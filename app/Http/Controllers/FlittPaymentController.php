@@ -132,12 +132,114 @@ class FlittPaymentController extends Controller
         return $this->payment_response($payment, 'fail');
     }
 
+    public function mobileIntent(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'payment_id' => 'required|uuid',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json($this->response_formatter(GATEWAYS_DEFAULT_400, null, $this->error_processor($validator)), 400);
+        }
+
+        return $this->mobileIntentById((string) $request['payment_id']);
+    }
+
+    public function mobileIntentById(string $paymentId)
+    {
+        $payment = $this->payment::where(['id' => $paymentId])->where(['is_paid' => 0])->first();
+
+        if (!isset($payment) || !$this->isConfigured()) {
+            return response()->json(['message' => 'Flitt მობილური გადახდა მიუწვდომელია'], 404);
+        }
+
+        $payload = $this->buildCreateOrderPayload($payment, true);
+        $response = $this->postToFlitt('/api/checkout/token', $payload);
+        $token = data_get($response, 'response.token');
+
+        if (data_get($response, 'response.response_status') === 'success' && !empty($token)) {
+            return response()->json([
+                'payment_id' => (string) $payment->id,
+                'merchant_id' => (int) $this->config_values->merchant_id,
+                'token' => (string) $token,
+            ]);
+        }
+
+        return response()->json(['message' => 'Flitt გადახდის ინიციალიზაცია ვერ მოხერხდა'], 422);
+    }
+
+    public function mobileReturn(Request $request)
+    {
+        $payload = $this->extractBodyPayload($request);
+        $paymentId = $request->query('payment_id') ?? data_get($payload, 'order_id');
+        $payment = $paymentId ? $this->payment::where(['id' => $paymentId])->first() : null;
+
+        if ($payment && !empty($payload) && $this->isValidSignature($payload)) {
+            $this->processFlittStatus(
+                payment: $payment,
+                payload: $payload,
+                transactionId: data_get($payload, 'payment_id')
+            );
+        }
+
+        return response(
+            '<!doctype html><html lang="ka"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Flitt</title></head><body style="margin:0;background:#f7f7f7;"></body></html>',
+            200,
+            ['Content-Type' => 'text/html; charset=UTF-8']
+        );
+    }
+
+    public function mobileStatus(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'payment_id' => 'required|uuid',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json($this->response_formatter(GATEWAYS_DEFAULT_400, null, $this->error_processor($validator)), 400);
+        }
+
+        $payment = $this->payment::where(['id' => $request['payment_id']])->first();
+
+        if (!$payment || !$this->isConfigured()) {
+            return response()->json(['message' => 'Payment request not found'], 404);
+        }
+
+        if ($payment->is_paid) {
+            return response()->json([
+                'payment_id' => (string) $payment->id,
+                'status' => 'approved',
+                'is_paid' => true,
+                'transaction_id' => $payment->transaction_id,
+            ]);
+        }
+
+        $status = 'processing';
+        $statusPayload = $this->getOrderStatusPayload($payment);
+        if ($statusPayload) {
+            $status = $this->processFlittStatus(
+                payment: $payment,
+                payload: $statusPayload,
+                transactionId: data_get($statusPayload, 'payment_id')
+            ) ?? 'processing';
+
+            $payment = $this->payment::where(['id' => $payment->id])->first() ?? $payment;
+        }
+
+        return response()->json([
+            'payment_id' => (string) $payment->id,
+            'status' => $status,
+            'is_paid' => (bool) $payment->is_paid,
+            'transaction_id' => $payment->transaction_id,
+        ]);
+    }
+
     private function isConfigured(): bool
     {
         return !empty($this->config_values?->merchant_id) && !empty($this->config_values?->secret_key);
     }
 
-    private function buildCreateOrderPayload(PaymentRequest $payment): array
+    private function buildCreateOrderPayload(PaymentRequest $payment, bool $mobileSdk = false): array
     {
         $payload = [
             'version' => self::API_VERSION,
@@ -146,7 +248,10 @@ class FlittPaymentController extends Controller
             'order_desc' => Str::limit((string) ($payment->attribute ?? 'order_payment'), 1024, ''),
             'amount' => $this->toMinorAmount($payment->payment_amount),
             'currency' => strtoupper($payment->currency_code ?? 'GEL'),
-            'response_url' => $this->paymentRoute('flitt.response', ['payment_id' => $payment->id]),
+            'response_url' => $this->paymentRoute(
+                $mobileSdk ? 'flitt.mobile-return' : 'flitt.response',
+                ['payment_id' => $payment->id]
+            ),
             'server_callback_url' => $this->paymentRoute('flitt.callback'),
             'merchant_data' => $payment->id,
             'delayed' => 'N',

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use App\Models\Order;
 use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 use App\Models\BusinessSetting;
 use App\Library\Payer;
 use App\Traits\Payment;
@@ -40,6 +41,66 @@ class PaymentController extends Controller
     }
     public function payment(Request $request)
     {
+        $result = $this->prepareOrderPayment($request);
+        if ($result instanceof JsonResponse) {
+            return $result;
+        }
+
+        $redirect_link = $result['redirect_link'];
+        return redirect($redirect_link);
+
+    }
+
+    public function flittMobileIntent(Request $request)
+    {
+        $request->merge([
+            'payment_method' => 'flitt',
+            'payment_platform' => 'app',
+        ]);
+
+        $result = $this->prepareOrderPayment($request);
+        if ($result instanceof JsonResponse) {
+            return $result;
+        }
+
+        $paymentId = $this->extractPaymentIdFromLink($result['redirect_link']);
+        if (!$paymentId) {
+            return response()->json([
+                'message' => 'Unable to initialize Flitt mobile payment',
+            ], 422);
+        }
+
+        return app(FlittPaymentController::class)->mobileIntentById($paymentId);
+    }
+
+    public function success()
+    {
+        $order = Order::where(['id' => session('order_id'), 'user_id'=>session('customer_id')])->first();
+        if (isset($order) && $order->callback != null) {
+            return redirect($order->callback . '&status=success');
+        }
+        return response()->json(['message' => 'Payment succeeded'], 200);
+    }
+
+    public function fail()
+    {
+        $order = Order::where(['id' => session('order_id'), 'user_id'=>session('customer_id')])->first();
+        if (isset($order) && $order->callback != null) {
+            return redirect($order->callback . '&status=fail');
+        }
+        return response()->json(['message' => 'Payment failed'], 403);
+    }
+    public function cancel(Request $request)
+    {
+        $order = Order::where(['id' => session('order_id'), 'user_id'=>session('customer_id')])->first();
+        if (isset($order) && $order->callback != null) {
+            return redirect($order->callback . '&status=fail');
+        }
+        return response()->json(['message' => 'Payment failed'], 403);
+    }
+
+    private function prepareOrderPayment(Request $request): array|JsonResponse
+    {
         if ($request->has('callback')) {
             Order::where(['id' => $request->order_id])->update(['callback' => $request['callback']]);
         }
@@ -52,13 +113,7 @@ class PaymentController extends Controller
         if(!$order){
             return response()->json(['errors' => ['code' => 'order-payment', 'message' => 'Data not found']], 403);
         }
-        if($order->is_guest){
-            $customer_details = json_decode($order['delivery_address'],true);
-        }else{
-            $customer = User::find($request['customer_id']);
-        }
 
-        //guest user check
         if ($order->is_guest) {
             $address = json_decode($order['delivery_address'],true);
             $customer = collect([
@@ -77,7 +132,6 @@ class PaymentController extends Controller
                 'email' => $customer['email'],
             ]);
         }
-
 
         if (session()->has('payment_method') == false) {
             session()->put('payment_method', 'ssl_commerz_payment');
@@ -125,35 +179,26 @@ class PaymentController extends Controller
         $receiver_info = new Receiver('receiver_name','example.png');
 
         $redirect_link = Payment::generate_link($payer, $payment_info, $receiver_info);
+        if (!$redirect_link) {
+            return response()->json(['errors' => ['message' => 'Payment not found']], 403);
+        }
 
-        return redirect($redirect_link);
-
+        return [
+            'order' => $order,
+            'redirect_link' => $redirect_link,
+        ];
     }
 
-    public function success()
+    private function extractPaymentIdFromLink(string $redirectLink): ?string
     {
-        $order = Order::where(['id' => session('order_id'), 'user_id'=>session('customer_id')])->first();
-        if (isset($order) && $order->callback != null) {
-            return redirect($order->callback . '&status=success');
+        $query = parse_url($redirectLink, PHP_URL_QUERY);
+        if (!$query) {
+            return null;
         }
-        return response()->json(['message' => 'Payment succeeded'], 200);
-    }
 
-    public function fail()
-    {
-        $order = Order::where(['id' => session('order_id'), 'user_id'=>session('customer_id')])->first();
-        if (isset($order) && $order->callback != null) {
-            return redirect($order->callback . '&status=fail');
-        }
-        return response()->json(['message' => 'Payment failed'], 403);
-    }
-    public function cancel(Request $request)
-    {
-        $order = Order::where(['id' => session('order_id'), 'user_id'=>session('customer_id')])->first();
-        if (isset($order) && $order->callback != null) {
-            return redirect($order->callback . '&status=fail');
-        }
-        return response()->json(['message' => 'Payment failed'], 403);
+        parse_str($query, $params);
+
+        return $params['payment_id'] ?? null;
     }
 
 }

@@ -70,6 +70,7 @@ Route::get('authentication-failed', function () {
 
 Route::group(['prefix' => 'payment-mobile'], function () {
     Route::get('/', 'PaymentController@payment')->name('payment-mobile');
+    Route::get('flitt-intent', 'PaymentController@flittMobileIntent')->name('payment-mobile.flitt-intent');
     Route::get('set-payment-method/{name}', 'PaymentController@set_payment_method')->name('set-payment-method');
 });
 
@@ -188,6 +189,10 @@ if (!$is_published) {
         //FLITT
         Route::group(['prefix' => 'flitt', 'as' => 'flitt.'], function () {
             Route::get('pay', [FlittPaymentController::class, 'payment'])->name('pay');
+            Route::get('mobile-intent', [FlittPaymentController::class, 'mobileIntent'])->name('mobile-intent');
+            Route::get('mobile-status', [FlittPaymentController::class, 'mobileStatus'])->name('mobile-status');
+            Route::any('mobile-return', [FlittPaymentController::class, 'mobileReturn'])->name('mobile-return')
+                ->withoutMiddleware([\App\Http\Middleware\VerifyCsrfToken::class]);
             Route::any('response', [FlittPaymentController::class, 'response'])->name('response')
                 ->withoutMiddleware([\App\Http\Middleware\VerifyCsrfToken::class]);
             Route::post('callback', [FlittPaymentController::class, 'callback'])->name('callback')
