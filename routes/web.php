@@ -12,6 +12,7 @@ use App\Http\Controllers\SenangPayController;
 use App\Http\Controllers\MercadoPagoController;
 use App\Http\Controllers\BkashPaymentController;
 use App\Http\Controllers\FlutterwaveV3Controller;
+use App\Http\Controllers\FlittPaymentController;
 use App\Http\Controllers\PaypalPaymentController;
 use App\Http\Controllers\BogPaymentController;
 use App\Http\Controllers\StripePaymentController;
@@ -181,6 +182,15 @@ if (!$is_published) {
             Route::any('fail', [BogPaymentController::class, 'fail'])->name('fail')
                 ->withoutMiddleware([\App\Http\Middleware\VerifyCsrfToken::class]);
             Route::any('callback', [BogPaymentController::class, 'callback'])->name('callback')
+                ->withoutMiddleware([\App\Http\Middleware\VerifyCsrfToken::class]);
+        });
+
+        //FLITT
+        Route::group(['prefix' => 'flitt', 'as' => 'flitt.'], function () {
+            Route::get('pay', [FlittPaymentController::class, 'payment'])->name('pay');
+            Route::any('response', [FlittPaymentController::class, 'response'])->name('response')
+                ->withoutMiddleware([\App\Http\Middleware\VerifyCsrfToken::class]);
+            Route::post('callback', [FlittPaymentController::class, 'callback'])->name('callback')
                 ->withoutMiddleware([\App\Http\Middleware\VerifyCsrfToken::class]);
         });
 

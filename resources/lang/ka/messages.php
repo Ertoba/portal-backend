@@ -1820,6 +1820,7 @@
   'copy_callback' => 'Copy callback',
   'senang_pay' => 'Senang pay',
   'mercadopago' => 'Mercadopago',
+  'flitt' => 'Flitt',
   'paymob_accept' => 'Paymob accept',
   'callback' => 'Callback',
   'bkash' => 'Bkash',

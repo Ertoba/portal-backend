@@ -101,8 +101,9 @@ class BusinessSettingsController extends Controller
             return view('admin-views.business-settings.settings.customer-index', compact('data'));
 
         case 'payment':
+            $this->ensureBuiltInPaymentGatewayConfigsExist();
             $digital_payment_methods_count = Setting::whereIn('settings_type', ['payment_config'])
-                ->whereIn('key_name', ['ssl_commerz', 'paypal', 'stripe', 'razor_pay', 'senang_pay', 'paytabs', 'paystack', 'paymob_accept', 'paytm', 'flutterwave', 'liqpay', 'bkash', 'mercadopago', 'bog_pay'])
+                ->whereIn('key_name', $this->builtInPaymentGatewayKeys())
                 ->where('is_active', 1)
                 ->count();
             $offline_payment_methods_count = \App\Models\OfflinePaymentMethod::where('status', 1)->count();
@@ -672,6 +673,7 @@ class BusinessSettingsController extends Controller
 
     public function payment_index(Request $request)
     {
+        $this->ensureBuiltInPaymentGatewayConfigsExist();
         $published_status = 0; // Set a default value
         $payment_published_status = config('get_payment_publish_status');
         if (isset($payment_published_status[0]['is_published'])) {
@@ -691,7 +693,7 @@ class BusinessSettingsController extends Controller
             }
         }
         $data_values = Setting::whereIn('settings_type', ['payment_config'])
-            ->whereIn('key_name', ['ssl_commerz', 'paypal', 'stripe', 'razor_pay', 'senang_pay', 'paytabs', 'paystack', 'paymob_accept', 'paytm', 'flutterwave', 'liqpay', 'bkash', 'mercadopago', 'bog_pay'])
+            ->whereIn('key_name', $this->builtInPaymentGatewayKeys())
             ->when($request->has('search'), function ($query) use ($request) {
                 $query->where('key_name', 'like', "%{$request->search}%");
             })
@@ -1035,6 +1037,30 @@ class BusinessSettingsController extends Controller
         return $activeCount > 0;
     }
 
+    private function builtInPaymentGatewayKeys(): array
+    {
+        return ['ssl_commerz', 'paypal', 'stripe', 'razor_pay', 'senang_pay', 'paytabs', 'paystack', 'paymob_accept', 'paytm', 'flutterwave', 'liqpay', 'bkash', 'mercadopago', 'bog_pay', 'flitt'];
+    }
+
+    private function ensureBuiltInPaymentGatewayConfigsExist(): void
+    {
+        foreach ($this->builtInPaymentGatewayKeys() as $gateway) {
+            Setting::firstOrCreate(
+                ['key_name' => $gateway, 'settings_type' => 'payment_config'],
+                [
+                    'live_values' => $this->getDefaultPaymentConfigValues($gateway, 'live'),
+                    'test_values' => $this->getDefaultPaymentConfigValues($gateway, 'test'),
+                    'mode' => 'test',
+                    'is_active' => 0,
+                    'additional_data' => json_encode([
+                        'gateway_title' => ucwords(str_replace('_', ' ', $gateway)),
+                        'gateway_image' => '',
+                    ]),
+                ]
+            );
+        }
+    }
+
     public function payment_config_update(Request $request)
     {
         if ($request->toggle_type) {
@@ -1058,7 +1084,7 @@ class BusinessSettingsController extends Controller
         $request['status'] = $request->status ?? 0;
 
         $validation = [
-            'gateway' => 'required|in:ssl_commerz,paypal,stripe,razor_pay,senang_pay,paytabs,paystack,paymob_accept,paytm,flutterwave,liqpay,bkash,mercadopago,bog_pay',
+            'gateway' => 'required|in:' . implode(',', $this->builtInPaymentGatewayKeys()),
             'mode' => 'required|in:live,test',
         ];
 
@@ -1293,6 +1319,20 @@ class BusinessSettingsController extends Controller
                 'client_id.required_if' => translate('Client ID is required when payment status is ON'),
                 'client_secret.required_if' => translate('Client Secret is required when payment status is ON'),
             ];
+        } elseif ($request['gateway'] == 'flitt') {
+            $additional_data = [
+                'gateway_image' => $validator_image_rule . '|image|max:' . $maxFileSizeInMB . '|mimes:' . IMAGE_FORMAT_FOR_VALIDATION,
+                'status' => 'required|in:1,0',
+                'merchant_id' => 'required_if:status,1',
+                'secret_key' => 'required_if:status,1',
+            ];
+            $validation_messages = [
+                'gateway_image.required' => translate('Gateway image is required'),
+                'gateway_image.max' => translate('Gateway image size should not be greater than ' . $maxFileSizeInMB . 'MB'),
+                'gateway_image.mimes' => translate('Gateway image must be a ' . IMAGE_FORMAT_FOR_VALIDATION),
+                'merchant_id.required_if' => translate('Merchant Id is required when payment status is ON'),
+                'secret_key.required_if' => translate('Secret Key is required when payment status is ON'),
+            ];
         }
 
         $validatedData = $request->validate(array_merge($validation, $additional_data), $validation_messages);
@@ -1347,11 +1387,18 @@ class BusinessSettingsController extends Controller
 
     private function getDefaultPaymentConfigValues(string $gateway, string $mode): array
     {
-        return [
+        $defaultValues = [
             'gateway' => $gateway,
             'mode' => $mode,
             'status' => 0,
         ];
+
+        if ($gateway === 'flitt' && $mode === 'test') {
+            $defaultValues['merchant_id'] = '1549901';
+            $defaultValues['secret_key'] = 'test';
+        }
+
+        return $defaultValues;
     }
 
     private function buildPaymentGatewayConfigValues(array $validatedData, array $gatewayRules): array

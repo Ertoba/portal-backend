@@ -63,6 +63,16 @@ trait PaymentGatewayTrait
                 "TZS" => "Tanzanian Shilling",
                 "ZMW" => "Zambian Kwacha"
             ],
+            "flitt" => [
+                "GEL" => "Georgian Lari",
+                "USD" => "United States Dollar",
+                "EUR" => "Euro",
+                "AMD" => "Armenian Dram",
+                "AZN" => "Azerbaijanian Manat",
+                "KZT" => "Tenge",
+                "MDL" => "Moldovian Leu",
+                "UZS" => "Uzbekistan Sum"
+            ],
             "foloosi" => [
                 "AED" => "United Arab Emirates Dirham",
                 "SAR" => "Saudi Riyal",
