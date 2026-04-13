@@ -32,6 +32,38 @@ use MatanYadaev\EloquentSpatial\Objects\Point;
 
 class CustomerController extends Controller
 {
+    private function customerOrderQuery(Request $request)
+    {
+        if ($request->user()) {
+            return Order::where('user_id', $request->user()->id)->where('is_guest', 0);
+        }
+
+        return Order::where('user_id', $request->input('guest_id'))->where('is_guest', 1);
+    }
+
+    private function isIncompleteDigitalOrder(Order $order): bool
+    {
+        if (
+            !in_array($order->order_status, ['pending', 'failed'], true)
+            || in_array($order->payment_method, ['cash_on_delivery', 'wallet'], true)
+        ) {
+            return false;
+        }
+
+        if ($order->payment_method === 'partial_payment') {
+            return $order->payments()
+                ->where('payment_status', 'unpaid')
+                ->whereNotIn('payment_method', ['cash_on_delivery', 'wallet'])
+                ->exists();
+        }
+
+        if ($order->payment_method === 'offline_payment') {
+            return !$order->offline_payments()->exists();
+        }
+
+        return $order->payment_status !== 'paid';
+    }
+
     public function address_list(Request $request)
     {
         $limit = $request['limit'] ?? 10;
@@ -207,40 +239,19 @@ class CustomerController extends Controller
 
     public function orderPaymentFailed(Request $request)
     {
-        $user_id = $request->user ? $request->user->id : $request->input('guest_id');
         $orderId = $request->input('order_id');
+        $orderQuery = $this->customerOrderQuery($request);
 
         if ($orderId) {
-            $unpaidOrder = Order::where('id', $orderId)->first();
-        }
-        else {
-            $unpaidOrder = Order::where('user_id', $user_id)
+            $candidateOrder = (clone $orderQuery)->where('id', $orderId)->first();
+        } else {
+            $candidateOrder = (clone $orderQuery)
                 ->where('created_at', '>=', now()->subMonths(1))
-                ->whereIn('order_status', ['pending','failed'])
-                ->whereNotIn('payment_method', ['cash_on_delivery', 'wallet'])
-                ->where(function ($q) {
-                    // CASE 1: partial_payments
-                    $q->where(function ($q2) {
-                        $q2->where('payment_method', 'partial_payment')
-                            ->whereHas('payments', function ($p) {
-                                $p->where('payment_status', 'unpaid')
-                                    ->whereNotIn('payment_method', ['cash_on_delivery', 'wallet']);
-                            });
-                    })
-                    // CASE 2: offline_payment
-                    ->orWhere(function ($q3) {
-                        $q3->where('payment_method', 'offline_payment')
-                            ->whereDoesntHave('offline_payments');
-                    })
-                    // CASE 3: other online methods
-                    ->orWhere(function ($q4) {
-                        $q4->whereNotIn('payment_method', [
-                            'cash_on_delivery', 'wallet', 'partial_payment', 'offline_payment'
-                        ]);
-                    });
-                })
+                ->latest('id')
                 ->first();
         }
+
+        $unpaidOrder = isset($candidateOrder) && $this->isIncompleteDigitalOrder($candidateOrder) ? $candidateOrder : null;
 
         if (!$unpaidOrder) {
             return response()->json([], 200);
