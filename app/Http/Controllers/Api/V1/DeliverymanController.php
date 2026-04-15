@@ -489,6 +489,7 @@ class DeliverymanController extends Controller
             'created_at' => now(),
             'updated_at' => now()
         ]);
+        event(new \App\Events\DeliveryLocationUpdated($dm->id, $request['latitude'], $request['longitude'], $request['location'] ?? ''));
         return response()->json(['message' => translate('location recorded')], 200);
     }
 
