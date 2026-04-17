@@ -34,6 +34,7 @@ use App\Models\Translation;
 use App\Traits\Processor;
 use Brian2694\Toastr\Facades\Toastr;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
@@ -43,6 +44,7 @@ use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
+use Throwable;
 
 class BusinessSettingsController extends Controller
 {
@@ -55,16 +57,6 @@ class BusinessSettingsController extends Controller
         return back();
     }
 
-   $keys = ['landing_page_text'  ,'landing_page_links','speciality','join_as_images','download_app_section','counter_section',
-            'promotion_banner','module_section','feature','testimonial','landing_page_images','web_app_landing_page_settings',
-            'react_header_banner','hero_section','app_download_button','banner_section_full','delivery_service_section',
-            'discount_banner','banner_section_half','app_section_image','footer_logo','react_feature','about_us','privacy_policy',
-            'terms_and_conditions','tax','tax_included','shipping_policy','refund','cancelation','minimum_shipping_charge','per_km_shipping_charge',
-            'order_pending_message','order_confirmation_msg','order_processing_message','out_for_delivery_message','order_delivered_message',
-            'delivery_boy_assign_message','delivery_boy_start_message','delivery_boy_delivered_message','customer_verification','order_handover_message',
-            'order_cancled_message','order_refunded_message'];
-
-    BusinessSetting::whereIn('key',$keys)->delete();
 
     $language = getWebConfig('language');
     $type = $request->input('type');
@@ -101,9 +93,8 @@ class BusinessSettingsController extends Controller
             return view('admin-views.business-settings.settings.customer-index', compact('data'));
 
         case 'payment':
-            $this->ensureBuiltInPaymentGatewayConfigsExist();
             $digital_payment_methods_count = Setting::whereIn('settings_type', ['payment_config'])
-                ->whereIn('key_name', $this->builtInPaymentGatewayKeys())
+                ->whereIn('key_name', ['ssl_commerz', 'paypal', 'stripe', 'razor_pay', 'senang_pay', 'paytabs', 'paystack', 'paymob_accept', 'paytm', 'flutterwave', 'liqpay', 'bkash', 'mercadopago', 'bog_pay', 'flitt'])
                 ->where('is_active', 1)
                 ->count();
             $offline_payment_methods_count = \App\Models\OfflinePaymentMethod::where('status', 1)->count();
@@ -673,7 +664,6 @@ class BusinessSettingsController extends Controller
 
     public function payment_index(Request $request)
     {
-        $this->ensureBuiltInPaymentGatewayConfigsExist();
         $published_status = 0; // Set a default value
         $payment_published_status = config('get_payment_publish_status');
         if (isset($payment_published_status[0]['is_published'])) {
@@ -693,7 +683,7 @@ class BusinessSettingsController extends Controller
             }
         }
         $data_values = Setting::whereIn('settings_type', ['payment_config'])
-            ->whereIn('key_name', $this->builtInPaymentGatewayKeys())
+            ->whereIn('key_name', ['ssl_commerz', 'paypal', 'stripe', 'razor_pay', 'senang_pay', 'paytabs', 'paystack', 'paymob_accept', 'paytm', 'flutterwave', 'liqpay', 'bkash', 'mercadopago', 'bog_pay', 'flitt'])
             ->when($request->has('search'), function ($query) use ($request) {
                 $query->where('key_name', 'like', "%{$request->search}%");
             })
@@ -1037,30 +1027,6 @@ class BusinessSettingsController extends Controller
         return $activeCount > 0;
     }
 
-    private function builtInPaymentGatewayKeys(): array
-    {
-        return ['ssl_commerz', 'paypal', 'stripe', 'razor_pay', 'senang_pay', 'paytabs', 'paystack', 'paymob_accept', 'paytm', 'flutterwave', 'liqpay', 'bkash', 'mercadopago', 'bog_pay', 'flitt'];
-    }
-
-    private function ensureBuiltInPaymentGatewayConfigsExist(): void
-    {
-        foreach ($this->builtInPaymentGatewayKeys() as $gateway) {
-            Setting::firstOrCreate(
-                ['key_name' => $gateway, 'settings_type' => 'payment_config'],
-                [
-                    'live_values' => $this->getDefaultPaymentConfigValues($gateway, 'live'),
-                    'test_values' => $this->getDefaultPaymentConfigValues($gateway, 'test'),
-                    'mode' => 'test',
-                    'is_active' => 0,
-                    'additional_data' => json_encode([
-                        'gateway_title' => ucwords(str_replace('_', ' ', $gateway)),
-                        'gateway_image' => '',
-                    ]),
-                ]
-            );
-        }
-    }
-
     public function payment_config_update(Request $request)
     {
         if ($request->toggle_type) {
@@ -1084,12 +1050,12 @@ class BusinessSettingsController extends Controller
         $request['status'] = $request->status ?? 0;
 
         $validation = [
-            'gateway' => 'required|in:' . implode(',', $this->builtInPaymentGatewayKeys()),
+            'gateway' => 'required|in:ssl_commerz,paypal,stripe,razor_pay,senang_pay,paytabs,paystack,paymob_accept,paytm,flutterwave,liqpay,bkash,mercadopago,bog_pay,flitt',
             'mode' => 'required|in:live,test',
         ];
 
         $settings = Setting::where('key_name', $request['gateway'])->where('settings_type', 'payment_config')->first();
-        $additional_data_image = $settings?->additional_data ? json_decode($settings->additional_data) : null;
+        $additional_data_image = $settings['additional_data'] != null ? json_decode($settings['additional_data']) : null;
         $validator_image_rule = 'required';
 
         if ($additional_data_image != null && isset($additional_data_image->gateway_image)) {
@@ -1305,41 +1271,13 @@ class BusinessSettingsController extends Controller
                 'username.required_if' => translate('Username is required when payment status is ON'),
                 'password.required_if' => translate('Password is required when payment status is ON'),
             ];
-        } elseif ($request['gateway'] == 'bog_pay') {
-            $additional_data = [
-                'gateway_image' => $validator_image_rule . '|image|max:' . $maxFileSizeInMB . '|mimes:' . IMAGE_FORMAT_FOR_VALIDATION,
-                'status' => 'required|in:1,0',
-                'client_id' => 'required_if:status,1',
-                'client_secret' => 'required_if:status,1',
-            ];
-            $validation_messages = [
-                'gateway_image.required' => translate('Gateway image is required'),
-                'gateway_image.max' => translate('Gateway image size should not be greater than ' . $maxFileSizeInMB . 'MB'),
-                'gateway_image.mimes' => translate('Gateway image must be a ' . IMAGE_FORMAT_FOR_VALIDATION),
-                'client_id.required_if' => translate('Client ID is required when payment status is ON'),
-                'client_secret.required_if' => translate('Client Secret is required when payment status is ON'),
-            ];
-        } elseif ($request['gateway'] == 'flitt') {
-            $additional_data = [
-                'gateway_image' => $validator_image_rule . '|image|max:' . $maxFileSizeInMB . '|mimes:' . IMAGE_FORMAT_FOR_VALIDATION,
-                'status' => 'required|in:1,0',
-                'merchant_id' => 'required_if:status,1',
-                'secret_key' => 'required_if:status,1',
-            ];
-            $validation_messages = [
-                'gateway_image.required' => translate('Gateway image is required'),
-                'gateway_image.max' => translate('Gateway image size should not be greater than ' . $maxFileSizeInMB . 'MB'),
-                'gateway_image.mimes' => translate('Gateway image must be a ' . IMAGE_FORMAT_FOR_VALIDATION),
-                'merchant_id.required_if' => translate('Merchant Id is required when payment status is ON'),
-                'secret_key.required_if' => translate('Secret Key is required when payment status is ON'),
-            ];
         }
 
-        $validatedData = $request->validate(array_merge($validation, $additional_data), $validation_messages);
+        $request->validate(array_merge($validation, $additional_data), $validation_messages);
 
         $settings = Setting::where('key_name', $request['gateway'])->where('settings_type', 'payment_config')->first();
 
-        $additional_data_image = $settings?->additional_data ? json_decode($settings->additional_data) : null;
+        $additional_data_image = $settings['additional_data'] != null ? json_decode($settings['additional_data']) : null;
 
         if ($request->has('gateway_image')) {
             $gateway_image = $this->file_uploader('payment_modules/gateway_image/', 'png', $request['gateway_image'], $additional_data_image != null ? $additional_data_image->gateway_image : '');
@@ -1353,81 +1291,19 @@ class BusinessSettingsController extends Controller
             'storage' => self::getDisk(),
         ];
 
+        $validator = Validator::make($request->all(), array_merge($validation, $additional_data));
+
         $settings = Setting::firstOrNew(['key_name' => $request['gateway'], 'settings_type' => 'payment_config']);
-        $currentLiveValues = is_array($settings->live_values) ? $settings->live_values : [];
-        $currentTestValues = is_array($settings->test_values) ? $settings->test_values : [];
-
-        if (empty($currentLiveValues)) {
-            $currentLiveValues = $this->getDefaultPaymentConfigValues($validatedData['gateway'], 'live');
-        }
-
-        if (empty($currentTestValues)) {
-            $currentTestValues = $this->getDefaultPaymentConfigValues($validatedData['gateway'], 'test');
-        }
-
-        $gatewayConfigValues = $this->buildPaymentGatewayConfigValues($validatedData, $additional_data);
-
-        if ($validatedData['mode'] === 'live') {
-            $settings->live_values = array_merge($currentLiveValues, $gatewayConfigValues);
-            $settings->test_values = $currentTestValues;
-        } else {
-            $settings->test_values = array_merge($currentTestValues, $gatewayConfigValues);
-            $settings->live_values = $currentLiveValues;
-        }
-
-        $settings->mode = $validatedData['mode'];
-        $settings->is_active = (int) $validatedData['status'];
+        $settings->live_values = $validator->validate();
+        $settings->test_values = $validator->validate();
+        $settings->mode = $request['mode'];
+        $settings->is_active = $request['status'];
         $settings->additional_data = json_encode($payment_additional_data);
         $settings->save();
 
         Toastr::success(GATEWAYS_DEFAULT_UPDATE_200['message']);
 
         return back();
-    }
-
-    private function getDefaultPaymentConfigValues(string $gateway, string $mode): array
-    {
-        $defaultValues = [
-            'gateway' => $gateway,
-            'mode' => $mode,
-            'status' => 0,
-        ];
-
-        if ($gateway === 'flitt' && $mode === 'test') {
-            $defaultValues['merchant_id'] = '1549901';
-            $defaultValues['secret_key'] = 'test';
-        }
-
-        return $defaultValues;
-    }
-
-    private function buildPaymentGatewayConfigValues(array $validatedData, array $gatewayRules): array
-    {
-        $gatewayConfigValues = [
-            'gateway' => $validatedData['gateway'],
-            'mode' => $validatedData['mode'],
-            'status' => (int) $validatedData['status'],
-        ];
-
-        foreach (array_keys($gatewayRules) as $field) {
-            if (in_array($field, ['gateway_image', 'status'], true)) {
-                continue;
-            }
-
-            if (array_key_exists($field, $validatedData)) {
-                $gatewayConfigValues[$field] = $validatedData[$field];
-            }
-        }
-
-        return $gatewayConfigValues;
-    }
-
-    private function getSelectedPaymentGatewayValues(Setting $settings): array
-    {
-        $selectedMode = $settings->mode === 'test' ? 'test' : 'live';
-        $gatewayValues = $selectedMode === 'test' ? $settings->test_values : $settings->live_values;
-
-        return is_array($gatewayValues) ? $gatewayValues : [];
     }
 
     public function app_settings()
@@ -1759,10 +1635,37 @@ class BusinessSettingsController extends Controller
     public function fcm_index(Request $request)
     {
         abort_if($request?->module_type == 'rental' && !addon_published_status('Rental'), 404);
+        abort_if($request?->module_type == 'ride-share' && !addon_published_status('RideShare'), 404);
 
-        return view($request->module_type == 'rental' && addon_published_status('Rental')
-            ? 'admin-views.business-settings.fcm-index-rental'
-            : 'admin-views.business-settings.fcm-index');
+        $moduleType = $request->module_type ?? 'grocery';
+        if ($moduleType == 'ride-share' && addon_published_status('RideShare')) {
+
+            $language = BusinessSetting::where('key', 'language')->first()->value;
+            $langs = json_decode($language);
+            $defaultLang = $langs[0];
+            $cacheKey = 'fcm_notification_form_html_' . $moduleType . '_' . implode('_', $langs);
+
+            $formHtml = Cache::remember($cacheKey, now()->addMinutes(60), function () use ($langs, $defaultLang, $moduleType) {
+                $notificationMessages = NotificationMessage::with('translations')
+                    ->where('module_type', $moduleType)
+                    ->get()
+                    ->keyBy('key');
+
+                return view('admin-views.business-settings.partials.fcm-ride-share-form', [
+                    'language' => $langs,
+                    'defaultLang' => $defaultLang,
+                    'mod_type' => $moduleType,
+                    'notificationMessages' => $notificationMessages,
+                ])->render();
+            });
+
+            return view('admin-views.business-settings.fcm-index-ride-share', compact('formHtml', 'langs', 'defaultLang','language'));
+        }
+        if($moduleType == 'rental' && addon_published_status('Rental')) {
+            return view('admin-views.business-settings.fcm-index-rental');
+        }
+
+        return view('admin-views.business-settings.fcm-index');
     }
 
     public function fcm_config()
@@ -2212,6 +2115,108 @@ class BusinessSettingsController extends Controller
         Toastr::success(translate('messages.message_updated'));
 
         return back();
+    }
+
+    public function update_fcm_messages_ride_share(Request $request)
+    {
+        $request->validate([
+            'module_type' => 'required|string',
+            'lang' => 'required|array',
+            'lang.*' => 'required|string',
+        ]);
+
+        $moduleType = $request->module_type;
+        $activeLanguages = $request->lang;
+
+        $defaultLangIndex = array_search('en', $activeLanguages);
+        if ($defaultLangIndex === false && !empty($activeLanguages)) {
+            $defaultLangIndex = 0;
+        } else if (empty($activeLanguages)) {
+            Toastr::error(translate('messages.language not found'));
+            return back();
+        }
+
+        $notificationUserTypes = [
+            'customer' => NOTIFICATION_FOR_RIDE_SHARE_CUSTOMER,
+            'driver' => NOTIFICATION_FOR_RIDE_SHARE_DRIVER,
+            'driver_registration' => NOTIFICATION_FOR_RIDE_SHARE_DRIVER_REGISTRATION,
+            'other' => NOTIFICATION_FOR_RIDE_SHARE_OTHERS,
+        ];
+
+        DB::beginTransaction();
+
+        try {
+            foreach ($notificationUserTypes as $userType => $notificationsArray) {
+                foreach ($notificationsArray as $notificationConfig) {
+                    $baseNotificationKey = $notificationConfig['key'];
+                    $dbNotificationKey = $userType . '_' . $baseNotificationKey;
+                    $messageInputName = $userType . '_' . $baseNotificationKey . '_message';
+                    $statusInputName = $userType . '_' . $baseNotificationKey . '_status';
+
+                    $baseMessageContent = $request->input($messageInputName)[$defaultLangIndex] ?? null;
+                    $status = $request->has($statusInputName) ? 1 : 0;
+
+                    $notification = NotificationMessage::updateOrCreate(
+                        [
+                            'module_type' => $moduleType,
+                            'key' => $dbNotificationKey,
+                        ],
+                        [
+                            'message' => $baseMessageContent,
+                            'status' => $status,
+                        ]
+                    );
+
+                    $translationsData = [];
+                    foreach ($activeLanguages as $langIndex => $locale) {
+                        $translatedMessage = $request->input($messageInputName)[$langIndex] ?? '';
+
+                        if ($translatedMessage !== '') {
+                            $translationsData[] = [
+                                'translationable_type' => 'App\Models\NotificationMessage',
+                                'translationable_id' => $notification->id,
+                                'locale' => $locale,
+                                'key' => $dbNotificationKey,
+                                'value' => $translatedMessage,
+                                'created_at' => now(),
+                                'updated_at' => now(),
+                            ];
+                        }
+                        Translation::where('translationable_type', 'App\Models\NotificationMessage')
+                            ->where('translationable_id', $notification->id)
+                            ->where('locale', $locale)
+                            ->where('key', $dbNotificationKey)
+                            ->delete();
+                    }
+
+                    if (!empty($translationsData)) {
+                        Translation::upsert(
+                            $translationsData,
+                            ['translationable_type', 'translationable_id', 'locale', 'key'],
+                            ['value', 'updated_at']
+                        );
+                    }
+                }
+            }
+
+            DB::commit();
+
+            $cacheKey = 'fcm_notification_form_html_' . $moduleType . '_' . implode('_', $activeLanguages);
+            \Cache::forget($cacheKey);
+
+            Toastr::success(translate('messages.Notification updated successfully'));
+            return back();
+
+        } catch (Throwable $e) {
+            DB::rollBack();
+            \Log::error('error: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString(),
+                'request_data' => $request->all()
+            ]);
+
+            Toastr::error(translate('messages.notification update failed'));
+            return back();
+        }
     }
 
     public function location_setup(Request $request)
@@ -3364,6 +3369,40 @@ class BusinessSettingsController extends Controller
                 ]),
             ]);
             Toastr::success(translate('messages.delivery_man_links_updated'));
+        } elseif ($tab == 'earning-rider-link') {
+
+            $earning_rider_image = DataSetting::where('type', 'admin_landing_page')->where('key', 'earning_rider_image')->first();
+            if ($earning_rider_image == null) {
+                $request->validate([
+                    'earning_rider_image' => 'required|max:2048|mimes:' . IMAGE_FORMAT_FOR_VALIDATION,
+                ]);
+                $earning_rider_image = new DataSetting;
+            }
+            $earning_rider_image->key = 'earning_rider_image';
+            $earning_rider_image->type = 'admin_landing_page';
+            $earning_rider_image->value = $request->has('earning_rider_image') ? Helpers::update('earning/', $earning_rider_image->value, 'png', $request->file('earning_rider_image')) : $earning_rider_image->value;
+            $earning_rider_image->save();
+
+            if ($request['playstore_url_status'] && !$request['playstore_url']) {
+                Toastr::error(translate('messages.playstore download_url_is_empty'));
+
+                return back();
+            }
+            if ($request['apple_store_url_status'] && !$request['apple_store_url']) {
+                Toastr::error(translate('messages.App_store download_url_is_empty'));
+
+                return back();
+            }
+
+            Helpers::dataUpdateOrInsert(['key' => 'rider_app_earning_links', 'type' => 'admin_landing_page'], [
+                'value' => json_encode([
+                    'playstore_url_status' => $request['playstore_url_status'],
+                    'playstore_url' => $request['playstore_url'],
+                    'apple_store_url_status' => $request['apple_store_url_status'],
+                    'apple_store_url' => $request['apple_store_url'],
+                ]),
+            ]);
+            Toastr::success(translate('messages.rider_links_updated'));
         } elseif ($tab == 'why-choose-title') {
             $why_choose_title = DataSetting::where('type', 'admin_landing_page')->where('key', 'why_choose_title')->first();
             if ($why_choose_title == null) {
@@ -3558,6 +3597,7 @@ class BusinessSettingsController extends Controller
                     'app_download_count_numbers' => $request['app_download_count_numbers'],
                     'seller_count_numbers' => $request['seller_count_numbers'],
                     'deliveryman_count_numbers' => $request['deliveryman_count_numbers'],
+                    'rider_count_numbers' => $request['rider_count_numbers'] ?? 0,
                     'customer_count_numbers' => $request['customer_count_numbers'],
                     'status' => $request['status'],
                 ]),
@@ -4295,6 +4335,7 @@ class BusinessSettingsController extends Controller
             'popular-clients' => 'react-landing-page-popular-clients',
             'download-seller-app' => 'react-landing-page-download-seller-app',
             'download-deliveryman-app' => 'react-landing-page-download-deliveryman-app',
+            'download-rider-app' => 'react-landing-page-download-rider-app',
             'banner-section' => 'react-landing-page-banner-section',
             'testimonials' => 'react-landing-testimonial',
             'gallery' => 'react-landing-page-gallery',
@@ -4305,6 +4346,9 @@ class BusinessSettingsController extends Controller
         ];
 
         if (!isset($views[$tab])) {
+            abort(404);
+        }
+        if(($tab == 'download-rider-app') && (addon_published_status('RideShare') != 1)){
             abort(404);
         }
 
@@ -4440,6 +4484,33 @@ class BusinessSettingsController extends Controller
             Toastr::success(translate('messages.download_deliveryman_app_section_updated'));
 
             return back();
+        } elseif ($tab == 'download-rider-app-section') {
+            $request->validate([
+                'download_rider_app_title.0' => 'required|max:100',
+                'download_rider_app_sub_title.0' => 'nullable|max:1000',
+                'download_rider_app_button_title.0' => 'required|max:20',
+                'download_rider_app_image' => 'nullable|mimetypes:image/webp,image/jpeg,image/png,image/gif|max:2048',
+            ], [
+                'download_rider_app_title.0.required' => translate('Default_title_is_required'),
+                'download_rider_app_button_title.0.required' => translate('Default_button_title_is_required'),
+            ]);
+
+            if ($request->image_remove == '1') {
+                $image_deleted = $this->imageDelete(dir: 'download_rider_app_section', type: 'react_landing_page', key: 'download_rider_app_image');
+                if ($image_deleted) {
+                    $request['download_rider_app_image'] = null;
+                }
+                $this->getAddLandingPageData($request, 'react_landing_page', 'download_rider_app_image', false, 'download_rider_app_section/');
+            }
+            $this->getAddLandingPageData($request, 'react_landing_page', 'download_rider_app_title', true);
+            $this->getAddLandingPageData($request, 'react_landing_page', 'download_rider_app_sub_title', true);
+            $this->getAddLandingPageData($request, 'react_landing_page', 'download_rider_app_button_title', true);
+            if ($request->hasFile('download_rider_app_image')) {
+                $this->getAddLandingPageData($request, 'react_landing_page', 'download_rider_app_image', false, 'download_rider_app_section/');
+            }
+
+            Toastr::success(translate('messages.download_rider_app_section_updated'));
+            return back();
         } elseif ($tab == 'download-seller-app-section') {
             $request->validate([
                 'download_seller_app_title.0' => 'required|max:100',
@@ -4497,6 +4568,38 @@ class BusinessSettingsController extends Controller
             );
 
             Toastr::success(translate('messages.download_deliveryman_app_button_section_updated'));
+
+            return back();
+        } elseif ($tab == 'download-rider-app-button-section') {
+            $request->validate([
+                'download_rider_app_main_button_title.0' => 'required',
+                'download_rider_app_main_button_sub_title.0' => 'required',
+            ], [
+                'download_rider_app_main_button_title.0.required' => translate('messages.Default_title_is_required'),
+                'download_rider_app_main_button_sub_title.0.required' => translate('messages.Default_subtitle_is_required'),
+            ]);
+
+            $this->getAddLandingPageData($request, 'react_landing_page', 'download_rider_app_main_button_title', true);
+            $this->getAddLandingPageData($request, 'react_landing_page', 'download_rider_app_main_button_sub_title', true);
+
+            $download_links = [
+                'playstore_url_status' => $request->has('rider_playstore_url_status') ? 1 : 0,
+                'playstore_url' => $request->rider_playstore_url ?? '',
+                'apple_store_url_status' => $request->has('rider_apple_store_url_status') ? 1 : 0,
+                'apple_store_url' => $request->rider_apple_store_url ?? '',
+            ];
+
+            DataSetting::updateOrCreate(
+                [
+                    'key' => 'download_rider_app_links',
+                    'type' => 'react_landing_page'
+                ],
+                [
+                    'value' => json_encode($download_links)
+                ]
+            );
+
+            Toastr::success(translate('messages.download_rider_app_button_section_updated'));
 
             return back();
         } elseif ($tab == 'download-seller-app-button-section') {
@@ -7483,9 +7586,9 @@ class BusinessSettingsController extends Controller
 
         if ($request['status'] == 1) {
             $additional_data = json_decode($settings->additional_data, true);
-            $selectedGatewayValues = $this->getSelectedPaymentGatewayValues($settings);
+            $live_values = $settings->live_values;
 
-            if (empty($additional_data) || empty($selectedGatewayValues)) {
+            if (empty($additional_data) || empty($live_values)) {
                 Toastr::error(translate('messages.please_fill_all_required_fields_in_setup_first'));
                 return back();
             }
@@ -7495,7 +7598,7 @@ class BusinessSettingsController extends Controller
                 return back();
             }
 
-            foreach ($selectedGatewayValues as $key => $value) {
+            foreach ($live_values as $key => $value) {
                 if ($key != 'mode' && $key != 'status' && $key != 'gateway' && empty($value)) {
                     Toastr::error(translate('messages.please_fill_all_required_fields_in_setup_first'));
                     return back();

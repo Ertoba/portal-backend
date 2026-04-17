@@ -92,7 +92,7 @@
                                     </a>
                                 </li>
                                 <li
-                                    class="navbar-vertical-aside-has-menu {{ Request::is('admin/business-settings/module') ? 'active' : '' }}">
+                                    class="navbar-vertical-aside-has-menu @yield('edit_module')  {{ Request::is('admin/business-settings/module') ? 'active' : '' }}">
                                     <a class="js-navbar-vertical-aside-menu-link nav-link"
                                         href="{{ route('admin.business-settings.module.index') }}"
                                         title="{{ translate('messages.modules') }}">
@@ -338,6 +338,29 @@
                                 <span class="text-truncate text-capitalize">{{ translate('messages.gallery') }}</span>
                             </a>
                         </li>
+
+                        @if (addon_published_status('RideShare'))
+                            <li class="nav-item">
+                                <small class="nav-subtitle"
+                                    title="{{ translate('messages.ride_share_settings') }}">{{ translate('messages.ride_share_settings') }}</small>
+                                <small class="tio-more-horizontal nav-subtitle-replacer"></small>
+                            </li>
+                            <li class="navbar-vertical-aside-has-menu {{ Request::is('admin/business-settings/ride-share*') || Request::is('admin/business-settings/ride-fare*') || Request::is('admin/business-settings/rider') ? 'active' : '' }}">
+                                <a class="nav-link " href="{{ route('admin.business-settings.ride-fare.penalty') }}"
+                                title="{{ translate('messages.additional_settings') }}">
+                                    <span class="tio-settings nav-icon"></span>
+                                    <span class="text-truncate">{{ translate('messages.additional_settings') }}</span>
+                                </a>
+                            </li>
+                            <li class="navbar-vertical-aside-has-menu {{ Request::is('admin/business-settings/safety-precaution/*') ? 'active' : '' }}">
+                                <a class="nav-link " href="{{ route('admin.business-settings.safety-precaution.index', SAFETY_ALERT) }}"
+                                title="{{ translate('messages.Safety_&_Precaution') }}">
+                                    <span class="tio-settings nav-icon"></span>
+                                    <span class="text-truncate">{{ translate('messages.Safety_&_Precaution') }}</span>
+                                </a>
+                            </li>
+                        @endif
+
                         <li class="nav-item">
                             <small class="nav-subtitle"
                                 title="{{ translate('messages.business_settings') }}">{{ translate('messages.system_management') }}</small>
@@ -371,7 +394,7 @@
                                             class="text-truncate">{{ translate('messages.firebase_notification') }}</span>
                                     </a>
                                 </li>
-                                
+
                                 <li
                                         class="navbar-vertical-aside-has-menu {{ Request::is('admin/business-settings/third-party/payment-method') || Request::is('admin/business-settings/offline-payment') ? 'active' : '' }}">
                                         <a class="nav-link " href="{{ route('admin.business-settings.third-party.payment-method') }}"
@@ -381,7 +404,7 @@
                                                 class="text-truncate">{{ translate('Payment Setup') }}</span>
                                         </a>
                                 </li>
-                                
+
 
                                 <li class="nav-item @yield('analytics_Script')">
                                     <a class="nav-link " href="{{ route('admin.business-settings.marketing.analytic') }}"
@@ -419,7 +442,7 @@
                                     class="text-truncate text-capitalize">{{ translate('messages.login_setup') }}</span>
                             </a>
                         </li>
-                        
+
 
                         @if (addon_published_status('Rental'))
                             <li
@@ -633,90 +656,10 @@
 
 
 @push('script_2')
-    <script>
-        $(window).on('load', function() {
-            if ($(".navbar-vertical-content li.active").length) {
-                $('.navbar-vertical-content').animate({
-                    scrollTop: $(".navbar-vertical-content li.active").offset().top - 150
-                }, 10);
-            }
-        });
 
-        var $rows = $('#navbar-vertical-content li');
-        $('#search-sidebar-menu').keyup(function() {
-            var val = $.trim($(this).val()).replace(/ +/g, ' ').toLowerCase();
-
-            $rows.show().filter(function() {
-                var text = $(this).text().replace(/\s+/g, ' ').toLowerCase();
-                return !~text.indexOf(val);
-            }).hide();
-        });
+@if(addon_published_status('Rental'))
+<script src="{{ asset('Modules/Rental/public/assets/js/admin/view-pages/rental-sidebar.js') }}"></script>
+@endif
 
 
-        $(document).ready(function() {
-            const $searchInput = $('#search');
-            const $suggestionsList = $('#search-suggestions');
-            const $rows = $('#navbar-vertical-content li');
-            const $subrows = $('#navbar-vertical-content li ul li');
-            {{-- const suggestions = ['{{strtolower(translate('messages.zone'))  }}', '{{ strtolower(translate('messages.setting'))  }}', '{{ strtolower(translate('messages.pages')) }}', '{{ strtolower(translate('messages.3rd_party')) }}','{{ strtolower(translate('messages.system')) }}' ]; --}}
-            const focusInput = () => updateSuggestions($searchInput.val());
-            const hideSuggestions = () => $suggestionsList.slideUp(700);
-            const showSuggestions = () => $suggestionsList.slideDown(700);
-            let clickSuggestion = function() {
-                let suggestionText = $(this).text();
-                $searchInput.val(suggestionText);
-                hideSuggestions();
-                filterItems(suggestionText.toLowerCase());
-                updateSuggestions(suggestionText);
-            };
-            let filterItems = (val) => {
-                let unmatchedItems = $rows.show().filter((index, element) => !~$(element).text().replace(
-                    /\s+/g, ' ').toLowerCase().indexOf(val));
-                let matchedItems = $rows.show().filter((index, element) => ~$(element).text().replace(/\s+/g,
-                    ' ').toLowerCase().indexOf(val));
-                unmatchedItems.hide();
-                matchedItems.each(function() {
-                    let $submenu = $(this).find($subrows);
-                    let keywordCountInRows = 0;
-                    $rows.each(function() {
-                        let rowText = $(this).text().toLowerCase();
-                        let valLower = val.toLowerCase();
-                        let keywordCountRow = rowText.split(valLower).length - 1;
-                        keywordCountInRows += keywordCountRow;
-                    });
-                    if ($submenu.length > 0) {
-                        $subrows.show();
-                        $submenu.each(function() {
-                            let $submenu2 = !~$(this).text().replace(/\s+/g, ' ')
-                                .toLowerCase().indexOf(val);
-                            if ($submenu2 && keywordCountInRows <= 2) {
-                                $(this).hide();
-                            }
-                        });
-                    }
-                });
-            };
-            let updateSuggestions = (val) => {
-                $suggestionsList.empty();
-                suggestions.forEach(suggestion => {
-                    if (suggestion.toLowerCase().includes(val.toLowerCase())) {
-                        $suggestionsList.append(
-                            `<span class="search-suggestion badge badge-soft-light m-1 fs-14">${suggestion}</span>`
-                        );
-                    }
-                });
-                // showSuggestions();
-            };
-            $searchInput.focus(focusInput);
-            $searchInput.on('input', function() {
-                updateSuggestions($(this).val());
-            });
-            $suggestionsList.on('click', '.search-suggestion', clickSuggestion);
-            $searchInput.keyup(function() {
-                filterItems($(this).val().toLowerCase());
-            });
-            $searchInput.on('focusout', hideSuggestions);
-            $searchInput.on('focus', showSuggestions);
-        });
-    </script>
 @endpush

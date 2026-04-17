@@ -129,6 +129,105 @@
                 @endif
                 <!-- End DeliveryMan -->
 
+                 <!-- Rider-->
+                @if (addon_published_status('RideShare'))
+                    @if(\App\CentralLogics\Helpers::module_permission_check('rider'))
+                    <li class="nav-item">
+                        <small class="nav-subtitle" title="{{ translate('messages.rider_handle') }}">{{ translate('messages.rider') }}
+                            {{ translate('management') }}</small>
+                        <small class="tio-more-horizontal nav-subtitle-replacer"></small>
+                    </li>
+
+                    <li class="navbar-vertical-aside-has-menu {{ Request::is('admin/users/rider*') && !Request::is('admin/users/rider/vehicle*') ? 'active' : '' }}">
+                        <a class="js-navbar-vertical-aside-menu-link nav-link nav-link-toggle" href="javascript:" title="{{ translate('messages.rider_Setup') }}">
+                            <i class="tio-user nav-icon"></i>
+                            <span class="navbar-vertical-aside-mini-mode-hidden-elements text-truncate">{{ translate('messages.rider_Setup') }}</span>
+                        </a>
+                        <ul class="js-navbar-vertical-aside-submenu nav nav-sub"  style="display:{{ Request::is('admin/users/rider*') && !Request::is('admin/users/rider/vehicle*') ? 'block' : 'none' }}">
+                            <li class="nav-item {{ Request::is('admin/users/rider') ||  Request::is('admin/users/rider/edit*') ||  Request::is('admin/users/rider/preview*') ? 'active' : '' }}">
+                                <a class="nav-link " href="{{ route('admin.users.rider.list') }}" title="{{ translate('messages.Rider_List') }}">
+                                    <span class="tio-circle nav-indicator-icon"></span>
+                                    <span class="text-truncate">{{ translate('messages.Rider_List') }}</span>
+                                </a>
+                            </li>
+                            <li class="nav-item {{ Request::is('admin/users/rider/add') ? 'active' : '' }}">
+                                <a class="nav-link " href="{{ route('admin.users.rider.add') }}" title="{{ translate('messages.Add_New_Rider') }}">
+                                    <span class="tio-circle nav-indicator-icon"></span>
+                                    <span class="text-truncate">{{ translate('messages.Add_New_Rider') }}</span>
+                                </a>
+                            </li>
+                            <li class="nav-item {{ Request::is('admin/users/rider/new') || Request::is('admin/users/rider/deny')  ? 'active' : '' }}">
+                                <a class="nav-link " href="{{ route('admin.users.rider.new') }}" title="{{ translate('messages.New_Rider') }}">
+                                    <span class="tio-circle nav-indicator-icon"></span>
+                                    <span class="navbar-vertical-aside-mini-mode-hidden-elements text-truncate">
+                                        {{ translate('messages.New_Rider') }}
+
+                                        <span class="badge badge-soft-info badge-pill ml-1">
+                                            {{ \App\Models\DeliveryMan::rider()->where('application_status','pending')->count() }}
+                                        </span>
+                                    </span>
+                                </a>
+                            </li>
+                            <li class="nav-item {{ Request::is('admin/users/rider/level') || Request::is('admin/users/rider/level/edit*') ? 'active' : '' }}">
+                                <a class="nav-link " href="{{ route('admin.users.rider.level.index') }}" title="{{ translate('messages.rider_level') }}">
+                                    <span class="tio-circle nav-indicator-icon"></span>
+                                    <span class="text-truncate">{{ translate('messages.rider_level') }}</span>
+                                </a>
+                            </li>
+                            <li class="nav-item {{ Request::is('admin/users/rider/level/create') ? 'active' : '' }}">
+                                <a class="nav-link " href="{{ route('admin.users.rider.level.create') }}" title="{{ translate('messages.add_rider_level') }}">
+                                    <span class="tio-circle nav-indicator-icon"></span>
+                                    <span class="text-truncate">{{ translate('messages.add_rider_level') }}</span>
+                                </a>
+                            </li>
+                            <li class="nav-item {{ Request::is('admin/users/rider/reviews') ? 'active' : '' }}">
+                                <a class="nav-link " href="{{ route('admin.users.rider.reviews.list') }}" title="{{ translate('messages.reviews') }}">
+                                    <span class="tio-circle nav-indicator-icon"></span>
+                                    <span class="text-truncate">{{ translate('messages.reviews') }}</span>
+                                </a>
+                            </li>
+
+                        </ul>
+                    </li>
+                    @endif
+                    @if(\App\CentralLogics\Helpers::module_permission_check('ride_vehicle'))
+                    <li class="navbar-vertical-aside-has-menu {{ Request::is('admin/users/rider/vehicle*') ? 'active' : '' }}">
+                        <a class="js-navbar-vertical-aside-menu-link nav-link nav-link-toggle" href="javascript:" title="{{ translate('messages.Vehicle_Setup') }}">
+                            <i class="tio-car nav-icon"></i>
+                            <span class="navbar-vertical-aside-mini-mode-hidden-elements text-truncate">{{ translate('messages.Vehicle_Setup') }}</span>
+                        </a>
+                        <ul class="js-navbar-vertical-aside-submenu nav nav-sub"  style="display:{{ Request::is('admin/users/rider/vehicle*') ? 'block' : 'none' }}">
+                            <li class="nav-item {{ Request::is('admin/users/rider/vehicle/brand') || Request::is('admin/users/rider/vehicle/category') || Request::is('admin/users/rider/vehicle/model') ? 'active' : '' }}">
+                                <a class="nav-link " href="{{ route('admin.users.rider.vehicle.brand.index') }}" title="{{ translate('messages.Attribute_Setup') }}">
+                                    <span class="tio-circle nav-indicator-icon"></span>
+                                    <span class="text-truncate">{{ translate('messages.Attribute_Setup') }}</span>
+                                </a>
+                            </li>
+                            <li class="nav-item @yield('rider_new_vehicle_edit') {{ Request::is('admin/users/rider/vehicle/create') ? 'active' : '' }}">
+                                <a class="nav-link " href="{{ route('admin.users.rider.vehicle.create') }}" title="{{ translate('messages.Add_Vehicle') }}">
+                                    <span class="tio-circle nav-indicator-icon"></span>
+                                    <span class="text-truncate">{{ translate('messages.Add_Vehicle') }}</span>
+                                </a>
+                            </li>
+                            <li class="nav-item {{ Request::is('admin/users/rider/vehicle') || Request::is('admin/users/rider/vehicle/show*') ? 'active' : '' }}">
+                                <a class="nav-link " href="{{ route('admin.users.rider.vehicle.index') }}" title="{{ translate('messages.Vehicle_List') }}">
+                                    <span class="tio-circle nav-indicator-icon"></span>
+                                    <span class="text-truncate">{{ translate('messages.Vehicle_List') }}</span>
+                                </a>
+                            </li>
+                            <li class="nav-item {{ Request::is('admin/users/rider/vehicle/request/list*') || Request::is('admin/users/rider/vehicle/request/details*') ? 'active' : '' }}">
+                                <a class="nav-link " href="{{ route('admin.users.rider.vehicle.request.list',['status'=>'pending']) }}" title="{{ translate('messages.Vehicle_Request') }}">
+                                    <span class="tio-circle nav-indicator-icon"></span>
+                                    <span class="text-truncate">{{ translate('messages.Vehicle_Request') }}</span>
+                                </a>
+                            </li>
+
+                        </ul>
+                    </li>
+                    @endif
+                @endif
+                <!-- End Rider -->
+
                 <!-- Customer Section -->
                 @if (\App\CentralLogics\Helpers::module_permission_check('customer_management'))
                 <li class="nav-item">
@@ -137,7 +236,7 @@
                 </li>
                 <!-- Custommer -->
 
-                <li class="navbar-vertical-aside-has-menu {{ (Request::is('admin/users/customer/list') || Request::is('admin/users/customer/view*')) ? 'active' : '' }}">
+                <li class="navbar-vertical-aside-has-menu @yield('customer') {{ (Request::is('admin/users/customer/list') || Request::is('admin/users/customer/view*')) ? 'active' : '' }}">
                     <a class="js-navbar-vertical-aside-menu-link nav-link" href="{{ route('admin.users.customer.list') }}" title="{{ translate('messages.customers') }}">
                         <i class="tio-poi-user nav-icon"></i>
                         <span class="navbar-vertical-aside-mini-mode-hidden-elements text-truncate">
@@ -248,7 +347,7 @@
                                 <span class="text-truncate">{{ translate('messages.add_new') }}</span>
                             </a>
                         </li>
-                        <li class="nav-item {{ Request::is('admin/users/employee/') ? 'active' : '' }}">
+                        <li class="nav-item @yield('employee_list')">
                             <a class="nav-link " href="{{ route('admin.users.employee.list') }}" title="{{ translate('messages.Employee_list') }}">
                                 <span class="tio-circle nav-indicator-icon"></span>
                                 <span class="text-truncate">{{ translate('messages.list') }}</span>
@@ -279,88 +378,10 @@
 
 
 @push('script_2')
-<script>
-    $(window).on('load' , function() {
-        if($(".navbar-vertical-content li.active").length) {
-            $('.navbar-vertical-content').animate({
-                scrollTop: $(".navbar-vertical-content li.active").offset().top - 150
-            }, 10);
-        }
-    });
 
-    var $rows = $('#navbar-vertical-content li');
-    $('#search-sidebar-menu').keyup(function() {
-        var val = $.trim($(this).val()).replace(/ +/g, ' ').toLowerCase();
+@if(addon_published_status('Rental'))
+<script src="{{ asset('Modules/Rental/public/assets/js/admin/view-pages/rental-sidebar.js') }}"></script>
+@endif
 
-        $rows.show().filter(function() {
-            var text = $(this).text().replace(/\s+/g, ' ').toLowerCase();
-            return !~text.indexOf(val);
-        }).hide();
-    });
-    $(document).ready(function() {
-            const $searchInput = $('#search');
-            const $suggestionsList = $('#search-suggestions');
-            const $rows = $('#navbar-vertical-content li');
-            const $subrows = $('#navbar-vertical-content li ul li');
-            const suggestions = ['{{strtolower(translate('messages.customer'))  }}', '{{ strtolower(translate('messages.employee'))  }}', '{{ strtolower(translate('messages.delivery_man')) }}', '{{ strtolower(translate('messages.review')) }}' ];
-            const focusInput = () => updateSuggestions($searchInput.val());
-            const hideSuggestions = () => $suggestionsList.slideUp(700);
-            const showSuggestions = () => $suggestionsList.slideDown(700);
-            let clickSuggestion = function() {
-                let suggestionText = $(this).text();
-                $searchInput.val(suggestionText);
-                hideSuggestions();
-                filterItems(suggestionText.toLowerCase());
-                updateSuggestions(suggestionText);
-            };
-            let filterItems = (val) => {
-                let unmatchedItems = $rows.show().filter((index, element) => !~$(element).text().replace(
-                    /\s+/g, ' ').toLowerCase().indexOf(val));
-                let matchedItems = $rows.show().filter((index, element) => ~$(element).text().replace(/\s+/g,
-                    ' ').toLowerCase().indexOf(val));
-                unmatchedItems.hide();
-                matchedItems.each(function() {
-                    let $submenu = $(this).find($subrows);
-                    let keywordCountInRows = 0;
-                    $rows.each(function() {
-                        let rowText = $(this).text().toLowerCase();
-                        let valLower = val.toLowerCase();
-                        let keywordCountRow = rowText.split(valLower).length - 1;
-                        keywordCountInRows += keywordCountRow;
-                    });
-                    if ($submenu.length > 0) {
-                        $subrows.show();
-                        $submenu.each(function() {
-                            let $submenu2 = !~$(this).text().replace(/\s+/g, ' ')
-                                .toLowerCase().indexOf(val);
-                            if ($submenu2 && keywordCountInRows <= 2) {
-                                $(this).hide();
-                            }
-                        });
-                    }
-                });
-            };
-            let updateSuggestions = (val) => {
-                $suggestionsList.empty();
-                suggestions.forEach(suggestion => {
-                    if (suggestion.toLowerCase().includes(val.toLowerCase())) {
-                        $suggestionsList.append(
-                            `<span class="search-suggestion badge badge-soft-light m-1 fs-14">${suggestion}</span>`
-                        );
-                    }
-                });
-                // showSuggestions();
-            };
-            $searchInput.focus(focusInput);
-            $searchInput.on('input', function() {
-                updateSuggestions($(this).val());
-            });
-            $suggestionsList.on('click', '.search-suggestion', clickSuggestion);
-            $searchInput.keyup(function() {
-                filterItems($(this).val().toLowerCase());
-            });
-            $searchInput.on('focusout', hideSuggestions);
-            $searchInput.on('focus', showSuggestions);
-        });
-</script>
+
 @endpush

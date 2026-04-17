@@ -72,7 +72,7 @@ use App\Exceptions\ZoneModuleException;
 use App\Models\ParcelCancellation;
 use App\Models\ParcelReturnFees;
 use Illuminate\Http\UploadedFile;
-
+use Modules\RideShare\Entities\ReviewModule\RideReview;
 
 class Helpers
 {
@@ -374,8 +374,18 @@ class Helpers
                 $item['free_delivery'] = $item->store?->free_delivery;
                 $item['tax'] = 0;
                 $item['unit'] = $item->unit;
-                $item['rating_count'] = (int) ($item->rating ? array_sum(json_decode($item->rating, true)) : 0);
-                $item['avg_rating'] = (float) ($item->avg_rating ? $item->avg_rating : 0);
+
+
+                try {
+                    $reviewsInfo = $item->rating()->where('status', 1)->first();
+                } catch (\Exception $e) {
+                    $reviewsInfo = null;
+                }
+                $item['rating_count'] =  (int) $reviewsInfo?->rating_count ?? 0;
+                $item['avg_rating'] = (float) $reviewsInfo?->average ?? 0;
+
+
+
                 $item['recommended'] = (int) $item->recommended;
                 $item['min_delivery_time'] = (int) explode('-', $item?->store?->delivery_time)[0] ?? 0;
                 $item['max_delivery_time'] = (int) explode('-', $item?->store?->delivery_time)[1] ?? 0;
@@ -476,8 +486,17 @@ class Helpers
 
             $data['store_discount'] = ($running_flash_sale && ($running_flash_sale->available_stock > 0)) ? 0 : (self::get_store_discount($data->store) ? $data->store?->discount->discount : 0);
             $data['schedule_order'] = $data->store->schedule_order;
-            $data['rating_count'] = (int) ($data->rating ? array_sum(json_decode($data->rating, true)) : 0);
-            $data['avg_rating'] = (float) ($data->avg_rating ? $data->avg_rating : 0);
+
+            try {
+                $reviewsInfo = $data->rating()->where('status', 1)->first();
+            } catch (\Exception $e) {
+                $reviewsInfo = null;
+            }
+            $data['rating_count'] = (int) $reviewsInfo?->rating_count ?? 0;
+            $data['review_count'] = (int) $reviewsInfo?->review_count ?? 0;
+            $data['avg_rating'] = (float) $reviewsInfo?->average ?? 0;
+
+
             $data['min_delivery_time'] = (int) explode('-', $data->store->delivery_time)[0] ?? 0;
             $data['max_delivery_time'] = (int) explode('-', $data->store->delivery_time)[1] ?? 0;
             $data['common_condition_id'] = (int) $data->pharmacy_item_details?->common_condition_id ?? 0;
@@ -894,7 +913,13 @@ class Helpers
                 $item['ratings'] = $item?->rating ?? [];
                 unset($item['rating']);
                 $item['avg_rating'] = $ratings['rating'];
-                $item['rating_count'] = $ratings['total'];
+
+                $reviewsInfo = $item->reviews()->where('reviews.status', 1)
+                    ->selectRaw('avg(reviews.rating) as average_rating, count(reviews.id) as total_reviews, items.store_id')
+                    ->groupBy('items.store_id')
+                    ->first();
+
+                $item['rating_count'] = (int) $reviewsInfo?->total_reviews ?? 0;
                 $item['positive_rating'] = $ratings['positive_rating'];
                 $item['total_items'] = $item['items_count']??$item?->items()->approved()->count();
                 $item['total_campaigns'] = $item['campaigns_count'];
@@ -936,7 +961,14 @@ class Helpers
             $data['ratings'] = $data?->rating ?? [];
             unset($data['rating']);
             $data['avg_rating'] = $ratings['rating'];
-            $data['rating_count'] = $ratings['total'];
+
+            $reviewsInfo = $data->reviews()->where('reviews.status', 1)
+                ->selectRaw('avg(reviews.rating) as average_rating, count(reviews.id) as total_reviews, items.store_id')
+                ->groupBy('items.store_id')
+                ->first();
+
+            $data['rating_count'] = (int) $reviewsInfo?->total_reviews ?? 0;
+
             $data['positive_rating'] = $ratings['positive_rating'];
             $data['total_items'] = $data['items_count']??$data?->items()->approved()->count();
             $data['total_campaigns'] = $data['campaigns_count'];
@@ -1494,6 +1526,11 @@ class Helpers
         return DMReview::where(['delivery_man_id' => $deliveryman_id, 'rating' => $rating])->count();
     }
 
+    public static function rider_rating_count($rider_id, $rating)
+    {
+        return RideReview::where(['received_by' => $rider_id, 'review_for' => 'driver', 'rating' => $rating])->count();
+    }
+
     public static function tax_calculate($item, $price)
     {
         if ($item['tax_type'] == 'percent') {
@@ -1995,7 +2032,7 @@ class Helpers
                 }
             }
 
-            if (in_array($order->order_status, ['processing', 'handover']) && $order->delivery_man && self::getNotificationStatusData('deliveryman', 'deliveryman_order_notification', 'push_notification_status')) {
+            if (in_array($order->order_status, ['processing', 'handover']) && $order->delivery_man && $order->delivery_man->status == 1 && self::getNotificationStatusData('deliveryman', 'deliveryman_order_notification', 'push_notification_status')) {
                 $data = [
                     'title' => translate('Order_Notification'),
                     'description' => $order->order_status == 'processing' ? translate('order_is_processing') : translate('messages.ready_for_delivery'),
@@ -2306,9 +2343,8 @@ class Helpers
     {
         $envFile = app()->environmentFilePath();
         $str = file_get_contents($envFile);
-        $oldValue = env($envKey);
-        if (strpos($str, $envKey) !== false) {
-            $str = str_replace("{$envKey}={$oldValue}", "{$envKey}={$envValue}", $str);
+        if (preg_match("/^{$envKey}=(.*)$/m", $str, $matches)) {
+            $str = preg_replace("/^{$envKey}=.*$/m", "{$envKey}={$envValue}", $str);
         } else {
             $str .= "{$envKey}={$envValue}\n";
         }
@@ -2503,6 +2539,10 @@ class Helpers
         }
         $data['MAX_FILE_SIZE'] = self::maxUploadSizeMb();
         return $data;
+    }
+
+    public static function get_data_settings($type, $key) {
+        return DataSetting::where('type', $type)->where('key', $key)->first();
     }
 
 
@@ -2962,6 +3002,7 @@ class Helpers
 
             if ($delivery_man_name) {
                 $data = str_replace("{deliveryManName}", $delivery_man_name, $data);
+                $data =  str_replace("{riderName}", $delivery_man_name, $data);
             }
 
             if ($transaction_id) {
@@ -2971,6 +3012,7 @@ class Helpers
             if ($order_id) {
                 $data = str_replace("{orderId}", $order_id, $data);
                 $data = str_replace("{tripId}", $order_id, $data);
+                $data = str_replace("{rideId}", $order_id, $data);
             }
             if ($add_id) {
                 $data = str_replace("{advertisementId}", $add_id, $data);
@@ -2978,6 +3020,73 @@ class Helpers
         }
 
         return $data;
+    }
+
+    public static function isRideShareMailLabelEnabled(): bool
+    {
+        return function_exists('addon_published_status') && addon_published_status('RideShare') == 1;
+    }
+
+    public static function formatDeliverymanText(?string $value, $deliveryMan = null, bool $includeRiderOption = false): ?string
+    {
+        if (!$value) {
+            return $value;
+        }
+
+        if ($includeRiderOption && self::isRideShareMailLabelEnabled()) {
+            return self::replaceDeliverymanTextByContext($value, 'combined');
+        }
+
+        if (
+            $deliveryMan
+            && self::isRideShareMailLabelEnabled()
+            && (int) data_get($deliveryMan, 'is_ride', 0) === 1
+            && (int) data_get($deliveryMan, 'is_delivery', 0) !== 1
+        ) {
+            return self::replaceDeliverymanTextByContext($value, 'rider');
+        }
+
+        return $value;
+    }
+
+    private static function replaceDeliverymanTextByContext(string $value, string $mode): string
+    {
+        $replacements = match ($mode) {
+            'combined' => [
+                '/\bdelivery men\b/u' => 'delivery men / riders',
+                '/\bDelivery Men\b/u' => 'Delivery Men / Riders',
+                '/\bDELIVERY MEN\b/u' => 'DELIVERY MEN / RIDERS',
+                '/\bdeliveryman\b/u' => 'deliveryman / rider',
+                '/\bDeliveryman\b/u' => 'Deliveryman / Rider',
+                '/\bDELIVERYMAN\b/u' => 'DELIVERYMAN / RIDER',
+                '/\bdelivery man\b/u' => 'delivery man / rider',
+                '/\bDelivery Man\b/u' => 'Delivery Man / Rider',
+                '/\bDELIVERY MAN\b/u' => 'DELIVERY MAN / RIDER',
+                '/\bdeliverymen\b/u' => 'deliverymen / riders',
+                '/\bDeliverymen\b/u' => 'Deliverymen / Riders',
+                '/\bDELIVERYMEN\b/u' => 'DELIVERYMEN / RIDERS',
+            ],
+            default => [
+                '/\bdelivery men\b/u' => 'riders',
+                '/\bDelivery Men\b/u' => 'Riders',
+                '/\bDELIVERY MEN\b/u' => 'RIDERS',
+                '/\bdeliveryman\b/u' => 'rider',
+                '/\bDeliveryman\b/u' => 'Rider',
+                '/\bDELIVERYMAN\b/u' => 'RIDER',
+                '/\bdelivery man\b/u' => 'rider',
+                '/\bDelivery Man\b/u' => 'Rider',
+                '/\bDELIVERY MAN\b/u' => 'RIDER',
+                '/\bdeliverymen\b/u' => 'riders',
+                '/\bDeliverymen\b/u' => 'Riders',
+                '/\bDELIVERYMEN\b/u' => 'RIDERS',
+            ],
+        };
+
+        foreach ($replacements as $pattern => $replacement) {
+            $value = preg_replace($pattern, $replacement, $value);
+        }
+
+        return $value;
     }
 
     public static function get_login_url($type)
@@ -2994,39 +3103,64 @@ class Helpers
 
     public static function react_activation_check($react_domain, $react_license_code)
     {
-    return true;
+        $scheme = str_contains($react_domain, 'localhost') ? 'http://' : 'https://';
+        $url = empty(parse_url($react_domain)['scheme']) ? $scheme . ltrim($react_domain, '/') : $react_domain;
+        $response = Http::post('https://store.6amtech.com/api/v1/customer/license-check', [
+            'domain_name' => str_ireplace('www.', '', parse_url($url, PHP_URL_HOST)),
+            'license_code' => $react_license_code
+        ]);
+        return ($response->successful() && isset($response->json('content')['is_active']) && $response->json('content')['is_active']);
     }
 
     public static function activation_submit($purchase_key)
     {
-    $previous_active = json_decode(
-        BusinessSetting::where('key', 'app_activation')->first()->value ?? '[]',
-        true
-    );
-
-    $software_id = env('REACT_APP_KEY');
-
-    $found = false;
-    foreach ($previous_active as $item) {
-        if (isset($item['software_id']) && $item['software_id'] === $software_id) {
-            $found = true;
-            break;
-        }
-    }
-
-    if (!$found) {
-        $previous_active[] = [
-            'software_id' => $software_id,
-            'is_active'   => 1
+        $post = [
+            'purchase_key' => $purchase_key
         ];
+        $live = 'https://check.6amtech.com';
+        $ch = curl_init($live . '/api/v1/software-check');
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $post);
+        $response = curl_exec($ch);
 
-        Helpers::businessUpdateOrInsert(
-            ['key' => 'app_activation'],
-            ['value' => json_encode($previous_active)]
-        );
-    }
+        curl_close($ch);
+        $response_body = json_decode($response, true);
 
-    return true;
+        try {
+            if ($response_body['is_valid'] && $response_body['result']['item']['id'] == env('REACT_APP_KEY')) {
+                $previous_active = json_decode(BusinessSetting::where('key', 'app_activation')->first()->value ?? '[]');
+                $found = 0;
+                foreach ($previous_active as $key => $item) {
+                    if ($item->software_id == env('REACT_APP_KEY')) {
+                        $found = 1;
+                    }
+                }
+                if (!$found) {
+                    $previous_active[] = [
+                        'software_id' => env('REACT_APP_KEY'),
+                        'is_active' => 1
+                    ];
+                    Helpers::businessUpdateOrInsert(['key' => 'app_activation'], [
+                        'value' => json_encode($previous_active)
+                    ]);
+                }
+                return true;
+            }
+
+        } catch (\Exception $exception) {
+            info($exception->getMessage());
+
+            $previous_active[] = [
+                'software_id' => env('REACT_APP_KEY'),
+                'is_active' => 1
+            ];
+            Helpers::businessUpdateOrInsert(['key' => 'app_activation'], [
+                'value' => json_encode($previous_active)
+            ]);
+
+            return true;
+        }
+        return false;
     }
 
     public static function react_domain_status_check()
@@ -3298,7 +3432,7 @@ class Helpers
         }
 
         if ($data && Storage::disk('public')->exists($path . '/' . $data)) {
-            return asset('storage') . '/' . $path . '/' . $data;
+            return asset('storage/app/public') . '/' . $path . '/' . $data;
         }
 
         if (request()->is('api/*')) {
@@ -3931,7 +4065,7 @@ class Helpers
             return [];
         }
 
-        $methods = DB::table('addon_settings')->where('is_active', 1)->whereIn('settings_type', ['payment_config'])->whereIn('key_name', ['ssl_commerz', 'paypal', 'stripe', 'razor_pay', 'senang_pay', 'paytabs', 'paystack', 'paymob_accept', 'paytm', 'flutterwave', 'liqpay', 'bkash', 'mercadopago', 'bog_pay', 'flitt'])->get();
+        $methods = DB::table('addon_settings')->where('is_active', 1)->whereIn('settings_type', ['payment_config'])->whereIn('key_name', ['ssl_commerz', 'paypal', 'stripe', 'razor_pay', 'senang_pay', 'paytabs', 'paystack', 'paymob_accept', 'paytm', 'flutterwave', 'liqpay', 'bkash', 'mercadopago'])->get();
         $env = env('APP_ENV') == 'live' ? 'live' : 'test';
         $credentials = $env . '_values';
 
@@ -4096,7 +4230,7 @@ class Helpers
             $credentials = $env . '_values';
 
         } else {
-            $methods = DB::table('addon_settings')->where('is_active', 1)->whereIn('settings_type', ['payment_config'])->whereIn('key_name', ['ssl_commerz', 'paypal', 'stripe', 'razor_pay', 'senang_pay', 'paytabs', 'paystack', 'paymob_accept', 'paytm', 'flutterwave', 'liqpay', 'bkash', 'mercadopago', 'bog_pay', 'flitt'])->get();
+            $methods = DB::table('addon_settings')->where('is_active', 1)->whereIn('settings_type', ['payment_config'])->whereIn('key_name', ['ssl_commerz', 'paypal', 'stripe', 'razor_pay', 'senang_pay', 'paytabs', 'paystack', 'paymob_accept', 'paytm', 'flutterwave', 'liqpay', 'bkash', 'mercadopago'])->get();
             $env = env('APP_ENV') == 'live' ? 'live' : 'test';
             $credentials = $env . '_values';
 
@@ -4864,6 +4998,20 @@ class Helpers
                 }
             }
             $request->headers->set('zoneId', json_encode([$zone->id]));
+        } elseif($request->hasHeader('zoneId') && !empty($request->header('zoneId'))){
+                $zoneIds = json_decode($request->header('zoneId'), true);
+                if(is_int($zoneIds)){
+                    $zoneIds = [$zoneIds];
+                }
+                $zoneIds= Zone::whereIn('id', $zoneIds)->where('status', 1)->pluck('id')->toArray();
+
+                if(empty($zoneIds)){
+                    $zone = Zone::where('status',1)->where('is_default',1)->first() ?? Zone::first();
+                    $request->headers->set('zoneId', json_encode([$zone->id]));
+                } else {
+                    $request->headers->set('zoneId', json_encode($zoneIds));
+                }
+
         }
 
         return true;
@@ -4921,6 +5069,21 @@ class Helpers
                 return $num;
         }
     }
+
+
+     public static function deleteUnUsesdSettings(){
+        $keys = ['landing_page_text'  ,'landing_page_links','speciality','join_as_images','download_app_section','counter_section',
+            'promotion_banner','module_section','feature','testimonial','landing_page_images','web_app_landing_page_settings',
+            'react_header_banner','hero_section','app_download_button','banner_section_full','delivery_service_section',
+            'discount_banner','banner_section_half','app_section_image','footer_logo','react_feature','about_us','privacy_policy',
+            'terms_and_conditions','tax','tax_included','shipping_policy','refund','cancelation','minimum_shipping_charge','per_km_shipping_charge',
+            'order_pending_message','order_confirmation_msg','order_processing_message','out_for_delivery_message','order_delivered_message',
+            'delivery_boy_assign_message','delivery_boy_start_message','delivery_boy_delivered_message','customer_verification','order_handover_message',
+            'order_cancled_message','order_refunded_message'];
+
+            BusinessSetting::whereIn('key',$keys)->delete();
+            return true;
+     }
 
 }
 

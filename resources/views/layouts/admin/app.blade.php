@@ -13,7 +13,7 @@ $countryCode= strtolower($country?$country:'auto');
     <title>@yield('title')</title>
     <!-- Favicon -->
     @php($logo=\App\Models\BusinessSetting::where(['key'=>'icon'])->first())
-    <link rel="shortcut icon" href="">
+    {{-- <link rel="shortcut icon" href=""> --}}
     <link rel="icon" type="image/x-icon" href="{{\App\CentralLogics\Helpers::get_full_url('business', $logo?->value?? '', $logo?->storage[0]?->value ?? 'public','favicon')}}">
     <!-- Font -->
     <link href="{{asset('public/assets/admin/css/fonts.css')}}" rel="stylesheet">
@@ -31,8 +31,12 @@ $countryCode= strtolower($country?$country:'auto');
 
     <link rel="stylesheet" href="{{asset('public/assets/admin/intltelinput/css/intlTelInput.css')}}">
     <link rel="stylesheet" href="{{asset('public/assets/admin/css/upload-single-image.css')}}">
-
-
+    @if (!isset($module_type))
+        @php($module_type = Config::get('module.current_module_type'))
+    @endif
+    @if(addon_published_status('RideShare') && in_array($module_type, ['ride-share','settings', 'transactions']))
+         <link rel="stylesheet" href="{{ asset('Modules/RideShare/public/assets/css/ride-share.css') }}">
+    @endif
     @stack('css_or_js')
 
     <script src="{{asset('public/assets/admin/vendor/hs-navbar-vertical-aside/hs-navbar-vertical-aside-mini-cache.js')}}"></script>
@@ -52,7 +56,7 @@ $countryCode= strtolower($country?$country:'auto');
         <div class="col-md-12">
             <div id="loading" class="initial-hidden">
                 <div class="loader--inner">
-                    <img width="200" src="{{asset('public/assets/admin/img/loader.gif')}}" alt="image">
+                    <img width="80" src="{{asset('public/assets/admin/img/loader.gif')}}" alt="image">
                 </div>
             </div>
         </div>
@@ -73,8 +77,8 @@ $countryCode= strtolower($country?$country:'auto');
 @php($module_type = 'settings')
 @endif
 
-    @if($module_type == 'rental')
-        @include("rental::admin.partials._sidebar_{$module_type}")
+    @if(in_array($module_type, ['rental', 'ride-share']))
+        @include("{$module_type}::admin.partials._sidebar_{$module_type}")
     @else
         @include("layouts.admin.partials._sidebar_{$module_type}")
     @endif
@@ -254,6 +258,44 @@ $countryCode= strtolower($country?$country:'auto');
     </div>
 
 
+@if(addon_published_status('RideShare'))
+{{--safetyAlertNotificationModal--}}
+<div class="modal fade" id="safetyAlertNotificationModal" aria-modal="true" role="dialog">
+    <div class="modal-dialog status-warning-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal">
+                    <span aria-hidden="true" class="tio-clear"></span>
+                </button>
+            </div>
+            <div class="modal-body pb-5 pt-0">
+                <div class="max-349 mx-auto">
+                    <div>
+                        <div class="text-center">
+                            <img alt="" class="mb-4" id="deleteIcon"
+                                 src="{{asset('Modules/RideShare/public/assets/img/ride-share/safety-alert-shield-icon-red.png')}}">
+                            <h5 class="modal-title mb-3" id="safetyAlertNotificationTitle"></h5>
+                        </div>
+                        <div class="text-center mb-4 pb-2">
+                            <p id="safetyAlertNotificationSubtitle"></p>
+                        </div>
+                    </div>
+                    <div class="btn--container justify-content-center mt-3">
+                        <button id="checkLater" class="btn btn--cancel min-w-120 fs-14 fw-semibold"
+                        >{{ translate('Check Later') }}</button>
+                        <a href=""
+                           class="show-safety-alert-user-details btn btn-primary min-w-120 confirm-Toggle fs-14 fw-semibold"
+                           data-user-id="">
+                            {{ translate('View Alert') }}
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@endif
+
     <!--- Global Image -->
     <div id="imageModal" class="imageModal modal fade" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-xl modal-dialog-centered">
@@ -300,6 +342,7 @@ if(in_array(config('module.current_module_type'),config('module.module_type') ))
 <!-- JS Implementing Plugins -->
 
 @stack('script')
+
 <!-- JS Front -->
 
 <script src="{{asset('public/assets/admin')}}/js/vendor.min.js"></script>
@@ -314,17 +357,18 @@ if(in_array(config('module.current_module_type'),config('module.module_type') ))
 <script src="{{asset('public/assets/admin/js/form-validate.js')}}"></script>
 <script src="{{asset('public/assets/admin/js/upload-single-image.js')}}"></script>
 <script src="{{asset('public/assets/admin/js/multiple-file-upload.js')}}"></script>
+ <script src="{{asset('public/assets/admin/intltelinput/js/intlTelInput.min.js')}}"></script>
 
+    @if(addon_published_status('RideShare') && in_array($module_type, ['ride-share','settings', 'transactions']))
+        <script src="{{ asset('Modules/RideShare/public/assets/js/ride-share.js') }}"></script>
+    @endif
 
 {!! Toastr::message() !!}
 
 @if ($errors->any())
     <script>
         @foreach($errors->all() as $error)
-        toastr.error('{{translate($error)}}', Error, {
-            CloseButton: true,
-            ProgressBar: true
-        });
+        toastr.error('{{translate($error)}}');
         @endforeach
     </script>
 @endif
@@ -341,14 +385,29 @@ if(in_array(config('module.current_module_type'),config('module.module_type') ))
 <audio id="myAudio">
     <source src="{{asset('public/assets/admin/sound/notification.mp3')}}" type="audio/mpeg">
 </audio>
+<audio id="safetyAlertAudio">
+    <source src="{{asset('public/assets/admin/sound/safety-alert.mp3')}}" type="audio/mpeg">
+</audio>
 <script>
     var audio = document.getElementById("myAudio");
+    var isPlaying = false;
     function playAudio() {
         audio.play();
     }
 
     function pauseAudio() {
         audio.pause();
+    }
+
+    var safetyAlertAudio = document.getElementById("safetyAlertAudio");
+    function playSafetyAlertAudio() {
+        safetyAlertAudio.play();
+        isPlaying = true;
+    }
+    function pauseSafetyAlertAudio() {
+        safetyAlertAudio.pause();
+        isPlaying = false;
+        safetyAlertAudio.currentTime = 0; // Reset to the start
     }
 "use strict";
 
@@ -564,6 +623,9 @@ if(in_array(config('module.current_module_type'),config('module.module_type') ))
                 // console.log('FCM Token:', token);
                 // Send the token to your backend to subscribe to topic
                 subscribeTokenToBackend(token, 'admin_message');
+                @if(addon_published_status('RideShare'))
+                    subscribeTokenToBackend(token, 'admin_safety_alert_notification');
+                @endif
             }).catch(function(error) {
             console.error('Error getting permission or token:', error);
         });
@@ -653,22 +715,33 @@ if(in_array(config('module.current_module_type'),config('module.module_type') ))
         if(payload.data.order_id && payload.data.type == "order_request"){
                 @php($admin_order_notification = \App\CentralLogics\Helpers::get_business_settings('admin_order_notification') ?? 0)
                 @if (\App\CentralLogics\Helpers::module_permission_check('order') && $admin_order_notification && $order_notification_type == 'firebase')
-                new_order_type = payload.data.order_type
-                new_module_id = payload.data.module_id
-                admin_zone_id = '<?php echo auth()->guard('admin')->user()->zone_id ;?>';
-                admin_role_id = '<?php echo auth()->guard('admin')->user()->role_id ;?>';
-                if(new_order_type === 'trip'){
-                    document.querySelector('.update_notification_text').textContent = "{{translate('messages.You have new trip, Check Please.')}}";
-                }
-                if(admin_role_id === '1'){
-                    playAudio();
-                    $('#popup-modal').appendTo("body").modal('show');
-                }
-                if((admin_role_id !== '1') && (admin_zone_id === payload.data.zone_id)){
-                    playAudio();
-                    $('#popup-modal').appendTo("body").modal('show');
-                }
+                    new_order_type = payload.data.order_type
+                    new_module_id = payload.data.module_id
+                    admin_zone_id = '<?php echo auth()->guard('admin')->user()->zone_id ;?>';
+                    admin_role_id = '<?php echo auth()->guard('admin')->user()->role_id ;?>';
+                    if(new_order_type === 'trip'){
+                        document.querySelector('.update_notification_text').textContent = "{{translate('messages.You have new trip, Check Please.')}}";
+                    }
+                    @if(addon_published_status('RideShare'))
+                    if(new_order_type === 'ride_request'){
+                        document.querySelector('.update_notification_text').textContent = "{{translate('messages.You have new ride request, Check Please.')}}";
+                    }
+                    @endif
+                    if(admin_role_id === '1'){
+                        playAudio();
+                        $('#popup-modal').appendTo("body").modal('show');
+                    }
+                    if((admin_role_id !== '1') && (admin_zone_id === payload.data.zone_id)){
+                        playAudio();
+                        $('#popup-modal').appendTo("body").modal('show');
+                    }
                 @endif
+
+        } else if(payload.data.type == 'safety_alert') {
+            @if(addon_published_status('RideShare'))
+                safetyAlertNotification(payload.data);
+                playSafetyAlertAudio();
+            @endif
 
         }else{
             if (window.location.href.includes('message/list?conversation')) {
@@ -693,6 +766,56 @@ if(in_array(config('module.current_module_type'),config('module.module_type') ))
         }
     });
 
+    function safetyAlertNotification(data) {
+        let checkLaterButton = $('#checkLater');
+        let showSafetyAlertUserDetails = $('.show-safety-alert-user-details');
+        let response = `${data.type.replace(/_/g, ' ')} {{ translate('sent a new Safety Alert for') }}`;
+        response = response.charAt(0).toUpperCase() + response.slice(1).toLowerCase();
+        let trip = `<b> {{ translate('Trip') }} #${data.trip_reference_id}</b>`
+        let fullContent = `${response} ${trip}`;
+        $('#safetyAlertNotificationTitle').text(data.body);
+        $('#safetyAlertNotificationSubtitle').empty().html(fullContent);
+        showSafetyAlertUserDetails.attr('data-user-id', data.sent_by);
+        showSafetyAlertUserDetails.attr('href', data.route);
+        const modalElement = document.getElementById('safetyAlertNotificationModal');
+        let bootstrapModal = new bootstrap.Modal(modalElement, {
+            backdrop: 'static',
+            keyboard: false,
+        });
+        if (modalElement.classList.contains('show')) {
+            bootstrapModal.hide();
+            modalElement.removeEventListener('hidden.bs.modal', onHidden);
+        }
+        bootstrapModal.show();
+        const onHidden = () => {
+            modalElement.removeEventListener('hidden.bs.modal', onHidden);
+        };
+        modalElement.addEventListener('hidden.bs.modal', onHidden);
+        showSafetyAlertUserDetails.on('click', function () {
+            let $userId = localStorage.getItem('safetyAlertUserId');
+            if ($userId != data.sent_by) {
+                localStorage.setItem('safetyAlertUserId', data.sent_by);
+            }
+            localStorage.setItem('safetyAlertUserDetailsStatus', true);
+        });
+        checkLaterButton.on('click', function () {
+            pauseSafetyAlertAudio();
+            bootstrapModal.hide();
+            let safetyAlertMapIcon = document.getElementById('safetyAlertMapIcon');
+            let newSafetyAlertMapIcon = document.getElementById('newSafetyAlertMapIcon');
+            if (safetyAlertMapIcon) {
+                safetyAlertMapIcon.classList.remove('d-none');
+            }
+            if (newSafetyAlertMapIcon) {
+                newSafetyAlertMapIcon.classList.add('d-none');
+            }
+        });
+        $('#btnClose').on('click', function () {
+            pauseSafetyAlertAudio();
+            bootstrapModal.hide();
+        });
+    }
+
     @if(\App\CentralLogics\Helpers::module_permission_check('order') && $order_notification_type == 'manual')
         @php($admin_order_notification=\App\CentralLogics\Helpers::get_business_settings('admin_order_notification') ?? 0)
         @if($admin_order_notification)
@@ -707,6 +830,9 @@ if(in_array(config('module.current_module_type'),config('module.module_type') ))
                         if(new_order_type === 'trip'){
                             document.querySelector('.update_notification_text').textContent = "{{translate('messages.You have new trip, Check Please.')}}";
                         }
+                        if(new_order_type === 'ride_request'){
+                            document.querySelector('.update_notification_text').textContent = "{{translate('You have new ride request, Check Please.')}}";
+                        }
                         if (data.new_order > 0) {
                             playAudio();
                             $('#popup-modal').appendTo("body").modal('show');
@@ -720,16 +846,17 @@ if(in_array(config('module.current_module_type'),config('module.module_type') ))
     @endif
 
     $(document).on('click', '.check-order', function () {
-        if(new_order_type === 'parcel')
-        {
+        if(new_order_type === 'parcel') {
             location.href = '{{url('/')}}/admin/parcel/orders/all?module_id=' + new_module_id;
-        }
-        else if(new_order_type === 'trip')
-        {
+        } else if(new_order_type === 'trip') {
             location.href = '{{url('/')}}/admin/rental/trip?module_id=' + new_module_id;
-        }
-        else
-        {
+        } else if(new_order_type === 'ride_request') {
+            @if(addon_published_status('RideShare'))
+            location.href = '{{url('/')}}/admin/ride-share/ride/list/all?module_id=' + {{ \App\Models\Module::where('module_type', 'ride-share')->first()?->id }};
+            @else
+            location.href = '{{url('/')}}/admin/order/list/all?module_id=' + new_module_id;
+            @endif
+        } else {
             location.href = '{{url('/')}}/admin/order/list/all?module_id=' + new_module_id;
         }
     });
@@ -776,35 +903,115 @@ if(in_array(config('module.current_module_type'),config('module.module_type') ))
                 }
             })
         }
+
+
+    @if(addon_published_status('RideShare') && in_array($module_type, ['ride-share','settings']))
+        function fetchSafetyAlertIcon(condition = false) {
+            let url = "{{ route('admin.ride-share.fleet-map.fleet-map-safety-alert-icon-in-map') }}";
+            $.ajax({
+                url: url,
+                method: 'GET',
+                success: function (response) {
+                    $('.safety-alert-icon-map').empty().html(response);
+                    if (condition) {
+                        if ($('#safetyAlertMapIcon').length) {
+                            $('#safetyAlertMapIcon').addClass('d-none');
+                        }
+                        if ($('#newSafetyAlertMapIcon').length) {
+                            $('#newSafetyAlertMapIcon').removeClass('d-none');
+                        }
+                    }
+
+                    $('.show-safety-alert-user-details').on('click', function () {
+                        localStorage.setItem('safetyAlertUserDetailsStatus', true);
+                    });
+                }
+            })
+        }
+
+        function getZoneMessage() {
+            let url = "{{ route('admin.ride-share.fleet-map.fleet-map-zone-message') }}";
+            $.ajax({
+                url: url,
+                method: 'GET',
+                success: function (response) {
+                    $('.get-zone-message').empty().html(response);
+                    $('.zone-message-hide').on('click', function () {
+                        $('.zone-message').addClass('invisible');
+                        sessionStorage.setItem('showZoneMessage', 'false');
+                    });
+                }
+            })
+        }
+
+        $(document).ready(function () {
+            let showSafetyAlertUserDetails = $('.show-safety-alert-user-details');
+            showSafetyAlertUserDetails.on('click', function () {
+                localStorage.setItem('safetyAlertUserDetailsStatus', true);
+                localStorage.setItem('safetyAlertUserIdFromTrip', $(this).data('user-id'));
+            });
+
+            $('.safety-alert-header-icon').on('click', function () {
+                localStorage.setItem('safetyAlertUserDetailsStatus', true);
+                localStorage.setItem('safetyAlertUserId', $(this).data('user-id'));
+            });
+        })
+
+    @endif
 </script>
-        <script src="{{asset('public/assets/admin/intltelinput/js/intlTelInput.min.js')}}"></script>
+
 
         <script>
 
-    const inputs = document.querySelectorAll('input[type="tel"]');
 
-    inputs.forEach(input => {
-        window.intlTelInput(input, {
-            initialCountry: "{{$countryCode}}",
-            utilsScript: "{{ asset('public/assets/admin/intltelinput/js/utils.js') }}",
-            autoInsertDialCode: true,
-            nationalMode: false,
-            formatOnDisplay: false,
-        });
-    });
+        function initTelInputs() {
+            const inputs = document.querySelectorAll('input[type="tel"]');
+
+            inputs.forEach(input => {
+
+                const iti = window.intlTelInput(input, {
+                    initialCountry: "{{$countryCode}}",
+                    utilsScript: "{{ asset('public/assets/admin/intltelinput/js/utils.js') }}",
+                    autoInsertDialCode: true,
+                    nationalMode: false,
+                    formatOnDisplay: false,
+                    strictMode: true,
+                    @if (\App\CentralLogics\Helpers::get_business_settings('country_picker_status') != 1)
+                        onlyCountries: ["{{$countryCode}}"],
+                    @endif
+                });
+
+                const restoreDialCode = () => {
+                    if (input.value.trim() === '') {
+                        input.value = '+' + iti.getSelectedCountryData().dialCode;
+                    }
+                };
+
+                input.addEventListener('blur', restoreDialCode);
+                input.closest('form')?.addEventListener('submit', restoreDialCode);
+            });
+
+            $(document).off('keyup.telinput').on('keyup.telinput', 'input[type="tel"]', function () {
+                const iti = window.intlTelInputGlobals.getInstance(this);
+                if (!iti) return;
+
+                let val = $(this).val();
+                if (val.trim() === '') {
+                    val = '+' + iti.getSelectedCountryData().dialCode;
+                } else {
+                    const plus = val.startsWith('+') ? '+' : '';
+                    val = plus + val.replace(/[^\d]/g, '');
+                }
+
+                $(this).val(val);
+            });
+        }
 
 
-  function keepNumbersAndPlus(inputString) {
-    let regex = /[0-9+]/g;
-    let filteredString = inputString.match(regex);
-    let result = filteredString ? filteredString.join('') : '';
-    return result;
-}
+        initTelInputs();
 
-$(document).on('keyup', 'input[type="tel"]', function () {
-        let input = $(this).val();
-        $(this).val(keepNumbersAndPlus(input));
-        });
+
+
 
 
   //external configuration
@@ -873,8 +1080,8 @@ $(document).on('keyup', 'input[type="tel"]', function () {
                                     var fullRouteWithKeyword = route.fullRoute + separator + 'keyword=' + encodeURIComponent(searchKeyword);
                                     var keywordRegex = searchKeyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
                                         keywordRegex = new RegExp('(' + keywordRegex + ')', 'gi');
-                                    var highlightedRouteName = route.routeName.replace(keywordRegex, '<mark>$1</mark>');
-                                    var highlightedURI = route.URI.replace(keywordRegex, '<mark>$1</mark>');
+                                    var highlightedRouteName = route.routeName.replace(keywordRegex, '<mark class="p-0">$1</mark>');
+                                    var highlightedURI = route.URI.replace(keywordRegex, '<mark class="p-0">$1</mark>');
                                     resultHtml += '<a href="' + fullRouteWithKeyword + '" class="search-list-item d-flex flex-column" data-route-name="' + route.routeName + '" data-route-uri="' + route.URI + '" data-route-full-url="' + route.fullRoute + '" aria-current="true">';
                                     resultHtml += '<h5>' + highlightedRouteName + '</h5>';
                                     resultHtml += '<p class="text-muted fs-12 mb-0">' + highlightedURI + '</p>';
@@ -1065,14 +1272,39 @@ $(document).on('keyup', 'input[type="tel"]', function () {
             container.scrollBy({ left: itemWidth, behavior: 'smooth' });
         });
 
-        container.addEventListener('scroll', updateArrows);
-        ['load', 'resize'].forEach(evt => window.addEventListener(evt, updateArrows));
-        new MutationObserver(updateArrows).observe(container, { childList: true, subtree: true });
-        new ResizeObserver(updateArrows).observe(container);
-
+        if (container) {
+            container.addEventListener('scroll', updateArrows);
+            ['load', 'resize'].forEach(evt => window.addEventListener(evt, updateArrows));
+            new MutationObserver(updateArrows).observe(container, { childList: true, subtree: true });
+            new ResizeObserver(updateArrows).observe(container);
+        }
         // Initial update
         updateArrows();
 
+    </script>
+
+    <script>
+        let hideTimer;
+
+        $('.blinkings').hover(
+            function () {
+                clearTimeout(hideTimer);
+                $(this).closest('.card').find('.remove_btn_outside').css({
+                    opacity: 0,
+                    visibility: 'hidden'
+                });
+            },
+            function () {
+                let $btn = $(this).closest('.card').find('.remove_btn_outside');
+
+                hideTimer = setTimeout(() => {
+                    $btn.css({
+                        opacity: 1,
+                        visibility: 'visible'
+                    });
+                }, 100);
+            }
+        );
     </script>
 </body>
 </html>

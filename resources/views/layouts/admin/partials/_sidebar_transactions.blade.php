@@ -70,12 +70,28 @@
                         </li>
                     @endif
                     @if (\App\CentralLogics\Helpers::module_permission_check('withdraw_list'))
-                    <li class="navbar-vertical-aside-has-menu {{ Request::is('admin/transactions/delivery-man/withdraw*') ? 'active' : '' }}">
-                        <a class="js-navbar-vertical-aside-menu-link nav-link" href="{{ route('admin.transactions.delivery-man.withdraw_list') }}" title="{{ translate('messages.deliveryman_withdraws') }}">
-                            <i class="tio-table nav-icon"></i>
-                            <span class="navbar-vertical-aside-mini-mode-hidden-elements text-truncate">{{ translate('deliveryman_withdraws') }}</span>
-                        </a>
-                    </li>
+                        <li
+                            class="navbar-vertical-aside-has-menu {{ Request::is('admin/transactions/delivery-man/withdraw*') ? 'active' : '' }}">
+                            <a class="js-navbar-vertical-aside-menu-link nav-link"
+                                href="{{ route('admin.transactions.delivery-man.withdraw_list') }}"
+                                title="{{ translate('messages.deliveryman_withdraws') }}">
+                                <i class="tio-table nav-icon"></i>
+                                <span
+                                    class="navbar-vertical-aside-mini-mode-hidden-elements text-truncate">{{ translate('deliveryman_withdraws') }}</span>
+                            </a>
+                        </li>
+                    @endif
+                    @if (addon_published_status('RideShare') && \App\CentralLogics\Helpers::module_permission_check('withdraw_list'))
+                        <li
+                            class="navbar-vertical-aside-has-menu {{ Request::is('admin/transactions/rider/withdraw*') ? 'active' : '' }}">
+                            <a class="js-navbar-vertical-aside-menu-link nav-link"
+                                href="{{ route('admin.transactions.rider.withdraw_list') }}"
+                                title="{{ translate('messages.rider_withdraws') }}">
+                                <i class="tio-table nav-icon"></i>
+                                <span
+                                    class="navbar-vertical-aside-mini-mode-hidden-elements text-truncate">{{ translate('rider_withdraws') }}</span>
+                            </a>
+                        </li>
                     @endif
                     <!-- End withdraw -->
                     @if (\App\CentralLogics\Helpers::module_permission_check('disbursement'))
@@ -99,6 +115,18 @@
                                 <i class="tio-saving-outlined nav-icon"></i>
                                 <span
                                     class="navbar-vertical-aside-mini-mode-hidden-elements text-truncate">{{ translate('messages.delivery_man_disbursement') }}</span>
+                            </a>
+                        </li>
+                    @endif
+                    @if (addon_published_status('RideShare') && \App\CentralLogics\Helpers::module_permission_check('disbursement'))
+                        <li
+                            class="navbar-vertical-aside-has-menu {{ Request::is('admin/transactions/rider-disbursement*') ? 'active' : '' }}">
+                            <a class="js-navbar-vertical-aside-menu-link nav-link"
+                                href="{{ route('admin.transactions.rider-disbursement.list', ['status' => 'all']) }}"
+                                title="{{ translate('messages.rider_disbursement') }}">
+                                <i class="tio-saving-outlined nav-icon"></i>
+                                <span
+                                    class="navbar-vertical-aside-mini-mode-hidden-elements text-truncate">{{ translate('messages.rider_disbursement') }}</span>
                             </a>
                         </li>
                     @endif
@@ -131,6 +159,20 @@
                         </li>
                     @endif
                     <!-- End provide_dm_earning -->
+                    <!-- provide_rider_earning -->
+                    @if (addon_published_status('RideShare') && \App\CentralLogics\Helpers::module_permission_check('provide_dm_earning'))
+                        <li
+                            class="navbar-vertical-aside-has-menu {{ Request::is('admin/transactions/provide-rider-earnings*') ? 'active' : '' }}">
+                            <a class="js-navbar-vertical-aside-menu-link nav-link"
+                                href="{{ route('admin.transactions.provide-rider-earnings.index') }}"
+                                title="{{ translate('messages.rider_earning_provide') }}">
+                                <i class="tio-send nav-icon"></i>
+                                <span
+                                    class="navbar-vertical-aside-mini-mode-hidden-elements text-truncate">{{ translate('Rider Payments') }}</span>
+                            </a>
+                        </li>
+                    @endif
+                    <!-- End provide_rider_earning -->
 
                     @if (\App\CentralLogics\Helpers::module_permission_check('settings'))
                         <li
@@ -156,9 +198,9 @@
                         <li
                             class="navbar-vertical-aside-has-menu {{ Request::is('admin/transactions/report/day-wise-report') ? 'active' : '' }}">
                             <a class="nav-link " href="{{ route('admin.transactions.report.day-wise-report') }}"
-                                title="{{ translate('messages.transection_report') }}">
+                                title="{{ translate('messages.Transaction_report') }}">
                                 <span class="tio-chart-pie-1 nav-icon"></span>
-                                <span class="text-truncate">{{ translate('messages.transection_report') }}</span>
+                                <span class="text-truncate">{{ translate('messages.Transaction_report') }}</span>
                             </a>
                         </li>
 
@@ -199,31 +241,36 @@
                         </li>
 
 
-                <li class="navbar-vertical-aside-has-menu {{ Request::is('admin/transactions/report/order-report') ? 'active' : '' }}">
-                    <a class="nav-link " href="{{ route('admin.transactions.report.order-report') }}" title="{{ translate('messages.order_report') }}">
-                        <span class="tio-chart-bar-4 nav-icon"></span>
-                        <span class="text-truncate text-capitalize">{{ translate('messages.order_report') }}</span>
-                    </a>
-                </li>
-                <li class="navbar-vertical-aside-has-menu @yield('tax_report')">
-                    <a class="nav-link " href="{{ route('admin.transactions.report.getTaxReport') }}" title="{{ translate('Admin_Tax_Report') }}">
-                        <span class="tio-albums nav-icon"></span>
-                        <span class="text-truncate text-capitalize">{{ translate('Admin_Tax_Report') }}</span>
-                    </a>
-                </li>
-                <li class="navbar-vertical-aside-has-menu @yield('vendor_tax_report')">
-                    <a class="nav-link " href="{{ route('admin.transactions.report.vendorWiseTaxes') }}" title="{{ translate('Vendor_Vat_Report') }}">
-                        <span class="tio-american-express nav-icon"></span>
-                        <span class="text-truncate text-capitalize">{{ translate('Vendor_Vat_Report') }}</span>
-                    </a>
-                </li>
-                <li class="navbar-vertical-aside-has-menu @yield('parcel_tax_report')">
-                    <a class="nav-link " href="{{ route('admin.transactions.report.parcel-wise-taxes') }}" title="{{ translate('Parcel_Tax_Report') }}">
-                        <span class="tio-american-express nav-icon"></span>
-                        <span class="text-truncate text-capitalize">{{ translate('Parcel_Tax_Report') }}</span>
-                    </a>
-                </li>
-                @endif
+                        <li
+                            class="navbar-vertical-aside-has-menu {{ Request::is('admin/transactions/report/order-report') ? 'active' : '' }}">
+                            <a class="nav-link " href="{{ route('admin.transactions.report.order-report') }}"
+                                title="{{ translate('messages.order_report') }}">
+                                <span class="tio-chart-bar-4 nav-icon"></span>
+                                <span class="text-truncate text-capitalize">{{ translate('messages.order_report') }}</span>
+                            </a>
+                        </li>
+                        <li class="navbar-vertical-aside-has-menu @yield('tax_report')">
+                            <a class="nav-link " href="{{ route('admin.transactions.report.getTaxReport') }}"
+                                title="{{ translate('Admin_Tax_Report') }}">
+                                <span class="tio-albums nav-icon"></span>
+                                <span class="text-truncate text-capitalize">{{ translate('Admin_Tax_Report') }}</span>
+                            </a>
+                        </li>
+                        <li class="navbar-vertical-aside-has-menu @yield('vendor_tax_report')">
+                            <a class="nav-link " href="{{ route('admin.transactions.report.vendorWiseTaxes') }}"
+                                title="{{ translate('Vendor_Vat_Report') }}">
+                                <span class="tio-american-express nav-icon"></span>
+                                <span class="text-truncate text-capitalize">{{ translate('Vendor_Vat_Report') }}</span>
+                            </a>
+                        </li>
+                        <li class="navbar-vertical-aside-has-menu @yield('parcel_tax_report')">
+                            <a class="nav-link " href="{{ route('admin.transactions.report.parcel-wise-taxes') }}"
+                                title="{{ translate('Parcel_Tax_Report') }}">
+                                <span class="tio-american-express nav-icon"></span>
+                                <span class="text-truncate text-capitalize">{{ translate('Parcel_Tax_Report') }}</span>
+                            </a>
+                        </li>
+                    @endif
                     @if (addon_published_status('Rental'))
                         <!-- Rental Report -->
                         @if (\App\CentralLogics\Helpers::module_permission_check('rental_report'))
@@ -235,9 +282,8 @@
 
                             <li
                                 class="navbar-vertical-aside-has-menu {{ Request::is('admin/transactions/rental/report/transaction-report') ? 'active' : '' }}">
-                                <a class="nav-link "
-                                    href="{{ route('admin.transactions.rental.report.transaction-report') }}"
-                                    title="{{ translate('messages.transection_report') }}">
+                                <a class="nav-link " href="{{ route('admin.transactions.rental.report.transaction-report') }}"
+                                    title="{{ translate('messages.Transaction_report') }}">
                                     <span class="tio-chart-pie-1 nav-icon"></span>
                                     <span class="text-truncate">{{ translate('messages.transaction_report') }}</span>
                                 </a>
@@ -245,8 +291,7 @@
 
                             <li
                                 class="navbar-vertical-aside-has-menu {{ Request::is('admin/transactions/rental/report/vehicle-report') ? 'active' : '' }}">
-                                <a class="nav-link "
-                                    href="{{ route('admin.transactions.rental.report.vehicle-wise-report') }}"
+                                <a class="nav-link " href="{{ route('admin.transactions.rental.report.vehicle-wise-report') }}"
                                     title="{{ translate('messages.vehicle_report') }}">
                                     <span class="tio-chart-bar-1 nav-icon"></span>
                                     <span class="text-truncate">{{ translate('messages.vehicle_report') }}</span>
@@ -259,38 +304,62 @@
                                     href="{{ route('admin.transactions.rental.report.provider-summary-report') }}"
                                     title="{{ translate('messages.provider_wise_report') }}">
                                     <span class="tio-home nav-icon"></span>
-                                    <span
-                                        class="text-truncate">{{ translate('messages.provider_wise_report') }}</span>
+                                    <span class="text-truncate">{{ translate('messages.provider_wise_report') }}</span>
                                 </a>
                             </li>
 
                             <li
                                 class="navbar-vertical-aside-has-menu {{ Request::is('admin/transactions/rental/report/trip-report') ? 'active' : '' }}">
-                                <a class="nav-link "
-                                    href="{{ route('admin.transactions.rental.report.trip-report') }}"
+                                <a class="nav-link " href="{{ route('admin.transactions.rental.report.trip-report') }}"
                                     title="{{ translate('messages.trip_report') }}">
                                     <span class="tio-chart-bar-4 nav-icon"></span>
-                                    <span
-                                        class="text-truncate text-capitalize">{{ translate('messages.trip_report') }}</span>
+                                    <span class="text-truncate text-capitalize">{{ translate('messages.trip_report') }}</span>
                                 </a>
                             </li>
                             @if (Route::has('admin.transactions.rental.report.getTaxReport'))
-                            <li class="navbar-vertical-aside-has-menu @yield('trip_tax_report')">
-                                <a class="nav-link " href="{{ route('admin.transactions.rental.report.getTaxReport') }}"
-                                    title="{{ translate('Trip_Tax_Report') }}">
-                                    <span class="tio-albums nav-icon"></span>
-                                    <span class="text-truncate text-capitalize">{{ translate('Trip_Tax_Report') }}</span>
-                                </a>
-                            </li>
-                            <li class="navbar-vertical-aside-has-menu @yield('provider_tax_report')">
-                                <a class="nav-link " href="{{ route('admin.transactions.rental.report.providerWiseTaxes') }}"
-                                    title="{{ translate('Provider_Vat_Report') }}">
-                                    <span class="tio-american-express nav-icon"></span>
-                                    <span
-                                        class="text-truncate text-capitalize">{{ translate('Provider_Vat_Report') }}</span>
-                                </a>
-                            </li>
+                                <li class="navbar-vertical-aside-has-menu @yield('trip_tax_report')">
+                                    <a class="nav-link " href="{{ route('admin.transactions.rental.report.getTaxReport') }}"
+                                        title="{{ translate('Trip_Tax_Report') }}">
+                                        <span class="tio-albums nav-icon"></span>
+                                        <span class="text-truncate text-capitalize">{{ translate('Trip_Tax_Report') }}</span>
+                                    </a>
+                                </li>
+                                <li class="navbar-vertical-aside-has-menu @yield('provider_tax_report')">
+                                    <a class="nav-link " href="{{ route('admin.transactions.rental.report.providerWiseTaxes') }}"
+                                        title="{{ translate('Provider_Vat_Report') }}">
+                                        <span class="tio-american-express nav-icon"></span>
+                                        <span class="text-truncate text-capitalize">{{ translate('Provider_Vat_Report') }}</span>
+                                    </a>
+                                </li>
                             @endif
+                        @endif
+                    @endif
+                    @if (addon_published_status('RideShare'))
+                        @if (\App\CentralLogics\Helpers::module_permission_check('ride_report'))
+                            <!-- Rental Report -->
+                            <li class="nav-item">
+                                <small class="nav-subtitle"
+                                    title="{{ translate('messages.ride_report_and_analytics') }}">{{ translate('messages.ride_report_and_analytics') }}</small>
+                                <small class="tio-more-horizontal nav-subtitle-replacer"></small>
+                            </li>
+
+                            <li
+                                class="navbar-vertical-aside-has-menu {{ Request::is('admin/transactions/ride-share/transaction*') ? 'active' : '' }}">
+                                <a class="nav-link " href="{{ route('admin.transactions.ride-share.transaction.index') }}"
+                                    title="{{ translate('messages.transactions_&_reports') }}">
+                                    <span class="tio-chart-pie-1 nav-icon"></span>
+                                    <span class="text-truncate">{{ translate('messages.transactions_&_reports') }}</span>
+                                </a>
+                            </li>
+
+                            <li
+                                class="navbar-vertical-aside-has-menu {{ Request::is('admin/transactions/ride-share/report*') ? 'active' : '' }}">
+                                <a class="nav-link " href="{{ route('admin.transactions.ride-share.report.earning') }}"
+                                    title="{{ translate('messages.reports') }}">
+                                    <span class="tio-chart-bar-1 nav-icon"></span>
+                                    <span class="text-truncate">{{ translate('messages.reports') }}</span>
+                                </a>
+                            </li>
                         @endif
                     @endif
                     <li class="nav-item py-5">
@@ -311,88 +380,10 @@
 
 
 @push('script_2')
-    <script>
-        $(window).on('load', function() {
-            if ($(".navbar-vertical-content li.active").length) {
-                $('.navbar-vertical-content').animate({
-                    scrollTop: $(".navbar-vertical-content li.active").offset().top - 150
-                }, 10);
-            }
-        });
 
-        var $rows = $('#navbar-vertical-content li');
-        $('#search-sidebar-menu').keyup(function() {
-            var val = $.trim($(this).val()).replace(/ +/g, ' ').toLowerCase();
+@if(addon_published_status('Rental'))
+<script src="{{ asset('Modules/Rental/public/assets/js/admin/view-pages/rental-sidebar.js') }}"></script>
+@endif
 
-            $rows.show().filter(function() {
-                var text = $(this).text().replace(/\s+/g, ' ').toLowerCase();
-                return !~text.indexOf(val);
-            }).hide();
-        });
-        $(document).ready(function() {
-            const $searchInput = $('#search');
-            const $suggestionsList = $('#search-suggestions');
-            const $rows = $('#navbar-vertical-content li');
-            const $subrows = $('#navbar-vertical-content li ul li');
-            const suggestions = [];
-            const focusInput = () => updateSuggestions($searchInput.val());
-            const hideSuggestions = () => $suggestionsList.slideUp(700);
-            const showSuggestions = () => $suggestionsList.slideDown(700);
-            let clickSuggestion = function() {
-                let suggestionText = $(this).text();
-                $searchInput.val(suggestionText);
-                hideSuggestions();
-                filterItems(suggestionText.toLowerCase());
-                updateSuggestions(suggestionText);
-            };
-            let filterItems = (val) => {
-                let unmatchedItems = $rows.show().filter((index, element) => !~$(element).text().replace(
-                    /\s+/g, ' ').toLowerCase().indexOf(val));
-                let matchedItems = $rows.show().filter((index, element) => ~$(element).text().replace(/\s+/g,
-                    ' ').toLowerCase().indexOf(val));
-                unmatchedItems.hide();
-                matchedItems.each(function() {
-                    let $submenu = $(this).find($subrows);
-                    let keywordCountInRows = 0;
-                    $rows.each(function() {
-                        let rowText = $(this).text().toLowerCase();
-                        let valLower = val.toLowerCase();
-                        let keywordCountRow = rowText.split(valLower).length - 1;
-                        keywordCountInRows += keywordCountRow;
-                    });
-                    if ($submenu.length > 0) {
-                        $subrows.show();
-                        $submenu.each(function() {
-                            let $submenu2 = !~$(this).text().replace(/\s+/g, ' ')
-                                .toLowerCase().indexOf(val);
-                            if ($submenu2 && keywordCountInRows <= 2) {
-                                $(this).hide();
-                            }
-                        });
-                    }
-                });
-            };
-            let updateSuggestions = (val) => {
-                $suggestionsList.empty();
-                suggestions.forEach(suggestion => {
-                    if (suggestion.toLowerCase().includes(val.toLowerCase())) {
-                        $suggestionsList.append(
-                            `<span class="search-suggestion badge badge-soft-light m-1 fs-14">${suggestion}</span>`
-                        );
-                    }
-                });
-                // showSuggestions();
-            };
-            $searchInput.focus(focusInput);
-            $searchInput.on('input', function() {
-                updateSuggestions($(this).val());
-            });
-            $suggestionsList.on('click', '.search-suggestion', clickSuggestion);
-            $searchInput.keyup(function() {
-                filterItems($(this).val().toLowerCase());
-            });
-            $searchInput.on('focusout', hideSuggestions);
-            $searchInput.on('focus', showSuggestions);
-        });
-    </script>
+
 @endpush

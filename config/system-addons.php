@@ -1,11 +1,9 @@
-<?php
-
-return array (
+<?php return array (
   'admin_panel' => 
   array (
     'active' => '1',
-    'username' => '1',
-    'purchase_key' => '1',
+    'username' => 'miro',
+    'purchase_key' => 'NulledMaster',
     'software_id' => 'MzY3NzIxMTI=',
     'domain' => 'portal.crypt.ge',
     'software_type' => 'product',
@@ -31,8 +29,8 @@ return array (
   'vendor_app' => 
   array (
     'active' => '1',
-    'username' => 'Utff',
-    'purchase_key' => 'Fy663',
+    'username' => '',
+    'purchase_key' => '',
     'software_id' => 'MzY3NzIxNzM=',
     'domain' => 'portal.crypt.ge',
     'software_type' => 'addon',
@@ -40,8 +38,8 @@ return array (
   'deliveryman_app' => 
   array (
     'active' => '1',
-    'username' => '747474',
-    'purchase_key' => 'Fr8r85',
+    'username' => '',
+    'purchase_key' => '',
     'software_id' => 'MzY3NzIxNDg=',
     'domain' => 'portal.crypt.ge',
     'software_type' => 'addon',

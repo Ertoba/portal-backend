@@ -44,7 +44,7 @@ class UpdateController extends Controller
         Helpers::setEnvironmentValue('BUYER_USERNAME', $request['username']);
         Helpers::setEnvironmentValue('PURCHASE_CODE', $request['purchase_key']);
         Helpers::setEnvironmentValue('APP_MODE', 'live');
-        Helpers::setEnvironmentValue('SOFTWARE_VERSION', '3.7');
+        Helpers::setEnvironmentValue('SOFTWARE_VERSION', '3.8');
         Helpers::setEnvironmentValue('REACT_APP_KEY', '45370351');
         Helpers::setEnvironmentValue('APP_NAME', '6amMart' . time());
 
@@ -93,8 +93,8 @@ class UpdateController extends Controller
         Helpers::insert_business_settings_key("home_delivery_status", "1");
         Helpers::insert_business_settings_key("takeaway_status", "1");
 
-        $data_settings = file_get_contents('database/partial/data_settings.sql');
-        $email_tempaltes = file_get_contents('database/partial/email_tempaltes.sql');
+        $data_settings = file_get_contents(base_path('database/partial/data_settings.sql'));
+        $email_tempaltes = file_get_contents(base_path('database/partial/email_tempaltes.sql'));
 
         if (DataSetting::count() < 1) {
             DB::statement($data_settings);
@@ -121,7 +121,7 @@ class UpdateController extends Controller
 
         try {
             if (!Schema::hasTable('addon_settings')) {
-                $sql = file_get_contents('database/partial/addon_settings.sql');
+                $sql = file_get_contents(base_path('database/partial/addon_settings.sql'));
                 DB::unprepared($sql);
                 $this->set_data();
                 $this->set_sms_data();
@@ -136,7 +136,7 @@ class UpdateController extends Controller
 
 
             if (!Schema::hasTable('payment_requests')) {
-                $sql = file_get_contents('database/partial/payment_requests.sql');
+                $sql = file_get_contents(base_path('database/partial/payment_requests.sql'));
                 DB::unprepared($sql);
             }
 
