@@ -275,11 +275,8 @@ class SMS_module
             $httpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
             $err = curl_error($curl);
             curl_close($curl);
-            if (!$err && $httpCode === 200 && strpos($result, 'no access') === false) {
-                $decoded = json_decode($result, true);
-                if (isset($decoded['statusID']) && $decoded['statusID'] === 0) {
-                    $response = 'success';
-                }
+            if (!$err && $httpCode === 200 && strpos($result, 'no access') === false && strpos($result, '"status":"error"') === false) {
+                $response = 'success';
             }
         }
         return $response;
