@@ -387,6 +387,7 @@ class ConfigController extends Controller
             'websocket_url' => (isset($settings['websocket_url']) ? $settings['websocket_url'] : ''),
             'websocket_port' => (int)(isset($settings['websocket_port']) ? $settings['websocket_port'] : 6001),
             'websocket_key' => env('PUSHER_APP_KEY'),
+            'websocket_scheme' => env('PUSHER_SCHEME') ?: ((isset($settings['websocket_url']) && strpos($settings['websocket_url'], 'wss://') === 0) ? 'https' : 'http'),
             'guest_checkout_status' => (int)(isset($settings['guest_checkout_status']) ? $settings['guest_checkout_status'] : 0),
             'disbursement_type' => (string)(isset($settings['disbursement_type']) ? $settings['disbursement_type'] : 'manual'),
             'restaurant_disbursement_waiting_time' => (int)(isset($settings['restaurant_disbursement_waiting_time']) ? $settings['restaurant_disbursement_waiting_time'] : 0),
