@@ -75,13 +75,22 @@ class SMSModuleController extends Controller
                 'template_id' => $request['template_id'],
                 'auth_key' => $request['auth_key'],
             ];
-        } elseif ($request['gateway'] == 'alphanet_sms') {
+        } elseif ($module == 'alphanet_sms') {
             $additional_data = [
                 'status' => $request['status'],
                 'api_key' =>$request['api_key'],
                 'sender_id' =>$request['sender_id'] ?? null,
                 'otp_template' =>$request['otp_template'],
             ];
+        } elseif ($module == 'ubill_ge') {
+            $additional_data = [
+                'status' => $request['status'],
+                'api_key' => $request['api_key'],
+                'brand_id' => $request['brand_id'],
+                'otp_template' => $request['otp_template'],
+            ];
+        } else {
+            $additional_data = [];
         }
 
         $data= ['gateway' => $module ,
@@ -99,7 +108,7 @@ class SMSModuleController extends Controller
     ]);
 
     if ($request['status'] == 1) {
-        foreach (['twilio','nexmo','2factor','msg91','alphanet_sms'] as $gateway) {
+        foreach (['twilio','nexmo','2factor','msg91','alphanet_sms','ubill_ge'] as $gateway) {
             if ($module != $gateway) {
                 $keep = Setting::where(['key_name' => $gateway, 'settings_type' => 'sms_config'])->first();
                 if (isset($keep)) {
