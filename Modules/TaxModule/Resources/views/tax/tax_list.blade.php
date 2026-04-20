@@ -218,7 +218,7 @@
 
     <div id="editTaxData" class="custom-offcanvas d-flex flex-column justify-content-between">
         <div>
-            <form action="" method="post">
+            <form action="" method="post" data-update-action-base="{{ url('/taxvat/update-taxvat-data') }}">
                 @method('PUT')
                 @csrf
                 <div
