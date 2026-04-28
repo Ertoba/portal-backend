@@ -39,10 +39,13 @@ class HomeController extends Controller
     {
         $datas =  DataSetting::with('translations', 'storage')->where('type', 'admin_landing_page')->get();
         $data = [];
+        $locale = app()->getLocale();
         foreach ($datas as $key => $value) {
-            if (count($value->translations) > 0) {
+            $matchedTranslation = $value->translations->firstWhere('locale', $locale);
+
+            if ($matchedTranslation) {
                 $cred = [
-                    $value->key => $value->translations[0]['value'],
+                    $value->key => $matchedTranslation['value'],
                 ];
                 array_push($data, $cred);
             } else {

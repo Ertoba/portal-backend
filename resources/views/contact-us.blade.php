@@ -1,6 +1,6 @@
 @extends('layouts.landing.app')
 
-@section('title', translate('messages.contact_us'))
+@section('title', 'კონტაქტი')
 
 @section('content')
     <!-- ==== Contact Section ==== -->
@@ -42,7 +42,7 @@
                                             </defs>
                                         </svg>
                                     </div>
-                                    <h5 class="subtitle">{{translate("messages.Call_Us")}} </h5>
+                                    <h5 class="subtitle">დაგვიკავშირდით</h5>
                                 </div>
                                 <ul>
                                     <li>
@@ -73,7 +73,7 @@
                                             </defs>
                                         </svg>
                                     </div>
-                                    <h5 class="subtitle">{{translate("messages.Email")}}</h5>
+                                    <h5 class="subtitle">ელფოსტა</h5>
                                 </div>
                                 <ul>
                                     <li>
@@ -106,7 +106,7 @@
                                             </defs>
                                         </svg>
                                     </div>
-                                    <h5 class="subtitle">{{translate("messages.Address")}}</h5>
+                                    <h5 class="subtitle">მისამართი</h5>
                                 </div>
                                 <ul>
                                     <li>
@@ -149,7 +149,7 @@
                                             </defs>
                                         </svg>
                                     </div>
-                                    <h5 class="subtitle">{{translate("messages.Time")}}</h5>
+                                    <h5 class="subtitle">სამუშაო დრო</h5>
                                 </div>
                                 <ul>
                                     <li>
@@ -168,16 +168,16 @@
                         @csrf
                         <div class="row g-4">
                             <div class="col-sm-6">
-                                <input type="text" required name="name" placeholder="{{ translate('Your Name') }}" class="form-control form--control">
+                                <input type="text" required name="name" placeholder="თქვენი სახელი" class="form-control form--control">
                             </div>
                             <div class="col-sm-6">
-                                <input type="email" required name="email" placeholder="{{ translate('Email') }}" class="form-control form--control">
+                                <input type="email" required name="email" placeholder="ელფოსტა" class="form-control form--control">
                             </div>
                             <div class="col-sm-12">
-                                <input type="text" required name="subject" placeholder="{{ translate('Subject') }}" class="form-control form--control">
+                                <input type="text" required name="subject" placeholder="თემა" class="form-control form--control">
                             </div>
                             <div class="col-sm-12">
-                                <textarea name="message" required class="form-control form--control" placeholder="Message"></textarea>
+                                <textarea name="message" required class="form-control form--control" placeholder="შეტყობინება"></textarea>
                             </div>
                             @php($recaptcha = \App\CentralLogics\Helpers::get_business_settings('recaptcha'))
                             @if(isset($recaptcha) && $recaptcha['status'] == 1)
@@ -186,7 +186,7 @@
                                 <div class="m-auto p-3 row" id="reload-captcha">
                                     <div class="col-6 pr-0">
                                         <input type="text" class="form-control form-control-lg" name="custome_recaptcha"
-                                               id="custome_recaptcha" required placeholder="{{translate('Enter recaptcha value')}}" autocomplete="off" value="{{env('APP_MODE')=='dev'? session('six_captcha'):''}}">
+                                               id="custome_recaptcha" required placeholder="შეიყვანეთ კოდი" autocomplete="off" value="{{env('APP_MODE')=='dev'? session('six_captcha'):''}}">
                                     </div>
                                     <div class="col-6 bg-white rounded d-flex w-auto">
                                         <img src="<?php echo $custome_recaptcha->inline(); ?>" class="rounded w-100" />
@@ -194,7 +194,7 @@
                                 </div>
                             @endif
                             <div class="col-sm-12 text-center">
-                                <button class="cmn--btn border-0" type="submit" id="signInBtn">{{translate("messages.Send_Message")}} </button>
+                                <button class="cmn--btn border-0" type="submit" id="signInBtn">შეტყობინების გაგზავნა</button>
                             </div>
                         </div>
                     </form>

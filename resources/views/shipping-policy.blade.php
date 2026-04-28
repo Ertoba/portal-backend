@@ -1,13 +1,13 @@
 @extends('layouts.landing.app')
 
-@section('title',translate('messages.Shipping Policy'))
+@section('title', 'მიწოდების პოლიტიკა')
 
 @section('content')
     <!-- ==== Privacy Section ==== -->
     <section class="about-section py-5 position-relative">
         <div class=" container">
             <div class="section-header">
-                <h2 class="title">{{translate('messages.Shipping Policy')}}</span></h2>
+                <h2 class="title">მიწოდების პოლიტიკა</h2>
             </div>
             <div class="privacy-wrapper">
                 <div class="item">
