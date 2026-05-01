@@ -621,17 +621,18 @@ trait  SmsGateway
         $config = self::get_settings('ubill_ge');
         $response = 'error';
         if (isset($config) && $config['status'] == 1) {
-            $receiver = str_replace('+', '', $receiver);
+            $receiver = ltrim(str_replace('+', '', $receiver), '0');
             $message = str_replace('#OTP#', $otp, $config['otp_template']);
+            $url = 'https://api.ubill.dev/v1/sms/send?' . http_build_query([
+                'key'     => $config['api_key'],
+                'brandID' => $config['brand_id'],
+                'numbers' => $receiver,
+                'text'    => $message,
+                'otp'     => 'true',
+            ]);
             $curl = curl_init();
             curl_setopt_array($curl, [
-                CURLOPT_URL            => 'https://api.ubill.dev/v1/sms/send?' . http_build_query([
-                    'key'     => $config['api_key'],
-                    'brandID' => $config['brand_id'],
-                    'numbers' => $receiver,
-                    'text'    => $message,
-                    'otp'     => 'true',
-                ]),
+                CURLOPT_URL            => $url,
                 CURLOPT_RETURNTRANSFER => true,
                 CURLOPT_TIMEOUT        => 30,
                 CURLOPT_CUSTOMREQUEST  => 'GET',
@@ -640,7 +641,13 @@ trait  SmsGateway
             $httpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
             $err = curl_error($curl);
             curl_close($curl);
-            if (!$err && $httpCode === 200 && strpos($result, 'no access') === false && strpos($result, 'error') === false) {
+            \Illuminate\Support\Facades\Log::info('ubill_ge SMS', [
+                'http'     => $httpCode,
+                'response' => $result,
+                'curl_err' => $err,
+            ]);
+            $decoded = json_decode($result, true);
+            if (!$err && $httpCode === 200 && isset($decoded['statusID']) && $decoded['statusID'] === 0) {
                 $response = 'success';
             }
         }
