@@ -66,7 +66,7 @@ class PaymentController extends Controller
         $paymentId = $this->extractPaymentIdFromLink($result['redirect_link']);
         if (!$paymentId) {
             return response()->json([
-                'message' => 'Unable to initialize Flitt mobile payment',
+                'message' => 'Flitt მობილური გადახდის ინიციალიზაცია ვერ მოხერხდა',
             ], 422);
         }
 

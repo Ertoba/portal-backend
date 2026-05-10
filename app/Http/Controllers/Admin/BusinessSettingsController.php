@@ -1271,6 +1271,20 @@ class BusinessSettingsController extends Controller
                 'username.required_if' => translate('Username is required when payment status is ON'),
                 'password.required_if' => translate('Password is required when payment status is ON'),
             ];
+        } elseif ($request['gateway'] == 'flitt') {
+            $additional_data = [
+                'gateway_image' => $validator_image_rule . '|image|max:' . $maxFileSizeInMB . '|mimes:' . IMAGE_FORMAT_FOR_VALIDATION,
+                'status' => 'required|in:1,0',
+                'merchant_id' => 'required_if:status,1',
+                'secret_key' => 'required_if:status,1',
+            ];
+            $validation_messages = [
+                'gateway_image.required' => translate('Gateway image is required'),
+                'gateway_image.max' => translate('Gateway image size should not be greater than ' . $maxFileSizeInMB . 'MB'),
+                'gateway_image.mimes' => translate('Gateway image must be a ' . IMAGE_FORMAT_FOR_VALIDATION),
+                'merchant_id.required_if' => translate('Merchant Id is required when payment status is ON'),
+                'secret_key.required_if' => translate('Secret Key is required when payment status is ON'),
+            ];
         }
 
         $request->validate(array_merge($validation, $additional_data), $validation_messages);
