@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\PaymentRequest;
+use App\Models\FlittSavedCard;
 use App\Traits\Processor;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
@@ -52,7 +53,8 @@ class FlittPaymentController extends Controller
             return response()->json($this->response_formatter(GATEWAYS_DEFAULT_204), 200);
         }
 
-        $payload = $this->buildCreateOrderPayload($payment);
+        $saveCardRequested = $this->resolveSaveCardPreference($payment, $request);
+        $payload = $this->buildCreateOrderPayload($payment, false, $saveCardRequested);
         $response = $this->postToFlitt('/api/checkout/token', $payload);
         $token = data_get($response, 'response.token');
 
@@ -66,6 +68,8 @@ class FlittPaymentController extends Controller
                     'currency' => strtoupper($payment->currency_code ?? 'GEL'),
                     'title' => $this->checkoutTitle($payment),
                     'isLiveMode' => $this->isLiveMode,
+                    'canSaveCard' => $this->canSaveCard($payment),
+                    'saveCardRequested' => $saveCardRequested,
                 ])
                 ->header('Content-Type', 'text/html; charset=UTF-8');
         }
@@ -180,7 +184,8 @@ class FlittPaymentController extends Controller
             return response()->json(['message' => 'Flitt მობილური გადახდა მიუწვდომელია'], 404);
         }
 
-        $payload = $this->buildCreateOrderPayload($payment, true);
+        $saveCardRequested = $this->resolveSaveCardPreference($payment, request());
+        $payload = $this->buildCreateOrderPayload($payment, true, $saveCardRequested);
         $response = $this->postToFlitt('/api/checkout/token', $payload);
         $token = data_get($response, 'response.token');
 
@@ -263,12 +268,31 @@ class FlittPaymentController extends Controller
         ]);
     }
 
+    public function reconcilePaymentRequest(PaymentRequest $payment): ?string
+    {
+        if ($payment->is_paid || !$this->isConfigured()) {
+            return $payment->is_paid ? 'approved' : null;
+        }
+
+        $statusPayload = $this->getOrderStatusPayload($payment);
+
+        if (!$statusPayload) {
+            return null;
+        }
+
+        return $this->processFlittStatus(
+            payment: $payment,
+            payload: $statusPayload,
+            transactionId: data_get($statusPayload, 'payment_id')
+        );
+    }
+
     private function isConfigured(): bool
     {
         return !empty($this->config_values?->merchant_id) && !empty($this->config_values?->secret_key);
     }
 
-    private function buildCreateOrderPayload(PaymentRequest $payment, bool $mobileSdk = false): array
+    private function buildCreateOrderPayload(PaymentRequest $payment, bool $mobileSdk = false, bool $saveCardRequested = false): array
     {
         $payload = [
             'version' => self::API_VERSION,
@@ -286,6 +310,10 @@ class FlittPaymentController extends Controller
             'delayed' => 'N',
             'lang' => 'ka',
         ];
+
+        if ($saveCardRequested) {
+            $payload['required_rectoken'] = 'Y';
+        }
 
         $email = $this->payerEmail($payment);
         if ($email !== null) {
@@ -507,6 +535,7 @@ class FlittPaymentController extends Controller
             $updatedPayment = $this->finalizeSuccessfulPayment($payment, $transactionId);
 
             if ($updatedPayment) {
+                $this->storeSavedCardIfRequested($updatedPayment, $payload);
                 $this->callSuccessHook($updatedPayment);
             }
 
@@ -660,5 +689,74 @@ class FlittPaymentController extends Controller
         ]);
 
         $payment->additional_data = $encodedMetadata;
+    }
+
+    private function canSaveCard(PaymentRequest $payment): bool
+    {
+        return is_numeric($payment->payer_id)
+            && (int) $payment->payer_id > 0
+            && $this->normalizeStatus((string) $payment->attribute) === 'order';
+    }
+
+    private function resolveSaveCardPreference(PaymentRequest $payment, Request $request): bool
+    {
+        if (!$this->canSaveCard($payment)) {
+            return false;
+        }
+
+        $metadata = $this->getPaymentMetadata($payment);
+        $requested = $request->has('save_card')
+            ? $request->boolean('save_card')
+            : (bool) data_get($metadata, 'flitt_save_card_requested', false);
+
+        $metadata['flitt_save_card_requested'] = $requested;
+        $metadata['flitt_save_card_requested_at'] = $requested ? now()->toIso8601String() : null;
+        $this->updatePaymentMetadata($payment, $metadata);
+
+        return $requested;
+    }
+
+    private function storeSavedCardIfRequested(PaymentRequest $payment, array $payload): void
+    {
+        $metadata = $this->getPaymentMetadata($payment);
+
+        if (empty($metadata['flitt_save_card_requested']) || !$this->canSaveCard($payment)) {
+            return;
+        }
+
+        $rectoken = (string) data_get($payload, 'rectoken', '');
+
+        if ($rectoken === '') {
+            return;
+        }
+
+        $additionalInfo = data_get($payload, 'additional_info');
+        $additionalInfo = is_string($additionalInfo) ? json_decode($additionalInfo, true) : [];
+        $additionalInfo = is_array($additionalInfo) ? $additionalInfo : [];
+
+        FlittSavedCard::updateOrCreate(
+            [
+                'customer_id' => (int) $payment->payer_id,
+                'gateway' => 'flitt',
+                'rectoken' => $rectoken,
+            ],
+            [
+                'masked_card' => data_get($payload, 'masked_card') ?: null,
+                'card_type' => data_get($payload, 'card_type') ?: data_get($additionalInfo, 'card_type'),
+                'card_bin' => data_get($payload, 'card_bin') ?: null,
+                'rectoken_lifetime' => data_get($payload, 'rectoken_lifetime') ?: null,
+                'is_active' => true,
+                'metadata' => [
+                    'payment_request_id' => (string) $payment->id,
+                    'flitt_payment_id' => data_get($payload, 'payment_id'),
+                    'payment_system' => data_get($payload, 'payment_system'),
+                    'saved_at' => now()->toIso8601String(),
+                ],
+            ]
+        );
+
+        $metadata['flitt_card_saved_at'] = now()->toIso8601String();
+        $metadata['flitt_card_saved_masked'] = data_get($payload, 'masked_card') ?: null;
+        $this->updatePaymentMetadata($payment, $metadata);
     }
 }

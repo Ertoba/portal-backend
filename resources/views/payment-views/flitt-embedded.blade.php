@@ -145,6 +145,35 @@
             flex: 0 0 auto;
         }
 
+        .save-card {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            margin-top: 20px;
+            padding: 14px;
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            background: #fbfdfc;
+            color: var(--ink-soft);
+            font-size: 13px;
+            line-height: 1.45;
+        }
+
+        .save-card input {
+            width: 18px;
+            height: 18px;
+            margin-top: 1px;
+            accent-color: var(--brand);
+            flex: 0 0 auto;
+        }
+
+        .save-card strong {
+            display: block;
+            color: var(--ink);
+            font-size: 14px;
+            margin-bottom: 3px;
+        }
+
         .checkout-shell {
             width: 100%;
             min-height: 650px;
@@ -264,6 +293,15 @@
             <span class="note-dot" aria-hidden="true"></span>
             <span>გადახდის დასრულების შემდეგ შეკვეთის სტატუსი ავტომატურად განახლდება.</span>
         </div>
+        @if($canSaveCard)
+            <label class="save-card">
+                <input id="save-card-toggle" type="checkbox" @checked($saveCardRequested)>
+                <span>
+                    <strong>ბარათის დამახსოვრება</strong>
+                    შემდეგ გადახდებზე გამოიყენება მხოლოდ Flitt-ის უსაფრთხო token-ი. ბარათის სრული ნომერი და CVV ჩვენს სერვერზე არ ინახება.
+                </span>
+            </label>
+        @endif
     </aside>
 
     <section class="checkout-shell" aria-label="Flitt გადახდის ფორმა">
@@ -317,6 +355,15 @@
 
         var loader = document.getElementById('flitt-loader');
         var fallback = document.getElementById('flitt-fallback');
+        var saveCardToggle = document.getElementById('save-card-toggle');
+
+        if (saveCardToggle) {
+            saveCardToggle.addEventListener('change', function () {
+                var url = new URL(window.location.href);
+                url.searchParams.set('save_card', this.checked ? '1' : '0');
+                window.location.replace(url.toString());
+            });
+        }
 
         function hideLoader() {
             if (loader) {

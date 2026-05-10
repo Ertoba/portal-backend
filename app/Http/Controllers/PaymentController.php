@@ -158,7 +158,8 @@ class PaymentController extends Controller
         $store_logo= BusinessSetting::where(['key' => 'logo'])->first();
         $additional_data = [
             'business_name' => BusinessSetting::where(['key'=>'business_name'])->first()?->value,
-            'business_logo' => \App\CentralLogics\Helpers::get_full_url('business',$store_logo?->value,$store_logo?->storage[0]?->value ?? 'public' )
+            'business_logo' => \App\CentralLogics\Helpers::get_full_url('business',$store_logo?->value,$store_logo?->storage[0]?->value ?? 'public' ),
+            'flitt_save_card_requested' => $request->boolean('save_card'),
         ];
 
         $payment_info = new PaymentInfo(
