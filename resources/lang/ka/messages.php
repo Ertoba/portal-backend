@@ -10140,4 +10140,8 @@ Smartly or Earn. ',
   'subscription_canceled' => 'გამოწერა გაუქმდა',
   'subscription_renewed' => 'გამოწერა განახლდა',
   'subscription_shifted' => 'გამოწერა შეიცვალა',
+  'invalid_file_upload' => 'ფაილი არასწორად აიტვირთა.',
+  'file_size_exceeds_limit' => 'ფაილის ზომა აღემატება :size მბ ლიმიტს.',
+  'file_type_not_allowed' => 'ფაილის ტიპი დაშვებული არ არის.',
+  'image_upload_failed' => 'სურათის ატვირთვა ვერ მოხერხდა. გთხოვთ სცადოთ თავიდან.',
 );

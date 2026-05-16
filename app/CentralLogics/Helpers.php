@@ -2214,9 +2214,7 @@ class Helpers
         } catch (InvalidUploadException $e) {
             throw $e;
         } catch (\Throwable $e) {
-            throw new InvalidUploadException(
-                'Image upload failed. Please try again.'
-            );
+            throw new InvalidUploadException(translate('messages.image_upload_failed'));
         }
 
         return $imageName;
@@ -4877,11 +4875,11 @@ class Helpers
     public static function validateFile($image)
     {
         if (! $image instanceof UploadedFile) {
-            throw new InvalidUploadException('Invalid file upload.');
+            throw new InvalidUploadException(translate('messages.invalid_file_upload'));
         }
 
         if ($image->getSize() > MAX_FILE_SIZE * 1024 * 1024) {
-            throw new InvalidUploadException('File size exceeds the limit of '.MAX_FILE_SIZE.'MB');
+            throw new InvalidUploadException(translate('messages.file_size_exceeds_limit', ['size' => MAX_FILE_SIZE]));
         }
 
         $allowedExtensions = explode(',', IMAGE_EXTENSION.','.VIDEO_EXTENSION.','.DOCUMENT_EXTENSION.','.AUDIO_EXTENSION.','.FILE_EXTENSION);
@@ -4896,7 +4894,7 @@ class Helpers
         }
 
         if (! in_array($extension, $allowedExtensions)) {
-            throw new InvalidUploadException('File type not allowed.');
+            throw new InvalidUploadException(translate('messages.file_type_not_allowed'));
         }
     }
 

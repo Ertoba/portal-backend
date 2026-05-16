@@ -9808,4 +9808,8 @@ Smartly or Earn. ',
   'Coverage_area_overlapped' => 'Coverage area overlapped',
   'The maximum coverage area must be greater than 1.' => 'The maximum coverage area must be greater than 1.',
   'The maximum coverage area must be greater than 130.' => 'The maximum coverage area must be greater than 130.',
+  'invalid_file_upload' => 'Invalid file upload.',
+  'file_size_exceeds_limit' => 'File size exceeds the limit of :sizeMB',
+  'file_type_not_allowed' => 'File type not allowed.',
+  'image_upload_failed' => 'Image upload failed. Please try again.',
 );
