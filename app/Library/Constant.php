@@ -1,5 +1,9 @@
 <?php
 
+if (! defined('POINT_SRID')) {
+    define('POINT_SRID', 0); // For MariaDB use 4326.
+}
+
 //payment methods
 const GATEWAYS_PAYMENT_METHODS = [
     ['key' => 'ssl_commerz', 'value' => 'SSLCOMMERZ'],
