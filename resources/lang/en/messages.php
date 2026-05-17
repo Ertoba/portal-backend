@@ -4901,6 +4901,7 @@
   'Upload Your Video' => 'Upload Your Video',
   '16:9' => '16:9',
   'Maximum 5 MB' => 'Maximum 5 MB',
+  'Maximum 10 MB' => 'Maximum 10 MB',
   'Supports: MP4, WEBM, MKV' => 'Supports: MP4, WEBM, MKV',
   'Show Review' => 'Show Review',
   'Profile Image' => 'Profile Image',

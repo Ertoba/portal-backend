@@ -107,6 +107,8 @@ class VendorController extends Controller
             'password.symbols' => translate('The password must contain symbols'),
             'password.uncompromised' => translate('The password is compromised. Please choose a different one'),
             'password.custom' => translate('The password cannot contain white spaces.'),
+            'logo.max' => translate('messages.file_size_exceeds_limit', ['size' => MAX_FILE_SIZE]),
+            'cover_photo.max' => translate('messages.file_size_exceeds_limit', ['size' => MAX_FILE_SIZE]),
         ]);
         if ($validator->fails()) {
                  return response()->json(['errors' => Helpers::error_processor($validator)]);
@@ -132,6 +134,12 @@ class VendorController extends Controller
         if ($request->business_plan == 'subscription-base' && $request->package_id == null ) {
             $validator->getMessageBag()->add('package_id', translate('messages.You_must_select_a_package'));
              return response()->json(['errors' => Helpers::error_processor($validator)]);
+        }
+
+        foreach (['logo', 'cover_photo', 'tin_certificate_image'] as $fileField) {
+            if ($request->hasFile($fileField)) {
+                Helpers::validateFile($request->file($fileField));
+            }
         }
 
         $vendor = new Vendor();

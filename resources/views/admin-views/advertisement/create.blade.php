@@ -170,7 +170,7 @@ active
                                     </div>
 
                                     <p class="opacity-75 max-w220 mx-auto text-center fs-12">
-                                        {{ translate('Maximum 5 MB') }}
+                                        {{ translate('Maximum 10 MB') }}
                                         <br>
                                         {{ translate('Supports: MP4, WEBM, MKV') }}
                                     </p>
@@ -214,7 +214,7 @@ active
                                     <p class="opacity-75 max-w220 mx-auto text-center fs-12">
                                         {{ translate('Supports: PNG, JPG, JPEG, WEBP') }}
                                         <br>
-                                        {{ translate('Maximum 2 MB') }}
+                                        {{ translate('Maximum 10 MB') }}
                                     </p>
                                 </div>
                                 <div class="d-flex flex-column align-items-center gap-3">
@@ -234,7 +234,7 @@ active
                                     <p class="opacity-75 max-w220 mx-auto text-center fs-12">
                                         {{ translate('Supports: PNG, JPG, JPEG, WEBP') }}
                                         <br>
-                                        {{ translate('Maximum 2 MB') }}
+                                        {{ translate('Maximum 10 MB') }}
                                     </p>
                                 </div>
                             </div>
