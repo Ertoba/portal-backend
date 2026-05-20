@@ -13,6 +13,7 @@ use App\Http\Controllers\MercadoPagoController;
 use App\Http\Controllers\BkashPaymentController;
 use App\Http\Controllers\FlutterwaveV3Controller;
 use App\Http\Controllers\FlittPaymentController;
+use App\Http\Controllers\KeepzPaymentController;
 use App\Http\Controllers\PaypalPaymentController;
 use App\Http\Controllers\BogPaymentController;
 use App\Http\Controllers\StripePaymentController;
@@ -196,6 +197,17 @@ if (!$is_published) {
             Route::any('response', [FlittPaymentController::class, 'response'])->name('response')
                 ->withoutMiddleware([\App\Http\Middleware\VerifyCsrfToken::class]);
             Route::post('callback', [FlittPaymentController::class, 'callback'])->name('callback')
+                ->withoutMiddleware([\App\Http\Middleware\VerifyCsrfToken::class]);
+        });
+
+        //KEEPZ
+        Route::group(['prefix' => 'keepz', 'as' => 'keepz.'], function () {
+            Route::get('pay', [KeepzPaymentController::class, 'payment'])->name('pay');
+            Route::any('success', [KeepzPaymentController::class, 'success'])->name('success')
+                ->withoutMiddleware([\App\Http\Middleware\VerifyCsrfToken::class]);
+            Route::any('fail', [KeepzPaymentController::class, 'fail'])->name('fail')
+                ->withoutMiddleware([\App\Http\Middleware\VerifyCsrfToken::class]);
+            Route::post('callback', [KeepzPaymentController::class, 'callback'])->name('callback')
                 ->withoutMiddleware([\App\Http\Middleware\VerifyCsrfToken::class]);
         });
 
