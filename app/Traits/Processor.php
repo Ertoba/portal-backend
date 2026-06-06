@@ -66,9 +66,7 @@ trait  Processor
     }
     public static function getDisk()
     {
-        $config=\App\CentralLogics\Helpers::get_business_settings('local_storage');
-
-        return isset($config)?($config==0?'s3':'public'):'public';
+        return Helpers::getDisk();
     }
     public function file_uploader(string $dir, string $format, $image = null, $old_image = null)
     {

@@ -2179,7 +2179,17 @@ class Helpers
     {
         $config = self::get_business_settings('local_storage');
 
-        return isset($config) ? ($config == 0 ? 's3' : 'public') : 'public';
+        return isset($config) && (string) $config === '0' && self::isS3Configured() ? 's3' : 'public';
+    }
+
+    public static function isS3Configured(): bool
+    {
+        $disk = config('filesystems.disks.s3', []);
+
+        return ! empty($disk['key'])
+            && ! empty($disk['secret'])
+            && ! empty($disk['region'])
+            && ! empty($disk['bucket']);
     }
 
     public static function upload(string $dir, string $format, $image = null)
@@ -3453,8 +3463,7 @@ class Helpers
 
     public static function create_storage($model, $data_id)
     {
-        $config = self::get_business_settings('local_storage');
-        $value = isset($config) ? ($config == 0 ? 's3' : 'public') : 'public';
+        $value = self::getDisk();
         return DB::table('storages')->updateOrInsert(['data_type' => $model, 'data_id' => $data_id], [
             'value' => $value,
             'created_at' => now(),

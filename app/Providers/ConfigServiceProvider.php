@@ -232,15 +232,24 @@ class ConfigServiceProvider extends ServiceProvider
             if ($data?->value) {
                 $credentials = json_decode($data['value'], true);
             }
-            $config = (bool) BusinessSetting::where(['key' => 'local_storage'])->first()?->value;
-            if ($credentials) {
-                Config::set('filesystems.default', $config ? ($config == 0 ? 's3' : 'local') : 'local');
+            $storageConfig = BusinessSetting::where(['key' => 'local_storage'])->first()?->value;
+            $useS3 = is_array($credentials)
+                && isset($storageConfig)
+                && (string) $storageConfig === '0'
+                && ! empty($credentials['key'])
+                && ! empty($credentials['secret'])
+                && ! empty($credentials['region'])
+                && ! empty($credentials['bucket']);
+            if ($useS3) {
+                Config::set('filesystems.default', 's3');
                 Config::set('filesystems.disks.s3.key', $credentials['key']);
                 Config::set('filesystems.disks.s3.secret', $credentials['secret']);
                 Config::set('filesystems.disks.s3.region', $credentials['region']);
                 Config::set('filesystems.disks.s3.bucket', $credentials['bucket']);
-                Config::set('filesystems.disks.s3.url', $credentials['url']);
-                Config::set('filesystems.disks.s3.endpoint', $credentials['end_point']);
+                Config::set('filesystems.disks.s3.url', $credentials['url'] ?? null);
+                Config::set('filesystems.disks.s3.endpoint', $credentials['end_point'] ?? null);
+            } else {
+                Config::set('filesystems.default', 'local');
             }
 
             $openAi = BusinessSetting::where(['key' => 'openai_config'])->first();
