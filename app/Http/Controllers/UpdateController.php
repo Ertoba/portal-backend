@@ -511,15 +511,12 @@ class UpdateController extends Controller
         $appId = $config['appId'] ?? '';
         $measurementId = $config['measurementId'] ?? '';
 
-        $filePath = base_path('firebase-messaging-sw.js');
+        $filePaths = [
+            base_path('firebase-messaging-sw.js'),
+            public_path('firebase-messaging-sw.js'),
+        ];
 
         try {
-            if (file_exists($filePath) && !is_writable($filePath)) {
-                if (!chmod($filePath, 0644)) {
-                    throw new \Exception('File is not writable and permission change failed: ' . $filePath);
-                }
-            }
-
             $fileContent = <<<JS
                 importScripts('https://www.gstatic.com/firebasejs/8.3.2/firebase-app.js');
                 importScripts('https://www.gstatic.com/firebasejs/8.3.2/firebase-messaging.js');
@@ -544,8 +541,16 @@ class UpdateController extends Controller
                 JS;
 
 
-            if (file_put_contents($filePath, $fileContent) === false) {
-                throw new \Exception('Failed to write to file: ' . $filePath);
+            foreach ($filePaths as $filePath) {
+                if (file_exists($filePath) && !is_writable($filePath)) {
+                    if (!chmod($filePath, 0644)) {
+                        throw new \Exception('File is not writable and permission change failed: ' . $filePath);
+                    }
+                }
+
+                if (file_put_contents($filePath, $fileContent) === false) {
+                    throw new \Exception('Failed to write to file: ' . $filePath);
+                }
             }
 
         } catch (\Exception $e) {
