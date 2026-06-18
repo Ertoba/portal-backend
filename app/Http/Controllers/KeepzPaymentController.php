@@ -225,6 +225,7 @@ class KeepzPaymentController extends Controller
             }
 
             $payload['splitDetails'] = $splitDetails;
+            $this->rememberSplitDetails($payment, $splitDetails);
         }
 
         return $payload;
@@ -294,6 +295,44 @@ class KeepzPaymentController extends Controller
                 'amount' => $vendorAmount,
             ],
         ];
+    }
+
+    private function rememberSplitDetails(PaymentRequest $payment, array $splitDetails): void
+    {
+        $mainReceiver = [
+            'receiverType' => strtoupper(trim((string) $this->config_values->receiver_type)),
+            'receiverIdentifier' => trim((string) $this->config_values->receiver_id),
+        ];
+        $mainAmount = 0.0;
+        $vendorAmount = 0.0;
+        $vendorReceiver = null;
+
+        foreach ($splitDetails as $detail) {
+            $receiver = [
+                'receiverType' => $detail['receiverType'] ?? '',
+                'receiverIdentifier' => $detail['receiverIdentifier'] ?? '',
+            ];
+
+            if ($this->sameReceiver($mainReceiver, $receiver)) {
+                $mainAmount += (float) ($detail['amount'] ?? 0);
+                continue;
+            }
+
+            $vendorAmount += (float) ($detail['amount'] ?? 0);
+            $vendorReceiver = $receiver;
+        }
+
+        $metadata = $this->getPaymentMetadata($payment);
+        $metadata['keepz_split_requested_at'] = now()->toIso8601String();
+        $metadata['keepz_split_main_amount'] = round($mainAmount, 2);
+        $metadata['keepz_split_vendor_amount'] = round($vendorAmount, 2);
+
+        if ($vendorReceiver) {
+            $metadata['keepz_split_vendor_receiver_type'] = $vendorReceiver['receiverType'];
+            $metadata['keepz_split_vendor_receiver_identifier'] = $vendorReceiver['receiverIdentifier'];
+        }
+
+        $this->updatePaymentMetadata($payment, $metadata);
     }
 
     private function resolveVendorSplitReceiver(Order $order): ?array

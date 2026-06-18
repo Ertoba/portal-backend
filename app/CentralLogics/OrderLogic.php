@@ -12,6 +12,7 @@ use App\Models\DeliveryMan;
 use App\Models\StoreWallet;
 use Illuminate\Support\Str;
 use App\Models\OrderPayment;
+use App\Models\PaymentRequest;
 use App\Models\BusinessSetting;
 use App\Models\OrderTransaction;
 use App\Models\DeliveryManWallet;
@@ -210,6 +211,7 @@ class OrderLogic
                 $vendorWallet = StoreWallet::firstOrNew(
                     ['vendor_id' => $order->store->vendor->id]
                 );
+                $keepzDirectSettledAmount = self::keepzDirectSettledAmount($order);
                 if ($order->store->sub_self_delivery) {
                     $vendorWallet->total_earning = $vendorWallet->total_earning + $order->delivery_charge + $dm_tips;
                 } else {
@@ -217,6 +219,10 @@ class OrderLogic
                 }
                 // $vendorWallet->total_earning = $vendorWallet->total_earning+($order_amount + $order->total_tax_amount - $comission_on_store_amount);
                 $vendorWallet->total_earning = $vendorWallet->total_earning + $store_amount;
+
+                if ($keepzDirectSettledAmount > 0) {
+                    $vendorWallet->total_withdrawn = $vendorWallet->total_withdrawn + $keepzDirectSettledAmount;
+                }
             }
             if ($order->delivery_man && ($type == 'parcel' || ($order->store && !$order->store->sub_self_delivery))) {
                 $dmWallet = DeliveryManWallet::firstOrNew(
@@ -995,8 +1001,29 @@ class OrderLogic
 
             } catch (\Exception $exception) {
                 info(["line___{$exception->getLine()}", $exception->getMessage()]);
-            }
+        }
         return true;
+    }
+
+    private static function keepzDirectSettledAmount($order): float
+    {
+        if ($order?->payment_method !== 'keepz' || !$order?->id) {
+            return 0.0;
+        }
+
+        $payment = PaymentRequest::whereIn('attribute', ['order', 'order_place'])
+            ->where('attribute_id', $order->id)
+            ->where('payment_method', 'keepz')
+            ->where('is_paid', 1)
+            ->latest()
+            ->first();
+
+        $metadata = json_decode($payment?->additional_data ?: '[]', true);
+        if (!is_array($metadata)) {
+            return 0.0;
+        }
+
+        return round(max(0, (float) ($metadata['keepz_split_vendor_amount'] ?? 0)), 8);
     }
 
 
