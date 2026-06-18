@@ -1137,7 +1137,12 @@ class DeliverymanController extends Controller
         $key = explode(' ', $request['search']);
         $paginator = DisbursementWithdrawalMethod::where('delivery_man_id', $dm['id'])
             ->whereHas('withdraw_method', function ($query) {
-                $query->where('is_active', 1);
+                $query->where('is_active', 1)
+                    ->where('method_name', '!=', 'Keepz Split Receiver');
+            })
+            ->where(function ($query) {
+                $query->whereNull('method_fields')
+                    ->orWhere('method_fields', 'not like', '%keepz_receiver_identifier%');
             })
             ->when(
                 isset($key),
@@ -1179,11 +1184,9 @@ class DeliverymanController extends Controller
     public function withdraw_method_list()
     {
         $wi = WithdrawalMethod::where('is_active', 1)
-            ->where(function ($query) {
-                $query->where('method_name', '!=', 'Keepz Split Receiver')
-                    ->whereRaw("JSON_SEARCH(method_fields, 'one', 'keepz_receiver_identifier') IS NULL");
-            })
-            ->get();
+            ->get()
+            ->reject(fn (WithdrawalMethod $method) => $this->isKeepzSplitMethod($method))
+            ->values();
 
         return response()->json($wi, 200);
     }
