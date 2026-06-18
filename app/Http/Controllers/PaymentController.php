@@ -43,7 +43,7 @@ class PaymentController extends Controller
     {
         $result = $this->prepareOrderPayment($request);
         if ($result instanceof JsonResponse) {
-            return $result;
+            return $this->failedBrowserPaymentResponse($request);
         }
 
         $redirect_link = $result['redirect_link'];
@@ -187,6 +187,16 @@ class PaymentController extends Controller
             'order' => $order,
             'redirect_link' => $redirect_link,
         ];
+    }
+
+    private function failedBrowserPaymentResponse(Request $request)
+    {
+        if ($request->has('callback')) {
+            $separator = str_contains($request['callback'], '?') ? '&' : '?';
+            return redirect($request['callback'] . $separator . 'status=fail');
+        }
+
+        return redirect()->route('payment-fail');
     }
 
     private function extractPaymentIdFromLink(string $redirectLink): ?string

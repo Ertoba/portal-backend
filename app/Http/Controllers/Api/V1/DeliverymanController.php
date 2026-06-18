@@ -1178,7 +1178,12 @@ class DeliverymanController extends Controller
 
     public function withdraw_method_list()
     {
-        $wi = WithdrawalMethod::where('is_active', 1)->get();
+        $wi = WithdrawalMethod::where('is_active', 1)
+            ->where(function ($query) {
+                $query->where('method_name', '!=', 'Keepz Split Receiver')
+                    ->whereRaw("JSON_SEARCH(method_fields, 'one', 'keepz_receiver_identifier') IS NULL");
+            })
+            ->get();
 
         return response()->json($wi, 200);
     }
@@ -1195,7 +1200,11 @@ class DeliverymanController extends Controller
 
         $dm = DeliveryMan::where(['auth_token' => $request['token']])->first();
 
-        $method = WithdrawalMethod::find($request['withdraw_method_id']);
+        $method = WithdrawalMethod::where('is_active', 1)->find($request['withdraw_method_id']);
+        if (!$method || $this->isKeepzSplitMethod($method)) {
+            return response()->json(['errors' => [['code' => 'withdraw_method_id', 'message' => translate('messages.method_not_found')]]], 404);
+        }
+
         $fields = array_column($method->method_fields, 'input_name');
         $values = $request->all();
 
@@ -1230,7 +1239,13 @@ class DeliverymanController extends Controller
             return response()->json(['errors' => Helpers::error_processor($validator)], 403);
         }
         $dm = DeliveryMan::where(['auth_token' => $request['token']])->first();
-        $method = DisbursementWithdrawalMethod::find($request->id);
+        $method = DisbursementWithdrawalMethod::where('id', $request->id)
+            ->where('delivery_man_id', $dm['id'])
+            ->first();
+        if (!$method) {
+            return response()->json(['errors' => [['code' => 'id', 'message' => translate('messages.method_not_found')]]], 404);
+        }
+
         $method->is_default = $request->is_default;
         $method->save();
         DisbursementWithdrawalMethod::whereNot('id', $request->id)->where('delivery_man_id', $dm['id'])->update(['is_default' => 0]);
@@ -1248,10 +1263,25 @@ class DeliverymanController extends Controller
             return response()->json(['errors' => Helpers::error_processor($validator)], 403);
         }
 
-        $method = DisbursementWithdrawalMethod::find($request->id);
+        $dm = DeliveryMan::where(['auth_token' => $request['token']])->first();
+        $method = DisbursementWithdrawalMethod::where('id', $request->id)
+            ->where('delivery_man_id', $dm['id'])
+            ->first();
+        if (!$method) {
+            return response()->json(['errors' => [['code' => 'id', 'message' => translate('messages.method_not_found')]]], 404);
+        }
+
         $method->delete();
 
         return response()->json(['message' => translate('messages.method_deleted_successfully')], 200);
+    }
+
+    private function isKeepzSplitMethod(WithdrawalMethod $method): bool
+    {
+        $fieldNames = array_column($method->method_fields ?? [], 'input_name');
+
+        return $method->method_name === 'Keepz Split Receiver'
+            || in_array('keepz_receiver_identifier', $fieldNames, true);
     }
 
     public function disbursement_report(Request $request)
