@@ -382,10 +382,15 @@
                                                     @php($skip=['gateway','mode','status','supported_country', 'gateway_image'])
                                                     @foreach($credentialValues as $key=>$value)
                                                         @if(!in_array($key,$skip))
+                                                            @php($isLongCredential = in_array($key, ['keepz_public_key', 'integrator_private_key']))
                                                             <div class="form-floating mb-20">
                                                                 <label for="{{$payment_key}}-{{$key}}" class="form-label fs-14">{{ucwords(str_replace('_',' ',$key))}} <span class="text-danger">*</span></label>
-                                                                <div class="custom-copy-text position-relative h--45px w-100 rounded overflow-hidden">
-                                                                    <input type="text" id="{{$payment_key}}-{{$key}}" class="text-inside copy-text form-control rounded-1 pe-40" placeholder="{{ucwords(str_replace('_',' ',$key))}} *" name="{{$key}}" value="{{env('APP_ENV')=='demo'?'':$value}}" />
+                                                                <div class="custom-copy-text position-relative {{$isLongCredential ? '' : 'h--45px'}} w-100 rounded overflow-hidden">
+                                                                    @if($isLongCredential)
+                                                                        <textarea id="{{$payment_key}}-{{$key}}" class="text-inside copy-text form-control rounded-1 pe-40" rows="5" placeholder="{{ucwords(str_replace('_',' ',$key))}} *" name="{{$key}}">{{env('APP_ENV')=='demo'?'':$value}}</textarea>
+                                                                    @else
+                                                                        <input type="text" id="{{$payment_key}}-{{$key}}" class="text-inside copy-text form-control rounded-1 pe-40" placeholder="{{ucwords(str_replace('_',' ',$key))}} *" name="{{$key}}" value="{{env('APP_ENV')=='demo'?'':$value}}" />
+                                                                    @endif
                                                                     <span class="copy-btn bg-white position-absolute end-cus-0 top-50 cursor-pointer text-primary me-3"><i class="tio-copy"></i></span>
                                                                 </div>
                                                             </div>

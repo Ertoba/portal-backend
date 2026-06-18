@@ -94,7 +94,7 @@ class BusinessSettingsController extends Controller
 
         case 'payment':
             $digital_payment_methods_count = Setting::whereIn('settings_type', ['payment_config'])
-                ->whereIn('key_name', ['ssl_commerz', 'paypal', 'stripe', 'razor_pay', 'senang_pay', 'paytabs', 'paystack', 'paymob_accept', 'paytm', 'flutterwave', 'liqpay', 'bkash', 'mercadopago', 'bog_pay', 'flitt'])
+                ->whereIn('key_name', ['ssl_commerz', 'paypal', 'stripe', 'razor_pay', 'senang_pay', 'paytabs', 'paystack', 'paymob_accept', 'paytm', 'flutterwave', 'liqpay', 'bkash', 'mercadopago', 'bog_pay', 'flitt', 'keepz'])
                 ->where('is_active', 1)
                 ->count();
             $offline_payment_methods_count = \App\Models\OfflinePaymentMethod::where('status', 1)->count();
@@ -683,7 +683,7 @@ class BusinessSettingsController extends Controller
             }
         }
         $data_values = Setting::whereIn('settings_type', ['payment_config'])
-            ->whereIn('key_name', ['ssl_commerz', 'paypal', 'stripe', 'razor_pay', 'senang_pay', 'paytabs', 'paystack', 'paymob_accept', 'paytm', 'flutterwave', 'liqpay', 'bkash', 'mercadopago', 'bog_pay', 'flitt'])
+            ->whereIn('key_name', ['ssl_commerz', 'paypal', 'stripe', 'razor_pay', 'senang_pay', 'paytabs', 'paystack', 'paymob_accept', 'paytm', 'flutterwave', 'liqpay', 'bkash', 'mercadopago', 'bog_pay', 'flitt', 'keepz'])
             ->when($request->has('search'), function ($query) use ($request) {
                 $query->where('key_name', 'like', "%{$request->search}%");
             })
@@ -1050,7 +1050,7 @@ class BusinessSettingsController extends Controller
         $request['status'] = $request->status ?? 0;
 
         $validation = [
-            'gateway' => 'required|in:ssl_commerz,paypal,stripe,razor_pay,senang_pay,paytabs,paystack,paymob_accept,paytm,flutterwave,liqpay,bkash,mercadopago,bog_pay,flitt',
+            'gateway' => 'required|in:ssl_commerz,paypal,stripe,razor_pay,senang_pay,paytabs,paystack,paymob_accept,paytm,flutterwave,liqpay,bkash,mercadopago,bog_pay,flitt,keepz',
             'mode' => 'required|in:live,test',
         ];
 
@@ -1270,6 +1270,47 @@ class BusinessSettingsController extends Controller
                 'app_secret.required_if' => translate('App Secret is required when payment status is ON'),
                 'username.required_if' => translate('Username is required when payment status is ON'),
                 'password.required_if' => translate('Password is required when payment status is ON'),
+            ];
+        } elseif ($request['gateway'] == 'flitt') {
+            $additional_data = [
+                'gateway_image' => $validator_image_rule . '|image|max:' . $maxFileSizeInMB . '|mimes:' . IMAGE_FORMAT_FOR_VALIDATION,
+                'status' => 'required|in:1,0',
+                'merchant_id' => 'required_if:status,1',
+                'secret_key' => 'required_if:status,1',
+            ];
+            $validation_messages = [
+                'gateway_image.required' => translate('Gateway image is required'),
+                'gateway_image.max' => translate('Gateway image size should not be greater than ' . $maxFileSizeInMB . 'MB'),
+                'gateway_image.mimes' => translate('Gateway image must be a ' . IMAGE_FORMAT_FOR_VALIDATION),
+                'merchant_id.required_if' => translate('Merchant Id is required when payment status is ON'),
+                'secret_key.required_if' => translate('Secret Key is required when payment status is ON'),
+            ];
+        } elseif ($request['gateway'] == 'keepz') {
+            $additional_data = [
+                'gateway_image' => $validator_image_rule . '|image|max:' . $maxFileSizeInMB . '|mimes:' . IMAGE_FORMAT_FOR_VALIDATION,
+                'status' => 'required|in:1,0',
+                'identifier' => 'required_if:status,1',
+                'integrator_id' => 'required_if:status,1|nullable|uuid',
+                'receiver_id' => 'required_if:status,1|nullable|uuid',
+                'receiver_type' => 'required_if:status,1|nullable|in:BRANCH',
+                'keepz_public_key' => 'required_if:status,1',
+                'integrator_private_key' => 'required_if:status,1',
+                'split_status' => 'nullable|in:1,0,true,false,on,off',
+                'split_fallback_to_main_receiver' => 'nullable|in:1,0,true,false,on,off',
+            ];
+            $validation_messages = [
+                'gateway_image.required' => translate('Gateway image is required'),
+                'gateway_image.max' => translate('Gateway image size should not be greater than ' . $maxFileSizeInMB . 'MB'),
+                'gateway_image.mimes' => translate('Gateway image must be a ' . IMAGE_FORMAT_FOR_VALIDATION),
+                'identifier.required_if' => translate('Identifier is required when payment status is ON'),
+                'integrator_id.required_if' => translate('Integrator Id is required when payment status is ON'),
+                'integrator_id.uuid' => translate('Integrator Id must be a valid UUID'),
+                'receiver_id.required_if' => translate('Receiver Id is required when payment status is ON'),
+                'receiver_id.uuid' => translate('Receiver Id must be a valid UUID'),
+                'receiver_type.required_if' => translate('Receiver Type is required when payment status is ON'),
+                'receiver_type.in' => translate('Receiver Type must be BRANCH'),
+                'keepz_public_key.required_if' => translate('Keepz Public Key is required when payment status is ON'),
+                'integrator_private_key.required_if' => translate('Integrator Private Key is required when payment status is ON'),
             ];
         }
 

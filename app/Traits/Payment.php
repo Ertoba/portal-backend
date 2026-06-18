@@ -75,6 +75,7 @@ trait Payment
             'instamojo' => 'payment/instamojo/pay',
             'bog_pay' => 'payment/bog/pay',
             'flitt' => 'payment/flitt/pay',
+            'keepz' => 'payment/keepz/pay',
         ];
         if (array_key_exists($payment->payment_method, $routes)) {
             return url("{$routes[$payment->payment_method]}/?payment_id={$payment->id}");

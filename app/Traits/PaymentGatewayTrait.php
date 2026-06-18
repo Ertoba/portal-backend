@@ -73,6 +73,11 @@ trait PaymentGatewayTrait
                 "MDL" => "Moldovian Leu",
                 "UZS" => "Uzbekistan Sum"
             ],
+            "keepz" => [
+                "GEL" => "Georgian Lari",
+                "USD" => "United States Dollar",
+                "EUR" => "Euro"
+            ],
             "foloosi" => [
                 "AED" => "United Arab Emirates Dirham",
                 "SAR" => "Saudi Riyal",
