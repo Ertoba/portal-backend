@@ -82,7 +82,17 @@ class KeepzPaymentController extends Controller
 
         $this->logGatewayResponse('Keepz order was not created', $payment, $response);
 
-        return response()->json($this->response_formatter(GATEWAYS_DEFAULT_204), 200);
+        $failedPayment = $this->finalizeFailedPayment(
+            $payment,
+            null,
+            data_get($response, 'status') ?? data_get($response, 'statusCode') ?? 'order_create_failed'
+        );
+
+        if ($failedPayment) {
+            $this->callFailureHook($failedPayment);
+        }
+
+        return $this->payment_response($failedPayment ?? $payment, 'fail');
     }
 
     public function success(Request $request)

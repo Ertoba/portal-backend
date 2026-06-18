@@ -50,6 +50,10 @@ class CustomerController extends Controller
             return false;
         }
 
+        if ($order->order_status === 'failed' && $order->failed !== null) {
+            return false;
+        }
+
         if ($order->payment_method === 'partial_payment') {
             return $order->payments()
                 ->where('payment_status', 'unpaid')
