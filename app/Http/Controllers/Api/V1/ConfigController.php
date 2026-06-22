@@ -51,6 +51,8 @@ class ConfigController extends Controller
             'digital_payment',
             'default_location',
             'business_name',
+            'website_test_mode_status',
+            'website_test_mode_message',
             'logo',
             'address',
             'phone',
@@ -305,6 +307,8 @@ class ConfigController extends Controller
 
         return response()->json([
             'business_name' => $settings['business_name'],
+            'website_test_mode_status' => (bool)($settings['website_test_mode_status'] ?? false),
+            'website_test_mode_message' => (string)($settings['website_test_mode_message'] ?? 'ვებგვერდი სატესტო რეჟიმშია!'),
             'logo' => $settings['logo'],
             'logo_full_url' => Helpers::get_full_url('business', $settings['logo'], $data['logo_storage'] ?? 'public'),
             'address' => $settings['address'],

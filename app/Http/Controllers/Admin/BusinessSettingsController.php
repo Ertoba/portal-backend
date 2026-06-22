@@ -579,6 +579,11 @@ class BusinessSettingsController extends Controller
             return back();
         }
 
+        $request->validate([
+            'website_test_mode_status' => 'nullable|boolean',
+            'website_test_mode_message' => 'nullable|string|max:160',
+        ]);
+
         $this->updateBasicSettings($request);
         $this->updateImages($request);
         $this->updatePaymentSettings($request);
@@ -7718,6 +7723,9 @@ class BusinessSettingsController extends Controller
                 'timeformat' => $request->timeformat,
                 'digit_after_decimal_point' => $request->digit_after_decimal_point,
                 'delivery_charge_comission' => $request->delivery_charge_comission,
+                'website_test_mode_status' => $request->boolean('website_test_mode_status') ? 1 : 0,
+                'website_test_mode_message' => trim((string) $request->website_test_mode_message)
+                    ?: 'ვებგვერდი სატესტო რეჟიმშია!',
             ];
 
             foreach ($settings as $key => $value) {

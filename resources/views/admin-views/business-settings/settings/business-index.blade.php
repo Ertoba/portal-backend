@@ -66,6 +66,52 @@
                     </div>
                 </div>
             </div>
+            @php($websiteTestModeStatus = \App\CentralLogics\Helpers::get_business_settings('website_test_mode_status'))
+            @php($websiteTestModeMessage = \App\CentralLogics\Helpers::get_business_settings('website_test_mode_message') ?? 'ვებგვერდი სატესტო რეჟიმშია!')
+            <div class="card mb-3" id="website_test_mode_section">
+                <div class="card-header">
+                    <div>
+                        <h3 class="mb-1">{{ translate('messages.website_test_mode_banner') }}</h3>
+                        <p class="mb-0 fs-12">{{ translate('messages.website_test_mode_banner_hint') }}</p>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3 align-items-center">
+                        <div class="col-lg-8">
+                            <label class="form-label" for="website_test_mode_message">
+                                {{ translate('messages.website_test_mode_message') }}
+                            </label>
+                            <input
+                                id="website_test_mode_message"
+                                type="text"
+                                name="website_test_mode_message"
+                                value="{{ old('website_test_mode_message', $websiteTestModeMessage) }}"
+                                class="form-control"
+                                maxlength="160"
+                                placeholder="ვებგვერდი სატესტო რეჟიმშია!">
+                        </div>
+                        <div class="col-lg-4">
+                            <div class="maintenance-mode-toggle-bar d-flex flex-wrap justify-content-between border rounded align-items-center py-2 px-3">
+                                <h5 class="text-capitalize m-0 font-weight-normal fs-14 text-dark">
+                                    {{ translate('messages.website_test_mode_status') }}
+                                </h5>
+                                <input type="hidden" name="website_test_mode_status" value="0">
+                                <label class="toggle-switch toggle-switch-sm mb-0">
+                                    <input
+                                        type="checkbox"
+                                        name="website_test_mode_status"
+                                        value="1"
+                                        class="toggle-switch-input"
+                                        {{ old('website_test_mode_status', $websiteTestModeStatus) ? 'checked' : '' }}>
+                                    <span class="toggle-switch-label text mb-0">
+                                        <span class="toggle-switch-indicator"></span>
+                                    </span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
             <div class="row g-3">
                 <div class="col-lg-12">
                     <div class="card" id="basic_information_section">
