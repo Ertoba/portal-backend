@@ -10,6 +10,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Validator;
 use App\CentralLogics\Helpers;
 use App\Models\Order;
+use App\Models\PaymentRequest;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Support\Facades\DB;
@@ -71,6 +72,7 @@ class ReportController extends Controller
         $offset = $request['offset'] ?? 1;
 
         $store_id = $request?->vendor?->stores[0]?->id;
+        $store_ids = $request?->vendor?->stores?->pluck('id')->filter()->values() ?? collect();
 
         $total_disbursements = DisbursementDetails::where('store_id', $store_id)->orderBy('created_at', 'desc')->get();
         $paginator = DisbursementDetails::where('store_id', $store_id)->latest()->paginate($limit, ['*'], 'page', $offset);
@@ -78,6 +80,54 @@ class ReportController extends Controller
         $paginator->each(function ($data) {
             $data->withdraw_method?->method_fields ?  $data->withdraw_method->method_fields = json_decode($data->withdraw_method?->method_fields, true) : '';
         });
+
+        $keepz_settlement_query = PaymentRequest::query()
+            ->join('orders', 'orders.id', '=', 'payment_requests.attribute_id')
+            ->whereIn('orders.store_id', $store_ids)
+            ->whereIn('payment_requests.attribute', ['order', 'order_place'])
+            ->where('payment_requests.payment_method', 'keepz')
+            ->where('payment_requests.is_paid', 1)
+            ->whereNotNull('payment_requests.additional_data')
+            ->whereRaw(
+                "COALESCE(CAST(JSON_UNQUOTE(JSON_EXTRACT(payment_requests.additional_data, '$.keepz_split_vendor_amount')) AS DECIMAL(24,8)), 0) > 0"
+            );
+
+        $keepz_completed = (float) (clone $keepz_settlement_query)
+            ->selectRaw(
+                "COALESCE(SUM(CAST(JSON_UNQUOTE(JSON_EXTRACT(payment_requests.additional_data, '$.keepz_split_vendor_amount')) AS DECIMAL(24,8))), 0) as total"
+            )
+            ->value('total');
+
+        $keepz_paginator = (clone $keepz_settlement_query)
+            ->select([
+                'payment_requests.id as payment_request_id',
+                'payment_requests.transaction_id',
+                'payment_requests.additional_data',
+                'payment_requests.created_at',
+                'payment_requests.updated_at',
+                'orders.id as order_id',
+                'orders.store_id',
+            ])
+            ->latest('payment_requests.updated_at')
+            ->paginate($limit, ['*'], 'keepz_page', $offset);
+
+        $keepz_settlements = collect($keepz_paginator->items())->map(function ($payment) {
+            $metadata = json_decode($payment->additional_data ?: '[]', true);
+            $receiver_identifier = (string) ($metadata['keepz_split_vendor_receiver_identifier'] ?? '');
+            $paid_at = $metadata['keepz_paid_at'] ?? $payment->updated_at ?? $payment->created_at;
+
+            return [
+                'payment_request_id' => $payment->payment_request_id,
+                'order_id' => (int) $payment->order_id,
+                'store_id' => (int) $payment->store_id,
+                'amount' => round((float) ($metadata['keepz_split_vendor_amount'] ?? 0), 2),
+                'status' => 'completed',
+                'transaction_id' => $payment->transaction_id,
+                'receiver_type' => $metadata['keepz_split_vendor_receiver_type'] ?? null,
+                'receiver_identifier_masked' => $this->maskKeepzReceiver($receiver_identifier),
+                'paid_at' => $paid_at ? Carbon::parse($paid_at)->format('Y-m-d H:i:s') : null,
+            ];
+        })->values();
 
         $data = [
             'total_size' => $paginator->total(),
@@ -87,9 +137,29 @@ class ReportController extends Controller
             'completed' => (float) $total_disbursements->where('status', 'completed')->sum('disbursement_amount'),
             'canceled' => (float) $total_disbursements->where('status', 'canceled')->sum('disbursement_amount'),
             'complete_day' => (int) BusinessSetting::where(['key' => 'store_disbursement_waiting_time'])->first()?->value,
-            'disbursements' => $paginator->items()
+            'disbursements' => $paginator->items(),
+            'keepz_total_size' => $keepz_paginator->total(),
+            'keepz_completed' => $keepz_completed,
+            'keepz_settlements' => $keepz_settlements,
         ];
         return response()->json($data, 200);
+    }
+
+    private function maskKeepzReceiver(string $receiver): ?string
+    {
+        $receiver = trim($receiver);
+        if ($receiver === '') {
+            return null;
+        }
+
+        $visible_start = str_starts_with(strtoupper($receiver), 'GE') ? 4 : 8;
+        if (strlen($receiver) <= $visible_start + 4) {
+            return str_repeat('*', max(4, strlen($receiver)));
+        }
+
+        return substr($receiver, 0, $visible_start)
+            . str_repeat('*', strlen($receiver) - $visible_start - 4)
+            . substr($receiver, -4);
     }
 
 

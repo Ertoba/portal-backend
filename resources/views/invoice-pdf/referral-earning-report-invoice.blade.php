@@ -10,11 +10,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{translate('Delivery Man Referral Earning Report Invoice')}}</title>
      <style>
-        @import url('https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,400;0,500;0,700;1,400&display=swap');
-
         body {
             margin: 0;
-            font-family: 'Roboto', sans-serif;
+            font-family: dejavusans, sans-serif;
             font-size: 13px;
             line-height: 21px;
             color: #303030;
@@ -295,7 +293,7 @@
                             <td>
                                 <span class="datas">
                                 @if ($startDate && $endDate)
-                                    {{ $startDate }} {{ translate('to') }} {{ $endDate }}
+                                    {{ $startDate }} {{ translate('Statement To') }} {{ $endDate }}
                                 @elseif ($startDate)
                                     {{ $startDate }}
                                 @elseif ($endDate)
