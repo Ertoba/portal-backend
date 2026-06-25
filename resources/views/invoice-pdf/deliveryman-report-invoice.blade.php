@@ -285,7 +285,7 @@
                             </td>
                             <td>:</td>
                             <td>
-                                <span class="datas">{{ \Carbon\Carbon::parse(now())->format('d-M-Y') }}</span>
+                                <span class="datas">{{ \App\CentralLogics\Helpers::date_format(now()) }}</span>
                             </td>
                         </tr>
                         <tr>
@@ -360,7 +360,7 @@
             @foreach($earnings as $earning)
             <tr>
                 <td class="text-left">
-                    <span>{{ \Carbon\Carbon::parse($earning->delivered)->format('d-M-Y') }}</span>
+                    <span>{{ \App\CentralLogics\Helpers::date_format($earning->delivered) }}</span>
                 </td>
                 <td class="text-left">
                     <span>{{ translate($earning?->order?->payment_method) }}</span>

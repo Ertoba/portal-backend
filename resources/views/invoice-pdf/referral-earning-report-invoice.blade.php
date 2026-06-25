@@ -282,7 +282,7 @@
                             </td>
                             <td>:</td>
                             <td>
-                                <span class="datas">{{ \Carbon\Carbon::parse(now())->format('d-M-Y') }}</span>
+                                <span class="datas">{{ \App\CentralLogics\Helpers::date_format(now()) }}</span>
                             </td>
                         </tr>
                         <tr>
