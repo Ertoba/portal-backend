@@ -1106,7 +1106,7 @@ class DeliverymanController extends Controller
 
         foreach ($paginator->items() as $item) {
             $item['amount'] = (float) $item['amount'];
-            $item['status'] = 'Approved';
+            $item['status'] = 'approved';
             $item['payment_time'] = \App\CentralLogics\Helpers::time_date_format($item->created_at);
 
             $temp[] = $item;

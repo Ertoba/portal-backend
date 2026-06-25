@@ -85,7 +85,10 @@ class DeliveryManLoginController extends Controller
             'password' => ['required', Password::min(8)->mixedCase()->letters()->numbers()->symbols()->uncompromised()],
             'zone_id' => 'required',
             'vehicle_id' => 'required',
-            'earning' => 'required'
+            'earning' => 'required',
+            'image' => 'nullable|image|max:5120|mimes:'.IMAGE_FORMAT_FOR_VALIDATION,
+            'identity_image' => 'nullable|array',
+            'identity_image.*' => 'image|max:5120|mimes:'.IMAGE_FORMAT_FOR_VALIDATION,
         ], [
             'f_name.required' => translate('messages.first_name_is_required'),
             'zone_id.required' => translate('messages.select_a_zone'),

@@ -216,6 +216,12 @@ class ConfigController extends Controller
                 'value' => Helpers::get_language_name($language),
             ]);
         }
+        if (!in_array('ka', array_column($lang_array, 'key'), true)) {
+            $lang_array[] = [
+                'key' => 'ka',
+                'value' => 'ქართული',
+            ];
+        }
         $system_languages = Helpers::get_business_settings('system_language');
         $sys_lang_array = [];
         foreach ($system_languages as $language) {

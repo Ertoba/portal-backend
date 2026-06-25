@@ -147,8 +147,8 @@ class VendorLoginController extends Controller
             'password' => ['required', Password::min(8)->mixedCase()->letters()->numbers()->symbols()->uncompromised()],
             'zone_id' => 'required',
             'module_id' => 'required',
-            'logo' => 'required|image|max:2048|mimes:'.IMAGE_FORMAT_FOR_VALIDATION,
-            'cover_photo' => 'nullable|image|max:2048|mimes:'.IMAGE_FORMAT_FOR_VALIDATION,
+            'logo' => 'required|image|max:5120|mimes:'.IMAGE_FORMAT_FOR_VALIDATION,
+            'cover_photo' => 'nullable|image|max:10240|mimes:'.IMAGE_FORMAT_FOR_VALIDATION,
         ],[
             'password.required' => translate('The password is required'),
             'password.min_length' => translate('The password must be at least :min characters long'),

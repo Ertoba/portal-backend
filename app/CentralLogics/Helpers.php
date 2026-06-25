@@ -279,6 +279,10 @@ class Helpers
                 'id' => (int) $item->id,
                 'name' => $item->title ?? $item->name,
                 'slug' => $item->slug,
+                'category_id' => (int) $item->category_id,
+                'category_ids' => is_string($item->category_ids)
+                    ? (json_decode($item->category_ids, true) ?? [])
+                    : ($item->category_ids ?? []),
                 'image_full_url' => $item->image_full_url,
                 'price' => $item->price,
                 'veg' => $item->veg,

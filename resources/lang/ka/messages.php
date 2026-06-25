@@ -3630,7 +3630,7 @@
   'Select_Disburse_Method' => 'Select Disburse Method',
   'Cash_in_Hand' => 'Cash in Hand',
   'The_total_amount_you’ve_received_from_the_customer_in_cash_(Cash_on_Delivery)' => 'The total amount you’ve received from the customer in cash (Cash on Delivery)',
-  'Payable_Balance' => 'Payable Balance',
+  'Payable_Balance' => 'გადასახდელი ბალანსი',
   'Total_Withdrawn' => 'Total Withdrawn',
   'withdraw_request' => 'Withdraw request',
   'Select_Withdraw_Method' => 'Select Withdraw Method',
