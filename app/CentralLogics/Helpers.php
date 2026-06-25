@@ -2755,7 +2755,21 @@ class Helpers
 
     public static function gen_mpdf($view, $file_prefix, $file_postfix)
     {
-        $mpdf = new \Mpdf\Mpdf(['tempDir' => __DIR__ . '/../../storage/tmp', 'default_font' => 'Inter', 'mode' => 'utf-8', 'format' => [190, 250]]);
+        $fontDirs = (new \Mpdf\Config\ConfigVariables())->getDefaults()['fontDir'];
+        $fontData = (new \Mpdf\Config\FontVariables())->getDefaults()['fontdata'];
+        $mpdf = new \Mpdf\Mpdf([
+            'tempDir' => __DIR__ . '/../../storage/tmp',
+            'default_font' => 'Inter',
+            'mode' => 'utf-8',
+            'format' => [190, 250],
+            'fontDir' => array_merge($fontDirs, [public_path('assets/fonts')]),
+            'fontdata' => $fontData + [
+                'notosansgeorgian' => [
+                    'R' => 'NotoSansGeorgian-Regular.ttf',
+                    'B' => 'NotoSansGeorgian-Bold.ttf',
+                ],
+            ],
+        ]);
         /* $mpdf->AddPage('XL', '', '', '', '', 10, 10, 10, '10', '270', '');*/
         $mpdf->autoScriptToLang = true;
         $mpdf->autoLangToFont = true;

@@ -12,7 +12,7 @@
     <style>
         body {
             margin: 0;
-            font-family: dejavusans, sans-serif;
+            font-family: notosansgeorgian, sans-serif;
             font-size: 13px;
             line-height: 21px;
             color: #303030;
