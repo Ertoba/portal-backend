@@ -4690,11 +4690,19 @@ class Helpers
             $address = json_decode($order->delivery_address, true);
             $phone = $order->is_guest ? data_get($address, 'contact_person_number') : $order?->customer?->phone;
 
-            if ($published_status == 1) {
+            if ($force) {
+                $response = SMS_module::send($phone, $order->otp);
+            } elseif ($published_status == 1 && class_exists(\Modules\Gateways\Traits\SmsGateway::class)) {
                 $response = \Modules\Gateways\Traits\SmsGateway::send($phone, $order->otp);
             } else {
                 $response = SMS_module::send($phone, $order->otp);
             }
+
+            info('order_delivery_verification_otp_sms', [
+                'order_id' => $order->id,
+                'response' => $response ?? null,
+                'phone_digits' => strlen(preg_replace('/\D+/', '', (string) $phone)),
+            ]);
         }
 
         return $response ?? null;

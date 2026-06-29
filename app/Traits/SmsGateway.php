@@ -621,7 +621,7 @@ trait  SmsGateway
         $config = self::get_settings('ubill_ge');
         $response = 'error';
         if (isset($config) && $config['status'] == 1) {
-            $receiver = str_replace('+', '', $receiver);
+            $receiver = self::normalize_ubill_numbers($receiver);
             $message = str_replace('#OTP#', $otp, $config['otp_template']);
             $curl = curl_init();
             curl_setopt_array($curl, [
@@ -645,6 +645,23 @@ trait  SmsGateway
             }
         }
         return $response;
+    }
+
+    private static function normalize_ubill_numbers($receiver): string
+    {
+        $numbers = array_filter(array_map('trim', explode(',', (string) $receiver)));
+        $numbers = array_map(function ($number) {
+            $number = preg_replace('/\D+/', '', $number);
+            if (substr($number, 0, 2) === '00') {
+                $number = substr($number, 2);
+            }
+            if (strlen($number) === 9 && substr($number, 0, 1) === '5') {
+                $number = '995' . $number;
+            }
+            return $number;
+        }, $numbers);
+
+        return implode(',', array_filter($numbers));
     }
 
     public static function get_settings($name)
