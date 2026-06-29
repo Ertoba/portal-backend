@@ -27,6 +27,7 @@ use App\CentralLogics\StoreLogic;
 use App\Mail\WithdrawRequestMail;
 use App\CentralLogics\CouponLogic;
 use App\Models\AccountTransaction;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Mail;
@@ -1276,6 +1277,13 @@ class VendorController extends Controller
         } catch (\Exception $e) {
             info($e->getMessage());
             return response()->json(['message' => translate('messages.push_notification_faild')], 403);
+        }
+        try {
+            if (config('order_delivery_verification') && Cache::add('order_delivery_verification_sms_' . $order->id, true, now()->addSeconds(60))) {
+                Helpers::sendOrderDeliveryVerificationOtp($order, true);
+            }
+        } catch (\Exception $e) {
+            info($e->getMessage());
         }
         return response()->json([], 200);
     }

@@ -37,6 +37,7 @@ use App\Models\Zone;
 use App\Traits\Payment;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
@@ -558,6 +559,14 @@ class DeliverymanController extends Controller
             info($e->getMessage());
 
             return response()->json(['message' => translate('messages.push_notification_faild')], 403);
+        }
+
+        try {
+            if (config('order_delivery_verification') && Cache::add('order_delivery_verification_sms_' . $order->id, true, now()->addSeconds(60))) {
+                Helpers::sendOrderDeliveryVerificationOtp($order, true);
+            }
+        } catch (\Exception $e) {
+            info($e->getMessage());
         }
 
         return response()->json([], 200);

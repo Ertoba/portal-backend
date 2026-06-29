@@ -4679,9 +4679,9 @@ class Helpers
 
 
 
-    public static function sendOrderDeliveryVerificationOtp($order)
+    public static function sendOrderDeliveryVerificationOtp($order, $force = false)
     {
-        if (self::getNotificationStatusData('customer', 'customer_delivery_verification_otp', 'sms_status')) {
+        if ($force || self::getNotificationStatusData('customer', 'customer_delivery_verification_otp', 'sms_status')) {
             $published_status = 0;
             $payment_published_status = config('get_payment_publish_status');
             if (isset($payment_published_status[0]['is_published'])) {
