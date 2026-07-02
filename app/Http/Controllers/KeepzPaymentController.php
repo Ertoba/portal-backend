@@ -371,15 +371,19 @@ class KeepzPaymentController extends Controller
             'accountno',
             'bankaccount',
             'bankaccountnumber',
+            'bankaccountno',
         ]);
 
         if (!$identifier) {
             return null;
         }
 
+        $identifier = $this->normalizeReceiverIdentifier($identifier);
+
         $receiverType = strtoupper((string) ($this->firstConfiguredValue($normalized, [
             'keepzreceivertype',
             'receivertype',
+            'type',
         ]) ?? ''));
 
         if ($receiverType === '' && preg_match('/^GE\d{2}[A-Z]{2}\d{16}$/i', $identifier)) {
@@ -405,19 +409,55 @@ class KeepzPaymentController extends Controller
         $normalized = [];
 
         foreach ($fields as $key => $value) {
+            if (is_array($value) && array_key_exists('input_name', $value)) {
+                $fieldKey = $value['input_name'] ?? $value['key'] ?? $value['name'] ?? $key;
+                $fieldValue = $value['value']
+                    ?? $value['input_value']
+                    ?? $value['input_data']
+                    ?? $value['data']
+                    ?? null;
+
+                if (is_scalar($fieldValue)) {
+                    $normalizedKey = $this->normalizeMethodFieldKey((string) $fieldKey);
+                    $normalized[$normalizedKey] = trim((string) $fieldValue);
+                }
+
+                continue;
+            }
+
             if (is_array($value)) {
-                $value = $value['value'] ?? $value['input_value'] ?? null;
+                $value = $value['value']
+                    ?? $value['input_value']
+                    ?? $value['input_data']
+                    ?? $value['data']
+                    ?? null;
             }
 
             if (!is_scalar($value)) {
                 continue;
             }
 
-            $normalizedKey = strtolower(preg_replace('/[^a-z0-9]/i', '', (string) $key) ?? (string) $key);
+            $normalizedKey = $this->normalizeMethodFieldKey((string) $key);
             $normalized[$normalizedKey] = trim((string) $value);
         }
 
         return $normalized;
+    }
+
+    private function normalizeMethodFieldKey(string $key): string
+    {
+        return strtolower(preg_replace('/[^a-z0-9]/i', '', $key) ?? $key);
+    }
+
+    private function normalizeReceiverIdentifier(string $identifier): string
+    {
+        $identifier = trim($identifier);
+
+        if (preg_match('/^GE/i', $identifier)) {
+            return strtoupper(preg_replace('/\s+/', '', $identifier) ?? $identifier);
+        }
+
+        return $identifier;
     }
 
     private function firstConfiguredValue(array $fields, array $keys): ?string
