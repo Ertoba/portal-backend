@@ -375,6 +375,10 @@ class KeepzPaymentController extends Controller
         ]);
 
         if (!$identifier) {
+            $identifier = $this->firstGeorgianIbanValue($normalized);
+        }
+
+        if (!$identifier) {
             return null;
         }
 
@@ -442,6 +446,22 @@ class KeepzPaymentController extends Controller
         }
 
         return $normalized;
+    }
+
+    private function firstGeorgianIbanValue(array $fields): ?string
+    {
+        foreach ($fields as $value) {
+            if (!is_scalar($value)) {
+                continue;
+            }
+
+            $candidate = strtoupper(preg_replace('/\s+/', '', trim((string) $value)) ?? '');
+            if (preg_match('/^GE\d{2}[A-Z]{2}\d{16}$/', $candidate)) {
+                return $candidate;
+            }
+        }
+
+        return null;
     }
 
     private function normalizeMethodFieldKey(string $key): string
