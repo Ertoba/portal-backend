@@ -354,6 +354,10 @@ class KeepzPaymentController extends Controller
                 return null;
             }
 
+            if ($provider === 'DEFAULT') {
+                return [];
+            }
+
             return ['directLinkProvider' => $provider];
         }
 
