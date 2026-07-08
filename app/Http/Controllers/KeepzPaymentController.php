@@ -136,7 +136,7 @@ class KeepzPaymentController extends Controller
         $redirectUrl = $this->redirectUrlFromResponse($response);
         $usedHostedFallback = false;
 
-        if ($redirectUrl === null && !empty($directOptions)) {
+        if ($redirectUrl === null && !empty($directOptions) && $flow !== 'card') {
             Log::warning('Keepz direct mobile intent failed, trying hosted fallback', [
                 'payment_request_id' => $payment->id,
                 'keepz_flow' => $flow,
@@ -349,13 +349,9 @@ class KeepzPaymentController extends Controller
         }
 
         if ($flow === 'card') {
-            $provider = $provider !== '' ? $provider : 'DEFAULT';
+            $provider = $provider !== '' ? $provider : 'BOG';
             if (!in_array($provider, self::DIRECT_LINK_PROVIDERS, true)) {
                 return null;
-            }
-
-            if ($provider === 'DEFAULT') {
-                return [];
             }
 
             return ['directLinkProvider' => $provider];
