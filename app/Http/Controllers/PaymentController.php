@@ -73,6 +73,28 @@ class PaymentController extends Controller
         return app(FlittPaymentController::class)->mobileIntentById($paymentId);
     }
 
+    public function keepzMobileIntent(Request $request)
+    {
+        $request->merge([
+            'payment_method' => 'keepz',
+            'payment_platform' => 'app',
+        ]);
+
+        $result = $this->prepareOrderPayment($request);
+        if ($result instanceof JsonResponse) {
+            return $result;
+        }
+
+        $paymentId = $this->extractPaymentIdFromLink($result['redirect_link']);
+        if (!$paymentId) {
+            return response()->json([
+                'message' => 'Unable to initialize Keepz mobile payment',
+            ], 422);
+        }
+
+        return app(KeepzPaymentController::class)->mobileIntentById($paymentId, $request);
+    }
+
     public function success()
     {
         $order = Order::where(['id' => session('order_id'), 'user_id'=>session('customer_id')])->first();

@@ -23,6 +23,10 @@ class KeepzPaymentController extends Controller
     private const TEST_API_BASE_URL = 'https://gateway.dev.keepz.me/ecommerce-service';
     private const LIVE_API_BASE_URL = 'https://gateway.keepz.me/ecommerce-service';
     private const SUPPORTED_CURRENCIES = ['GEL', 'USD', 'EUR'];
+    private const DIRECT_LINK_PROVIDERS = ['DEFAULT', 'BOG', 'TBC', 'CREDO'];
+    private const OPEN_BANKING_PROVIDERS = ['TBC', 'BOG', 'CREDO', 'LB'];
+    private const CRYPTO_PROVIDERS = ['CITYPAY'];
+    private const INSTALLMENT_PROVIDERS = ['CREDO'];
 
     private mixed $config_values;
     private PaymentRequest $payment;
@@ -93,6 +97,86 @@ class KeepzPaymentController extends Controller
         }
 
         return $this->payment_response($failedPayment ?? $payment, 'fail');
+    }
+
+    public function mobileIntentById(string $paymentId, Request $request)
+    {
+        $request->merge(['payment_id' => $paymentId]);
+
+        $validator = Validator::make($request->all(), [
+            'payment_id' => 'required|uuid',
+            'keepz_flow' => 'required|string|in:hosted,open_banking,card,crypto,installment',
+            'keepz_provider' => 'nullable|string|max:32',
+            'personal_number' => 'nullable|string|max:32',
+            'is_foreign' => 'nullable|boolean',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json($this->response_formatter(GATEWAYS_DEFAULT_400, null, $this->error_processor($validator)), 400);
+        }
+
+        $payment = $this->payment::where(['id' => $paymentId])->where(['is_paid' => 0])->first();
+
+        if (!isset($payment) || !$this->isConfigured() || !$this->isCurrencySupported($payment)) {
+            return response()->json([
+                'message' => 'Keepz payment is not available for this order',
+            ], 422);
+        }
+
+        $flow = (string) $request->input('keepz_flow');
+        $directOptions = $this->directOptionsFromRequest($request);
+
+        if ($directOptions === null) {
+            return response()->json([
+                'message' => 'Unsupported Keepz payment provider',
+            ], 422);
+        }
+
+        $response = $this->createKeepzOrder($payment, $directOptions);
+        $redirectUrl = $this->redirectUrlFromResponse($response);
+        $usedHostedFallback = false;
+
+        if ($redirectUrl === null && !empty($directOptions)) {
+            Log::warning('Keepz direct mobile intent failed, trying hosted fallback', [
+                'payment_request_id' => $payment->id,
+                'keepz_flow' => $flow,
+                'keepz_provider' => $request->input('keepz_provider'),
+                'status' => data_get($response, 'status'),
+                'status_code' => data_get($response, 'statusCode'),
+                'message' => data_get($response, 'message'),
+            ]);
+
+            $response = $this->createKeepzOrder($payment);
+            $redirectUrl = $this->redirectUrlFromResponse($response);
+            $usedHostedFallback = $redirectUrl !== null;
+        }
+
+        if ($redirectUrl === null) {
+            $this->logGatewayResponse('Keepz mobile intent was not created', $payment, $response);
+
+            return response()->json([
+                'message' => 'Keepz payment could not be initialized',
+            ], 422);
+        }
+
+        $metadata = $this->getPaymentMetadata($payment);
+        $metadata['keepz_order_created_at'] = now()->toIso8601String();
+        $metadata['keepz_order_url_received'] = true;
+        $metadata['keepz_mobile_flow'] = $flow;
+        $metadata['keepz_mobile_provider'] = $request->input('keepz_provider');
+        $metadata['keepz_mobile_hosted_fallback'] = $usedHostedFallback;
+        $metadata['keepz_create_response'] = $this->safeGatewayPayload($response);
+        $this->updatePaymentMetadata($payment, $metadata);
+
+        return response()->json([
+            'payment_id' => $payment->id,
+            'url' => $redirectUrl,
+            'fallback_url' => $redirectUrl,
+            'flow' => $flow,
+            'provider' => $request->input('keepz_provider'),
+            'hosted_fallback' => $usedHostedFallback,
+            'action' => $this->mobileIntentAction($flow, $usedHostedFallback),
+        ]);
     }
 
     public function success(Request $request)
@@ -201,14 +285,14 @@ class KeepzPaymentController extends Controller
         return in_array(strtoupper($payment->currency_code ?? 'GEL'), self::SUPPORTED_CURRENCIES, true);
     }
 
-    private function createKeepzOrder(PaymentRequest $payment): ?array
+    private function createKeepzOrder(PaymentRequest $payment, array $directOptions = []): ?array
     {
-        $payload = $this->buildCreateOrderPayload($payment);
+        $payload = $this->buildCreateOrderPayload($payment, $directOptions);
 
         return $payload === null ? null : $this->sendEncryptedRequest('POST', '/api/integrator/order', $payload, $payment);
     }
 
-    private function buildCreateOrderPayload(PaymentRequest $payment): ?array
+    private function buildCreateOrderPayload(PaymentRequest $payment, array $directOptions = []): ?array
     {
         $payload = [
             'amount' => round((float) $payment->payment_amount, 2),
@@ -222,6 +306,12 @@ class KeepzPaymentController extends Controller
             'callbackUri' => $this->paymentRoute('keepz.callback', ['payment_id' => $payment->id]),
             'language' => 'KA',
         ];
+
+        foreach ($directOptions as $key => $value) {
+            if ($value !== null && $value !== '') {
+                $payload[$key] = $value;
+            }
+        }
 
         if ($this->shouldSplitPayment($payment)) {
             $splitDetails = $this->buildSplitDetails($payment);
@@ -239,6 +329,68 @@ class KeepzPaymentController extends Controller
         }
 
         return $payload;
+    }
+
+    private function directOptionsFromRequest(Request $request): ?array
+    {
+        $flow = (string) $request->input('keepz_flow');
+        $provider = strtoupper(trim((string) $request->input('keepz_provider', '')));
+
+        if ($flow === 'hosted') {
+            return [];
+        }
+
+        if ($flow === 'open_banking') {
+            if (!in_array($provider, self::OPEN_BANKING_PROVIDERS, true)) {
+                return null;
+            }
+
+            return ['openBankingLinkProvider' => $provider];
+        }
+
+        if ($flow === 'card') {
+            $provider = $provider !== '' ? $provider : 'DEFAULT';
+            if (!in_array($provider, self::DIRECT_LINK_PROVIDERS, true)) {
+                return null;
+            }
+
+            return ['directLinkProvider' => $provider];
+        }
+
+        if ($flow === 'crypto') {
+            $provider = $provider !== '' ? $provider : 'CITYPAY';
+            if (!in_array($provider, self::CRYPTO_PROVIDERS, true)) {
+                return null;
+            }
+
+            return ['cryptoPaymentProvider' => $provider];
+        }
+
+        if ($flow === 'installment') {
+            $provider = $provider !== '' ? $provider : 'CREDO';
+            $personalNumber = preg_replace('/\s+/', '', (string) $request->input('personal_number', '')) ?? '';
+
+            if (!in_array($provider, self::INSTALLMENT_PROVIDERS, true) || !preg_match('/^(\d{9}|\d{11})$/', $personalNumber)) {
+                return null;
+            }
+
+            return [
+                'installmentPaymentProvider' => $provider,
+                'personalNumber' => $personalNumber,
+                'isForeign' => filter_var($request->input('is_foreign', false), FILTER_VALIDATE_BOOLEAN),
+            ];
+        }
+
+        return null;
+    }
+
+    private function mobileIntentAction(string $flow, bool $hostedFallback): string
+    {
+        if ($flow === 'open_banking' && !$hostedFallback) {
+            return 'external_non_browser';
+        }
+
+        return 'bottom_sheet_webview';
     }
 
     private function shouldSplitPayment(PaymentRequest $payment): bool

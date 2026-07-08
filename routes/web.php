@@ -72,6 +72,7 @@ Route::get('authentication-failed', function () {
 Route::group(['prefix' => 'payment-mobile'], function () {
     Route::get('/', 'PaymentController@payment')->name('payment-mobile');
     Route::get('flitt-intent', 'PaymentController@flittMobileIntent')->name('payment-mobile.flitt-intent');
+    Route::get('keepz-intent', 'PaymentController@keepzMobileIntent')->name('payment-mobile.keepz-intent');
     Route::get('set-payment-method/{name}', 'PaymentController@set_payment_method')->name('set-payment-method');
 });
 
