@@ -25,23 +25,7 @@ jobs:
           coverage: none
 
       - name: Apply verified Keepz recovery patch
-        shell: bash
-        run: |
-          python3 <<'EXTRACT'
-          from pathlib import Path
-
-          workflow = Path('.github/workflows/keepz-recovery-hotfix.yml').read_text()
-          start = "          python3 <<'PY'\n"
-          end = "\n          PY\n\n      - name: Validate PHP syntax and hotfix invariants"
-          if start not in workflow or end not in workflow:
-              raise SystemExit('Embedded patch script markers were not found')
-          raw_script = workflow.split(start, 1)[1].split(end, 1)[0]
-          script = '\n'.join(
-              line[10:] if line.startswith('          ') else line
-              for line in raw_script.splitlines()
-          )
-          exec(compile(script, 'keepz-recovery-hotfix.py', 'exec'))
-          EXTRACT
+        run: python3 .github/scripts/keepz_recovery_patch.py
 
       - name: Validate PHP syntax and invariants
         shell: bash
@@ -73,6 +57,7 @@ jobs:
           git rm .github/workflows/keepz-recovery-hotfix.yml
           git rm .github/workflows/keepz-recovery-issue-trigger.yml
           git rm .github/workflows/keepz-pr-hotfix.yml
+          git rm .github/scripts/keepz_recovery_patch.py
           git add app/Services/KeepzGatewayLifecycleService.php app/Services/CheckoutPaymentRecoveryService.php
           git commit -m "Fix Keepz recovery state handling"
           git push origin HEAD:${{ github.head_ref }}
