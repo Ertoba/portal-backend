@@ -399,7 +399,11 @@ class CheckoutPaymentRecoveryService
 
     private function resolveOwner(Request $request): array
     {
-        $user = $request->user();
+        $user = $request->input('user');
+        if (!$user && $request->header('Authorization') && $request->header('Authorization') !== 'Bearer null') {
+            $user = auth('api')->user();
+        }
+
         if ($user) {
             return [(string) $user->id, 0];
         }
