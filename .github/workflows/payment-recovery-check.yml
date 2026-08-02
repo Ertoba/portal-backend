@@ -31,7 +31,7 @@ jobs:
           php -l bootstrap/providers.php
       - name: Install application dependencies
         run: composer install --no-interaction --prefer-dist --no-progress
-      - name: Verify route registration and migration
+      - name: Verify scoped route registration
         env:
           APP_ENV: testing
           APP_KEY: base64:WZexSodmlGKb9vIYXXGgkAk9BhO7d8aJndOvcSh6D8M=
@@ -42,5 +42,35 @@ jobs:
           QUEUE_CONNECTION: sync
         run: |
           touch database/database.sqlite
-          php artisan route:list --path=api/v1/customer/order-payment
-          php artisan migrate --pretend --path=database/migrations/2026_08_02_130000_create_checkout_idempotencies_table.php --force
+          php -r '
+            require "vendor/autoload.php";
+            $app = require "bootstrap/app.php";
+            $app->make(Illuminate\Contracts\Console\Kernel::class)->bootstrap();
+            $uris = [];
+            foreach ($app["router"]->getRoutes() as $route) {
+                $uris[] = $route->uri();
+            }
+            $required = [
+                "api/v1/customer/order-payment/recoverable",
+                "api/v1/customer/order-payment/{order}/status",
+                "api/v1/customer/order-payment/{order}/prepare-retry",
+                "api/v1/customer/order-payment/{order}/switch-to-cod",
+            ];
+            foreach ($required as $uri) {
+                if (!in_array($uri, $uris, true)) {
+                    fwrite(STDERR, "Missing route: {$uri}\n");
+                    exit(1);
+                }
+            }
+            echo "Checkout recovery routes registered\n";
+          '
+      - name: Verify migration SQL
+        env:
+          APP_ENV: testing
+          APP_KEY: base64:WZexSodmlGKb9vIYXXGgkAk9BhO7d8aJndOvcSh6D8M=
+          DB_CONNECTION: sqlite
+          DB_DATABASE: database/database.sqlite
+          CACHE_STORE: array
+          SESSION_DRIVER: array
+          QUEUE_CONNECTION: sync
+        run: php artisan migrate --pretend --path=database/migrations/2026_08_02_130000_create_checkout_idempotencies_table.php --force
