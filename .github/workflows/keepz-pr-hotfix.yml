@@ -29,15 +29,18 @@ jobs:
         run: |
           python3 <<'EXTRACT'
           from pathlib import Path
-          import textwrap
 
           workflow = Path('.github/workflows/keepz-recovery-hotfix.yml').read_text()
           start = "          python3 <<'PY'\n"
           end = "\n          PY\n\n      - name: Validate PHP syntax and hotfix invariants"
           if start not in workflow or end not in workflow:
               raise SystemExit('Embedded patch script markers were not found')
-          script = workflow.split(start, 1)[1].split(end, 1)[0]
-          exec(compile(textwrap.dedent(script), 'keepz-recovery-hotfix.py', 'exec'))
+          raw_script = workflow.split(start, 1)[1].split(end, 1)[0]
+          script = '\n'.join(
+              line[10:] if line.startswith('          ') else line
+              for line in raw_script.splitlines()
+          )
+          exec(compile(script, 'keepz-recovery-hotfix.py', 'exec'))
           EXTRACT
 
       - name: Validate PHP syntax and invariants
