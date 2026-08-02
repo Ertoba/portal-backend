@@ -158,8 +158,9 @@ class KeepzGatewayLifecycleService
         $metadata['keepz_recovery_status'] = $this->safePayload($payload);
         $this->storeMetadata($updatedPayment, $metadata);
 
-        if (function_exists($updatedPayment->success_hook)) {
-            call_user_func($updatedPayment->success_hook, $updatedPayment);
+        $successHook = (string) $updatedPayment->success_hook;
+        if ($successHook !== '' && function_exists($successHook)) {
+            call_user_func($successHook, $updatedPayment);
         }
     }
 
@@ -193,8 +194,17 @@ class KeepzGatewayLifecycleService
     private function markTerminal(PaymentRequest $payment, ?string $status, ?array $payload = null): void
     {
         $metadata = $this->metadata($payment);
+        $handledAt = now()->toIso8601String();
         $metadata['keepz_recovery_terminal_status'] = $status;
-        $metadata['keepz_recovery_terminal_at'] = now()->toIso8601String();
+        $metadata['keepz_recovery_terminal_at'] = $handledAt;
+
+        // The stock 6amMart gateway callback invokes order_failed() for a
+        // terminal payment. Marking it handled prevents a late canceled
+        // callback from reverting an order that has already been recovered to
+        // a new card attempt or switched to cash on delivery.
+        $metadata['keepz_failure_handled'] = $metadata['keepz_failure_handled'] ?? $handledAt;
+        $metadata['keepz_failure_status'] = $status;
+
         if ($payload !== null) {
             $metadata['keepz_recovery_terminal_payload'] = $this->safePayload($payload);
         }
