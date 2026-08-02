@@ -1,0 +1,58 @@
+name: Keepz all-attempt validation
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  harden-and-validate:
+    if: github.head_ref == 'fix/keepz-6005-recovery-v2'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          coverage: none
+
+      - name: Apply all-attempt safety patch
+        run: python3 .github/scripts/keepz_recovery_followup.py
+
+      - name: Validate
+        shell: bash
+        run: |
+          php -l app/Services/CheckoutPaymentRecoveryService.php
+          php -l app/Services/KeepzGatewayLifecycleService.php
+          python3 <<'PY'
+          from pathlib import Path
+          text = Path('app/Services/CheckoutPaymentRecoveryService.php').read_text()
+          checks = {
+              'continues after active status': '$activeResult ??= $inspection;' in text,
+              'continues after cancel blocker': '$blockingResult ??= [' in text,
+              'paid checked across attempts': "if ($inspection['state'] === 'paid')" in text,
+              'unsafe supersede blocked': "['active', 'unknown', 'blocked']" in text,
+          }
+          failed = [name for name, ok in checks.items() if not ok]
+          if failed:
+              raise SystemExit('Invariant checks failed: ' + ', '.join(failed))
+          PY
+
+      - name: Commit and remove temporary validation
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/keepz-followup.yml
+          git rm .github/scripts/keepz_recovery_followup.py
+          git add app/Services/CheckoutPaymentRecoveryService.php
+          git commit -m "Inspect every Keepz attempt before recovery"
+          git push origin HEAD:${{ github.head_ref }}
