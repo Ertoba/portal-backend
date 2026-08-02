@@ -14,11 +14,6 @@ use Symfony\Component\HttpFoundation\Response;
 
 class CheckoutOrderLifecycleMiddleware
 {
-    public function __construct(
-        private readonly CheckoutPaymentRecoveryService $recoveryService
-    ) {
-    }
-
     public function handle(Request $request, Closure $next): Response
     {
         if (!$request->isMethod('post')
@@ -35,7 +30,8 @@ class CheckoutOrderLifecycleMiddleware
         $response = $next($request);
 
         if ($this->isEmptyCartResponse($response)) {
-            $recovered = $this->recoveryService->recoverFromEmptyCart($request);
+            $recovered = app(CheckoutPaymentRecoveryService::class)
+                ->recoverFromEmptyCart($request);
             if ($recovered instanceof JsonResponse) {
                 $response = $recovered;
             }
