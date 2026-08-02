@@ -93,7 +93,8 @@ class CheckoutPaymentRecoveryService
             ]);
         }
 
-        if (!$usesKeepz) {
+        if (!$usesKeepz
+            && !in_array($inspection['state'], ['active', 'unknown', 'blocked'], true)) {
             return response()->json([
                 'order_id' => $order->id,
                 'state' => 'superseded',
@@ -336,6 +337,8 @@ class CheckoutPaymentRecoveryService
 
         $lastProviderStatus = null;
         $lastError = null;
+        $activeResult = null;
+        $blockingResult = null;
 
         foreach ($payments as $payment) {
             $inspection = $this->keepzGateway->inspect($payment);
@@ -353,7 +356,8 @@ class CheckoutPaymentRecoveryService
 
             if ($inspection['state'] === 'active') {
                 if (!$cancelActive) {
-                    return $inspection;
+                    $activeResult ??= $inspection;
+                    continue;
                 }
 
                 $cancellation = $this->keepzGateway->cancel($payment);
@@ -367,18 +371,27 @@ class CheckoutPaymentRecoveryService
                     continue;
                 }
 
-                return [
+                $blockingResult ??= [
                     'state' => 'blocked',
                     'provider_status' => $cancellation['provider_status'] ?? null,
                     'error' => $cancellation['error'] ?? 'cancel_failed',
                 ];
+                continue;
             }
 
-            return [
-                'state' => 'unknown',
+            $blockingResult ??= [
+                'state' => $cancelActive ? 'blocked' : 'unknown',
                 'provider_status' => $inspection['provider_status'] ?? null,
                 'error' => $inspection['error'] ?? 'status_unavailable',
             ];
+        }
+
+        if ($blockingResult !== null) {
+            return $blockingResult;
+        }
+
+        if ($activeResult !== null) {
+            return $activeResult;
         }
 
         return [
