@@ -1,0 +1,72 @@
+name: Keepz recovery issue trigger
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  patch:
+    if: github.event.issue.title == 'Run Keepz recovery hotfix now'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          coverage: none
+
+      - name: Execute embedded patch script
+        shell: bash
+        run: |
+          python3 <<'EXTRACT'
+          from pathlib import Path
+          import textwrap
+
+          workflow = Path('.github/workflows/keepz-recovery-hotfix.yml').read_text()
+          start = "          python3 <<'PY'\n"
+          end = "\n          PY\n\n      - name: Validate PHP syntax and hotfix invariants"
+          if start not in workflow or end not in workflow:
+              raise SystemExit('Embedded patch script markers were not found')
+          script = workflow.split(start, 1)[1].split(end, 1)[0]
+          exec(compile(textwrap.dedent(script), 'keepz-recovery-hotfix.py', 'exec'))
+          EXTRACT
+
+      - name: Validate PHP syntax and invariants
+        shell: bash
+        run: |
+          php -l app/Services/KeepzGatewayLifecycleService.php
+          php -l app/Services/CheckoutPaymentRecoveryService.php
+          python3 <<'PY'
+          from pathlib import Path
+          lifecycle = Path('app/Services/KeepzGatewayLifecycleService.php').read_text()
+          recovery = Path('app/Services/CheckoutPaymentRecoveryService.php').read_text()
+          checks = {
+              '6005 absent state': "result('absent', 'not_found', 'provider_order_absent'" in lifecycle,
+              'status retries': 'STATUS_RETRY_DELAYS_MICROSECONDS' in lifecycle,
+              'all Keepz attempts': 'private function keepzPayments' in recovery,
+              'Keepz order method recovery': "whereIn('payment_method', ['digital_payment', 'keepz'])" in recovery,
+              'superseded state': "'state' => 'superseded'" in recovery,
+          }
+          failed = [name for name, ok in checks.items() if not ok]
+          if failed:
+              raise SystemExit('Invariant checks failed: ' + ', '.join(failed))
+          PY
+
+      - name: Commit hotfix and remove temporary automation
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/keepz-recovery-hotfix.yml
+          git rm .github/workflows/keepz-recovery-issue-trigger.yml
+          git add app/Services/KeepzGatewayLifecycleService.php app/Services/CheckoutPaymentRecoveryService.php
+          git commit -m "Fix Keepz recovery state handling"
+          git push origin main
