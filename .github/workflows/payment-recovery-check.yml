@@ -1,0 +1,27 @@
+name: Payment recovery checks
+
+on:
+  push:
+    branches:
+      - fix/keepz-payment-resume
+
+jobs:
+  php-checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          tools: composer:v2
+      - name: Validate composer metadata
+        run: composer validate --no-check-publish
+      - name: Lint recovery PHP files
+        run: |
+          php -l app/Http/Controllers/Api/V1/CheckoutPaymentRecoveryController.php
+          php -l app/Http/Middleware/CheckoutOrderLifecycleMiddleware.php
+          php -l app/Providers/CheckoutPaymentRecoveryServiceProvider.php
+          php -l app/Services/CheckoutPaymentRecoveryService.php
+          php -l app/Services/KeepzGatewayLifecycleService.php
+          php -l database/migrations/2026_08_02_130000_create_checkout_idempotencies_table.php
+          php -l bootstrap/providers.php
