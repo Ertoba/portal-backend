@@ -73,31 +73,49 @@ class CheckoutPaymentRecoveryService
                 'state' => 'paid',
                 'provider_status' => 'success',
                 'payment_status' => $order->payment_status,
+                'payment_method' => $order->payment_method,
                 'order_status' => $order->order_status,
             ]);
         }
 
-        $payment = $this->latestKeepzPayment($order);
-        if (!$payment) {
-            return response()->json([
-                'order_id' => $order->id,
-                'state' => 'ready',
-                'provider_status' => null,
-                'payment_status' => $order->payment_status,
-                'order_status' => $order->order_status,
-            ]);
-        }
-
-        $inspection = $this->keepzGateway->inspect($payment);
+        $usesKeepz = in_array($order->payment_method, ['digital_payment', 'keepz'], true);
+        $inspection = $this->inspectOrderPayments($order, false);
         $order->refresh();
 
+        if ($inspection['state'] === 'paid' || $order->payment_status === 'paid') {
+            return response()->json([
+                'order_id' => $order->id,
+                'state' => 'paid',
+                'provider_status' => 'success',
+                'payment_status' => $order->payment_status,
+                'payment_method' => $order->payment_method,
+                'order_status' => $order->order_status,
+            ]);
+        }
+
+        if (!$usesKeepz
+            && !in_array($inspection['state'], ['active', 'unknown', 'blocked'], true)) {
+            return response()->json([
+                'order_id' => $order->id,
+                'state' => 'superseded',
+                'provider_status' => $inspection['provider_status'] ?? null,
+                'provider_error' => $inspection['error'] ?? null,
+                'payment_status' => $order->payment_status,
+                'payment_method' => $order->payment_method,
+                'order_status' => $order->order_status,
+            ]);
+        }
+
+        $state = $inspection['state'];
         return response()->json([
             'order_id' => $order->id,
-            'state' => $inspection['state'],
-            'provider_status' => $inspection['provider_status'],
+            'state' => $state,
+            'provider_status' => $inspection['provider_status'] ?? null,
+            'provider_error' => $inspection['error'] ?? null,
             'payment_status' => $order->payment_status,
+            'payment_method' => $order->payment_method,
             'order_status' => $order->order_status,
-        ], $inspection['state'] === 'unknown' ? 409 : 200);
+        ], in_array($state, ['unknown', 'blocked'], true) ? 409 : 200);
     }
 
     public function prepareRetry(Request $request, int $orderId): JsonResponse
@@ -153,7 +171,7 @@ class CheckoutPaymentRecoveryService
         $query = Order::withoutGlobalScopes()
             ->where('user_id', $userId)
             ->where('is_guest', $isGuest)
-            ->where('payment_method', 'digital_payment')
+            ->whereIn('payment_method', ['digital_payment', 'keepz'])
             ->where('payment_status', 'unpaid')
             ->whereIn('order_status', ['failed', 'pending'])
             ->where('created_at', '>=', now()->subDay())
@@ -165,7 +183,7 @@ class CheckoutPaymentRecoveryService
         }
 
         foreach ($query->limit(5)->get() as $order) {
-            if ($this->latestKeepzPayment($order)) {
+            if ($this->hasKeepzPayment($order)) {
                 return response()->json([
                     'recoverable' => true,
                     'order_id' => $order->id,
@@ -193,7 +211,7 @@ class CheckoutPaymentRecoveryService
             );
         }
 
-        if ($order->payment_method !== 'digital_payment') {
+        if (!in_array($order->payment_method, ['digital_payment', 'keepz'], true)) {
             if ($order->payment_method === 'cash_on_delivery') {
                 return $this->orderResponse($order, ['switched_to_cod' => true]);
             }
@@ -235,7 +253,7 @@ class CheckoutPaymentRecoveryService
                     return $lockedOrder;
                 }
 
-                if ($lockedOrder->payment_method === 'digital_payment') {
+                if (in_array($lockedOrder->payment_method, ['digital_payment', 'keepz'], true)) {
                     $lockedOrder->payment_method = 'cash_on_delivery';
                     $lockedOrder->payment_status = 'unpaid';
                     $lockedOrder->order_status = 'pending';
@@ -293,38 +311,112 @@ class CheckoutPaymentRecoveryService
 
     private function prepareOrderForPaymentRetry(Order $order): array
     {
-        if ($order->payment_status === 'paid') {
-            return ['state' => 'paid'];
-        }
+        $inspection = $this->inspectOrderPayments($order, true);
 
-        $payment = $this->latestKeepzPayment($order);
-        if (!$payment) {
-            return ['state' => 'ready'];
-        }
-
-        $inspection = $this->keepzGateway->inspect($payment);
         if ($inspection['state'] === 'paid') {
             return ['state' => 'paid'];
         }
 
-        if ($inspection['state'] === 'terminal') {
-            return ['state' => 'ready'];
-        }
-
-        if ($inspection['state'] !== 'active') {
-            return ['state' => 'blocked'];
-        }
-
-        $cancellation = $this->keepzGateway->cancel($payment);
-        if ($cancellation['state'] === 'paid') {
-            return ['state' => 'paid'];
-        }
-
-        if ($cancellation['state'] === 'terminal') {
+        if ($inspection['state'] === 'ready') {
             return ['state' => 'ready'];
         }
 
         return ['state' => 'blocked'];
+    }
+
+    private function inspectOrderPayments(Order $order, bool $cancelActive): array
+    {
+        if ($order->payment_status === 'paid') {
+            return ['state' => 'paid', 'provider_status' => 'success', 'error' => null];
+        }
+
+        $payments = $this->keepzPayments($order);
+        if ($payments->isEmpty()) {
+            return ['state' => 'ready', 'provider_status' => null, 'error' => null];
+        }
+
+        $lastProviderStatus = null;
+        $lastError = null;
+        $activeResult = null;
+        $blockingResult = null;
+
+        foreach ($payments as $payment) {
+            $inspection = $this->keepzGateway->inspect($payment);
+            $this->logLifecycleResult($order, $payment, 'inspect', $inspection);
+            $lastProviderStatus = $inspection['provider_status'] ?? $lastProviderStatus;
+            $lastError = $inspection['error'] ?? $lastError;
+
+            if ($inspection['state'] === 'paid') {
+                return $inspection;
+            }
+
+            if (in_array($inspection['state'], ['terminal', 'absent'], true)) {
+                continue;
+            }
+
+            if ($inspection['state'] === 'active') {
+                if (!$cancelActive) {
+                    $activeResult ??= $inspection;
+                    continue;
+                }
+
+                $cancellation = $this->keepzGateway->cancel($payment);
+                $this->logLifecycleResult($order, $payment, 'cancel', $cancellation);
+
+                if ($cancellation['state'] === 'paid') {
+                    return $cancellation;
+                }
+
+                if (in_array($cancellation['state'], ['terminal', 'absent'], true)) {
+                    continue;
+                }
+
+                $blockingResult ??= [
+                    'state' => 'blocked',
+                    'provider_status' => $cancellation['provider_status'] ?? null,
+                    'error' => $cancellation['error'] ?? 'cancel_failed',
+                ];
+                continue;
+            }
+
+            $blockingResult ??= [
+                'state' => $cancelActive ? 'blocked' : 'unknown',
+                'provider_status' => $inspection['provider_status'] ?? null,
+                'error' => $inspection['error'] ?? 'status_unavailable',
+            ];
+        }
+
+        if ($blockingResult !== null) {
+            return $blockingResult;
+        }
+
+        if ($activeResult !== null) {
+            return $activeResult;
+        }
+
+        return [
+            'state' => 'ready',
+            'provider_status' => $lastProviderStatus,
+            'error' => $lastError,
+        ];
+    }
+
+    private function logLifecycleResult(
+        Order $order,
+        PaymentRequest $payment,
+        string $action,
+        array $result
+    ): void {
+        Log::info('Keepz checkout recovery decision', [
+            'order_id' => $order->id,
+            'payment_request_id' => $payment->id,
+            'action' => $action,
+            'state' => $result['state'] ?? null,
+            'provider_status' => $result['provider_status'] ?? null,
+            'error' => $result['error'] ?? null,
+            'status_code' => data_get($result, 'payload.statusCode'),
+            'exception_group' => data_get($result, 'payload.exceptionGroup'),
+        ]);
     }
 
     private function findMatchingRecoverableOrder(Request $request): ?Order
@@ -337,7 +429,7 @@ class CheckoutPaymentRecoveryService
         $query = Order::withoutGlobalScopes()
             ->where('user_id', $userId)
             ->where('is_guest', $isGuest)
-            ->where('payment_method', 'digital_payment')
+            ->whereIn('payment_method', ['digital_payment', 'keepz'])
             ->where('payment_status', 'unpaid')
             ->whereIn('order_status', ['failed', 'pending'])
             ->where('created_at', '>=', now()->subHours(2))
@@ -365,7 +457,7 @@ class CheckoutPaymentRecoveryService
             if ($order->order_type === 'parcel') {
                 continue;
             }
-            if ($this->latestKeepzPayment($order)) {
+            if ($this->hasKeepzPayment($order)) {
                 return $order;
             }
         }
@@ -387,14 +479,21 @@ class CheckoutPaymentRecoveryService
             ->first();
     }
 
-    private function latestKeepzPayment(Order $order): ?PaymentRequest
+    private function keepzPayments(Order $order)
     {
-        return PaymentRequest::where('attribute', 'order')
+        return PaymentRequest::whereIn('attribute', ['order', 'order_place'])
             ->where('attribute_id', $order->id)
             ->where('payment_method', 'keepz')
-            ->where('is_paid', 0)
             ->latest()
-            ->first();
+            ->get();
+    }
+
+    private function hasKeepzPayment(Order $order): bool
+    {
+        return PaymentRequest::whereIn('attribute', ['order', 'order_place'])
+            ->where('attribute_id', $order->id)
+            ->where('payment_method', 'keepz')
+            ->exists();
     }
 
     private function resolveOwner(Request $request): array
