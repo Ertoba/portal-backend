@@ -14,6 +14,9 @@ class KeepzGatewayLifecycleService
 {
     private const TEST_API_BASE_URL = 'https://gateway.dev.keepz.me/ecommerce-service';
     private const LIVE_API_BASE_URL = 'https://gateway.keepz.me/ecommerce-service';
+    private const ORDER_NOT_FOUND_STATUS_CODE = 6005;
+    private const FINALIZED_STATUS_CODE = 6006;
+    private const STATUS_RETRY_DELAYS_MICROSECONDS = [300000, 800000];
     private const ACTIVE_STATUSES = ['initial', 'processing'];
     private const TERMINAL_STATUSES = [
         'failed',
@@ -62,12 +65,19 @@ class KeepzGatewayLifecycleService
             return $this->result('unknown', null, 'keepz_not_configured');
         }
 
-        $payload = $this->sendEncryptedRequest('GET', '/api/integrator/order/status', [
-            'integratorId' => trim((string) $this->configValues->integrator_id),
-            'integratorOrderId' => (string) $payment->id,
-        ]);
+        $payload = $this->statusPayload($payment);
 
-        if (!is_array($payload) || isset($payload['statusCode'])) {
+        if (!is_array($payload)) {
+            $this->logUnusableResponse('Keepz recovery status was unavailable', $payment, $payload);
+            return $this->result('unknown', null, 'status_unavailable', $payload);
+        }
+
+        if ((int) ($payload['statusCode'] ?? 0) === self::ORDER_NOT_FOUND_STATUS_CODE) {
+            $this->markAbsent($payment, $payload);
+            return $this->result('absent', 'not_found', 'provider_order_absent', $payload);
+        }
+
+        if (isset($payload['statusCode'])) {
             $this->logUnusableResponse('Keepz recovery status was unavailable', $payment, $payload);
             return $this->result('unknown', null, 'status_unavailable', $payload);
         }
@@ -92,6 +102,7 @@ class KeepzGatewayLifecycleService
             return $this->result('terminal', $status, null, $payload);
         }
 
+        $this->logUnusableResponse('Keepz recovery returned an unrecognized status', $payment, $payload);
         return $this->result('unknown', $status, 'unrecognized_status', $payload);
     }
 
@@ -115,14 +126,68 @@ class KeepzGatewayLifecycleService
             return $this->result('terminal', 'canceled', null, $payload);
         }
 
+        if (is_array($payload)
+            && (int) ($payload['statusCode'] ?? 0) === self::ORDER_NOT_FOUND_STATUS_CODE) {
+            $this->markAbsent($payment, $payload);
+            return $this->result('absent', 'not_found', 'provider_order_absent', $payload);
+        }
+
         // Keepz returns 6006 when an order is already finalised. Resolve the
         // authoritative state before allowing a retry or a COD conversion.
-        if (is_array($payload) && (int) ($payload['statusCode'] ?? 0) === 6006) {
+        if (is_array($payload)
+            && (int) ($payload['statusCode'] ?? 0) === self::FINALIZED_STATUS_CODE) {
             return $this->inspect($payment);
         }
 
         $this->logUnusableResponse('Keepz recovery cancellation failed', $payment, $payload);
         return $this->result('unknown', $status, 'cancel_failed', $payload);
+    }
+
+    private function statusPayload(PaymentRequest $payment): ?array
+    {
+        $payload = null;
+        $delays = array_merge([0], self::STATUS_RETRY_DELAYS_MICROSECONDS);
+
+        foreach ($delays as $attempt => $delay) {
+            if ($delay > 0) {
+                usleep($delay);
+            }
+
+            $payload = $this->sendEncryptedRequest('GET', '/api/integrator/order/status', [
+                'integratorId' => trim((string) $this->configValues->integrator_id),
+                'integratorOrderId' => (string) $payment->id,
+            ]);
+
+            if (!is_array($payload)
+                || (int) ($payload['statusCode'] ?? 0) !== self::ORDER_NOT_FOUND_STATUS_CODE) {
+                return $payload;
+            }
+
+            if ($attempt < count($delays) - 1) {
+                Log::info('Keepz recovery status was not found; retrying', [
+                    'payment_request_id' => $payment->id,
+                    'order_id' => $payment->attribute_id,
+                    'attempt' => $attempt + 1,
+                    'next_delay_ms' => (int) ($delays[$attempt + 1] / 1000),
+                    'status_code' => data_get($payload, 'statusCode'),
+                    'exception_group' => data_get($payload, 'exceptionGroup'),
+                    'message' => data_get($payload, 'message'),
+                ]);
+            }
+        }
+
+        return $payload;
+    }
+
+    private function markAbsent(PaymentRequest $payment, array $payload): void
+    {
+        $metadata = $this->metadata($payment);
+        $handledAt = now()->toIso8601String();
+        $metadata['keepz_recovery_absent_at'] = $handledAt;
+        $metadata['keepz_recovery_absent_payload'] = $this->safePayload($payload);
+        $metadata['keepz_failure_handled'] = $metadata['keepz_failure_handled'] ?? $handledAt;
+        $metadata['keepz_failure_status'] = 'provider_order_absent';
+        $this->storeMetadata($payment, $metadata);
     }
 
     private function finalizeSuccessfulPayment(PaymentRequest $payment, array $payload): void
@@ -303,6 +368,17 @@ class KeepzGatewayLifecycleService
             return null;
         }
 
+        if ($httpCode >= 400 || isset($decoded['statusCode'])) {
+            Log::warning('Keepz recovery returned an HTTP error', [
+                'endpoint' => $endpoint,
+                'integrator_order_id' => $payload['integratorOrderId'] ?? null,
+                'http_code' => $httpCode,
+                'status_code' => data_get($decoded, 'statusCode'),
+                'exception_group' => data_get($decoded, 'exceptionGroup'),
+                'message' => data_get($decoded, 'message'),
+            ]);
+        }
+
         return $this->decodeKeepzResponse($decoded);
     }
 
@@ -460,8 +536,10 @@ class KeepzGatewayLifecycleService
     {
         Log::warning($message, [
             'payment_request_id' => $payment->id,
+            'order_id' => $payment->attribute_id,
             'status' => data_get($payload, 'status'),
             'status_code' => data_get($payload, 'statusCode'),
+            'exception_group' => data_get($payload, 'exceptionGroup'),
             'message' => data_get($payload, 'message'),
         ]);
     }
