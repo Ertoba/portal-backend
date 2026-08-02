@@ -21,7 +21,9 @@ class CheckoutOrderLifecycleMiddleware
 
     public function handle(Request $request, Closure $next): Response
     {
-        if (!$request->isMethod('post') || !$request->is('api/v1/customer/order/place')) {
+        if (!$request->isMethod('post')
+            || !$request->is('api/v1/customer/order/place')
+            || $request->input('order_type') === 'parcel') {
             return $next($request);
         }
 
