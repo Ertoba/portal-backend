@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - fix/keepz-payment-resume
+  pull_request:
+    branches:
+      - main
 
 jobs:
   php-checks:
