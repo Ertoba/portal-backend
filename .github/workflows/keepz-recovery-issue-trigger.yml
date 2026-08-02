@@ -1,21 +1,20 @@
-name: Keepz recovery issue trigger
+name: Keepz recovery branch patch
 
 on:
-  issues:
-    types: [opened]
+  push:
+    branches: [fix/keepz-status-authority]
+    paths:
+      - .github/workflows/keepz-recovery-issue-trigger.yml
 
 permissions:
   contents: write
-  issues: write
 
 jobs:
   patch:
-    if: github.event.issue.title == 'Run Keepz recovery hotfix now'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: main
           fetch-depth: 0
 
       - uses: shivammathur/setup-php@v2
@@ -69,4 +68,4 @@ jobs:
           git rm .github/workflows/keepz-recovery-issue-trigger.yml
           git add app/Services/KeepzGatewayLifecycleService.php app/Services/CheckoutPaymentRecoveryService.php
           git commit -m "Fix Keepz recovery state handling"
-          git push origin main
+          git push origin HEAD:fix/keepz-status-authority
