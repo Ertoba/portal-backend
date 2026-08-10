@@ -398,7 +398,20 @@ class KeepzPaymentController extends Controller
         $splitStatus = (string) ($this->config_values?->split_status ?? '0');
 
         return in_array($splitStatus, ['1', 'true', 'on'], true)
-            && in_array((string) $payment->attribute, ['order', 'order_place'], true);
+            && in_array((string) $payment->attribute, ['order', 'order_place'], true)
+            && !$this->isParcelOrderPayment($payment);
+    }
+
+    private function isParcelOrderPayment(PaymentRequest $payment): bool
+    {
+        if (!in_array((string) $payment->attribute, ['order', 'order_place'], true)) {
+            return false;
+        }
+
+        return Order::withoutGlobalScopes()
+            ->whereKey($payment->attribute_id)
+            ->where('order_type', 'parcel')
+            ->exists();
     }
 
     private function shouldFallbackToMainReceiver(): bool
