@@ -174,8 +174,12 @@ class ConfigController extends Controller
         });
         $image_key = ['logo', 'icon'];
         $data = [];
-        $openAIStatus = isset($settings['openai_config']) ? json_decode($settings['openai_config'], true) : [];
-        $openAIStatus = isset($openAIStatus['status']) && $openAIStatus['status'] == 1 ? 1 : 0;
+        $openAIConfig = isset($settings['openai_config']) ? json_decode($settings['openai_config'], true) : [];
+        $openAIStatus = isset($openAIConfig['status']) && $openAIConfig['status'] == 1 ? 1 : 0;
+        $aiChatStatus = $openAIStatus
+            && isset($openAIConfig['chat_status'])
+            && $openAIConfig['chat_status'] == 1
+            && !empty($openAIConfig['OPENAI_API_KEY']) ? 1 : 0;
         foreach ($image_key as $value) {
             $data[$value . '_storage'] = Cache::rememberForever("business_settings_config_{$value}_storage", function () use ($value) {
                 return BusinessSetting::where('key', $value)->first()?->storage[0]?->value ?? 'public';
@@ -281,6 +285,9 @@ class ConfigController extends Controller
             'dm_referal_status' => (bool) (data_get($settings,'dm_referal_status') == 1 ? true : false),
             'dm_referal_amount' => (float) data_get($settings, 'dm_referal_amount') ?? 0,
             'dm_referal_bonus' => (float) data_get($settings, 'dm_referal_bonus') ?? 0,
+            // Backward-compatible aliases expected by the delivery app model.
+            'referal_status' => (bool) (data_get($settings,'dm_referal_status') == 1 ? true : false),
+            'referal_amount' => (float) data_get($settings, 'dm_referal_amount') ?? 0,
         ];
 
         if (data_get($settings, 'subscription_free_trial_type') == 'year') {
@@ -447,6 +454,7 @@ class ConfigController extends Controller
             'parcel_return_time_fee' => isset($settings['parcel_return_time_fee']) ? json_decode($settings['parcel_return_time_fee']) : null,
 
             'open_ai_status' => (int)$openAIStatus,
+            'ai_chat_status' => (int)$aiChatStatus,
 
             'dm_loyality_point_data' => $dm_loyality_point_data,
             'dm_referral_data' => $dm_referral_data,

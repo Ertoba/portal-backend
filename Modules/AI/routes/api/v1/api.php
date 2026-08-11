@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 
+use Modules\AI\app\Http\Controllers\Api\V1\CustomerChatController;
 use Modules\AI\app\Http\Controllers\Api\ProductAutoFillController;
 
 /*
@@ -23,3 +24,6 @@ Route::group(['prefix' => 'ai', 'as' => 'ai.','middleware'=>['vendor.api','actch
     Route::get('generate-title-suggestions', [ProductAutoFillController::class, 'generateTitleSuggestions']);
     Route::post('generate-form-image', [ProductAutoFillController::class, 'analyzeImageAutoFill']);
 });
+
+Route::post('ai-chat/send', [CustomerChatController::class, 'send'])
+    ->middleware(['localization', 'auth:api', 'throttle:6,1']);

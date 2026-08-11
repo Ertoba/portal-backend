@@ -249,6 +249,7 @@ class Helpers
         $data['is_basic'] = (int) $data->pharmacy_item_details?->is_basic ?? 0;
         $data['is_prescription_required'] = (int) $data->pharmacy_item_details?->is_prescription_required ?? 0;
         $data['halal_tag_status'] = (int) $data->store->storeConfig?->halal_tag_status ?? 0;
+        $data['verified_seller'] = self::get_verified_seller_status($data->store, $data->store?->storeConfig);
 
         $data['nutritions_name'] = $data?->nutritions ? Nutrition::whereIn('id', $data?->nutritions->pluck('id'))->pluck('nutrition') : null;
         $data['allergies_name'] = $data?->allergies ? Allergy::whereIn('id', $data?->allergies->pluck('id'))->pluck('allergy') : null;
@@ -307,6 +308,7 @@ class Helpers
                 'module_type' => $module_type,
                 'halal_tag_status' => (int) ($item->store->storeConfig->halal_tag_status ?? 0),
                 'free_delivery' => $item->store?->free_delivery,
+                'verified_seller' => self::get_verified_seller_status($item->store, $item->store?->storeConfig),
             ];
         })->toArray();
     }
@@ -398,6 +400,7 @@ class Helpers
                 $item['is_basic'] = (int) $item->pharmacy_item_details?->is_basic ?? 0;
                 $item['is_prescription_required'] = (int) $item->pharmacy_item_details?->is_prescription_required ?? 0;
                 $item['halal_tag_status'] = (int) $item->store->storeConfig?->halal_tag_status ?? 0;
+                $item['verified_seller'] = self::get_verified_seller_status($item->store, $item->store?->storeConfig);
 
                 $item->store['self_delivery_system'] = (int) $item->store->sub_self_delivery;
 
@@ -508,6 +511,7 @@ class Helpers
             $data['is_basic'] = (int) $data->pharmacy_item_details?->is_basic ?? 0;
             $data['is_prescription_required'] = (int) $data->pharmacy_item_details?->is_prescription_required ?? 0;
             $data['halal_tag_status'] = (int) $data->store->storeConfig?->halal_tag_status ?? 0;
+            $data['verified_seller'] = self::get_verified_seller_status($data->store, $data->store?->storeConfig);
 
             $data['nutritions_name'] = $data?->nutritions ? Nutrition::whereIn('id', $data?->nutritions->pluck('id'))->pluck('nutrition') : null;
             $data['allergies_name'] = $data?->allergies ? Allergy::whereIn('id', $data?->allergies->pluck('id'))->pluck('allergy') : null;
@@ -613,6 +617,7 @@ class Helpers
                 $item['is_basic'] = (int) $item->pharmacy_item_details?->is_basic ?? 0;
                 $item['is_prescription_required'] = (int) $item->pharmacy_item_details?->is_prescription_required ?? 0;
                 $item['halal_tag_status'] = (int) $item->store->storeConfig?->halal_tag_status ?? 0;
+                $item['verified_seller'] = self::get_verified_seller_status($item->store, $item->store?->storeConfig);
 
                 if ($trans) {
                     $item['translations'][] = [
@@ -736,6 +741,7 @@ class Helpers
             $data['is_basic'] = (int) $data->pharmacy_item_details?->is_basic ?? 0;
             $data['is_prescription_required'] = (int) $data->pharmacy_item_details?->is_prescription_required ?? 0;
             $data['halal_tag_status'] = (int) $data->store->storeConfig?->halal_tag_status ?? 0;
+            $data['verified_seller'] = self::get_verified_seller_status($data->store, $data->store?->storeConfig);
 
             if ($trans) {
                 $data['translations'][] = [
@@ -906,6 +912,13 @@ class Helpers
         return $data;
     }
 
+    public static function get_verified_seller_status(?Store $store = null, mixed $storeConfig = null): int
+    {
+        $storeConfig ??= $store?->storeConfig;
+
+        return (int) (self::get_business_settings('verified_seller_badge') && $storeConfig?->verified_seller);
+    }
+
     public static function store_data_formatting($data, $multi_data = false)
     {
         $storage = [];
@@ -931,6 +944,7 @@ class Helpers
                 $item['max'] = (float) $item->items()->active()->max('price');
                 $item['is_recommended'] = false;
                 $item['halal_tag_status'] = (bool) $item?->storeConfig?->halal_tag_status;
+                $item['verified_seller'] = self::get_verified_seller_status($item, $item?->storeConfig);
                 $extra_packaging_data = self::get_business_settings('extra_packaging_data');
 
                 $item['extra_packaging_status'] = (bool) (!empty($extra_packaging_data) && data_get($extra_packaging_data, $item->module->module_type) == '1') ? $item?->storeConfig?->extra_packaging_status : false;
@@ -953,6 +967,7 @@ class Helpers
             $data['is_recommended'] = false;
             $data['minimum_stock_for_warning'] = (int) $data?->storeConfig?->minimum_stock_for_warning ?? 0;
             $data['halal_tag_status'] = (bool) $data?->storeConfig?->halal_tag_status;
+            $data['verified_seller'] = self::get_verified_seller_status($data, $data?->storeConfig);
             $extra_packaging_data = self::get_business_settings('extra_packaging_data');
 
             $data['extra_packaging_status'] = (bool) (!empty($extra_packaging_data) && data_get($extra_packaging_data, $data?->module?->module_type)) ? $data?->storeConfig?->extra_packaging_status : false;

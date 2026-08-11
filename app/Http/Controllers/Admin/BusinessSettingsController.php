@@ -330,6 +330,11 @@ class BusinessSettingsController extends Controller
         Helpers::businessUpdateOrInsert(['key' => 'product_gallery'], [
             'value' => $request['product_gallery'],
         ]);
+        Helpers::businessUpdateOrInsert(['key' => 'verified_seller_badge'], [
+            'value' => $request->boolean('verified_seller_badge') ? 1 : 0,
+        ]);
+        Config::forget('verified_seller_badge_conf');
+        Cache::forget('business_settings_all_data');
 
         Toastr::success(translate('messages.successfully_updated_to_changes_restart_app'));
 
@@ -7293,12 +7298,43 @@ class BusinessSettingsController extends Controller
             [
                 'value' => json_encode([
                     'status' => $request['status'] ?? 0,
+                    'chat_status' => $data['chat_status'] ?? 0,
                     'OPENAI_ORGANIZATION' => $data['OPENAI_ORGANIZATION'] ?? '',
                     'OPENAI_API_KEY' => $data['OPENAI_API_KEY'] ?? '',
                 ]),
                 'updated_at' => now(),
             ]
         );
+        Cache::forget('business_settings_config_keys');
+        Toastr::success(translate('messages.configuration_updated_successfully'));
+
+        return back();
+    }
+
+    public function openAIChatStatus(Request $request)
+    {
+        if (env('APP_MODE') == 'demo') {
+            Toastr::info(translate('messages.update_option_is_disable_for_demo'));
+
+            return back();
+        }
+
+        $config = BusinessSetting::where(['key' => 'openai_config'])->first();
+        $data = $config ? json_decode($config['value'], true) : [];
+
+        Helpers::businessUpdateOrInsert(
+            ['key' => 'openai_config'],
+            [
+                'value' => json_encode([
+                    'status' => $data['status'] ?? 0,
+                    'chat_status' => $request->boolean('status') ? 1 : 0,
+                    'OPENAI_ORGANIZATION' => $data['OPENAI_ORGANIZATION'] ?? '',
+                    'OPENAI_API_KEY' => $data['OPENAI_API_KEY'] ?? '',
+                ]),
+                'updated_at' => now(),
+            ]
+        );
+        Cache::forget('business_settings_config_keys');
         Toastr::success(translate('messages.configuration_updated_successfully'));
 
         return back();
@@ -7320,12 +7356,14 @@ class BusinessSettingsController extends Controller
             [
                 'value' => json_encode([
                     'status' => $data['status'] ?? 0,
+                    'chat_status' => $data['chat_status'] ?? 0,
                     'OPENAI_ORGANIZATION' => $request['OPENAI_ORGANIZATION'] ?? '',
                     'OPENAI_API_KEY' => $request['OPENAI_API_KEY'] ?? '',
                 ]),
                 'updated_at' => now(),
             ]
         );
+        Cache::forget('business_settings_config_keys');
         Toastr::success(translate('messages.configuration_updated_successfully'));
 
         return back();

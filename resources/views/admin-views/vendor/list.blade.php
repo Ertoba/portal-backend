@@ -164,6 +164,7 @@
                         <th class="border-0">{{translate('messages.owner_information')}}</th>
                         <th class="border-0">{{translate('messages.zone')}}</th>
                         <th class="text-uppercase border-0">{{translate('messages.featured')}}</th>
+                        <th class="text-uppercase border-0">{{translate('messages.verified')}}</th>
                         <th class="text-uppercase border-0">{{translate('messages.status')}}</th>
                         <th class="text-center border-0">{{translate('messages.action')}}</th>
                     </tr>
@@ -212,6 +213,20 @@
                                         <span class="toggle-switch-indicator"></span>
                                     </span>
                                 </label>
+                            </td>
+
+                            <td>
+                                @php($isVerifiedSeller = (bool) ($store->storeConfig?->verified_seller ?? false))
+                                <form method="post" action="{{ route('admin.store.verified-seller', $store->id) }}">
+                                    @csrf
+                                    <input type="hidden" name="verified_seller" value="{{ $isVerifiedSeller ? 0 : 1 }}">
+                                    <button type="submit"
+                                        class="btn action-btn {{ $isVerifiedSeller ? 'btn--primary btn-outline-primary' : 'btn--secondary btn-outline-secondary' }}"
+                                        title="{{ $isVerifiedSeller ? translate('Remove verified badge') : translate('Grant verified badge') }}"
+                                        aria-label="{{ $isVerifiedSeller ? translate('Remove verified badge') : translate('Grant verified badge') }}">
+                                        <i class="{{ $isVerifiedSeller ? 'tio-verified' : 'tio-checkmark-circle-outlined' }}"></i>
+                                    </button>
+                                </form>
                             </td>
 
                             <td>

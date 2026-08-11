@@ -100,6 +100,27 @@
                             </div>
                         </form>
                         <form
+                            action="{{ env('APP_MODE') != 'demo' ? route('admin.business-settings.openAIChatStatus') : 'javascript:' }}"
+                            method="post" class="mb-4">
+                            @csrf
+                            <div class="form-group mb-0">
+                                <label class="d-flex align-items-center justify-content-between border rounded px-3 py-3">
+                                    <span class="pr-3">
+                                        <strong>{{ translate('AI_Chat_Assistant') }}</strong>
+                                        <small class="d-block text-muted">{{ translate('AI_Chat_Assistant_read_only_hint') }}</small>
+                                    </span>
+                                    <span class="toggle-switch toggle-switch-sm">
+                                        <input type="hidden" name="status" value="0">
+                                        <input type="checkbox" name="status" value="1" class="toggle-switch-input"
+                                            onchange="this.form.submit()"
+                                            {{ isset($data['chat_status']) && $data['chat_status'] == 1 ? 'checked' : '' }}
+                                            {{ !isset($data['status']) || $data['status'] != 1 ? 'disabled' : '' }}>
+                                        <span class="toggle-switch-label"><span class="toggle-switch-indicator"></span></span>
+                                    </span>
+                                </label>
+                            </div>
+                        </form>
+                        <form
                             action="{{ env('APP_MODE') != 'demo' ? route('admin.business-settings.openAIConfigUpdate') : 'javascript:' }}"
                             method="post">
                             @csrf

@@ -238,6 +238,39 @@
                                             </label>
                                         </div>
                                     </div>
+                                    <div class="col-lg-4 col-sm-6">
+                                        @php($verified_seller_badge = \App\Models\BusinessSetting::where('key', 'verified_seller_badge')->first()?->value ?? 0)
+                                        <div class="form-group mb-0">
+                                            <span class="mb-2 d-flex align-items-center">
+                                                <span class="text-title fs-14">{{ translate('Show Verified Badge') }}</span>
+                                                <span class="form-label-secondary text-danger d-flex align-items-center gap-1"
+                                                    data-toggle="tooltip" data-placement="right"
+                                                    data-original-title="{{ translate('Enable verified badges assigned to vendors by the admin.') }}"><i class="tio-info text-muted ps--3"></i>
+                                                </span>
+                                            </span>
+                                            <label class="toggle-switch h--45px toggle-switch-sm d-flex justify-content-between border rounded px-3 py-0 form-control">
+                                                <span class="pr-1 d-flex align-items-center switch--label">
+                                                    <span class="line--limit-1 text-title">{{ translate('Status') }}</span>
+                                                </span>
+                                                <input type="checkbox"
+                                                    data-id="verified_seller_badge" data-type="toggle"
+                                                    data-image-on="{{ asset('/public/assets/admin/img/modal/info-warning.png') }}"
+                                                    data-image-off="{{ asset('/public/assets/admin/img/modal/info-warning.png') }}"
+                                                    data-title-on="<strong>{{ translate('Are you sure to enable Verified Seller Badge?') }}</strong>"
+                                                    data-title-off="<strong>{{ translate('Are you sure to disable Verified Seller Badge?') }}</strong>"
+                                                    data-text-on="{{ translate('Verified vendors will display a badge in customer-facing applications.') }}"
+                                                    data-text-off="{{ translate('Verified badges will be hidden without changing vendor verification assignments.') }}"
+                                                    data-footer-text-on="<div class='text-center text-info mt-5'>{{ translate('Note : Do not forget to save the information before leaving this page') }}</div>"
+                                                    data-footer-text-off="<div class='text-center text-info mt-5'>{{ translate('Note : Do not forget to save the information before leaving this page') }}</div>"
+                                                    class="status toggle-switch-input dynamic-checkbox-toggle"
+                                                    name="verified_seller_badge" id="verified_seller_badge" value="1"
+                                                    {{ $verified_seller_badge ? 'checked' : '' }}>
+                                                <span class="toggle-switch-label text">
+                                                    <span class="toggle-switch-indicator"></span>
+                                                </span>
+                                            </label>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 
@@ -677,4 +710,3 @@
         });
     </script>
 @endpush
-

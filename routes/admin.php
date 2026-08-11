@@ -235,6 +235,7 @@ Route::group(['namespace' => 'Admin', 'as' => 'admin.'], function () {
                 Route::get('export/withdraw/{type}/{store_id}', 'VendorController@withdraw_trans_export')->name('withdraw_trans_export');
                 Route::get('status/{store}/{status}', 'VendorController@status')->name('status');
                 Route::get('featured/{store}/{status}', 'VendorController@featured')->name('featured');
+                Route::post('verified-seller/{store}', 'VendorController@setVerifiedSeller')->name('verified-seller');
                 Route::get('toggle-settings-status/{store}/{status}/{menu}', 'VendorController@store_status')->name('toggle-settings');
                 Route::post('status-filter', 'VendorController@status_filter')->name('status-filter');
 
@@ -408,6 +409,7 @@ Route::group(['namespace' => 'Admin', 'as' => 'admin.'], function () {
             Route::get('open-ai-settings', 'BusinessSettingsController@openAISettings')->name('openAISettings');
             Route::put('open-ai-settings-update', 'BusinessSettingsController@openAISettingsUpdate')->name('openAISettingsUpdate');
             Route::get('open-ai-config-status', 'BusinessSettingsController@openAIConfigStatus')->name('openAIConfigStatus');
+            Route::post('open-ai-chat-status', 'BusinessSettingsController@openAIChatStatus')->name('openAIChatStatus');
             Route::post('openai-update', 'BusinessSettingsController@openAIConfigUpdate')->name('openAIConfigUpdate');
 
             // Page Meta Data

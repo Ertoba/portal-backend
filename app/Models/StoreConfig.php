@@ -26,6 +26,7 @@ class StoreConfig extends Model
         'image_wise_ai_use_count' => 'integer',
         'is_recommended' => 'boolean',
         'is_recommended_deleted' => 'boolean',
+        'verified_seller' => 'boolean',
         'halal_tag_status' => 'boolean',
         'extra_packaging_status' => 'boolean',
         'extra_packaging_amount' => 'float',

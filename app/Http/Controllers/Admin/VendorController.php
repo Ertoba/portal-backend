@@ -540,7 +540,7 @@ class VendorController extends Controller
         $zone_id = $request->query('zone_id', 'all');
         $type = $request->query('type', 'all');
         $module_id = $request->query('module_id', 'all');
-        $stores = Store::with('vendor', 'module', 'zone')->whereHas('vendor', function ($query) {
+        $stores = Store::with('vendor', 'module', 'zone', 'storeConfig')->whereHas('vendor', function ($query) {
             return $query->where('status', 1);
         })
             ->when(is_numeric($zone_id), function ($query) use ($zone_id) {
@@ -570,7 +570,7 @@ class VendorController extends Controller
                 })->orderByRaw('FIELD(name, ?) DESC', [$request->search]);
             })
             ->module(Config::get('module.current_module_id'))
-            ->with('vendor', 'module')->type($type)->latest()->paginate(config('default_pagination'));
+            ->with('vendor', 'module', 'storeConfig')->type($type)->latest()->paginate(config('default_pagination'));
         $zone = is_numeric($zone_id) ? Zone::findOrFail($zone_id) : null;
 
         $result = OrderTransaction::where('module_id', Config::get('module.current_module_id'))
@@ -588,6 +588,21 @@ class VendorController extends Controller
             ->sum('amount');
 
         return view('admin-views.vendor.list', compact('stores', 'zone', 'type', 'total_store', 'active_stores', 'inactive_stores', 'recent_stores', 'total_transaction', 'comission_earned', 'store_withdraws'));
+    }
+
+    public function setVerifiedSeller(Request $request, Store $store)
+    {
+        $validated = $request->validate([
+            'verified_seller' => ['required', 'boolean'],
+        ]);
+
+        $store->storeConfig()->updateOrCreate([], [
+            'verified_seller' => (bool) $validated['verified_seller'],
+        ]);
+
+        Toastr::success(translate('messages.status_updated'));
+
+        return back();
     }
 
     public function pending_requests(Request $request)

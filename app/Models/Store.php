@@ -774,6 +774,11 @@ class Store extends Model
         return $this->hasOne(StoreConfig::class);
     }
 
+    public function getVerifiedSellerAttribute(): int
+    {
+        return Helpers::get_verified_seller_status($this, $this->storeConfig);
+    }
+
     /**
      * Get all of the comments for the Store
      */
