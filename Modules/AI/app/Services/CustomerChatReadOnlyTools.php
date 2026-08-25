@@ -19,6 +19,7 @@ final class CustomerChatReadOnlyTools
     private array $stores = [];
     private array $categories = [];
     private array $usedTools = [];
+    private ?array $comparison = null;
 
     public function __construct(
         private readonly int $moduleId,
@@ -37,6 +38,15 @@ final class CustomerChatReadOnlyTools
                     'category_id' => ['type' => 'integer', 'description' => 'Optional category ID.'],
                     'max_price' => ['type' => 'number', 'description' => 'Optional maximum price in the platform currency.'],
                     'limit' => ['type' => 'integer', 'description' => 'Maximum results, from 1 to 10.'],
+                ],
+                ['query']
+            ),
+            $this->tool(
+                'compare_product_prices',
+                'Compare current live prices for matching product listings across different active vendors in the current module and delivery zone. Use for cheapest, lower-price, or vendor price-comparison requests. Results are name-based candidates, not proof of identical brand, weight, size, or specification.',
+                [
+                    'query' => ['type' => 'string', 'description' => 'Product name or concise search phrase.'],
+                    'limit' => ['type' => 'integer', 'description' => 'Maximum vendors to compare, from 2 to 10.'],
                 ],
                 ['query']
             ),
@@ -92,6 +102,7 @@ final class CustomerChatReadOnlyTools
         try {
             return match ($name) {
                 'search_products' => $this->searchProducts($arguments),
+                'compare_product_prices' => $this->compareProductPrices($arguments),
                 'get_popular_items' => $this->popularItems($arguments),
                 'get_best_deals' => $this->bestDeals($arguments),
                 'search_stores' => $this->searchStores($arguments),
@@ -112,6 +123,7 @@ final class CustomerChatReadOnlyTools
             'products' => array_values($this->products),
             'stores' => array_values($this->stores),
             'categories' => array_values($this->categories),
+            'comparison' => $this->comparison,
         ]);
 
         if ($metadata !== []) {
@@ -167,6 +179,77 @@ final class CustomerChatReadOnlyTools
         return $this->recordProducts($items, 'No matching products are currently available in this delivery area.');
     }
 
+    private function compareProductPrices(array $arguments): string
+    {
+        if (! $this->hasZoneContext()) {
+            return $this->missingLocationMessage();
+        }
+
+        $query = $this->cleanQuery($arguments['query'] ?? '');
+        if ($query === '') {
+            return 'A product name is required for price comparison.';
+        }
+
+        $limit = max(2, $this->limit($arguments['limit'] ?? null));
+        $items = $this->itemQuery()
+            ->where(function (Builder $builder) use ($query): void {
+                $builder->where('name', 'like', "%{$query}%")
+                    ->orWhereHas('translations', function (Builder $translation) use ($query): void {
+                        $translation->where('key', 'name')->where('value', 'like', "%{$query}%");
+                    });
+            })
+            ->orderByDesc('order_count')
+            ->limit(min(50, max(20, $limit * 8)))
+            ->get()
+            ->map(fn (Item $item): array => $this->formatProduct($item))
+            ->filter(fn (array $product): bool => $product['in_stock'])
+            ->sort(function (array $left, array $right): int {
+                $priceOrder = $left['discounted_price'] <=> $right['discounted_price'];
+                return $priceOrder !== 0 ? $priceOrder : ($right['rating'] <=> $left['rating']);
+            });
+
+        $products = [];
+        $seenStores = [];
+        foreach ($items as $product) {
+            if (isset($seenStores[$product['store_id']])) {
+                continue;
+            }
+            $seenStores[$product['store_id']] = true;
+            $products[] = $product;
+            if (count($products) >= $limit) {
+                break;
+            }
+        }
+
+        if ($products === []) {
+            return 'No in-stock matching product listings are currently available for comparison in this module and delivery area.';
+        }
+
+        foreach ($products as $product) {
+            $this->products[$product['id']] = $product;
+        }
+        $this->comparison = [
+            'query' => $query,
+            'basis' => 'vendor_listing_name_match',
+            'product_ids' => array_column($products, 'id'),
+        ];
+
+        $lines = array_map(
+            fn (array $product): string => sprintf(
+                '%s at %s: %s [item_id:%d, store_id:%d]',
+                $product['name'],
+                $product['store_name'],
+                Helpers::format_currency($product['discounted_price']),
+                $product['id'],
+                $product['store_id']
+            ),
+            $products
+        );
+
+        return 'Current-module price comparison candidates, cheapest first: ' . implode('; ', $lines)
+            . '. Matching is based on vendor-entered listing names. Tell the customer to verify brand, package size, weight, unit, and specification before purchase.';
+    }
+
     private function popularItems(array $arguments): string
     {
         if (! $this->hasZoneContext()) {
@@ -218,7 +301,7 @@ final class CustomerChatReadOnlyTools
             })
             ->orderByDesc('order_count')
             ->limit($this->limit($arguments['limit'] ?? null))
-            ->get(['id', 'name', 'logo', 'cover_photo', 'rating', 'delivery_time', 'minimum_order', 'free_delivery', 'address', 'zone_id', 'module_id', 'order_count', 'featured']);
+            ->get(['id', 'name', 'slug', 'logo', 'cover_photo', 'rating', 'delivery_time', 'minimum_order', 'free_delivery', 'address', 'zone_id', 'module_id', 'order_count', 'featured']);
 
         if ($stores->isEmpty()) {
             return 'No matching stores are currently available in this delivery area.';
@@ -248,7 +331,7 @@ final class CustomerChatReadOnlyTools
             ->active()
             ->module($this->moduleId)
             ->whereIn('zone_id', $this->zoneIds)
-            ->find($storeId, ['id', 'name', 'logo', 'cover_photo', 'rating', 'delivery_time', 'minimum_order', 'free_delivery', 'address', 'zone_id', 'module_id', 'order_count', 'featured', 'schedule_order', 'delivery', 'take_away']);
+            ->find($storeId, ['id', 'name', 'slug', 'logo', 'cover_photo', 'rating', 'delivery_time', 'minimum_order', 'free_delivery', 'address', 'zone_id', 'module_id', 'order_count', 'featured', 'schedule_order', 'delivery', 'take_away']);
 
         if (! $store) {
             return 'That store is not currently available in this module and delivery area.';
@@ -366,7 +449,7 @@ final class CustomerChatReadOnlyTools
         return Item::query()
             ->active()
             ->module($this->moduleId)
-            ->with(['store:id,name,logo,zone_id,module_id', 'category:id,name'])
+            ->with(['store:id,name,slug,logo,zone_id,module_id', 'category:id,name'])
             ->whereHas('store', fn (Builder $store) => $store->whereIn('zone_id', $this->zoneIds));
     }
 
@@ -413,6 +496,9 @@ final class CustomerChatReadOnlyTools
             'store_name' => (string) ($item->store?->name ?? ''),
             'category_id' => (int) $item->category_id,
             'category_name' => (string) ($item->category?->name ?? ''),
+            'unit_type' => (string) ($item->unit_type ?? ''),
+            'slug' => (string) ($item->slug ?? ''),
+            'store_slug' => (string) ($item->store?->slug ?? ''),
         ];
     }
 
@@ -427,6 +513,7 @@ final class CustomerChatReadOnlyTools
         return [
             'id' => (int) $store->id,
             'name' => (string) $store->name,
+            'slug' => (string) ($store->slug ?? ''),
             'logo_full_url' => $store->logo_full_url,
             'cover_photo_full_url' => $store->cover_photo_full_url,
             'rating' => round($weighted, 1),

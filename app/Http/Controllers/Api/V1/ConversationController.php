@@ -54,7 +54,9 @@ class ConversationController extends Controller
             if($conversation->sender_id == $sender->id){
                 $receiver_id = $conversation->receiver_id;
                 $receiver = UserInfo::find($receiver_id);
-                if($receiver->vendor_id){
+                if($receiver_id == 0 || $conversation->receiver_type == 'admin'){
+                    $receiver_id = 0;
+                }elseif($receiver?->vendor_id){
                     $vendor = Vendor::find($receiver->vendor_id);
                     $fcm_token=$vendor->firebase_token;
                     $fcm_token_web = "store_panel_{$vendor->stores[0]->id}_message";
@@ -502,28 +504,34 @@ class ConversationController extends Controller
             if($conversation->sender_id == $sender->id){
                 $receiver_id = $conversation->receiver_id;
                 $receiver = UserInfo::find($receiver_id);
-                if($receiver->vendor_id){
+                if($receiver_id == 0 || $conversation->receiver_type == 'admin'){
+                    $receiver_id = 0;
+                }elseif($receiver?->vendor_id){
                     $vendor = Vendor::find($receiver->vendor_id);
                     $fcm_token=$vendor->firebase_token;
                     $fcm_token_web = "store_panel_{$vendor->stores[0]->id}_message";
-                }elseif($receiver->user_id){
+                }elseif($receiver?->user_id){
                     $user = User::find($receiver->user_id);
                     $fcm_token=$user->cm_firebase_token;
                 }
             }else{
                 $receiver_id =$conversation->sender_id;
                 $receiver = UserInfo::find($receiver_id);
-                if($receiver->vendor_id){
+                if($receiver_id == 0 || $conversation->sender_type == 'admin'){
+                    $receiver_id = 0;
+                }elseif($receiver?->vendor_id){
                     $vendor = Vendor::find($receiver->vendor_id);
                     $fcm_token=$vendor->firebase_token;
                     $fcm_token_web = "store_panel_{$vendor->stores[0]->id}_message";
-                }elseif($receiver->user_id){
+                }elseif($receiver?->user_id){
                     $user = User::find($receiver->user_id);
                     $fcm_token=$user->cm_firebase_token;
                 }
             }
         }else{
-            if($request->receiver_type == 'vendor'){
+            if($request->receiver_type == 'admin'){
+                $receiver_id = 0;
+            }else if($request->receiver_type == 'vendor'){
                 $receiver = UserInfo::where('vendor_id',$request->receiver_id)->first();
                 $vendor = Vendor::find($request->receiver_id);
 
@@ -566,7 +574,7 @@ class ConversationController extends Controller
             $conversation = new Conversation;
             $conversation->sender_id = $sender->id;
             $conversation->sender_type = 'delivery_man';
-            $conversation->receiver_id = $receiver->id;
+            $conversation->receiver_id = $receiver_id;
             $conversation->receiver_type = $request->receiver_type;
             $conversation->unread_message_count = 0;
             $conversation->last_message_time = Carbon::now()->toDateTimeString();
@@ -599,9 +607,13 @@ class ConversationController extends Controller
                     'conversation_id'=> $conversation->id,
                     'sender_type'=> 'delivery_man'
                 ];
-                Helpers::send_push_notif_to_device($fcm_token, $data);
-                if($fcm_token_web){
-                    Helpers::send_push_notif_to_topic($data, $fcm_token_web, 'message');
+                if($request->receiver_type == 'admin' || $receiver_id == 0){
+                    Helpers::send_push_notif_to_topic($data, 'admin_message', 'message');
+                }else{
+                    Helpers::send_push_notif_to_device($fcm_token, $data);
+                    if($fcm_token_web){
+                        Helpers::send_push_notif_to_topic($data, $fcm_token_web, 'message');
+                    }
                 }
             }
 
@@ -802,6 +814,8 @@ class ConversationController extends Controller
                 $user->save();
             }
             $conversation = Conversation::with(['sender','receiver','last_message'])->WhereConversation($delivery_man->id,$user->id)->first();
+        }else if($request->has('admin_id')){
+            $conversation = Conversation::with(['sender','receiver','last_message'])->WhereConversation($delivery_man->id, 0)->first();
         }
 
         if($conversation){

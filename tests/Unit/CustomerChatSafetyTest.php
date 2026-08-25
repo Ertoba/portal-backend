@@ -19,6 +19,7 @@ class CustomerChatSafetyTest extends TestCase
 
         $this->assertSame([
             'search_products',
+            'compare_product_prices',
             'get_popular_items',
             'get_best_deals',
             'search_stores',
