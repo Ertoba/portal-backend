@@ -60,23 +60,25 @@ class ConversationController extends Controller
                     $vendor = Vendor::find($receiver->vendor_id);
                     $fcm_token=$vendor->firebase_token;
                     $fcm_token_web = "store_panel_{$vendor->stores[0]->id}_message";
-                }elseif($receiver->deliveryman_id){
+                }elseif($receiver?->deliveryman_id){
                     $delivery_man = DeliveryMan::find($receiver->deliveryman_id);
                     $fcm_token=$delivery_man->fcm_token;
-                }elseif($receiver->admin_id){
+                }elseif($receiver?->admin_id){
                     $receiver_id = 0;
                 }
             }else{
                 $receiver_id =$conversation->sender_id;
                 $receiver = UserInfo::find($receiver_id);
-                if($receiver->vendor_id){
+                if($receiver_id == 0 || $conversation->sender_type == 'admin'){
+                    $receiver_id = 0;
+                }elseif($receiver?->vendor_id){
                     $vendor = Vendor::find($receiver->vendor_id);
                     $fcm_token=$vendor->firebase_token;
                     $fcm_token_web = "store_panel_{$vendor->stores[0]->id}_message";
-                }elseif($receiver->deliveryman_id){
+                }elseif($receiver?->deliveryman_id){
                     $delivery_man = DeliveryMan::find($receiver->deliveryman_id);
                     $fcm_token=$delivery_man->fcm_token;
-                }elseif($receiver->admin_id){
+                }elseif($receiver?->admin_id){
                     $receiver_id = 0;
                 }
             }
