@@ -34,6 +34,18 @@ class CustomerChatSafetyTest extends TestCase
         );
     }
 
+    public function test_catalog_search_expands_multilingual_product_terms(): void
+    {
+        $method = new ReflectionMethod(CustomerChatReadOnlyTools::class, 'catalogSearchTerms');
+        $method->setAccessible(true);
+        $terms = $method->invoke(new CustomerChatReadOnlyTools(5, [2]), 'USB კაბელი');
+
+        $this->assertContains('usb', $terms);
+        $this->assertContains('კაბელი', $terms);
+        $this->assertContains('cable', $terms);
+        $this->assertContains('кабель', $terms);
+    }
+
     /** @dataProvider languageMessages */
     public function test_latest_message_controls_the_reply_language(
         string $message,

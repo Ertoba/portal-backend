@@ -14,6 +14,12 @@ final class CustomerChatReadOnlyTools
 {
     private const DEFAULT_LIMIT = 6;
     private const MAX_LIMIT = 10;
+    private const CATALOG_TERM_GROUPS = [
+        ['cable', 'cables', 'кабель', 'кабели', 'კაბელი', 'კაბელები'],
+        ['headphone', 'headphones', 'earphone', 'earphones', 'наушники', 'ყურსასმენი', 'ყურსასმენები'],
+        ['charger', 'chargers', 'charging', 'зарядка', 'зарядное', 'დამტენი', 'დამტენები'],
+        ['case', 'cases', 'cover', 'covers', 'чехол', 'чехлы', 'ქეისი', 'ქეისები'],
+    ];
 
     private array $products = [];
     private array $stores = [];
@@ -158,13 +164,7 @@ final class CustomerChatReadOnlyTools
             ? max(0, (float) $arguments['max_price'])
             : null;
 
-        $items = $this->itemQuery()
-            ->where(function (Builder $builder) use ($query): void {
-                $builder->where('name', 'like', "%{$query}%")
-                    ->orWhereHas('translations', function (Builder $translation) use ($query): void {
-                        $translation->where('key', 'name')->where('value', 'like', "%{$query}%");
-                    });
-            })
+        $items = $this->applyProductNameSearch($this->itemQuery(), $query)
             ->when($categoryId, function (Builder $builder) use ($categoryId): void {
                 $builder->where(function (Builder $category) use ($categoryId): void {
                     $category->where('category_id', $categoryId)
@@ -191,13 +191,7 @@ final class CustomerChatReadOnlyTools
         }
 
         $limit = max(2, $this->limit($arguments['limit'] ?? null));
-        $items = $this->itemQuery()
-            ->where(function (Builder $builder) use ($query): void {
-                $builder->where('name', 'like', "%{$query}%")
-                    ->orWhereHas('translations', function (Builder $translation) use ($query): void {
-                        $translation->where('key', 'name')->where('value', 'like', "%{$query}%");
-                    });
-            })
+        $items = $this->applyProductNameSearch($this->itemQuery(), $query)
             ->orderByDesc('order_count')
             ->limit(min(50, max(20, $limit * 8)))
             ->get()
@@ -451,6 +445,40 @@ final class CustomerChatReadOnlyTools
             ->module($this->moduleId)
             ->with(['store:id,name,slug,logo,zone_id,module_id', 'category:id,name'])
             ->whereHas('store', fn (Builder $store) => $store->whereIn('zone_id', $this->zoneIds));
+    }
+
+    private function applyProductNameSearch(Builder $builder, string $query): Builder
+    {
+        $terms = $this->catalogSearchTerms($query);
+
+        return $builder->where(function (Builder $search) use ($terms): void {
+            foreach ($terms as $term) {
+                $search->orWhere('name', 'like', "%{$term}%")
+                    ->orWhereHas('translations', function (Builder $translation) use ($term): void {
+                        $translation->where('key', 'name')->where('value', 'like', "%{$term}%");
+                    });
+            }
+        });
+    }
+
+    private function catalogSearchTerms(string $query): array
+    {
+        $normalized = mb_strtolower(trim(preg_replace('/[%_]+/u', ' ', $query) ?? ''));
+        $terms = $normalized === '' ? [] : [$normalized];
+        $tokens = preg_split('/[^\p{L}\p{N}]+/u', $normalized, -1, PREG_SPLIT_NO_EMPTY) ?: [];
+
+        foreach ($tokens as $token) {
+            if (mb_strlen($token) >= 2) {
+                $terms[] = $token;
+            }
+        }
+        foreach (self::CATALOG_TERM_GROUPS as $group) {
+            if (array_intersect($tokens, $group) !== []) {
+                array_push($terms, ...$group);
+            }
+        }
+
+        return array_slice(array_values(array_unique($terms)), 0, 24);
     }
 
     private function recordProducts($items, string $emptyMessage): string
