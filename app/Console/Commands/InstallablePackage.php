@@ -42,7 +42,6 @@ class InstallablePackage extends Command
     public function handle()
     {
         /*Helpers::remove_dir('.idea');*/
-        Artisan::call('debugbar:clear');
         Helpers::remove_dir('storage/app/public');
         Storage::disk('public')->makeDirectory('/');
         Madzipper::make('installation/backup/public.zip')->extractTo('storage/app');
