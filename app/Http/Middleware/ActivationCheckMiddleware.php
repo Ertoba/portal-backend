@@ -2,36 +2,30 @@
 
 namespace App\Http\Middleware;
 
-use App\Traits\ActivationClass;
+use App\Services\MiliEntitlementService;
 use Closure;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Redirect;
-
 
 class ActivationCheckMiddleware
 {
-    use ActivationClass;
+    public function __construct(
+        private MiliEntitlementService $entitlements
+    ) {
+    }
 
-    /**
-     * Handle an incoming request.
-     *
-     * @param Request $request
-     * @param \Closure $next
-     * @return mixed
-     */
     public function handle(Request $request, Closure $next, $area = null): mixed
     {
-        $response = $this->checkActivationCache(app: $area);
-        if (!$response) {
-            if (!strpos(url()->current(), '/api/v1')) {
-                return Redirect::away(route(base64_decode('c3lzdGVtLmFjdGl2YXRpb24tY2hlY2s=')))->send();
+        if (!$this->entitlements->enabled($area)) {
+            if ($request->is('api/v1/*')) {
+                return response()->json([
+                    'code' => 503,
+                    'message' => 'Mili feature is disabled: ' . str_replace('_', ' ', (string) $area),
+                ], 503);
             }
 
-            return response()->json([
-                'code' => 503,
-                'message' => 'Please check activation for '. str_replace('_', ' ', $area),
-            ], 503);
+            abort(503, 'This Mili feature is currently disabled.');
         }
+
         return $next($request);
     }
 }

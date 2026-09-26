@@ -1400,7 +1400,7 @@ class BusinessSettingsController extends Controller
                 $app_url_ios = BusinessSetting::where(['key' => 'app_url_ios'])->first()?->value;
 
                 $response = Http::post($driveMondBaseUrl->value . '/api/store-configurations', [
-                    'mart_business_name' => $name->value ?? '6amMart',
+                    'mart_business_name' => $name->value ?? 'Mili',
                     'mart_business_logo' => \App\CentralLogics\Helpers::get_full_url('business', $logo?->value ?? '', $logo?->storage[0]?->value ?? 'public', 'favicon') ?? asset('public/assets/admin/img/160x160/img2.jpg'),
                     'mart_app_minimum_version_android' => $app_minimum_version_android,
                     'mart_app_url_android' => $app_url_android,
@@ -6856,51 +6856,28 @@ class BusinessSettingsController extends Controller
 
     public function react_setup()
     {
-        Helpers::react_domain_status_check();
-
         return view('admin-views.business-settings.react-setup');
     }
 
     public function react_update(Request $request)
     {
         $request->validate([
-            'react_license_code' => 'required',
-            'react_domain' => 'required',
+            'react_domain' => ['required', 'string', 'max:255'],
         ], [
-            'react_license_code.required' => translate('messages.license_code_is_required'),
             'react_domain.required' => translate('messages.doamain_is_required'),
         ]);
-        if (Helpers::activation_submit($request['react_license_code'])) {
-            Helpers::businessUpdateOrInsert(['key' => 'react_setup'], [
-                'value' => json_encode([
-                    'status' => 1,
-                    'react_license_code' => $request['react_license_code'],
-                    'react_domain' => $request['react_domain'],
-                    'react_platform' => 'codecanyon',
-                ]),
-            ]);
 
-            Toastr::success(translate('messages.react_data_updated'));
+        Helpers::businessUpdateOrInsert(['key' => 'react_setup'], [
+            'value' => json_encode([
+                'status' => 1,
+                'react_domain' => $request->input('react_domain'),
+                'react_platform' => 'mili',
+            ]),
+        ]);
 
-            return back();
-        } elseif (Helpers::react_activation_check($request->react_domain, $request->react_license_code)) {
+        Toastr::success(translate('messages.react_data_updated'));
 
-            Helpers::businessUpdateOrInsert(['key' => 'react_setup'], [
-                'value' => json_encode([
-                    'status' => 1,
-                    'react_license_code' => $request['react_license_code'],
-                    'react_domain' => $request['react_domain'],
-                    'react_platform' => 'iss',
-                ]),
-            ]);
-
-            Toastr::success(translate('messages.react_data_updated'));
-
-            return back();
-        }
-        Toastr::error(translate('messages.Invalid_license_code_or_unregistered_domain'));
-
-        return back()->withInput(['invalid-data' => true]);
+        return back();
     }
 
     public function landing_page_settings_update(Request $request)

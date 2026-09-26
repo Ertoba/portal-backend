@@ -17,7 +17,6 @@ use App\Models\BusinessSetting;
 use App\Models\Coupon;
 use App\Models\DeliveryHistory;
 use App\Models\Module;
-use App\Traits\ActivationClass;
 use Illuminate\Support\Facades\DB;
 use App\Models\NotificationSetting;
 use Brian2694\Toastr\Facades\Toastr;
@@ -27,7 +26,6 @@ use Illuminate\Support\Facades\Artisan;
 
 class UpdateController extends Controller
 {
-    use ActivationClass;
 
     public function update_software_index()
     {
@@ -41,11 +39,8 @@ class UpdateController extends Controller
             $filesystem->cleanDirectory('database/migrations');
         }
 
-        Helpers::setEnvironmentValue('BUYER_USERNAME', $request['username']);
-        Helpers::setEnvironmentValue('PURCHASE_CODE', $request['purchase_key']);
         Helpers::setEnvironmentValue('APP_MODE', 'live');
         Helpers::setEnvironmentValue('SOFTWARE_VERSION', '3.8');
-        Helpers::setEnvironmentValue('REACT_APP_KEY', '45370351');
         Helpers::setEnvironmentValue('APP_NAME', '6amMart' . time());
 
 
@@ -68,7 +63,7 @@ class UpdateController extends Controller
             "app_url_ios_status" => "0",
             "app_url_ios" => "https://www.apple.com/app-store",
             "web_app_url_status" => "0",
-            "web_app_url" => "https://6ammart-web.6amtech.com/"
+            "web_app_url" => ""
         ]));
 
         //version 1.5.0

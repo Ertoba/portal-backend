@@ -6,20 +6,16 @@ use Closure;
 
 class InstallationMiddleware
 {
-    /**
-     * Handle an incoming request.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \Closure  $next
-     * @return mixed
-     */
     public function handle($request, Closure $next)
     {
-        if (session()->has('purchase_key') == false && env('PURCHASE_CODE') == null) {
-            session()->flash('error', base64_decode('SW52YWxpZCBwdXJjaGFzZSBjb2RlIGZvciB0aGlzIHNvZnR3YXJlLg=='));
-            return redirect('step2');
-        }elseif(env('PURCHASE_CODE') != null){
-            return $next($request);
+        if (
+            !session()->has('mili_install_ready')
+            && !filter_var(env('MILI_INSTALL', false), FILTER_VALIDATE_BOOLEAN)
+        ) {
+            session()->flash('error', 'Please complete the Mili configuration first.');
+            return redirect()->route('step2', [
+                'token' => bcrypt('step_2')
+            ]);
         }
 
         return $next($request);

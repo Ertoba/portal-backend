@@ -23,12 +23,10 @@ use App\Models\AdminPromotionalBanner;
 use App\Models\DeliverymanLoyaltyPointHistory;
 use App\Models\DeliverymanReferralHistory;
 use App\Models\SubscriptionTransaction;
-use App\Traits\ActivationClass;
 use Illuminate\Support\Facades\Session;
 
 class HomeController extends Controller
 {
-      use ActivationClass;
 
     /**
      * Show the application dashboard.
@@ -39,10 +37,13 @@ class HomeController extends Controller
     {
         $datas =  DataSetting::with('translations', 'storage')->where('type', 'admin_landing_page')->get();
         $data = [];
+        $locale = app()->getLocale();
         foreach ($datas as $key => $value) {
-            if (count($value->translations) > 0) {
+            $matchedTranslation = $value->translations->firstWhere('locale', $locale);
+
+            if ($matchedTranslation) {
                 $cred = [
-                    $value->key => $value->translations[0]['value'],
+                    $value->key => $matchedTranslation['value'],
                 ];
                 array_push($data, $cred);
             } else {
@@ -475,23 +476,5 @@ class HomeController extends Controller
         return DeliverymanLoyaltyPointHistory::where('delivery_man_id', $id)->applyDateFilter($date_range, $start, $end)->where('point_conversion_type','debit')
             ->select(['id','transaction_id','transaction_type' ,'converted_amount','point','created_at'])
             ->latest()->get();
-    }
-
-
-
-    public function getActivationCheckView(Request $request)
-    {
-        return view('installation.activation-check');
-    }
-
-    public function activationCheck(Request $request)
-    {
-        $response = $this->getRequestConfig(
-            username: $request['username'],
-            purchaseKey: $request['purchase_key'],
-            softwareType: $request->get('software_type', base64_decode('cHJvZHVjdA=='))
-        );
-        $this->updateActivationConfig(app: 'admin_panel', response: $response);
-        return redirect(url('/'));
     }
 }

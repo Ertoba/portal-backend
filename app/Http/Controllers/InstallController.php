@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\CentralLogics\Helpers;
-use App\Traits\ActivationClass;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
@@ -15,7 +14,6 @@ use Illuminate\Support\Facades\Session;
 
 class InstallController extends Controller
 {
-    use ActivationClass;
 
     public function step0()
     {
@@ -42,7 +40,6 @@ class InstallController extends Controller
             $permission['sodium'] = extension_loaded('sodium');
             $permission['pdo_mysql'] = extension_loaded('pdo_mysql');
             $permission['db_file_write_perm'] = is_writable(base_path('.env'));
-            $permission['config_file_write_perm'] = is_writable(base_path('config/system-addons.php'));
             $permission['routes_file_write_perm'] = is_writable(base_path('app/Providers/RouteServiceProvider.php'));
             return view('installation.step1', compact('permission'));
         }
@@ -86,24 +83,15 @@ class InstallController extends Controller
         return redirect()->route('step0');
     }
 
-    public function purchase_code(Request $request)
+    public function mili_setup(Request $request)
     {
-        Helpers::setEnvironmentValue('SOFTWARE_ID', 'MzY3NzIxMTI=');
-        Helpers::setEnvironmentValue('BUYER_USERNAME', $request['username']);
-        Helpers::setEnvironmentValue('PURCHASE_CODE', $request['purchase_key']);
+        $request->validate([
+            'app_name' => ['required', 'string', 'max:100', 'regex:/^[A-Za-z0-9 _-]+$/'],
+        ]);
 
-        $post = [
-            'name' => $request['name'],
-            'email' => $request['email'],
-            'username' => $request['username'],
-            'purchase_key' => $request['purchase_key'],
-            'domain' => preg_replace("#^[^:/.]*[:/]+#i", "", url('/')),
-        ];
-        // $response = $this->dmvf($post);
+        Session::put('mili_install_ready', true);
+        Session::put('mili_app_name', $request->input('app_name', 'Mili'));
 
-        // return redirect($response.'?token='.bcrypt('step_3'));
-        Session::put(base64_decode('cHVyY2hhc2Vfa2V5'), $request[base64_decode('cHVyY2hhc2Vfa2V5')]);//pk
-        Session::put(base64_decode('dXNlcm5hbWU='), $request[base64_decode('dXNlcm5hbWU=')]);//un
         return redirect('step3?token='.bcrypt('step_3'));
     }
 
@@ -165,7 +153,7 @@ class InstallController extends Controller
         if (self::check_database_connection($request->DB_HOST, $request->DB_DATABASE, $request->DB_USERNAME, $request->DB_PASSWORD)) {
 
             $key = base64_encode(random_bytes(32));
-            $output = 'APP_NAME=6ammart'.time().
+            $output = 'APP_NAME="' . session('mili_app_name', 'Mili') . '"' . "\n" .
                     'APP_ENV=live
                     APP_KEY=base64:' . $key . '
                     APP_DEBUG=false
@@ -196,12 +184,10 @@ class InstallController extends Controller
                     PUSHER_APP_SECRET=
                     PUSHER_APP_CLUSTER=mt1
 
-                    PURCHASE_CODE=' . session('purchase_key') . '
-                    BUYER_USERNAME=' . session('username') . '
-                    SOFTWARE_ID=MzY3NzIxMTI=
+                    MILI_INSTALL=true
+                    MILI_ENV=production
 
-                    SOFTWARE_VERSION=3.7
-                    REACT_APP_KEY=45370351
+                    SOFTWARE_VERSION=3.8
                     ';
             $file = fopen(base_path('.env'), 'w');
             fwrite($file, $output);

@@ -11,7 +11,6 @@ use Illuminate\Contracts\View\View;
 use App\Http\Controllers\Controller;
 use Brian2694\Toastr\Facades\Toastr;
 use Illuminate\Support\Facades\File;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Contracts\View\Factory;
 use Illuminate\Support\Facades\Artisan;
@@ -49,12 +48,12 @@ class AddonController extends Controller
 
     public function index(): Factory|View|Application
     {
-        $dir = base_path('Modules');
+        $dir = 'Modules';
         $directories = self::getDirectories($dir);
         $addons = [];
         foreach ($directories as $directory) {
             if($directory !== 'TaxModule'){
-                $sub_dirs = self::getDirectories(base_path('Modules') . '/' . $directory);
+                $sub_dirs = self::getDirectories('Modules/' . $directory);
                 if (in_array('Addon', $sub_dirs)) {
                     $addons[] = 'Modules/' . $directory;
                 }
@@ -70,14 +69,6 @@ class AddonController extends Controller
             return back();
         }
         $full_data = include($request['path'] . '/Addon/info.php');
-        $path = $request['path'];
-        $addon_name = $full_data['name'];
-        if ($full_data['purchase_code'] == null || $full_data['username'] == null) {
-            return response()->json([
-                'flag' => 'inactive',
-                'view' => view('admin-views.system.addon.partials.activation-modal-data', compact('full_data', 'path', 'addon_name'))->render(),
-            ]);
-        }
         $full_data['is_published'] = $full_data['is_published'] ? 0 : 1;
         $str = "<?php return " . var_export($full_data, true) . ";";
         file_put_contents(base_path($request['path'] . '/Addon/info.php'), $str);
@@ -86,34 +77,14 @@ class AddonController extends Controller
             $this->rentalPublish($full_data['is_published']);
         }
 
+        if ($full_data['name'] == 'RideShare') {
+            $this->rideSharePublish($full_data['is_published']);
+        }
+
         return response()->json([
             'status' => 'success',
             'message'=> 'status_updated_successfully'
         ]);
-    }
-
-    public function activation(Request $request): Redirector|RedirectResponse|Application
-    {
-        if (env('APP_MODE') == 'demo') {
-            Toastr::info(translate('messages.update_option_is_disable_for_demo'));
-            return back();
-        }
-
-        $full_data = include($request['path'] . '/Addon/info.php');
-
-        $full_data['is_published']  = 1;
-        $full_data['username']      = $request['username'] ?? 'bypassed';
-        $full_data['purchase_code'] = $request['purchase_code'] ?? 'bypassed-' . date('YmdHis');
-
-        $str = "<?php return " . var_export($full_data, true) . ";";
-        file_put_contents(base_path($request['path'] . '/Addon/info.php'), $str);
-
-        if (isset($full_data['name']) && $full_data['name'] == 'Rental') {
-            $this->rentalPublish($full_data['is_published']);
-        }
-
-        Toastr::success(translate('activated_successfully'));
-        return back();
     }
 
     public function upload(Request $request)
@@ -128,27 +99,36 @@ class AddonController extends Controller
         }
 
         $file = $request->file('file_upload');
+        try {
+            Helpers::validateFile($file);
+        } catch (\App\Exceptions\InvalidUploadException $e) {
+            return response()->json(['status' => 'error', 'message' => $e->getMessage()]);
+        }
         $filename = $file->getClientOriginalName();
         $tempPath = $file->storeAs('temp', $filename);
         $zip = new \ZipArchive();
 
         if ($zip->open(storage_path('app/' . $tempPath)) === TRUE) {
+            // Extract the contents to a directory
             $extractPath = base_path('Modules/');
+            if (!File::isWritable($extractPath)) {
+                        $status = 'error';
+                        $message = translate('messages.File is not writable. Please check your file permissions.');
+                        return response()->json(['status' => $status, 'message' => $message]);
+                    }
             $zip->extractTo($extractPath);
             $zip->close();
-
-            $addonFolder = $extractPath . explode('.', $filename)[0];
-            if (File::exists($addonFolder . '/Addon/info.php')) {
-                File::chmod($addonFolder . '/Addon', 0777);
+            if(File::exists($extractPath.'/'.explode('.', $filename)[0].'/Addon/info.php')){
+                File::chmod($extractPath.'/'.explode('.', $filename)[0].'/Addon', 0777);
                 Toastr::success(translate('file_upload_successfully!'));
                 $status = 'success';
                 $message = translate('file_upload_successfully!');
-            } else {
-                File::deleteDirectory($addonFolder);
+            }else{
+                File::deleteDirectory($extractPath.'/'.explode('.', $filename)[0]);
                 $status = 'error';
                 $message = translate('invalid_file!');
             }
-        } else {
+        }else{
             $status = 'error';
             $message = translate('file_upload_fail!');
         }
@@ -156,8 +136,8 @@ class AddonController extends Controller
         Storage::delete($tempPath);
 
         return response()->json([
-            'status'  => $status,
-            'message' => $message
+            'status' => $status,
+            'message'=> $message
         ]);
     }
 
@@ -167,31 +147,44 @@ class AddonController extends Controller
             return back();
         }
         $path = $request->path;
+
         $full_path = base_path($path);
 
-        if (File::deleteDirectory($full_path)) {
+        if(File::deleteDirectory($full_path)){
             return response()->json([
-                'status'  => 'success',
-                'message' => translate('file_delete_successfully')
+                'status' => 'success',
+                'message'=> translate('file_delete_successfully')
             ]);
-        } else {
+        }else{
             return response()->json([
-                'status'  => 'error',
-                'message' => translate('file_delete_fail')
+                'status' => 'error',
+                'message'=> translate('file_delete_fail')
             ]);
         }
+
     }
 
+    //helper functions
     function getDirectories(string $path): array
     {
-        $directories = [];
-        $items = scandir($path);
-        foreach ($items as $item) {
-            if ($item == '..' || $item == '.')
-                continue;
-            if (is_dir($path . '/' . $item))
-                $directories[] = $item;
+        $fullPath = base_path($path);
+
+        if (!is_dir($fullPath)) {
+            return [];
         }
+
+        $directories = [];
+
+        foreach (scandir($fullPath) as $item) {
+            if ($item === '.' || $item === '..') {
+                continue;
+            }
+
+            if (is_dir($fullPath . DIRECTORY_SEPARATOR . $item)) {
+                $directories[] = $item;
+            }
+        }
+
         return $directories;
     }
 
@@ -201,6 +194,28 @@ class AddonController extends Controller
             $module = Module::firstOrNew(
                 ['module_type' => 'rental'],
                 ['module_name' => 'Rental']
+            );
+
+            if ($is_published) {
+                Artisan::call('migrate', ['--force' => true]);
+                $module->status = 1;
+            } else {
+                $module->status = 0;
+            }
+
+            $module->save();
+            return true;
+        } catch (\Exception $e) {
+            return false;
+        }
+    }
+
+    private function rideSharePublish(int|bool $is_published): bool
+    {
+        try {
+            $module = Module::firstOrNew(
+                ['module_type' => 'ride-share'],
+                ['module_name' => 'RideShare']
             );
 
             if ($is_published) {

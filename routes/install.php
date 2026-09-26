@@ -14,7 +14,7 @@ Route::post('/database_installation', 'InstallController@database_installation')
 Route::get('import_sql', 'InstallController@import_sql')->name('import_sql')->middleware('installation-check');
 Route::get('force-import-sql', 'InstallController@force_import_sql')->name('force-import-sql')->middleware('installation-check');
 Route::post('system_settings', 'InstallController@system_settings')->name('system_settings');
-Route::post('purchase_code', 'InstallController@purchase_code')->name('purchase.code');
+Route::post('mili_setup', 'InstallController@mili_setup')->name('mili.setup');
 
 Route::fallback(function () {
     return redirect('/');

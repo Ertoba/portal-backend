@@ -2,7 +2,7 @@
 
 namespace App\Services;
 
-use App\Traits\ActivationClass;
+use App\Models\AddOn;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Config;
@@ -10,7 +10,6 @@ use Rap2hpoutre\FastExcel\FastExcel;
 
 class AddonService
 {
-    use ActivationClass;
 
     public function getAddData(Object $request): array
     {
@@ -77,37 +76,9 @@ class AddonService
         return str_replace(["http://", "https://", "www."], "", url('/'));
     }
 
-    public function addonActivationProcess(object $request): array
+    public function checkAddonExistsForThisStore(int|string $storeId, string $addonName): bool
     {
-        $response = $this->getRequestConfig(
-            username: $request['username'],
-            purchaseKey: $request['purchase_key'],
-            softwareId: $request['software_id'] ?? SOFTWARE_ID,
-            softwareType: $request['software_type'] ?? base64_decode('cHJvZHVjdA==')
-        );
-
-        $status = $response['active'] ?? 0;
-        $message = $response['message'] ?? translate('Activation_failed');
-        if($response['active'] == 1 && $request['status'] == 1){
-            $response['active'] = 1;
-        }else{
-            $response['active'] = 0;
-        }
-        $this->updateActivationConfig(app: $request['addon_name'], response: $response);
-
-        if ((int)$status) {
-            return [
-                'status' => (int)$status,
-                'activation_status' => 1,
-                'username' => $request['username'],
-                'purchase_code' => $request['purchase_code'],
-            ];
-        }
-
-        return [
-            'status' => (int)$status,
-            'message' => $message
-        ];
+        return AddOn::where('store_id', $storeId)->where('name', $addonName)->exists();
     }
 
 }

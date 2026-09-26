@@ -44,11 +44,9 @@
                                     <div class="">
                                         <img src="{{asset('public/assets/admin/img/addon_setting.png')}}" loading="lazy" alt="" class="dark-support rounded mb-4 mw-100">
                                         <ol>
-                                            <li>{{translate('After purchasing the ')}} <strong>{{translate('Payment & SMS Module/Rental Module')}}</strong> {{translate('from Codecanyon, you will find a file download option.')}}</li>
-                                            <li>{{translate('Download the file. It will be downloaded as Zip format Filename.Zip.')}}</li>
-                                            <li>{{translate('Extract the file and you will get another file name Filename.zip.')}}</li>
-                                            <li>{{translate('Upload the file here and your Addon uploading is complete !')}}</li>
-                                            <li>{{translate('Then active the Addon and setup all the options. you are good to go !')}}</li>
+                                            <li>Upload a compatible Mili addon ZIP file.</li>
+                                            <li>Wait until the addon installation is completed.</li>
+                                            <li>Publish the addon and configure its available options.</li>
                                         </ol>
                                         <div class="swiper-slide">
                                             <div class="d-flex flex-column align-items-center mx-w450 mx-auto">
@@ -105,16 +103,21 @@
                             <div class="pl-sm-5">
                                 <h5 class="mb-3 d-flex">{{ translate('instructions') }}</h5>
                                 <ul class="pl-3 d-flex flex-column gap-2 instructions-list">
-                                    <li>
-                                        1. {{ translate('please_make_sure') }}, {{ translate('your_server_php') }}
-                                        "upload_max_filesize" {{translate('value_is_grater_or_equal_to_20MB') }}. {{ translate('current_value_is') }}
-                                        - {{ini_get('upload_max_filesize')}}B
+                                    <li><h5>
+                                        {{ translate('please_make_sure') }}, {{ translate('your_server_php') }}
+                                       "upload_max_filesize" {{translate('value_is_grater_or_equal_to_20MB') }}. {{ translate('current_value_is') }}
+                                       - {{ini_get('upload_max_filesize')}}B
+
+                                    </h5>
                                     </li>
                                     <li>
-                                        2. {{ translate('please_make_sure')}}, {{ translate('your_server_php')}}
-                                        "post_max_size"
-                                        {{translate('value_is_grater_or_equal_to_20MB')}}
-                                        . {{translate('current_value_is') }} - {{ini_get('post_max_size')}}B
+                                        <h5>
+                                            {{ translate('please_make_sure')}}, {{ translate('your_server_php')}}
+                                           "post_max_size"
+                                           {{translate('value_is_grater_or_equal_to_20MB')}}
+                                           . {{translate('current_value_is') }} - {{ini_get('post_max_size')}}B
+
+                                        </h5>
                                     </li>
                                 </ul>
                             </div>
@@ -211,26 +214,6 @@
                     </div>
 
                     <div class="p-2 p-sm-3">
-                        <div class="mb-2" id="activate_{{$key}}" style="display: none!important;">
-                            <form action="" method="post">
-                                @csrf
-                                <div class="form-group">
-                                    <input type="text" name="username" value=""
-                                            class="form-control" placeholder="{{ translate('codecanyon_username') }}">
-                                </div>
-                                <div class="form-group">
-                                    <input type="text" name="purchase_code" value=""
-                                            class="form-control" placeholder="{{ translate('purchase_code') }}">
-                                    <input type="text" name="path" class="form-control" value="" hidden>
-                                </div>
-
-                                <div>
-                                    <input type="hidden" value="key" name="theme">
-                                    <button type="submit" class="btn btn--primary radius-button text-end">{{translate('activate')}}</button>
-                                </div>
-                            </form>
-                        </div>
-
                         <div class="aspect-ration-3:2 border border-color-primary-light radius-10">
                             <img class="img-fit radius-10 onerror-image"
                             data-onerror-image="{{asset('public/assets/admin/img/placeholder.png')}}"
@@ -395,7 +378,7 @@
                                 });
                                 setTimeout(function () {
                                     location.reload()
-                                }, 2000);
+                                }, 3000);
                             }
                         }
                     }
