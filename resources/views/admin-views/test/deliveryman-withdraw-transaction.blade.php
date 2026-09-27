@@ -54,7 +54,7 @@
                             <img class="avatar avatar-xss avatar-4by3 mr-2"
                                 src="{{ asset('public/assets/admin') }}/svg/components/placeholder-csv-format.svg"
                                 alt="Image Description">
-                            .{{ translate('messages.csv') }}
+                            {{ translate('messages.csv') }}
                         </a>
                     </div>
                 </div>
@@ -63,7 +63,7 @@
         <div class="table-responsive">
             <table class="table m-0 table-borderless table-thead-bordered table-nowrap table-align-middle">
                 <thead class="bg-table-head">
-                    
+
                 </thead>
                 <tbody>
                     <tr>

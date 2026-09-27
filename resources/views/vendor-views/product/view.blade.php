@@ -212,17 +212,21 @@
                                     </td>
                                     @if (in_array($product->module->module_type, ['food', 'grocery']))
                                         <td class="px-4">
-                                            @if ($product->nutritions)
+                                            @if ($product->nutritions && count($product->nutritions) > 0)
                                                 @foreach ($product->nutritions as $nutrition)
                                                     {{ $nutrition->nutrition }}{{ !$loop->last ? ',' : '.' }}
                                                 @endforeach
+                                            @else
+                                                {{ translate('messages.No Data Available') }}
                                             @endif
                                         </td>
                                         <td class="px-4">
-                                            @if ($product->allergies)
+                                            @if ($product->allergies && count($product->allergies) > 0)
                                                 @foreach ($product->allergies as $allergy)
                                                     {{ $allergy->allergy }}{{ !$loop->last ? ',' : '.' }}
                                                 @endforeach
+                                            @else
+                                                {{ translate('messages.No Data Available') }}
                                             @endif
                                         </td>
                                     @endif
@@ -235,6 +239,8 @@
                                         <td class="px-4">
                                             @if ($product->generic->pluck('generic_name')->first())
                                                 {{ $product->generic->pluck('generic_name')->first() }}
+                                            @else
+                                                {{ translate('messages.No Data Available') }}
                                             @endif
                                         </td>
 
@@ -248,7 +254,7 @@
                                         <span class="d-block mb-1">
                                             <span>{{ translate('messages.discount') }} :</span>
                                                          <strong>  {{$product['discount_type'] == 'percent' ? $product['discount'] . ' %' : \App\CentralLogics\Helpers::format_currency($product['discount']) }}   </strong>
-                                            
+
                                         </span>
                                         @if (config('module.' . $product->module->module_type)['item_available_time'])
                                             <span class="d-block mb-1">
@@ -263,7 +269,7 @@
                                     </td>
                                     <td class="px-4">
                                         @if ($product->module->module_type == 'food')
-                                            @if ($product->food_variations && is_array(json_decode($product['food_variations'], true)))
+                                            @if ($product->food_variations && is_array(json_decode($product['food_variations'], true)) && count(json_decode($product['food_variations'], true)) > 0)
                                                 @foreach (json_decode($product->food_variations, true) as $variation)
                                                     @if (isset($variation['price']))
                                                         <span class="d-block mb-1 text-capitalize">
@@ -305,36 +311,44 @@
                                                         @endif
                                                     @endif
                                                 @endforeach
+                                            @else
+                                                {{ translate('messages.No Data Available') }}
                                             @endif
                                         @else
-                                            @if ($product->variations && is_array(json_decode($product['variations'], true)))
+                                            @if ($product->variations && is_array(json_decode($product['variations'], true)) && count(json_decode($product['variations'], true)) > 0)
                                                 @foreach (json_decode($product['variations'], true) as $variation)
                                                     <span class="d-block mb-1 text-capitalize">
                                                         {{ $variation['type'] }} :
                                                         {{ \App\CentralLogics\Helpers::format_currency($variation['price']) }}
                                                     </span>
                                                 @endforeach
+                                            @else
+                                                {{ translate('messages.No Data Available') }}
                                             @endif
                                     </td>
         @endif
         @if (\App\CentralLogics\Helpers::get_store_data()->module->module_type == 'food')
             <td class="px-4">
-                @if (config('module.' . $product->module->module_type)['add_on'])
+                @if (config('module.' . $product->module->module_type)['add_on'] && $product->add_ons && count(json_decode($product['add_ons'], true)) > 0 && json_decode($product['add_ons'], true)[0] != null)
                     @foreach (\App\Models\AddOn::whereIn('id', json_decode($product['add_ons'], true))->get() as $addon)
                         <span class="d-block mb-1 text-capitalize">
                             {{ $addon['name'] }} : {{ \App\CentralLogics\Helpers::format_currency($addon['price']) }}
                         </span>
                     @endforeach
+                @else
+                {{ translate('messages.No Data Available') }}
                 @endif
             </td>
         @endif
-        @if ($product->tags)
-            <td>
+        <td>
+                @if ($product->tags && count($product->tags) > 0)
                 @foreach ($product->tags as $c)
                     {{ $c->tag . ',' }}
                 @endforeach
+                @else
+                {{ translate('messages.No Data Available') }}
+                @endif
             </td>
-        @endif
         @if ($productWiseTax)
             <td>
 

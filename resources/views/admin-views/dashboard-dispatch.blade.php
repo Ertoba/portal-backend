@@ -1,6 +1,6 @@
 @extends('layouts.admin.app')
 
-@section('title', \App\Models\BusinessSetting::where(['key' => 'business_name'])->first()->value ?? translate('messages.dashboard'))
+@section('title', \App\CentralLogics\Helpers::get_business_settings('business_name') ?? translate('messages.dashboard'))
 
 @push('css_or_js')
     <meta name="csrf-token" content="{{ csrf_token() }}">
@@ -156,7 +156,7 @@
 
 @push('script_2')
 <script async defer
-    src="https://maps.googleapis.com/maps/api/js?key={{\App\Models\BusinessSetting::where('key', 'map_api_key')->first()->value}}&callback=initialize&libraries=drawing,places,marker&v=3.61"></script>
+    src="https://maps.googleapis.com/maps/api/js?key={{ \App\CentralLogics\Helpers::get_business_settings('map_api_key') }}&callback=initialize&libraries=drawing,places,marker&v=3.61"></script>
 
 <script>
     "use strict";
@@ -198,14 +198,13 @@
     }
 
     function initialize() {
-        @php($default_location = \App\Models\BusinessSetting::where('key', 'default_location')->first())
-        @php($default_location = $default_location->value ? json_decode($default_location->value, true) : 0)
+        @php($default_location = \App\CentralLogics\Helpers::get_business_settings('default_location'))
         var myLatlng = {
             lat: {{ $default_location ? $default_location['lat'] : '23.757989' }},
             lng: {{ $default_location ? $default_location['lng'] : '90.360587' }}
             };
         var dmbounds = new google.maps.LatLngBounds(null);
-        const mapId = "{{ \App\Models\BusinessSetting::where('key', 'map_api_key')->first()->value }}"
+        const mapId = " {{  \App\CentralLogics\Helpers::get_business_settings('map_api_key')   }}"
 
         var myOptions = {
             zoom: 13,
@@ -230,15 +229,15 @@
                 const activeIconContent = document.createElement("img");
                 activeIconContent.src = "{{ asset('public/assets/admin/img/delivery_boy_active.png') }}";
                 activeIconContent.alt = "Active DM";
-                activeIconContent.style.width = '100%'; 
-                activeIconContent.style.height = '100%'; 
-                activeIconContent.style.borderRadius = '50%'; 
+                activeIconContent.style.width = '100%';
+                activeIconContent.style.height = '100%';
+                activeIconContent.style.borderRadius = '50%';
 
                 const marker = new AdvancedMarkerElement({
                     position: point,
                     map: map,
                     title: dm.image,
-                    content: activeIconContent, 
+                    content: activeIconContent,
                 });
 
                 dmMarkers[dm.id] = marker;

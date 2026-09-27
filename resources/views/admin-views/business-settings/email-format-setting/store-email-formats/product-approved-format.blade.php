@@ -27,7 +27,7 @@
         <div class="tab-content">
             <div class="tab-pane fade show active">
                 <div class="card mb-3">
-                    @php($mail_status=\App\Models\BusinessSetting::where('key','product_approve_mail_status_store')->first()?->value ?? '0')
+                    @php($mail_status=\App\Models\BusinessSetting::where('key','product_approved_mail_status_store')->first()?->value ?? '0')
                     <div class="card-body">
                         <div class="maintenance-mode-toggle-bar d-flex flex-wrap justify-content-between border rounded align-items-center p-2">
                             <h5 class="text-capitalize m-0 text--primary pl-2">
@@ -46,7 +46,7 @@
                                        data-title-off="{{translate('Want_to_disable_product_approval_mai?')}}"
                                        data-text-on="<p>{{translate('If_enabled,_Stores_will_receive_a_confirmation_email_when_the_Admin_approves_their_product.')}}</p>"
                                        data-text-off="<p>{{translate('If_disabled,_Stores_will_not_get_a_product_approval_mail.')}}</p>"
-                                       id="mail-status" {{$mail_status == '1'?'checked':''}}>
+                                       id="mail-status" name="product_approve_mail_status_store" {{$mail_status == '1'?'checked':''}}>
                                 <span class="toggle-switch-label text mb-0">
                                     <span class="toggle-switch-indicator"></span>
                                 </span>

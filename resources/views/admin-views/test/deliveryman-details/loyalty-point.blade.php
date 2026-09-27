@@ -11,7 +11,7 @@
                 <img src="{{asset('public/assets/admin/img/delivery-man.png')}}" class="w--26" alt="">
             </span>
             <span>Deliveryman Preview</span>
-        </h1>        
+        </h1>
 
         <div class="">
             <div class="js-nav-scroller hs-nav-scroller-horizontal mt-3">
@@ -91,7 +91,7 @@
             </div>
         </div>
     </div>
- 
+
     <div class="card">
         <div class="card-header flex-wrap pt-3 pb-3 border-0 gap-2">
             <div class="search--button-wrapper mr-1">
@@ -104,7 +104,7 @@
                     </div>
                 </form>
                 <button type="button" class="btn btn--primary h-40px btn-outline-primary py-2 offcanvas-trigger"  data-target="#transaction__list">
-                    <i class="tio-tune-horizontal"></i> 
+                    <i class="tio-tune-horizontal"></i>
                     {{ translate('messages.Filter') }}
                 </button>
             </div>
@@ -131,7 +131,7 @@
                         <img class="avatar avatar-xss avatar-4by3 mr-2"
                             src="{{ asset('public/assets/admin') }}/svg/components/placeholder-csv-format.svg"
                             alt="Image Description">
-                        .{{ translate('messages.csv') }}
+                        {{ translate('messages.csv') }}
                     </a>
                 </div>
             </div>
@@ -198,30 +198,6 @@
                                      <button type="button" class="btn px-3 fs-12 py-1 text-primary badge-soft-success">Debit</button>
                                 </div>
                             </td>
-                        </tr>    
-                        <tr>
-                            <td class="text-center">1</td>
-                            <td>
-                                <div class="text-wrap line--limit-1  max-w--220px min-w-160 text-title">
-                                    84Ed788EFG7986
-                                </div>
-                            </td>
-                            <td>
-                                <div class="text-wrap line--limit-1  max-w--220px min-w-160 text-title">
-                                    29 Sep 2022
-                                </div>
-                            </td>
-                            <td>
-                                <div class="text-wrap line--limit-1  max-w--220px min-w-160 text-title">
-                                    Converted to Wallet ($)
-                                </div>
-                            </td>
-                            <td>
-                                <div class="text-dark text-right pr-6">
-                                     - 448 <br>
-                                     <button type="button" class="btn px-3 fs-12 py-1 badge-soft-danger">Debit</button>
-                                </div>
-                            </td>
                         </tr>
                         <tr>
                             <td class="text-center">1</td>
@@ -270,7 +246,31 @@
                                      <button type="button" class="btn px-3 fs-12 py-1 badge-soft-danger">Debit</button>
                                 </div>
                             </td>
-                        </tr>                                          
+                        </tr>
+                        <tr>
+                            <td class="text-center">1</td>
+                            <td>
+                                <div class="text-wrap line--limit-1  max-w--220px min-w-160 text-title">
+                                    84Ed788EFG7986
+                                </div>
+                            </td>
+                            <td>
+                                <div class="text-wrap line--limit-1  max-w--220px min-w-160 text-title">
+                                    29 Sep 2022
+                                </div>
+                            </td>
+                            <td>
+                                <div class="text-wrap line--limit-1  max-w--220px min-w-160 text-title">
+                                    Converted to Wallet ($)
+                                </div>
+                            </td>
+                            <td>
+                                <div class="text-dark text-right pr-6">
+                                     - 448 <br>
+                                     <button type="button" class="btn px-3 fs-12 py-1 badge-soft-danger">Debit</button>
+                                </div>
+                            </td>
+                        </tr>
                     </tbody>
                 </table>
                 <div class="page-area border-top px-3 pt-3 pb-2 d-flex align-items-center gap-3 justify-content-between flex-wrap">
@@ -297,12 +297,12 @@
             </div>
             <!-- End Table -->
         </div>
-    </div>             
+    </div>
 
 
 
 
- 
+
 
 
 
@@ -348,7 +348,7 @@
                                 <input type="text" name="dates" class="form-control h-45 position-relative bg-white" placeholder="Select Date">
                             </div>
                         </div>
-                    </div>    
+                    </div>
                 </div>
             </div>
     </div>

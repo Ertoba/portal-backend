@@ -12,4 +12,6 @@ $(document).on('ready', function (){
 
 $('#reset_btn').click(function(){
     $('#bulk__import').val(null);
+    $('.date_wise').hide();
+    $('.id_wise').hide();
 })

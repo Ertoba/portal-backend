@@ -121,11 +121,11 @@
                             <div class="col-sm mb-2 mb-sm-0">
                                 <div class="d-flex flex-wrap justify-content-center align-items-center">
                                     @php($amount=array_sum($earning))
-                                    <span class="h5 m-0 mr-3 fz--11 d-flex align-items-center mb-2 mb-md-0">
+                                    <span class="h5 m-0 px-2 mr-3 fz--11 d-flex align-items-center mb-2 mb-md-0">
                                         <span class="legend-indicator chart-bg-2"></span>
                                         {{translate('messages.total_earning')}} : <span>{{\App\CentralLogics\Helpers::format_currency(array_sum($earning))}}</span>
                                     </span>
-                                    <span class="h5 m-0 fz--11 d-flex align-items-center mb-2 mb-md-0">
+                                    <span class="h5  m-0 fz--11 d-flex align-items-center mb-2 mb-md-0">
                                         <span class="legend-indicator chart-bg-3"></span>
                                         {{translate('messages.commission_given')}} : <span>{{\App\CentralLogics\Helpers::format_currency(array_sum($commission))}}</span>
                                     </span>

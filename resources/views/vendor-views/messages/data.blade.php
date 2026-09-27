@@ -1,4 +1,4 @@
-
+@if($conversations->count() > 0)
 @foreach($conversations as $conv)
 @php($user= $conv->sender_type == 'vendor' ? $conv->receiver :  $conv->sender)
 @if (isset($user ) && $conv->last_message)
@@ -24,20 +24,16 @@
             <div class="text-title">{{ Str::limit($conv->last_message->message ??'', 35, '...') }}</div>
         </div>
     </div>
-@else
-    <div
-        class="chat-user-info d-flex border-bottom p-3 align-items-center customer-list">
-        <div class="chat-user-info-img d-none d-md-block">
-            <img class="avatar-img"
-                    src='{{asset('public/assets/admin/img/160x160/img1.jpg')}}'
-                    alt="Image Description">
-        </div>
-        <div class="chat-user-info-content">
-            <h5 class="mb-0 d-flex justify-content-between">
-                <span class=" mr-3">{{translate('messages.user_not_found')}}</span>
-            </h5>
-        </div>
-    </div>
 @endif
 @endforeach
+@else
+    <div class="no-conversation-wrapper h-100 w-100 d-flex flex-column justify-content-center align-items-center text-center">
+        <img src="{{asset('public/assets/admin/img/conversation-no-data.svg')}}" 
+             style="max-width:120px; opacity:.6;" 
+             alt="No conversation">
+
+        <h5 class="mt-3 mb-1">{{translate('no conversation found')}}</h5>
+        <p class="text-muted mb-0">{{translate('start chat when customer message')}}</p>
+    </div>
+@endif
 <script src="{{asset('public/assets/admin')}}/js/view-pages/common.js"></script>

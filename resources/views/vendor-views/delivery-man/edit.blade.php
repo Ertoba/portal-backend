@@ -17,8 +17,7 @@
             </h1>
         </div>
         <!-- End Page Header -->
-        <form action="javascript:" method="post"
-                enctype="multipart/form-data" id="deliaveryman_form" class="js-validate">
+        <form action="{{ route('vendor.delivery-man.update',[$delivery_man['id']]) }}" method="post" enctype="multipart/form-data" class="validate-form global-ajax-form">
             @csrf
             <div class="row g-3">
                 <div class="col-md-12">
@@ -31,27 +30,42 @@
                         <div class="card-body">
                             <div class="row g-3">
                                 <div class="col-sm-6 col-md-4">
-                                    <label class="input-label" for="f_name">{{translate('messages.first_name')}}</label>
+                                    <label class="input-label" for="f_name">{{translate('messages.first_name')}}
+                                            <span class="form-label-secondary text-danger"
+                                            data-toggle="tooltip" data-placement="right"
+                                            data-original-title="{{ translate('messages.Required.') }}"> *
+                                        </span>
+                                    </label>
                                     <input type="text" id="f_name" value="{{$delivery_man['f_name']}}" name="f_name"
                                         class="form-control" placeholder="{{translate('messages.first_name')}}"
                                         required>
                                 </div>
                                 <div class="col-sm-6 col-md-4">
-                                    <label class="input-label" for="l_name">{{translate('messages.last_name')}}</label>
+                                    <label class="input-label" for="l_name">{{translate('messages.last_name')}}
+                                            <span class="form-label-secondary text-danger"
+                                            data-toggle="tooltip" data-placement="right"
+                                            data-original-title="{{ translate('messages.Required.') }}"> *  </span>
+                                    </label>
                                     <input type="text" id="l_name" value="{{$delivery_man['l_name']}}" name="l_name"
                                         class="form-control" placeholder="{{translate('messages.last_name')}}"
                                         required>
                                 </div>
                                 <div class="col-sm-6 col-md-4">
                                     <div class="form-group mb-0">
-                                        <label class="input-label" for="email">{{translate('messages.email')}}</label>
+                                        <label class="input-label" for="email">{{translate('messages.email')}}
+                                                <span class="form-label-secondary text-danger"
+                                            data-toggle="tooltip" data-placement="right"
+                                            data-original-title="{{ translate('messages.Required.') }}"> *  </span></label>
                                         <input type="email" id="email" value="{{$delivery_man['email']}}" name="email" class="form-control"
                                             placeholder="{{ translate('messages.Ex:') }} ex@example.com"
                                             required>
                                     </div>
                                 </div>
                                 <div class="col-sm-6 col-md-4">
-                                    <label class="input-label" for="identity_type">{{translate('messages.identity_type')}}</label>
+                                    <label class="input-label" for="identity_type">{{translate('messages.identity_type')}}
+                                            <span class="form-label-secondary text-danger"
+                                            data-toggle="tooltip" data-placement="right"
+                                            data-original-title="{{ translate('messages.Required.') }}"> *  </span></label>
                                     <select name="identity_type" id="identity_type" class="form-control">
                                         <option
                                             value="passport" {{$delivery_man['identity_type']=='passport'?'selected':''}}>
@@ -66,7 +80,10 @@
                                     </select>
                                 </div>
                                 <div class="col-sm-6 col-md-4">
-                                    <label class="input-label" for="identity_number">{{translate('messages.identity_number')}}</label>
+                                    <label class="input-label" for="identity_number">{{translate('messages.identity_number')}}
+                                            <span class="form-label-secondary text-danger"
+                                            data-toggle="tooltip" data-placement="right"
+                                            data-original-title="{{ translate('messages.Required.') }}"> *  </span></label>
                                     <input type="text" name="identity_number" id="identity_number" value="{{$delivery_man['identity_number']}}"
                                         class="form-control"
                                         placeholder="{{ translate('messages.Ex:') }} DH-23434-LS"
@@ -80,7 +97,7 @@
                     <div class="card h-100">
                         <div class="card-header">
                             <h5 class="form-label m-0">{{translate('messages.identity_image')}}
-                            <small class="text-danger">* {{translate('messages.( Ratio 190x120 )')}}</small></h5>
+                            <small class="text-danger"> {{translate('messages.( Ratio 190x120 )')}}</small></h5>
                         </div>
                         <div class="card-body d-flex flex-column">
                             <div class="form-group">
@@ -129,7 +146,10 @@
                             <div class="row g-3">
                                 <div class="col-md-4 col-12">
                                     <div class="form-group mb-0">
-                                        <label class="input-label" for="phone">{{translate('messages.phone')}}</label>
+                                        <label class="input-label" for="phone">{{translate('messages.phone')}}
+                                                <span class="form-label-secondary text-danger"
+                                            data-toggle="tooltip" data-placement="right"
+                                            data-original-title="{{ translate('messages.Required.') }}"> *  </span></label>
                                         <input type="tel" id="phone" name="phone" value="{{$delivery_man['phone']}}" class="form-control"
                                                 placeholder="{{ translate('messages.Ex:') }} 017********"
                                                 required>

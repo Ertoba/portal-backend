@@ -1,7 +1,8 @@
 @extends('layouts.landing.app')
 @section('title', translate('messages.deliveryman_registration'))
-
-
+@push('css_or_js')
+<link rel="stylesheet" href="{{asset('public/assets/admin/css/style.css')}}">
+@endpush
 @section('content')
 
 <?php
@@ -217,7 +218,7 @@ $countryCode= strtolower($country?$country->value:'auto');
                                     <div class="form-group pt-3 mb-5">
                                         <label  class="input-label">{{ translate('messages.deliveryman_image') }}<small
                                             class="text-danger">* ( {{ translate('messages.ratio') }} 1:1 )</small></label>
-                                        <label class="position-relative">
+                                        <label class="position-relative w-140px">
                                             <img class="__register-img mb-3 image--border h-140px" id="viewer"
                                                 src="{{ asset('public/assets/admin/img/upload-img.png') }}"
                                                 alt="delivery-man image" />
@@ -234,21 +235,40 @@ $countryCode= strtolower($country?$country->value:'auto');
                             </div>
                             <div class="row">
                                 <div class="col-sm-4 col-12">
+                                    @include('admin-views.partials._recaptcha')
+                                    
                                     {{-- recaptcha --}}
-                                    @php($recaptcha = \App\CentralLogics\Helpers::get_business_settings('recaptcha'))
+                                    {{-- @php($recaptcha = \App\CentralLogics\Helpers::get_business_settings('recaptcha'))
                                     @if(isset($recaptcha) && $recaptcha['status'] == 1)
                                         <input type="hidden" name="g-recaptcha-response" id="g-recaptcha-response">
-                                    @else
-                                        <div class="row p-2">
+
+                                        <input type="hidden" name="set_default_captcha" id="set_default_captcha_value" value="0" >
+                                        <div class="row p-2 d-none" id="reload-captcha">
                                             <div class="col-6 pr-0">
-                                                <input type="text" class="form-control" name="custome_recaptcha"
+                                                <input type="text" class="form-control form-control-lg border-0" name="custome_recaptcha"
                                                         id="custome_recaptcha" required placeholder="{{\__('Enter recaptcha value')}}" autocomplete="off" value="{{env('APP_DEBUG')?session('six_captcha'):''}}">
                                             </div>
-                                            <div class="col-6" style="background-color: #FFFFFF; border-radius: 5px;">
-                                                <img src="<?php echo $custome_recaptcha->inline(); ?>" style="width: 100%; border-radius: 4px;"/>
+                                            <div class="col-6 bg-white rounded d-flex">
+                                                <img src="<?php echo $custome_recaptcha->inline(); ?>" class="rounded w-100" />
+                                                <div class="p-3 pr-0 capcha-spin reloadCaptcha">
+                                                    <i class="tio-cached"></i>
+                                                </div>
                                             </div>
                                         </div>
-                                    @endif
+                                    @else
+                                        <div class="row p-2" id="reload-captcha">
+                                            <div class="col-6 pr-0">
+                                                <input type="text" class="form-control form-control-lg border-0" name="custome_recaptcha"
+                                                        id="custome_recaptcha" required placeholder="{{\__('Enter recaptcha value')}}" autocomplete="off" value="{{env('APP_DEBUG')?session('six_captcha'):''}}">
+                                            </div>
+                                            <div class="col-6 bg-white rounded d-flex">
+                                                <img src="<?php echo $custome_recaptcha->inline(); ?>" class="rounded w-100" />
+                                                <div class="p-3 pr-0 capcha-spin reloadCaptcha">
+                                                    <i class="tio-cached"></i>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    @endif --}}
                                 </div>
                             </div>
                         </div>
@@ -751,47 +771,68 @@ $countryCode= strtolower($country?$country->value:'auto');
     </script>
 
 
-    {{-- recaptcha scripts start --}}
-    @if(isset($recaptcha) && $recaptcha['status'] == 1)
-        <script src="https://www.google.com/recaptcha/api.js?render={{$recaptcha['site_key']}}"></script>
-    @endif
-    @if(isset($recaptcha) && $recaptcha['status'] == 1)
-        <script>
-            $(document).ready(function() {
-                $('#signInBtn').click(function (e) {
-                    e.preventDefault();
+    <script>
+    $(document).on('click', '.reloadCaptcha', function () {
+        $.ajax({
+            url: "{{ route('reload-captcha') }}",
+            type: "GET",
+            dataType: 'json',
+            beforeSend: function () {
+                $('#loading').show()
+                $('.capcha-spin').addClass('active')
+            },
+            success: function (data) {
+                $('#reload-captcha').html(data.view);
+            },
+            complete: function () {
+                $('#loading').hide()
+                $('.capcha-spin').removeClass('active')
+            }
+        });
+    });
 
-                    if (window.FormValidation && !window.FormValidation.validateForm(document.getElementById('form-id'))) {
-                        return;
-                    }
+</script>
 
-                    if (window.validateFileInputs && !window.validateFileInputs()) {
-                        return;
-                    }
+@if(isset($recaptcha) && $recaptcha['status'] == 1)
+    <script src="https://www.google.com/recaptcha/api.js?render={{$recaptcha['site_key']}}"></script>
+@endif
+@if(isset($recaptcha) && $recaptcha['status'] == 1)
+    <script>
+        $(document).ready(function () {
+            $('#signInBtn').click(function (e) {
+                if ($('#set_default_captcha_value').val() == 1) {
+                    $('#form-id').submit();
+                    return true;
+                }
+                e.preventDefault();
+                if (typeof grecaptcha === 'undefined') {
+                    toastr.error('Invalid recaptcha key provided. Please check the recaptcha configuration.');
+                    $('#reload-captcha').removeClass('d-none');
+                    $('#set_default_captcha_value').val('1');
 
-                    if (typeof grecaptcha === 'undefined') {
-                        toastr.error('Invalid recaptcha key provided. Please check the recaptcha configuration.');
-                        return;
-                    }
-                    grecaptcha.ready(function () {
-                        grecaptcha.execute('{{$recaptcha['site_key']}}', {action: 'submit'}).then(function (token) {
-                            $('#g-recaptcha-response').value = token;
-                            $('#form-id').submit();
-                        });
+                    return;
+                }
+                grecaptcha.ready(function () {
+                    grecaptcha.execute('{{$recaptcha['site_key']}}', { action: 'submit' }).then(function (token) {
+                        $('#g-recaptcha-response').val(token);
+                        $('#form-id').submit();
                     });
-                    window.onerror = function (message) {
-                        var errorMessage = 'An unexpected error occurred. Please check the recaptcha configuration';
-                        if (message.includes('Invalid site key')) {
-                            errorMessage = 'Invalid site key provided. Please check the recaptcha configuration.';
-                        } else if (message.includes('not loaded in api.js')) {
-                            errorMessage = 'reCAPTCHA API could not be loaded. Please check the recaptcha API configuration.';
-                        }
-                        toastr.error(errorMessage)
-                        return true;
-                    };
                 });
+                window.onerror = function (message) {
+                    var errorMessage = 'An unexpected error occurred. Please check the recaptcha configuration';
+                    if (message.includes('Invalid site key')) {
+                        errorMessage = 'Invalid site key provided. Please check the recaptcha configuration.';
+                    } else if (message.includes('not loaded in api.js')) {
+                        errorMessage = 'reCAPTCHA API could not be loaded. Please check the recaptcha API configuration.';
+                    }
+                    $('#reload-captcha').removeClass('d-none');
+                    $('#set_default_captcha_value').val('1');
+                    toastr.error(errorMessage)
+                    return true;
+                };
             });
-        </script>
-    @endif
-    {{-- recaptcha scripts end --}}
+        });
+    </script>
+@endif
+{{-- recaptcha scripts end --}}
 @endpush

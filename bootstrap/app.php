@@ -40,7 +40,7 @@ use Illuminate\View\Middleware\ShareErrorsFromSession;
 return Application::configure(basePath: dirname(__DIR__))
 
     ->withRouting(
-        // commands: __DIR__ . '/../routes/console.php',
+        commands: __DIR__ . '/../routes/console.php',
         health: '/up',
     )
 

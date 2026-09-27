@@ -49,7 +49,7 @@ class FlashSale extends Model
 
     public function activeProducts()
     {
-        return $this->hasMany(FlashSaleItem::class,'flash_sale_id','id')->where('available_stock' ,'>' ,0 )->where('status',1)->whereHas('item.store',function($query){
+        return $this->hasMany(FlashSaleItem::class,'flash_sale_id','id')->where('available_stock' ,'>' ,0 )->where('status',1)->whereHas('item',function($query){
             $query->active();
         });
     }

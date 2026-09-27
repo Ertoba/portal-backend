@@ -3,6 +3,7 @@
         '1:1' => 'ratio-1',
         '2:1' => 'ratio-2-1',
         '3:1' => 'ratio-3-1',
+        '4:1' => 'ratio-4-1',
         default => 'ratio-1',
     };
     $imageExtension = $imageExtension ?? IMAGE_EXTENSION;

@@ -4,6 +4,7 @@ $(document).ready(function () {
         e.preventDefault();
         var target = $(this).data('target');
         $(target).addClass('open');
+        $('body').addClass('modal-open');
         $('#offcanvasOverlay').addClass('show');
     });
 
@@ -11,6 +12,7 @@ $(document).ready(function () {
     $('.offcanvas-close, #offcanvasOverlay').on('click', function () {
         $('.custom-offcanvas').removeClass('open');
         $('#offcanvasOverlay').removeClass('show');
+        $('body').removeClass('modal-open');
     });
 });
 

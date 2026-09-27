@@ -231,7 +231,7 @@
                                                 </span> </span>
                                             <br>
                                         @empty
-                                            <span> {{ translate('messages.no_tax') }} </span>
+                                            <span> {{ translate('N/A') }} </span>
                                         @endforelse
                                     </span>
                                 </td>

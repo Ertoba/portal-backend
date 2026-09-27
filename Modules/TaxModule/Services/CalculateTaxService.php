@@ -169,6 +169,8 @@ class CalculateTaxService
 
         if ($systemTaxVat?->tax_payer == 'parcel') {
             $dataType = self::getClassNames('parcel_category');
+        } else if($systemTaxVat?->tax_payer == 'ride_module'){
+            $dataType = self::getClassNames('ride');
         }  else {
             $dataType = self::getClassNames($taxType === 'product_wise' ? 'product' : 'category');
         }
@@ -267,7 +269,7 @@ class CalculateTaxService
                 $orderTaxData->tax_payer = $taxPayer;
                 $orderTaxData->country_code = $countryCode;
                 $orderTaxData->order_id = $orderId;
-                $orderTaxData->order_type = self::getClassNames($taxPayer == 'rental_provider' ?  'trip' : 'order');
+                $orderTaxData->order_type = self::getClassNames($taxPayer == 'rental_provider' ?  'trip' : ($taxPayer == 'ride_module' ? 'ride' : 'order'));
                 $orderTaxData->tax_id = $taxRate->id;
                 $orderTaxData->system_tax_setup_id = $systemTaxVat->id;
                 $orderTaxData->taxable_id = $data_id;
@@ -320,5 +322,72 @@ class CalculateTaxService
         }
 
         return $result;
+    }
+
+    public static function getTaxPercentage($taxPayer = 'ride_module')
+    {
+        $systemTaxVat = SystemTaxSetup::with('additionalData')
+            ->where('tax_payer', $taxPayer)
+            ->where('is_active', 1)
+            ->first();
+
+        if (empty($systemTaxVat) || $systemTaxVat?->is_included) {
+            return ['include' => 1, 'totalTaxPercent' => 0];
+        }
+
+        $taxIds = $systemTaxVat?->tax_ids ?? [];
+        $taxRatePercent = Tax::whereIn('id', $taxIds)->where('is_active', 1)->select('id', 'name', 'tax_rate')->get();
+        $totalTaxPercent = 0;
+        foreach ($taxRatePercent as $taxRate) {
+            $totalTaxPercent += $taxRate->tax_rate;
+        }
+
+        return  ['include' => $systemTaxVat?->is_included, 'totalTaxPercent' => $totalTaxPercent];
+    }
+
+    public static function storeRideTax($ride, $amount)
+    {
+        $systemTaxVat = SystemTaxSetup::with('additionalData')
+            ->where('tax_payer', 'ride_module')
+            ->where('is_active', 1)
+            ->first();
+
+        if (empty($systemTaxVat) || $systemTaxVat?->is_included) {
+            return false;
+        }
+
+        $taxIds = $systemTaxVat?->tax_ids ?? [];
+
+        $taxRatePercent = Tax::whereIn('id', $taxIds)->where('is_active', 1)->select('id', 'name', 'tax_rate')->get();
+        $totalTaxPercent = 0;
+        $totalTaxamount = 0;
+        $orderTaxIds = [];
+        OrderTax::where('order_id', $ride->id)->where('order_type', self::getClassNames('ride'))->delete();
+        foreach ($taxRatePercent as $taxRate) {
+            $taxData = self::getTaxAmount(amount: $amount, taxRatePercent: $taxRate->tax_rate, isInclude: $systemTaxVat->is_included);
+            $totalTaxPercent += $taxRate->tax_rate;
+            $taxAmount = $taxData['taxAmount'];
+            $totalTaxamount += $taxAmount;
+
+            $orderTaxData = new OrderTax();
+            $orderTaxData->tax_name = $taxRate->name;
+            $orderTaxData->tax_type = $systemTaxVat->tax_type;
+            $orderTaxData->tax_on = 'basic';
+            $orderTaxData->tax_rate = $taxRate->tax_rate;
+            $orderTaxData->tax_amount = $taxAmount;
+            $orderTaxData->before_tax_amount = $taxData['originalAmount'];
+            $orderTaxData->after_tax_amount = $taxData['totalAmount'];
+            $orderTaxData->tax_payer = 'ride_module';
+            $orderTaxData->order_id = $ride->id;
+            $orderTaxData->order_type = self::getClassNames('ride');
+            $orderTaxData->tax_id = $taxRate->id;
+            $orderTaxData->system_tax_setup_id = $systemTaxVat->id;
+            $orderTaxData->quantity = 1;
+            $orderTaxData->save();
+            $orderTaxIds[] = $orderTaxData->id;
+            
+        }
+
+        return  ['include' => $systemTaxVat?->is_included, 'totalTaxPercent' => $totalTaxPercent, 'totalTaxamount' => $totalTaxamount, 'orderTaxIds' => $orderTaxIds];
     }
 }

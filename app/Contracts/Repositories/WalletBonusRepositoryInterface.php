@@ -2,7 +2,6 @@
 
 namespace App\Contracts\Repositories;
 
-use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 
 interface WalletBonusRepositoryInterface extends RepositoryInterface
@@ -14,10 +13,5 @@ interface WalletBonusRepositoryInterface extends RepositoryInterface
      */
     public function getFirstWithoutGlobalScopeWhere(array $params, array $relations = []): ?Model;
 
-    /**
-     * @param string|null $searchValue
-     * @param int|string $dataLimit
-     * @return Collection
-     */
-    public function getSearchedList(string $searchValue = null, int|string $dataLimit = DEFAULT_DATA_LIMIT): Collection;
+
 }

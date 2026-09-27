@@ -74,7 +74,8 @@
                         data-hs-datatables-options='{
                             "order": [],
                             "orderCellsTop": true,
-                            "paging":false
+                            "paging":false,
+                            "columnDefs":[{"targets":[7],"orderable":false}]
                         }'>
                     <thead class="thead-light">
                     <tr>
@@ -93,7 +94,7 @@
                         <tr>
                             <td>{{$key+$deliveryMen->firstItem()}}</td>
                             <td>
-                                <a class="table-rest-info" href="{{route('admin.users.delivery-man.preview',[$dm['id']])}}">
+                                <a class="table-rest-info w-max-content" href="{{route('admin.users.delivery-man.preview',[$dm['id']])}}">
                                     <img class="onerror-image" data-onerror-image="{{asset('public/assets/admin/img/160x160/img1.jpg')}}"
                                     src="{{$dm['image_full_url']}}"
                                     alt="{{$dm['f_name']}} {{$dm['l_name']}}">
@@ -123,19 +124,17 @@
                                 @if($dm->application_status == 'approved')
 
                                 @else
-                                <div class="col-md-12">
-                                    <div class="btn--container justify-content-end">
-                                        <a class="btn action-btn btn--primary btn-outline-primary request-alert" data-toggle="tooltip" data-placement="top"
-                                        data-original-title="{{ translate('messages.approve') }}" data-url="{{route('admin.users.delivery-man.application',[$dm['id'],'approved'])}}" data-message="{{translate('messages.you_want_to_approve_this_application')}}"
-                                            href="javascript:"><i class="tio-done font-weight-bold"></i> </a>
-                                        <a class="btn action-btn btn--primary btn-outline-primary"  data-toggle="tooltip" data-placement="top" data-original-title="{{ translate('messages.edit') }}" href="{{route('admin.users.delivery-man.edit',[$dm['id']])}}" ><i class="tio-edit"></i>
-                                        </a>
-                                        @if($dm->application_status !='denied')
-                                        <a class="btn action-btn btn--danger btn-outline-danger request-alert" data-toggle="tooltip" data-placement="top"
-                                        data-original-title="{{ translate('messages.deny') }}" data-url="{{route('admin.users.delivery-man.application',[$dm['id'],'denied'])}}" data-message="{{translate('messages.you_want_to_deny_this_application')}}"
-                                            href="javascript:"><i class="tio-clear font-weight-bold"></i></a>
-                                        @endif
-                                    </div>
+                                <div class="btn--container justify-content-center">
+                                    <a class="btn action-btn btn--primary btn-outline-primary request-alert" data-toggle="tooltip" data-placement="top"
+                                    data-original-title="{{ translate('messages.approve') }}" data-url="{{route('admin.users.delivery-man.application',[$dm['id'],'approved'])}}" data-message="{{translate('messages.you_want_to_approve_this_application')}}"
+                                        href="javascript:"><i class="tio-done font-weight-bold"></i> </a>
+                                    <a class="btn action-btn btn--primary btn-outline-primary"  data-toggle="tooltip" data-placement="top" data-original-title="{{ translate('messages.edit') }}" href="{{route('admin.users.delivery-man.edit',[$dm['id']])}}" ><i class="tio-edit"></i>
+                                    </a>
+                                    @if($dm->application_status !='denied')
+                                    <a class="btn action-btn btn--danger btn-outline-danger request-alert" data-toggle="tooltip" data-placement="top"
+                                    data-original-title="{{ translate('messages.deny') }}" data-url="{{route('admin.users.delivery-man.application',[$dm['id'],'denied'])}}" data-message="{{translate('messages.you_want_to_deny_this_application')}}"
+                                        href="javascript:"><i class="tio-clear font-weight-bold"></i></a>
+                                    @endif
                                 </div>
 
                                 @endif

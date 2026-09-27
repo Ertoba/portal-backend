@@ -183,6 +183,7 @@
                                         </div>
                                         <div class="col-sm-6 col-lg-4 access_product_approval">
                                             @php($order_notification_type = Helpers::get_business_settings('order_notification_type'))
+                                            <input type="hidden" id="hidden_notification_type">
                                             <div class="form-group mb-0">
                                                 <label class="input-label text-capitalize d-flex alig-items-center"><span
                                                         class="line--limit-1 text-title">{{ translate('Order_Notification_Type') }}
@@ -381,7 +382,7 @@
                                     <div class="rounded border py-2 min-h-45px bg-white px-3">
                                         <div class="row g-lg-3 g-1">
                                             @foreach (config('module.module_type') as $key => $value)
-                                                @if ($value != 'parcel' && $value != 'rental')
+                                                @if ($value != 'parcel' && $value != 'rental' && $value != 'ride-share')
                                                     <div class="col-lg-3 col-sm-6">
                                                         <div class="custom-control custom-checkbox pt-1">
                                                             <input class="custom-control-input extra-packaging-option" type="checkbox" {{ isset($extra_packaging_data[$value]) && $extra_packaging_data[$value] == 1 ? 'checked' : '' }} id="inlineCheckbox{{$key}}" value="1" name="{{ $value }}">
@@ -1166,4 +1167,41 @@
             });
         });
     </script>
+    <script>
+        $(document).ready(function () {
+
+            const toggle = $('#aon1');
+            const radios = $('input[name="order_notification_type"]');
+            const form = radios.closest('form');
+
+            function toggleNotificationType() {
+                if (!toggle.length) return;
+
+                radios.prop('disabled', !toggle.prop('checked'));
+            }
+
+            toggleNotificationType();
+
+            toggle.on('change', function () {
+                setTimeout(toggleNotificationType, 120);
+            });
+
+            $(document).on('click', '.confirm-Toggle', function () {
+                let toggle_id = $('#toggle-ok-button').attr('toggle-ok-button');
+                if (toggle_id === 'aon1') {
+                    setTimeout(toggleNotificationType, 120);
+                }
+            });
+
+            form.on('submit', function () {
+
+                if (!toggle.prop('checked')) {
+                    radios.prop('disabled', false);
+                }
+
+            });
+
+        });
+    </script>
+
 @endpush

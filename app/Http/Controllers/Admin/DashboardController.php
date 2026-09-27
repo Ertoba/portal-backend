@@ -18,6 +18,8 @@ use App\Models\OrderTransaction;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\Route;
+use Modules\RideShare\Entities\UserManagement\Rider;
 
 class DashboardController extends Controller
 {
@@ -144,7 +146,72 @@ class DashboardController extends Controller
         $deliveryMen = Helpers::deliverymen_list_formatting($deliveryMen);
 
         $module_type = Config::get('module.current_module_type');
-        return view("admin-views.dashboard-{$module_type}", compact('data', 'reviews', 'this_month', 'user_data', 'neutral_reviews', 'good_reviews', 'negative_reviews', 'positive_reviews', 'employees', 'active_deliveryman', 'deliveryMen', 'inactive_deliveryman', 'newly_joined_deliveryman', 'delivery_man', 'total_sell', 'commission', 'delivery_commission', 'params', 'module_type', 'customers', 'active_customers', 'blocked_customers', 'newly_joined', 'last_year_users', 'blocked_deliveryman'));
+
+        if(addon_published_status('RideShare')) {
+            $rider_data = self::get_rider_data($params);
+        } else {
+            $rider_data = [];
+        }
+
+        return view("admin-views.dashboard-{$module_type}", compact('data', 'reviews', 'this_month', 'user_data', 'neutral_reviews', 'good_reviews', 'negative_reviews', 'positive_reviews', 'employees', 'active_deliveryman', 'deliveryMen', 'inactive_deliveryman', 'newly_joined_deliveryman', 'delivery_man', 'total_sell', 'commission', 'delivery_commission', 'params', 'module_type', 'customers', 'active_customers', 'blocked_customers', 'newly_joined', 'last_year_users', 'blocked_deliveryman', 'rider_data'));
+    }
+
+    private function get_rider_data($params) {
+
+        $data['rider_images'] = Rider::when(is_numeric($params['zone_id']), function ($q) use ($params) {
+                return $q->where('zone_id', $params['zone_id']);
+            })
+            ->limit(2)
+            ->get('image');
+
+        $data['active_rider'] = Rider::when(is_numeric($params['zone_id']), function ($q) use ($params) {
+                return $q->where('zone_id', $params['zone_id']);
+            })
+            ->active()
+            ->count();
+
+        $data['inactive_rider'] = Rider::when(is_numeric($params['zone_id']), function ($q) use ($params) {
+                return $q->where('zone_id', $params['zone_id']);
+            })
+            ->where('application_status', 'approved')
+            ->where('active', 0)
+            ->count();
+
+        $data['blocked_rider'] = Rider::when(is_numeric($params['zone_id']), function ($q) use ($params) {
+                return $q->where('zone_id', $params['zone_id']);
+            })
+            ->where('application_status', 'approved')
+            ->where('status', 0)
+            ->count();
+
+        $data['newly_joined_rider'] = Rider::when(is_numeric($params['zone_id']), function ($q) use ($params) {
+                return $q->where('zone_id', $params['zone_id']);
+            })
+            ->where('application_status', 'approved')
+            ->whereDate('created_at', '>=', now()->subDays(30)->format('Y-m-d'))
+            ->count();
+
+        $data['top_riders'] = Rider::withCount('driverTrips')->when(is_numeric($params['zone_id']), function ($q) use ($params) {
+                return $q->where('zone_id', $params['zone_id']);
+            })
+            ->having("driver_trips_count", '>', 0)
+            ->orderBy("driver_trips_count", 'desc')
+            ->take(6)
+            ->get();
+
+        $riders = Rider::with('last_location')->when(is_numeric($params['zone_id']), function ($q) use ($params) {
+                return $q->where('zone_id', $params['zone_id']);
+            })
+            ->available()
+            ->active()
+            ->get();
+
+        $data['map_riders'] = Helpers::deliverymen_list_formatting($riders);
+
+        $data['total_riders'] = $data['active_rider'] + $data['inactive_rider'] + $data['blocked_rider'];
+
+        return $data;
+
     }
 
     public function transaction_dashboard(Request $request)
@@ -166,47 +233,54 @@ class DashboardController extends Controller
 
         session()->put('dash_params', $params);
         $data = self::dashboard_data($request);
-        $total_sell = $data['total_sell'];
-        $commission = $data['commission'];
-        $delivery_commission = $data['delivery_commission'];
-        $label = $data['label'];
-        $customers = User::zone($params['zone_id'])->take(2)->get();
 
-        $delivery_man = DeliveryMan::with('last_location')->when(is_numeric($params['zone_id']), function ($q) use ($params) {
-            return $q->where('zone_id', $params['zone_id']);
-        })
+        $maxOrder = config('dm_maximum_orders') ?? 1;
+
+        $deliveryman_stats = DeliveryMan::when(is_numeric($params['zone_id']), function ($q) use ($params) {
+                return $q->where('zone_id', $params['zone_id']);
+            })
             ->Zonewise()
-            ->limit(2)->get('image');
+            ->selectRaw("
+                COUNT(*) as total,
 
-        $active_deliveryman = DeliveryMan::when(is_numeric($params['zone_id']), function ($q) use ($params) {
-            return $q->where('zone_id', $params['zone_id']);
-        })
-            ->Zonewise()->where('active', 1)->count();
+                SUM(CASE
+                    WHEN active = 1
+                    THEN 1 ELSE 0 END
+                ) as active_deliveryman,
 
-        $inactive_deliveryman = DeliveryMan::when(is_numeric($params['zone_id']), function ($q) use ($params) {
-            return $q->where('zone_id', $params['zone_id']);
-        })
-            ->Zonewise()->where('application_status', 'approved')->where('active', 0)->count();
+                SUM(CASE
+                    WHEN application_status = 'approved'
+                        AND active = 0
+                    THEN 1 ELSE 0 END
+                ) as inactive_deliveryman,
 
-        $suspend_deliveryman = DeliveryMan::when(is_numeric($params['zone_id']), function ($q) use ($params) {
-            return $q->where('zone_id', $params['zone_id']);
-        })
-            ->Zonewise()->where('application_status', 'approved')->where('status', 0)->count();
+                SUM(CASE
+                    WHEN application_status = 'approved'
+                        AND status = 0
+                    THEN 1 ELSE 0 END
+                ) as suspend_deliveryman,
 
-        $unavailable_deliveryman = DeliveryMan::when(is_numeric($params['zone_id']), function ($q) use ($params) {
-            return $q->where('zone_id', $params['zone_id']);
-        })
-            ->Zonewise()->where('active', 1)->Unavailable()->count();
+                SUM(CASE
+                    WHEN active = 1
+                        AND current_orders > {$maxOrder}
+                    THEN 1 ELSE 0 END
+                ) as unavailable_deliveryman,
 
-        $available_deliveryman = DeliveryMan::when(is_numeric($params['zone_id']), function ($q) use ($params) {
-            return $q->where('zone_id', $params['zone_id']);
-        })
-            ->Zonewise()->where('active', 1)->Available()->count();
+                SUM(CASE
+                    WHEN active = 1
+                        AND current_orders < {$maxOrder}
+                    THEN 1 ELSE 0 END
+                ) as available_deliveryman
+            ")
+            ->first();
 
-        $newly_joined_deliveryman = DeliveryMan::when(is_numeric($params['zone_id']), function ($q) use ($params) {
-            return $q->where('zone_id', $params['zone_id']);
-        })
-            ->Zonewise()->whereDate('created_at', '>=', now()->subDays(30)->format('Y-m-d'))->count();
+        $active_deliveryman      = $deliveryman_stats->active_deliveryman;
+        $inactive_deliveryman    = $deliveryman_stats->inactive_deliveryman;
+        $suspend_deliveryman     = $deliveryman_stats->suspend_deliveryman;
+        $unavailable_deliveryman = $deliveryman_stats->unavailable_deliveryman;
+        $available_deliveryman   = $deliveryman_stats->available_deliveryman;
+
+
         $deliveryMen = DeliveryMan::when(is_numeric($params['zone_id']), function ($q) use ($params) {
             return $q->where('zone_id', $params['zone_id']);
         })->zonewise()->available()->active()->get();
@@ -214,7 +288,7 @@ class DashboardController extends Controller
         $deliveryMen = Helpers::deliverymen_list_formatting($deliveryMen);
 
         $module_type = Config::get('module.current_module_type');
-        return view("admin-views.dashboard-{$module_type}", compact('data', 'active_deliveryman', 'deliveryMen', 'unavailable_deliveryman', 'available_deliveryman', 'inactive_deliveryman', 'newly_joined_deliveryman', 'delivery_man', 'total_sell', 'commission', 'delivery_commission', 'label', 'params', 'module_type', 'suspend_deliveryman'));
+        return view("admin-views.dashboard-{$module_type}", compact('data', 'active_deliveryman', 'deliveryMen', 'unavailable_deliveryman', 'available_deliveryman', 'inactive_deliveryman', 'module_type', 'suspend_deliveryman'));
     }
 
     public function dashboard(Request $request)
@@ -236,6 +310,11 @@ class DashboardController extends Controller
         $module_type = Config::get('module.current_module_type');
         if ($module_type == 'settings') {
             return redirect()->route('admin.business-settings.business-setup');
+        }
+        if ($module_type == 'ride-share' && addon_published_status('RideShare') == 1) {
+            return redirect()->route('admin.ride-share.dashboard');
+        } elseif ($module_type == 'ride-share' && addon_published_status('RideShare') == 0) {
+            return view('errors.404');
         }
         if ($module_type == 'rental' && addon_published_status('Rental') == 1) {
             return redirect()->route('admin.rental.dashboard');
@@ -299,6 +378,7 @@ class DashboardController extends Controller
         $top_sell = $data['top_sell'];
         $delivery_commission = $data['delivery_commission'];
         $module_type = Config::get('module.current_module_type');
+        $label = $data['label'];
 
         return response()->json([
             'popular_restaurants' => view('admin-views.partials._popular-restaurants', compact('popular'))->render(),
@@ -310,7 +390,7 @@ class DashboardController extends Controller
 
 
             'user_overview' => view('admin-views.partials._user-overview-chart', compact('data'))->render(),
-            'monthly_graph' => view('admin-views.partials._monthly-earning-graph', compact('total_sell', 'commission', 'delivery_commission'))->render(),
+            'monthly_graph' => view('admin-views.partials._monthly-earning-graph', compact('total_sell', 'commission', 'delivery_commission', 'label'))->render(),
             'stat_zone' => view('admin-views.partials._zone-change', compact('data'))->render(),
             'order_stats' => $module_type == 'parcel' ? view('admin-views.partials._dashboard-order-stats-parcel', compact('data'))->render() :
                 ($module_type == 'food' ? view('admin-views.partials._dashboard-order-stats-food', compact('data'))->render() :
@@ -384,7 +464,7 @@ class DashboardController extends Controller
             }
             $total_items = Item::where('is_approved', 1)->where('module_id', $module_id);
             $total_stores = Store::whereHas('vendor', fn($query) => $query->where('status', 1))->where('module_id', $module_id);
-            $total_customers = User::all();
+            $total_customers = User::query();
         } elseif ($module_id && $params['statistics_type'] == 'this_year') {
             $searching_for_dm = Order::SearchingForDeliveryman()->where('module_id', $module_id)->whereYear('created_at', now()->format('Y'));
             $accepted_by_dm = Order::AccepteByDeliveryman()->where('module_id', $module_id)->whereYear('accepted', now()->format('Y'));
@@ -401,7 +481,7 @@ class DashboardController extends Controller
             $total_orders = Order::where('module_id', $module_id);
             $total_items = Item::where('is_approved', 1)->where('module_id', $module_id);
             $total_stores = Store::whereHas('vendor', fn($query) => $query->where('status', 1))->where('module_id', $module_id);
-            $total_customers = User::all();
+            $total_customers = User::guery();
         } elseif ($module_id && $params['statistics_type'] == 'this_month') {
             $searching_for_dm = Order::SearchingForDeliveryman()->where('module_id', $module_id)->whereMonth('created_at', now()->format('m'))->whereYear('created_at', now()->format('Y'));
             $accepted_by_dm = Order::AccepteByDeliveryman()->where('module_id', $module_id)->whereMonth('accepted', now()->format('m'))->whereYear('accepted', now()->format('Y'));
@@ -418,7 +498,7 @@ class DashboardController extends Controller
             $total_orders = Order::where('module_id', $module_id);
             $total_items = Item::where('is_approved', 1)->where('module_id', $module_id);
             $total_stores = Store::whereHas('vendor', fn($query) => $query->where('status', 1))->where('module_id', $module_id);
-            $total_customers = User::all();
+            $total_customers = User::query();
         } elseif ($module_id && $params['statistics_type'] == 'this_week') {
             $searching_for_dm = Order::SearchingForDeliveryman()->where('module_id', $module_id)->whereBetween('created_at', [now()->startOfWeek()->format('Y-m-d H:i:s'), now()->endOfWeek()->format('Y-m-d H:i:s')]);
             $accepted_by_dm = Order::AccepteByDeliveryman()->where('module_id', $module_id)->whereBetween('accepted', [now()->startOfWeek()->format('Y-m-d H:i:s'), now()->endOfWeek()->format('Y-m-d H:i:s')]);
@@ -435,7 +515,7 @@ class DashboardController extends Controller
             $total_orders = Order::where('module_id', $module_id);
             $total_items = Item::where('is_approved', 1)->where('module_id', $module_id);
             $total_stores = Store::whereHas('vendor', fn($query) => $query->where('status', 1))->where('module_id', $module_id);
-            $total_customers = User::all();
+            $total_customers = User::guery();
         } elseif ($module_id) {
             $searching_for_dm = Order::SearchingForDeliveryman()->where('module_id', $module_id);
             $accepted_by_dm = Order::AccepteByDeliveryman()->where('module_id', $module_id);
@@ -452,7 +532,7 @@ class DashboardController extends Controller
             $total_orders = Order::where('module_id', $module_id);
             $total_items = Item::where('is_approved', 1)->where('module_id', $module_id);
             $total_stores = Store::whereHas('vendor', fn($query) => $query->where('status', 1))->where('module_id', $module_id);
-            $total_customers = User::all();
+            $total_customers = User::query();
         } else {
             $searching_for_dm = Order::SearchingForDeliveryman();
             $accepted_by_dm = Order::AccepteByDeliveryman();
@@ -466,10 +546,10 @@ class DashboardController extends Controller
             $new_items = Item::where('is_approved', 1)->whereDate('created_at', '>=', now()->subDays(30)->format('Y-m-d'));
             $new_stores = Store::whereHas('vendor', fn($query) => $query->where('status', 1))->whereDate('created_at', '>=', now()->subDays(30)->format('Y-m-d'));
             $new_customers = User::whereDate('created_at', '>=', now()->subDays(30)->format('Y-m-d'));
-            $total_orders = Order::all();
-            $total_items = Item::where('is_approved', 1)->get();
-            $total_stores = Store::whereHas('vendor', fn($query) => $query->where('status', 1))->get();
-            $total_customers = User::all();
+            $total_orders = Order::query();
+            $total_items = Item::where('is_approved', 1);
+            $total_stores = Store::whereHas('vendor', fn($query) => $query->where('status', 1));
+            $total_customers = User::query();
         }
 
         if (is_numeric($zone_id) && $module_id && !in_array($module_type, ['parcel'])) {
@@ -631,6 +711,9 @@ class DashboardController extends Controller
         $params = session('dash_params');
         if (!url()->current() == $request->is('admin/users')) {
             $data_os = self::order_stats_calc($params['zone_id'], $params['module_id']);
+            if(Route::currentRouteName() == 'admin.dispatch.dashboard'){
+                return $data_os;
+            }
             $data_uo = self::user_overview_calc($params['zone_id'], $params['module_id']);
         }
         $popular = Wishlist::with(['store'])
@@ -690,10 +773,13 @@ class DashboardController extends Controller
             ->get();
 
         $top_customers = User::when(is_numeric($params['zone_id']), function ($q) use ($params) {
-            return $q->where('zone_id', $params['zone_id']);
-        })
-            ->having("order_count", '>', 0)
-            ->orderBy("order_count", 'desc')
+                return $q->where('zone_id', $params['zone_id']);
+            })
+            ->withCount([
+                'orders as order_count' => fn($query) => $query->where('order_status', 'delivered')
+            ])
+            ->having('order_count', '>', 0)
+            ->orderByDesc('order_count')
             ->take(6)
             ->get();
 

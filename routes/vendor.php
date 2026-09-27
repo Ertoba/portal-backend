@@ -136,6 +136,8 @@ Route::group(['namespace' => 'Vendor', 'as' => 'vendor.'], function () {
             Route::get('requested/item/view/{id}', 'ItemController@requested_item_view')->name('requested_item_view');
 
             Route::get('product-gallery', 'ItemController@product_gallery')->name('product_gallery');
+            Route::get('item-view/{id}', 'ItemController@gallery_item_view')->name('item-view');
+
 
 
             //Mainul
@@ -204,6 +206,7 @@ Route::group(['namespace' => 'Vendor', 'as' => 'vendor.'], function () {
             Route::post('update/{id}', 'CouponController@update');
             Route::get('status/{id}/{status}', 'CouponController@status')->name('status');
             Route::delete('delete/{id}', 'CouponController@delete')->name('delete');
+             Route::get('view/{id}', 'CouponController@viewCoupon')->name('viewCoupon');
         });
 
         Route::group([ 'prefix' => 'advertisement', 'as' => 'advertisement.'], function () {

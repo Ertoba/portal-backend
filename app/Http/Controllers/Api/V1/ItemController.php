@@ -439,7 +439,7 @@ class ItemController extends Controller
                     })
                     ->first();
             }
-            
+
             $store = StoreLogic::get_store_details($item->store_id);
             if($store)
             {

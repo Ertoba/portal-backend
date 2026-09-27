@@ -28,9 +28,44 @@
                         data-target="#confirmation-reason-btn">
                         Confirmation Reason Modal Feature
                     </button>
+                    <button type="button" class="btn btn--primary" data-toggle="modal"
+                        data-target="#confirmation-deletes">
+                        Deletes confirmation
+                    </button>
                 </div>
             </div>
         </div>
+
+
+
+        <div class="modal shedule-modal fade" id="confirmation-deletes" tabindex="-1" aria-labelledby="exampleModalLabel"
+            aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content pb-2 max-w-500">
+                    <div class="modal-header">
+                        <button type="button"
+                            class="close bg-modal-btn w-30px h-30 rounded-circle position-absolute right-0 top-0 m-2 z-2"
+                            data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="text-center">
+                            <img src="{{asset('public/assets/admin/img/delete.png')}}" alt="icon" class="mb-20">
+                            <h3 class="mb-2 fs-18">Are you sure ?</h3>
+                            <p class="mb-2">Want to delete this role</p>
+                        </div>
+                    </div>
+                    <div class="modal-footer justify-content-center border-0 pt-0 mb-1 gap-2">
+                        <button type="button" class="btn min-w-120px btn-danger min-h-45px">Yes</button>
+                        <button type="button" class="btn min-w-120px btn--reset min-h-45px" data-dismiss="modal">No</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+
         <div class="col-md-3 col-sm-6">
             <div class="bg-light rounded p-3 h-100">
                 <h1 class="mb-2 text-capitalize">Button</h1>
@@ -144,13 +179,13 @@
                             <img class="avatar avatar-xss avatar-4by3 mr-2"
                                 src="{{ asset('public/assets/admin') }}/svg/components/placeholder-csv-format.svg"
                                 alt="Image Description">
-                            .{{ translate('messages.csv') }}
+                            {{ translate('messages.csv') }}
                         </a>
                     </div>
                 </div>
             </div>
         </div>
-        
+
     </div>
 </div>
 

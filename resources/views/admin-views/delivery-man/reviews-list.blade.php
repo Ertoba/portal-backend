@@ -94,7 +94,7 @@
                                         <img class="avatar avatar-xss avatar-4by3 mr-2"
                                              src="{{ asset('public/assets/admin/svg/components/placeholder-csv-format.svg') }}"
                                              alt="Image Description">
-                                        .{{ translate('messages.csv') }}
+                                        {{ translate('messages.csv') }}
                                     </a>
                                 </div>
                             </div>
@@ -176,7 +176,7 @@
                                     </td>
                                     <td>
                                         <div class="btn--container justify-content-center">
-                                            <a class="btn action-btn btn--warning btn-outline-warning view-details" href="#"
+                                            <a class="btn action-btn btn--warning btn-outline-warning" id="view-details" href="#"
                                                title="View" data-order_id="{{$review->order_id}}"
                                                data-date="{{ Helpers::time_date_format($review->created_at) }}"
                                                data-name="{{$review?->delivery_man?->f_name.' '.$review?->delivery_man?->l_name}}"
@@ -265,7 +265,7 @@
 @push('script_2')
     <script>
         "use strict";
-        $(document).on('click', '.view-details', function () {
+        $(document).on('click', '#view-details', function () {
             let data = $(this).data();
             $('#deliverymanReviewModal .modal-body #deliverymanReviewModalLabel').text('Deliveryman Review');
             $('#deliverymanReviewModal .modal-body #order-id').text(data.order_id);

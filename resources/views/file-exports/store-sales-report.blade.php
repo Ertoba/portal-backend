@@ -38,13 +38,13 @@
                 <th></th>
                 <th></th>
                 <th>
-                    {{ translate('gross_sale')  }}- {{ \App\CentralLogics\Helpers::number_format_short($data['orders']->sum('order_amount')) }}
+                    {{ translate('gross_sale')  }}- {{ \App\CentralLogics\Helpers::number_format_short($data['orders']->order_amount) }}
                     <br>
-                    {{ translate('total_tax')  }}- {{ \App\CentralLogics\Helpers::number_format_short($data['orders']->sum('total_tax_amount')) }}
+                    {{ translate('total_tax')  }}- {{ \App\CentralLogics\Helpers::number_format_short($data['orders']->total_tax_amount) }}
                     <br>
-                    {{ translate('total_commission')  }}- {{ \App\CentralLogics\Helpers::number_format_short($data['orders']->sum('transaction_sum_admin_commission')+$data['orders']->sum('transaction_sum_delivery_fee_comission')-$data['orders']->sum('transaction_sum_admin_expense')) }}
+                    {{ translate('total_commission')  }}- {{ \App\CentralLogics\Helpers::number_format_short($data['orders']->transaction_sum_admin_commission+$data['orders']->transaction_sum_delivery_fee_comission-$data['orders']->transaction_sum_admin_expense) }}
                     <br>
-                    {{ translate('total_store_earning')  }}- {{ \App\CentralLogics\Helpers::number_format_short($data['orders']->sum('transaction_sum_store_amount')) }}
+                    {{ translate('total_store_earning')  }}- {{ \App\CentralLogics\Helpers::number_format_short($data['orders']->transaction_sum_store_amount) }}
                 </th>
                 <th> </th>
                 <th></th>

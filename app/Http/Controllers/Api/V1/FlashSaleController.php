@@ -66,6 +66,8 @@ class FlashSaleController extends Controller
 
             ->wherehas('item.store', function($query)use($zone_id){
                 $query->whereIn('zone_id',json_decode($zone_id, true));
+            })->wherehas('item',function($query){
+                $query->active();
             })
 
             ->paginate($limit, ['*'], 'page', $offset);

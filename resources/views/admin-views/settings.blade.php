@@ -86,7 +86,7 @@
                         <label class="avatar avatar-xxl avatar-circle avatar-border-lg avatar-uploader profile-cover-avatar"
                             for="avatarUploader">
                             <img id="viewer" data-onerror-image="{{ asset('public/assets/admin/img/160x160/img1.jpg') }}"
-                                class="avatar-img onerror-image"
+                                class="avatar-img onerror-image w-100"
                                 src="{{ auth('admin')->user()->toArray()['image_full_url'] }}" alt="Image">
 
                             <input type="file" name="image" class="js-file-attach avatar-uploader-input"

@@ -16,7 +16,7 @@
                     <img src="{{asset('public/assets/admin/img/campaign.png')}}" class="w--26" alt="">
                 </span>
                 <span>
-                    {{translate('messages.campaign_list')}}<span class="badge badge-soft-dark ml-2" id="itemCount">{{$campaigns->total()}}</span>
+                    {{translate('messages.basic_campaign_list')}}<span class="badge badge-soft-dark ml-2" id="itemCount">{{$campaigns->total()}}</span>
                 </span>
             </h1>
         </div>
@@ -25,10 +25,9 @@
         <div class="card">
             <div class="card-header border-0 justify-content-end ">
                 <form  class="min--250">
-                    @csrf
                     <!-- Search -->
                     <div class="input-group input--group">
-                        <input id="datatableSearch_"  value="{{request()?->search ?? ''}}" type="search" name="search" class="form-control" placeholder="{{translate('messages.ex_search_name')}}" aria-label="{{translate('messages.search')}}">
+                        <input id="datatableSearch_"  value="{{request()?->search ?? ''}}" type="search" name="search" class="form-control" placeholder="{{translate('messages.ex_:_search_title')}}" aria-label="{{translate('messages.search')}}">
                         <button type="submit" class="btn btn--secondary"><i class="tio-search"></i></button>
                     </div>
                     <!-- End Search -->

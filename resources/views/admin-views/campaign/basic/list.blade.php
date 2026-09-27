@@ -16,11 +16,21 @@
                         {{translate('messages.campaign')}}
                     </span>
                 </h1>
-                <a class="btn btn--primary" href="{{route('admin.campaign.add-new', 'basic')}}">
-                    <i class="tio-add-circle"></i> {{translate('messages.add_new_campaign')}}
-                </a>
+
             </div>
         </div>
+
+        <div class="fs-12 px-3 py-2 rounded bg-info bg-opacity-10 mb-20">
+            <div class="d-flex align-items-center gap-2 mb-0">
+                <span class="text-info lh-1 fs-14">
+                    <img src="{{asset('public/assets/admin/img/svg/bulb.svg')}}" class="svg" alt="">
+                </span>
+                <p class="mb-0">
+                    {{ translate('messages.Vendors can join any campaign directly from the Basic Campaign List in the vendor panel.') }}
+                </p>
+            </div>
+        </div>
+
         <!-- End Page Header -->
         <!-- Card -->
         <div class="card">
@@ -70,84 +80,136 @@
                                 <img class="avatar avatar-xss avatar-4by3 mr-2"
                                     src="{{ asset('public/assets/admin') }}/svg/components/placeholder-csv-format.svg"
                                     alt="Image Description">
-                                .{{ translate('messages.csv') }}
+                                {{ translate('messages.csv') }}
                             </a>
                         </div>
                     </div>
                     <!-- End Unfold -->
+                    <a class="btn btn--primary py-10px px-3 fs-12" href="{{route('admin.campaign.add-new', 'basic')}}">
+                        <i class="tio-add-circle"></i> {{translate('messages.add_new_campaign')}}
+                    </a>
                 </div>
             </div>
             <!-- Table -->
-            <div class="table-responsive datatable-custom">
-                <table id="columnSearchDatatable"
-                        class="font-size-sm table table-borderless table-thead-bordered table-nowrap table-align-middle card-table"
-                        data-hs-datatables-options='{
-                            "order": [],
-                            "orderCellsTop": true,
-                            "paging":false
-                        }'>
-                    <thead class="thead-light">
-                    <tr>
-                        <th class="border-0">{{translate('messages.#')}}</th>
-                        <th class="border-0" >{{translate('messages.title')}}</th>
-                        <th class="border-0" >{{translate('messages.date_duration')}}</th>
-                        <th class="border-0" >{{translate('messages.time_duration')}}</th>
-                        <th class="border-0">{{translate('messages.status')}}</th>
-                        <th class="border-0 text-center">{{translate('messages.action')}}</th>
-                    </tr>
-                    </thead>
-
-                    <tbody id="set-rows">
-                    @foreach($campaigns as $key=>$campaign)
+            <div class="card-body pt-0 pb-0">
+                <div class="table-responsive datatable-custom">
+                    <table id="columnSearchDatatable"
+                            class="font-size-sm table table-borderless table-thead-bordered table-nowrap table-align-middle card-table"
+                            data-hs-datatables-options='{
+                                "order": [],
+                                "orderCellsTop": true,
+                                "paging":false
+                            }'>
+                        <thead class="thead-light">
                         <tr>
-                            <td>{{$key+$campaigns->firstItem()}}</td>
-                            <td>
-                                <a href="{{route('admin.campaign.view',['basic',$campaign->id])}}" title="{{ $campaign['title'] }}" class="d-block text-body">{{Str::limit($campaign['title'],25, '...')}}</a>
-                            </td>
-                            <td>
-                                <span class="bg-gradient-light text-dark">{{$campaign->start_date? \App\CentralLogics\Helpers::date_format($campaign?->start_date).'-'.  \App\CentralLogics\Helpers::date_format($campaign?->end_date): 'N/A'}}</span>
-                            </td>
-                            <td>
-                                <span class="bg-gradient-light text-dark">{{$campaign->start_time? \App\CentralLogics\Helpers::time_format($campaign?->start_time).'-'.  \App\CentralLogics\Helpers::time_format($campaign?->end_time): 'N/A'}}</span>
-                            </td>
-                            <td>
-                                <label class="toggle-switch toggle-switch-sm" for="stocksCheckbox{{$campaign->id}}">
-                                    <input type="checkbox" data-url=""
-                                    data-id="stocksCheckbox{{$campaign->id}}"
-                                    data-type="status"
-                                    data-image-on="{{ asset('/public/assets/admin/img/modal/basic_campaign_on.png') }}"
-                                    data-image-off="{{ asset('/public/assets/admin/img/modal/basic_campaign_off.png') }}"
-                                    data-title-on="{{ translate('By_Turning_ON_Campaign!') }}"
-                                    data-title-off="{{ translate('By_Turning_OFF_Campaign!') }}"
-                                    data-text-on="<p>{{ translate('If_you_turn_on_this_status,_it_will_show_on_user_website_and_app.') }}</p>"
-                                    data-text-off="<p>{{ translate('If_you_turn_off_this_status,_it_won’t_show_on_user_website_and_app') }}</p>"
-                                    class="toggle-switch-input dynamic-checkbox" id="stocksCheckbox{{$campaign->id}}" {{$campaign->status?'checked':''}}>
-                                    <span class="toggle-switch-label">
-                                        <span class="toggle-switch-indicator"></span>
-                                    </span>
-                                </label>
-                            </td>
-                            <form action="{{route('admin.campaign.status',['basic',$campaign['id'],$campaign->status?0:1])}}"
-                            method="get" id="stocksCheckbox{{$campaign->id}}_form">
-                            </form>
-                            <td>
-                                <div class="btn--container justify-content-center">
-                                    <a class="btn action-btn btn-outline-primary btn--primary"
-                                        href="{{route('admin.campaign.edit',['basic',$campaign['id']])}}" title="{{translate('messages.edit_campaign')}}"><i class="tio-edit"></i>
-                                    </a>
-                                    <a class="btn action-btn btn-outline-danger btn--danger form-alert" href="javascript:" data-id="campaign-{{$campaign['id']}}" data-message="{{translate('messages.Want_to_delete_this_item')}}"
-                                         title="{{translate('messages.delete_campaign')}}"><i class="tio-delete-outlined"></i>
-                                    </a>
-                                    <form action="{{route('admin.campaign.delete',[$campaign['id']])}}"
-                                                    method="post" id="campaign-{{$campaign['id']}}">
-                                        @csrf @method('delete')
-                                    </form>
-                                </div>
-                            </td>
+                            <th class="border-0">{{translate('messages.#')}}</th>
+                            <th class="border-0" >{{translate('messages.title')}}</th>
+                            <th class="border-0" >{{translate('messages.Store')}}</th>
+                            <th class="border-0" >{{translate('messages.date_duration')}}</th>
+                            <th class="border-0" >{{translate('messages.time_duration')}}</th>
+                            <th class="border-0">{{translate('messages.status')}}</th>
+                            <th class="border-0 text-center">{{translate('messages.action')}}</th>
                         </tr>
-                    @endforeach
-                    </tbody>
-                </table>
+                        </thead>
+
+                        <tbody id="set-rows">
+                        @foreach($campaigns as $key=>$campaign)
+                            <tr>
+                                {{-- @dump($campaign) --}}
+                                <td>{{$key+$campaigns->firstItem()}}</td>
+                                <td>
+                                    <a href="{{route('admin.campaign.view',['basic',$campaign->id])}}" title="{{ $campaign['title'] }}" class="text-hover-info text--dark max-w--220px min-w-150 line--limit-1">{{Str::limit($campaign['title'],25, '...')}}</a>
+                                </td>
+                                <td>
+                                    <div class="text-dark">
+                                       {{ $campaign->stores_count ?? 0}}
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="bg-gradient-light text-dark">{{$campaign->start_date? \App\CentralLogics\Helpers::date_format($campaign?->start_date).'-'.  \App\CentralLogics\Helpers::date_format($campaign?->end_date): 'N/A'}}</span>
+                                </td>
+                                <td>
+                                    <span class="bg-gradient-light text-dark">{{$campaign->start_time? \App\CentralLogics\Helpers::time_format($campaign?->start_time).'-'.  \App\CentralLogics\Helpers::time_format($campaign?->end_time): 'N/A'}}</span>
+                                </td>
+                                <td>
+                                    <label class="toggle-switch toggle-switch-sm" for="stocksCheckbox{{$campaign->id}}">
+                                        <input type="checkbox" data-url=""
+                                        data-id="stocksCheckbox{{$campaign->id}}"
+                                        data-type="status"
+                                        data-image-on="{{ asset('/public/assets/admin/img/modal/basic_campaign_on.png') }}"
+                                        data-image-off="{{ asset('/public/assets/admin/img/modal/basic_campaign_off.png') }}"
+                                        data-title-on="{{ translate('By_Turning_ON_Campaign!') }}"
+                                        data-title-off="{{ translate('By_Turning_OFF_Campaign!') }}"
+                                        data-text-on="<p>{{ translate('If_you_turn_on_this_status,_it_will_show_on_user_website_and_app.') }}</p>"
+                                        data-text-off="<p>{{ translate('If_you_turn_off_this_status,_it_won’t_show_on_user_website_and_app') }}</p>"
+                                        class="toggle-switch-input dynamic-checkbox" id="stocksCheckbox{{$campaign->id}}" {{$campaign->status?'checked':''}}>
+                                        <span class="toggle-switch-label">
+                                            <span class="toggle-switch-indicator"></span>
+                                        </span>
+                                    </label>
+                                </td>
+                                <form action="{{route('admin.campaign.status',['basic',$campaign['id'],$campaign->status?0:1])}}"
+                                method="get" id="stocksCheckbox{{$campaign->id}}_form">
+                                </form>
+                                <td>
+                                    <div class="btn--container justify-content-center">
+                                        <a class="btn action-btn btn-theme-dark btn-outline-base" href="{{route('admin.campaign.view',['basic',$campaign->id])}}">
+                                            <i class="tio-visible"></i>
+                                        </a>
+                                        <a class="btn action-btn btn-theme btn-outline-base"
+                                            href="{{route('admin.campaign.edit',['basic',$campaign['id']])}}" title="{{translate('messages.edit_campaign')}}"><i class="tio-edit"></i>
+                                        </a>
+                                        <a class="btn action-btn btn-outline-danger btn--danger" data-toggle="modal"
+                                                data-target="#confirmation-deletes-{{$campaign['id']}}" data-id="campaign-{{$campaign['id']}}"
+                                                data-message="{{translate('messages.Want_to_delete_this_item')}}"
+                                                title="{{translate('messages.delete_campaign')}}"><i class="tio-delete-outlined"></i>
+                                        </a>
+
+
+
+                                        <div class="modal shedule-modal fade" id="confirmation-deletes-{{$campaign['id']}}" tabindex="-1" aria-labelledby="exampleModalLabel"
+                                                    aria-hidden="true">
+                                                    <div class="modal-dialog modal-dialog-centered">
+                                                         <form action="{{route('admin.campaign.delete',[$campaign['id']])}}"  method="post" id="campaign-{{$campaign['id']}}">
+                                                            @csrf @method('delete')
+                                                            <div class="modal-content pb-2 max-w-500">
+                                                                <div class="modal-header">
+                                                                    <button type="button"
+                                                                        class="close bg-modal-btn w-30px h-30 rounded-circle position-absolute right-0 top-0 m-2 z-2"
+                                                                        data-dismiss="modal" aria-label="Close">
+                                                                        <span aria-hidden="true">&times;</span>
+                                                                    </button>
+                                                                </div>
+                                                                <div class="modal-body">
+                                                                    <div class="text-center">
+                                                                        <img src="{{asset('public/assets/admin/img/delete.png')}}" alt="icon" class="mb-20">
+                                                                        <h3 class="mb-2 fs-18">{{ translate('Want to delete this Campaign?') }}</h3>
+                                                                        @if ( $campaign->stores_count > 0)
+                                                                        <p class="mb-2 px-3 text-wrap">{{ translate('This campaign is already running, and ') }} {{ $campaign->stores_count }} {{ translate('of your stores have joined. If you delete it, those stores will be removed from the campaign.') }}</p>
+                                                                        @else
+                                                                        <p class="mb-2 px-3 text-wrap">{{ translate('Please confirm before deleting this campaign. This will permanently remove this from the campaign list.') }}</p>
+                                                                        @endif
+
+                                                                    </div>
+                                                                </div>
+                                                                <div class="modal-footer justify-content-center border-0 pt-0 mb-1 gap-2">
+                                                                    <button type="submit" class="btn min-w-120px btn-danger min-h-45px">{{ translate('messages.Yes, Delete') }}</button>
+                                                                    <button type="button" class="btn min-w-120px btn--reset min-h-45px" data-dismiss="modal">{{ translate('messages.cancel') }}</button>
+                                                                </div>
+                                                            </div>
+                                                        </form>
+                                                    </div>
+                                                </div>
+
+
+
+                                    </div>
+                                </td>
+                            </tr>
+                        @endforeach
+                        </tbody>
+                    </table>
+                </div>
             </div>
                 @if(count($campaigns) !== 0)
                 <hr>
@@ -166,6 +228,8 @@
             <!-- End Table -->
         </div>
         <!-- End Card -->
+
+
     </div>
 
 @endsection

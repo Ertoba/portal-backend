@@ -16,6 +16,12 @@ class NotificationController extends Controller
         $zone_id= $request->header('zoneId');
         $zone_id= json_decode($zone_id,true)  ?? [];
 
+        //for rideshare module start
+        if(is_int($zone_id)){
+            $zone_id = [$zone_id];
+        }
+        //for rideshare module end
+
         try {
             $notifications = Notification::active()->where('tergat', 'customer')->where(function($q)use($zone_id){
                 $q->whereNull('zone_id')->orWhereIn('zone_id', $zone_id);

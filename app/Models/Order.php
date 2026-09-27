@@ -54,7 +54,7 @@ class Order extends Model
 
     public function getOrderAttachmentFullUrlAttribute(){
         $images = [];
-        $attachment[] = $this->order_attachment;
+        $attachment = $this->order_attachment;
 
         $value = is_array($attachment)
             ? $attachment
@@ -67,7 +67,7 @@ class Order extends Model
         if ($value) {
             foreach ($value as $item) {
                 $item = is_array($item) ? $item : (is_object($item) && get_class($item) == 'stdClass' ? json_decode(json_encode($item), true) : ['img' => $item, 'storage' => 'public']);
-                $images[] = Helpers::get_full_url('order', $item['img'], $item['storage']);
+                $images[] = Helpers::get_full_url('order', $item['img'], $item['storage'] ?? 'public');
             }
         }
 
@@ -84,7 +84,7 @@ class Order extends Model
         if ($value){
             foreach ($value as $item){
                 $item = is_array($item)?$item:(is_object($item) && get_class($item) == 'stdClass' ? json_decode(json_encode($item), true):['img' => $item, 'storage' => 'public']);
-                $images[] = Helpers::get_full_url('order',$item['img'],$item['storage']);
+                $images[] = Helpers::get_full_url('order',$item['img'],$item['storage'] ?? 'public');
             }
         }
 

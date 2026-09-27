@@ -62,23 +62,23 @@
                     </a>
                     <ul class="menu">
                         <li>
-                            <a id="home-link" href="{{route('home')}}" class="{{ Request::is('/') ? 'active' : '' }}"><span>{{ translate('messages.home') }}</span></a>
+                            <a id="home-link" href="{{route('home')}}" class="{{ Request::is('/') ? 'active' : '' }}"><span>მთავარი</span></a>
                         </li>
                         <li>
-                            <a href="{{route('about-us')}}" class="{{ Request::is('about-us') ? 'active' : '' }}"><span>{{ translate('messages.about_us') }}</span></a>
+                            <a href="{{route('about-us')}}" class="{{ Request::is('about-us') ? 'active' : '' }}"><span>ჩვენს შესახებ</span></a>
                         </li>
                         <li>
-                            <a href="{{route('privacy-policy')}}" class="{{ Request::is('privacy-policy') ? 'active' : '' }}"><span>{{ translate('messages.privacy_policy') }}</span></a>
+                            <a href="{{route('privacy-policy')}}" class="{{ Request::is('privacy-policy') ? 'active' : '' }}"><span>კონფიდენციალურობის პოლიტიკა</span></a>
                         </li>
                         <li>
-                            <a href="{{route('terms-and-conditions')}}" class="{{ Request::is('terms-and-conditions') ? 'active' : '' }}"><span>{{ translate('messages.terms_and_condition') }}</span></a>
+                            <a href="{{route('terms-and-conditions')}}" class="{{ Request::is('terms-and-conditions') ? 'active' : '' }}"><span>წესები და პირობები</span></a>
                         </li>
                         <li>
-                            <a href="{{route('contact-us')}}"  class="{{ Request::is('contact-us') ? 'active' : '' }}"><span>{{ translate('messages.contact_us') }}</span></a>
+                            <a href="{{route('contact-us')}}"  class="{{ Request::is('contact-us') ? 'active' : '' }}"><span>კონტაქტი</span></a>
                         </li>
                         @if ($fixed_link &&$fixed_link['web_app_url_status'])
                             <div class="me-2 d-lg-none">
-                                <a class="cmn--btn me-xl-auto py-2" href="{{ $fixed_link['web_app_url'] }}" target="_blank">{{ translate('messages.browse_web') }}</a>
+                                <a class="cmn--btn me-xl-auto py-2" href="{{ $fixed_link['web_app_url'] }}" target="_blank">ვებ-აპის გახსნა</a>
                             </div>
                         @endif
                     </ul>
@@ -89,10 +89,11 @@
                     </div>
                     @php( $local = session()->has('landing_local')?session('landing_local'):null)
                     @php($lang = \App\CentralLogics\Helpers::get_business_settings('system_language') )
-                    @if ($lang)
+                    @php($active_lang = collect($lang ?? [])->where('status', 1)->values())
+                    @if ($active_lang->count() > 1)
                         <div class="dropdown--btn-hover position-relative">
                             <a class="dropdown--btn border-0 px-3 header--btn text-capitalize d-flex align-items-center" href="javascript:void(0)">
-                                @foreach($lang as $data)
+                                @foreach($active_lang as $data)
                                 @if($data['code']==$local)
                                     <span class="me-1">{{$data['code']}}</span>
                                 @elseif(!$local &&  $data['default'] == true)
@@ -104,8 +105,7 @@
                                 </svg>
                             </a>
                             <ul class="dropdown-list py-0" style="min-width:120px; top:100%">
-                                @foreach($lang as $key =>$data)
-                                @if($data['status']==1)
+                                @foreach($active_lang as $key =>$data)
                                     <li class="py-0">
                                         <a class="" href="{{route('lang',[$data['code']])}}">
                                             {{$data['code']}}
@@ -114,20 +114,19 @@
                                     <li>
                                         <hr class="dropdown-divider my-0">
                                     </li>
-                                @endif
-                            @endforeach
+                                @endforeach
                             </ul>
                         </div>
                     @endif
                     @if ($fixed_link &&$fixed_link['web_app_url_status'])
                         <div class="me-2 d-none d-lg-block">
-                            <a class="cmn--btn me-xl-auto py-2" href="{{ $fixed_link['web_app_url'] }}" target="_blank">{{ translate('messages.browse_web') }}</a>
+                            <a class="cmn--btn me-xl-auto py-2" href="{{ $fixed_link['web_app_url'] }}" target="_blank">ვებ-აპის გახსნა</a>
                         </div>
                     @endif
                     @if (isset($toggle_dm_registration) || isset($toggle_store_registration))
                     <div class="dropdown--btn-hover position-relative">
                         <a class="dropdown--btn header--btn text-capitalize d-flex align-items-center" href="javascript:void(0)">
-                            <span class="me-1">{{ translate('Join us') }}</span>
+                            <span class="me-1">შემოგვიერთდი</span>
                             <svg width="12" height="7" viewBox="0 0 12 7" fill="none" xmlns="http://www.w3.org/2000/svg">
                                 <path
                                     d="M6.00224 5.46105L1.33333 0.415128C1.21002 0.290383 1 0.0787335 1 0.0787335C1 0.0787335 0.708488 -0.0458817 0.584976 0.0788632L0.191805 0.475841C0.0680976 0.600389 7.43292e-08 0.766881 7.22135e-08 0.9443C7.00978e-08 1.12172 0.0680976 1.28801 0.191805 1.41266L5.53678 6.80682C5.66068 6.93196 5.82624 7.00049 6.00224 7C6.17902 7.00049 6.34439 6.93206 6.46839 6.80682L11.8082 1.41768C11.9319 1.29303 12 1.12674 12 0.949223C12 0.771804 11.9319 0.605509 11.8082 0.480765L11.415 0.0838844C11.1591 -0.174368 10.9225 0.222512 10.6667 0.480765L6.00224 5.46105Z"
@@ -139,7 +138,7 @@
                             @if ($toggle_store_registration)
                             <li>
                                 <a class="" href="{{ route('restaurant.create') }}">
-                                    {{ translate('messages.vendor_registration') }}
+                                    ვენდორის რეგისტრაცია
                                 </a>
                             </li>
                             @if ($toggle_dm_registration)
@@ -150,7 +149,7 @@
                         @endif
                         @if ($toggle_dm_registration)
                             <li><a class=""
-                                    href="{{ route('deliveryman.create') }}">{{ translate('messages.deliveryman_registration') }}</a>
+                                    href="{{ route('deliveryman.create') }}">კურიერის რეგისტრაცია</a>
                             </li>
                         @endif
                         </ul>
@@ -182,7 +181,7 @@
                         <form method="post" action="{{route('newsletter.subscribe')}}">
                             @csrf
                             <div class="input--grp">
-                                <input type="email" name="email" required class="form-control" placeholder="{{ translate('Enter your email address') }}">
+                                <input type="email" name="email" required class="form-control" placeholder="შეიყვანეთ თქვენი ელფოსტა">
                                 <button class="search-btn" type="submit">
                                     <svg width="46" height="46" viewBox="0 0 46 46" fill="none"
                                         xmlns="http://www.w3.org/2000/svg">
@@ -248,35 +247,35 @@
                     </div>
                     @php($landing_data =\App\Models\DataSetting::where('type', 'admin_landing_page')->whereIn('key', ['shipping_policy_status','refund_policy_status','cancellation_policy_status'])->pluck('value','key')->toArray())
                     <div class="footer-widget widget-links">
-                        <h5 class="subtitle mt-2 text-white">{{translate("messages.Suppport")}}</h5>
+                        <h5 class="subtitle mt-2 text-white">მხარდაჭერა</h5>
                         <ul>
                             <li>
-                                <a href="{{route('privacy-policy')}}">{{ translate('messages.privacy_policy') }}</a>
+                                <a href="{{route('privacy-policy')}}">კონფიდენციალურობის პოლიტიკა</a>
                             </li>
                             <li>
-                                <a href="{{route('terms-and-conditions')}}">{{ translate('messages.terms_and_condition') }}</a>
+                                <a href="{{route('terms-and-conditions')}}">წესები და პირობები</a>
                             </li>
 
                             @if (isset($landing_data['refund_policy_status']) && $landing_data['refund_policy_status']  == 1)
                             <li>
-                                <a href="{{route('refund')}}">{{ translate('messages.Refund Policy') }}</a>
+                                <a href="{{route('refund')}}">თანხის დაბრუნების პოლიტიკა</a>
                             </li>
                             @endif
                             @if (isset($landing_data['shipping_policy_status']) && $landing_data['shipping_policy_status']  == 1)
                             <li>
-                                <a href="{{route('shipping-policy')}}">{{ translate('messages.Shipping Policy') }}</a>
+                                <a href="{{route('shipping-policy')}}">მიწოდების პოლიტიკა</a>
                             </li>
                             @endif
                             @if (isset($landing_data['cancellation_policy_status']) && $landing_data['cancellation_policy_status']  == 1)
                             <li>
-                                <a href="{{route('cancelation')}}">{{ translate('messages.Cancelation Policy') }}</a>
+                                <a href="{{route('cancelation')}}">გაუქმების პოლიტიკა</a>
                             </li>
                             @endif
 
                         </ul>
                     </div>
                     <div class="footer-widget widget-links">
-                        <h5 class="subtitle mt-2 text-white">{{translate("messages.Contact_Us")}} </h5>
+                        <h5 class="subtitle mt-2 text-white">კონტაქტი</h5>
                         <ul>
                             <li>
                                 <a>

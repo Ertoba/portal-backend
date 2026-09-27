@@ -15,29 +15,35 @@
                     {{ translate('Zone')  }}: {{ $data['zone'] ?? translate('N/A') }}
                     <br>
                     {{ translate('Total_Order')  }}: {{ $data['data']->count() ?? translate('N/A') }}
+
+                  @isset($data['filter'])
+                    <br>
+                    {{ translate('Filter')  }}: {{ translate($data['filter']) ?? translate('All') }}
+                  @endisset
                 </th>
                 <th> </th>
             </tr>
 
-
             <tr>
                 <th></th>
                 <th></th>
-                <th>
-                    {{ translate('Scheduled_Order')  }}: {{ $data['data']->where('scheduled', '1')->count() ?? translate('N/A') }}
-                </th>
-                <th>
-                    {{ translate('Pending_Order')  }}: {{ $data['data']->where('order_status' ,'pending')->count() ?? translate('N/A') }}
-                </th>
-                <th>
-                    {{ translate('Delivered_Order')  }}: {{ $data['data']->where('order_status' ,'delivered')->count() ?? translate('N/A') }}
-                </th>
-                <th>
-                    {{ translate('Canceled_Order')  }}: {{ $data['data']->where('order_status' ,'canceled')->count() ?? translate('N/A') }}
-                </th>
-                <th>
-                    {{ translate('Refunded_Order')  }}: {{ $data['data']->where('order_status' ,'refunded')->count() ?? translate('N/A') }}
-                </th>
+                @if (!isset($data['filter']))
+                    <th>
+                        {{ translate('Scheduled_Order')  }}: {{ $data['data']->where('scheduled', '1')->count() ?? translate('N/A') }}
+                    </th>
+                    <th>
+                        {{ translate('Pending_Order')  }}: {{ $data['data']->where('order_status' ,'pending')->count() ?? translate('N/A') }}
+                    </th>
+                    <th>
+                        {{ translate('Delivered_Order')  }}: {{ $data['data']->where('order_status' ,'delivered')->count() ?? translate('N/A') }}
+                    </th>
+                    <th>
+                        {{ translate('Canceled_Order')  }}: {{ $data['data']->where('order_status' ,'canceled')->count() ?? translate('N/A') }}
+                    </th>
+                    <th>
+                        {{ translate('Refunded_Order')  }}: {{ $data['data']->where('order_status' ,'refunded')->count() ?? translate('N/A') }}
+                    </th>
+                @endif
                 <th> </th>
             </tr>
 

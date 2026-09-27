@@ -60,30 +60,39 @@
                             </div>
                         </div>
                         <div class="card-body d-flex flex-column" id="items">
-                            <div class="row g-3 mb-auto">
-                                @foreach ($products as $product)
-                                    <div class="order--item-box item-box">
-                                        @include('vendor-views.pos._single_product', [
-                                            'product' => $product,
-                                            'store' => $store_data,
-                                        ])
-                                    </div>
-                                @endforeach
-                            </div>
-                            @if (count($products) >= 13)
-                                <hr>
-                            @endif
-                            <div class="page-area mt-2">
-                                {!! $products->withQueryString()->links() !!}
-                            </div>
-                            @if (count($products) === 0)
-                                <div class="search--no-found">
+
+                            @if ($products->count() > 0)
+
+                                <div class="row g-3 mb-auto">
+                                    @foreach ($products as $product)
+                                        <div class="order--item-box item-box">
+                                            @include('vendor-views.pos._single_product', [
+                                                'product' => $product,
+                                                'store' => $store_data,
+                                            ])
+                                        </div>
+                                    @endforeach
+                                </div>
+
+                                @if ($products->count() >= 13)
+                                    <hr>
+                                @endif
+
+                                <div class="page-area mt-2">
+                                    {!! $products->withQueryString()->links() !!}
+                                </div>
+
+                            @else
+
+                                <div class="search--no-found text-center py-5 w-100">
                                     <img src="{{ asset('public/assets/admin/img/search-icon.png') }}" alt="img">
-                                    <p>
+                                    <p class="mt-3">
                                         {{ translate('messages.no_products_on_store_pos_search') }}
                                     </p>
                                 </div>
+
                             @endif
+
                         </div>
                     </div>
                 </div>
@@ -101,7 +110,7 @@
                                 <select id='customer' name="customer_id"
                                     data-placeholder="{{ translate('messages.walk_in_customer') }}"
                                     class="js-data-example-ajax form-control"></select>
-                                <button class="btn btn--primary" data-toggle="modal"
+                                <button class="btn btn--primary px-3" data-toggle="modal"
                                     data-target="#add-customer">{{ translate('messages.add_new_customer') }}</button>
                             </div>
                             @if ($store_data->sub_self_delivery == 1)
@@ -174,10 +183,9 @@
                             </div>
                             <div class="col-12 col-lg-6">
                                 <div class="form-group">
-                                    <label for="phone" class="input-label">{{ translate('phone') }}
-                                        ({{ translate('with_country_code') }})<span
+                                    <label for="phone" class="input-label">{{ translate('phone') }} <span
                                             class="input-label-secondary text-danger">*</span></label>
-                                    <input id="phone" type="text" name="phone" class="form-control"
+                                    <input id="phone" type="tel" name="phone" class="form-control"
                                         placeholder="{{ translate('phone') }}" required>
                                 </div>
                             </div>
@@ -333,7 +341,7 @@
                     document.getElementById('latitude').value = place.geometry.location.lat();
                     document.getElementById('longitude').value = place.geometry.location.lng();
                     const { AdvancedMarkerElement } = google.maps.marker;
-                    
+
                     // Create a marker for each place.
                     markers.push(
                         new AdvancedMarkerElement({
@@ -591,7 +599,11 @@
             }
         }
 
+        let form_submitted = false;
         $(document).on('click', '.add-To-Cart', function () {
+            if (form_submitted) return false;
+            form_submitted = true;
+            $('.add-To-Cart').prop('disabled', true);
             if (checkAddToCartValidity()) {
                 $.ajaxSetup({
                     headers: {
@@ -624,6 +636,8 @@
 
                             return false;
                         } else if (data.data === 0) {
+                            form_submitted = false;
+                            $('.add-To-Cart').prop('disabled', false);
                             Swal.fire({
                                 icon: 'error',
                                 title: 'Cart',
@@ -631,6 +645,8 @@
                             });
                             return false;
                         } else if (data.data === 'letiation_error') {
+                            form_submitted = false;
+                            $('.add-To-Cart').prop('disabled', false);
                             Swal.fire({
                                 icon: 'error',
                                 title: 'Cart',
@@ -649,9 +665,13 @@
                     },
                     complete: function() {
                         $('#loading').hide();
+                        form_submitted = false;
+                        $('.add-To-Cart').prop('disabled', false);
                     }
                 });
             } else {
+                form_submitted = false;
+                $('.add-To-Cart').prop('disabled', false);
                 Swal.fire({
                     type: 'info',
                     title: '{{translate('Cart')}}',

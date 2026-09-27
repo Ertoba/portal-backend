@@ -116,6 +116,7 @@
                                 <th class="border-0">{{translate('messages.store')}}</th>
                                 <th class="border-0">{{translate('messages.stock_for_this_sale')}}</th>
                                 <th class="border-0">{{translate('messages.Qty_Sold')}}</th>
+                                <th class="border-0">{{translate('messages.discount')}}</th>
                                 <th class="border-0">{{translate('messages.price')}}</th>
                                 <th class="border-0">{{translate('messages.status')}}</th>
                                 <th class="border-0">{{translate('messages.action')}}</th>
@@ -141,13 +142,22 @@
                                         </a>
                                     </td>
                                     <td class="text-center" title="{{ $item->item->store?$item->item->store->name:'' }}">
+
+                                        @if ($item->item->store)
+                                            <a href="{{route('admin.store.view', $item->item->store->id)}}" class="" > {{  Str::limit($item->item->store->name, 20, '...') }}</a>
+                                        @else
                                         {{Str::limit($item->item->store?$item->item->store->name:translate('messages.store deleted!'), 20, '...')}}
+
+                                        @endif
                                         </td>
                                     <td class="text-center">
                                         {{ $item['stock'] }}
                                     </td>
                                     <td class="text-center">
                                         {{ $item['sold'] }}
+                                    </td>
+                                    <td class="text-center">
+                                        {{ \App\CentralLogics\Helpers::format_currency($item['discount_amount']) }}
                                     </td>
                                     <td class="text-center">
                                         {{ \App\CentralLogics\Helpers::format_currency($item['price']) }}

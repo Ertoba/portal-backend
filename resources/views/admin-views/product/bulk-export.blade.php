@@ -85,24 +85,24 @@
                             </div>
                         </div>
                         <div class="col-md-4">
-                            <div class="form-group id_wise">
+                            <div class="form-group id_wise d-none">
                                 <label class="input-label" for="exampleFormControlSelect1">{{translate('messages.start_id')}}<span
                                         class="input-label-secondary"></span></label>
                                 <input type="number" name="start_id" class="form-control">
                             </div>
-                            <div class="form-group date_wise">
+                            <div class="form-group date_wise d-none">
                                 <label class="input-label" for="exampleFormControlSelect1">{{translate('messages.from_date')}}<span
                                         class="input-label-secondary"></span></label>
                                 <input type="date" name="from_date" class="form-control">
                             </div>
                         </div>
                         <div class="col-md-4">
-                            <div class="form-group id_wise">
+                            <div class="form-group id_wise  d-none">
                                 <label class="input-label" for="exampleFormControlSelect1">{{translate('messages.end_id')}}<span
                                         class="input-label-secondary"></span></label>
                                 <input type="number" name="end_id" class="form-control">
                             </div>
-                            <div class="form-group date_wise">
+                            <div class="form-group date_wise d-none">
                                 <label class="input-label text-capitalize" for="exampleFormControlSelect1">{{translate('messages.to_date')}}<span
                                         class="input-label-secondary"></span></label>
                                 <input type="date" name="to_date" class="form-control">
@@ -125,18 +125,17 @@
 <script>
     "use strict";
     $(document).on('ready', function (){
-        $('.id_wise').hide();
-        $('.date_wise').hide();
+
         $('#type').on('change', function()
         {
-            $('.id_wise').hide();
-            $('.date_wise').hide();
-            $('.'+$(this).val()).show();
+            $('.id_wise').addClass('d-none');
+            $('.date_wise').addClass('d-none');
+            $('.'+$(this).val()).removeClass('d-none');
         })
         $('#reset-btn').on('click', function()
         {
-            $('.id_wise').hide();
-            $('.date_wise').hide();
+            $('.id_wise').addClass('d-none');
+            $('.date_wise').addClass('d-none');
         })
     });
 </script>

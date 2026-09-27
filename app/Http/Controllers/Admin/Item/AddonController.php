@@ -79,6 +79,10 @@ class AddonController extends BaseController
 
     public function add(AddonAddRequest $request): RedirectResponse
     {
+        if($this->addonService->checkAddonExistsForThisStore(storeId: $request->store_id, addonName: $request->name[0])) {
+            Toastr::error(translate('messages.addon_already_exists_for_this_store'));
+            return back();
+        }
         $addon = $this->addonRepo->add(data: $this->addonService->getAddData(request: $request));
 
         if (addon_published_status('TaxModule')) {

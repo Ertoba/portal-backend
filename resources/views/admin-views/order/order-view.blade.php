@@ -296,27 +296,29 @@
 
                                     </h6>
                                 @endif
-                                @if ($order->order_attachment)
+
+                            </div>
+                        </div>
+                    </div>
+
+                    @if ($order->order_attachment)
                                     @php
                                         $order_images = json_decode($order->order_attachment,true) ?? [];
                                     @endphp
-                                    <h5 class="text-dark">
-                                        <span>{{ translate('messages.prescription') }}</span> <span>:</span>
-                                    </h5>
-                                    <div class="d-flex flex-wrap flex-md-row-reverse" style="gap:15px">
-                                        @foreach ($order_images as $key => $item)
+                    <div class="px-20">
+                        <h4 class="fs-14 mb-10px">{{ translate('messages.Prescription') }}</h4>
+                        <div class="tabs-slide-wrap tabs-slide-wrap-prescription position-relative">
+                            <div class="tabs-inner d-flex align-items-center gap-xxl-20 gap-3">
+
+                                @foreach ($order_images as $key => $item)
                                             @php($item = is_array($item)?$item:['img'=>$item,'storage'=>'public'])
-                                            <div>
-                                                <button class="btn w-100 px-0" data-toggle="modal"
-                                                        data-target="#prescriptionimagemodal{{ $key }}"
-                                                        title="{{ translate('messages.order_attachment') }}">
-                                                    <div class="gallary-card ml-auto">
-                                                        <img  src="{{\App\CentralLogics\Helpers::get_full_url('order', $item['img'], $item['storage']??'public') }}"
-                                                              alt="{{ translate('messages.prescription') }}"
-                                                              class="initial--22 object-cover">
+
+                                              <div class="tabs-slide_items">
+                                                    <div class="prescription-thumb h-100px aspect-ratio-1 overflow-hidden rounded" data-toggle="modal"
+                                                                                data-target="#prescriptionimagemodal{{ $key }}">
+                                                                <img src="{{\App\CentralLogics\Helpers::get_full_url('order', $item['img'], $item['storage']??'public') }}" alt="img" class="w-100">
                                                     </div>
-                                                </button>
-                                            </div>
+                                                </div>
                                             <div class="modal fade" id="prescriptionimagemodal{{ $key }}" tabindex="-1"
                                                  role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
                                                 <div class="modal-dialog">
@@ -346,12 +348,28 @@
                                                 </div>
                                             </div>
                                         @endforeach
-                                    </div>
-                                @endif
+
+
+                            </div>
+                            <div class="arrow-area">
+                                <div class="button-prev align-items-center">
+                                    <button type="button"
+                                        class="btn btn-click-prev mr-auto border-0 btn-primary rounded-circle fs-12 p-2 d-center">
+                                        <i class="tio-chevron-left fs-24"></i>
+                                    </button>
+                                </div>
+                                <div class="button-next align-items-center">
+                                    <button type="button"
+                                        class="btn btn-click-next ml-auto border-0 btn-primary rounded-circle fs-12 p-2 d-center">
+                                        <i class="tio-chevron-right fs-24"></i>
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
+                     @endif
                     <!-- End Header -->
+
 
                     <!-- Body -->
                     <div class="card-body px-0">
@@ -853,6 +871,16 @@
                                     <dd class="col-6 text-dark fs-14">
                                         - {{ \App\CentralLogics\Helpers::format_currency($coupon_discount_amount) }}
                                     </dd>
+
+
+
+                                     @if ($order->extra_discount_amount > 0)
+                                    <dt class="col-6 color-8a8a8a fs-12">{{ translate('extra_discount') }}:</dt>
+                                    <dd class="col-6 text-dark fs-14">
+                                        - {{ \App\CentralLogics\Helpers::format_currency($order->extra_discount_amount) }}
+                                    </dd>
+
+                                    @endif
                                         @if ($ref_bonus_amount > 0)
                                             <dt class="col-6 color-8a8a8a fs-12">{{ translate('messages.Referral_Discount') }}:</dt>
                                             <dd class="col-6 text-dark fs-14">
@@ -900,7 +928,7 @@
                                     <dt class="col-6 text-dar text-bold fs-16">{{ translate('messages.total') }} {{ $order->tax_status == 'included' ? '('.translate('messages.TAX_Included').')'  :'' }} : </dt>
                                     <dd class="col-6 text-dark font-weight-bolder fs-16">
 
-                                        {{ \App\CentralLogics\Helpers::format_currency($product_price + $del_c + $total_tax_amount + $total_addon_price + $deliverman_tips + $additional_charge - $coupon_discount_amount - $store_discount_amount - $admin_flash_discount_amount - $store_flash_discount_amount - $ref_bonus_amount +$extra_packaging_amount )  }}
+                                        {{ \App\CentralLogics\Helpers::format_currency($product_price + $del_c + $total_tax_amount + $total_addon_price + $deliverman_tips + $additional_charge - $coupon_discount_amount - $store_discount_amount - $admin_flash_discount_amount - $store_flash_discount_amount - $ref_bonus_amount +$extra_packaging_amount - $order->extra_discount_amount )  }}
                                     </dd>
                                     @if ($order?->payments)
                                         @foreach ($order?->payments as $payment)
@@ -1325,18 +1353,18 @@
                                         <span
                                             class="text-body d-block text-hover-primary mb-1">{{ $order->delivery_man['f_name'] . ' ' . $order->delivery_man['l_name'] }}</span>
 
-                                        <span class="text--title font-semibold d-flex align-items-center">
+                                        <span class="text--title font-normal d-flex align-items-center">
                                             <i class="tio-shopping-basket-outlined mr-2"></i>
                                             {{ $order->delivery_man->orders_count }}
                                             {{ translate('messages.orders_delivered') }}
                                         </span>
 
-                                        <span class="text--title font-semibold d-flex align-items-center">
+                                        <span class="text--title font-normal d-flex align-items-center">
                                             <i class="tio-call-talking-quiet mr-2"></i>
                                             {{ $order->delivery_man['phone'] }}
                                         </span>
 
-                                        <span class="text--title font-semibold d-flex align-items-center">
+                                        <span class="text--title font-normal d-flex align-items-center">
                                             <i class="tio-email-outlined mr-2"></i>
                                             {{ $order->delivery_man['email'] }}
                                         </span>
@@ -1387,7 +1415,7 @@
                                             {{ $order->customer['f_name'] . ' ' . $order->customer['l_name'] }}
                                         </span>
                                         <span>{{ $order->customer->orders_count }} {{ translate('messages.orders') }}</span>
-                                        <span class="text--title font-semibold d-flex align-items-center">
+                                        <span class="text--title font-normal d-flex align-items-center">
                                             <i class="tio-call-talking-quiet mr-2"></i> <span>{{ $order->customer['phone'] }}</span>
                                         </span>
                                         <span class="text--title d-flex align-items-center">
@@ -1421,7 +1449,7 @@
                                         <span class="name">{{ translate('messages.name') }}</span>
                                         <span class="info">{{ $receiver_details['contact_person_name'] }}</span>
                                         <span class="name">{{ translate('messages.contact') }}</span>
-                                        <a class="deco-none info d-flex"
+                                        <a class="deco-none info font-normal d-flex"
                                            href="tel:{{ $receiver_details['contact_person_number'] }}">
                                             {{ $receiver_details['contact_person_number'] }}</a>
                                             @if (data_get($receiver_details,'floor') != '')
@@ -1513,6 +1541,7 @@
                 <!-- Customer Card -->
                 @php($data = isset($order->order_proof) ? json_decode($order->order_proof, true) : [])
                 @if ( in_array($order->order_status, [ 'handover', 'delivered', 'picked_up']) || ($data != null && count($data) > 0) )
+                {{-- @dump($data) --}}
                     <!-- order proof -->
                     <div class="card mb-2 mt-2">
                         <div class="card-header border-0 text-center pb-0">
@@ -1596,7 +1625,7 @@
                                             {{ $order->store['name'] }}
                                         </span>
                                         <span>{{ $order->store->orders_count }} {{ translate('messages.orders') }}</span>
-                                        <span class="text--title font-semibold d-flex align-items-center">
+                                        <span class="text--title font-normal d-flex align-items-center">
                                             <i class="tio-call-talking-quiet mr-2"></i>{{ $order->store['phone'] }}
                                         </span>
                                         <span class="text--title d-flex align-items-center">

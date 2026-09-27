@@ -236,7 +236,7 @@
                                 </span>
                             </div>
                         </div>
-                        <div class="hs-unfold mr-2">
+                        <div class="hs-unfold mr-2 flex-grow-0">
                             <a class="js-hs-unfold-invoker btn btn-sm btn-white dropdown-toggle h--40px"
                                 href="javascript:;"
                                 data-hs-unfold-options='{
@@ -258,7 +258,7 @@
                                     <img class="avatar avatar-xss avatar-4by3 mr-2"
                                         src="{{ asset('public/assets/admin') }}/svg/components/placeholder-csv-format.svg"
                                         alt="Image Description">
-                                    .{{ translate('messages.csv') }}
+                                    {{ translate('messages.csv') }}
                                 </a>
                             </div>
                         </div>

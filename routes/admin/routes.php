@@ -143,6 +143,7 @@ Route::group(['namespace' => 'Admin', 'as' => 'admin.'], function () {
             Route::get(Coupon::STATUS[URI] . '/{id}/{status}', [CouponController::class, 'updateStatus'])->name('status');
             Route::get(Coupon::EXPORT[URI], [CouponController::class, 'exportList'])->name('coupon_export');
             Route::get('view/{id}', [CouponController::class, 'viewCoupon'])->name('viewCoupon');
+            Route::get('generate-check-code', [CouponController::class, 'generateCheckCode'])->name('generate-check-code');
         });
 
         Route::group(['prefix' => 'notification', 'as' => 'notification.', 'middleware' => ['module:notification']], function () {
@@ -163,6 +164,7 @@ Route::group(['namespace' => 'Admin', 'as' => 'admin.'], function () {
             Route::post(CommonCondition::UPDATE[URI] . '/{id}', [CommonConditionController::class, 'update'])->name('update');
             Route::delete(CommonCondition::DELETE[URI] . '/{id}', [CommonConditionController::class, 'delete'])->name('delete');
             Route::get(CommonCondition::STATUS[URI] . '/{id}/{status}', [CommonConditionController::class, 'updateStatus'])->name('status');
+            Route::get( 'view/{id}', [CommonConditionController::class, 'getDetailsView'])->name('view');
         });
 
         Route::group(['prefix' => 'brand', 'as' => 'brand.'], function () {
@@ -281,6 +283,7 @@ Route::group(['namespace' => 'Admin', 'as' => 'admin.'], function () {
                 Route::post(CustomRole::UPDATE[URI] . '/{id}', [CustomRoleController::class, 'update'])->name('update');
                 Route::delete(CustomRole::DELETE[URI] . '/{id}', [CustomRoleController::class, 'delete'])->name('delete');
                 Route::post(CustomRole::SEARCH[URI], [CustomRoleController::class, 'search'])->name('search');
+                Route::get('view/{id}', [CustomRoleController::class, 'view'])->name('view');
             });
 
             Route::group(['prefix' => 'employee', 'as' => 'employee.', 'middleware' => ['module:employee']], function () {
@@ -304,7 +307,6 @@ Route::group(['namespace' => 'Admin', 'as' => 'admin.'], function () {
                         Route::post(WalletBonus::UPDATE[URI] . '/{id}', [WalletBonusController::class, 'update'])->name('update');
                         Route::delete(WalletBonus::DELETE[URI] . '/{id}', [WalletBonusController::class, 'delete'])->name('delete');
                         Route::get(WalletBonus::UPDATE_STATUS[URI] . '/{id}/{status}', [WalletBonusController::class, 'updateStatus'])->name('status');
-                        Route::post(WalletBonus::SEARCH[URI], [WalletBonusController::class, 'getSearchList'])->name('search');
                     });
                 });
             });

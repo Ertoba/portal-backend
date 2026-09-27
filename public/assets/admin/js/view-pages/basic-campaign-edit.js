@@ -1,4 +1,9 @@
 "use strict";
+$(document).ready(function(){
+    $('#date_from').attr('min',(new Date()).toISOString().split('T')[0]);
+    $('#date_to').attr('min',(new Date()).toISOString().split('T')[0]);
+});
+
 $("#date_from").on("change", function () {
     $('#date_to').attr('min',$(this).val());
 });

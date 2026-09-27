@@ -12,6 +12,7 @@ use App\CentralLogics\Helpers;
 use App\Models\BusinessSetting;
 use App\CentralLogics\OrderLogic;
 use App\CentralLogics\CouponLogic;
+use App\CentralLogics\ProductLogic;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 use App\Models\OrderPayment;
@@ -344,12 +345,33 @@ class OrderController extends Controller
 
                 $order?->store ?   Helpers::increment_order_count($order?->store) : '';
 
+                if($order->is_guest == 0){
+
+                    OrderLogic::refund_before_delivered($order);
+                }
+
+            $hasStock = config('module.' . $order->module->module_type)['stock'];
+            $hasFlashDiscount = $order->flash_admin_discount_amount > 0 && $order->flash_store_discount_amount > 0;
+
+            if ($hasStock || $hasFlashDiscount) {
+                foreach ($order->details as $detail) {
+
+                    $item = $detail->campaign ?? $detail->item;
+
+                    if ($hasStock) {
+                        $variant = json_decode($detail->variation, true);
+                        $variantType = !empty($variant) ? $variant[0]['type'] : null;
+                        ProductLogic::update_stock($item, -$detail->quantity, $variantType)?->save();
+                    }
+
+                    if ($hasFlashDiscount) {
+                        ProductLogic::update_flash_stock($detail->item, $detail->quantity, true)?->save();
+                    }
+                }
             }
 
-            if($order->is_guest == 0){
-
-                OrderLogic::refund_before_delivered($order);
             }
+
 
         }
 

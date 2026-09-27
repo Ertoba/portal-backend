@@ -47,7 +47,11 @@ use App\Models\LoyaltyPointTransaction;
 use Modules\Rental\Entities\VehicleBrand;
 use Modules\Rental\Entities\VehicleReview;
 use Modules\Rental\Entities\VehicleCategory;
-
+use Modules\RideShare\Entities\TripManagement\RideRequest;
+use Modules\RideShare\Entities\VehicleManagement\RiderVehicle;
+use Modules\RideShare\Entities\VehicleManagement\RiderVehicleBrand;
+use Modules\RideShare\Entities\VehicleManagement\RiderVehicleModel;
+use Modules\RideShare\Entities\VehicleManagement\RiderVehicleCategory as VehicleManagementVehicleCategory;
 
 class SearchRoutingController extends Controller
 {
@@ -66,6 +70,16 @@ class SearchRoutingController extends Controller
             if (!addon_published_status('Rental') || $currentModuleType !== 'rental') {
                 $routes = array_filter($routes, function ($route) {
                     return  !in_array('rental', $route['moduleType']);
+                });
+            }
+            // if (!addon_published_status('RideShare') || $currentModuleType !== 'ride-share') {
+            //     $routes = array_filter($routes, function ($route) {
+            //         return  !in_array('ride-share', $route['moduleType']) && !in_array('rider', $route['moduleType']);
+            //     });
+            // }
+            if (!addon_published_status('RideShare') ) {
+                $routes = array_filter($routes, function ($route) {
+                    return  !in_array('ride-share', $route['moduleType']) && !in_array('rider', $route['moduleType']);
                 });
             }
 
@@ -108,6 +122,13 @@ class SearchRoutingController extends Controller
         if (!addon_published_status('Rental') || $currentModuleType !== 'rental') {
             $excludeTermsRoute[] = 'rental';
         }
+        if (!addon_published_status('RideShare') ) {
+
+             $excludeTermsRoute = array_merge($excludeTermsRoute, ['ride-share', 'rider']);
+        }
+        // if (!addon_published_status('RideShare') || $currentModuleType !== 'ride-share') {
+        //      $excludeTermsRoute = array_merge($excludeTermsRoute, ['ride-share', 'rider']);
+        // }
         $excludeTermsAjax = $this->getAjaxRoutes($adminRoutes);
         $addUrl = [
             'admin/users/cashback/edit/{id}',
@@ -128,8 +149,7 @@ class SearchRoutingController extends Controller
             }
             return true;
         });
-//         // print_r($adminRoutes->toArray());
-// dd($adminRoutes->toArray());
+
         $validRoutes = [];
         if (is_numeric($searchKeyword) && $searchKeyword > 0) {
             //store
@@ -187,7 +207,7 @@ class SearchRoutingController extends Controller
                     }
                 }
             }
-            if ($currentModuleType !== 'rental') {
+            if ( !in_array($currentModuleType, ['rental', 'ride-share']) ) {
 
                 //order
                 $order = Order::when(is_numeric($currentModuleId), function ($query) use ($currentModuleId) {
@@ -475,7 +495,12 @@ class SearchRoutingController extends Controller
                     $couponRoutes = $adminRoutes->filter(function ($route) {
                         return str_contains($route->uri(), 'rental/coupon') && (!str_contains($route->uri(), 'status') && !str_contains($route->uri(), 'export'));
                     });
-                } else {
+                } elseif ($currentModuleType == 'ride-share') {
+                    $couponRoutes = $adminRoutes->filter(function ($route) {
+                        return str_contains($route->uri(), 'ride-share/promotion/coupon-setup') && (!str_contains($route->uri(), 'status') && !str_contains($route->uri(), 'export'));
+                    });
+                }
+                else {
 
                     $couponRoutes = $adminRoutes->filter(function ($route) {
                         return str_contains($route->uri(), 'coupon/edit');
@@ -554,12 +579,12 @@ class SearchRoutingController extends Controller
 
                 if ($currentModuleType == 'rental') {
                     $notificationRoutes = $adminRoutes->filter(function ($route) {
-                        return str_contains($route->uri(), 'rental/notification') && str_contains($route->uri(), 'edit');
+                        return str_contains($route->getName(), 'admin.rental.notification.list');
                     });
                 } else {
 
                     $notificationRoutes = $adminRoutes->filter(function ($route) {
-                        return str_contains($route->uri(), 'notification') && str_contains($route->uri(), 'edit');
+                        return str_contains($route->getName(), 'admin.notification.add-new');
                     });
                 }
 
@@ -874,39 +899,24 @@ class SearchRoutingController extends Controller
                 }
             }
 
+            if ($currentModuleType == 'ride-share') {
+                $rideRequest = RideRequest::where('ref_id',$searchKeyword)->first();
+                if ($rideRequest) {
+                    $tripRoutes = $adminRoutes->filter(function ($route) {
+                        return (str_contains($route->uri(), 'admin/ride-share/ride/details')) && !str_contains($route->uri(), 'transactions/rental/trip/details/')  && !str_contains($route->uri(), 'expense-report') && !str_contains($route->uri(), 'export');
+                    });
 
-            // review
-            // $review = Review::when(is_numeric($currentModuleId), function ($query) use ($currentModuleId) {
-            //                                         return $query->where('module_id', $currentModuleId);
-            //                                     })->find($searchKeyword);
-            // if ($review){
-            //     $reviewRoutes = $adminRoutes->filter(function ($route) {
-            //         return str_contains($route->uri(), 'admin/item/reviews') || str_contains($route->uri(), 'admin/item/requested/item/view/') ;
-            //     });
+                    if (isset($tripRoutes)) {
+                        foreach ($tripRoutes as $route) {
+                            $validRoutes[] = $this->filterRoute(model: $rideRequest, route: $route, type: 'ride-request', prefix: 'RideRequest', name: $rideRequest->ref_id, module_type: 'ride-share', searchKeyword: $rideRequest->ref_id);
+                        }
+                    }
+                }
 
-            //     if (isset($reviewRoutes)) {
-            //         foreach ($reviewRoutes as $route) {
-            //             $validRoutes[] = $this->filterRoute(model: $review, route: $route, prefix: 'Review');
-            //         }
-            //     }
-            // }
 
-            // //subscriber
-            // $storeSubscription = StoreSubscription::wherehas('store', function($query){
-            //     $query->whereIn('store_business_model' ,['subscription','unsubscribed']);
-            // })->where('store_id',$searchKeyword);
+            }
 
-            // if ($storeSubscription){
-            //     $storeSubscriptionRoutes = $adminRoutes->filter(function ($route) {
-            //         return str_contains($route->uri(), 'subscription') && str_contains($route->uri(), 'subscriber-detail');
-            //     });
 
-            //     if (isset($storeSubscriptionRoutes)) {
-            //         foreach ($storeSubscriptionRoutes as $route) {
-            //             $validRoutes[] = $this->filterRoute(model: $storeSubscription, route: $route, prefix: 'Subscription');
-            //         }
-            //     }
-            // }
         } else {
             //Store
             $stores = Store::when(is_numeric($currentModuleId), function ($query) use ($currentModuleId) {
@@ -983,45 +993,45 @@ class SearchRoutingController extends Controller
 
             if ($currentModuleType !== 'rental') {
                 //  Order
-                $orders = Order::with('customer')->when(is_numeric($currentModuleId), function ($query) use ($currentModuleId) {
-                    return $query->where('module_id', $currentModuleId);
-                })->where(function ($query) use ($searchKeyword) {
+                // $orders = Order::with('customer')->when(is_numeric($currentModuleId), function ($query) use ($currentModuleId) {
+                //     return $query->where('module_id', $currentModuleId);
+                // })->where(function ($query) use ($searchKeyword) {
 
-                    $query->where('order_status', 'LIKE', '%' . $searchKeyword . '%' )
-                    ->orwhere('payment_method', 'LIKE', '%' . $searchKeyword . '%' )
-                    ->orwhereHas('customer', function ($query) use ($searchKeyword) {
-                        $query->where('f_name', 'LIKE', '%' . $searchKeyword . '%')
-                            ->orWhere('l_name', 'LIKE', '%' . $searchKeyword . '%')
-                            ->orWhere('email', 'LIKE', '%' . $searchKeyword . '%')
-                            ->orWhere('phone', 'LIKE', '%' . $searchKeyword . '%')
-                            ->orWhereRaw("CONCAT(f_name, ' ', l_name) LIKE ?", ['%' . $searchKeyword . '%'])
-                            ->orWhereRaw("CONCAT(f_name,l_name) LIKE ?", ['%' . $searchKeyword . '%'])
-                            ->orWhereRaw("CONCAT(l_name,f_name) LIKE ?", ['%' . $searchKeyword . '%']);
-                    })
-                        ->orWhereHas('store', function ($query) use ($searchKeyword) {
-                            $query->where('name', 'LIKE', '%' . $searchKeyword . '%')
-                                ->orWhere('phone', 'LIKE', '%' . $searchKeyword . '%')
-                                ->orWhere('email', 'LIKE', '%' . $searchKeyword . '%')
-                                ->orWhere('address', 'LIKE', '%' . $searchKeyword . '%')
-                                ->orWhere('meta_title', 'LIKE', '%' . $searchKeyword . '%')
-                                ->orWhere('meta_description', 'LIKE', '%' . $searchKeyword . '%');
-                        });
-                })
+                //     $query->where('order_status', 'LIKE', '%' . $searchKeyword . '%' )
+                //     ->orwhere('payment_method', 'LIKE', '%' . $searchKeyword . '%' )
+                //     ->orwhereHas('customer', function ($query) use ($searchKeyword) {
+                //         $query->where('f_name', 'LIKE', '%' . $searchKeyword . '%')
+                //             ->orWhere('l_name', 'LIKE', '%' . $searchKeyword . '%')
+                //             ->orWhere('email', 'LIKE', '%' . $searchKeyword . '%')
+                //             ->orWhere('phone', 'LIKE', '%' . $searchKeyword . '%')
+                //             ->orWhereRaw("CONCAT(f_name, ' ', l_name) LIKE ?", ['%' . $searchKeyword . '%'])
+                //             ->orWhereRaw("CONCAT(f_name,l_name) LIKE ?", ['%' . $searchKeyword . '%'])
+                //             ->orWhereRaw("CONCAT(l_name,f_name) LIKE ?", ['%' . $searchKeyword . '%']);
+                //     })
+                //         ->orWhereHas('store', function ($query) use ($searchKeyword) {
+                //             $query->where('name', 'LIKE', '%' . $searchKeyword . '%')
+                //                 ->orWhere('phone', 'LIKE', '%' . $searchKeyword . '%')
+                //                 ->orWhere('email', 'LIKE', '%' . $searchKeyword . '%')
+                //                 ->orWhere('address', 'LIKE', '%' . $searchKeyword . '%')
+                //                 ->orWhere('meta_title', 'LIKE', '%' . $searchKeyword . '%')
+                //                 ->orWhere('meta_description', 'LIKE', '%' . $searchKeyword . '%');
+                //         });
+                // })
 
-                    ->get();
+                //     ->get();
 
-                if ($orders) {
-                    $ordersRoutes = $adminRoutes->filter(function ($route) {
-                        return str_contains($route->uri(), 'admin/order/details');
-                    });
-                    if (isset($ordersRoutes)) {
-                        foreach ($orders as $order) {
-                            foreach ($ordersRoutes as $route) {
-                                $validRoutes[] = $this->filterRoute(model: $order, route: $route, type: 'order', prefix: 'Order');
-                            }
-                        }
-                    }
-                }
+                // if ($orders) {
+                //     $ordersRoutes = $adminRoutes->filter(function ($route) {
+                //         return str_contains($route->uri(), 'admin/order/details');
+                //     });
+                //     if (isset($ordersRoutes)) {
+                //         foreach ($orders as $order) {
+                //             foreach ($ordersRoutes as $route) {
+                //                 $validRoutes[] = $this->filterRoute(model: $order, route: $route, type: 'order', prefix: 'Order');
+                //             }
+                //         }
+                //     }
+                // }
                 //Advertisement
                 $advertisements = Advertisement::when(is_numeric($currentModuleId), function ($query) use ($currentModuleId) {
                     return $query->where('module_id', $currentModuleId);
@@ -1338,7 +1348,11 @@ class SearchRoutingController extends Controller
                     $couponRoutes = $adminRoutes->filter(function ($route) {
                         return str_contains($route->uri(), 'rental/coupon') && (!str_contains($route->uri(), 'status') && !str_contains($route->uri(), 'export'));
                     });
-                } else {
+                } elseif ($currentModuleType == 'ride-share') {
+                    $couponRoutes = $adminRoutes->filter(function ($route) {
+                        return str_contains($route->uri(), 'ride-share/promotion/coupon-setup') && (!str_contains($route->uri(), 'status') && !str_contains($route->uri(), 'export'));
+                    });
+                }  else {
 
                     $couponRoutes = $adminRoutes->filter(function ($route) {
                         return str_contains($route->uri(), 'coupon/edit');
@@ -1398,7 +1412,12 @@ class SearchRoutingController extends Controller
                     $bannerRoutes = $adminRoutes->filter(function ($route) {
                         return str_contains($route->uri(), 'admin/rental/banner') && !str_contains($route->uri(), 'status') && !str_contains($route->uri(), 'export');
                     });
-                } else {
+                }
+                else if ($currentModuleType == 'ride-share') {
+                    $bannerRoutes = $adminRoutes->filter(function ($route) {
+                        return str_contains($route->uri(), 'admin/ride-share/promotion/banner-setup') && !str_contains($route->uri(), 'status') && !str_contains($route->uri(), 'export');
+                    });
+                }  else {
                     $bannerRoutes = $adminRoutes->filter(function ($route) {
                         return str_contains($route->uri(), 'admin/banner') && !str_contains($route->uri(), 'status') && !str_contains($route->uri(), 'export');
                     });
@@ -1470,12 +1489,13 @@ class SearchRoutingController extends Controller
 
                 if ($currentModuleType == 'rental') {
                     $notificationRoutes = $adminRoutes->filter(function ($route) {
-                        return str_contains($route->uri(), 'rental/notification') && str_contains($route->uri(), 'edit');
+                       return str_contains($route->getName(), 'admin.rental.notification.list');
                     });
                 } else {
 
                     $notificationRoutes = $adminRoutes->filter(function ($route) {
-                        return str_contains($route->uri(), 'notification') && str_contains($route->uri(), 'edit');
+                      return str_contains($route->getName(), 'admin.notification.add-new');
+
                     });
                 }
 
@@ -2042,6 +2062,142 @@ class SearchRoutingController extends Controller
                     }
                 }
             }
+
+
+            if ($currentModuleType == 'ride-share') {
+
+                //  RideRequest
+                $rideRequest = RideRequest::with('customer')->when(is_numeric($currentModuleId), function ($query) use ($currentModuleId) {
+                    return $query->where('module_id', $currentModuleId);
+                })
+                  ->where(function ($query) use ($searchKeyword) {
+
+                    $query->where('current_status', 'LIKE', '%' . $searchKeyword . '%' )
+                    ->orwhere('payment_method', 'LIKE', '%' . $searchKeyword . '%' )
+                    ->orwhereHas('customer', function ($query) use ($searchKeyword) {
+                        $query->where('f_name', 'LIKE', '%' . $searchKeyword . '%')
+                            ->orWhere('l_name', 'LIKE', '%' . $searchKeyword . '%')
+                            ->orWhere('email', 'LIKE', '%' . $searchKeyword . '%')
+                            ->orWhere('phone', 'LIKE', '%' . $searchKeyword . '%')
+                            ->orWhereRaw("CONCAT(f_name, ' ', l_name) LIKE ?", ['%' . $searchKeyword . '%'])
+                            ->orWhereRaw("CONCAT(f_name,l_name) LIKE ?", ['%' . $searchKeyword . '%'])
+                            ->orWhereRaw("CONCAT(l_name,f_name) LIKE ?", ['%' . $searchKeyword . '%']);
+                    })  ;
+                })  ->get();
+
+                if ($rideRequest) {
+                    $rideRequestRoutes = $adminRoutes->filter(function ($route) {
+                        return (str_contains($route->uri(), 'ride-share/ride/details')) && !str_contains($route->uri(), 'transactions/rental/trip/details/')  && !str_contains($route->uri(), 'expense-report') && !str_contains($route->uri(), 'export');
+                    });
+                    if (isset($rideRequestRoutes)) {
+                        foreach ($rideRequest as $trip) {
+                            foreach ($rideRequestRoutes as $route) {
+                                $validRoutes[] = $this->filterRoute(model: $trip, route: $route, type: 'ride-request', prefix: 'RideRequest', name: $trip->ref_id,module_type: 'ride-share', searchKeyword: $trip->ref_id);
+                            }
+                        }
+                    }
+                }
+            }
+
+            if(addon_published_status('RideShare')){
+
+                    $rider = DeliveryMan::rider() ->where(function ($query) use ($searchKeyword) {
+                            $query->where('f_name', 'LIKE', '%' . $searchKeyword . '%')
+                                ->orWhere('l_name', 'LIKE', '%' . $searchKeyword . '%')
+                                ->orWhere('email', 'LIKE', '%' . $searchKeyword . '%')
+                                ->orWhere('phone', 'LIKE', '%' . $searchKeyword . '%')
+                                ->orWhere('identity_type', 'LIKE', '%' . $searchKeyword . '%')
+                                ->orWhereRaw("CONCAT(f_name, ' ', l_name) LIKE ?", ['%' . $searchKeyword . '%'])
+                                ->orWhereRaw("CONCAT(f_name,l_name) LIKE ?", ['%' . $searchKeyword . '%'])
+                                ->orWhereRaw("CONCAT(l_name,f_name) LIKE ?", ['%' . $searchKeyword . '%']);
+
+                    })  ->get();
+
+                    if ($rider) {
+                        $riderRoutes = $adminRoutes->filter(function ($route) {
+                            return (str_contains($route->uri(), 'admin/users/rider/preview')) ;
+                        });
+                        if (isset($riderRoutes)) {
+                            foreach ($rider as $trip) {
+                                foreach ($riderRoutes as $route) {
+                                    $validRoutes[] = $this->filterRoute(model: $trip, route: $route, type: 'rider', prefix: 'Rider', name: $trip->full_name,module_type: 'ride-share', searchKeyword: $trip->id);
+                                }
+                            }
+                        }
+                    }
+
+                    $riderVehicleBrand = RiderVehicleBrand::
+                    where(function ($query) use ($searchKeyword) {
+                            $query->where('name', 'LIKE', '%' . $searchKeyword . '%');
+                    })  ->get();
+
+                    if ($riderVehicleBrand) {
+                        $riderVehicleBrandRoutes = $adminRoutes->filter(function ($route) {
+                            return (str_contains($route->uri(), 'admin/users/rider/vehicle/brand/edit')) ;
+                        });
+                        if (isset($riderVehicleBrandRoutes)) {
+                            foreach ($riderVehicleBrand as $trip) {
+                                foreach ($riderVehicleBrandRoutes as $route) {
+                                    $validRoutes[] = $this->filterRoute(model: $trip, route: $route, type: 'rider-vehicle-brand', prefix: 'RiderVehicleBrand', name: $trip->name,module_type: 'ride-share', searchKeyword: $trip->id);
+                                }
+                            }
+                        }
+                    }
+
+                    $riderVehicleModel = RiderVehicleModel::
+                    where(function ($query) use ($searchKeyword) {
+                            $query->where('name', 'LIKE', '%' . $searchKeyword . '%');
+                    })  ->get();
+
+                    if ($riderVehicleModel) {
+                        $riderVehicleModelRoutes = $adminRoutes->filter(function ($route) {
+                            return (str_contains($route->uri(), 'admin/users/rider/vehicle/model/edit')) ;
+                        });
+                        if (isset($riderVehicleModelRoutes)) {
+                            foreach ($riderVehicleModel as $trip) {
+                                foreach ($riderVehicleModelRoutes as $route) {
+                                    $validRoutes[] = $this->filterRoute(model: $trip, route: $route, type: 'rider-vehicle-model', prefix: 'RiderVehicleModel', name: $trip->name,module_type: 'ride-share', searchKeyword: $trip->id);
+                                }
+                            }
+                        }
+                    }
+                    $riderVehicleModel = VehicleManagementVehicleCategory::
+                    where(function ($query) use ($searchKeyword) {
+                            $query->where('name', 'LIKE', '%' . $searchKeyword . '%');
+                    })  ->get();
+
+                    if ($riderVehicleModel) {
+                        $riderVehicleModelRoutes = $adminRoutes->filter(function ($route) {
+                            return (str_contains($route->uri(), 'admin/users/rider/vehicle/category/edit')) ;
+                        });
+                        if (isset($riderVehicleModelRoutes)) {
+                            foreach ($riderVehicleModel as $trip) {
+                                foreach ($riderVehicleModelRoutes as $route) {
+                                    $validRoutes[] = $this->filterRoute(model: $trip, route: $route, type: 'rider-vehicle-category', prefix: 'RiderVehicleCategory', name: $trip->name,module_type: 'ride-share', searchKeyword: $trip->id);
+                                }
+                            }
+                        }
+                    }
+                    $riderVehicle = RiderVehicle::
+                    whereNot('vehicle_request_status', 'pending')
+                    ->where(function ($query) use ($searchKeyword) {
+                            $query->where('name', 'LIKE', '%' . $searchKeyword . '%');
+                    })  ->get();
+
+                    if ($riderVehicle) {
+                        $riderVehicleRoutes = $adminRoutes->filter(function ($route) {
+                            return (str_contains($route->uri(), 'admin/users/rider/vehicle/show') || str_contains($route->uri(), 'admin/users/rider/vehicle/edit/')) ;
+                        });
+                        if (isset($riderVehicleRoutes)) {
+                            foreach ($riderVehicle as $trip) {
+                                foreach ($riderVehicleRoutes as $route) {
+                                    $validRoutes[] = $this->filterRoute(model: $trip, route: $route, type: 'rider-vehicle', prefix: 'RiderVehicle', name: $trip->name,module_type: 'ride-share', searchKeyword: $trip->id);
+                                }
+                            }
+                        }
+                    }
+            }
+
         }
 
         $result = array_merge($formattedRoutes, $validRoutes);
@@ -2069,7 +2225,11 @@ class SearchRoutingController extends Controller
 
         if (!empty($placeholders)) {
             $firstPlaceholder = $placeholders[0];
-            $uriWithParameter = str_replace("{{$firstPlaceholder}}", $model->id, $uriWithParameter);
+            if($module_type == 'ride-share' && $type == 'ride-request') {
+                $uriWithParameter = str_replace("{{$firstPlaceholder}}", $model->ref_id, $uriWithParameter);
+            } else{
+                $uriWithParameter = str_replace("{{$firstPlaceholder}}", $model->id, $uriWithParameter);
+            }
         }
 
         $uriWithParameter = preg_replace('/\{\w+\?\}/', '', $uriWithParameter);

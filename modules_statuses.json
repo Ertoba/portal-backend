@@ -3,5 +3,6 @@
     "Rental": true,
     "Controller": true,
     "TaxModule": true,
-    "AI": true
+    "AI": true,
+    "RideShare": true
 }

@@ -88,10 +88,12 @@ class WishlistController extends Controller
             });
         }, 'store'=>function($q)use($zone_id,$longitude,$latitude){
             return $q->when(config('module.current_module_data'), function($query)use($zone_id){
-                $query->whereHas('zone.modules', function($query){
-                    $query->where('modules.id', config('module.current_module_data')['id']);
-                })->module(config('module.current_module_data')['id']);
-            })->withOpen($longitude??0,$latitude??0)->whereHas('module',function($query){
+                        $query->whereHas('zone.modules', function($query){
+                            $query->where('modules.id', config('module.current_module_data')['id']);
+                        })->module(config('module.current_module_data')['id']);
+                    })->where('status', 1)
+            ->withOpen($longitude??0,$latitude??0)
+            ->whereHas('module',function($query){
                 $query->where('status',1);
             })->whereIn('zone_id', json_decode($zone_id, true));
         }])->get();

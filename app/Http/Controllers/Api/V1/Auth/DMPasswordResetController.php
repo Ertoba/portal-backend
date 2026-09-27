@@ -30,7 +30,7 @@ class DMPasswordResetController extends Controller
             return response()->json(['errors' => Helpers::error_processor($validator)], 403);
         }
         $firebase_otp_verification = BusinessSetting::where('key', 'firebase_otp_verification')->first()->value??0;
-        $deliveryman = DeliveryMan::Where(['phone' => $request['phone']])->first();
+        $deliveryman = DeliveryMan::withoutGlobalScope('delivery_only')->Where(['phone' => $request['phone']])->first();
 
         if (isset($deliveryman)) {
             if($firebase_otp_verification || env('APP_MODE') =='demo')
@@ -62,7 +62,7 @@ class DMPasswordResetController extends Controller
             try {
                 $mailResponse=null;
                 if (config('mail.status') && Helpers::get_mail_status('forget_password_mail_status_dm') == '1' && Helpers::getNotificationStatusData('deliveryman','deliveryman_forget_password','mail_status')) {
-                    Mail::to($deliveryman?->getRawOriginal('email'))->send(new \App\Mail\DmPasswordResetMail($token,$deliveryman['f_name']));
+                    Mail::to($deliveryman?->getRawOriginal('email'))->send(new \App\Mail\DmPasswordResetMail($token, $deliveryman));
                 $mailResponse='success';
                 }
             }catch(\Exception $ex){
@@ -138,7 +138,7 @@ class DMPasswordResetController extends Controller
         if ($validator->fails()) {
             return response()->json(['errors' => Helpers::error_processor($validator)], 403);
         }
-        $user=DeliveryMan::where('phone', $request->phone)->first();
+        $user=DeliveryMan::withoutGlobalScope('delivery_only')->where('phone', $request->phone)->first();
         if (!isset($user)) {
             $errors = [];
             array_push($errors, ['code' => 'not-found', 'message' => 'Phone number not found!']);
@@ -306,7 +306,7 @@ class DMPasswordResetController extends Controller
             return response()->json(['errors' => $errors], 403);
         }
 
-        $user = DeliveryMan::Where(['phone' => $request->phoneNumber])->first();
+        $user = DeliveryMan::withoutGlobalScope('delivery_only')->Where(['phone' => $request->phoneNumber])->first();
 
         if (isset($user)){
             DB::table('password_resets')->updateOrInsert(['email' => $user->email],

@@ -31,8 +31,8 @@
                     <div class="card-body">
                         <div class="maintenance-mode-toggle-bar d-flex flex-wrap justify-content-between border rounded align-items-center p-2">
                             <h5 class="text-capitalize m-0 text--primary pl-2">
-                                {{translate('Receive_Mail_On_‘New_Deliveryman_Registration’?')}}
-                        <span class="form-label-secondary text--primary" data-toggle="tooltip" data-placement="right" data-original-title="{{ translate('If_Deliveryman_registers_from_the_customer_App_or_Website_or_Deliveryman_App,_Admin_receive_an_automated_email.') }}">
+                                {{ \App\CentralLogics\Helpers::formatDeliverymanText(translate('Receive_Mail_On_‘New_Deliveryman_Registration’?'), null, true) }}
+                        <span class="form-label-secondary text--primary" data-toggle="tooltip" data-placement="right" data-original-title="{{ \App\CentralLogics\Helpers::formatDeliverymanText(translate('If_Deliveryman_registers_from_the_customer_App_or_Website_or_Deliveryman_App,_Admin_receive_an_automated_email.'), null, true) }}">
                                     <img src="{{asset('public/assets/admin/img/info-circle.svg')}}" alt="">
                                 </span>
                             </h5>
@@ -42,10 +42,10 @@
                                        data-type="status"
                                        data-image-on='{{asset('/public/assets/admin/img/modal')}}/place-order-on.png'
                                        data-image-off="{{asset('/public/assets/admin/img/modal')}}/place-order-off.png"
-                                       data-title-on="{{translate('Want_to_enable_Delivery_Man_Registration_mail?')}}"
-                                       data-title-off="{{translate('Want_to_disable_Delivery_Man_Registration_mail?')}}"
-                                       data-text-on="<p>{{translate('If_enabled,_the_admin_will_get_an_automated_email_when_a_deliveryman_registers.')}}</p>"
-                                       data-text-off="<p>{{translate('If_disabled,_the_admin_will_not_get_an_automated_email_when_a_deliveryman_registers.')}}</p>"
+                                       data-title-on="{{ \App\CentralLogics\Helpers::formatDeliverymanText(translate('Want_to_enable_Delivery_Man_Registration_mail?'), null, true) }}"
+                                       data-title-off="{{ \App\CentralLogics\Helpers::formatDeliverymanText(translate('Want_to_disable_Delivery_Man_Registration_mail?'), null, true) }}"
+                                       data-text-on="<p>{{ \App\CentralLogics\Helpers::formatDeliverymanText(translate('If_enabled,_the_admin_will_get_an_automated_email_when_a_deliveryman_registers.'), null, true) }}</p>"
+                                       data-text-off="<p>{{ \App\CentralLogics\Helpers::formatDeliverymanText(translate('If_disabled,_the_admin_will_not_get_an_automated_email_when_a_deliveryman_registers.'), null, true) }}</p>"
                                        id="mail-status" {{$mail_status == '1'?'checked':''}}>
                                 <span class="toggle-switch-label text mb-0">
                                     <span class="toggle-switch-indicator"></span>
@@ -365,4 +365,3 @@
     <script src="{{asset('public/assets/admin/js/view-pages/email-templates.js')}}"></script>
     <!-- Email Template End-->
 @endpush
-

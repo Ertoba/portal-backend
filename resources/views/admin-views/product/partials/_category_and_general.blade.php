@@ -15,8 +15,7 @@
                             id="general_setup_auto_fill"
                             data-route="{{ route('admin.product.general-setup-auto-fill') }}"
                             data-error="{{ translate('Please provide an item name and description so the AI can generate a suitable data.') }}"
-                            data-restaurant-id=""
-                            data-lang="en">
+                            data-restaurant-id="" data-lang="en">
                             <div class="btn-svg-wrapper">
                                 <img width="18" height="18" class=""
                                     src="{{ asset('public/assets/admin/img/svg/blink-right-small.svg') }}"
@@ -88,10 +87,11 @@
                                         data-url="{{ url('/') }}/vendor-panel/item/get-categories?parent_id="
                                         data-id="sub-categories">
                                         <option value="">---{{ translate('messages.select') }}---</option>
-                                        @foreach($categories as $category)
-                                                <option
-                                                    value="{{$category['id']}}" {{ isset($product) && $category->id==$product_category[0]->id ? 'selected' : ''}} >{{$category['name']}}</option>
-                                            @endforeach
+                                        @foreach ($categories as $category)
+                                            <option value="{{ $category['id'] }}"
+                                                {{ isset($product) && $category->id == $product_category[0]->id ? 'selected' : '' }}>
+                                                {{ $category['name'] }}</option>
+                                        @endforeach
                                     </select>
                                 </div>
                             </div>
@@ -239,7 +239,7 @@
                                     class="form-control multiple-select2"
                                     data-placeholder="{{ translate('messages.Type your content and press enter') }}"
                                     multiple>
-                                    @php($nutritions = \App\Models\Nutrition::select(['id','nutrition'])->get() ?? [])
+                                    @php($nutritions = \App\Models\Nutrition::select(['id', 'nutrition'])->get() ?? [])
                                     @foreach ($nutritions as $nutrition)
                                         <option
                                             {{ $product_nutritions && $product_nutritions->contains($nutrition->id) ? 'selected' : '' }}
@@ -261,7 +261,7 @@
                                 <select name="allergies[]" class="form-control multiple-select2" id="allergy_input"
                                     data-placeholder="{{ translate('messages.Type your content and press enter') }}"
                                     multiple>
-                                    @php($allergies = \App\Models\Allergy::select(['id','allergy'])->get() ?? [])
+                                    @php($allergies = \App\Models\Allergy::select(['id', 'allergy'])->get() ?? [])
 
                                     @foreach ($allergies as $allergy)
                                         <option
@@ -300,7 +300,7 @@
                                     <input type="text" id="generic_name_input"
                                         value="{{ (isset($temp_product) && $temp_product == 1 ? \App\Models\GenericName::where('id', json_decode($product?->generic_ids))->first()?->generic_name : isset($product)) ? $product?->generic->pluck('generic_name')->first() : '' }}"
                                         class="form-control" name="generic_name" autocomplete="off">
-                                    @php($generic_names = \App\Models\GenericName::select(['id','generic_name'])->get() ?? [])
+                                    @php($generic_names = \App\Models\GenericName::select(['id', 'generic_name'])->get() ?? [])
                                     @if (count($generic_names) > 0)
                                         <div class="dropdown-menu">
                                             @foreach ($generic_names ?? [] as $generic_name)
@@ -401,8 +401,8 @@
                                         <label class="input-label"
                                             for="exampleFormControlSelect1">{{ translate('messages.addon') }}<span
                                                 class="input-label-secondary"></span></label>
-                                        <select name="addon_ids[]" class="form-control js-select2-custom" id="add_on"
-                                            multiple="multiple">
+                                        <select name="addon_ids[]" class="form-control js-select2-custom"
+                                            id="add_on" multiple="multiple">
                                             @foreach (\App\Models\AddOn::where('store_id', \App\CentralLogics\Helpers::get_store_id())->orderBy('name')->get() as $addon)
                                                 <option value="{{ $addon['id'] }}"
                                                     {{ isset($product) && in_array($addon->id, json_decode($product['add_ons'], true)) ? 'selected' : '' }}>

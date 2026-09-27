@@ -19,7 +19,7 @@
             </h1>
         </div>
         <!-- End Page Header -->
-        <form  action="javascript:" method="post" enctype="multipart/form-data" id="deliaveryman_form" class="js-validate">
+        <form method="post" enctype="multipart/form-data" id="" class="validate-form global-ajax-form" action="{{ route('vendor.delivery-man.store') }}">
             @csrf
             <div class="row g-3">
                 <div class="col-md-12">
@@ -33,28 +33,45 @@
                             <div class="row g-3">
                                 <div class="col-md-4 col-sm-6">
                                     <div>
-                                        <label class="input-label" for="f_name">{{translate('messages.first_name')}}</label>
+                                        <label class="input-label" for="f_name">{{translate('messages.first_name')}}
+                                                <span class="form-label-secondary text-danger"
+                                            data-toggle="tooltip" data-placement="right"
+                                            data-original-title="{{ translate('messages.Required.') }}"> *
+                                        </span>
+                                        </label>
                                         <input id="f_name"  type="text"  name="f_name" class="form-control" placeholder="{{translate('messages.first_name')}}"
                                                 required>
                                     </div>
                                 </div>
                                 <div class="col-md-4 col-sm-6">
                                     <div>
-                                        <label class="input-label" for="l_name">{{translate('messages.last_name')}}</label>
+                                        <label class="input-label" for="l_name">{{translate('messages.last_name')}}
+                                                <span class="form-label-secondary text-danger"
+                                            data-toggle="tooltip" data-placement="right"
+                                            data-original-title="{{ translate('messages.Required.') }}"> *  </span>
+                                        </label>
                                         <input id="l_name"  type="text" name="l_name" class="form-control" placeholder="{{translate('messages.last_name')}}"
                                                 required>
                                     </div>
                                 </div>
                                 <div class="col-md-4 col-sm-6">
                                     <div class="form-group mb-0">
-                                        <label class="input-label" for="email">{{translate('messages.email')}}</label>
+                                        <label class="input-label" for="email">{{translate('messages.email')}}
+                                                <span class="form-label-secondary text-danger"
+                                            data-toggle="tooltip" data-placement="right"
+                                            data-original-title="{{ translate('messages.Required.') }}"> *  </span>
+                                        </label>
                                         <input id="email"  type="email" name="email" class="form-control" placeholder="{{ translate('messages.Ex:') }} ex@example.com"
                                                 required>
                                     </div>
                                 </div>
                                 <div class="col-md-4 col-sm-6">
                                     <div>
-                                        <label class="input-label" for="identity_type">{{translate('messages.identity_type')}}</label>
+                                        <label class="input-label" for="identity_type">{{translate('messages.identity_type')}}
+                                                <span class="form-label-secondary text-danger"
+                                            data-toggle="tooltip" data-placement="right"
+                                            data-original-title="{{ translate('messages.Required.') }}"> *  </span>
+                                        </label>
                                         <select name="identity_type" id="identity_type" class="form-control">
                                             <option value="passport">{{translate('messages.passport')}}</option>
                                             <option value="driving_license">{{translate('messages.driving_license')}}</option>
@@ -64,7 +81,11 @@
                                 </div>
                                 <div class="col-md-4 col-sm-6">
                                     <div>
-                                        <label class="input-label" for="identity_number">{{translate('messages.identity_number')}}</label>
+                                        <label class="input-label" for="identity_number">{{translate('messages.identity_number')}}
+                                                <span class="form-label-secondary text-danger"
+                                            data-toggle="tooltip" data-placement="right"
+                                            data-original-title="{{ translate('messages.Required.') }}"> *  </span>
+                                        </label>
                                         <input type="text" id="identity_number" name="identity_number" class="form-control"
                                                 placeholder="{{ translate('messages.Ex:') }} DH-23434-LS"
                                                 required>
@@ -78,7 +99,7 @@
                     <div class="card h-100">
                         <div class="card-header">
                             <h5 class="form-label m-0">{{translate('messages.identity_image')}}
-                            <small class="text-danger">* {{translate('messages.( Ratio 190x120 )')}}</small></h5>
+                            <small class="text-danger"> {{translate('messages.( Ratio 190x120 )')}}</small></h5>
                         </div>
                         <div class="card-body d-flex flex-column">
                             <div class="form-group">
@@ -118,7 +139,12 @@
                             <div class="row g-3">
                                 <div class="col-md-4 col-12">
                                     <div class="form-group mb-0">
-                                        <label class="input-label" for="phone">{{translate('messages.phone')}}</label>
+                                        <label class="input-label" for="phone">{{translate('messages.phone')}}
+                                                <span class="form-label-secondary text-danger"
+                                            data-toggle="tooltip" data-placement="right"
+                                            data-original-title="{{ translate('messages.Required.') }}"> *
+                                        </span>
+                                        </label>
                                         <div class="input-group">
                                             <input type="tel" name="phone" id="phone" placeholder="{{ translate('messages.Ex:') }} 017********" class="form-control" required>
                                         </div>
@@ -126,7 +152,11 @@
                                 </div>
                                 <div class="col-md-4 col-12">
                                     <div class="js-form-message form-group mb-0">
-                                        <label class="input-label" for="signupSrPassword">{{translate('messages.password')}} <span class="form-label-secondary" data-toggle="tooltip" data-placement="right"
+                                        <label class="input-label" for="signupSrPassword">{{translate('messages.password')}}
+                                                <span class="form-label-secondary text-danger"
+                                            data-toggle="tooltip" data-placement="right"
+                                            data-original-title="{{ translate('messages.Required.') }}"> *
+                                        </span> <span class="form-label-secondary" data-toggle="tooltip" data-placement="right"
         data-original-title="{{ translate('messages.Must_contain_at_least_one_number_and_one_uppercase_and_lowercase_letter_and_symbol,_and_at_least_8_or_more_characters') }}"><img src="{{ asset('/public/assets/admin/img/info-circle.svg') }}" alt="{{ translate('messages.Must_contain_at_least_one_number_and_one_uppercase_and_lowercase_letter_and_symbol,_and_at_least_8_or_more_characters') }}"></span></label>
 
                                         <div class="input-group input-group-merge">
@@ -150,7 +180,10 @@
                                 </div>
                                 <div class="col-md-4 col-12">
                                     <div class="js-form-message form-group mb-0">
-                                        <label class="input-label" for="signupSrConfirmPassword">{{translate('messages.confirm_password')}}</label>
+                                        <label class="input-label" for="signupSrConfirmPassword">{{translate('messages.confirm_password')}}
+                                                <span class="form-label-secondary text-danger"
+                                            data-toggle="tooltip" data-placement="right"
+                                            data-original-title="{{ translate('messages.Required.') }}"> *  </span></label>
                                         <div class="input-group input-group-merge">
                                         <input type="password" class="js-toggle-password form-control" name="confirmPassword" id="signupSrConfirmPassword" pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}" title="{{ translate('messages.Must_contain_at_least_one_number_and_one_uppercase_and_lowercase_letter_and_symbol,_and_at_least_8_or_more_characters') }}"
                                         placeholder="{{ translate('messages.password_length_placeholder', ['length' => '8+']) }}"
@@ -212,7 +245,7 @@
                 maxCount: 5,
                 rowHeight: '120px',
                 groupClassName: '',
-                maxFileSize: '',
+               maxFileSize: 1024 * 1024 * 2,
                 placeholderImage: {
                     image: '{{asset('public/assets/admin/img/400x400/img2.jpg')}}',
                     width: '100%'

@@ -2,8 +2,15 @@
 
 namespace App\Services;
 
+use App\Contracts\Repositories\CouponRepositoryInterface;
+
 class CouponService
 {
+    public function __construct(
+        protected CouponRepositoryInterface $couponRepo,
+    )
+    {
+    }
 
     public function getAddData(Object $request, int|string $moduleId): array
     {
@@ -37,5 +44,32 @@ class CouponService
         ];
     }
 
+    public function getUniqueCouponCode(?string $title): string
+    {
+        if (!$title) {
+            $code = strtoupper(bin2hex(random_bytes(4))); // 8 chars random
+        } else {
+            $code = strtoupper(preg_replace('/[^A-Za-z0-9]/', '', $title));
+            if (empty($code)) {
+                $code = strtoupper(bin2hex(random_bytes(4)));
+            }
+        }
 
+        $code = substr($code, 0, 12);
+
+        $exists = $this->couponRepo->getFirstWhere(params: ['code' => $code]);
+        if (!$exists) {
+            return $code;
+        }
+
+        $i = 1;
+        while (true) {
+            $suffix = (string)$i;
+            $candidate = substr($code, 0, 12 - strlen($suffix)) . $suffix;
+            if (!$this->couponRepo->getFirstWhere(params: ['code' => $candidate])) {
+                return $candidate;
+            }
+            $i++;
+        }
+    }
 }

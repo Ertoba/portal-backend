@@ -29,6 +29,8 @@ class StoreSubscription extends Model
         'store_id'=>'integer',
         'max_order'=>'string',
         'max_product'=>'string',
+        'is_trial'=>'integer',
+        'is_canceled'=>'integer',
     ];
 
     public function package()

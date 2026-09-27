@@ -189,7 +189,7 @@
                                 <img class="avatar avatar-xss avatar-4by3 mr-2"
                                     src="{{ asset('public/assets/admin') }}/svg/components/placeholder-csv-format.svg"
                                     alt="Image Description">
-                                .{{ translate('messages.csv') }}
+                                {{ translate('messages.csv') }}
                             </a>
 
                         </div>
@@ -212,11 +212,19 @@
                                 <th class=" text-title border-0">{{ translate('messages.id') }}</th>
                                 <th class=" text-title border-0 w--1">{{ translate('messages.name') }}</th>
                                 <th class=" text-title border-0 text-center">{{ translate('messages.status') }}</th>
+
+                                @if (Config::get('module.current_module_type') == 'ecommerce')
                                 <th class=" text-title border-0 text-center">{{ translate('messages.featured') }}</th>
+                                @endif
                                 @if ($categoryWiseTax)
                                     <th class=" text-title border-0 ">{{ translate('messages.Vat/Tax') }}</th>
                                 @endif
-                                <th class=" text-title border-0 text-center">{{ translate('messages.priority') }}</th>
+                                <th class=" text-title border-0 text-center">{{ translate('messages.priority') }}
+                                        <span class="input-label-secondary"
+                                            data-toggle="tooltip" data-placement="right" data-original-title="{{translate('Categories will be displayed based on priority order: High first, then Medium, and finally Low ')}}"><img src="{{asset('public/assets/admin/img/info-circle.svg')}}"
+                                            alt="public/img"></span>
+
+                                </th>
                                 <th class=" text-title border-0 text-center">{{ translate('messages.action') }}</th>
                             </tr>
                         </thead>
@@ -244,6 +252,8 @@
                                             </span>
                                         </label>
                                     </td>
+                                    @if (Config::get('module.current_module_type') == 'ecommerce')
+
                                     <td>
                                         <label class="toggle-switch toggle-switch-sm"
                                             for="featuredCheckbox{{ $category->id }}">
@@ -268,6 +278,7 @@
                                             method="get" id="featuredCheckbox{{ $category->id }}_form">
                                         </form>
                                     </td>
+                                    @endif
 
 
                                     @if ($categoryWiseTax)
@@ -279,7 +290,7 @@
                                                         </span> </span>
                                                     <br>
                                                 @empty
-                                                    <span> {{ translate('messages.no_tax') }} </span>
+                                                    <span> {{ translate('messages.N/A') }} </span>
                                                 @endforelse
                                             </span>
                                         </td>

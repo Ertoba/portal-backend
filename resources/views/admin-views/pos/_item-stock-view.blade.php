@@ -220,7 +220,7 @@
                                     class="d-flex align-items-center btn btn-sm check-label mx-1 addon-input text-break"
                                     for="addon{{ $key }}">{{ Str::limit($add_on->name, 20, '...') }} <br>
                                     {{ \App\CentralLogics\Helpers::format_currency($add_on->price) }}</label>
-                                <label class="input-group addon-quantity-input mx-1 shadow bg-white rounded px-1"
+                                <label class="input-group addon-quantity-input mx-1 shadow-lg border bg-white rounded px-1"
                                     for="addon{{ $key }}">
                                     <button class="btn btn-sm h-100 text-dark px-0 decrease-button" data-id="{{ $add_on->id }}" type="button"
                                        ><i

@@ -121,7 +121,7 @@
                                 <img class="avatar avatar-xss avatar-4by3 mr-2"
                                     src="{{ asset('public/assets/admin') }}/svg/components/placeholder-csv-format.svg"
                                     alt="Image Description">
-                                .{{ translate('messages.csv') }}
+                                {{ translate('messages.csv') }}
                             </a>
                         </div>
                     </div>
@@ -148,7 +148,8 @@
                             "pageLength": 25,
                             "isResponsive": false,
                             "isShowPaging": false,
-                            "paging":false
+                            "paging":false,
+                            "columnDefs":[{"targets":[6,7],"orderable":false}]
                         }'>
                         <thead class="thead-light">
                             <tr>

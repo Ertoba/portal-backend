@@ -24,6 +24,7 @@ use App\Models\Store;
 use App\Models\Tag;
 use App\Models\TempProduct;
 use App\Models\Translation;
+use App\Models\Zone;
 use App\Scopes\StoreScope;
 use Brian2694\Toastr\Facades\Toastr;
 use Carbon\Carbon;
@@ -1191,38 +1192,38 @@ class ItemController extends Controller
         return back();
     }
 
-    public function search(Request $request)
-    {
-        $view = 'admin-views.product.partials._table';
-        $key = explode(' ', $request['search']);
-        $store_id = $request->query('store_id', 'all');
-        $category_id = $request->query('category_id', 'all');
-        $items = Item::withoutGlobalScope(StoreScope::class)
-            ->where(function ($q) use ($key) {
-                foreach ($key as $value) {
-                    $q->where('name', 'like', "%{$value}%");
-                }
-            })->when(is_numeric($store_id), function ($query) use ($store_id) {
-                return $query->where('store_id', $store_id);
-            })
-            ->when(is_numeric($category_id), function ($query) use ($category_id) {
-                return $query->whereHas('category', function ($q) use ($category_id) {
-                    return $q->whereId($category_id)->orWhere('parent_id', $category_id);
-                });
-            })->module(Config::get('module.current_module_id'))->where('is_approved', 1);
+    // public function search(Request $request)
+    // {
+    //     $view = 'admin-views.product.partials._table';
+    //     $key = explode(' ', $request['search']);
+    //     $store_id = $request->query('store_id', 'all');
+    //     $category_id = $request->query('category_id', 'all');
+    //     $items = Item::withoutGlobalScope(StoreScope::class)
+    //         ->where(function ($q) use ($key) {
+    //             foreach ($key as $value) {
+    //                 $q->where('name', 'like', "%{$value}%");
+    //             }
+    //         })->when(is_numeric($store_id), function ($query) use ($store_id) {
+    //             return $query->where('store_id', $store_id);
+    //         })
+    //         ->when(is_numeric($category_id), function ($query) use ($category_id) {
+    //             return $query->whereHas('category', function ($q) use ($category_id) {
+    //                 return $q->whereId($category_id)->orWhere('parent_id', $category_id);
+    //             });
+    //         })->module(Config::get('module.current_module_id'))->where('is_approved', 1);
 
-        if (isset($request->product_gallery) && $request->product_gallery == 1) {
-            $items = $items->limit(12)->get();
-            $view = 'admin-views.product.partials._gallery';
-        } else {
-            $items = $items->latest()->limit(50)->get();
-        }
+    //     if (isset($request->product_gallery) && $request->product_gallery == 1) {
+    //         $items = $items->limit(12)->get();
+    //         $view = 'admin-views.product.partials._gallery';
+    //     } else {
+    //         $items = $items->latest()->limit(50)->get();
+    //     }
 
-        return response()->json([
-            'count' => $items->count(),
-            'view' => view($view, compact('items'))->render(),
-        ]);
-    }
+    //     return response()->json([
+    //         'count' => $items->count(),
+    //         'view' => view($view, compact('items'))->render(),
+    //     ]);
+    // }
 
     public function review_list(Request $request)
     {
@@ -1769,6 +1770,9 @@ class ItemController extends Controller
         $category_id = $request->query('category_id', 'all');
         $sub_category_id = $request->query('sub_category_id', 'all');
         $zone_id = $request->query('zone_id', 'all');
+        $filter = $request->query('filter', 'all');
+        $from = $request->query('from');
+        $to = $request->query('to');
 
         $model = app('\\App\\Models\\Item');
         if ($request?->table && $request?->table == 'TempProduct') {
@@ -1804,6 +1808,18 @@ class ItemController extends Controller
                     }
                 });
             })
+
+            ->when($request?->table == 'TempProduct' && isset($filter) && $filter == 'pending', function ($query) {
+                return $query->where('is_rejected', 0);
+            })
+            ->when($request?->table == 'TempProduct' && isset($filter) && $filter == 'rejected', function ($query) {
+                return $query->where('is_rejected', 1);
+            })
+            ->when($request?->table == 'TempProduct' && isset($from) && isset($to) && $from != null && $to != null && isset($filter) && $filter == 'custom', function ($query) use ($from, $to) {
+                return $query->whereBetween('updated_at', [$from.' 00:00:00', $to.' 23:59:59']);
+            })
+
+
             ->approved()
             ->module(Config::get('module.current_module_id'))
             ->type($type)
@@ -1826,6 +1842,11 @@ class ItemController extends Controller
             'category' => $category_id != 'all' ? Category::findOrFail($category_id)?->name : null,
             'module_name' => Helpers::get_module_name(Config::get('module.current_module_id')),
             'productWiseTax' => $productWiseTax,
+            'zone' => $zone_id != 'all' ? Zone::find($zone_id)?->name : null,
+            'filter' => $filter,
+            'from' => $from,
+            'to' => $to
+
         ];
         if ($request->type == 'csv') {
             return Excel::download(new ItemListExport($data), $format_type.'List.csv');
@@ -2196,7 +2217,7 @@ class ItemController extends Controller
         $store_id = $request->query('store_id', 'all');
         $category_id = $request->query('category_id', 'all');
         $type = $request->query('type', 'all');
-        $key = explode(' ', $request['search']);
+
         $items = Item::withoutGlobalScope(StoreScope::class)
             ->when($request->query('module_id', null), function ($query) use ($request) {
                 return $query->module($request->query('module_id'));
@@ -2208,20 +2229,13 @@ class ItemController extends Controller
                 return $query->whereHas('category', function ($q) use ($category_id) {
                     return $q->whereId($category_id)->orWhere('parent_id', $category_id);
                 });
-            })
-            ->when($request['search'], function ($query) use ($key) {
-                return $query->where(function ($q) use ($key) {
-                    foreach ($key as $value) {
-                        $q->where('name', 'like', "%{$value}%");
-                    }
-                });
-            })
-            ->orderByRaw('FIELD(name, ?) DESC', [$request['name']])
+            })->search($request['search'])
+
             ->where('is_approved', 1)
             ->module(Config::get('module.current_module_id'))
             ->type($type)
-            // ->latest()->paginate(config('default_pagination'));
-            ->inRandomOrder()->limit(12)->get();
+            ->latest()->paginate(12);
+
         $store = $store_id != 'all' ? Store::findOrFail($store_id) : null;
         $category = $category_id != 'all' ? Category::findOrFail($category_id) : null;
 
@@ -2250,4 +2264,16 @@ class ItemController extends Controller
 
         return true;
     }
+
+
+    public function gallery_item_view(Request $request, $id)
+    {
+        $item = Item::withoutGlobalScope(StoreScope::class)->find($id);
+
+        return response()->json([
+            'view' => view('admin-views.product.partials._view_gallery_item', compact('item'))->render(),
+        ]);
+    }
+
+
 }

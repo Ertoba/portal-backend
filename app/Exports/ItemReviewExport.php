@@ -40,9 +40,9 @@ class ItemReviewExport implements  FromView, ShouldAutoSize, WithStyles ,WithHea
     }
 
     public function styles(Worksheet $sheet) {
-        $sheet->getStyle('A2:H2')->getFont()->setBold(true);
-        $sheet->getStyle('A3:H3')->getFont()->setBold(true);
-        $sheet->getStyle('A3:H3')->getFill()->applyFromArray([
+        $sheet->getStyle('A2:J2')->getFont()->setBold(true);
+        $sheet->getStyle('A3:J3')->getFont()->setBold(true);
+        $sheet->getStyle('A3:J3')->getFill()->applyFromArray([
             'fillType' => 'solid',
             'rotation' => 0,
             'color' => ['rgb' => '9F9F9F'],
@@ -59,10 +59,10 @@ class ItemReviewExport implements  FromView, ShouldAutoSize, WithStyles ,WithHea
             'fillType' => 'solid',
             'rotation' => 0,
         ];
-        $sheet->getStyle('A1:H1')->applyFromArray($styleArray);
+        $sheet->getStyle('A1:J1')->applyFromArray($styleArray);
         return [
             // Define the style for cells with data
-            'A1:H'.$this->data['data']->count() +3 => [
+            'A1:J'.$this->data['data']->count() +3 => [
                 'borders' => [
                     'allBorders' => [
                         'borderStyle' => Border::BORDER_THIN,
@@ -78,7 +78,7 @@ class ItemReviewExport implements  FromView, ShouldAutoSize, WithStyles ,WithHea
     {
         return [
             AfterSheet::class => function(AfterSheet $event) {
-                $event->sheet->getStyle('A1:H1') // Adjust the range as per your needs
+                $event->sheet->getStyle('A1:J1') // Adjust the range as per your needs
                     ->getAlignment()
                     ->setHorizontal(Alignment::HORIZONTAL_CENTER)
                     ->setVertical(Alignment::VERTICAL_CENTER);
@@ -91,19 +91,19 @@ class ItemReviewExport implements  FromView, ShouldAutoSize, WithStyles ,WithHea
                     ->setHorizontal(Alignment::HORIZONTAL_CENTER)
                     ->setVertical(Alignment::VERTICAL_CENTER);
 
-                $event->sheet->getStyle('A3:H'.$this->data['data']->count() +3)
+                $event->sheet->getStyle('A3:J'.$this->data['data']->count() +3)
                     ->getAlignment()
                     ->setHorizontal(Alignment::HORIZONTAL_CENTER)
                     ->setVertical(Alignment::VERTICAL_CENTER);
-                $event->sheet->getStyle('C2:H2')
+                $event->sheet->getStyle('C2:J2')
                     ->getAlignment()
                     ->setHorizontal(Alignment::HORIZONTAL_LEFT)
                     ->setVertical(Alignment::VERTICAL_CENTER);
 
 
-                    $event->sheet->mergeCells('A1:H1');
+                    $event->sheet->mergeCells('A1:J1');
                     $event->sheet->mergeCells('A2:B2');
-                    $event->sheet->mergeCells('C2:H2');
+                    $event->sheet->mergeCells('C2:J2');
 
                     if(isset($this->data['type']) && $this->data['type'] == 'single'){
                         $event->sheet->mergeCells('B4:B'.$this->data['data']->count() +4);

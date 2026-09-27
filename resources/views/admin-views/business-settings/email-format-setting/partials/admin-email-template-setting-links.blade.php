@@ -17,7 +17,7 @@
             <li class="nav-item">
                 <a class="nav-link {{ Request::is('admin/business-settings/email-setup/admin/dm-registration') ? 'active' : '' }}"
                 href="{{ route('admin.business-settings.email-setup', ['admin','dm-registration']) }}">
-                    {{translate('New Delivery Man Registration')}}
+                    {{ \App\CentralLogics\Helpers::formatDeliverymanText(translate('New Delivery Man Registration'), null, true) }}
                 </a>
             </li>
             <li class="nav-item">
@@ -29,7 +29,7 @@
             <li class="nav-item">
                 <a class="nav-link {{ Request::is('admin/business-settings/email-setup/admin/dm-withdraw-request') ? 'active' : '' }}"
                 href="{{ route('admin.business-settings.email-setup', ['admin','dm-withdraw-request']) }}">
-                    {{translate('Delivery Man Withdraw Request')}}
+                    {{ \App\CentralLogics\Helpers::formatDeliverymanText(translate('Delivery Man Withdraw Request'), null, true) }}
                 </a>
             </li>
             <li class="nav-item">

@@ -228,6 +228,8 @@ class GenerateVendorRoute extends Command
             'vendor-views.product.bulk-export' => ['vendor-panel/item/bulk-export'],
             'vendor-views.messages.index' => ['vendor-panel/message/list'],
             'vendor-views.business-settings.restaurant-index' => ['vendor-panel/business-settings/store-setup'],
+            'vendor-views.order.list' => ['vendor-panel/order/list/all','vendor-panel/order/list/pending','vendor-panel/order/list/confirmed','vendor-panel/order/list/cooking','vendor-panel/order/list/ready_for_delivery','vendor-panel/order/list/item_on_the_way','vendor-panel/order/list/delivered','vendor-panel/order/list/refunded','vendor-panel/order/list/scheduled'],
+
         ];
 
         foreach ($array as $bladePath => $value) {

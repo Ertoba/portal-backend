@@ -153,6 +153,7 @@ Route::group(['namespace' => 'Api\V1', 'middleware'=>'localization'], function (
                 Route::get('search-list', 'ConversationController@dm_search_conversations');
                 Route::get('details', 'ConversationController@dm_messages');
                 Route::post('send', 'ConversationController@dm_messages_store');
+                Route::post('question/send', 'ConversationController@dm_auto_messages_store');
             });
         });
     });
@@ -400,6 +401,7 @@ Route::group(['namespace' => 'Api\V1', 'middleware'=>'localization'], function (
             Route::group(['prefix' => 'order'], function () {
                 Route::get('list', 'OrderController@get_order_list');
                 Route::get('running-orders', 'OrderController@get_running_orders');
+                Route::get('all-running-orders', 'OrderController@get_all_running_orders');
                 Route::get('details', 'OrderController@get_order_details');
                 Route::post('place', 'OrderController@place_order');
                 Route::post('get-Tax', 'OrderController@getTaxFromCart');

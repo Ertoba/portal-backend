@@ -145,6 +145,11 @@ class Module extends Model
         return $query->where('module_type', '!=' ,'rental');
     }
 
+    public function scopeNotServiceAndRideShare($query)
+    {
+        return $query->whereNotIn('module_type', ['service', 'ride-share']);
+    }
+
     /**
      * @param $query
      * @return mixed

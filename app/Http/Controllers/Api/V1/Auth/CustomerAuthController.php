@@ -1146,7 +1146,7 @@ class CustomerAuthController extends Controller
 
             $referar_user = User::where('ref_code', '=', $request->ref_code)->first();
             if (!$referar_user || !$referar_user->status) {
-                return response()->json(['errors' => Helpers::error_formater('ref_code', translate('messages.referer_code_not_found'))], 405);
+                return response()->json(['errors' => Helpers::error_formater('ref_code', translate('Invalid referer code'))], 405);
             }
 
             if (WalletTransaction::where('reference', $request->phone)->first()) {
@@ -1266,7 +1266,7 @@ class CustomerAuthController extends Controller
                         $drivemondCustomer = $drivemondCustomerResponse['data'];
                         if (User::where('email', $drivemondCustomer['email'])->first()) {
                             $errors = [];
-                            array_push($errors, ['code' => 'email_unique_402', 'message' => translate('messages.Email already exists, Please update mart email and switch 6ammart')]);
+                            array_push($errors, ['code' => 'email_unique_402', 'message' => translate('messages.Email already exists, Please update mart email and switch Mili')]);
                             return response()->json([
                                 'errors' => $errors
                             ], 403);

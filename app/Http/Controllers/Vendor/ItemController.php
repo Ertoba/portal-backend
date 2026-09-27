@@ -595,7 +595,7 @@ class ItemController extends Controller
                 array_push($tag_ids, $tag->id);
             }
         }
-        
+
 
         $nutrition_ids = [];
         if ($request->nutritions != null) {
@@ -999,36 +999,36 @@ class ItemController extends Controller
         return view('vendor-views.product.list', compact('items', 'category', 'type', 'sub_categories','productWiseTax'));
     }
 
-    public function search(Request $request)
-    {
-        $view = 'vendor-views.product.partials._table';
-        $key = explode(' ', $request['search']);
-        $settings_access = Helpers::get_mail_status('access_all_products');
-        $items = Item::where(function ($q) use ($key) {
-            foreach ($key as $value) {
-                $q->where('name', 'like', "%{$value}%");
-            }
-        })
-            ->module(Helpers::get_store_data()->module_id)
-            ->where('is_approved', 1);
+    // public function search(Request $request)
+    // {
+    //     $view = 'vendor-views.product.partials._table';
+    //     $key = explode(' ', $request['search']);
+    //     $settings_access = Helpers::get_mail_status('access_all_products');
+    //     $items = Item::where(function ($q) use ($key) {
+    //         foreach ($key as $value) {
+    //             $q->where('name', 'like', "%{$value}%");
+    //         }
+    //     })
+    //         ->module(Helpers::get_store_data()->module_id)
+    //         ->where('is_approved', 1);
 
-        if (isset($request->product_gallery) && $request->product_gallery == 1 && $settings_access == 1) {
+    //     if (isset($request->product_gallery) && $request->product_gallery == 1 && $settings_access == 1) {
 
-            $items = $items->withoutGlobalScope(StoreScope::class)->limit(12)->get();
+    //         $items = $items->withoutGlobalScope(StoreScope::class)->limit(12)->get();
 
-            $view = 'vendor-views.product.partials._gallery';
-        } elseif (isset($request->product_gallery) && $request->product_gallery == 1 && $settings_access == 0) {
-            $items = $items->limit(12)->get();
-            $view = 'vendor-views.product.partials._gallery';
-        } else {
-            $items = $items->latest()->limit(50)->get();
-        }
+    //         $view = 'vendor-views.product.partials._gallery';
+    //     } elseif (isset($request->product_gallery) && $request->product_gallery == 1 && $settings_access == 0) {
+    //         $items = $items->limit(12)->get();
+    //         $view = 'vendor-views.product.partials._gallery';
+    //     } else {
+    //         $items = $items->latest()->limit(50)->get();
+    //     }
 
-        return response()->json([
-            'view' => view($view, compact('items'))->render(),
-            'count' => $items->count()
-        ]);
-    }
+    //     return response()->json([
+    //         'view' => view($view, compact('items'))->render(),
+    //         'count' => $items->count()
+    //     ]);
+    // }
 
     public function remove_image(Request $request)
     {
@@ -1888,24 +1888,18 @@ class ItemController extends Controller
         $items = Item::when($settings_access == 1, function ($q) {
             $q->withoutGlobalScope(StoreScope::class);
         })
-            ->where('is_approved', 1)
+
             ->when(is_numeric($category_id), function ($query) use ($category_id) {
                 return $query->whereHas('category', function ($q) use ($category_id) {
                     return $q->whereId($category_id)->orWhere('parent_id', $category_id);
                 });
             })
-            ->when($request['search'], function ($query) use ($key) {
-                return $query->where(function ($q) use ($key) {
-                    foreach ($key as $value) {
-                        $q->where('name', 'like', "%{$value}%");
-                    }
-                });
-            })
+
+            ->search($request['search'])
             ->type($type)
-            ->inRandomOrder()
             ->module(Helpers::get_store_data()->module_id)
-            ->limit(12)
-            ->get();
+            ->where('is_approved', 1)
+           ->latest()->paginate(12);
 
         $category = $category_id != 'all' ? Category::findOrFail($category_id) : null;
 
@@ -1974,5 +1968,14 @@ class ItemController extends Controller
         $itemMetaData->save();
 
         return true;
+    }
+
+    public function gallery_item_view(Request $request, $id)
+    {
+         $item = Item::withoutGlobalScope(StoreScope::class)->find($id);
+
+        return response()->json([
+            'view' => view('vendor-views.product.partials._view_gallery_item', compact('item'))->render(),
+        ]);
     }
 }

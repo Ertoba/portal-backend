@@ -7,9 +7,26 @@
     <table>
         <thead>
             <tr>
-                <th>{{ translate('Search_Criteria') }}</th>
+                <th>{{ translate('Search_Criteria') }}
+
+                    @isset($data['delivery_men'])
+                         <br>
+                        {{ translate('delivery_man')  }}- {{ $data['delivery_men']}}
+                    @endisset
+
+                    @isset($data['order_by'])
+                        <br>
+                        {{ translate('order_by')  }}- {{ $data['order_by']}}
+
+                    @endisset
+                </th>
                 <th></th>
-                <th></th>
+                <th>
+                    {{-- @dd($data['delivery_men']) --}}
+
+
+
+                </th>
                 <th>
                     {{ translate('Search_Bar_Content')  }}- {{ $data['search'] ??translate('N/A') }}
 

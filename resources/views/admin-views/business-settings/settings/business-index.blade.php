@@ -184,7 +184,7 @@
                                                         for="address">{{ translate('address') }} <span
                                                             class="text-danger">*</span>
                                                         <span class="" data-toggle="tooltip" data-placement="right"
-                                                            data-original-title="The physical location of your business">
+                                                            data-original-title="{{ translate('The physical location of your business') }}">
                                                             <i class="tio-info text-muted"></i>
                                                         </span>
                                                     </label>
@@ -335,6 +335,13 @@
                                                 <label class="input-label d-flex align-items-center gap-1">
                                                     {{ translate('time_zone') }}
                                                     <span class="text-danger">*</span>
+
+                                                        <span class="" data-toggle="tooltip" data-placement="right"
+                                                            data-original-title="{{ translate('Time zone impact for this system') }}">
+                                                            <i class="tio-info text-muted"></i>
+                                                        </span>
+
+
                                                 </label>
                                                 <select name="timezone" class="form-control js-select2-custom">
                                                     @foreach(timezone_identifiers_list() as $tz)
@@ -636,9 +643,11 @@
 
                                                 <input type="text" name="additional_charge_name" class="form-control"
                                                     id="additional_charge_name"
-                                                    placeholder="{{ translate('Ex:_Processing_Fee') }}"
+                                                    placeholder="{{ translate('Ex:_Processing_Fee') }}" maxlength="50"
                                                     value="{{ $additional_charge_name ? $additional_charge_name->value : '' }}"
                                                     {{ isset($additional_charge_status) ? '' : 'readonly' }} required>
+                                                       <span
+                                                    class="text-right text-counting color-A7A7A7 d-block mt-1">0/50</span>
                                             </div>
                                         </div>
                                         <div class="col-sm-6 col-lg-6">
@@ -1212,13 +1221,13 @@
 
     // Business Model Validation
     $('#subs, #commission').on('change', function (e) {
-        
+
             if (!$('#subs').is(':checked') && !$('#commission').is(':checked')) {
                 e.preventDefault();
                 toastr.error('{{ translate("At least one business model must be selected") }}');
                 $(this).prop('checked', true);
             }
-        
+
     });
 
     $(document).on('click', '.confirm-Toggle', function () {

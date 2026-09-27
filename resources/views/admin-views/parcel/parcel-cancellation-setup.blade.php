@@ -104,7 +104,7 @@
                                                             {{ translate('Do not charge any return fee to customer ') }}
                                                         </label>
                                                     </div>
-                                                    
+
                                                     <!-- <div class="d-flex align-item-center justify-content-between cursor-pointer">
                                                         <div class="form-check m-0">
                                                             <input class="form-check-input checkbox-theme-16 single-select"
@@ -344,7 +344,7 @@
                                 <img class="avatar avatar-xss avatar-4by3 mr-2"
                                     src="{{ asset('public/assets/admin') }}/svg/components/placeholder-csv-format.svg"
                                     alt="Image Description">
-                                .{{ translate('messages.csv') }}
+                                {{ translate('messages.csv') }}
                             </a>
                         </div>
                     </div>

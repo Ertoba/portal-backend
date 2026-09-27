@@ -105,9 +105,9 @@
                 <table id="datatable" class="table table-borderless table-thead-bordered table-nowrap table-align-middle card-table"
                     data-hs-datatables-options='{
                         "columnDefs": [{
-                            "targets": [],
+                            "targets": [1],
                             "width": "5%",
-                            "orderable": false
+                            "orderable": false,
                         }],
                         "order": [],
                         "info": {

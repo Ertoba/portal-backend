@@ -1,32 +1,33 @@
-"use strict";
-function readURL(input) {
-    if (input.files && input.files[0]) {
-        var reader = new FileReader();
 
-        reader.onload = function (e) {
-            $('#viewer').attr('src', e.target.result);
+    $(document).on('click', '.data-info-show', function() {
+            let id = $(this).data('id');
+            let url = $(this).data('url');
+            fetch_data(id, url)
+        })
+
+        function fetch_data(id, url) {
+            $.ajax({
+                url: url,
+                type: "get",
+                beforeSend: function() {
+                    $('#data-view').empty();
+                    $('#loading').show()
+                },
+                success: function(data) {
+                    $("#data-view").append(data.view);
+
+                    initSelect2Dropdowns();
+
+                },
+                complete: function() {
+                    $('#loading').hide()
+                }
+            })
         }
-        reader.readAsDataURL(input.files[0]);
-    }
-}
 
-$("#customFileEg1").change(function () {
-    readURL(this);
-});
-
-$(document).on('ready', function () {
-    // INITIALIZATION OF DATATABLES
-    // =======================================================
-
-
-
-    // INITIALIZATION OF SELECT2
-    // =======================================================
-    $('.js-select2-custom').each(function () {
-        var select2 = $.HSCore.components.HSSelect2.init($(this));
-    });
-});
-
-$('#reset_btn').click(function(){
-    $('#exampleFormControlSelect1').val(null).trigger('change');
-})
+        function initSelect2Dropdowns() {
+             $('.offcanvas-close, #offcanvasOverlay').on('click', function () {
+                $('.custom-offcanvas').removeClass('open');
+                $('#offcanvasOverlay').removeClass('show');
+            });
+        }

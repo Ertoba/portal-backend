@@ -37,13 +37,20 @@
                 </div>
                 <!-- End Card -->
             </div>
-            <div class="col-lg-8 col-nd-6" id="view-conversation">
-                <div class="text-center view_conversation-style">
-                    <h4 class="view_conversation-h4-style">{{ translate('messages.view_conversation') }}
-                    </h4>
+
+             <div class="col-lg-8 col-nd-6" id="view-conversation">
+                    <div class="h-100 d-flex align-items-center justify-content-center">
+                        <div class="text-center">
+                            <div class="empty-conversation-content d-flex flex-column align-items-center gap-3">
+                                <img width="128" height="128" src="{{asset('/public/assets/admin/img/icons/empty-conversation.png')}}" alt="public">
+                                <h5 class="text-muted">
+                                    {{translate('no_conversation_found')}}
+                                </h5>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                {{-- view here --}}
-            </div>
+
         </div>
         <!-- End Row -->
     </div>
@@ -54,6 +61,19 @@
 <script src="{{ asset('public/assets/admin/js/spartan-multi-image-picker.js') }}"></script>
     <script>
         "use strict";
+
+
+        let empty_page = `<div class="h-100 d-flex align-items-center justify-content-center">
+                        <div class="text-center">
+                            <div class="empty-conversation-content d-flex flex-column align-items-center gap-3">
+                                <img width="128" height="128" src="{{asset('/public/assets/admin/img/icons/empty-conversation.png')}}" alt="public">
+                                <h5 class="text-muted">
+                                    {{translate('no_conversation_found')}}
+                                </h5>
+                            </div>
+                        </div>
+                    </div>`;
+
         function viewConvs(url, id_to_active, conv_id, sender_id) {
             $('.customer-list').removeClass('conv-active');
             $('#' + id_to_active).addClass('conv-active');
@@ -110,6 +130,9 @@
         $(document).on('keyup', '#serach', function() {
             let query = $('#serach').val();
             fetch_data(page, query);
+            $('#view-conversation').empty();
+            $('#view-conversation').append(empty_page);
         });
+
     </script>
 @endpush

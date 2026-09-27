@@ -2,7 +2,6 @@
 
 namespace App\Exports;
 
-
 use Illuminate\Contracts\View\View;
 use Maatwebsite\Excel\Concerns\Exportable;
 use Maatwebsite\Excel\Concerns\FromView;
@@ -13,20 +12,21 @@ use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use Maatwebsite\Excel\Concerns\WithColumnWidths;
 use Maatwebsite\Excel\Concerns\WithColumnFormatting;
+
 use PhpOffice\PhpSpreadsheet\Style\NumberFormat;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 use PhpOffice\PhpSpreadsheet\Worksheet\Drawing;
 use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 
-
-class DeliveryManListExport implements  FromView, ShouldAutoSize, WithStyles,WithColumnWidths ,WithHeadings, WithEvents, WithColumnFormatting
+class DeliveryManListExport implements FromView, ShouldAutoSize, WithStyles, WithColumnWidths, WithHeadings, WithEvents, WithColumnFormatting
 {
-
     use Exportable;
+
     protected $data;
 
-    public function __construct($data) {
+    public function __construct($data)
+    {
         $this->data = $data;
     }
 
@@ -51,113 +51,114 @@ class DeliveryManListExport implements  FromView, ShouldAutoSize, WithStyles,Wit
         ];
     }
 
-    public function styles(Worksheet $sheet) {
+    public function styles(Worksheet $sheet)
+    {
+        $count = $this->data['delivery_men']->count();
+        $lastRow = $count + 4;
+
         $sheet->getStyle('A2:N4')->getFont()->setBold(true);
-        $sheet->getStyle('A4:N4')->getFont()->setBold(true)->getColor()
-        ->setARGB('FFFFFF');
+
+        $sheet->getStyle('A4:N4')->getFont()
+            ->setBold(true)
+            ->getColor()
+            ->setARGB('FFFFFF');
 
         $sheet->getStyle('A4:N4')->getFill()->applyFromArray([
             'fillType' => 'solid',
-            'rotation' => 0,
             'color' => ['rgb' => '005D5F'],
         ]);
 
-        $sheet->getStyle('G5:K'.$this->data['delivery_men']->count() +4)->getFill()->applyFromArray([
-            'fillType' => 'solid',
-            'rotation' => 0,
-            'color' => ['rgb' => 'FFE599'],
-        ]);
+        $sheet->getStyle("G5:K{$lastRow}")
+            ->getFill()
+            ->applyFromArray([
+                'fillType' => 'solid',
+                'color' => ['rgb' => 'FFE599'],
+            ]);
 
         $sheet->setShowGridlines(false);
-        $styleArray = [
-            'borders' => [
-                'bottom' => ['borderStyle' => 'hair', 'color' => ['argb' => 'FFFF0000']],
-                'top' => ['borderStyle' => 'hair', 'color' => ['argb' => 'FFFF0000']],
-                'right' => ['borderStyle' => 'hair', 'color' => ['argb' => 'FF00FF00']],
-                'left' => ['borderStyle' => 'hair', 'color' => ['argb' => 'FF00FF00']],
-            ],
-            'fillType' => 'solid',
-            'rotation' => 0,
-        ];
-        $sheet->getStyle('A1:C1')->applyFromArray($styleArray);
+
         return [
-            // Define the style for cells with data
-            'A1:N'.$this->data['delivery_men']->count() +4 => [
+            "A1:N{$lastRow}" => [
                 'borders' => [
                     'allBorders' => [
                         'borderStyle' => Border::BORDER_THIN,
-                        'color' => ['argb' => '000000'], // Specify the color of the border (optional)
+                        'color' => ['argb' => '000000'],
                     ],
                 ],
             ],
         ];
-
     }
 
-    public function setImage($workSheet) {
-        $this->data['delivery_men']->each(function($item,$index) use($workSheet) {
+    public function setImage($worksheet)
+    {
+        $this->data['delivery_men']->each(function ($item, $index) use ($worksheet) {
+
+            $row = $index + 5;
+
             $drawing = new Drawing();
             $drawing->setName($item->f_name);
             $drawing->setDescription($item->f_name);
-            $drawing->setPath(is_file(storage_path('app/public/delivery-man/'.$item->image))?storage_path('app/public/delivery-man/'.$item->image):public_path('/assets/admin/img/160x160/img2.jpg'));
-            $drawing->setHeight(25);
-            $index+=5;
-            $drawing->setCoordinates("B$index");
-            $drawing->setWorksheet($workSheet);
+
+            $imagePath = storage_path('app/public/delivery-man/' . $item->image);
+
+            if (!is_file($imagePath)) {
+                $imagePath = public_path('/assets/admin/img/160x160/img2.jpg');
+            }
+
+            $drawing->setPath($imagePath);
+            $drawing->setHeight(20);
+            $drawing->setCoordinates("B{$row}");
+            $drawing->setWorksheet($worksheet);
+
+            $drawing->setResizeProportional(true);
+            $drawing->setOffsetX(5);
+            $drawing->setOffsetY(3);
         });
     }
 
     public function registerEvents(): array
     {
         return [
-            AfterSheet::class => function(AfterSheet $event) {
-                $event->sheet->getStyle('A1:N1') // Adjust the range as per your needs
-                    ->getAlignment()
-                    ->setHorizontal(Alignment::HORIZONTAL_CENTER)
-                    ->setVertical(Alignment::VERTICAL_CENTER);
-                $event->sheet->getStyle('A2:C2')
-                    ->getAlignment()
-                    ->setHorizontal(Alignment::HORIZONTAL_CENTER)
-                    ->setVertical(Alignment::VERTICAL_CENTER);
-                $event->sheet->getStyle('A3:C3')
-                    ->getAlignment()
-                    ->setHorizontal(Alignment::HORIZONTAL_CENTER)
-                    ->setVertical(Alignment::VERTICAL_CENTER);
-                $event->sheet->getStyle('A4:C4')
+            AfterSheet::class => function (AfterSheet $event) {
+
+                $sheet = $event->sheet;
+                $worksheet = $sheet->getDelegate();
+
+                $highestRow = $worksheet->getHighestRow();
+
+                // Alignment
+                $sheet->getStyle("A1:N{$highestRow}")
                     ->getAlignment()
                     ->setHorizontal(Alignment::HORIZONTAL_CENTER)
                     ->setVertical(Alignment::VERTICAL_CENTER);
 
-                $event->sheet->getStyle('A4:N'.$this->data['delivery_men']->count() +4)
-                    ->getAlignment()
-                    ->setHorizontal(Alignment::HORIZONTAL_CENTER)
-                    ->setVertical(Alignment::VERTICAL_CENTER);
-                $event->sheet->getStyle('D2:N2')
-                    ->getAlignment()
-                    ->setHorizontal(Alignment::HORIZONTAL_LEFT)
-                    ->setVertical(Alignment::VERTICAL_CENTER);
-                $event->sheet->getStyle('D3:N3')
+                $sheet->getStyle('D2:N3')
                     ->getAlignment()
                     ->setHorizontal(Alignment::HORIZONTAL_LEFT)
                     ->setVertical(Alignment::VERTICAL_CENTER);
 
+                // Merge cells
+                $sheet->mergeCells('A1:N1');
+                $sheet->mergeCells('A2:C2');
+                $sheet->mergeCells('D2:N2');
+                $sheet->mergeCells('A3:C3');
+                $sheet->mergeCells('D3:N3');
 
-                    $event->sheet->mergeCells('A1:N1');
-                    $event->sheet->mergeCells('A2:C2');
-                    $event->sheet->mergeCells('D2:N2');
-                    $event->sheet->mergeCells('A3:C3');
-                    $event->sheet->mergeCells('D3:N3');
+                // Row heights
+                $worksheet->getRowDimension(1)->setRowHeight(50);
+                $worksheet->getRowDimension(2)->setRowHeight(100);
+                $worksheet->getRowDimension(3)->setRowHeight(80);
 
-                    $event->sheet->getDefaultRowDimension()->setRowHeight(30);
-                    $event->sheet->getRowDimension(1)->setRowHeight(50);
-                    $event->sheet->getRowDimension(2)->setRowHeight(100);
-                    $event->sheet->getRowDimension(3)->setRowHeight(80);
+                for ($i = 5; $i <= $highestRow; $i++) {
+                    $worksheet->getRowDimension($i)->setRowHeight(40);
+                }
 
-                    $workSheet = $event->sheet->getDelegate();
-                    $this->setImage($workSheet);
-                },
+                // Insert images
+                $this->setImage($worksheet);
+            },
         ];
     }
+
     public function headings(): array
     {
         return [
@@ -165,4 +166,3 @@ class DeliveryManListExport implements  FromView, ShouldAutoSize, WithStyles,Wit
         ];
     }
 }
-

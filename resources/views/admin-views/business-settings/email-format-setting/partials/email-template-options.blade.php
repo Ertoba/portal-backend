@@ -1,8 +1,9 @@
 <div>
+    @php($deliverymanTemplateLabel = \App\CentralLogics\Helpers::formatDeliverymanText(translate('Delivery_Man_Mail_Templates'), null, true))
     <select id="mail-route-selector" class="custom-select w-auto min-width-170px">
         <option value="admin" {{ Request::is('admin/business-settings/email-setup/admin*') ? 'selected' : '' }}><a href="https://support.6amtech.com/">{{ translate('Admin_Mail_Templates') }}</a></option>
         <option value="store" {{ Request::is('admin/business-settings/email-setup/store*') ? 'selected' : '' }}><a href="https://support.6amtech.com/">{{ translate('Store_Mail_Templates') }}</a></option>
-        <option value="dm" {{ Request::is('admin/business-settings/email-setup/dm*') ? 'selected' : '' }}><a href="https://support.6amtech.com/">{{ translate('Delivery_Man_Mail_Templates') }}</a></option>
+        <option value="dm" {{ Request::is('admin/business-settings/email-setup/dm*') ? 'selected' : '' }}><a href="https://support.6amtech.com/">{{ $deliverymanTemplateLabel }}</a></option>
         <option value="user" {{ Request::is('admin/business-settings/email-setup/user*') ? 'selected' : '' }}><a href="https://support.6amtech.com/">{{ translate('Customer_Mail_Templates') }}</a></option>
     </select>
     <div class="d-flex justify-content-end mt-2">

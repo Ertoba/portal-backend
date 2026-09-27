@@ -27,7 +27,7 @@
                             class="onerror-image"
                             data-onerror-image="{{ asset('public/assets/admin/img/100x100/2.png') }}"
                             alt="{{ Str::limit($item->name ?? translate('messages.Item deleted!'), 20, '...') }}">
-                        <span class="line--limit-1 w-0 flex-grow-1" title="{{ $item?->name }}">
+                        <span class="line--limit-1 w-0 flex-grow-1 text-hover--primary" title="{{ $item?->name }}">
                             {{ Str::limit($item->name ?? translate('messages.Item deleted!'), 20, '...') }}
                         </span>
                         <div>

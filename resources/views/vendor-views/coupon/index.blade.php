@@ -13,9 +13,7 @@
                 </div>
             </div>
         </div>
-        @php($language=\App\Models\BusinessSetting::where('key','language')->first())
-        @php($language = $language->value ?? null)
-        @php($defaultLang = str_replace('_', '-', app()->getLocale()))
+
         <!-- End Page Header -->
         <div class="card mb-3">
             <div class="card-body">
@@ -30,7 +28,7 @@
                                     href="#"
                                     id="default-link">{{translate('messages.default')}}</a>
                                 </li>
-                                @foreach (json_decode($language) as $lang)
+                                @foreach ($language as $lang)
                                     <li class="nav-item">
                                         <a class="nav-link lang_link"
                                             href="#"
@@ -43,6 +41,10 @@
                                     <label class="input-label"
                                         for="default_title">{{ translate('messages.title') }}
                                         ({{ translate('messages.Default') }})
+                                        <span class="form-label-secondary text-danger"
+                                            data-toggle="tooltip" data-placement="right"
+                                            data-original-title="{{ translate('messages.Required.') }}"> *
+                                        </span>
                                     </label>
                                     <input type="text" name="title[]" id="default_title"
                                         class="form-control" placeholder="{{ translate('messages.new_coupon') }}"
@@ -51,7 +53,7 @@
                                 </div>
                                 <input type="hidden" name="lang[]" value="default">
                             </div>
-                                @foreach (json_decode($language) as $lang)
+                                @foreach ($language as $lang)
                                     <div class="d-none lang_form"
                                         id="{{ $lang }}-form">
                                         <div class="form-group error-wrapper">
@@ -66,21 +68,17 @@
                                         <input type="hidden" name="lang[]" value="{{ $lang }}">
                                     </div>
                                 @endforeach
-                            @else
-                                <div id="default-form">
-                                    <div class="form-group error-wrapper">
-                                        <label class="input-label"
-                                            for="title">{{ translate('messages.title') }} ({{ translate('messages.default') }})</label>
-                                        <input type="text" id="title" name="title[]" class="form-control"
-                                            placeholder="{{ translate('messages.new_coupon') }}">
-                                    </div>
-                                    <input type="hidden" name="lang[]" value="default">
-                                </div>
+
                             @endif
                         </div>
                         <div class="col-lg-3 col-sm-6">
                             <div class="form-group error-wrapper">
-                                <label class="input-label" for="coupon_type">{{translate('messages.coupon_type')}}</label>
+                                <label class="input-label" for="coupon_type">{{translate('messages.coupon_type')}}
+                                    <span class="form-label-secondary text-danger"
+                                            data-toggle="tooltip" data-placement="right"
+                                            data-original-title="{{ translate('messages.Required.') }}"> *
+                                        </span>
+                                </label>
                                 <select id="coupon_type" name="coupon_type" class="form-control" >
                                     <option value="default">{{translate('messages.default')}}</option>
                                     @if ($store_data->sub_self_delivery == 1)
@@ -94,7 +92,12 @@
 
                         <div class="col-lg-3 col-sm-6">
                             <div class="form-group error-wrapper">
-                                <label class="input-label" for="coupon_code">{{translate('messages.code')}}</label>
+                                <label class="input-label" for="coupon_code">{{translate('messages.code')}}
+                                    <span class="form-label-secondary text-danger"
+                                        data-toggle="tooltip" data-placement="right"
+                                        data-original-title="{{ translate('messages.Required.') }}"> *
+                                    </span>
+                                </label>
                                 <input id="coupon_code" type="text" name="code" class="form-control"
                                     placeholder="{{\Illuminate\Support\Str::random(8)}}" required maxlength="100">
                             </div>
@@ -102,24 +105,39 @@
                         <div class="col-lg-3 col-sm-6">
                             <div class="form-group error-wrapper">
                                 <label class="input-label" for="coupon_limit">{{translate('messages.limit_for_same_user')}}</label>
-                                <input type="number" name="limit" id="coupon_limit" class="form-control" placeholder="{{ translate('messages.Ex :') }} 10" max="100">
+                                <input type="number" name="limit" required id="coupon_limit" class="form-control" placeholder="{{ translate('messages.Ex :') }} 10" max="100">
                             </div>
                         </div>
                         <div class="col-lg-3 col-sm-6">
                             <div class="form-group error-wrapper">
-                                <label class="input-label" for="date_from">{{translate('messages.start_date')}}</label>
+                                <label class="input-label" for="date_from">{{translate('messages.start_date')}}
+                                    <span class="form-label-secondary text-danger"
+                                            data-toggle="tooltip" data-placement="right"
+                                            data-original-title="{{ translate('messages.Required.') }}"> *
+                                        </span>
+                                </label>
                                 <input type="date" name="start_date" class="form-control" id="date_from" required>
                             </div>
                         </div>
                         <div class="col-lg-3 col-sm-6">
                             <div class="form-group error-wrapper">
-                                <label class="input-label" for="date_to">{{translate('messages.expire_date')}}</label>
+                                <label class="input-label" for="date_to">{{translate('messages.expire_date')}}
+                                    <span class="form-label-secondary text-danger"
+                                            data-toggle="tooltip" data-placement="right"
+                                            data-original-title="{{ translate('messages.Required.') }}"> *
+                                        </span>
+                                </label>
                                 <input type="date" name="expire_date" class="form-control" id="date_to" required>
                             </div>
                         </div>
-                        <div class="col-lg-3 col-sm-6">
+                        <div class="col-lg-3 col-sm-6" id="discount_type_div">
                             <div class="form-group error-wrapper">
-                                <label class="input-label" for="discount_type">{{translate('messages.discount_type')}}</label>
+                                <label class="input-label" for="discount_type">{{translate('messages.discount_type')}}
+                                    <span class="form-label-secondary text-danger"
+                                            data-toggle="tooltip" data-placement="right"
+                                            data-original-title="{{ translate('messages.Required.') }}"> *
+                                        </span>
+                                </label>
                                 <select name="discount_type" class="form-control" id="discount_type">
                                     <option value="amount">
                                             {{ translate('messages.amount').' ('.\App\CentralLogics\Helpers::currency_symbol().')'  }}
@@ -130,23 +148,39 @@
                         </div>
                         <div class="col-lg-3 col-sm-6">
                             <div class="form-group error-wrapper">
-                                <label class="input-label" for="discount">{{translate('messages.discount')}} </label>
+                                <label class="input-label" for="min_purchase">{{translate('messages.min_purchase')}}
+                                    <span class="form-label-secondary text-danger"
+                                            data-toggle="tooltip" data-placement="right"
+                                            data-original-title="{{ translate('messages.Required.') }}"> *
+                                        </span>
+                                </label>
+                                <input id="min_purchase" type="number" step="0.01" name="min_purchase" min="1" max="999999999999.99" class="form-control"
+                                    placeholder="100" required>
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-sm-6" id="discount_div">
+                            <div class="form-group error-wrapper">
+                                <label class="input-label" for="discount">{{translate('messages.discount')}}
+                                    <span class="form-label-secondary text-danger"
+                                            data-toggle="tooltip" data-placement="right"
+                                            data-original-title="{{ translate('messages.Required.') }}"> *
+                                        </span>
+                                </label>
                                 <input type="number" step="0.01" min="1" max="999999999999.99" name="discount" id="discount" class="form-control" required>
                             </div>
                         </div>
-                        <div class="col-lg-3 col-sm-6">
+                        <div class="col-lg-3 col-sm-6" id="max_discount_div">
                             <div class="form-group error-wrapper">
-                                <label class="input-label" for="max_discount">{{translate('messages.max_discount')}}</label>
-                                <input type="number" step="0.01" min="0" value="0" max="999999999999.99" name="max_discount" id="max_discount" class="form-control" readonly>
+                                <label class="input-label" for="max_discount">{{translate('messages.max_discount')}}
+                                    <span id="max_discount_astaric" class="form-label-secondary text-danger"
+                                            data-toggle="tooltip" data-placement="right"
+                                            data-original-title="{{ translate('messages.Required.') }}"> *
+                                        </span>
+                                </label>
+                                <input type="number" step="0.01" min="0" value="0" max="999999999999.99" name="max_discount" id="max_discount" class="form-control">
                             </div>
                         </div>
-                        <div class="col-lg-3 col-sm-6">
-                            <div class="form-group error-wrapper">
-                                <label class="input-label" for="min_purchase">{{translate('messages.min_purchase')}}</label>
-                                <input id="min_purchase" type="number" step="0.01" name="min_purchase" value="0" min="0" max="999999999999.99" class="form-control"
-                                    placeholder="100">
-                            </div>
-                        </div>
+
                     </div>
                     <div class="btn--container justify-content-end">
                         <button id="reset_btn" type="button" class="btn btn--reset">{{translate('messages.reset')}}</button>
@@ -238,7 +272,7 @@
                             @elseif ($coupon['discount_type'] == 'amount')
                             <td>{{ translate('messages.amount')}}</td>
                             @else
-                            <td>{{$coupon['discount_type']}}</td>
+                            <td>{{ translate('N/A') }}</td>
                             @endif
 
                             <td>{{$coupon['start_date']}}</td>
@@ -256,9 +290,15 @@
                             </td>
                             <td>
                                 <div class="btn--container justify-content-center">
-                                    <a class="ml-2 btn btn-sm btn--warning btn-outline-warning action-btn" href="#0" data-toggle="modal" data-target="#coupon_btn">
+                                    {{-- <a class="ml-2 btn btn-sm btn--warning btn-outline-warning action-btn" href="#0" data-toggle="modal" data-target="#coupon_btn">
                                         <i class="tio-invisible"></i>
-                                    </a>
+                                    </a> --}}
+                                     <a class="ml-2 btn btn-sm btn--warning btn-outline-warning action-btn data-info-show"
+                                                    href="#0" data-toggle="modal" data-target="#coupon_btn"
+                                                    data-id="{{ $coupon['id'] }}"
+                                                    data-url="{{ route('vendor.coupon.viewCoupon', [$coupon['id']]) }}">
+                                                    <i class="tio-invisible"></i>
+                                                </a>
                                     <a class="btn btn-sm btn--primary btn-outline-primary action-btn" href="{{route('vendor.coupon.update',[$coupon['id']])}}" title="{{translate('messages.edit_coupon')}}"><i class="tio-edit"></i>
                                     </a>
                                     <a class="btn btn-sm btn--danger btn-outline-danger action-btn form-alert"
@@ -298,88 +338,35 @@
 
 
 
-
-    <!-- Coupon Details Modal -->
-<div class="modal shedule-modal fade" id="coupon_btn" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-md">
-    <div class="modal-content pb-1">
-      <div class="d-flex align-items-center justify-content-between gap-2 py-3 px-3">
-        <p class="m-0 d-xl-block d-none"></p>
-        <div class="text-center">
-            <h3 class="title-clr mb-0">Coupon Details</h3>
-        </div>
-        <button type="button" class="close bg-light w-30px h-30 rounded-circle" data-dismiss="modal" aria-label="Close">
-          <span aria-hidden="true">&times;</span>
-        </button>
-      </div>
-      <div class="modal-body">
-        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-15">
-            <div>
-                <h3 class="title-clr mb-0">Super offer (30%)</h3>
-                <div class="d-flex align-items-center gap-1">
-                    <span class="fs-14">Duration:</span>
-                    <p class="fs-14 m-0 text-title">01 Oct 2022 - 05 Jul 2025</p>
+   <div class="modal shedule-modal fade" id="coupon_btn" tabindex="-1" aria-labelledby="exampleModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog modal-md">
+            <div class="modal-content pb-1">
+                <div class="d-flex align-items-center justify-content-between gap-2 py-3 px-3">
+                    <p class="m-0 d-xl-block d-none"></p>
+                    <div class="text-center">
+                        <h3 class="title-clr mb-0">{{ translate('messages.Coupon Details') }}</h3>
+                    </div>
+                    <button type="button" class="close bg-light w-30px h-30 rounded-circle" data-dismiss="modal"
+                        aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
                 </div>
-            </div>
-            <div class="bg-warning-10 py-2 px-3 rounded text-center">
-                <h2 class="mb-0 text_FF7500">30%</h2>
-                <p class="fs-16 text_FF7500 m-0">Discount</p>
-            </div>
-        </div>
-        <ul class="coupon-details-list d-flex flex-wrap bg-light rounded p-3 mb-3">
-            <li class="d-flex flex-sm-nowrap flex-wrap list-none li align-items-center gap-1">
-                <span class="fs-14 w-135px d-block min-w-135px">Coupon type </span>
-                <span>:</span>
-                <span class="fs-14 text-title">Store Wise</span>
-            </li>
-            <li class="d-flex flex-sm-nowrap flex-wrap list-none align-items-center gap-1">
-                <span class="fs-14 w-135px d-block min-w-135px">Selected Store </span>
-                <span>:</span>
-                <span class="fs-14 text-title">Online Market</span>
-            </li>
-            <li class="d-flex flex-sm-nowrap flex-wrap list-none align-items-center gap-1">
-                <span class="fs-14 w-135px d-block min-w-135px">Limit for same user </span>
-                <span>:</span>
-                <span class="fs-14 text-title">5</span>
-            </li>
-            <li class="d-flex flex-sm-nowrap flex-wrap list-none align-items-center gap-1">
-                <span class="fs-14 w-135px d-block min-w-135px">Max discount($) </span>
-                <span>:</span>
-                <span class="fs-14 text-title">200.00</span>
-            </li>
-            <li class="d-flex flex-sm-nowrap flex-wrap list-none align-items-center gap-1">
-                <span class="fs-14 w-135px d-block min-w-135px">Min purchase($) </span>
-                <span>:</span>
-                <span class="fs-14 text-title">100.00</span>
-            </li>
-            <li class="d-flex flex-sm-nowrap flex-wrap list-none gap-1">
-                <span class="fs-14 w-135px d-block min-w-135px">Min purchase($) </span>
-                <span>:</span>
-                <span class="fs-14 text-title">Esther Howard, Dianne Russell, Darlene Robertson</span>
-            </li>
-        </ul>
-        <div class="bg-light rounded p-3">
-            <h5 class="title-clr mb-15">Coupon Code</h5>
-            <div class="custom-copy-text position-relative h--45px w-100 rounded overflow-hidden">
-                <input type="text" class="text-inside form-control rounded-0 pe-30" value="NewUser" />
-                <span class="copy-btn bg-primary text-white d-flex align-items-center justify-content-center w-40px h--45px position-absolute end-cus-0 top-50 cursor-pointer text-primary"><i class="tio-copy text-white"></i></span>
-            </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
+                <div id="data-view">
 
+                </div>
+
+            </div>
+        </div>
+    </div>
+    <input type="hidden" id="min-purchase-toast"
+        value="{{ translate('messages.Discount amount cannot be greater than minimum purchase amount') }}">
 @endsection
 
 @push('script_2')
     <script src="{{asset('public/assets/admin/js/view-pages/vendor-coupon.js')}}"></script>
 <script>
     "use strict";
-    $(document).on('ready', function () {
-        $('#date_from').attr('min',(new Date()).toISOString().split('T')[0]);
-        $('#date_to').attr('min',(new Date()).toISOString().split('T')[0]);
-    });
 
         $('#reset_btn').click(function(){
             $('#coupon_title').val('');

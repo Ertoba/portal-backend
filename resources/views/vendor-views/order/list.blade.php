@@ -48,20 +48,8 @@
 
                             <div id="usersExportDropdown"
                                     class="hs-unfold-content dropdown-unfold dropdown-menu dropdown-menu-sm-right">
-                                <span class="dropdown-header">{{translate('messages.options')}}</span>
-                                <a id="export-copy" class="dropdown-item" href="javascript:">
-                                    <img class="avatar avatar-xss avatar-4by3 mr-2"
-                                            src="{{asset('public/assets/admin/svg/illustrations/copy.svg')}}"
-                                            alt="Image Description">
-                                    {{translate('messages.copy')}}
-                                </a>
-                                <a id="export-print" class="dropdown-item" href="javascript:">
-                                    <img class="avatar avatar-xss avatar-4by3 mr-2"
-                                            src="{{asset('public/assets/admin/svg/illustrations/print.svg')}}"
-                                            alt="Image Description">
-                                    {{translate('messages.print')}}
-                                </a>
-                                <div class="dropdown-divider"></div>
+                           
+
                                 <span
                                     class="dropdown-header">{{translate('messages.download_options')}}</span>
                                 <a id="export-excel" class="dropdown-item" href="javascript:">
@@ -76,26 +64,14 @@
                                             alt="Image Description">
                                     .{{translate('messages.csv')}}
                                 </a>
-                                <a id="export-pdf" class="dropdown-item" href="javascript:">
-                                    <img class="avatar avatar-xss avatar-4by3 mr-2"
-                                            src="{{asset('public/assets/admin/svg/components/pdf.svg')}}"
-                                            alt="Image Description">
-                                    {{translate('messages.pdf')}}
-                                </a>
+
                             </div>
                         </div>
                         <!-- End Unfold -->
 
                         <!-- Unfold -->
                         <div class="hs-unfold">
-                            <a class="js-hs-unfold-invoker btn btn-sm btn-white h--40px" href="javascript:"
-                                data-hs-unfold-options='{
-                                    "target": "#showHideDropdown",
-                                    "type": "css-animation"
-                                }'>
-                                <i class="tio-table mr-1"></i> {{translate('messages.column')}} <span
-                                    class="badge badge-soft-dark rounded-circle ml-1"></span>
-                            </a>
+
 
                             <div id="showHideDropdown" class="hs-unfold-content dropdown-unfold dropdown-menu dropdown-menu-right dropdown-card">
                                 <div class="card card-sm">

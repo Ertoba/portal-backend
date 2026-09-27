@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\CentralLogics\Helpers;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -13,6 +14,9 @@ use MatanYadaev\EloquentSpatial\Objects\Polygon;
 use MatanYadaev\EloquentSpatial\Traits\HasSpatial;
 use Illuminate\Database\Eloquent\Builder;
 use App\Scopes\ZoneScope;
+use Modules\RideShare\Entities\FareManagement\RideFare;
+use Modules\RideShare\Entities\FareManagement\ZoneWiseDefaultRideFare;
+use Modules\RideShare\Entities\TripManagement\RideRequest;
 
 /**
  * Class Zone
@@ -131,6 +135,26 @@ class Zone extends Model
         return $this->hasManyThrough(Campaigns::class, Store::class);
     }
 
+    public function tripFares()
+    {
+        return $this->hasMany(RideFare::class, 'zone_id');
+    }
+
+    public function tripRequest()
+    {
+        return $this->hasMany(RideRequest::class, 'zone_id');
+    }
+
+    public function defaultFare()
+    {
+        return $this->hasOne(ZoneWiseDefaultRideFare::class, 'zone_id');
+    }
+
+    public function drivers(): HasMany
+    {
+        return $this->hasMany(DeliveryMan::class);
+    }
+
     public function scopeActive($query)
     {
         return $query->where('status', '=', 1);
@@ -149,6 +173,13 @@ class Zone extends Model
                 return $query->where('locale', app()->getLocale());
             }]);
         });
+
+            static::saved(function () {
+                Helpers::deleteCacheData('banners_');
+                Helpers::deleteCacheData('advertisement_');
+        });
+
+
     }
 
     public function modules(): BelongsToMany

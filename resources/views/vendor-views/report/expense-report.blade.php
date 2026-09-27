@@ -88,7 +88,7 @@
                     <form  class="search-form">
                         <!-- Search -->
                         <div class="input--group input-group input-group-merge input-group-flush">
-                            <input name="search" value="{{ request()->search ?? null }}"   type="search" class="form-control" placeholder="{{ translate('Search by Order ID') }}">
+                            <input name="search" value="{{ request()->search ?? null }}"   type="search" class="form-control" placeholder="{{ translate('Search by order id ,Phone number ,Customer name') }}">
                             <button type="submit" class="btn btn--secondary"><i class="tio-search"></i></button>
                         </div>
                         <!-- End Search -->
@@ -119,7 +119,7 @@
                                 <img class="avatar avatar-xss avatar-4by3 mr-2"
                                     src="{{ asset('public/assets/admin') }}/svg/components/placeholder-csv-format.svg"
                                     alt="Image Description">
-                                .{{ translate('messages.csv') }}
+                                {{ translate('messages.csv') }}
                             </a>
                         </div>
                     </div>
@@ -142,7 +142,7 @@
                                 @endif
                                 <th class="text-center" >{{translate('Date & Time')}}</th>
                                 <th class="text-center" >{{ translate('Expense Type') }}</th>
-                                <th class="text-center" >{{ translate('Customer Name') }}</th>
+                                <th class="text-center" >{{ translate('Customer Info') }}</th>
                                 <th class="border-0 text-right pr-xl-5">
                                     <div class="pr-xl-5">
                                         {{translate('expense amount')}}

@@ -52,12 +52,49 @@ class ReportController extends Controller
         ->when(isset($filter) && $filter == 'this_week', function ($query) {
             return $query->whereBetween('created_at', [now()->startOfWeek()->format('Y-m-d H:i:s'), now()->endOfWeek()->format('Y-m-d H:i:s')]);
         })
-        ->when( isset($key), function($query) use($key){
+        ->when(isset($key) && is_array($key), function ($query) use ($key) {
+
             $query->where(function ($q) use ($key) {
+
                 foreach ($key as $value) {
-                    $q->orWhere('type', 'like', "%{$value}%")->orWhere('order_id', 'like', "%{$value}%");
+
+                    $q->orWhere(function ($sub) use ($value) {
+
+                        $sub->where('type', 'like', "%{$value}%")
+                            ->orWhere('order_id', 'like', "%{$value}%")
+
+                            ->orWhereHas('order.customer', function ($customer) use ($value) {
+                                $customer->where('f_name', 'like', "%{$value}%")
+                                        ->orWhere('l_name', 'like', "%{$value}%")
+                                        ->orWhere('phone', 'like', "%{$value}%");
+                            })
+
+                            ->orWhereHas('order', function ($order) use ($value) {
+                                $order->where('delivery_address->contact_person_name', 'like', "%{$value}%")
+                                    ->orWhere('delivery_address->contact_person_phone', 'like', "%{$value}%");
+                            })
+
+                            ->orWhereHas('trip.customer', function ($customer) use ($value) {
+                                $customer->where('f_name', 'like', "%{$value}%")
+                                        ->orWhere('l_name', 'like', "%{$value}%")
+                                        ->orWhere('phone', 'like', "%{$value}%");
+                            })
+
+                            ->orWhereHas('trip', function ($trip) use ($value) {
+                                $trip->where('user_info->contact_person_name', 'like', "%{$value}%")
+                                    ->orWhere('user_info->contact_person_phone', 'like', "%{$value}%");
+                            })
+
+                            ->orWhereHas('user', function ($user) use ($value) {
+                                $user->where('f_name', 'like', "%{$value}%")
+                                    ->orWhere('l_name', 'like', "%{$value}%")
+                                    ->orWhere('phone', 'like', "%{$value}%");
+                            });
+
+                    });
                 }
             });
+
         })
         ->orderBy('created_at', 'desc')
         ->paginate(config('default_pagination'))->withQueryString();

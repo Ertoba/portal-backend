@@ -109,7 +109,7 @@
                         </div>
                     </div>
                     <div class="btn--container justify-content-end mt-20">
-                        <button type="reset" class="btn btn--reset">{{translate('clear')}}</button>
+                        <button type="reset" class="btn btn--reset" id="reset_btn">{{translate('clear')}}</button>
                         <button type="submit" class="btn btn--primary">{{translate('export')}}</button>
                     </div>
                 </form>

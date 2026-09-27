@@ -71,6 +71,12 @@ class SystemController extends Controller
 
         $admin->f_name = $request->f_name;
         $admin->l_name = $request->l_name;
+
+        if($admin->email != $request->email){
+            $login_remember_token= Str::random(60);
+            $admin->login_remember_token =  $login_remember_token;
+            session(['login_remember_token' => $login_remember_token]);
+        }
         $admin->email = $request->email;
         $admin->phone = $request->phone;
         $admin->image = $image_name;

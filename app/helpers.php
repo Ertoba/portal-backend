@@ -69,7 +69,7 @@ if (! function_exists('collect_cash_success')) {
                 $account_transaction->created_by = 'store';
             }
             elseif($data->attribute === 'deliveryman_collect_cash_payments'){
-                $user_data = DeliveryMan::findOrFail($data->attribute_id);
+                $user_data = DeliveryMan::withoutGlobalScope('delivery_only')->findOrFail($data->attribute_id);
                 $user_data->status = 1;
                 $user_data->save();
                 $current_balance = $user_data?->wallet?->collected_cash ?? 0;
@@ -102,7 +102,7 @@ if (! function_exists('collect_cash_success')) {
 
         try {
             if($data->attribute == 'deliveryman_collect_cash_payments' && config('mail.status') &&  Helpers::getNotificationStatusData('deliveryman','deliveryman_collect_cash','mail_status') && Helpers::get_mail_status('cash_collect_mail_status_dm') == 1 ){
-                Mail::to($user_data?->getRawOriginal('email'))->send(new \App\Mail\CollectCashMail($account_transaction,$user_data['f_name']));
+                Mail::to($user_data?->getRawOriginal('email'))->send(new \App\Mail\CollectCashMail($account_transaction, $user_data));
             }
         } catch (\Exception $exception) {
             info($exception->getMessage());
@@ -161,9 +161,12 @@ if (! function_exists('trip_payment_success')) {
         $trip = Trips::find($data->attribute_id);
         if($trip->payment_method != 'partial_payment'){
             $trip->payment_method=$data->payment_method;
+        }elseif($trip->payment_method == 'partial_payment'){
+            CustomerLogic::create_wallet_transaction($trip->user_id, $trip->partially_paid_amount, 'partial_payment', $trip->id);
         }
         $trip->transaction_reference=$data->transaction_ref;
         $trip->payment_status='paid';
+        $trip->trip_status = $trip->trip_status == 'payment_failed' ? 'completed' : $trip->trip_status;
         $trip->save();
 
         if( $trip?->provider?->is_valid_subscription == 1 && $trip?->provider?->store_sub?->max_order != "unlimited" && $trip?->provider?->store_sub?->max_order > 0){
@@ -211,24 +214,10 @@ if (! function_exists('order_failed')) {
 if (! function_exists('wallet_success')) {
     function wallet_success($data) {
         $order = WalletPayment::find($data->attribute_id);
-        if (!$order) {
-            return;
-        }
-
-        // Prevent duplicate wallet credits if the same payment callback/success flow is retried.
-        $updatedRows = WalletPayment::where('id', $data->attribute_id)
-            ->where(function ($query) {
-                $query->whereNull('payment_status')->orWhere('payment_status', '!=', 'success');
-            })
-            ->update([
-                'payment_method' => $data->payment_method,
-                'payment_status' => 'success',
-            ]);
-
-        if ($updatedRows !== 1) {
-            return;
-        }
-
+        $order->payment_method=$data->payment_method;
+        // $order->transaction_reference=$data->transaction_ref;
+        $order->payment_status='success';
+        $order->save();
         $wallet_transaction = CustomerLogic::create_wallet_transaction($data->payer_id, $data->payment_amount, 'add_fund',$data->payment_method);
         if($wallet_transaction)
         {
@@ -323,7 +312,7 @@ if (!function_exists('config_settings')) {
                 if (Config::has($configKey)) {
                     $data = Config::get($configKey);
                 } else {
-                    $data = env('APP_MODE')??'demo';
+                    $data = config('app.app_mode', 'live');
                     Config::set($configKey, $data);
                 }
                 return $data;

@@ -21,10 +21,16 @@ class CampaignController extends Controller
 
         $campaigns=Campaign::with('stores')->running()->latest()->module(Helpers::get_store_data()->module_id)
 
-        ->when($key, function($query)use($key){
+        ->when($key, function ($query) use ($key) {
             $query->where(function ($q) use ($key) {
                 foreach ($key as $value) {
-                    $q->orWhere('title', 'like', "%". $value."%");
+                    $q->orWhere('title', 'like', "%{$value}%")
+                    ->orWhere('description', 'like', "%{$value}%")
+                    ->orWhere('slug', 'like', "%{$value}%")
+                    ->orWhereHas('translations', function ($t) use ($value) {
+                        $t->where('value', 'like', "%{$value}%");
+                    });
+
                 }
             });
         })
@@ -48,7 +54,7 @@ class CampaignController extends Controller
     }
     public function addstore(Campaign $campaign, $store_id)
     {
-        $campaign->stores()->attach($store_id,['campaign_status' => 'pending']);
+        $campaign->stores()->attach($store_id,['campaign_status' => 'pending','updated_at' => now(),'created_at' => now()]);
         $campaign->save();
         $store = Store::find($store_id);
         try

@@ -21,9 +21,7 @@
                     @csrf
                     <div class="row">
                         <div class="col-12">
-                            @php($language=\App\Models\BusinessSetting::where('key','language')->first())
-                                    @php($language = $language->value ?? null)
-                                    @php($defaultLang = str_replace('_', '-', app()->getLocale()))
+
                                     @if($language)
                                         <ul class="nav nav-tabs mb-4">
                                             <li class="nav-item">
@@ -31,7 +29,7 @@
                                                 href="#"
                                                 id="default-link">{{translate('messages.default')}}</a>
                                             </li>
-                                            @foreach (json_decode($language) as $lang)
+                                            @foreach ($language as $lang)
                                                 <li class="nav-item">
                                                     <a class="nav-link lang_link"
                                                         href="#"
@@ -41,12 +39,17 @@
                                         </ul>
                                         <div class="lang_form" id="default-form">
                                             <div class="form-group error-wrapper">
-                                                <label class="input-label" for="default_title">{{translate('messages.title')}} ({{translate('messages.default')}})</label>
+                                                <label class="input-label" for="default_title">{{translate('messages.title')}} ({{translate('messages.default')}})
+                                                    <span class="form-label-secondary text-danger"
+                                            data-toggle="tooltip" data-placement="right"
+                                            data-original-title="{{ translate('messages.Required.') }}"> *
+                                        </span>
+                                                </label>
                                                 <input type="text" name="title[]" id="default_title" class="form-control" placeholder="{{translate('messages.new_coupon')}}" value="{{$coupon?->getRawOriginal('title')}}" required>
                                             </div>
                                             <input type="hidden" name="lang[]" value="default">
                                         </div>
-                                        @foreach(json_decode($language) as $lang)
+                                        @foreach($language as $lang)
                                             <?php
                                                 if(count($coupon['translations'])){
                                                     $translate = [];
@@ -66,19 +69,21 @@
                                                 <input type="hidden" name="lang[]" value="{{$lang}}">
                                             </div>
                                         @endforeach
-                                    @else
-                                    <div id="default-form">
-                                        <div class="form-group error-wrapper">
-                                            <label class="input-label" for="title">{{translate('messages.title')}} ({{ translate('messages.default') }})</label>
-                                            <input type="text" name="title[]" id="title" class="form-control" placeholder="{{translate('messages.new_coupon')}}" value="{{$coupon['title']}}" maxlength="100" required>
-                                        </div>
-                                        <input type="hidden" name="lang[]" value="default">
-                                    </div>
+
+
                                     @endif
                         </div>
-                        <div class="col-sm-6 col-lg-3">
+
+                    </div>
+                    <div class="row">
+                          <div class="col-sm-6 col-lg-3">
                             <div class="form-group error-wrapper">
-                                <label class="input-label" for="coupon_type">{{translate('messages.coupon_type')}}</label>
+                                <label class="input-label" for="coupon_type">{{translate('messages.coupon_type')}}
+                                    <span class="form-label-secondary text-danger"
+                                            data-toggle="tooltip" data-placement="right"
+                                            data-original-title="{{ translate('messages.Required.') }}"> *
+                                        </span>
+                                </label>
                                 <select id="coupon_type" name="coupon_type" class="form-control" >
                                     @if ($store_data->sub_self_delivery == 1)
                                     <option value="free_delivery" {{$coupon['coupon_type']=='free_delivery'?'selected':''}}>{{translate('messages.free_delivery')}}</option>
@@ -87,11 +92,14 @@
                                 </select>
                             </div>
                         </div>
-                    </div>
-                    <div class="row">
                         <div class="col-sm-6 col-lg-3">
                             <div class="form-group error-wrapper">
-                                <label class="input-label" for="coupon_code">{{translate('messages.code')}}</label>
+                                <label class="input-label" for="coupon_code">{{translate('messages.code')}}
+                                    <span class="form-label-secondary text-danger"
+                                            data-toggle="tooltip" data-placement="right"
+                                            data-original-title="{{ translate('messages.Required.') }}"> *
+                                        </span>
+                                </label>
                                 <input id="coupon_code" type="text" name="code" class="form-control" value="{{$coupon['code']}}"
                                         placeholder="{{\Illuminate\Support\Str::random(8)}}" required maxlength="100">
                             </div>
@@ -99,28 +107,43 @@
                         <div class="col-sm-6 col-lg-3">
                             <div class="form-group error-wrapper">
                                 <label class="input-label" for="coupon_limit">{{translate('messages.limit_for_same_user')}}</label>
-                                <input type="number" name="limit" id="coupon_limit" value="{{$coupon['limit']}}" class="form-control" max="100"
+                                <input type="number" required name="limit" id="coupon_limit" value="{{$coupon['limit']}}" class="form-control" max="100"
                                         placeholder="{{ translate('messages.Ex :') }} 10">
                             </div>
                         </div>
                         <div class="col-sm-6 col-lg-3">
                             <div class="form-group error-wrapper">
-                                <label class="input-label" for="date_from">{{translate('messages.start_date')}}</label>
+                                <label class="input-label" for="date_from">{{translate('messages.start_date')}}
+                                    <span class="form-label-secondary text-danger"
+                                            data-toggle="tooltip" data-placement="right"
+                                            data-original-title="{{ translate('messages.Required.') }}"> *
+                                        </span>
+                                </label>
                                 <input type="date" name="start_date" class="form-control" id="date_from" placeholder="{{translate('messages.select_date')}}" value="{{date('Y-m-d',strtotime($coupon['start_date']))}}">
                             </div>
                         </div>
                         <div class="col-sm-6 col-lg-3">
                             <div class="form-group error-wrapper">
-                                <label class="input-label" for="date_to">{{translate('messages.expire_date')}}</label>
+                                <label class="input-label" for="date_to">{{translate('messages.expire_date')}}
+                                    <span class="form-label-secondary text-danger"
+                                            data-toggle="tooltip" data-placement="right"
+                                            data-original-title="{{ translate('messages.Required.') }}"> *
+                                        </span>
+                                </label>
                                 <input type="date" name="expire_date" class="form-control" placeholder="{{translate('messages.select_date')}}" id="date_to" value="{{date('Y-m-d',strtotime($coupon['expire_date']))}}"
                                         data-hs-flatpickr-options='{
                                         "dateFormat": "Y-m-d"
                                     }'>
                             </div>
                         </div>
-                        <div class="col-sm-6 col-lg-3">
+                        <div class="col-sm-6 col-lg-3 {{$coupon['coupon_type']=='free_delivery'?'d-none':''}}" id="discount_type_div">
                             <div class="form-group error-wrapper">
-                                <label class="input-label" for="discount_type">{{translate('messages.discount_type')}}</label>
+                                <label class="input-label" for="discount_type">{{translate('messages.discount_type')}}
+                                    <span class="form-label-secondary text-danger"
+                                            data-toggle="tooltip" data-placement="right"
+                                            data-original-title="{{ translate('messages.Required.') }}"> *
+                                        </span>
+                                </label>
                                 <select name="discount_type" id="discount_type" class="form-control" {{$coupon['coupon_type']=='free_delivery'?'disabled':''}}>
                                     <option value="amount" {{$coupon['discount_type']=='amount'?'selected':''}}>
                                         {{ translate('messages.amount').' ('.\App\CentralLogics\Helpers::currency_symbol().')'  }}
@@ -131,28 +154,39 @@
                                 </select>
                             </div>
                         </div>
-                        <div class="col-sm-6 col-lg-3">
+                         <div class="col-sm-6 col-lg-3">
                             <div class="form-group error-wrapper">
-                                <label class="input-label" for="discount">{{translate('messages.discount')}} </label>
+                                <label class="input-label" for="min_purchase">{{translate('messages.min_purchase')}}
+                                    <span class="form-label-secondary text-danger"
+                                            data-toggle="tooltip" data-placement="right"
+                                            data-original-title="{{ translate('messages.Required.') }}"> *
+                                        </span>
+                                </label>
+                                <input id="min_purchase" type="number" name="min_purchase" step="0.01" value="{{$coupon['min_purchase']}}"
+                                        min="0" max="999999999999.99" class="form-control"
+                                        placeholder="100" required>
+                            </div>
+                        </div>
+                        <div class="col-sm-6 col-lg-3 {{$coupon['coupon_type']=='free_delivery'?'d-none':''}}" id="discount_div">
+                            <div class="form-group error-wrapper">
+                                <label class="input-label" for="discount">{{translate('messages.discount')}}
+                                    <span class="form-label-secondary text-danger"
+                                            data-toggle="tooltip" data-placement="right"
+                                            data-original-title="{{ translate('messages.Required.') }}"> *
+                                        </span>
+                                </label>
                                 <input type="number" id="discount" min="1" max="999999999999.99" step="0.01" value="{{$coupon['discount']}}"
                                         name="discount" class="form-control" required {{$coupon['coupon_type']=='free_delivery'?'readonly':''}}>
                             </div>
                         </div>
-                        <div class="col-sm-6 col-lg-3">
+                        <div class="col-sm-6 col-lg-3 {{$coupon['coupon_type']=='free_delivery'?'d-none':''}}" id="max_discount_div">
                             <div class="form-group error-wrapper">
                                 <label class="input-label" for="max_discount">{{translate('messages.max_discount')}}</label>
                                 <input type="number" min="0" max="999999999999.99" step="0.01"
                                         value="{{$coupon['max_discount']}}" name="max_discount" id="max_discount" class="form-control" {{$coupon['coupon_type']=='free_delivery'?'readonly':''}}>
                             </div>
                         </div>
-                        <div class="col-sm-6 col-lg-3">
-                            <div class="form-group error-wrapper">
-                                <label class="input-label" for="min_purchase">{{translate('messages.min_purchase')}}</label>
-                                <input id="min_purchase" type="number" name="min_purchase" step="0.01" value="{{$coupon['min_purchase']}}"
-                                        min="0" max="999999999999.99" class="form-control"
-                                        placeholder="100">
-                            </div>
-                        </div>
+
                     </div>
                     <div class="btn--container justify-content-end">
                         <button id="reset_btn" type="button" class="btn btn--reset location-reload" >{{translate('messages.reset')}}</button>
@@ -167,13 +201,5 @@
 
 @push('script_2')
     <script src="{{asset('public/assets/admin/js/view-pages/vendor-coupon.js')}}"></script>
-    <script>
-        "use strict";
-        $(document).on('ready', function () {
-            $('#date_from').attr('max','{{date("Y-m-d",strtotime($coupon["expire_date"]))}}');
-            $('#date_to').attr('min','{{date("Y-m-d",strtotime($coupon["start_date"]))}}');
-        });
-    </script>
-
 
 @endpush

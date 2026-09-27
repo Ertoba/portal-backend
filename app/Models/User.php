@@ -14,6 +14,10 @@ use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\DB;
 use Laravel\Passport\HasApiTokens;
 use Modules\Rental\Entities\Trips;
+use Modules\RideShare\Entities\PromotionManagement\AppliedCoupon;
+use Modules\RideShare\Entities\TripManagement\RideRequest;
+use App\Models\UserAccount;
+use Modules\RideShare\Entities\UserManagement\UserLastLocation;
 
 class User extends Authenticatable
 {
@@ -84,6 +88,26 @@ class User extends Authenticatable
     {
         return $this->hasMany(Trips::class)->where('is_guest', 0);
     }
+
+    public function customerRides()
+    {
+        return $this->hasMany(RideRequest::class, 'customer_id');
+    }
+
+    public function lastLocations()
+    {
+        return $this->hasOne(UserLastLocation::class, 'user_id')->where('type', 'customer');
+    }
+
+    public function appliedCoupon()
+    {
+        return $this->hasOne(AppliedCoupon::class);
+    }
+
+    // public function userAccount()
+    // {
+    //     return $this->hasOne(UserAccount::class, 'user_id');
+    // }
 
     public function addresses(){
         return $this->hasMany(CustomerAddress::class);

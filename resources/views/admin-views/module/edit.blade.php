@@ -6,6 +6,10 @@
 <link rel="stylesheet" href="{{asset('public/assets/admin/css/radio-image.css')}}">
 @endpush
 
+@section('edit_module')
+active
+@endsection
+
 @section('content')
     <div class="content container-fluid">
         <!-- Page Header -->

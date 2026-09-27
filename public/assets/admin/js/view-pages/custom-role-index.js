@@ -1,39 +1,39 @@
 "use strict";
-$(document).ready(function() {
+
+$(document).ready(function () {
     let datatable = $.HSCore.components.HSDatatables.init($('#columnSearchDatatable'));
 });
 
-$('#reset-btn').on('click', function(){
+$('#reset-btn').on('click', function () {
+    $('.check--item-wrapper .check-item .form-check-input').prop('checked', false);
+    $('#select-all').prop('checked', false);
+    $('.select-subwrapper .check-all').prop('checked', false);
+});
 
-    $('.check--item-wrapper .check-item .form-check-input').attr('checked', false)
-})
-$('#select-all').on('change', function(){
-    if(this.checked === true) {
-        $('.check--item-wrapper .check-item .form-check-input').attr('checked', true)
+$('#select-all').on('change', function () {
+    if (this.checked === true) {
+        $('.check--item-wrapper .check-item .form-check-input').prop('checked', true);
     } else {
-        $('.check--item-wrapper .check-item .form-check-input').attr('checked', false)
+        $('.check--item-wrapper .check-item .form-check-input').prop('checked', false);
     }
-})
-$('.check--item-wrapper .check-item .form-check-input').on('change', function(){
-    if(this.checked === true) {
-        $(this).attr('checked', true)
-    } else {
-        $(this).attr('checked', false)
-    }
-})
+});
 
-
+$('.check--item-wrapper .check-item .form-check-input').on('change', function () {
+    const allCheckboxes = $('.check--item-wrapper .check-item .form-check-input');
+    const allChecked = allCheckboxes.length === allCheckboxes.filter(':checked').length;
+    $('#select-all').prop('checked', allChecked);
+});
 
 //Sub Select
-$('.select-subwrapper .check-all').on('change', function() {
+$('.select-subwrapper .check-all').on('change', function () {
     const wrapper = $(this).closest('.select-subwrapper');
     const isChecked = $(this).is(':checked');
-    
+
     wrapper.find('.check-item .form-check-input').prop('checked', isChecked);
 });
 
 // Handle individual checkbox update
-$('.select-subwrapper .check-item .form-check-input').on('change', function() {
+$('.select-subwrapper .check-item .form-check-input').on('change', function () {
     const wrapper = $(this).closest('.select-subwrapper');
     const allCheckboxes = wrapper.find('.check-item .form-check-input');
     const allChecked = allCheckboxes.length === allCheckboxes.filter(':checked').length;

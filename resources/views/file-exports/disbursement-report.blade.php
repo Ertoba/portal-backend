@@ -26,8 +26,10 @@
                     <br>
                     @if($data['type'] == 'store')
                         {{ translate('store' )}} - {{ $data['store']??translate('all') }}
-                    @else
+                    @elseif($data['type'] == 'delivery_man')
                         {{ translate('delivery_man' )}} - {{ $data['delivery_man']??translate('all') }}
+                    @else
+                    {{ translate('rider' )}} - {{ $data['rider']??translate('all') }}
                     @endif
                     @if ($data['from'])
                         <br>
@@ -71,8 +73,10 @@
             @if($data['type'] == 'store')
 
             <th>{{ translate('Store_Info') }}</th>
-            @else
+            @elseif($data['type'] == 'delivery_man')
             <th>{{ translate('Delivery_Man_Info') }}</th>
+            @else
+            <th>{{ translate('Rider_Info') }}</th>
             @endif
             <th>{{ translate('created_at') }}</th>
             <th>{{ translate('amount') }}</th>
@@ -87,8 +91,10 @@
         @if($data['type'] == 'store')
 
         <td>{{ $disb->store->name }}</td>
+        @elseif($data['type'] == 'delivery_man')
+            <td>{{$disb->delivery_man->f_name.' '.$disb->delivery_man->l_name}}</td>
         @else
-            <th>{{$disb->delivery_man->f_name.' '.$disb->delivery_man->l_name}}</th>
+            <td>{{$disb->rider->f_name.' '.$disb->rider->l_name}}</td>
         @endif
         <td>{{ \App\CentralLogics\Helpers::time_date_format($disb['created_at']) }}</td>
         <td>

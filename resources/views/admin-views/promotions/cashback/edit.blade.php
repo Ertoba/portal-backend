@@ -46,6 +46,7 @@
                                     <label class="input-label"
                                         for="default_title">{{ translate('messages.title') }}
                                         ({{ translate('Default') }})
+                                        <span class="text-danger">*</span>
                                     </label>
                                     <input type="text" name="title[]" maxlength="254" value="{{$cashback?->getRawOriginal('title')}}" id="default_title"
                                         class="form-control" placeholder="{{ translate('messages.Eid_Dhamaka') }}" >
@@ -96,9 +97,10 @@
 
                         <div class="col-md-4 col-lg-4 col-sm-6" id="customer_wise">
                             <div class="form-group">
-                                <label class="input-label" for="select_customer">{{translate('messages.select_customer')}}</label>
+                                <label class="input-label" for="select_customer">{{translate('messages.select_customer')}}   <span class="text-danger">*</span></label>
                                 <select required name="customer_id[]" id="select_customer"
-                                class="form-control js-select2-custom"
+                                class="form-control multiple-select2"
+                                data-placeholder="{{translate('messages.select_customer')}}"
                                 multiple="multiple" placeholder="{{translate('messages.select_customer')}}">
                                 <option value="all" {{in_array('all', json_decode($cashback->customer_id))?'selected':''}}>{{translate('messages.all')}} </option>
                                 @foreach(\App\Models\User::get(['id','f_name','l_name']) as $user)
@@ -149,33 +151,33 @@
 
                         <div class="col-md-4 col-lg-4 col-sm-6">
                             <div class="form-group">
-                                <label class="input-label" for="exampleFormControlInput1">{{translate('messages.Minimum_Purchase')}} ({{ \App\CentralLogics\Helpers::currency_symbol() }})</label>
+                                <label class="input-label" for="exampleFormControlInput1">{{translate('messages.Minimum_Purchase')}} ({{ \App\CentralLogics\Helpers::currency_symbol() }})   <span class="text-danger">*</span></label>
                                 <input type="number" step="0.01" id="min_purchase" required name="min_purchase" value="{{ $cashback->min_purchase }}" min="0" max="999999999999.99" class="form-control"
                                 placeholder="{{ translate('messages.Ex:_100') }}">
                             </div>
                         </div>
                         <div class="col-md-4 col-lg-4 col-sm-6">
                             <div class="form-group">
-                                <label class="input-label" for="max_discount">{{translate('messages.Maximum_Discount')}} ({{ \App\CentralLogics\Helpers::currency_symbol() }})</label>
+                                <label class="input-label" for="max_discount">{{translate('messages.Maximum_Discount')}} ({{ \App\CentralLogics\Helpers::currency_symbol() }}) </label>
                                 <input type="number" step="0.01" min="0" placeholder="{{ translate('messages.Ex:_100') }}"  max="999999999999.99"  {{ $cashback->cashback_type ==  'percentage' ? 'required'  : 'readonly' }}   value="{{ $cashback->max_discount }}" name="max_discount" id="max_discount" class="form-control" >
                             </div>
                         </div>
 
                         <div class="col-md-4 col-lg-4 col-sm-6">
                             <div class="form-group">
-                                <label class="input-label" for="exampleFormControlInput1">{{translate('messages.Start_Date')}}</label>
+                                <label class="input-label" for="exampleFormControlInput1">{{translate('messages.Start_Date')}}   <span class="text-danger">*</span></label>
                                 <input type="date" name="start_date" value="{{ $cashback->start_date }}" class="form-control" id="date_from" required>
                             </div>
                         </div>
                         <div class="col-md-4 col-lg-4 col-sm-6">
                             <div class="form-group">
-                                <label class="input-label" for="exampleFormControlInput1">{{translate('messages.End_Date')}}</label>
+                                <label class="input-label" for="exampleFormControlInput1">{{translate('messages.End_Date')}}   <span class="text-danger">*</span></label>
                                 <input type="date" name="end_date" value="{{ $cashback->end_date }}"  class="form-control" id="date_to" required>
                             </div>
                         </div>
                         <div class="col-md-4 col-lg-4 col-sm-6">
                             <div class="form-group">
-                                <label class="input-label" for="exampleFormControlInput1">{{translate('messages.Limit_for_Same_User')}}</label>
+                                <label class="input-label" for="exampleFormControlInput1">{{translate('messages.Limit_for_Same_User')}}   <span class="text-danger">*</span></label>
                                 <input type="number" step="1" name="same_user_limit" value="{{ $cashback->same_user_limit }}"  value="0" min="0" max="9999999" class="form-control" required
                                 placeholder="{{ translate('messages.Ex:_5') }}">
                             </div>

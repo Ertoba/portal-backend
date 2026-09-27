@@ -31,6 +31,7 @@ class ZoneService
             'store_wise_topic' => 'zone_'.$zoneId.'_store',
             'customer_wise_topic' => 'zone_'.$zoneId.'_customer',
             'deliveryman_wise_topic' => 'zone_'.$zoneId.'_delivery_man',
+            'rider_wise_topic' => 'zone_'.$zoneId.'_rider',
             'cash_on_delivery' => $request->cash_on_delivery?1:0,
             'digital_payment' => $request->digital_payment?1:0,
         ];
@@ -56,6 +57,7 @@ class ZoneService
             'store_wise_topic' => 'zone_'.$zoneId.'_store',
             'customer_wise_topic' => 'zone_'.$zoneId.'_customer',
             'deliveryman_wise_topic' => 'zone_'.$zoneId.'_delivery_man',
+            'rider_wise_topic' => 'zone_'.$zoneId.'_rider',
             'coordinates' => new Polygon([new LineString($polygon)]),
         ];
     }

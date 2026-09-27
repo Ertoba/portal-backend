@@ -45,7 +45,7 @@ document.addEventListener("DOMContentLoaded", function() {
                 console.error("Error rendering PDF thumbnail:", error);
                 thumbnail.src = $('#file-assets').data('default-thumbnail');
             }
-        } else if (["jpg", "jpeg", "png", "gif", "bmp"].includes(fileExtension)) {
+        } else if (["jpg","webp","jpeg", "png", "gif", "bmp"].includes(fileExtension)) {
             thumbnail.src = fileUrl;
         } else {
             const fileIconPath = $('#file-assets').data('document-path') + `/${fileExtension}.png`;

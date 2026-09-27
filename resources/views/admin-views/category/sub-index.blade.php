@@ -144,7 +144,7 @@
                                 <img class="avatar avatar-xss avatar-4by3 mr-2"
                                     src="{{ asset('public/assets/admin') }}/svg/components/placeholder-csv-format.svg"
                                     alt="Image Description">
-                                .{{ translate('messages.csv') }}
+                                {{ translate('messages.csv') }}
                             </a>
 
                         </div>
@@ -169,8 +169,13 @@
                                 <th class="border-0 w--1">{{translate('messages.main_category')}}</th>
                                 <th class="border-0 text-center">{{translate('messages.sub_category')}}</th>
                                 <th class="border-0 text-center">{{translate('messages.status')}}</th>
+                                @if (Config::get('module.current_module_type') == 'ecommerce')
                                 <th class="border-0 text-center">{{translate('messages.featured')}}</th>
-                                <th class="border-0 text-center">{{translate('messages.priority')}}</th>
+
+                                @endif
+                                <th class="border-0 text-center">{{translate('messages.priority')}}     <span class="input-label-secondary"
+                                            data-toggle="tooltip" data-placement="right" data-original-title="{{translate('Categories will be displayed based on priority order: High first, then Medium, and finally Low ')}}"><img src="{{asset('public/assets/admin/img/info-circle.svg')}}"
+                                            alt="public/img"></span></th>
                                 <th class="border-0 text-center">{{translate('messages.action')}}</th>
                             </tr>
                         </thead>
@@ -198,6 +203,8 @@
                                         </span>
                                     </label>
                                 </td>
+
+                                @if (Config::get('module.current_module_type') == 'ecommerce')
                                 <td>
                                         <label class="toggle-switch toggle-switch-sm"
                                             for="featuredCheckbox{{ $category->id }}">
@@ -222,6 +229,10 @@
                                             method="get" id="featuredCheckbox{{ $category->id }}_form">
                                         </form>
                                     </td>
+
+                                @endif
+
+
                                 <td>
                                     <form action="{{route('admin.category.priority',$category->id)}}" class="priority-form">
                                         <select name="priority" id="priority" class="form-control priority-select form--control-select mx-auto {{$category->priority == 0 ? 'text-title':''}} {{$category->priority == 1 ? 'text-info':''}} {{$category->priority == 2 ? 'text-success':''}}">

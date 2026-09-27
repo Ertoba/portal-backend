@@ -3,12 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Models\PaymentRequest;
+use App\Models\FlittSavedCard;
 use App\Traits\Processor;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
-use Illuminate\Support\Facades\Redirect;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
+use Throwable;
 
 class FlittPaymentController extends Controller
 {
@@ -19,12 +21,14 @@ class FlittPaymentController extends Controller
 
     private mixed $config_values;
     private PaymentRequest $payment;
+    private bool $isLiveMode = false;
 
     public function __construct(PaymentRequest $payment)
     {
         $config = $this->payment_config('flitt', 'payment_config');
 
         if (!is_null($config) && $config->mode == 'live') {
+            $this->isLiveMode = true;
             $this->config_values = json_decode($config->live_values);
         } else {
             $this->config_values = !is_null($config) ? json_decode($config->test_values) : null;
@@ -49,13 +53,28 @@ class FlittPaymentController extends Controller
             return response()->json($this->response_formatter(GATEWAYS_DEFAULT_204), 200);
         }
 
-        $payload = $this->buildCreateOrderPayload($payment);
-        $response = $this->postToFlitt('/api/checkout/url', $payload);
-        $checkoutUrl = data_get($response, 'response.checkout_url');
+        $saveCardRequested = $this->resolveSaveCardPreference($payment, $request);
+        $payload = $this->buildCreateOrderPayload($payment, false, $saveCardRequested);
+        $response = $this->postToFlitt('/api/checkout/token', $payload);
+        $token = data_get($response, 'response.token');
 
-        if (data_get($response, 'response.response_status') === 'success' && !empty($checkoutUrl)) {
-            return Redirect::away($checkoutUrl);
+        if (data_get($response, 'response.response_status') === 'success' && !empty($token)) {
+            return response()
+                ->view('payment-views.flitt-embedded', [
+                    'payment' => $payment,
+                    'token' => (string) $token,
+                    'merchantId' => (int) $this->config_values->merchant_id,
+                    'amount' => number_format((float) $payment->payment_amount, 2),
+                    'currency' => strtoupper($payment->currency_code ?? 'GEL'),
+                    'title' => $this->checkoutTitle($payment),
+                    'isLiveMode' => $this->isLiveMode,
+                    'canSaveCard' => $this->canSaveCard($payment),
+                    'saveCardRequested' => $saveCardRequested,
+                ])
+                ->header('Content-Type', 'text/html; charset=UTF-8');
         }
+
+        $this->logGatewayResponse('Flitt checkout token was not created', $payment, $response);
 
         return response()->json($this->response_formatter(GATEWAYS_DEFAULT_204), 200);
     }
@@ -65,12 +84,24 @@ class FlittPaymentController extends Controller
         $payload = $this->extractBodyPayload($request);
 
         if (empty($payload) || !$this->isValidSignature($payload)) {
+            Log::warning('Flitt callback rejected', [
+                'reason' => empty($payload) ? 'empty_payload' : 'invalid_signature',
+                'order_id' => data_get($payload, 'order_id'),
+                'payment_id' => data_get($payload, 'payment_id'),
+                'ip' => $request->ip(),
+            ]);
+
             return response()->json(['status' => 'invalid_signature'], 400);
         }
 
         $payment = $this->payment::where(['id' => data_get($payload, 'order_id')])->first();
 
         if (!$payment) {
+            Log::warning('Flitt callback payment request was not found', [
+                'order_id' => data_get($payload, 'order_id'),
+                'payment_id' => data_get($payload, 'payment_id'),
+            ]);
+
             return response()->json(['status' => 'not_found'], 404);
         }
 
@@ -153,7 +184,8 @@ class FlittPaymentController extends Controller
             return response()->json(['message' => 'Flitt მობილური გადახდა მიუწვდომელია'], 404);
         }
 
-        $payload = $this->buildCreateOrderPayload($payment, true);
+        $saveCardRequested = $this->resolveSaveCardPreference($payment, request());
+        $payload = $this->buildCreateOrderPayload($payment, true, $saveCardRequested);
         $response = $this->postToFlitt('/api/checkout/token', $payload);
         $token = data_get($response, 'response.token');
 
@@ -164,6 +196,8 @@ class FlittPaymentController extends Controller
                 'token' => (string) $token,
             ]);
         }
+
+        $this->logGatewayResponse('Flitt mobile checkout token was not created', $payment, $response);
 
         return response()->json(['message' => 'Flitt გადახდის ინიციალიზაცია ვერ მოხერხდა'], 422);
     }
@@ -202,7 +236,7 @@ class FlittPaymentController extends Controller
         $payment = $this->payment::where(['id' => $request['payment_id']])->first();
 
         if (!$payment || !$this->isConfigured()) {
-            return response()->json(['message' => 'Payment request not found'], 404);
+            return response()->json(['message' => 'გადახდის მოთხოვნა ვერ მოიძებნა'], 404);
         }
 
         if ($payment->is_paid) {
@@ -234,18 +268,37 @@ class FlittPaymentController extends Controller
         ]);
     }
 
+    public function reconcilePaymentRequest(PaymentRequest $payment): ?string
+    {
+        if ($payment->is_paid || !$this->isConfigured()) {
+            return $payment->is_paid ? 'approved' : null;
+        }
+
+        $statusPayload = $this->getOrderStatusPayload($payment);
+
+        if (!$statusPayload) {
+            return null;
+        }
+
+        return $this->processFlittStatus(
+            payment: $payment,
+            payload: $statusPayload,
+            transactionId: data_get($statusPayload, 'payment_id')
+        );
+    }
+
     private function isConfigured(): bool
     {
         return !empty($this->config_values?->merchant_id) && !empty($this->config_values?->secret_key);
     }
 
-    private function buildCreateOrderPayload(PaymentRequest $payment, bool $mobileSdk = false): array
+    private function buildCreateOrderPayload(PaymentRequest $payment, bool $mobileSdk = false, bool $saveCardRequested = false): array
     {
         $payload = [
             'version' => self::API_VERSION,
             'order_id' => $payment->id,
             'merchant_id' => (string) $this->config_values->merchant_id,
-            'order_desc' => Str::limit((string) ($payment->attribute ?? 'order_payment'), 1024, ''),
+            'order_desc' => $this->orderDescription($payment),
             'amount' => $this->toMinorAmount($payment->payment_amount),
             'currency' => strtoupper($payment->currency_code ?? 'GEL'),
             'response_url' => $this->paymentRoute(
@@ -257,6 +310,20 @@ class FlittPaymentController extends Controller
             'delayed' => 'N',
             'lang' => 'ka',
         ];
+
+        if ($saveCardRequested) {
+            $payload['required_rectoken'] = 'Y';
+        }
+
+        $email = $this->payerEmail($payment);
+        if ($email !== null) {
+            $payload['sender_email'] = $email;
+        }
+
+        $clientIp = request()?->ip();
+        if (is_string($clientIp) && filter_var($clientIp, FILTER_VALIDATE_IP)) {
+            $payload['client_ip'] = $clientIp;
+        }
 
         $payload['signature'] = $this->generateSignature($payload);
 
@@ -281,6 +348,7 @@ class FlittPaymentController extends Controller
         $responsePayload = data_get($response, 'response');
 
         if (!is_array($responsePayload) || data_get($responsePayload, 'response_status') !== 'success' || !$this->isValidSignature($responsePayload)) {
+            $this->logGatewayResponse('Flitt order status response was not usable', $payment, $response);
             return null;
         }
 
@@ -301,9 +369,43 @@ class FlittPaymentController extends Controller
         curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode(['request' => $payload], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
 
         $response = curl_exec($ch);
+        $curlError = curl_error($ch);
+        $httpCode = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
 
+        if ($response === false) {
+            Log::warning('Flitt request failed before response', [
+                'endpoint' => $endpoint,
+                'order_id' => $payload['order_id'] ?? null,
+                'curl_error' => $curlError,
+            ]);
+
+            return null;
+        }
+
         $decoded = json_decode($response ?: '', true);
+
+        if (!is_array($decoded)) {
+            Log::warning('Flitt returned a non JSON response', [
+                'endpoint' => $endpoint,
+                'order_id' => $payload['order_id'] ?? null,
+                'http_code' => $httpCode,
+                'body_preview' => Str::limit((string) $response, 300, ''),
+            ]);
+
+            return null;
+        }
+
+        if ($httpCode >= 400) {
+            Log::warning('Flitt returned an HTTP error', [
+                'endpoint' => $endpoint,
+                'order_id' => $payload['order_id'] ?? null,
+                'http_code' => $httpCode,
+                'response_status' => data_get($decoded, 'response.response_status'),
+                'response_code' => data_get($decoded, 'response.response_code'),
+                'response_description' => data_get($decoded, 'response.response_description'),
+            ]);
+        }
 
         return is_array($decoded) ? $decoded : null;
     }
@@ -344,6 +446,37 @@ class FlittPaymentController extends Controller
     private function toMinorAmount(float|string|int $amount): int
     {
         return (int) round(((float) $amount) * 100);
+    }
+
+    private function checkoutTitle(PaymentRequest $payment): string
+    {
+        $metadata = $this->getPaymentMetadata($payment);
+        $businessName = data_get($metadata, 'business_name');
+
+        return is_string($businessName) && $businessName !== '' ? $businessName : 'გადახდა';
+    }
+
+    private function orderDescription(PaymentRequest $payment): string
+    {
+        $parts = ['MILI'];
+
+        if (!empty($payment->attribute)) {
+            $parts[] = (string) $payment->attribute;
+        }
+
+        if (!empty($payment->attribute_id)) {
+            $parts[] = '#' . $payment->attribute_id;
+        }
+
+        return Str::limit(implode(' ', $parts), 1024, '');
+    }
+
+    private function payerEmail(PaymentRequest $payment): ?string
+    {
+        $payer = json_decode($payment->payer_information ?? '[]', true);
+        $email = is_array($payer) ? data_get($payer, 'email') : null;
+
+        return is_string($email) && filter_var($email, FILTER_VALIDATE_EMAIL) ? $email : null;
     }
 
     private function generateSignature(array $params): string
@@ -387,7 +520,7 @@ class FlittPaymentController extends Controller
 
     private function isFailureStatus(?string $status): bool
     {
-        return in_array($this->normalizeStatus($status), ['declined', 'expired', 'reversed'], true);
+        return in_array($this->normalizeStatus($status), ['declined', 'expired', 'reversed', 'canceled', 'cancelled', 'failed', 'failure'], true);
     }
 
     private function processFlittStatus(PaymentRequest $payment, array $payload, ?string $transactionId): ?string
@@ -395,9 +528,14 @@ class FlittPaymentController extends Controller
         $status = $this->normalizeStatus(data_get($payload, 'order_status'));
 
         if ($status === 'approved') {
+            if (!$this->matchesPaymentRequest($payment, $payload)) {
+                return 'amount_or_currency_mismatch';
+            }
+
             $updatedPayment = $this->finalizeSuccessfulPayment($payment, $transactionId);
 
             if ($updatedPayment) {
+                $this->storeSavedCardIfRequested($updatedPayment, $payload);
                 $this->callSuccessHook($updatedPayment);
             }
 
@@ -460,15 +598,79 @@ class FlittPaymentController extends Controller
     private function callSuccessHook(PaymentRequest $payment): void
     {
         if (function_exists($payment->success_hook)) {
-            call_user_func($payment->success_hook, $payment);
+            try {
+                call_user_func($payment->success_hook, $payment);
+            } catch (Throwable $exception) {
+                Log::error('Flitt success hook failed', [
+                    'payment_id' => $payment->id,
+                    'hook' => $payment->success_hook,
+                    'exception' => $exception->getMessage(),
+                ]);
+
+                throw $exception;
+            }
         }
     }
 
     private function callFailureHook(?PaymentRequest $payment): void
     {
         if (isset($payment) && function_exists($payment->failure_hook)) {
-            call_user_func($payment->failure_hook, $payment);
+            try {
+                call_user_func($payment->failure_hook, $payment);
+            } catch (Throwable $exception) {
+                Log::error('Flitt failure hook failed', [
+                    'payment_id' => $payment->id,
+                    'hook' => $payment->failure_hook,
+                    'exception' => $exception->getMessage(),
+                ]);
+
+                throw $exception;
+            }
         }
+    }
+
+    private function matchesPaymentRequest(PaymentRequest $payment, array $payload): bool
+    {
+        $expectedAmount = $this->toMinorAmount($payment->payment_amount);
+        $actualAmount = data_get($payload, 'amount');
+        $expectedCurrency = strtoupper($payment->currency_code ?? 'GEL');
+        $actualCurrency = strtoupper((string) data_get($payload, 'currency', $expectedCurrency));
+
+        if ($actualAmount !== null && (int) $actualAmount !== $expectedAmount) {
+            Log::error('Flitt approved payment amount mismatch', [
+                'payment_request_id' => $payment->id,
+                'flitt_payment_id' => data_get($payload, 'payment_id'),
+                'expected_amount' => $expectedAmount,
+                'actual_amount' => $actualAmount,
+            ]);
+
+            return false;
+        }
+
+        if ($actualCurrency !== $expectedCurrency) {
+            Log::error('Flitt approved payment currency mismatch', [
+                'payment_request_id' => $payment->id,
+                'flitt_payment_id' => data_get($payload, 'payment_id'),
+                'expected_currency' => $expectedCurrency,
+                'actual_currency' => $actualCurrency,
+            ]);
+
+            return false;
+        }
+
+        return true;
+    }
+
+    private function logGatewayResponse(string $message, PaymentRequest $payment, ?array $response): void
+    {
+        Log::warning($message, [
+            'payment_request_id' => $payment->id,
+            'payment_amount' => $payment->payment_amount,
+            'currency' => $payment->currency_code,
+            'response_status' => data_get($response, 'response.response_status'),
+            'response_code' => data_get($response, 'response.response_code'),
+            'response_description' => data_get($response, 'response.response_description'),
+        ]);
     }
 
     private function getPaymentMetadata(PaymentRequest $payment): array
@@ -487,5 +689,74 @@ class FlittPaymentController extends Controller
         ]);
 
         $payment->additional_data = $encodedMetadata;
+    }
+
+    private function canSaveCard(PaymentRequest $payment): bool
+    {
+        return is_numeric($payment->payer_id)
+            && (int) $payment->payer_id > 0
+            && $this->normalizeStatus((string) $payment->attribute) === 'order';
+    }
+
+    private function resolveSaveCardPreference(PaymentRequest $payment, Request $request): bool
+    {
+        if (!$this->canSaveCard($payment)) {
+            return false;
+        }
+
+        $metadata = $this->getPaymentMetadata($payment);
+        $requested = $request->has('save_card')
+            ? $request->boolean('save_card')
+            : (bool) data_get($metadata, 'flitt_save_card_requested', false);
+
+        $metadata['flitt_save_card_requested'] = $requested;
+        $metadata['flitt_save_card_requested_at'] = $requested ? now()->toIso8601String() : null;
+        $this->updatePaymentMetadata($payment, $metadata);
+
+        return $requested;
+    }
+
+    private function storeSavedCardIfRequested(PaymentRequest $payment, array $payload): void
+    {
+        $metadata = $this->getPaymentMetadata($payment);
+
+        if (empty($metadata['flitt_save_card_requested']) || !$this->canSaveCard($payment)) {
+            return;
+        }
+
+        $rectoken = (string) data_get($payload, 'rectoken', '');
+
+        if ($rectoken === '') {
+            return;
+        }
+
+        $additionalInfo = data_get($payload, 'additional_info');
+        $additionalInfo = is_string($additionalInfo) ? json_decode($additionalInfo, true) : [];
+        $additionalInfo = is_array($additionalInfo) ? $additionalInfo : [];
+
+        FlittSavedCard::updateOrCreate(
+            [
+                'customer_id' => (int) $payment->payer_id,
+                'gateway' => 'flitt',
+                'rectoken' => $rectoken,
+            ],
+            [
+                'masked_card' => data_get($payload, 'masked_card') ?: null,
+                'card_type' => data_get($payload, 'card_type') ?: data_get($additionalInfo, 'card_type'),
+                'card_bin' => data_get($payload, 'card_bin') ?: null,
+                'rectoken_lifetime' => data_get($payload, 'rectoken_lifetime') ?: null,
+                'is_active' => true,
+                'metadata' => [
+                    'payment_request_id' => (string) $payment->id,
+                    'flitt_payment_id' => data_get($payload, 'payment_id'),
+                    'payment_system' => data_get($payload, 'payment_system'),
+                    'saved_at' => now()->toIso8601String(),
+                ],
+            ]
+        );
+
+        $metadata['flitt_card_saved_at'] = now()->toIso8601String();
+        $metadata['flitt_card_saved_masked'] = data_get($payload, 'masked_card') ?: null;
+        $this->updatePaymentMetadata($payment, $metadata);
     }
 }

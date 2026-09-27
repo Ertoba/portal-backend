@@ -86,7 +86,7 @@
                 <div class="card-body">
                     <h4 class="mb-3">{{translate('messages.import_items_file')}}</h4>
                     <div class="custom-file custom--file">
-                        <input type="file" name="products_file" class="form-control" id="products_file">
+                        <input type="file" name="products_file" class="form-control" id="products_file" accept=".xlsx,.xls">
                         <label class="custom-file-label" for="products_file">{{ translate('messages.Choose File') }}</label>
                     </div>
                     <div class="btn--container justify-content-end mt-20">
@@ -566,5 +566,28 @@
                 }
             })
         }
+        $(document).ready(function () {
+
+    $('#import_form').on('change', function (e) {
+            const fileInput = $('#products_file')[0];
+            const filePath = $('#products_file').val();
+
+            if (fileInput.files.length === 0) {
+                e.preventDefault();
+                toastr.error('Please select a file first.');
+                return false;
+            }
+
+            const allowedExtensions = /(\.xls|\.xlsx)$/i;
+
+            if (!allowedExtensions.exec(filePath)) {
+                e.preventDefault();
+                $('#products_file').val('');
+                toastr.error('Invalid file format. Please upload only XLS or XLSX files.');
+                return false;
+            }
+        });
+
+    });
     </script>
 @endpush

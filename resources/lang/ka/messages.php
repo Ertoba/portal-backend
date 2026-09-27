@@ -1,6 +1,4 @@
-<?php
-
-return array (
+<?php return array (
   'attributes' => 'ატრიბუტები',
   'add_new_attribute' => 'დაამატეთ ახალი ატრიბუტი',
   'default' => 'ნაგულისხმევი',
@@ -133,7 +131,7 @@ return array (
   'plesae_enter_your_registerd_email' => 'გთხოვთ, შეიყვანოთ თქვენი რეგისტრირებული ელ.ფოსტა',
   'A mail has been sent to your registered email' => 'ფოსტა გაიგზავნა თქვენს რეგისტრირებულ მეილზე',
   'Click the link in the mail description to change password' => 'პაროლის შესაცვლელად დააწკაპუნეთ ბმულზე ფოსტის აღწერაში',
-  'Credentials does not match.' => 'ავტორიზაციის მონაცემები არ ემთხვევა.',
+  'Credentials does not match.' => 'სერთიფიკატები არ ემთხვევა.',
   'Jan' => 'იან',
   'Feb' => 'თებ',
   'Mar' => 'მარ',
@@ -4675,7 +4673,7 @@ return array (
   'If_enabled,_stores_will_get_a_subscription_renew_email_when_they_successfully_renew_their_subscription.' => 'თუ ჩართულია, მაღაზიები მიიღებენ ხელმოწერის განახლების ელფოსტას, როდესაც ისინი წარმატებით განაახლებენ გამოწერას.',
   'If_disabled,_stores_will_not_get_a_subscription_renew_email_when_a_store_successfully_renew_their_subscription.' => 'თუ შეზღუდული შესაძლებლობის მქონე მაღაზიები არ მიიღებენ გამოწერის განახლების ელფოსტას, როდესაც მაღაზია წარმატებით განაახლებს გამოწერას.',
   'Send Mail on subscription renew?' => 'ფოსტის გაგზავნა გამოწერის განახლებისას ',
-  'Credential_do_not_match,_please_try_again' => 'ელ-ფოსტა ან პაროლი არასწორია. გთხოვთ, სცადოთ ხელახლა.',
+  'Credential_do_not_match,_please_try_again' => 'სერთიფიკატი არ ემთხვევა, გთხოვთ, სცადოთ ხელახლა',
   'Send Mail on subscription Shift?' => 'ფოსტის გაგზავნა გამოწერის Shift-ზე ',
   'Want_to_enable_subscription_shift_mail?' => 'გსურთ ჩართოთ გამოწერის Shift ფოსტა ',
   'Want_to_disable_subscription_shift_mail?' => 'გსურთ გამორთოთ გამოწერის Shift ფოსტა ',
@@ -4745,7 +4743,7 @@ return array (
   'If_it’s_enabled _Customers_will_automatically_receive_the_refunded_amount_in_their_wallets._But_if_it’s_disabled _the_Admin_will_handle_the_Refund_Request_in_his_convenient_transaction_channel.' => 'თუ ის ჩართულია, მომხმარებლები ავტომატურად მიიღებენ დაბრუნებულ თანხას საფულეში. მაგრამ თუ ის გამორთულია, ადმინი განიხილავს თანხის დაბრუნების მოთხოვნას თავის მოსახერხებელ ტრანზაქციის არხზე.',
   'If_yes _all_its_modules _stores _and_products_will_be_DELETED_FOREVER.' => 'თუ კი, მისი ყველა მოდულის მაღაზია და პროდუქტი სამუდამოდ წაიშლება.',
   'order_already_assign_to_this_deliveryman' => 'შეკვეთა უკვე მიენიჭა ამ მიმწოდებელს',
-  'Incorrect_credential,_please_try_again' => 'ტელეფონის ნომერი ან პაროლი არასწორია. გთხოვთ, სცადოთ ხელახლა.',
+  'Incorrect_credential,_please_try_again' => 'არასწორი სერთიფიკატი, გთხოვთ, სცადოთ ხელახლა',
   'Congratulation_you_have_received' => 'მილოცვა თქვენ მიიღეთ',
   'The_cashback_amount_successfully_added_to_your_wallet' => 'Cashback თანხა წარმატებით დაემატა თქვენს საფულეს',
   'point_to_wallet_transfer_successfully' => 'მიუთითეთ საფულის წარმატებით გადაცემაზე',
@@ -9829,4 +9827,7 @@ Smartly or Earn. ' => 'მოდით
   'Note : Do not forget to save the information before leaving this page' => 'შენიშვნა: გვერდიდან გასვლამდე არ დაგავიწყდეთ ცვლილებების შენახვა.',
   'Grant verified badge' => 'ვერიფიკაციის ნიშნის მინიჭება',
   'Remove verified badge' => 'ვერიფიკაციის ნიშნის მოხსნა',
+  'You Must Enter Note Or Reason' => 'You Must Enter Note Or Reason',
+  'contact person email ველი სავალდებულოა.' => 'Contact person email ველი სავალდებულოა.',
+  'contact person name ველი სავალდებულოა.' => 'Contact person name ველი სავალდებულოა.',
 );

@@ -525,7 +525,7 @@
 
                     $('#vendor_ids').select2({
                         ajax: {
-                            url: '{{url('/')}}/admin/store/get-stores',
+                            url: '{{ route('admin.store.get-stores') }}',
                             data: function (params) {
                                 return {
                                     q: params.term, // search term

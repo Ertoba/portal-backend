@@ -37,6 +37,13 @@
                                     aria-disabled="true">{{ translate('Rental Module') }}</a>
                             </li>
                         @endif
+                        @if (addon_published_status('RideShare'))
+                            <li class="nav-item">
+                                <a class="nav-link {{ Request::is('taxvat/system-taxvat') && request('type') == 'ride-share' ? 'active' : '' }}"
+                                    href="{{ route('taxvat.systemTaxvat', ['type' => 'ride-share']) }}"
+                                    aria-disabled="true">{{ translate('RideShare Module') }}</a>
+                            </li>
+                        @endif
                         <li class="nav-item">
                             <a class="nav-link {{ Request::is('taxvat/system-taxvat') && request('type') == 'parcel' ? 'active' : '' }}"
                                 href="{{ route('taxvat.systemTaxvat', ['type' => 'parcel']) }}"
@@ -88,6 +95,8 @@
                             <div class="mb-20">
                                 @if ($tax_payer == 'rental_provider')
                                     @php($productType = translate('Trip_Amount'))
+                                @elseif($tax_payer == 'ride_module')
+                                    @php($productType = translate('Ride_Amount'))
                                 @elseif($tax_payer == 'parcel')
                                     @php($productType = translate('Parcel_Amount'))
                                 @else

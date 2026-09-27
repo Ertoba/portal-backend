@@ -49,12 +49,14 @@ class NotificationService
         $topicAllZone =[
             'customer'=>'all_zone_customer',
             'deliveryman'=>'all_zone_delivery_man',
+            'rider'=>'all_zone_rider',
             'store'=>'all_zone_store',
         ];
 
         $topicZoneWise=[
             'customer'=>'zone_'.$request->zone.'_customer',
             'deliveryman'=>'zone_'.$request->zone.'_delivery_man_push',
+            'rider'=>'zone_'.$request->zone.'_rider',
             'store'=>'zone_'.$request->zone.'_store',
         ];
 

@@ -111,6 +111,18 @@ class Item extends Model
                                 });
                             });
                     });
+            })
+            ->whereHas('category', function ($q) {
+                $q->where(function ($q) {
+                    $q->where([
+                            ['parent_id', '=', 0],
+                            ['status', '=', 1],
+                        ])
+                    ->orWhere(function ($q) {
+                        $q->where('parent_id', '!=', 0)
+                            ->whereHas('parent', fn ($p) => $p->where('status', 1));
+                    });
+                });
             });
     }
     public function scopePopular($query)
@@ -150,6 +162,18 @@ class Item extends Model
     //         });
     //     });
     // }
+
+        public function rating()
+    {
+        return $this->hasMany(Review::class, 'item_id')
+            ->select(
+                'item_id',
+                DB::raw('AVG(rating) as average'),
+                DB::raw('COUNT(*) as rating_count'),
+                DB::raw('COUNT(CASE WHEN comment IS NOT NULL THEN 1 END) as review_count')
+            )
+            ->groupBy('item_id');
+    }
 
     public function flashSaleItems()
     {
@@ -192,7 +216,7 @@ class Item extends Model
         if (count($this->storage) > 0) {
             foreach ($this->storage as $storage) {
                 if ($storage['key'] == 'image') {
-                    return Helpers::get_full_url('product', $value, $storage['value']);
+                    return Helpers::get_full_url('product', $value, $storage['value'],'default');
                 }
             }
         }
@@ -210,7 +234,7 @@ class Item extends Model
         if ($value) {
             foreach ($value as $item) {
                 $item = is_array($item) ? $item : (is_object($item) && get_class($item) == 'stdClass' ? json_decode(json_encode($item), true) : ['img' => $item, 'storage' => 'public']);
-                $images[] = Helpers::get_full_url('product', $item['img'], $item['storage']);
+                $images[] = Helpers::get_full_url('product', $item['img'], $item['storage'],'default');
             }
         }
 

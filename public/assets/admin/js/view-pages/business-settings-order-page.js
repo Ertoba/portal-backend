@@ -18,6 +18,7 @@ $(".update-lang_link").click(function(e) {
     let reason_id = $(this).data('reason-id');
     let lang = form_id.substring(0, form_id.length - 5);
         $("#" + lang + "-langform_"+ reason_id).removeClass('d-none');
+        $("#" + lang + "-langform_"+ reason_id+"_2").removeClass('d-none');
     if (lang === 'default') {
         $(".add_active_2").removeClass('d-none');
     }
@@ -31,6 +32,7 @@ $(".lang_link1").click(function(e) {
     let form_id = this.id;
     let lang = form_id.substring(0, form_id.length - 6);
     $("#" + lang + "-form1").removeClass('d-none');
+    $("#" + lang + "-form2").removeClass('d-none');
     if (lang === 'default') {
         $(".default-form1").removeClass('d-none');
     }

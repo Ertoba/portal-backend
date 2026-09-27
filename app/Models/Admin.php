@@ -104,6 +104,11 @@ class Admin extends Authenticatable
         return $maskedEmail ?? $this->email;
     }
 
+    // public function account()
+    // {
+    //     return $this->hasOne(UserAccount::class, 'user_id', 'id')->where('user_type', 'admin');
+    // }
+
     /**
      * @param $query
      * @return mixed

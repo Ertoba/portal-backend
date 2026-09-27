@@ -4,6 +4,11 @@
 
 @endpush
 
+
+@section('employee_list')
+active
+@endsection
+
 @section('content')
 <div class="content container-fluid">
     <div class="page-header">
@@ -66,7 +71,7 @@
                                 <img class="avatar avatar-xss avatar-4by3 mr-2"
                                     src="{{ asset('public/assets/admin') }}/svg/components/placeholder-csv-format.svg"
                                     alt="Image Description">
-                                .{{ translate('messages.csv') }}
+                                {{ translate('messages.csv') }}
                             </a>
                         </div>
                     </div>

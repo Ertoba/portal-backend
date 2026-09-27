@@ -151,7 +151,7 @@
                                         </span>
 
                                         </label>
-                                        <input type="number" step="0.01" min="1" max="999999999999.99"  placeholder="{{ translate('messages.Ex:_100') }}"  name="bonus_amount" id="bonus_amount" class="form-control" required>
+                                        <input type="number" step="0.01" min="1" max="100"  placeholder="{{ translate('messages.Ex:_100') }}"  name="bonus_amount" id="bonus_amount" class="form-control" required>
                                     </div>
                                 </div>
                                 <div class="col-md-4 col-lg-4 col-sm-6">
@@ -220,11 +220,11 @@
                     <div class="card-header py-2 border-0">
                         <div class="search--button-wrapper">
                             <h5 class="card-title">{{translate('messages.bonus_list')}}<span class="badge badge-soft-dark ml-2" id="itemCount">{{$bonuses->total()}}</span></h5>
-                            <form id="dataSearch" class="search-form min--270">
-                            @csrf
+                            <form id="" class="search-form min--270">
+
                                 <!-- Search -->
                                 <div class="input-group input--group">
-                                    <input id="datatableSearch" type="search" name="search" class="form-control" placeholder="{{ translate('messages.Ex_:_Search_by_bonus_title') }}" aria-label="{{translate('messages.search_here')}}">
+                                    <input id="datatableSearch" value="{{ request()?->search ?? null }}" type="search" name="search" class="form-control" placeholder="{{ translate('messages.Ex_:_Search_by_bonus_title') }}" aria-label="{{translate('messages.search_here')}}">
                                     <button type="submit" class="btn btn--secondary"><i class="tio-search"></i></button>
                                 </div>
                                 <!-- End Search -->
@@ -354,55 +354,7 @@
 @push('script_2')
     <script src="{{asset('public/assets/admin')}}/js/view-pages/wallet-bonus-index.js"></script>
 <script>
-    "use strict";
-    $(document).on('ready', function () {
-        // INITIALIZATION OF DATATABLES
-        // =======================================================
-        let datatable = $.HSCore.components.HSDatatables.init($('#columnSearchDatatable'), {
-            select: {
-                style: 'multi',
-                classMap: {
-                    checkAll: '#datatableCheckAll',
-                    counter: '#datatableCounter',
-                    counterInfo: '#datatableCounterInfo'
-                }
-            },
-            language: {
-                zeroRecords: '<div class="text-center p-4">' +
-                '<img class="w-7rem mb-3" src="{{asset('public/assets/admin/svg/illustrations/sorry.svg')}}" alt="Image Description">' +
 
-                '</div>'
-            }
-        });
-    });
-
-    $('#dataSearch').on('submit', function (e) {
-            e.preventDefault();
-            let formData = new FormData(this);
-            $.ajaxSetup({
-                headers: {
-                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-                }
-            });
-            $.post({
-                url: '{{route('admin.users.customer.wallet.bonus.search')}}',
-                data: formData,
-                cache: false,
-                contentType: false,
-                processData: false,
-                beforeSend: function () {
-                    $('#loading').show();
-                },
-                success: function (data) {
-                    $('#table-div').html(data.view);
-                    $('#itemCount').html(data.count);
-                    $('.page-area').hide();
-                },
-                complete: function () {
-                    $('#loading').hide();
-                },
-            });
-        });
 
 </script>
 @endpush

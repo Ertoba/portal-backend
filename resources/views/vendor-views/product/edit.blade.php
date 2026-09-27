@@ -7,7 +7,7 @@
     <link href="{{ asset('public/assets/admin/css/tags-input.min.css') }}" rel="stylesheet">
     <link href="{{ asset('public/assets/admin/css/AI/animation/product/ai-sidebar.css') }}" rel="stylesheet">
     <link rel="stylesheet" href="{{asset('public/assets/admin/css/custom.css')}}">
-<link rel="stylesheet" href="{{asset('public/assets/admin/css/upload-single-image.css')}}">
+
 @endpush
 
 @section('content')
@@ -280,7 +280,7 @@
                 </div>
 
 
-                
+
 
 
                 <div class="col-12">
@@ -301,7 +301,7 @@
 @endpush
 
 @push('script_2')
-    <script src="{{asset('public/assets/admin/js/upload-single-image.js')}}"></script>
+
     <script src="{{ asset('public/assets/admin') }}/js/tags-input.min.js"></script>
     <script src="{{ asset('public/assets/admin/js/spartan-multi-image-picker.js') }}"></script>
     <script src="{{ asset('public/assets/admin') }}/js/view-pages/vendor/product-index.js"></script>
@@ -562,7 +562,7 @@
             if(typeof FormValidation != 'undefined' && !FormValidation.validateForm(this)) {
                 return false;
             }
-            
+
             let formData = new FormData(this);
             $.ajaxSetup({
                 headers: {
@@ -684,7 +684,7 @@
                 $('input[name="current_stock"]').attr("readonly", false);
             }
         }
-        
+
         $(document).on('keyup', 'input[name^="stock_"]', function() {
             let total_qty = 0;
             let qty_elements = $('input[name^="stock_"]');

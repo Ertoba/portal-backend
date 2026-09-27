@@ -243,9 +243,11 @@
                         <div class="d-flex flex-row justify-content-between border-top">
                             <span>{{ translate('messages.Paid by') }}:
                                 {{ translate('messages.' . $order->payment_method) }}</span>
-                            <span>{{ translate('messages.amount') }}:
-                                {{ $order->adjusment + $order->order_amount }}</span>
-                            <span>{{ translate('messages.change') }}: {{ abs($order->adjusment) }}</span>
+                                @if ($order->payment_method != 'wallet')
+                                    <span>{{ translate('messages.amount') }}:
+                                        {{ $order->adjusment + $order->order_amount }}</span>
+                                    <span>{{ translate('messages.change') }}: {{ abs($order->adjusment) }}</span>
+                                @endif
                         </div>
                     @endif
                 </div>

@@ -7,6 +7,8 @@ use App\Contracts\Repositories\TranslationRepositoryInterface;
 use App\Enums\ViewPaths\Admin\CommonCondition as CommonConditionViewPath;
 use App\Http\Controllers\BaseController;
 use App\Http\Requests\Admin\CommonConditionAddRequest;
+use App\Models\CommonCondition;
+use App\Models\Item;
 use App\Services\CommonConditionService;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\JsonResponse;
@@ -87,5 +89,20 @@ class CommonConditionController extends BaseController
         $data = $this->conditionService->getDropdownData(data: $data, request: $request);
 
         return response()->json($data);
+    }
+    public function getDetailsView(Request $request): JsonResponse
+    {
+       $condition = CommonCondition::where('id', $request->id)->first();
+
+        $items = Item::wherehas('pharmacy_item_details', function ($query) use ($condition) {
+            $query->where('common_condition_id', $condition->id);
+        })->select(['id','name','price','image'])
+
+        ->get();
+
+
+        return response()->json([
+            'view' => view('admin-views.common-condition.partials.view_data', compact('condition','items'))->render(),
+        ]);
     }
 }

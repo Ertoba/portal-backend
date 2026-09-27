@@ -9827,4 +9827,6 @@ Smartly or Earn. ',
   'Note : Do not forget to save the information before leaving this page' => 'Note: do not forget to save the information before leaving this page.',
   'Grant verified badge' => 'Grant verified badge',
   'Remove verified badge' => 'Remove verified badge',
+  'You have new ride request, Check Please.' => 'You have new ride request, Check Please.',
+  'sent a new Safety Alert for' => 'Sent a new Safety Alert for',
 );

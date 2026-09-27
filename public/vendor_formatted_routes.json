@@ -454,5 +454,77 @@
         "bladePath": "rental::provider/report/tax-report/vendor-tax-detail-report",
         "moduleType": "rental",
         "isModified": false
+    },
+    {
+        "routeName": "Order List",
+        "URI": "vendor-panel/order/list/all",
+        "keywords": "Order List Orders Ex Search Order Id Search Export Download Options Excel Csv Order Date Customer Total Amount Order Status Actions # Order Id Order Date Customer Information Invalid Customer Data Paid Partially Paid Unpaid Pending Confirmed Processing Out For Delivery Delivered Payment Failed Take Away Home Delivery No Data Found",
+        "bladePath": "vendor-views.order.list",
+        "moduleType": null,
+        "isModified": false
+    },
+    {
+        "routeName": "Pending Order List",
+        "URI": "vendor-panel/order/list/pending",
+        "keywords": "Order List Orders Ex Search Order Id Search Export Download Options Excel Csv Order Date Customer Total Amount Order Status Actions # Order Id Order Date Customer Information Invalid Customer Data Paid Partially Paid Unpaid Pending Confirmed Processing Out For Delivery Delivered Payment Failed Take Away Home Delivery No Data Found",
+        "bladePath": "vendor-views.order.list",
+        "moduleType": null,
+        "isModified": false
+    },
+    {
+        "routeName": "Confirmed Order List",
+        "URI": "vendor-panel/order/list/confirmed",
+        "keywords": "Order List Orders Ex Search Order Id Search Export Download Options Excel Csv Order Date Customer Total Amount Order Status Actions # Order Id Order Date Customer Information Invalid Customer Data Paid Partially Paid Unpaid Pending Confirmed Processing Out For Delivery Delivered Payment Failed Take Away Home Delivery No Data Found",
+        "bladePath": "vendor-views.order.list",
+        "moduleType": null,
+        "isModified": false
+    },
+    {
+        "routeName": "Cooking Order List",
+        "URI": "vendor-panel/order/list/cooking",
+        "keywords": "Cooking Order List Orders Ex Search Order Id Search Export Download Options Excel Csv Order Date Customer Total Amount Order Status Actions # Order Id Order Date Customer Information Invalid Customer Data Paid Partially Paid Unpaid Pending Confirmed Processing Out For Delivery Delivered Payment Failed Take Away Home Delivery No Data Found",
+        "bladePath": "vendor-views.order.list",
+        "moduleType": null,
+        "isModified": false
+    },
+    {
+        "routeName": "Ready For Delivery Order List",
+        "URI": "vendor-panel/order/list/ready_for_delivery",
+        "keywords": "Ready For Delivery Order List Orders Ex Search Order Id Search Export Download Options Excel Csv Order Date Customer Total Amount Order Status Actions # Order Id Order Date Customer Information Invalid Customer Data Paid Partially Paid Unpaid Pending Confirmed Processing Out For Delivery Delivered Payment Failed Take Away Home Delivery No Data Found",
+        "bladePath": "vendor-views.order.list",
+        "moduleType": null,
+        "isModified": false
+    },
+    {
+        "routeName": "Item on the way Order List",
+        "URI": "vendor-panel/order/list/item_on_the_way",
+        "keywords": "Item on the way Order List Orders Ex Search Order Id Search Export Download Options Excel Csv Order Date Customer Total Amount Order Status Actions # Order Id Order Date Customer Information Invalid Customer Data Paid Partially Paid Unpaid Pending Confirmed Processing Out For Delivery Delivered Payment Failed Take Away Home Delivery No Data Found",
+        "bladePath": "vendor-views.order.list",
+        "moduleType": null,
+        "isModified": false
+    },
+    {
+        "routeName": "Delivered Order List",
+        "URI": "vendor-panel/order/list/delivered",
+        "keywords": "Delivered Order List Orders Ex Search Order Id Search Export Download Options Excel Csv Order Date Customer Total Amount Order Status Actions # Order Id Order Date Customer Information Invalid Customer Data Paid Partially Paid Unpaid Pending Confirmed Processing Out For Delivery Delivered Payment Failed Take Away Home Delivery No Data Found",
+        "bladePath": "vendor-views.order.list",
+        "moduleType": null,
+        "isModified": false
+    },
+    {
+        "routeName": "Refunded Order List",
+        "URI": "vendor-panel/order/list/refunded",
+        "keywords": " Refunded Order List Orders Ex Search Order Id Search Export Download Options Excel Csv Order Date Customer Total Amount Order Status Actions # Order Id Order Date Customer Information Invalid Customer Data Paid Partially Paid Unpaid Pending Confirmed Processing Out For Delivery Delivered Payment Failed Take Away Home Delivery No Data Found",
+        "bladePath": "vendor-views.order.list",
+        "moduleType": null,
+        "isModified": false
+    },
+    {
+        "routeName": "Scheduled Order List",
+        "URI": "vendor-panel/order/list/scheduled",
+        "keywords": "Scheduled Order List Orders Ex Search Order Id Search Export Download Options Excel Csv Order Date Customer Total Amount Order Status Actions # Order Id Order Date Customer Information Invalid Customer Data Paid Partially Paid Unpaid Pending Confirmed Processing Out For Delivery Delivered Payment Failed Take Away Home Delivery No Data Found",
+        "bladePath": "vendor-views.order.list",
+        "moduleType": null,
+        "isModified": false
     }
 ]

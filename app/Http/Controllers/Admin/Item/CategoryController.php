@@ -32,6 +32,7 @@ use OpenSpout\Writer\Exception\WriterNotOpenedException;
 use Rap2hpoutre\FastExcel\FastExcel;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\StreamedResponse;
+use Illuminate\Support\Facades\Config;
 
 class CategoryController extends BaseController
 {
@@ -286,7 +287,8 @@ class CategoryController extends BaseController
         $data = [
             'data' => $categories,
             'search' => $request['search'] ?? null,
-            'categoryWiseTax' => $categoryWiseTax
+            'categoryWiseTax' => $categoryWiseTax,
+            'module'=>Config::get('module.current_module_type')
         ];
 
         if ($request['type'] == 'csv') {

@@ -34,7 +34,7 @@ class DeliveryManService
             Helpers::deliverymanReferralNotification($referal_user);
         }
 
-        return [
+        $data = [
             'f_name' => $request->f_name,
             'l_name' => $request->l_name,
             'email' => $request->email,
@@ -50,7 +50,14 @@ class DeliveryManService
             'password' => bcrypt($request->password),
             'ref_by' =>  $request->earning ? $referal_user?->id??null : null,
             'ref_code' => Helpers::generate_referer_code('deliveryman'),
+            'is_delivery' => in_array('delivery', $request->serve_for ?? []) ? 1 : 0,
+            'is_ride' => in_array('ride', $request->serve_for ?? []) ? 1 : 0,
         ];
+
+        if (addon_published_status('RideShare')) {
+            $data['user_level_id'] = $request->user_level_id ?? null;
+        }
+        return $data;
     }
 
     public function getUpdateData(Object $request, Object $deliveryMan): array
@@ -100,6 +107,8 @@ class DeliveryManService
             "password" => strlen($request->password)>1?bcrypt($request->password):$deliveryMan['password'],
             "application_status" => in_array($deliveryMan['application_status'], ['pending','denied']) ? 'approved' : $deliveryMan['application_status'],
             "status" => in_array($deliveryMan['application_status'], ['pending','denied']) ? 1 : $deliveryMan['status'],
+            "is_delivery" => in_array('delivery', $request->serve_for ?? []) ? 1 : 0,
+            "is_ride" => in_array('ride', $request->serve_for ?? []) ? 1 : 0
         ];
     }
 

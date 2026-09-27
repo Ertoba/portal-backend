@@ -34,6 +34,12 @@
                 <a class="nav-link {{ Request::is('admin/business-settings/pages/react-landing-page-settings/download-deliveryman-app') ? 'active' : '' }}"
                 href="{{ route('admin.business-settings.react-landing-page-settings', 'download-deliveryman-app') }}">{{translate('Deliveryman App Download')}}</a>
             </li>
+            @if(addon_published_status('RideShare'))
+                <li class="nav-item tabs-slide_items">
+                    <a class="nav-link {{ Request::is('admin/business-settings/pages/react-landing-page-settings/download-rider-app') ? 'active' : '' }}"
+                    href="{{ route('admin.business-settings.react-landing-page-settings', 'download-rider-app') }}">{{translate('Rider App Download')}}</a>
+                </li>
+            @endif
             <li class="nav-item tabs-slide_items">
                 <a class="nav-link {{ Request::is('admin/business-settings/pages/react-landing-page-settings/banner-section') ? 'active' : '' }}"
                 href="{{ route('admin.business-settings.react-landing-page-settings', 'banner-section') }}">{{translate('Banner Section')}}</a>

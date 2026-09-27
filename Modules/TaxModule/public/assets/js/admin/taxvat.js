@@ -2,27 +2,66 @@
 $(document).ready(function () {
     let originalData = {};
 
-    $('.get_data').on('click', function () {
+    $(document).on('click', '.get_data', function (e) {
+        e.preventDefault();
+        const id = $(this).data('id');
         originalData = {
-            action: $(this).data('action'),
+            id,
+            action: $(this).attr('data-action') || $(this).data('action') || buildUpdateAction(id),
             name: $(this).data('name'),
             tax_rate: $(this).data('tax_rate'),
-            is_active: $('#status_' +  $(this).data('id')).is(':checked'),
+            is_active: $('#status_' +  id).is(':checked'),
         };
         setDataOnModal(originalData)
     });
 
-    $('.reset').on('click', function () {
+    $(document).on('click', '.reset', function () {
         setDataOnModal(originalData)
     });
 
     function setDataOnModal(originalData){
         const modal = $('#editTaxData');
-        modal.find('form').attr('action', originalData.action);
+        const action = originalData.action || buildUpdateAction(originalData.id);
+        modal.find('form').attr('action', action);
         modal.find('#tax_name').val(originalData.name);
         modal.find('#tax_rate').val(originalData.tax_rate);
         modal.find('#tax_status').prop('checked', originalData.is_active == 1);
     };
+
+    $(document).on('submit', '#editTaxData form', function (e) {
+        const action = $(this).attr('action');
+        if (isMissingOrIndexAction(action)) {
+            const fallbackAction = buildUpdateAction(originalData.id);
+            if (fallbackAction && !isMissingOrIndexAction(fallbackAction)) {
+                $(this).attr('action', fallbackAction);
+                return true;
+            }
+
+            e.preventDefault();
+            console.error('Tax edit form action is missing.');
+            if (typeof sent_notification === 'function') {
+                sent_notification('errorMessage', 'Unable to update tax. Please reopen the edit form and try again.');
+            }
+            return false;
+        }
+    });
+
+    function buildUpdateAction(id) {
+        if (!id) return '';
+        const form = $('#editTaxData form');
+        const base = String(form.data('update-action-base') || '').replace(/\/$/, '');
+        if (base) {
+            return base + '/' + id;
+        }
+        const taxBasePath = window.location.pathname.replace(/\/get-taxvat-data\/?$/, '');
+        return window.location.origin + taxBasePath.replace(/\/$/, '') + '/update-taxvat-data/' + id;
+    }
+
+    function isMissingOrIndexAction(action) {
+        if (!action) return true;
+        const url = new URL(action, window.location.origin);
+        return /\/taxvat\/get-taxvat-data\/?$/.test(url.pathname);
+    }
 });
 
     document.addEventListener("DOMContentLoaded", () => {

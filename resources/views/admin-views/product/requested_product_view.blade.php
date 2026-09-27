@@ -165,12 +165,14 @@
                                     <strong>{{ Str::limit(($product?->category?->parent ? $product?->category?->parent?->name : $product?->category?->name )  ?? translate('messages.uncategorize')
                                         , 20, '...') }}</strong>
                                 </span>
+                                @if($product?->category?->parent?->name)
                                 <span class="d-block mb-1">
                                     <span>{{ translate('messages.Sub_Category') }}</span>
                                     <span>:</span>
                                     <strong>{{ Str::limit(( $product?->category?->parent?->name ? $product?->category?->name : '---' )
                                         , 20, '...') }}</strong>
                                 </span>
+                                @endif
                                 @if ($product->module->module_type == 'grocery')
                                 <span class="d-block mb-1">
                                     <span>{{ translate('messages.Is_Organic') }}</span>

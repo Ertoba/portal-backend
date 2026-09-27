@@ -27,6 +27,7 @@ use App\Models\SubscriptionBillingAndRefundHistory;
 use Modules\Rental\Emails\ProviderSubscriptionCancel;
 use Modules\Rental\Emails\ProviderSubscriptionPlanUpdate;
 use App\Contracts\Repositories\TranslationRepositoryInterface;
+use Illuminate\Validation\Rule;
 
 class SubscriptionController extends Controller
 {
@@ -91,7 +92,12 @@ class SubscriptionController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'package_name' => 'max:191|unique:subscription_packages',
+          'package_name' => [
+                        'max:191',
+                        Rule::unique('subscription_packages')
+                            ->where(fn ($query) => $query->where('module_type', $request?->module ?? 'all'))
+                            ],
+
             'package_name.0' => 'required',
 
             'package_price' => 'required|numeric|between:0,999999999999.999',
@@ -159,7 +165,14 @@ class SubscriptionController extends Controller
     {
 
         $request->validate([
-            'package_name' => 'max:191|unique:subscription_packages,package_name,'.$subscriptionackage->id,
+
+            'package_name' => ['max:191',
+                                Rule::unique('subscription_packages')
+                                    ->ignore($subscriptionackage->id)
+                                    ->where(fn ($q) => $q->where('module_type', $request?->module ?? 'all')),
+                            ],
+
+
             'package_name.0' => 'required',
 
             'package_price' => 'required|numeric|between:0,999999999999.999',

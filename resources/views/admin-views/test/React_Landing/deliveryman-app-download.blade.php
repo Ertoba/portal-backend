@@ -48,7 +48,6 @@
             <div class="card-body">
                 <div class="mb-20">
                     <h3 class="mb-1">{{ translate('Deliveryman App Download Section Content ') }}</h3>
-                    <p class="mb-0 fs-12">{{ translate('Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aliquam odio tellus, laoreet ') }}</p>
                 </div>
                 <div class="row g-3">
                     <div class="col-lg-8">
@@ -193,7 +192,6 @@
                     <div class="card-body">
                         <div class="mb-20">
                             <h3 class="mb-1">{{ translate('Deliveryman App Download Section Button ') }}</h3>
-                            <p class="mb-0 fs-12">{{ translate('Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aliquam odio tellus, laoreet ') }}</p>
                         </div>
                         <div class="bg--secondary rounded p-xxl-4 p-3 mb-20">
                             <ul class="nav nav-tabs mb-4 border-bottom">
@@ -223,7 +221,7 @@
                                                 data-toggle="tooltip" data-placement="right"
                                                 data-original-title="{{ translate('messages.Required.')}}"> *
                                                 </span>
-    
+
                                             </label>
                                         <input id="download_user_app_title" type="text"  maxlength="100" name="download_user_app_title[]" value="{{ $download_user_app_title?->getRawOriginal('value')??'' }}" class="form-control" placeholder="{{translate('messages.title_here...')}}">
                                         <span class="text-right text-counting color-A7A7A7 d-block mt-1">0/100</span>
@@ -236,7 +234,7 @@
                                                 data-toggle="tooltip" data-placement="right"
                                                 data-original-title="{{ translate('messages.Required.')}}"> *
                                                 </span>
-    
+
                                             </label>
                                         <input id="download_user_app_sub_title" type="text"  maxlength="200" name="download_user_app_sub_title[]" value="{{ $download_user_app_sub_title?->getRawOriginal('value')??'' }}" class="form-control" placeholder="{{translate('messages.sub_title_here...')}}">
                                         <span class="text-right text-counting color-A7A7A7 d-block mt-1">0/200</span>
@@ -254,7 +252,7 @@
                                                         $download_user_app_title_translate[$lang]['value'] = $t->value;
                                                     }
                                                 }
-    
+
                                             }
                                         if(isset($download_user_app_sub_title->translations)&&count($download_user_app_sub_title->translations)){
                                                 $download_user_app_sub_title_translate = [];
@@ -264,7 +262,7 @@
                                                         $download_user_app_sub_title_translate[$lang]['value'] = $t->value;
                                                     }
                                                 }
-    
+
                                             }
                                             ?>
                                         <div class="col-md-12 d-none lang_form" id="{{$lang}}-form1">
@@ -326,7 +324,7 @@
                                                         data-text-on="<p>{{ translate('if_enabled,_the_user_app_download_button_will_be_visible_on_react_landing_page') }}</p>"
                                                         data-text-off="<p>{{ translate('if_disabled,_this_button_will_be_hidden_from_the_react_landing_page') }}</p>"
                                                         class="status toggle-switch-input dynamic-checkbox-toggle"
-        
+
                                                         value="1" {{(isset($download_user_app_links) && $download_user_app_links['playstore_url_status'])?'checked':''}}>
                                                 <span class="toggle-switch-label text mb-0">
                                                     <span class="toggle-switch-indicator"></span>
@@ -350,7 +348,7 @@
                                 </div>
                                 <div class="col-md-6">
                                     <div class="bg-white rounded p-xxl-4 p-2">
-                                        <div class="d-flex mb-20 align-items-center gap-2 flex-wrap justify-content-between">                                        
+                                        <div class="d-flex mb-20 align-items-center gap-2 flex-wrap justify-content-between">
                                             <h4 class="m-0">
                                                 <img src="{{asset('public/assets/admin/img/ios.png')}}" class="mr-2" alt="">
                                                 {{translate('App Store Button')}}
@@ -417,7 +415,7 @@
             </div>
             <div class="custom-offcanvas-body custom-offcanvas-body-100  p-20">
                <section class="common-section-view p-xl-5 p-0 bg-white border rounded-10 my-xl-2 mx-xl-2">
-                    <div class="common-section-inner bg-fafafa p-xxl-4 p-3 d-flex flex-xl-nowrap justify-content-lg-between justify-content-center flex-wrap align-items-center gap-xxl-20">                        
+                    <div class="common-section-inner bg-fafafa p-xxl-4 p-3 d-flex flex-xl-nowrap justify-content-lg-between justify-content-center flex-wrap align-items-center gap-xxl-20">
                         <div class="d-flex align-items-center justify-content-xl-start justify-content-center flex-xl-nowrap flex-wrap gap-xxl-20 max-w-650 mb-xxl-0 mb-3">
                             <div class="selling-thumb min-w-176px max-w-250">
                                 <img width="180" src="{{ asset('/public/assets/admin/img/400x400/deliveryman-dirver.png') }}" alt="Google Play" class="object-contain w-100 h-100">
@@ -463,7 +461,7 @@
                                 <div>
                                     <div class="d-flex justify-content-sm-start justify-content-center flex-sm-nowrap flex-wrap align-items-center gap-x-xl-10 app-manage">
                                         <!-- Google Play Button -->
-                                        <a href="#" class="btn btn-primary d-flex align-items-center mr-2 px-3 py-2 bg-000 rounded mb-sm-0 mb-1">                                    
+                                        <a href="#" class="btn btn-primary d-flex align-items-center mr-2 px-3 py-2 bg-000 rounded mb-sm-0 mb-1">
                                             <img width="24" height="24" src="{{ asset('/public/assets/admin/img/icons/playstore.png') }}" alt="Google Play" class="mr-1">
                                             <div class="text-left">
                                                 <small class="d-block text-white mb-0 fs-12">GET IT ON</small>

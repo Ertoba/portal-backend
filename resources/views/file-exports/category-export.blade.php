@@ -24,7 +24,10 @@
                     <th>{{ translate('Category_ID') }}</th>
                     <th>{{ translate('Module') }}</th>
                     <th>{{ translate('Priority') }}</th>
+                    @if (isset($data['module'])  && $data['module'] == 'ecommerce')
                     <th>{{ translate('Featured') }}</th>
+
+                    @endif
                     @if ($data['categoryWiseTax'])
                         <th class="border-0 w--1">{{ translate('messages.Vat/Tax') }}</th>
                     @endif
@@ -46,7 +49,9 @@
                             };
                         @endphp
                         <td>{{ $return_value }}</td>
-                        <td>{{ $category->featured == 1 ? translate('messages.Yes') : '--' }} </td>
+                         @if (isset($data['module'])  && $data['module'] == 'ecommerce')
+                         <td>{{ $category->featured == 1 ? translate('messages.Yes') : '--' }} </td>
+                        @endif
                         @if ($data['categoryWiseTax'])
                         <td>
                             <span class="d-block font-size-sm text-body">

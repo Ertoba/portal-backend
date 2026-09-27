@@ -10,7 +10,7 @@
 <div class="content container-fluid">
 
     <h3 class="mb-20">Surge Price</h3>
-    
+
     <div class="card">
         <!-- Header -->
         <div class="card-header border-0 py-2">
@@ -44,7 +44,7 @@
                             <img class="avatar avatar-xss avatar-4by3 mr-2"
                                 src="{{ asset('public/assets/admin') }}/svg/components/placeholder-csv-format.svg"
                                 alt="Image Description">
-                            .{{ translate('messages.csv') }}
+                            {{ translate('messages.csv') }}
                         </a>
                     </div>
                 </div>

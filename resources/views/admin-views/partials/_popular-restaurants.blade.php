@@ -28,7 +28,7 @@
                             src="{{ $item->store['logo_full_url'] ?? asset('public/assets/admin/img/100x100/1.png') }}"
                             alt="{{ translate('store') }}" title="{{ $item?->store?->name }}">
                         <a href="{{ route('admin.store.view', $item->store_id) }}">
-                            <span class="ml-2" title="{{ $item?->store?->name }}">
+                            <span class="text-hover--primary ml-2" title="{{ $item?->store?->name }}">
                                 {{ Str::limit($item->store->name ?? translate('messages.store deleted!'), 20, '...') }}
                             </span>
                         </a>

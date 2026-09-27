@@ -5,19 +5,19 @@
             <li class="nav-item">
                 <a class="nav-link {{ Request::is('admin/business-settings/email-setup/dm/registration') ? 'active' : '' }}"
                 href="{{ route('admin.business-settings.email-setup', ['dm','registration']) }}">
-                {{translate('New_Deliveryman_Registration')}}
+                {{ \App\CentralLogics\Helpers::formatDeliverymanText(translate('New_Deliveryman_Registration'), null, true) }}
                 </a>
             </li>
             <li class="nav-item">
                 <a class="nav-link {{ Request::is('admin/business-settings/email-setup/dm/approve') ? 'active' : '' }}"
                 href="{{ route('admin.business-settings.email-setup', ['dm','approve']) }}">
-                {{translate('New_Deliveryman_Approval')}}
+                {{ \App\CentralLogics\Helpers::formatDeliverymanText(translate('New_Deliveryman_Approval'), null, true) }}
                 </a>
             </li>
             <li class="nav-item">
                 <a class="nav-link {{ Request::is('admin/business-settings/email-setup/dm/deny') ? 'active' : '' }}"
                 href="{{ route('admin.business-settings.email-setup', ['dm','deny']) }}">
-                {{translate('New_Deliveryman_Rejection')}}
+                {{ \App\CentralLogics\Helpers::formatDeliverymanText(translate('New_Deliveryman_Rejection'), null, true) }}
                 </a>
             </li>
             <li class="nav-item">

@@ -232,7 +232,8 @@ class CustomerController extends Controller
                 $query->Where('id', 'like', "%{$key}%");
             } )
             ->Notpos()->paginate(config('default_pagination'));
-            return view('admin-views.customer.customer-view', compact('customer', 'orders','total_order_amount'));
+            $moduleType = 'normal';
+            return view('admin-views.customer.customer-view', compact('customer', 'orders','total_order_amount','moduleType'));
         }
         Toastr::error(translate('messages.customer_not_found'));
         return back();
@@ -251,7 +252,8 @@ class CustomerController extends Controller
             ->when(isset($key), function($query) use($key){
                 $query->Where('id', 'like', "%{$key}%");
             })->paginate(config('default_pagination'));
-            return view('admin-views.customer.customer-rental-view', compact('customer', 'trips','total_trips_amount'));
+            $moduleType = 'rental';
+            return view('admin-views.customer.customer-rental-view', compact('customer', 'trips','total_trips_amount','moduleType'));
         }
         Toastr::error(translate('messages.customer_not_found'));
         return back();

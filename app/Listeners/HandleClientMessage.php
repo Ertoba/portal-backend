@@ -33,7 +33,7 @@ class HandleClientMessage
                 $latitude = $data['latitude'] ?? null;
                 $longitude = $data['longitude'] ?? null;
 
-                $deliverymanId = DeliveryMan::where(['auth_token' => $token])->first()?->id;
+                $deliverymanId = DeliveryMan::withoutGlobalScope('delivery_only')->where(['auth_token' => $token])->first()?->id;
 
                 if ($deliverymanId && $latitude && $longitude) {
                     DeliveryHistory::updateOrCreate(['delivery_man_id' => $deliverymanId], [

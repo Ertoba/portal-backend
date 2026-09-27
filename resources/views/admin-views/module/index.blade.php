@@ -75,7 +75,7 @@
                                 <img class="avatar avatar-xss avatar-4by3 mr-2"
                                     src="{{ asset('public/assets/admin') }}/svg/components/placeholder-csv-format.svg"
                                     alt="Image Description">
-                                .{{ translate('messages.csv') }}
+                                {{ translate('messages.csv') }}
                             </a>
                         </div>
                     </div>
@@ -98,7 +98,7 @@
                             <tr>
                                 <th class="border-0 pl-4 w--05">{{translate('messages.sl')}}</th>
                                 <th class="border-0 w--1">{{translate('messages.module_id')}}</th>
-                                <th class="border-0 w--2">{{translate('messages.name')}}</th>
+                                <th class="border-0 w--2">{{translate('Module Name')}}</th>
                                 <th class="border-0 w--2">{{translate('messages.business_Module_type')}}</th>
                                 <th class="border-0 text-center w--2">{{translate('messages.total_vendors')}}</th>
                                 <th class="border-0 w--1">{{translate('messages.status')}}</th>
@@ -123,9 +123,14 @@
                                     </span>
                                 </td>
                                 <td class="text-center">
+                                    @if ( in_array($module['module_type'], ['parcel' , 'ride-share']))
+                                        {{ translate('N/A') }}
+                                    @else
                                     {{$module->stores->filter(function($store) {
                                         return $store->vendor && $store->vendor->status == 1;
                                     })->count()}}
+
+                                    @endif
                                 </td>
                                 <td>
                                     <label class="toggle-switch toggle-switch-sm" for="status-{{$module->id}}">

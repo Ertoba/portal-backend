@@ -98,4 +98,14 @@ class CustomRoleController extends BaseController
             'count'=>$roles->count()
         ]);
     }
+
+    public function view($id)
+    {
+        $role = $this->roleRepo->getFirstWithoutGlobalScopeWhere(params: ['id' => $id]);
+        return response()->json([
+            'view' => view('admin-views.custom-role.partials._view_role', compact('role'))->render(),
+        ]);
+    }
+
+
 }

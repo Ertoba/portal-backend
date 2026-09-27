@@ -46,7 +46,7 @@ class CustomerLogic
                     $credit = (int)($amount / BusinessSetting::where('key', 'loyalty_point_exchange_rate')->first()->value);
                 }
             }
-        } else if (in_array($transaction_type, ['order_place','trip_booking'])) {
+        } else if (in_array($transaction_type, ['order_place','trip_booking','ride_booking'])) {
             $debit = $amount;
         } else if ($transaction_type == 'partial_payment') {
             $debit = $amount;

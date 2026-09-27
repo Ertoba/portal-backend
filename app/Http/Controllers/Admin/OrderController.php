@@ -502,7 +502,7 @@ class OrderController extends Controller
                     if ($order->order_type == 'take_away') {
                         $ol = OrderLogic::create_transaction($order, 'store', null);
                     } else if ($order->delivery_man_id) {
-                        $ol =  OrderLogic::create_transaction($order, 'deliveryman', null);
+                        $ol =  OrderLogic::create_transaction($order, 'admin', null);
                     } else if ($order->user_id) {
                         $ol =  OrderLogic::create_transaction($order, false, null);
                     }
@@ -625,16 +625,29 @@ class OrderController extends Controller
 
             $order?->store ?   Helpers::increment_order_count($order?->store) : '';
 
-            if (config('module.' . $order->module->module_type)['stock']) {
+
+            $hasStock = config('module.' . $order->module->module_type)['stock'];
+            $hasFlashDiscount = $order->flash_admin_discount_amount > 0 && $order->flash_store_discount_amount > 0;
+
+            if ($hasStock || $hasFlashDiscount) {
                 foreach ($order->details as $detail) {
-                    $variant = json_decode($detail['variation'], true);
-                    $item = $detail->item;
-                    if ($detail->campaign) {
-                        $item = $detail->campaign;
+
+                    $item = $detail->campaign ?? $detail->item;
+
+                    if ($hasStock) {
+                        $variant = json_decode($detail->variation, true);
+                        $variantType = !empty($variant) ? $variant[0]['type'] : null;
+                        ProductLogic::update_stock($item, -$detail->quantity, $variantType)?->save();
                     }
-                    ProductLogic::update_stock($item, -$detail->quantity, count($variant) ? $variant[0]['type'] : null)->save();
+
+                    if ($hasFlashDiscount) {
+                        ProductLogic::update_flash_stock($detail->item, $detail->quantity, true)?->save();
+                    }
                 }
             }
+
+
+
             if ($order->delivery_man) {
                 $dm = $order->delivery_man;
                 $dm->current_orders = $dm->current_orders > 1 ? $dm->current_orders - 1 : 0;
@@ -1689,6 +1702,7 @@ class OrderController extends Controller
     public function store_order_export(Request $request)
     {
         $key = explode(' ', $request['search']);
+         $filter = $request?->filter;
         $orders = Order::where('store_id', $request->store_id)->Notpos()
             ->when(isset($key ), function ($q) use ($key){
                 $q->where(function ($q) use ($key) {
@@ -1697,6 +1711,20 @@ class OrderController extends Controller
                     }
                 });
             })
+            ->when(isset($filter) && $filter == 'scheduled_orders', function ($q) {
+                    $q->Scheduled();
+                })
+                ->when(isset($filter) && $filter == 'pending_orders', function ($q) {
+                    $q->where(['order_status' => 'pending'])->OrderScheduledIn(30);
+                })
+                ->when(isset($filter) && $filter == 'delivered_orders', function ($q) {
+                    $q->where(['order_status' => 'delivered']);
+                })
+                ->when(isset($filter) && $filter == 'canceled_orders', function ($q) {
+                    $q->where(['order_status' => 'canceled']);
+                })
+                ->StoreOrder()
+                ->Notpos()
             ->get();
         $store= Store::where('id', $request->store_id)->select(['id','zone_id'])->first();
         $data = [
@@ -1704,6 +1732,7 @@ class OrderController extends Controller
             'search'=>request()->search ?? null,
             'zone'=>Helpers::get_zones_name($store->zone_id) ,
             'store'=>  Helpers::get_stores_name($store->id),
+            'filter'=>$filter = $filter == 'all_orders' ? null : $filter
         ];
 
         if($request->type == 'csv'){

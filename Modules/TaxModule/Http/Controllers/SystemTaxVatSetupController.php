@@ -40,6 +40,7 @@ class SystemTaxVatSetupController extends Controller
             'vendor' => 'vendor',
             'parcel' => 'parcel',
             'prescription' => 'prescription',
+            'ride-share' => 'ride_module',
         ];
         $systemTaxVatForPrescription = null;
         $tax_payer = $type_map[$request->type] ?? 'vendor';
@@ -137,7 +138,7 @@ class SystemTaxVatSetupController extends Controller
                 $systemTaxVat->is_default = false;
             }
             $systemTaxVat->tax_payer = $request->type;
-            $systemTaxVat->tax_type = $request->tax_type ?? $request->type == 'rental_provider' ?  'trip_wise' : 'order_wise';
+            $systemTaxVat->tax_type = $request->tax_type ?? $request->type == 'rental_provider' ?  'trip_wise' : ($request->type == 'ride_module' ?  'ride_wise' : 'order_wise');
         }
         $systemTaxVat->is_active = !$systemTaxVat->is_active;
         $systemTaxVat->save();

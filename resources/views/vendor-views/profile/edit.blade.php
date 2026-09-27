@@ -87,7 +87,7 @@
                             for="avatarUploader">
                             <img id="viewer"
                                  data-onerror-image="{{asset('public/assets/back-end/img/160x160/img1.jpg')}}"
-                                 class="avatar-img onerror-image"
+                                 class="avatar-img onerror-image w-100"
                                  src="{{ $data->image_full_url }}"
                                  alt="Image">
                         </label>

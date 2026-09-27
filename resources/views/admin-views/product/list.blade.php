@@ -160,7 +160,7 @@
                                 <img class="avatar avatar-xss avatar-4by3 mr-2"
                                     src="{{ asset('public/assets/admin') }}/svg/components/placeholder-csv-format.svg"
                                     alt="Image Description">
-                                .{{ translate('messages.csv') }}
+                                {{ translate('messages.csv') }}
                             </a>
 
                         </div>
@@ -173,7 +173,12 @@
                     @endif
                     @if (\App\CentralLogics\Helpers::get_mail_status('product_approval'))
                     <div>
-                        <a href="{{ route('admin.item.approval_list') }}" class="btn btn--primary font-regular">{{translate('messages.New_Product_Request')}}</a>
+                        <a href="{{ route('admin.item.approval_list') }}" class="btn btn--primary py-2 font-regular">{{translate('messages.New_Product_Request')}}
+
+                            <small class="badge badge-soft-success bg-light fs-10 badge-pill ml-1">
+                                                        {{ \App\Models\TempProduct::withoutGlobalScope(StoreScope::class)->module(Config::get('module.current_module_id'))->count() }}
+                            </small>
+                        </a>
                     </div>
                     @endif
                 </div>
@@ -186,7 +191,7 @@
                 <table id="datatable" class="table table-borderless table-thead-bordered table-nowrap table-align-middle card-table"
                     data-hs-datatables-options='{
                         "columnDefs": [{
-                            "targets": [],
+                            "targets": [8,9],
                             "width": "5%",
                             "orderable": false
                         }],
@@ -233,12 +238,12 @@
 
                                     data-onerror-image="{{asset('public/assets/admin/img/160x160/img2.jpg')}}" alt="{{$item->name}} image">
                                     <div title="{{ $item['name'] }}" class="media-body">
-                                        <h5 class="text-hover-primary mb-0">{{Str::limit($item['name'],20,'...')}}</h5>
+                                        <h5 class="text-hover-primary mb-0">{{Str::limit($item['name'],12,'...')}}</h5>
                                     </div>
                                 </a>
                             </td>
-                            <td title="{{ $item?->category?->name }}">
-                            {{Str::limit($item->category?$item->category->name:translate('messages.category_deleted'),20,'...')}}
+                            <td title="{{ App\CentralLogics\Helpers::get_category_name($item['category_ids'])}}">
+                            {{ Str::limit(App\CentralLogics\Helpers::get_category_name($item['category_ids']), 20, '...') }}
                             </td>
                             @if (Config::get('module.current_module_type') != 'food')
                             <td>
@@ -271,7 +276,7 @@
                                                 </span> </span>
                                             <br>
                                         @empty
-                                            <span> {{ translate('messages.no_tax') }} </span>
+                                            <span> {{ translate('messages.N/A') }} </span>
                                         @endforelse
                                     </span>
                                 </td>

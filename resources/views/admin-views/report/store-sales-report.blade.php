@@ -120,7 +120,7 @@
                     <img src="{{ asset('/public/assets/admin/img/report/gross.svg') }}" alt="">
                     <div class="info">
                         <h4 class="subtitle">
-                            {{ \App\CentralLogics\Helpers::number_format_short($orders->sum('order_amount')) }}</h4>
+                            {{ \App\CentralLogics\Helpers::number_format_short($orders->total_order_amount) }}</h4>
                         <h6 class="subtext">{{ translate('Gross Sale') }}</h6>
                     </div>
                 </div>
@@ -128,7 +128,7 @@
                     <img src="{{ asset('/public/assets/admin/img/report/tax.svg') }}" alt="">
                     <div class="info">
                         <h4 class="subtitle">
-                            {{ \App\CentralLogics\Helpers::number_format_short($orders->sum('total_tax_amount')) }}</h4>
+                            {{ \App\CentralLogics\Helpers::number_format_short($orders->total_tax_amount) }}</h4>
                         <h6 class="subtext">{{ translate('Total Tax') }}</h6>
                     </div>
                 </div>
@@ -136,7 +136,7 @@
                     <img src="{{ asset('/public/assets/admin/img/report/commission.svg') }}" alt="">
                     <div class="info">
                         <h4 class="subtitle">
-                            {{ \App\CentralLogics\Helpers::number_format_short($orders->sum('transaction_sum_admin_commission')+$orders->sum('transaction_sum_delivery_fee_comission')-$orders->sum('transaction_sum_admin_expense')) }}
+                            {{ \App\CentralLogics\Helpers::number_format_short($orders->transaction_sum_admin_commission+$orders->transaction_sum_delivery_fee_comission-$orders->transaction_sum_admin_expense) }}
                         </h4>
                         <h6 class="subtext">{{ translate('Total Commission') }}</h6>
                     </div>
@@ -146,7 +146,7 @@
                 <div class="center-chart-header">
                     <h4 class="title">{{ translate('Total Orders') }}</h4>
                     <h5 class="subtitle">{{ translate('Average Order Value :') }}
-                        {{ $orders->count() > 0 ? \App\CentralLogics\Helpers::number_format_short($orders->sum('order_amount') / $orders->count()) : 0 }}
+                        {{ $orders->total_order > 0 ? \App\CentralLogics\Helpers::number_format_short($orders->total_order_amount / $orders->total_order) : 0 }}
                         <span class="input-label-secondary text--title" data-toggle="tooltip"
                     data-placement="right"
                     data-original-title="{{ translate('Average Value of completed orders.') }}">
@@ -221,7 +221,7 @@
                         <div class="earning-statistics-content">
                             <h6 class="subtitle">{{ translate('Total Store Earnings') }}</h6>
                             <h3 class="title">
-                                {{ \App\CentralLogics\Helpers::number_format_short($orders->sum('transaction_sum_store_amount')) }}
+                                {{ \App\CentralLogics\Helpers::number_format_short($orders->transaction_sum_store_amount) }}
                             </h3>
                         </div>
                     </div>
@@ -272,7 +272,7 @@
                                 <img class="avatar avatar-xss avatar-4by3 mr-2"
                                     src="{{ asset('public/assets/admin') }}/svg/components/placeholder-csv-format.svg"
                                     alt="Image Description">
-                                .{{ translate('messages.csv') }}
+                                {{ translate('messages.csv') }}
                             </a>
                         </div>
                     </div>
@@ -375,7 +375,7 @@
 
             $('.js-data-example-ajax').select2({
                 ajax: {
-                    url: '{{ url('/') }}/admin/store/get-stores',
+                    url: '{{ route('admin.store.get-stores') }}',
                     data: function(params) {
                         return {
                             q: params.term, // search term

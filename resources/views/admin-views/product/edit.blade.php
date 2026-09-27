@@ -65,15 +65,12 @@
                     <div class="card h-100">
                         <div class="card-body d-flex flex-wrap align-items-center">
                             <div class="w-100 d-flex gap-3 flex-wrap flex-lg-nowrap">
-                                <div class="flex-grow-1 mx-auto overflow-x-auto scrollbar-primary">
+                                {{-- <div class="flex-grow-1 mx-auto overflow-x-auto scrollbar-primary">
                                     <label class="text-dark d-block">
                                         {{ translate('messages.item_image') }}
                                         <small>( {{ translate('messages.ratio') }} 1:1 )</small>
                                     </label>
                                     <div class="d-flex __gap-12px __new-coba overflow-x-auto pb-2" id="coba">
-
-                                        <input type="hidden" id="removedImageKeysInput" name="removedImageKeys"
-                                            value="">
                                         @foreach ($product->images as $key => $photo)
                                             @php($photo = is_array($photo) ? $photo : ['img' => $photo, 'storage' => 'public'])
                                             <div id="product_images_{{ $key }}"
@@ -90,28 +87,82 @@
                                             </div>
                                         @endforeach
                                     </div>
-                                </div>
+                                </div> --}}
+                                <input type="hidden" id="removedImageKeysInput" name="removedImageKeys" value="">
+                            <div class="w-100 d-flex gap-3 flex-wrap flex-lg-nowrap">
                                 <div class="flex-grow-1 mx-auto pb-2 flex-shrink-0">
-                                    <label class="text-dark d-block">
-                                        {{ translate('messages.item_thumbnail') }}
-                                        <small class="text-danger">* ( {{ translate('messages.ratio') }} 1:1 )</small>
-                                    </label>
-                                    <label class="d-inline-block m-0 position-relative error-wrapper">
-                                        <img class="img--176 border onerror-image" id="viewer"
-                                            src="{{ $product['image_full_url'] ?? asset('public/assets/admin/img/upload-img.png') }}"
-                                            data-onerror-image="{{ asset('public/assets/admin/img/upload-img.png') }}"
-                                            alt="thumbnail" />
-                                        <div class="icon-file-group">
-                                            <div class="icon-file">
-                                                <input type="file" name="image" id="customFileEg1"
-                                                    class="custom-file-input read-url"
-                                                    accept=".webp, .jpg, .png, .jpeg, .webp, .gif, .bmp, .tif, .tiff|image/*">
-                                                <i class="tio-edit"></i>
-                                            </div>
+                                    <div class="text-center">
+                                        <div class="mb-1">
+                                            <h4 class="mb-1">{{ translate('Item_Thumbnail') }}
+                                                @if (Config::get('module.current_module_type') != 'food')
+                                                <span class="text-danger">*</span>
+                                                @endif
+                                                </h4>
                                         </div>
-                                    </label>
+                                        <div class="mx-auto text-center">
+                                            @include('admin-views.partials._image-uploader', [
+                                                    'id' => 'image-input',
+                                                    'name' => 'image',
+                                                    'ratio' => '1:1',
+                                                    'isRequired' =>false,
+                                                    'existingImage' => $product['image_full_url'] ?? asset('public/assets/admin/img/upload-img.png') ,
+                                                    'imageExtension' => IMAGE_EXTENSION,
+                                                    'imageFormat' => IMAGE_FORMAT,
+                                                    'maxSize' => MAX_FILE_SIZE,
+                                                    ])
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
+                        </div>
+
+                        <div class="flex-grow-1 mx-auto overflow-x-auto scrollbar-primary">
+                                            <div class="mb-0">
+                                                <h4 class="mb-1">
+                                                    {{ translate('messages.item_image') }}
+                                                </h4>
+                                                <p class="mb-2 fs-12 gray-dark">
+                                                        {{ translate((IMAGE_FORMAT) . '. Less Than ' . MAX_FILE_SIZE . 'MB')}} <span
+                                                            class="font-medium text-title">{{ translate('(1:1)')}}</span>
+                                                    </p>
+                                            </div>
+
+
+                                    <div class="identity_documnet_body multiple_coba-img tabs-slide-wrap position-relative">
+                                        <div class="tabs-inner pt-3 d-flex gap-3 identity_documnet_wrap" id="coba">
+
+                                            @foreach($product->images as $key => $img)
+                                            @php($photo = is_array($img) ? $img : ['img' => $img, 'storage' => 'public'])
+                                                <div class="spartan_item_wrapper size--md existing_image" id="existing_image_{{ $key }}">
+                                                    <div style="position: relative;">
+                                                        <label class="file_upload" style="width: 100%; height: 100px; border: 2px dashed #ddd; border-radius: 3px; cursor: pointer; text-align: center; overflow: hidden; padding: 5px; margin-top: 5px; margin-bottom : 5px; position : relative; display: flex; align-items: center; margin: auto; justify-content: center; flex-direction: column;">
+                                                            <div class="spartan_item_loader" data-spartanindexloader="0" style=" position: absolute; width: 100%; height: 100px; background: rgba(255,255,255, 0.7); z-index: 22; text-align: center; align-items: center; margin: auto; justify-content: center; flex-direction: column; display : none; font-size : 1.7em; color: #CECECE"><i class="fas fa-sync fa-spin"></i></div>
+                                                            <img class="img--100 rounded border" style="width: 100%; margin: 0px auto; vertical-align: middle;" src="{{ \App\CentralLogics\Helpers::get_full_url('product', $photo['img'] ?? '', $photo['storage']) }}">
+                                                            <a href="javascript:void(0)" style="right: 3px; top: 3px; background: transparent; border-radius: 3px; width: 30px; height: 30px; line-height: 30px; text-align: center; text-decoration: none; color: rgb(255, 7, 0); position: absolute !important;" data-key="{{ $key }}"
+                                                            data-photo="{{ $photo['img'] }}"
+                                                            data-img="{{ $photo['img'] ?? '' }}" class="spartan_remove_row function_remove_img remove-existing-image-btn"><i class="tio-add-to-trash"></i></a>
+                                                            </div>
+                                                        </label>
+
+                                                </div>
+                                            @endforeach
+                                        </div>
+                                        <div class="arrow-area">
+                                            <div class="button-prev align-items-center">
+                                                <button type="button"
+                                                    class="btn btn-click-prev mr-auto border-0 btn-primary rounded-circle fs-12 p-2 d-center">
+                                                    <i class="tio-chevron-left fs-24"></i>
+                                                </button>
+                                            </div>
+                                            <div class="button-next align-items-center pt-5">
+                                                <button type="button"
+                                                    class="btn btn-click-next ml-auto border-0 btn-primary rounded-circle fs-12 p-2 d-center">
+                                                    <i class="tio-chevron-right fs-24"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                        </div>
                         </div>
                     </div>
                 </div>
@@ -618,22 +669,9 @@
             });
         }
 
-        function readURL(input) {
-            if (input.files && input.files[0]) {
-                let reader = new FileReader();
 
-                reader.onload = function(e) {
-                    $('#viewer').attr('src', e.target.result);
-                }
 
-                reader.readAsDataURL(input.files[0]);
-            }
-        }
 
-        $("#customFileEg1").change(function() {
-            readURL(this);
-            $('#image-viewer-section').show(1000)
-        });
 
         $(document).ready(function() {
             @if (count(json_decode($product['add_ons'], true)) > 0)
@@ -821,7 +859,7 @@
 
         $('#store_id').select2({
             ajax: {
-                url: '{{ url('/') }}/admin/store/get-stores',
+                url: '{{ route('admin.store.get-stores') }}',
                 data: function(params) {
                     return {
                         q: params.term, // search term
@@ -1038,7 +1076,7 @@
                 $('input[name="current_stock"]').attr("readonly", false);
             }
         }
-        
+
         $(document).on('keyup', 'input[name^="stock_"]', function() {
             let total_qty = 0;
             let qty_elements = $('input[name^="stock_"]');
@@ -1049,42 +1087,54 @@
         });
 
         function initImagePicker() {
-            $("#coba").spartanMultiImagePicker({
-                fieldName: 'item_images[]',
-                maxCount: 5,
-                rowHeight: '176px !important',
-                groupClassName: 'spartan_item_wrapper min-w-176px max-w-176px',
-                maxFileSize: 1024 * 1024 * {{ MAX_FILE_SIZE }},
-                placeholderImage: {
-                    image: "{{ asset('public/assets/admin/img/upload-img.png') }}",
-                    width: '176px'
-                },
-                dropFileLabel: "Drop Here",
-                onAddRow: function(index, file) {
-                    setTimeout(function() {
-                        let $newInput = $("#coba .spartan_item_wrapper").last();
-                        if ($newInput.length) {
-                            $newInput[0].scrollIntoView({
-                                behavior: "smooth",
-                                inline: "end",
-                                block: "nearest"
-                            });
-                        }
-                    }, 50);
-                },
-                onExtensionErr: function(index, file) {
-                    toastr.error("{{ translate('messages.please_only_input_png_or_jpg_type_file') }}", {
-                        CloseButton: true,
-                        ProgressBar: true
-                    });
-                },
-                onSizeErr: function(index, file) {
-                    toastr.error("{{ translate('messages.file_size_too_big') }}", {
-                        CloseButton: true,
-                        ProgressBar: true
-                    });
-                }
-            });
+
+             let existingImages = $("#coba .existing_image").detach();
+
+            let newCoba = $('<div class="tabs-inner pt-3 d-flex gap-3 identity_documnet_wrap" id="coba"></div>');
+
+            $("#coba").replaceWith(newCoba);
+
+            newCoba.append(existingImages);
+
+            let existingCount = existingImages.length;
+            let maxCount = 5 - existingCount;
+            console.log('Existing: ' + existingCount + ', Max: ' + maxCount);
+
+            if (maxCount > 0) {
+                $("#coba").spartanMultiImagePicker({
+                    fieldName: 'item_images[]',
+                    maxCount: maxCount,
+                    rowHeight: '100px',
+                    groupClassName: 'spartan_item_wrapper size--md',
+                    maxFileSize: {{ MAX_FILE_SIZE }} * 1024 * 1024,
+                    placeholderImage: {
+                        image: '{{asset('public/assets/admin/img/400x400/coba-placeholder.png')}}',
+                        width: '100%'
+                    },
+                    dropFileLabel: "Drop Here",
+                    onAddRow: function (index, file) {
+                        // Handle logic after adding new image if needed
+                    },
+                    onRenderedPreview: function (index) {
+
+                    },
+                    onRemoveRow: function (index) {
+
+                    },
+                    onExtensionErr: function (index, file) {
+                        toastr.error('Please only input png or jpg type file', {
+                            CloseButton: true,
+                            ProgressBar: true
+                        });
+                    },
+                    onSizeErr: function (index, file) {
+                        toastr.error('File size too big', {
+                            CloseButton: true,
+                            ProgressBar: true
+                        });
+                    }
+                });
+            }
         }
 
         $(function() {
@@ -1107,5 +1157,13 @@
             $("#coba").empty();
             initImagePicker();
         })
+
+            $(document).on('click', '.remove-existing-image-btn', function(){
+            let key = $(this).data('key');
+            let img = $(this).data('img');
+            $('#existing_image_' + key).remove();
+            $('form').append('<input type="hidden" name="delete_item_image[]" value="' + img + '">');
+            initSpatanImagePicker();
+        });
     </script>
 @endpush

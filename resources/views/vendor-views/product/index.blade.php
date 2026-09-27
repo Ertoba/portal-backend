@@ -6,9 +6,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <link href="{{ asset('public/assets/admin/css/tags-input.min.css') }}" rel="stylesheet">
     <link href="{{ asset('public/assets/admin/css/AI/animation/product/ai-sidebar.css') }}" rel="stylesheet">
-<link rel="stylesheet" href="{{asset('public/assets/admin/css/custom.css')}}">
-<link rel="stylesheet" href="{{asset('public/assets/admin/css/upload-single-image.css')}}">
-
+    <link rel="stylesheet" href="{{ asset('public/assets/admin/css/custom.css') }}">
 @endpush
 
 @section('content')
@@ -65,7 +63,8 @@
                                         <div class="icon-file-group">
                                             <div class="icon-file"><input type="file" name="image" id="customFileEg1"
                                                     class="custom-file-input d-none"
-                                                    accept=".webp, .jpg, .png, .webp, .jpeg, .gif, .bmp, .tif, .tiff|image/*" required>
+                                                    accept=".webp, .jpg, .png, .webp, .jpeg, .gif, .bmp, .tif, .tiff|image/*"
+                                                    required>
                                                 <i class="tio-edit"></i>
                                             </div>
                                         </div>
@@ -97,7 +96,8 @@
                     <div class="btn--container justify-content-end">
                         <button type="reset" id="reset_btn"
                             class="btn btn--reset">{{ translate('messages.reset') }}</button>
-                        <button type="submit" class="btn btn--primary">{{ translate('messages.submit') }}</button>
+                        <button type="submit" class="btn btn--primary"
+                            id="submit_btn">{{ translate('messages.submit') }}</button>
                     </div>
                 </div>
             </div>
@@ -367,10 +367,17 @@
 
 
 
+        let form_submitted = false;
         $('#item_form').on('submit', function(e) {
-
             e.preventDefault();
-            if(typeof FormValidation != 'undefined' && !FormValidation.validateForm(this)) {
+
+            if (form_submitted) return false;
+            form_submitted = true;
+            $('#submit_btn').prop('disabled', true);
+
+            if (typeof FormValidation != 'undefined' && !FormValidation.validateForm(this)) {
+                form_submitted = false;
+                $('#submit_btn').prop('disabled', false);
                 return false;
             }
 
@@ -382,7 +389,6 @@
             });
             $.post({
                 url: '{{ route('vendor.item.store') }}',
-                data: $('#item_form').serialize(),
                 data: formData,
                 cache: false,
                 contentType: false,
@@ -393,6 +399,8 @@
                 success: function(data) {
                     $('#loading').hide();
                     if (data.errors) {
+                        $('#submit_btn').prop('disabled', false);
+                        form_submitted = false;
                         for (let i = 0; i < data.errors.length; i++) {
                             toastr.error(data.errors[i].message, {
                                 CloseButton: true,
@@ -418,6 +426,12 @@
                             location.href = '{{ route('vendor.item.list') }}';
                         }, 2000);
                     }
+                },
+                error: function() {
+                    $('#loading').hide();
+                    $('#submit_btn').prop('disabled', false);
+                    form_submitted = false;
+                    toastr.error('{{ translate('messages.something_went_wrong') }}');
                 }
             });
         });

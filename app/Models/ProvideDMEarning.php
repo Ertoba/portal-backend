@@ -15,6 +15,11 @@ class ProvideDMEarning extends Model
         return $this->belongsTo(DeliveryMan::class, 'delivery_man_id');
     }
 
+    public function rider(){
+        return $this->belongsTo(DeliveryMan::class,'delivery_man_id')->withoutGlobalScope('delivery_only')->where('is_ride', 1);
+    }
+
+
     protected static function booted()
     {
         static::addGlobalScope(new ZoneScope);

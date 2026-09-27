@@ -86,26 +86,26 @@ class TranslationRepository implements TranslationRepositoryInterface
 
     public function getFirstWhere(array $params, array $relations = []): ?Model
     {
-        // TODO: Implement getFirstWhere() method.
+        
     }
 
     public function getList(array $orderBy = [], array $relations = [], int|string $dataLimit = DEFAULT_DATA_LIMIT, int $offset = null): Collection|LengthAwarePaginator
     {
-        // TODO: Implement getList() method.
+        
     }
 
     public function getListWhere(string $searchValue = null, array $filters = [], array $relations = [], int|string $dataLimit = DEFAULT_DATA_LIMIT, int $offset = null): Collection|LengthAwarePaginator
     {
-        // TODO: Implement getListWhere() method.
+        
     }
 
     public function update(string $id, array $data): bool
     {
-        // TODO: Implement update() method.
+        
     }
 
     public function delete(string $id): bool
     {
-        // TODO: Implement delete() method.
+        
     }
 }

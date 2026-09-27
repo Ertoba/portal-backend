@@ -59,7 +59,7 @@ class TaxVatController extends Controller
             [
                 'name' => 'required|max:50|unique:taxes,name' . ($id ? ',' . $id : ''),
                 'country_code' => 'nullable|max:20|unique:taxes,country_code' . ($id ? ',' . $id : ''),
-                'tax_rate' => 'required|numeric|max:100|min:0.001',
+                'tax_rate' => 'required|numeric|max:100|min:0',
 
             ]
         );

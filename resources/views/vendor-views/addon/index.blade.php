@@ -144,7 +144,7 @@
                             <form id="search-form" class="search-form">
                                 <div class="input-group input--group">
                                     <input type="text" id="column1_search" class="form-control"
-                                        placeholder="{{ translate('messages.ex_search_name') }}">
+                                        placeholder="{{ translate('messages.Search by addon name') }}">
                                     <button type="button" class="btn btn--secondary">
                                         <i class="tio-search"></i>
                                     </button>
@@ -194,7 +194,7 @@
                                                             </span> </span>
                                                         <br>
                                                     @empty
-                                                        <span> {{ translate('messages.no_tax') }} </span>
+                                                        <span> {{ translate('messages.N/A') }} </span>
                                                     @endforelse
                                                 </span>
                                             </td>

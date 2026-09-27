@@ -288,14 +288,14 @@
                                 for="contact_person_name">{{ translate('messages.contact_person_name') }}<span
                                             class="input-label-secondary text-danger">*</span></label>
                             <input  id="contact_person_name" type="text" class="form-control" name="contact_person_name"
-                                value="{{ $old ? $old['contact_person_name'] : '' }}" placeholder="{{ translate('messages.Ex :') }} Jhone">
+                                value="{{ $old ? $old['contact_person_name'] : (isset($customer) ? $customer->f_name . ' ' . $customer->l_name : '' )}}" placeholder="{{ translate('messages.Ex :') }} Jhone">
                         </div>
                         <div class="col-md-6">
                             <label class="input-label"
                                 for="contact_person_number">{{ translate('Contact Number') }}<span
                                             class="input-label-secondary text-danger">*</span></label>
                             <input id="contact_person_number" type="tel" class="form-control" name="contact_person_number"
-                                value="{{ $old ? $old['contact_person_number'] : '' }}"  placeholder="{{ translate('messages.Ex :') }} +3264124565">
+                                value="{{ $old ? $old['contact_person_number'] : (isset($customer) ? $customer->phone : '')  }}"  placeholder="{{ translate('messages.Ex :') }} +3264124565">
                         </div>
                         <div class="col-md-6">
                             <label class="input-label" for="road">{{ translate('messages.Road') }}</label>

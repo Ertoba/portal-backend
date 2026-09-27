@@ -25,6 +25,7 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\Mail;
 use App\Scopes\StoreScope;
 use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\Session;
 
 class POSController extends Controller
 {
@@ -35,7 +36,7 @@ class POSController extends Controller
         $category = $request->query('category_id', 0);
         $module_id = Config::get('module.current_module_id');
         $store_id = $request->query('store_id', null);
-        $categories = Category::active()->module(Config::get('module.current_module_id'))->get();
+
         $store = Store::active()->with('store_sub')->find($store_id);
         if(!$store && $request->has('store_id')){
             Toastr::error(translate('messages.Store_is_not_available'));
@@ -53,6 +54,7 @@ class POSController extends Controller
                 session()->forget('cart');
                 session()->forget('address');
                 session()->forget('cart_product_ids');
+                session()->forget('customer_id');
             }
         }
 
@@ -61,8 +63,20 @@ class POSController extends Controller
             session()->forget('tax_included');
         }
 
-        $products = Item::withoutGlobalScope(StoreScope::class)->active()
-        ->when($category, function($query)use($category){
+        $productQuery = Item::withoutGlobalScope(StoreScope::class)->active()
+
+        ->whereHas('store', function($query)use($store_id, $module_id){
+            return $query->where(['id'=>$store_id, 'module_id'=>$module_id]);
+        });
+
+        $categoryIds = (clone $productQuery)
+            ->pluck('category_ids')
+            ->flatMap(function ($item) {
+                return collect(json_decode($item, true))->pluck('id');
+            })->unique()->values();
+
+
+        $productQuery->when($category, function($query)use($category){
             $query->whereHas('category',function($q)use($category){
                 return $q->whereId($category)->orWhere('parent_id', $category);
             });
@@ -73,15 +87,28 @@ class POSController extends Controller
                     $q->orWhere('name', 'like', "%{$value}%");
                 }
             });
-        })
-        ->whereHas('store', function($query)use($store_id, $module_id){
-            return $query->where(['id'=>$store_id, 'module_id'=>$module_id]);
         });
+
+
         if(Config::get('module.current_module_type') == 'food'){
-            $products=  $products->available($time);
+            $productQuery=  $productQuery->available($time);
         }
-        $products=  $products->latest()->paginate(10);
-        return view('admin-views.pos.index', compact('categories', 'products','category', 'search', 'store', 'module_id'));
+
+        $products=  $productQuery->latest()->paginate(10);
+
+
+        $categories = Category::active()
+            ->when(count($categoryIds), function($query)use($categoryIds){
+                $query->whereIn('id', $categoryIds);
+            })
+
+        ->module(Config::get('module.current_module_id'))->get();
+        $customer = null;
+        if (Session::get('customer_id')) {
+            $customer = User::find(Session::get('customer_id'));
+        }
+
+        return view('admin-views.pos.index', compact('categories', 'products','category', 'search', 'store', 'module_id', 'customer'));
     }
 
     public function quick_view(Request $request)
@@ -485,7 +512,12 @@ class POSController extends Controller
     public function cart_items(Request $request)
     {
         $store = Store::find($request->store_id);
-        return view('admin-views.pos._cart', compact('store'));
+
+        $customer = null;
+        if (Session::get('customer_id')) {
+            $customer = User::find(Session::get('customer_id'));
+        }
+        return view('admin-views.pos._cart', compact('store', 'customer'));
     }
 
 
@@ -554,6 +586,7 @@ class POSController extends Controller
         session()->forget('tax_included');
         session()->forget('address');
         session()->forget('cart_product_ids');
+        session()->forget('customer_id');
         return response()->json([], 200);
     }
 
@@ -702,8 +735,8 @@ class POSController extends Controller
         $order->module_id = $store->module_id;
         $order->user_id = $request->user_id;
         $order->dm_vehicle_id = $vehicle_id;
-        $order->delivery_charge = isset($address)?$address['delivery_fee']+$extra_charges:0;
-        $order->original_delivery_charge = isset($address)?$address['delivery_fee']+$extra_charges:0;
+        $order->delivery_charge = $this->calculatePosDeliveryFee($store->id,$order->distance );
+        $order->original_delivery_charge = $this->calculatePosDeliveryFee($store->id,$order->distance );
         $order->delivery_address = isset($address)?json_encode($address):null;
         $order->checked = 1;
         $order->zone_id = $store->zone_id;
@@ -852,6 +885,7 @@ class POSController extends Controller
             session()->forget('tax_include');
             session()->forget('address');
             session()->forget('cart_product_ids');
+            session()->forget('customer_id');
             session(['last_order' => $order->id]);
             Helpers::send_order_notification($order);
 
@@ -905,14 +939,17 @@ class POSController extends Controller
             'email' => 'required|email|unique:users',
             'phone' => 'unique:users',
         ]);
-        User::create([
-            'f_name' => $request['f_name'],
-            'l_name' => $request['l_name'],
-            'email' => $request['email'],
-            'phone' => $request['phone'],
-            'password' => bcrypt('password'),
-            'is_from_pos' => 1
-        ]);
+
+
+        $customer = new User();
+        $customer->f_name = $request['f_name'];
+        $customer->l_name = $request['l_name'];
+        $customer->email = $request['email'];
+        $customer->phone = $request['phone'];
+        $customer->password = bcrypt('password');
+        $customer->is_from_pos = 1;
+        $customer->save();
+
 
         try {
             if (config('mail.status') && $request->email && Helpers::get_mail_status('pos_registration_mail_status_user') == '1' &&  Helpers::getNotificationStatusData('customer','customer_pos_registration','mail_status')) {
@@ -923,35 +960,23 @@ class POSController extends Controller
             info($ex->getMessage());
         }
         Toastr::success(translate('customer_added_successfully'));
-        return back();
+      return back()->with('customer', $customer);
     }
 
     public function extra_charge(Request $request)
     {
         $distance_data = $request->distancMileResult ?? 1;
-        $self_delivery_status = $request->self_delivery_status;
-        $extra_charges = 0;
+        $storeId=$request->store_id;
+        $delivery_fee = $this->calculatePosDeliveryFee($storeId,$distance_data);
 
-        if($self_delivery_status != 1){
-
-            $data=  DMVehicle::where(function($query)use($distance_data) {
-                    $query->where('starting_coverage_area','<=' , $distance_data )->where('maximum_coverage_area','>=', $distance_data);
-                })
-                ->orWhere(function ($query) use ($distance_data) {
-                    $query->where('starting_coverage_area', '>=', $distance_data);
-                })
-                ->active()
-                ->orderBy('starting_coverage_area')->first();
-
-                $extra_charges = (float) (isset($data) ? $data->extra_charges  : 0);
-        }
-            return response()->json($extra_charges,200);
+        return response()->json($delivery_fee,200);
     }
 
     public function getUserData(Request $request){
         if($request->customer_id){
             $user= User::where('id', $request->customer_id)->first();
             if ($user) {
+                Session::put('customer_id', $request->customer_id);
                 $user = [
                     'id' => $user->id,
                     'customer_name' => $user->f_name . ' ' . $user->l_name,

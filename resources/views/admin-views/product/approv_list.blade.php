@@ -178,7 +178,7 @@
                                 <img class="avatar avatar-xss avatar-4by3 mr-2"
                                     src="{{ asset('public/assets/admin') }}/svg/components/placeholder-csv-format.svg"
                                     alt="Image Description">
-                                .{{ translate('messages.csv') }}
+                                {{ translate('messages.csv') }}
                             </a>
 
                         </div>
@@ -196,7 +196,7 @@
                 <table id="datatable" class="table table-borderless table-thead-bordered table-nowrap table-align-middle card-table"
                     data-hs-datatables-options='{
                         "columnDefs": [{
-                            "targets": [],
+                            "targets": [7,8],
                             "width": "5%",
                             "orderable": false
                         }],
@@ -402,7 +402,7 @@
 
         $('#store').select2({
             ajax: {
-                url: '{{url('/')}}/admin/store/get-stores',
+                url: '{{ route('admin.store.get-stores') }}',
                 data: function (params) {
                     return {
                         q: params.term, // search term

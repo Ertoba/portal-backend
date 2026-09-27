@@ -97,6 +97,11 @@
     }
 
     $total += $delivery_fee;
+    $extra_discount_amount=session()->get('extra_discount_amount') ?? 0;
+    $extra_discount_type=session()->get('extra_discount_type');
+    $extra_discount=session()->get('extra_discount')?? 0;
+
+    $total -= $extra_discount_amount;
 
     if (isset($cart['paid'])) {
         $paid = $cart['paid'];
@@ -133,13 +138,14 @@
             <dt class="col-6 font-regular">{{ translate('messages.extra_discount') }} :</dt>
             <dd class="col-6 text-right"><button class="btn btn-sm" type="button" data-toggle="modal"
                     data-target="#add-discount"><i class="tio-edit"></i></button>-
-                {{ \App\CentralLogics\Helpers::format_currency(round($discount_amount, 2)) }}</dd>
+                {{ \App\CentralLogics\Helpers::format_currency(round($extra_discount_amount, 2)) }}</dd>
+
+
+
             @if ($tax_included !=  1)
                 <dt class="col-6 font-regular">{{ translate('messages.tax') }} : </dt>
                 <dd class="col-6 text-right">
-{{--                    <button class="btn btn-sm" type="button" data-toggle="modal"--}}
-{{--                    data-target="#add-tax">--}}
-{{--                        <i class="tio-edit"></i></button>--}}
+
                     {{ \App\CentralLogics\Helpers::format_currency(round($tax_amount, 2)) }}
                 </dd>
             @endif
@@ -260,16 +266,16 @@
                     <div class="form-group col-sm-6">
                         <label for="discount_input">{{ translate('messages.discount') }}</label>
                         <input type="number" class="form-control" name="discount" min="0"
-                            id="discount_input" value="{{ $discount }}"
-                            max="{{ $discount_type == 'percent' ? 100 : 1000000000 }}">
+                            id="discount_input" value="{{ $extra_discount_type == 'percent' ? $extra_discount  : $extra_discount_amount }}"
+                            max="{{ $extra_discount_type == 'percent' ? 100 : 1000000000 }}">
                     </div>
                     <div class="form-group col-sm-6">
                         <label for="discount_input_type">{{ translate('messages.type') }}</label>
                         <select name="type" class="form-control" id="discount_input_type" >
-                            <option value="amount" {{ $discount_type == 'amount' ? 'selected' : '' }}>
+                            <option value="amount" {{ $extra_discount_type == 'amount' ? 'selected' : '' }}>
                                 {{ translate('messages.amount') }}({{ \App\CentralLogics\Helpers::currency_symbol() }})
                             </option>
-                            <option value="percent" {{ $discount_type == 'percent' ? 'selected' : '' }}>
+                            <option value="percent" {{ $extra_discount_type == 'percent' ? 'selected' : '' }}>
                                 {{ translate('messages.percent') }}(%)</option>
                         </select>
                     </div>

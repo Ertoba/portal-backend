@@ -1,6 +1,6 @@
 @extends('layouts.landing.app')
 @php($business_name =    \App\CentralLogics\Helpers::get_business_settings('business_name'))
-@section('title', translate('messages.landing_page') . ' | ' . $business_name != 'null' ? $business_name : 'Sixam Mart')
+@section('title', ($business_name && $business_name != 'null') ? $business_name : 'მილი')
 @section('content')
 
     <!-- Basic Settings -->
@@ -44,7 +44,7 @@
                                     data-onerror-image="{{ asset('public/assets/admin/img/100x100/2.png') }}"
                                     src="{{ $item['icon_full_url'] ?? asset('public/assets/admin/img/100x100/2.png') }}"
                                     alt="image">
-                                <div class="txt d-block">{{ translate("messages.{$item->module_name}") }}</div>
+                                <div class="txt d-block">{{ $item->module_name }}</div>
                             </div>
                         @endforeach
                     </div>
@@ -201,7 +201,7 @@
                                         @if (count($zone['modules']->toArray()) > 0)
                                             <span class="item" data-bs-trigger="hover" data-bs-toggle="popover"
                                                 data-bs-placement="top" title="{{ $zone['display_name'] }}"
-                                                data-bs-content="{{ count($zone['modules']->toArray()) > 0 ? implode(', ', $zone['modules']->toArray()) . ' ' . translate('are_available.') : translate('right_now_no_module_available.') }}">
+                                                data-bs-content="{{ count($zone['modules']->toArray()) > 0 ? implode(', ', $zone['modules']->toArray()) . ' ხელმისაწვდომია.' : 'ამჟამად ეს მოდული ხელმისაწვდომი არ არის.' }}">
                                                 {{ $zone['display_name'] }}
                                             </span>
                                         @endif
@@ -827,7 +827,7 @@
                                 isset($join_as_seller['apple_store_url_status']) &&
                                 $join_as_seller['apple_store_url_status'] == '1')
                             <button type="button" class="cmn--btn border-0" data-bs-toggle="dropdown">
-                                {{ translate('Seller App') }}
+                                ვენდორის აპი
                                 <svg class="ms-2" width="12" height="7" viewBox="0 0 12 7"
                                     fill="none" xmlns="http://www.w3.org/2000/svg">
                                     <path
@@ -840,24 +840,24 @@
                                     class="dropdown-item">
                                     <img src="{{ asset('/public/assets/landing/img/google-play.png') }}"
                                         alt="">
-                                    {{ translate('google_play') }}
+                                    Google Play
                                 </a>
                                 <a href="{{ isset($join_as_seller['apple_store_url']) ? $join_as_seller['apple_store_url'] : '' }}"
                                     class="dropdown-item">
                                     <img src="{{ asset('/public/assets/landing/img/apple-store.png') }}"
                                         alt="">
-                                    {{ translate('apple_store') }}
+                                    App Store
                                 </a>
                             </div>
                         @elseif(isset($join_as_seller['playstore_url_status']) && $join_as_seller['playstore_url_status'] == '1')
                             <a type="button" class="cmn--btn border-0"
                                 href="{{ isset($join_as_seller['playstore_url']) ? $join_as_seller['playstore_url'] : '' }}">
-                                {{ translate('Seller App') }}
+                                ვენდორის აპი
                             </a>
                         @elseif(isset($join_as_seller['apple_store_url_status']) && $join_as_seller['apple_store_url_status'] == '1')
                             <a type="button" class="cmn--btn border-0"
                                 href="{{ isset($join_as_seller['apple_store_url']) ? $join_as_seller['apple_store_url'] : '' }}">
-                                {{ translate('Seller App') }}
+                                ვენდორის აპი
                             </a>
                         @endif
 
@@ -876,8 +876,8 @@
                 </div>
                 <div class="earn-item-cont">
                     <div>
-                        <h4 class="subtitle">{{ translate('messages.Become a best') }} </h4>
-                        <h3 class="title">{{ translate('messages.Seller') }}</h3>
+                        <h4 class="subtitle">გახდი საუკეთესო</h4>
+                        <h3 class="title">ვენდორი</h3>
                     </div>
                 </div>
             </div>
@@ -893,7 +893,7 @@
                                 isset($join_as_dm['apple_store_url_status']) &&
                                 $join_as_dm['apple_store_url_status'] == '1')
                             <button type="button" class="cmn--btn border-0" data-bs-toggle="dropdown">
-                                {{ translate('Deliveryman App') }}
+                                კურიერის აპი
                                 <svg class="ms-2" width="12" height="7" viewBox="0 0 12 7"
                                     fill="none" xmlns="http://www.w3.org/2000/svg">
                                     <path
@@ -907,27 +907,27 @@
                                     class="dropdown-item">
                                     <img src="{{ asset('/public/assets/landing/img/google-play.png') }}"
                                         alt="">
-                                    {{ translate('google_play') }}
+                                    Google Play
                                 </a>
 
                                 <a href="{{ isset($join_as_dm['apple_store_url']) ? $join_as_dm['apple_store_url'] : '' }}"
                                     class="dropdown-item">
                                     <img src="{{ asset('/public/assets/landing/img/apple-store.png') }}"
                                         alt="">
-                                    {{ translate('apple_store') }}
+                                    App Store
                                 </a>
                             </div>
                         @elseif(isset($join_as_dm['playstore_url_status']) && $join_as_dm['playstore_url_status'] == '1')
                             <a type="button"
                                 href="{{ isset($join_as_dm['playstore_url']) ? $join_as_dm['playstore_url'] : '' }}"
                                 class="cmn--btn border-0">
-                                {{ translate('Deliveryman App') }}
+                                კურიერის აპი
                             </a>
                         @elseif(isset($join_as_dm['apple_store_url_status']) && $join_as_dm['apple_store_url_status'] == '1')
                             <a type="button"
                                 href="{{ isset($join_as_dm['apple_store_url']) ? $join_as_dm['apple_store_url'] : '' }}"
                                 class="cmn--btn border-0">
-                                {{ translate('Deliveryman App') }}
+                                კურიერის აპი
                             </a>
                         @endif
 
@@ -935,8 +935,8 @@
                 </div>
                 <div class="earn-item-cont">
                     <div>
-                        <h4 class="subtitle">{{ translate('messages.Become a smart') }}</h4>
-                        <h3 class="title">{{ translate('messages.Deliveryman') }}</h3>
+                        <h4 class="subtitle">გახდი სწრაფი</h4>
+                        <h3 class="title">კურიერი</h3>
                     </div>
                 </div>
             </div>
@@ -1754,7 +1754,7 @@
                                         data-odometer-final="{{ $counter['app_download_count_numbers'] ?? 0 }}"></span>
                                     <span>+</span>
                                 </h4>
-                                <div class="text">{{ translate('messages.Download') }}</div>
+                                <div class="text">ჩამოტვირთვა</div>
                             </div>
                             <div class="counter-item wow fadeInUp">
                                 <div class="icon">
@@ -1776,7 +1776,7 @@
                                         data-odometer-final="{{ $counter['seller_count_numbers'] ?? 0 }}"></span>
                                     <span>+</span>
                                 </h4>
-                                <div class="text">{{ translate('messages.Seller') }}</div>
+                                <div class="text">ვენდორი</div>
                             </div>
                             <div class="counter-item wow fadeInUp">
                                 <div class="icon">
@@ -1813,7 +1813,7 @@
                                         data-odometer-final="{{ $counter['deliveryman_count_numbers'] ?? 0 }}"></span>
                                     <span>+</span>
                                 </h4>
-                                <div class="text">{{ translate('messages.Deliveryman') }}</div>
+                                <div class="text">კურიერი</div>
                             </div>
                             <div class="counter-item wow fadeInUp">
                                 <div class="icon">
@@ -1850,7 +1850,7 @@
                                         data-odometer-final="{{ $counter['customer_count_numbers'] ?? 0 }}"></span>
                                     <span>+</span>
                                 </h4>
-                                <div class="text">{{ translate('messages.customer') }}</div>
+                                <div class="text">მომხმარებელი</div>
                             </div>
                         </div>
 
@@ -1859,7 +1859,7 @@
                                 data-onerror-image="{{ asset('public/assets/admin/img/160x160/img2.jpg') }}"
                                 src="{{\App\CentralLogics\Helpers::iconFullUrl() }}"
                                 alt="image">
-                            {{ translate('messages.Still increasing') }}
+                            მუდმივად მზარდი
                         </div>
                     </div>
                     <div class="counter-bg"></div>
@@ -1882,11 +1882,11 @@
                             <h2 class="title">
                                 {{-- {{ $landing_data['download_user_app_title'] }} --}}
                                 <div class="primary-color">
-                                    {{ translate('Lets') }}
+                                    დაიწყე
                                 </div>
-                                {{ translate('Manage_your_business') }}
+                                მართე შენი საქმე
                                 <div class="primary-color">
-                                    {{ translate('Smartly_or_Earn') }}
+                                    ჭკვიანურად ან გამოიმუშავე
                                 </div>
                             </h2>
                             {{-- <h3 class="subtitle">{{ $landing_data['download_user_app_sub_title'] }}</h3> --}}
@@ -1895,7 +1895,7 @@
                             <div class="position-relative dropdown text-capitalize">
                                 <button type="button" class="cmn--btn border-0 w-75 w-sm-50 d-flex justify-content-between align-items-center"
                                     data-bs-toggle="dropdown">
-                                    {{ translate('User App') }}
+                                    მომხმარებლის აპი
                                     <svg class="ms-2" width="12" height="7" viewBox="0 0 12 7"
                                         fill="none" xmlns="http://www.w3.org/2000/svg">
                                         <path
@@ -1908,14 +1908,14 @@
                                         <a href="{{ $landing_page_links['playstore_url'] }}" class="dropdown-item">
                                             <img src="{{ asset('/public/assets/landing/img/google-play.png') }}"
                                                 alt="">
-                                            {{ translate('google_play') }}
+                                            Google Play
                                         </a>
                                     @endif
                                     @if (isset($landing_page_links['apple_store_url_status']) && $landing_page_links['apple_store_url_status'] == '1')
                                         <a href="{{ $landing_page_links['apple_store_url'] }}" class="dropdown-item">
                                             <img src="{{ asset('/public/assets/landing/img/apple-store.png') }}"
                                                 alt="">
-                                            {{ translate('apple_store') }}
+                                            App Store
                                         </a>
                                     @endif
                                 </div>
@@ -2068,13 +2068,13 @@
                         <div class="text-center">
                             <img src="{{ asset('/public/assets/landing/img/welcome.svg') }}" class="mw-100 mb-3"
                                 alt="">
-                            <h5 class="mb-3">{{ translate('Welcome_to') }} {{ $business_name }}!</h5>
+                            <h5 class="mb-3">კეთილი იყოს შენი მობრძანება {{ $business_name }}-ში!</h5>
                             <p class="m-0 mb-4">
-                                {{ translate('Thanks for joining us! Your registration is under review. Hang tight, we’ll notify you once approved!') }}
+                                მადლობა რეგისტრაციისთვის. შენი განაცხადი გადამოწმების პროცესშია და დამტკიცებისთანავე შეგატყობინებთ.
                             </p>
                             <button type="button" class="border-0 outline-0 shadow-none cmn--btn"
                                 data-bs-dismiss="modal">
-                                {{ translate('okay') }}
+                                გასაგებია
                             </button>
                         </div>
                     </div>

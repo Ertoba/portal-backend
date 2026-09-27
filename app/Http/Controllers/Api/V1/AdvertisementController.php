@@ -1,6 +1,7 @@
 <?php
 namespace App\Http\Controllers\Api\V1;
 
+use App\CentralLogics\Helpers;
 use App\Models\Advertisement;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
@@ -10,6 +11,8 @@ class AdvertisementController extends Controller
 {
     public function get_adds(Request $request)
     {
+
+        Helpers::setZoneIds($request);
         $zone_ids= $request->header('zoneId');
         $zone_ids=  json_decode($zone_ids, true)?? [];
 

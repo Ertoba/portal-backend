@@ -6,6 +6,7 @@ use App\CentralLogics\Helpers;
 use App\CentralLogics\CouponLogic;
 use App\Http\Controllers\Controller;
 use App\Models\Coupon;
+use App\Models\Order;
 use App\Models\Store;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -46,6 +47,13 @@ class CouponController extends Controller
                 else if($coupon->coupon_type == 'zone_wise')
                 {
                     if(count(array_intersect(json_decode($zone_id, true), json_decode($coupon->data,true))))
+                    {
+                        $data[] = $coupon;
+                    }
+                }
+                else if($coupon->coupon_type == 'first_order')
+                {
+                    if($customer_id  && Order::where('user_id', $customer_id)->where('is_guest', '0')->doesntExist())
                     {
                         $data[] = $coupon;
                     }

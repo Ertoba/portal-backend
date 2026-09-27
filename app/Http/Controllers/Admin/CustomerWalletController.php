@@ -9,6 +9,7 @@ use App\Models\WalletTransaction;
 use App\CentralLogics\CustomerLogic;
 use App\Exports\CustomerWalletTransactionExport;
 use App\Http\Controllers\Controller;
+use App\Models\User;
 use Brian2694\Toastr\Facades\Toastr;
 use Illuminate\Support\Facades\Mail;
 use Maatwebsite\Excel\Facades\Excel;
@@ -72,7 +73,14 @@ class CustomerWalletController extends Controller
         if ($request->search) {
             $key = explode(' ', $request['search']);
         }
-        $data = WalletTransaction::selectRaw('sum(credit+admin_bonus) as total_credit, sum(debit) as total_debit, SUM(IF(transaction_type = "add_fund_by_admin", credit, 0)) as add_fund_total,SUM(IF(transaction_type = "order_refund", credit, 0)) as order_refund_total,SUM(IF(transaction_type = "loyalty_point", credit, 0)) as loyalty_point_total,SUM(IF(transaction_type = "order_place", credit, 0)) as order_place_total')
+        $data = WalletTransaction::selectRaw('sum(credit+admin_bonus) as total_credit, sum(debit) as total_debit,
+         SUM(IF(transaction_type = "add_fund_by_admin", credit + admin_bonus, 0)) as add_fund_total,
+         SUM(IF(transaction_type = "add_fund", credit + admin_bonus, 0)) as add_fund,
+         SUM(IF(transaction_type = "order_refund", credit, 0)) as order_refund_total,
+         SUM(IF(transaction_type = "loyalty_point", credit, 0)) as loyalty_point_total,
+         SUM(IF(transaction_type = "CashBack", credit + admin_bonus, 0)) as CashBack,
+         SUM(IF(transaction_type = "referrer", credit + admin_bonus, 0)) as referrer,
+         SUM(IF(transaction_type = "order_place", credit, 0)) as order_place_total')
             ->when(($request->from && $request->to),function($query)use($request){
                 $query->whereBetween('created_at', [$request->from.' 00:00:00', $request->to.' 23:59:59']);
             })
@@ -282,5 +290,19 @@ class CustomerWalletController extends Controller
         session()->put('to_date', date('Y-m-d', strtotime($request['to'])));
         return back();
     }
+
+
+    public function getUserWallet(Request $request){
+
+
+        if($request->customer_id){
+            $user= User::where('id', $request->customer_id)->first();
+            return response()->json(Helpers::format_currency($user?->wallet_balance??0),200);
+        }
+
+        return response()->json(Helpers::format_currency(0),200);
+    }
+
+
 
 }

@@ -46,6 +46,10 @@
 
             <!-- Card -->
             <div class="auth-wrapper-form">
+                <div class="d-sm-none flex-grow-1 mb-2">
+                    <img class="w-50px img-fluid" class="onerror-image"  data-onerror-image="{{asset('/public/assets/admin/img/favicon.png')}}"
+                        src="{{\App\CentralLogics\Helpers::get_full_url('business', $store_logo?->value?? '', $store_logo?->storage[0]?->value ?? 'public','favicon')}}"  alt="public/img">
+                </div>
                 <!-- Form -->
                 <form class="" action="{{route('login_post')}}" method="post" id="form-id">
                     @csrf
@@ -110,50 +114,19 @@
                         <!-- forget password -->
                         <div class="form-group" id="forget-password" style="display: {{ $role == 'admin' ? '' : 'none' }};">
                             <div class="custom-control">
-                                <span type="button" data-toggle="modal" class="text-primary" data-target="#forgetPassModal">{{ translate('Forget Password') }}?</span>
+                                <span type="button" data-toggle="modal" class="text-primary text-hover--primary" data-target="#forgetPassModal">{{ translate('Forget Password') }}?</span>
                             </div>
                         </div>
                         <!-- End forget password -->
                         <div class="form-group" id="forget-password1" style="display: {{ $role == 'vendor' ? '' : 'none' }};">
                             <div class="custom-control">
-                                <span type="button" data-toggle="modal" class="text-primary" data-target="#forgetPassModal1">{{ translate('messages.Forget Password') }}?</span>
+                                <span type="button" data-toggle="modal" class="text-primary text-hover--primary" data-target="#forgetPassModal1">{{ translate('messages.Forget Password') }}?</span>
                             </div>
                         </div>
                         <!-- End forget password -->
                     </div>
 
-                    @php($recaptcha = \App\CentralLogics\Helpers::get_business_settings('recaptcha'))
-                    @if(isset($recaptcha) && $recaptcha['status'] == 1)
-                        <input type="hidden" name="g-recaptcha-response" id="g-recaptcha-response">
-
-                        <input type="hidden" name="set_default_captcha" id="set_default_captcha_value" value="0" >
-                        <div class="row p-2 d-none" id="reload-captcha">
-                            <div class="col-6 pr-0">
-                                <input type="text" class="form-control form-control-lg border-0" name="custome_recaptcha"
-                                        id="custome_recaptcha" required placeholder="{{translate('Enter recaptcha value')}}" autocomplete="off" value="{{env('APP_MODE')=='dev'? session('six_captcha'):''}}">
-                            </div>
-                            <div class="col-6 bg-white rounded d-flex">
-                                <img src="<?php echo $custome_recaptcha->inline(); ?>" class="rounded w-100" />
-                                <div class="p-3 pr-0 capcha-spin reloadCaptcha">
-                                    <i class="tio-cached"></i>
-                                </div>
-                            </div>
-                        </div>
-
-                        @else
-                        <div class="row p-2" id="reload-captcha">
-                            <div class="col-6 pr-0">
-                                <input type="text" class="form-control form-control-lg border-0" name="custome_recaptcha"
-                                        id="custome_recaptcha" required placeholder="{{translate('Enter recaptcha value')}}" autocomplete="off" value="{{env('APP_MODE')=='dev'? session('six_captcha'):''}}">
-                            </div>
-                            <div class="col-6 bg-white rounded d-flex">
-                                <img src="<?php echo $custome_recaptcha->inline(); ?>" class="rounded w-100" />
-                                <div class="p-3 pr-0 capcha-spin reloadCaptcha">
-                                    <i class="tio-cached"></i>
-                                </div>
-                            </div>
-                        </div>
-                    @endif
+                    @include('admin-views.partials._recaptcha')
 
                     <button type="submit" class="btn btn-lg btn-block btn--primary mt-xxl-3" id="signInBtn">{{translate('messages.login')}}</button>
                 </form>
@@ -332,28 +305,6 @@
             $.HSCore.components.HSValidation.init($(this));
         });
     });
-
-
-$(document).on('click','.reloadCaptcha', function(){
-    $.ajax({
-        url: "{{ route('reload-captcha') }}",
-        type: "GET",
-        dataType: 'json',
-        beforeSend: function () {
-            $('#loading').show()
-            $('.capcha-spin').addClass('active')
-        },
-        success: function(data) {
-            $('#reload-captcha').html(data.view);
-        },
-        complete: function () {
-            $('#loading').hide()
-            $('.capcha-spin').removeClass('active')
-        }
-    });
-});
-
-
     $(document).ready(function() {
         $('.onerror-image').on('error', function() {
             let img = $(this).data('onerror-image')
@@ -361,14 +312,37 @@ $(document).on('click','.reloadCaptcha', function(){
         });
     });
 </script>
+
+<script>
+    $(document).on('click', '.reloadCaptcha', function () {
+        $.ajax({
+            url: "{{ route('reload-captcha') }}",
+            type: "GET",
+            dataType: 'json',
+            beforeSend: function () {
+                $('#loading').show()
+                $('.capcha-spin').addClass('active')
+            },
+            success: function (data) {
+                $('#reload-captcha').html(data.view);
+            },
+            complete: function () {
+                $('#loading').hide()
+                $('.capcha-spin').removeClass('active')
+            }
+        });
+    });
+
+</script>
+
 @if(isset($recaptcha) && $recaptcha['status'] == 1)
     <script src="https://www.google.com/recaptcha/api.js?render={{$recaptcha['site_key']}}"></script>
 @endif
 @if(isset($recaptcha) && $recaptcha['status'] == 1)
     <script>
-        $(document).ready(function() {
+        $(document).ready(function () {
             $('#signInBtn').click(function (e) {
-                if( $('#set_default_captcha_value').val() == 1){
+                if ($('#set_default_captcha_value').val() == 1) {
                     $('#form-id').submit();
                     return true;
                 }
@@ -381,8 +355,8 @@ $(document).on('click','.reloadCaptcha', function(){
                     return;
                 }
                 grecaptcha.ready(function () {
-                    grecaptcha.execute('{{$recaptcha['site_key']}}', {action: 'submit'}).then(function (token) {
-                        $('#g-recaptcha-response').value = token;
+                    grecaptcha.execute('{{$recaptcha['site_key']}}', { action: 'submit' }).then(function (token) {
+                        $('#g-recaptcha-response').val(token);
                         $('#form-id').submit();
                     });
                 });
@@ -403,6 +377,7 @@ $(document).on('click','.reloadCaptcha', function(){
     </script>
 @endif
 {{-- recaptcha scripts end --}}
+
 
 
 

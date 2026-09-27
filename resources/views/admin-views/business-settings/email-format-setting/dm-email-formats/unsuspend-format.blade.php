@@ -32,8 +32,8 @@
                     <div class="card-body">
                         <div class="maintainance-mode-toggle-bar d-flex flex-wrap justify-content-between border rounded align-items-center p-2">
                             <h5 class="text-capitalize m-0 text--primary pl-2">
-                                {{translate('Send_Mail_On_Deliveryman’s_Account_Unsuspension')}}
-                                <span class="input-label-secondary" data-toggle="tooltip" data-placement="right" data-original-title="{{ translate('If_a_Store_or_Admin_unsuspends_a_Deliveryman’s_account,_he_or_she_will_receive_an_automated_email.')}}">
+                                {{ \App\CentralLogics\Helpers::formatDeliverymanText(translate('Send_Mail_On_Deliveryman’s_Account_Unsuspension'), null, true) }}
+                                <span class="input-label-secondary" data-toggle="tooltip" data-placement="right" data-original-title="{{ \App\CentralLogics\Helpers::formatDeliverymanText(translate('If_a_Store_or_Admin_unsuspends_a_Deliveryman’s_account,_he_or_she_will_receive_an_automated_email.'), null, true)}}">
                                     <img src="{{ asset('/public/assets/admin/img/info-circle.svg') }}" alt="{{ translate('messages.show_hide_food_menu') }}">
                                 </span>
                             </h5>
@@ -45,8 +45,8 @@
                                 data-image-off="{{asset('/public/assets/admin/img/modal')}}/place-order-off.png"
                                 data-title-on="{{translate('Want_to_enable_Suspend_mail?')}}"
                                 data-title-off="{{translate('Want_to_disable_Suspend_mail?')}}"
-                                data-text-on="<p>{{translate('If_enabled,_deliverymen_will_receive_an_email_for_account_unsuspension')}}</p>"
-                                data-text-off="<p>{{translate('If_disabled,_deliverymen_will_not_receive_an_email_for_account_unsuspension.')}}</p>"
+                                data-text-on="<p>{{ \App\CentralLogics\Helpers::formatDeliverymanText(translate('If_enabled,_deliverymen_will_receive_an_email_for_account_unsuspension'), null, true) }}</p>"
+                                data-text-off="<p>{{ \App\CentralLogics\Helpers::formatDeliverymanText(translate('If_disabled,_deliverymen_will_not_receive_an_email_for_account_unsuspension.'), null, true) }}</p>"
                                 id="mail-status" {{$mail_status == '1'?'checked':''}}>
 
                                 <span class="toggle-switch-label text mb-0">
@@ -352,4 +352,3 @@
     <script src="{{asset('public/assets/admin/js/view-pages/email-templates.js')}}"></script>
     <!-- Email Template End-->
 @endpush
-

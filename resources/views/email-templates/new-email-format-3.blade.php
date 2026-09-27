@@ -468,6 +468,18 @@ $site_direction = \App\CentralLogics\Helpers::system_default_direction();
                                                                                 {{ \App\CentralLogics\Helpers::format_currency($order->coupon_discount_amount) }}
                                                                             </td>
                                                                         </tr>
+
+                                                                        @if ($order->extra_discount_amount > 0)
+                                                                          <tr>
+                                                                            <td style="width: 40%"></td>
+                                                                            <td class="p-1 px-3">
+                                                                                {{ translate('messages.extra_discount') }}
+                                                                            </td>
+                                                                            <td class="text-right p-1 px-3">
+                                                                                {{ \App\CentralLogics\Helpers::format_currency($order->extra_discount_amount) }}
+                                                                            </td>
+                                                                        </tr>
+                                                                        @endif
                                                                         @if ($order?->ref_bonus_amount > 0)
                                                                             <tr>
                                                                                 <td style="width: 40%"></td>

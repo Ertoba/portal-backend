@@ -4,6 +4,10 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
 @endpush
 
+@section('employee_list')
+active
+@endsection
+
 @section('content')
 <div class="content container-fluid">
     <!-- Page Heading -->
@@ -86,7 +90,7 @@
                             data-toggle="tooltip" data-placement="right"
                             data-original-title="{{ translate('messages.Required.')}}"> *
                             </span> </label>
-                                <input type="number" value="{{$employee['phone']}}" required name="phone" class="form-control" id="phone"
+                                <input type="tel" value="{{$employee['phone']}}" required name="phone" class="form-control" id="phone"
                                         placeholder="{{ translate('messages.Ex:') }} +88017********">
                             </div>
                         </div>

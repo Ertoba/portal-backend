@@ -19,6 +19,7 @@
         <form class="validate-form global-ajax-form" action="{{route('admin.users.delivery-man.update',[$deliveryMan['id']])}}" method="post"
                 enctype="multipart/form-data">
             @csrf
+            <input type="hidden" name="serve_for[]" value="delivery">
             <div class="card mb-20">
                 <div class="card-header">
                    <div>
@@ -28,7 +29,7 @@
                         <p class="mb-0 fs-12">
                             {{ translate('Here you setup your all business information.') }}
                         </p>
-                   </div>                    
+                   </div>
                 </div>
                 <div class="card-body">
                     <div class="row g-4">
@@ -88,7 +89,7 @@
                                                         <div class="form-group mb-0">
                                                             <label class="input-label" for="exampleFormControlInput1">{{translate('messages.Delivery zone')}} <span class="form-label-secondary text-danger"
                                                                 data-toggle="tooltip" data-placement="right"
-                                                                data-original-title="{{ translate('messages.Required.')}}"> 
+                                                                data-original-title="{{ translate('messages.Required.')}}">
                                                                   <i class="tio-info text-muted"></i>
                                                                 *
                                                                 </span>
@@ -157,7 +158,7 @@
                         <p class="mb-0 fs-12">
                             {{ translate('Here you can manage time settings to match with your business criteria') }}
                         </p>
-                   </div> 
+                   </div>
                 </div>
                 <div class="card-body">
                     <div class="shadow-sm p-xxl-20 p-xl-3 p-2 bg-white mb-20">
@@ -168,7 +169,7 @@
                             <p class="mb-0 fs-12">
                                 {{ translate('Setup your business time zone and format from here') }}
                             </p>
-                        </div> 
+                        </div>
                         <div class="bg-light2 rounded p-xxl-20 p-xl-3 p-3 mb-20">
                             <div class="row g-3">
                                 <div class="col-sm-6 col-lg-6">
@@ -232,7 +233,7 @@
                                                        <a href="javascript:void(0)" style="right: 3px; top: 3px; background: transparent; border-radius: 3px; width: 30px; height: 30px; line-height: 30px; text-align: center; text-decoration: none; color: rgb(255, 7, 0); position: absolute !important;" data-key="{{ $key }}" data-img="{{ is_array($img) ? $img['img'] : $img }}" class="spartan_remove_row remove-existing-image-btn"><i class="tio-add-to-trash"></i></a>
                                                     </div>
                                                 </label>
-                                                
+
                                         </div>
                                     @endforeach
                                 </div>
@@ -250,7 +251,7 @@
                                         </button>
                                     </div>
                                 </div>
-                            </div> 
+                            </div>
                         </div>
 
                     </div>
@@ -262,7 +263,7 @@
                             <p class="mb-0 fs-12">
                                 {{ translate('Setup your business time zone and format from here') }}
                             </p>
-                        </div> 
+                        </div>
                         <div class="bg-light2 rounded p-xxl-20 p-xl-3 p-3">
                             <div class="row g-3">
                                 <div class="col-sm-4">
@@ -330,7 +331,7 @@
                     </div>
                 </div>
             </div>
-            
+
             <div class="btn--container justify-content-end mt-20">
                 <button type="reset" id="reset_btn" class="btn btn--reset min-w-120px">{{translate('messages.reset')}}</button>
                     <button type="submit" class="btn btn--primary min-w-120px"><i class="tio-save"></i> {{translate('messages.Save Information')}}</button>
@@ -344,21 +345,8 @@
     <script src="{{asset('public/assets/admin/js/spartan-multi-image-picker.js')}}"></script>
 <script>
     "use strict";
-        function readURL(input) {
-            if (input.files && input.files[0]) {
-                let reader = new FileReader();
+   
 
-                reader.onload = function (e) {
-                    $('#viewer').attr('src', e.target.result);
-                }
-
-                reader.readAsDataURL(input.files[0]);
-            }
-        }
-
-        $("#customFileEg1").change(function () {
-            readURL(this);
-        });
         $(function () {
             initSpatanImagePicker();
         });
@@ -367,9 +355,9 @@
             let existingImages = $("#coba .existing_image").detach();
 
             let newCoba = $('<div class="tabs-inner pt-3 d-flex gap-3 identity_documnet_wrap" id="coba"></div>');
-            
+
             $("#coba").replaceWith(newCoba);
-            
+
             newCoba.append(existingImages);
 
             let existingCount = existingImages.length;

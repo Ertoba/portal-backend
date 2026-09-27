@@ -13,7 +13,7 @@ class AppServiceProvider extends ServiceProvider
 {
     use AddonHelper;
     /**
-     * Register any application services.
+     * Register any application services. 
      *
      * @return void
      */
@@ -29,6 +29,16 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot()
     {
+
+        //TODO: need to remove after 3.8 development
+        if (app()->environment('local')) {
+            if (request()->header('x-forwarded-proto') === 'https' || request()->getScheme() === 'https') {
+                \URL::forceScheme('https');
+            }
+            if(request()->header('x-forwarded-host')) {
+                \URL::forceRootUrl('https://' . request()->header('x-forwarded-host'));
+            }
+        }
 
         try
         {

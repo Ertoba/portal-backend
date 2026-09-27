@@ -442,25 +442,61 @@ class POSController extends Controller
     {
         session()->forget('cart');
         session()->forget('tax_amount');
+        session()->forget('extra_discount_amount');
+        session()->forget('extra_discount_type');
+        session()->forget('extra_discount');
         session()->forget('tax_included');
         session()->forget('address');
         return response()->json([],200);
     }
 
-    public function update_tax(Request $request)
-    {
-        $cart = $request->session()->get('cart', collect([]));
-        $cart['tax'] = $request->tax;
-        $request->session()->put('cart', $cart);
-        return back();
-    }
+    // public function update_tax(Request $request)
+    // {
+    //     $cart = $request->session()->get('cart', collect([]));
+    //     $cart['tax'] = $request->tax;
+    //     $request->session()->put('cart', $cart);
+    //     return back();
+    // }
 
     public function update_discount(Request $request)
     {
-        $cart = $request->session()->get('cart', collect([]));
-        $cart['discount'] = $request->discount;
-        $cart['discount_type'] = $request->type;
-        $request->session()->put('cart', $cart);
+        $subtotal = 0;
+        $addon_price = 0;
+        $discount_on_product = 0;
+
+        $cart = session()->get('cart', []);
+
+        foreach ($cart as $cartItem) {
+
+            if (is_array($cartItem)) {
+
+                $subtotal += $cartItem['price'] * $cartItem['quantity'];
+                $addon_price += $cartItem['addon_price'] ?? 0;
+                $discount_on_product += ($cartItem['discount'] ?? 0) * $cartItem['quantity'];
+            }
+        }
+
+        // Base total (items + addons - product discount)
+        $total = ($subtotal + $addon_price) - $discount_on_product;
+
+        // Add delivery fee
+        $delivery_fee = session()->get('address')['delivery_fee'] ?? 0;
+        $total += $delivery_fee;
+
+        // Add tax if not included
+        $tax_amount = session()->get('tax_amount') ?? 0;
+        $tax_included = session()->get('tax_included') ?? 0;
+
+        if ($tax_included != 1) {
+            $total += $tax_amount;
+        }
+
+        if($total < $request->discount){
+            Toastr::error(translate('The extra discount cannot exceed the total payable amount'));
+            return back();
+        }
+        $this->updateExtraDiscount($request->type,$request->discount);
+        $this->setPosCalculatedTax(Helpers::get_store_data());
         return back();
     }
 
@@ -502,7 +538,7 @@ class POSController extends Controller
             return back();
         }
 
-        if($request->session()->has('cart'))
+        if($request->session()->has('cart') && isset($request->session()->get('cart')[0]))
         {
             if(count($request->session()->get('cart')) < 1)
             {
@@ -637,8 +673,15 @@ class POSController extends Controller
         $product_data = $order_details['product_data'];
         $order_details = $order_details['order_details'];
 
-        $total_price = $product_price + $total_addon_price - $store_discount_amount - $flash_sale_admin_discount_amount - $flash_sale_vendor_discount_amount;
-        $totalDiscount = $store_discount_amount + $flash_sale_admin_discount_amount + $flash_sale_vendor_discount_amount;
+        $extra_discount_amount=session()->get('extra_discount_amount') ?? 0;
+
+
+
+        $total_price = $product_price + $total_addon_price - $store_discount_amount - $flash_sale_admin_discount_amount - $flash_sale_vendor_discount_amount - $extra_discount_amount;
+        $totalDiscount = $store_discount_amount + $flash_sale_admin_discount_amount + $flash_sale_vendor_discount_amount + $extra_discount_amount;
+
+        $order->extra_discount_amount = $extra_discount_amount;
+
         $finalCalculatedTax =  Helpers::getFinalCalculatedTax($order_details, $additionalCharges, $totalDiscount, $total_price, $store->id);
         $order->flash_admin_discount_amount = round($flash_sale_admin_discount_amount, config('round_up_to_digit'));
         $order->flash_store_discount_amount = round($flash_sale_vendor_discount_amount, config('round_up_to_digit'));
@@ -704,6 +747,9 @@ class POSController extends Controller
 
             session()->forget('cart');
             session()->forget('tax_amount');
+            session()->forget('extra_discount_amount');
+            session()->forget('extra_discount_type');
+            session()->forget('extra_discount');
             session()->forget('tax_include');
             session()->forget('address');
             session(['last_order' => $order->id]);

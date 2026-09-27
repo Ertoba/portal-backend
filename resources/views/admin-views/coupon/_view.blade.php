@@ -21,69 +21,7 @@
              </div>
          @endif
      </div>
-     <!-- <ul class="coupon-details-list d-flex flex-wrap bg-light rounded p-3 mb-3">
-         <li class="d-flex flex-sm-nowrap flex-wrap list-none li align-items-center gap-1">
-             <span class="fs-14 w-135px d-block min-w-135px">{{ translate('messages.coupon_type') }} </span>
-             <span>:</span>
-             <span class="fs-14 text-title">{{ translate($coupon['coupon_type']) }}</span>
-         </li>
-         @if ($coupon['coupon_type'] == 'store_wise')
-             <li class="d-flex flex-sm-nowrap flex-wrap list-none align-items-center gap-1">
-                 <span class="fs-14 w-135px d-block min-w-135px">{{ translate('Selected Store') }} </span>
-                 <span>:</span>
-                 <span class="fs-14 text-title">{{ $coupon?->store?->name }}</span>
-             </li>
-         @elseif(count($zoneData) > 0)
-             <li class="d-flex flex-sm-nowrap flex-wrap list-none align-items-center gap-1">
-                 <span class="fs-14 w-135px d-block min-w-135px">{{ translate('Selected Zones') }} </span>
-                 <span>:</span>
-                 <span class="fs-14 text-title">
-                     @foreach ($zoneData ?? [] as $zone)
-                         {{ $zone->name }} {{ !$loop->last ? ',' : '' }}
-                     @endforeach
-                 </span>
-             </li>
 
-
-         @endif
-
-         <li class="d-flex flex-sm-nowrap flex-wrap list-none align-items-center gap-1">
-             <span class="fs-14 w-135px d-block min-w-135px">{{ translate('Limit for same user') }} </span>
-             <span>:</span>
-             <span class="fs-14 text-title">{{ $coupon['limit'] }}</span>
-         </li>
-         <li class="d-flex flex-sm-nowrap flex-wrap list-none align-items-center gap-1">
-             <span
-                 class="fs-14 w-135px d-block min-w-135px">{{ translate('Max discount') }}({{ \App\CentralLogics\Helpers::currency_symbol() }})
-             </span>
-             <span>:</span>
-             <span
-                 class="fs-14 text-title">{{ \App\CentralLogics\Helpers::format_currency($coupon['max_discount']) }}</span>
-         </li>
-         <li class="d-flex flex-sm-nowrap flex-wrap list-none align-items-center gap-1">
-             <span
-                 class="fs-14 w-135px d-block min-w-135px">{{ translate('Min purchase') }}({{ \App\CentralLogics\Helpers::currency_symbol() }})
-             </span>
-             <span>:</span>
-             <span
-                 class="fs-14 text-title">{{ \App\CentralLogics\Helpers::format_currency($coupon['min_purchase']) }}</span>
-         </li>
-         <li class="d-flex flex-sm-nowrap flex-wrap list-none gap-1">
-             <span class="fs-14 w-135px d-block min-w-135px">{{ translate('selected customer') }} </span>
-             <span>:</span>
-             <span class="fs-14 text-title">
-                 @if ($selectedCustomers == 'all')
-                     {{ translate('All customers') }}
-                 @else
-                     @forelse ($selectedCustomers??[] as $customer)
-                         {{ $customer->f_name }} {{ $customer->l_name }} {{ !$loop->last ? ',' : '' }}
-                     @empty
-                         {{ translate('All customers') }}
-                     @endforelse
-                 @endif
-             </span>
-         </li>
-     </ul> -->
      <ul class="coupon-details-list d-flex flex-md-nowrap flex-wrap bg-light rounded p-3 mb-3">
         <div class="d-flex flex-column gap-2">
             <li class="d-flex flex-sm-nowrap flex-wrap list-none li align-items-center gap-1">
@@ -107,10 +45,10 @@
                         @endforeach
                     </span>
                 </li>
-   
-   
+
+
             @endif
-   
+
             <li class="d-flex flex-sm-nowrap flex-wrap list-none align-items-center gap-1">
                 <span class="fs-14 w-135px d-block min-w-135px">{{ translate('Limit for same user') }} </span>
                 <span>:</span>
@@ -128,7 +66,7 @@
             </li>
             <li class="d-flex flex-sm-nowrap flex-wrap list-none align-items-center gap-1">
                 <span
-                    class="fs-14 w-135px d-block min-w-135px">{{ translate('Min purchase') }}({{ \App\CentralLogics\Helpers::currency_symbol() }})
+                    class="fs-14 w-135px d-block min-w-135px">{{ Config::get('module.current_module_type') == 'rental' ?  translate('Min Trip Amount') : translate('Min purchase') }}({{ \App\CentralLogics\Helpers::currency_symbol() }})
                 </span>
                 <span>:</span>
                 <span

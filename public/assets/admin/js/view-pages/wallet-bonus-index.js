@@ -8,12 +8,14 @@ $(document).ready(function() {
             $('#maximum_bonus_amount').val(null);
             $('#percentage').addClass('d-none');
             $('#cuttency_symbol').removeClass('d-none');
+            $('#bonus_amount').prop('max', 999999999999.99);
         }
         else
         {
             $('#maximum_bonus_amount').removeAttr("readonly");
             $('#percentage').removeClass('d-none');
             $('#cuttency_symbol').addClass('d-none');
+            $('#bonus_amount').prop('max', 100);
         }
     });
 

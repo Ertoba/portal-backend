@@ -62,34 +62,60 @@
                     <div class="card h-100">
                         <div class="card-body d-flex flex-wrap align-items-center">
                             <div class="w-100 d-flex gap-3 flex-wrap flex-lg-nowrap">
-                                <div class="flex-grow-1 mx-auto overflow-x-auto scrollbar-primary">
-                                    <label class="text-dark d-block mb-4 mb-xl-5">
-                                        {{ translate('messages.item_image') }}
-                                        <small class="">( {{ translate('messages.ratio') }} 1:1 )</small>
-                                    </label>
-                                    <div class="d-flex __gap-12px __new-coba overflow-x-auto pb-2" id="coba"></div>
-                                </div>
 
                                 <div class="flex-grow-1 mx-auto pb-2 flex-shrink-0">
-                                    <label class="text-dark d-block mb-4 mb-xl-5">
-                                        {{ translate('messages.item_thumbnail') }}
-                                        @if (Config::get('module.current_module_type') == 'food')
-                                            <small class="">( {{ translate('messages.ratio') }} 1:1 )</small>
-                                        @else
-                                            <small class="text-danger">* ( {{ translate('messages.ratio') }} 1:1 )</small>
-                                        @endif
-                                    </label>
-                                    <label class="d-inline-block m-0 position-relative error-wrapper">
-                                        <img class="img--176 border" id="viewer"
-                                            src="{{ asset('public/assets/admin/img/upload-img.png') }}" alt="thumbnail" />
-                                        <div class="icon-file-group">
-                                            <div class="icon-file"><input type="file" name="image" id="customFileEg1"
-                                                    class="custom-file-input d-none"
-                                                    accept=".webp, .jpg, .png, .webp, .jpeg, .gif, .bmp, .tif, .tiff|image/*" required>
-                                                <i class="tio-edit"></i>
+                                    <div class="text-center">
+                                        <div class="mb-1">
+                                            <h4 class="mb-1">{{ translate('Item_Thumbnail') }}
+                                                @if (Config::get('module.current_module_type') != 'food')
+                                                <span class="text-danger">*</span>
+                                                @endif
+                                                </h4>
+                                        </div>
+                                        <div class="mx-auto text-center">
+                                            @include('admin-views.partials._image-uploader', [
+                                                    'id' => 'image-input',
+                                                    'name' => 'image',
+                                                    'ratio' => '1:1',
+                                                    'isRequired' =>Config::get('module.current_module_type') == 'food' ?  false : true,
+                                                    'existingImage' => null,
+                                                    'imageExtension' => IMAGE_EXTENSION,
+                                                    'imageFormat' => IMAGE_FORMAT,
+                                                    'maxSize' => MAX_FILE_SIZE,
+                                                    ])
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class=" flex-grow-1 mx-auto overflow-x-auto scrollbar-primary">
+                                <div class="mb-0">
+                                    <h4 class="mb-1">
+                                        {{ translate('messages.item_image') }}
+                                    </h4>
+                                    <p class="mb-2 fs-12 gray-dark">
+                                            {{ translate((IMAGE_FORMAT) . '. Less Than ' . MAX_FILE_SIZE . 'MB')}} <span
+                                                class="font-medium text-title">{{ translate('(1:1)')}}</span>
+                                        </p>
+                                </div>
+                                <div class="form-group m-0">
+                                    <div class="identity_documnet_body multiple_coba-img tabs-slide-wrap position-relative">
+                                        <div class="tabs-inner pt-3 d-flex gap-3 identity_documnet_wrap" id="coba"></div>
+                                        <div class="arrow-area">
+                                            <div class="button-prev align-items-center">
+                                                <button type="button"
+                                                    class="btn btn-click-prev mr-auto border-0 btn-primary rounded-circle fs-12 p-2 d-center">
+                                                    <i class="tio-chevron-left fs-24"></i>
+                                                </button>
+                                            </div>
+                                            <div class="button-next align-items-center pt-5">
+                                                <button type="button"
+                                                    class="btn btn-click-next ml-auto border-0 btn-primary rounded-circle fs-12 p-2 d-center">
+                                                    <i class="tio-chevron-right fs-24"></i>
+                                                </button>
                                             </div>
                                         </div>
-                                    </label>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -121,7 +147,7 @@
             </div>
         </form>
 
-        
+
     </div>
 
     <div class="modal" id="food-modal">
@@ -175,9 +201,9 @@
     <script src="{{ asset('public/assets/admin/js/AI/products/general-setup-autofill.js') }}"></script>
     <script src="{{ asset('public/assets/admin/js/AI/products/product-others-autofill.js') }}"></script>
     @if (Config::get('module.current_module_type') == 'food')
-    <script src="{{ asset('public/assets/admin/js/AI/products/variation-setup-auto-fill.js') }}"></script>
+        <script src="{{ asset('public/assets/admin/js/AI/products/variation-setup-auto-fill.js') }}"></script>
     @else
-    <script src="{{ asset('public/assets/admin/js/AI/products/other-variation-setup-auto-fill.js') }}"></script>
+        <script src="{{ asset('public/assets/admin/js/AI/products/other-variation-setup-auto-fill.js') }}"></script>
     @endif
     <script src="{{ asset('public/assets/admin/js/AI/products/seo-section-autofill.js') }}"></script>
 
@@ -189,22 +215,6 @@
 
     <script>
         "use strict";
-
-        function validateImageSize(inputSelector, imageType = "Image", maxSizeMB = 2) {
-            let fileInput = $(inputSelector)[0];
-            if (fileInput && fileInput.files.length > 0) {
-                let fileSize = fileInput.files[0].size;
-                if (fileSize > maxSizeMB * 1024 * 1024) {
-                    toastr.error(`${imageType} size should not exceed ${maxSizeMB}MB`, {
-                        CloseButton: true,
-                        ProgressBar: true
-                    });
-                    return false;
-                }
-            }
-            return true;
-        }
-
 
         $(document).on('change', '#discount_type', function() {
             let data = document.getElementById("discount_type");
@@ -222,17 +232,13 @@
             });
 
 
-            // INITIALIZATION OF SELECT2
-            // =======================================================
-            $('.js-select2-custom').each(function() {
-                let select2 = $.HSCore.components.HSSelect2.init($(this));
-            });
+
         });
 
-            function add_new_option_button() {
-                $('#empty-variation').hide();
-                count++;
-                let add_option_view = `
+        function add_new_option_button() {
+            $('#empty-variation').hide();
+            count++;
+            let add_option_view = `
                                 <div class="__bg-F8F9FC-card view_new_option mb-2">
                                     <div>
                                         <div class="d-flex align-items-center justify-content-between mb-3">
@@ -251,9 +257,9 @@
                                             <div class="col-xl-4 col-lg-6">
                                                 <label for="">{{ translate('name') }}</label>
                                                 <input required name=options[` + count +
-                    `][name] class="form-control new_option_name" type="text" data-count="` +
-                    count +
-                    `">
+                `][name] class="form-control new_option_name" type="text" data-count="` +
+                count +
+                `">
                                             </div>
 
                                             <div class="col-xl-4 col-lg-6">
@@ -263,9 +269,9 @@
                                                     <div class="resturant-type-group px-0">
                                                         <label class="form-check form--check mr-2 mr-md-4">
                                                             <input class="form-check-input show_min_max" data-count="` +
-                    count + `" type="radio" value="multi"
+                count + `" type="radio" value="multi"
                                                             name="options[` + count + `][type]" id="type` + count +
-                    `" checked
+                `" checked
                                                             >
                                                             <span class="form-check-label">
                                                                 {{ translate('Multiple Selection') }}
@@ -275,7 +281,7 @@
                             <label class="form-check form--check mr-2 mr-md-4">
                                 <input class="form-check-input hide_min_max" data-count="` + count + `" type="radio" value="single"
                                 name="options[` + count + `][type]" id="type` + count +
-                    `"
+                `"
                                                             >
                                                             <span class="form-check-label">
                                                                 {{ translate('Single Selection') }}
@@ -289,12 +295,12 @@
                         <div class="col-6">
                             <label for="">{{ translate('Min') }}</label>
                                                         <input id="min_max1_` + count + `" required  name="options[` +
-                    count + `][min]" class="form-control" type="number" min="1">
+                count + `][min]" class="form-control" type="number" min="1">
                                                     </div>
                                                     <div class="col-6">
                                                         <label for="">{{ translate('Max') }}</label>
                                                         <input id="min_max2_` + count + `"   required name="options[` +
-                    count + `][max]" class="form-control" type="number" min="1">
+                count + `][max]" class="form-control" type="number" min="1">
                                                     </div>
                                                 </div>
                                             </div>
@@ -303,36 +309,37 @@
                                         <div id="option_price_` + count + `" >
                                             <div class="bg-white border rounded p-3 pb-0 mt-3">
                                                 <div  id="option_price_view_` + count +
-                    `">
+                `">
                                                     <div class="row g-3 add_new_view_row_class mb-3">
                                                         <div class="col-md-4 col-sm-6">
                                                             <label for="">{{ translate('Option_name') }}</label>
                                                             <input class="form-control" required type="text" name="options[` +
-                    count +
-                    `][values][0][label]" id="">
+                count +
+                `][values][0][label]" id="">
                                                         </div>
                                                         <div class="col-md-4 col-sm-6">
                                                             <label for="">{{ translate('Additional_price') }}</label>
                                                             <input class="form-control" required type="number" min="0" step="0.01" name="options[` +
-                    count + `][values][0][optionPrice]" id="">
+                count + `][values][0][optionPrice]" id="">
                                                         </div>
                                                     </div>
                                                 </div>
                                                 <div class="row mt-3 p-3 mr-1 d-flex "  id="add_new_button_` + count +
-                    `">
+                `">
                                                     <button type="button" class="btn btn--primary btn-outline-primary add_new_row_button" data-count="` +
-                    count + `">{{ translate('Add_New_Option') }}</button>
+                count + `">{{ translate('Add_New_Option') }}</button>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
                                 </div>`;
 
-                $("#add_new_option").append(add_option_view);
+            $("#add_new_option").append(add_option_view);
 
 
 
-            }
+        }
+
         function add_new_row_button(data) {
             count = data;
             countRow = 1 + $('#option_price_view_' + data).children('.add_new_view_row_class').length;
@@ -503,7 +510,7 @@
 
         $('#store_id').select2({
             ajax: {
-                url: '{{ url('/') }}/admin/store/get-stores',
+                url: '{{ route('admin.store.get-stores') }}',
                 data: function(params) {
                     return {
                         q: params.term, // search term
@@ -647,7 +654,7 @@
         $('#item_form').on('submit', function(e) {
             $('#submitButton').attr('disabled', true);
             e.preventDefault();
-            if(typeof FormValidation != 'undefined' && !FormValidation.validateForm(this)) {
+            if (typeof FormValidation != 'undefined' && !FormValidation.validateForm(this)) {
                 return false;
             }
 
@@ -656,21 +663,6 @@
                 return false;
             }
 
-            if (!validateImageSize('#customFileEg1', "Item image")) {
-                return;
-            }
-
-            let fileInput = $('#customFileEg1')[0];
-            if (fileInput.files.length > 0) {
-                let fileSize = fileInput.files[0].size;
-                if (fileSize > 1024 * 1024) {
-                    toastr.error('Image size should not exceed 2MB', {
-                        CloseButton: true,
-                        ProgressBar: true
-                    });
-                    return;
-                }
-            }
 
             let formData = new FormData(this);
             $.ajaxSetup({
@@ -715,41 +707,39 @@
             $("#coba").spartanMultiImagePicker({
                 fieldName: 'item_images[]',
                 maxCount: 5,
-                rowHeight: '176px !important',
-                groupClassName: 'spartan_item_wrapper min-w-176px max-w-176px',
-                maxFileSize: 1024 * 1024 * 2,
+                rowHeight: '120px',
+                groupClassName: 'spartan_item_wrapper size--md',
+                maxFileSize: {{ MAX_FILE_SIZE }} * 1024 * 1024,
                 placeholderImage: {
-                    image: "{{ asset('public/assets/admin/img/upload-img.png') }}",
-                    width: '176px'
+                    image: '{{ asset('public/assets/admin/img/400x400/coba-placeholder.png') }}',
+                    width: '100%'
                 },
                 dropFileLabel: "Drop Here",
                 onAddRow: function(index, file) {
-                    setTimeout(function() {
-                        let $newInput = $("#coba .spartan_item_wrapper").last();
-                        if ($newInput.length) {
-                            $newInput[0].scrollIntoView({
-                                behavior: "smooth",
-                                inline: "end",
-                                block: "nearest"
-                            });
-                        }
-                    }, 50);
+
+                },
+                onRenderedPreview: function(index) {
+
+                },
+                onRemoveRow: function(index) {
+
                 },
                 onExtensionErr: function(index, file) {
-                    toastr.error("{{ translate('messages.please_only_input_png_or_jpg_type_file') }}", {
+                    toastr.error(
+                    '{{ translate('messages.please_only_input_png_or_jpg_type_file') }}', {
                         CloseButton: true,
                         ProgressBar: true
                     });
                 },
                 onSizeErr: function(index, file) {
-                    toastr.error("{{ translate('messages.file_size_too_big') }}", {
+                    toastr.error('{{ translate('messages.file_size_too_big') }}', {
                         CloseButton: true,
                         ProgressBar: true
                     });
                 }
             });
         }
-        
+
 
         $(function() {
             initImagePicker();
@@ -768,7 +758,6 @@
             $('#customer_choice_options').empty().trigger('change');
             $('#variant_combination').empty().trigger('change');
             $('#viewer').attr('src', "{{ asset('public/assets/admin/img/upload.png') }}");
-            $('#customFileEg1').val(null).trigger('change');
             $("#coba").empty();
             initImagePicker();
         })

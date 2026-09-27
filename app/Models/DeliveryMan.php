@@ -8,6 +8,16 @@ use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 use App\Scopes\ZoneScope;
+use Modules\RideShare\Entities\ReviewModule\RideReview;
+use Modules\RideShare\Entities\TripManagement\RideRequest;
+use Modules\RideShare\Entities\UserManagement\RiderDetail;
+use Modules\RideShare\Entities\UserManagement\RiderTimeLog;
+use Modules\RideShare\Entities\UserManagement\TimeTrack;
+use Modules\RideShare\Entities\UserManagement\UserLastLocation;
+use Modules\RideShare\Entities\UserManagement\UserLevel;
+use Modules\RideShare\Entities\UserManagement\UserLevelHistory;
+use Modules\RideShare\Entities\VehicleManagement\RiderVehicle;
+use Illuminate\Database\Eloquent\Builder;
 use App\Traits\DemoMaskable;
 
 class DeliveryMan extends Authenticatable
@@ -26,6 +36,8 @@ class DeliveryMan extends Authenticatable
         'ref_by'=>'integer',
         'loyalty_point'=>'float',
     ];
+
+    protected $guarded = [];
 
     protected $hidden = [
         'password',
@@ -76,7 +88,157 @@ class DeliveryMan extends Authenticatable
 
     public function vehicle()
     {
-        return $this->belongsTo(DMVehicle::class);
+        return $this->belongsTo(DMVehicle::class, 'vehicle_id')->withoutGlobalScope('delivery_only');
+    }
+
+    public function rider_vehicle()
+    {
+        return $this->hasOne(RiderVehicle::class, 'rider_id');
+    }
+
+    public function vehicleCategory()
+    {
+        return $this->hasOne(RiderVehicle::class, 'rider_id')->with('category');
+    }
+
+    public function riderDetails()
+    {
+        return $this->hasOne(RiderDetail::class, 'user_id', 'id');
+    }
+    public function driverTrips()
+    {
+        return $this->hasMany(RideRequest::class, 'driver_id');
+    }
+
+    public function todays_rides()
+    {
+        return $this->hasMany(RideRequest::class, 'driver_id')
+            ->whereHas('tripStatus', function ($query) {
+                $query->whereDate('accepted', now());
+            });
+    }
+
+    public function this_week_rides()
+    {
+        return $this->hasMany(RideRequest::class, 'driver_id')
+            ->whereHas('tripStatus', function ($query) {
+                $query->whereBetween('accepted', [
+                    Carbon::now()->startOfWeek(),
+                    Carbon::now()->endOfWeek()
+                ]);
+            });
+    }
+
+    public function this_month_rides()
+    {
+        return $this->hasMany(RideRequest::class, 'driver_id')
+            ->whereHas('tripStatus', function ($query) {
+                $query->whereBetween('accepted', [
+                    Carbon::now()->startOfMonth(),
+                    Carbon::now()->endOfMonth()
+                ]);
+            });
+    }
+    public function driverCompletedTrips()
+    {
+        return $this->hasMany(RideRequest::class, 'driver_id')->where('current_status', 'completed');
+    }
+    public function driverCancelledTrips()
+    {
+        return $this->hasMany(RideRequest::class, 'driver_id')->where('current_status', 'cancelled');
+    }
+
+    public function level()
+    {
+        return $this->belongsTo(UserLevel::class, 'user_level_id');
+    }
+
+    public function levelHistory()
+    {
+        return $this->hasMany(UserLevelHistory::class, 'user_id');
+    }
+
+    public function latestLevelHistory()
+    {
+        return $this->hasOne(UserLevelHistory::class, 'user_id')->latestOfMany();
+    }
+
+    public function givenReviews()
+    {
+        return $this->hasMany(RideReview::class, 'given_by')->where('review_for', CUSTOMER);
+    }
+
+    public function receivedReviews()
+    {
+        return $this->hasMany(RideReview::class, 'received_by')->where('review_for', DRIVER);
+    }
+
+    public function rideRating()
+    {
+        return $this->hasMany(RideReview::class, 'received_by')->where('review_for', DRIVER)
+        ->select(DB::raw('avg(rating) average, count(received_by) rating_count, received_by'))
+            ->groupBy('received_by');
+    }
+
+    public function getCombinedRatingAttribute()
+    {
+        $ride = DB::table('ride_reviews')
+            ->where('review_for', 'driver')
+            ->where('received_by', $this->id)
+            ->select('rating');
+
+        $dm = DB::table('d_m_reviews')
+            ->where('delivery_man_id', $this->id)
+            ->select('rating');
+
+        $union = $ride->unionAll($dm);
+
+        return DB::query()
+            ->fromSub($union, 'all_reviews')
+            ->selectRaw('AVG(rating) as average, COUNT(*) as total')
+            ->first();
+    }
+
+    public function lastLocations()
+    {
+        return $this->hasOne(UserLastLocation::class, 'user_id')->where('type', 'rider');
+    }
+
+    public function getDriverLastTrip()
+    {
+        return $this->driverTrips()
+            ->whereIn('current_status', DV_DELETE_TRIP_CURRENT_STATUS)->get();
+    }
+
+    public function getDriverOngoingTrip() {
+        return $this->driverTrips()
+            ->where('current_status', ONGOING)->with('coordinate')->first();
+    }
+
+    public function getDriverAcceptedTrip()
+    {
+        return $this->driverTrips()
+            ->where('current_status', ACCEPTED)->with('coordinate')->first();
+    }
+
+    public function driverDetails()
+    {
+        return $this->hasOne(RiderDetail::class, 'user_id');
+    }
+
+    public function latestTrack()
+    {
+        return $this->hasOne(TimeTrack::class, 'user_id')->latestOfMany();
+    }
+
+    public function timeTrack()
+    {
+        return $this->hasMany(TimeTrack::class, 'user_id');
+    }
+
+    public function timeLog()
+    {
+        return $this->hasMany(RiderTimeLog::class, 'rider_id');
     }
 
     public function wallet()
@@ -225,12 +387,23 @@ class DeliveryMan extends Authenticatable
         return $this->morphMany(Storage::class, 'data');
     }
 
+    public function scopeRider($query)
+    {
+        return $query->withoutGlobalScope('delivery_only')->where('is_ride', 1);
+    }
+
     protected static function booted()
     {
         static::addGlobalScope('storage', function ($builder) {
             $builder->with('storage');
         });
         static::addGlobalScope(new ZoneScope);
+
+        if(!request()->is('api/*') && !request()->is('deliveryman-earning-report-invoice/*') && addon_published_status('RideShare')){
+            static::addGlobalScope('delivery_only', function (Builder $builder) {
+                $builder->where('is_delivery', 1);
+            });
+        }
     }
 
     protected static function boot()

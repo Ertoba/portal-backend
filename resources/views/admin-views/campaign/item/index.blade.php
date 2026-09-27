@@ -129,7 +129,7 @@
                                     {{translate('messages.item_image')}}
                                     <small class="text-danger">* ( {{translate('messages.ratio')}} 1:1 )</small>
                                 </label>
-    
+
                                 <div id="image-viewer-section" class="text-center py-3 my-auto">
                                     <img class="img--120" id="viewer"
                                             src="{{asset('public/assets/admin/img/100x100/2.png')}}" alt="banner image"/>
@@ -479,6 +479,19 @@
     <script src="{{asset('public/assets/admin')}}/js/tags-input.min.js"></script>
     <script>
         "use strict";
+        $(document).ready(function(){
+            $('#date_from').attr('min',(new Date()).toISOString().split('T')[0]);
+            $('#date_to').attr('min',(new Date()).toISOString().split('T')[0]);
+        });
+
+        $("#date_from").on("change", function () {
+            $('#date_to').attr('min',$(this).val());
+        });
+
+        $("#date_to").on("change", function () {
+            $('#date_from').attr('max',$(this).val());
+        });
+        
         let module_data = "";
         let module_type = "";
         let element = "";
@@ -487,9 +500,20 @@
             $('#food_variation_section').hide();
         });
 
-        $('#choice_attributes').on('change', function () {
+
+        $('#choice_attributes').on('change', function() {
+
             $('#customer_choice_options').html(null);
-            $.each($("#choice_attributes option:selected"), function () {
+            $('#variant_combination').html(null);
+            $.each($("#choice_attributes option:selected"), function() {
+                if ($(this).val().length > 50) {
+                    toastr.error(
+                        '{{ translate('validation.max.string', ['attribute' => translate('messages.variation'), 'max' => '50']) }}', {
+                            CloseButton: true,
+                            ProgressBar: true
+                        });
+                    return false;
+                }
                 add_more_customer_choice_option($(this).val(), $(this).text());
             });
         });
@@ -664,7 +688,7 @@
 
         $('#store_id').select2({
             ajax: {
-                url: '{{url('/')}}/admin/store/get-stores',
+                url: '{{ route('admin.store.get-stores') }}',
                 data: function (params) {
                     return {
                         q: params.term, // search term

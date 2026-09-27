@@ -249,12 +249,27 @@ class ProductLogic
         ->whereIn('id',$item_categories)
         ->orderBy('priority','desc')->get();
 
+
+        $prices = Item::active()
+            ->when(is_numeric($store_id), fn($q) => $q->where('store_id', $store_id))
+            ->when(!is_numeric($store_id), fn($q) =>
+                $q->whereHas('store', fn($q2) => $q2->where('slug', $store_id))
+            )
+            ->selectRaw('MIN(price) as min_price, MAX(price) as max_price')
+            ->first();
+
+        $min_price = $prices->min_price;
+        $max_price = $prices->max_price;
+
+
         return [
             'total_size' => $paginator->total(),
             'limit' => $limit,
             'offset' => $offset,
             'products' => $paginator->items(),
-            'categories'=>$categories
+            'categories'=>$categories,
+            'min_price' => $min_price,
+            'max_price' => $max_price
         ];
     }
 
@@ -647,7 +662,7 @@ class ProductLogic
         if ($filter && in_array('most_loved', $filter)) {
             $withCount[] = 'whislists';
         }
-      
+
 
         $query = Item::with('store')->
             whereHas('store', function($query)use($zone_id){
@@ -1043,6 +1058,12 @@ class ProductLogic
                     $sub_category_id = $category['id'];
                 }
             }
+            $addOns = json_decode($item->add_ons, true);
+            $variations = json_decode($item->variations, true);
+            $foodVariations = json_decode($item->food_variations, true);
+            $choiceOptions = json_decode($item->choice_options, true);
+            $attributes = json_decode($item->attributes, true);
+
             $storage[] = [
                 'Id'=>$item->id,
                 'Name'=>$item->name,
@@ -1058,10 +1079,10 @@ class ProductLogic
                 'DiscountType'=>$item->discount_type,
                 'AvailableTimeStarts'=>$item->available_time_starts,
                 'AvailableTimeEnds'=>$item->available_time_ends,
-                'Variations'=>$module_type == 'food'?$item->food_variations:$item->variations,
-                'ChoiceOptions'=>$item?->choice_options,
-                'AddOns'=>$item->add_ons,
-                'Attributes'=>$item->attributes,
+                'Variations'=>$module_type == 'food'?(!empty($foodVariations) ? $item->food_variations : 'N/A'):(!empty($variations) ? $item->variations : 'N/A'),
+                'ChoiceOptions'=>!empty($choiceOptions) ? $item->choice_options : 'N/A',
+                'AddOns'=>!empty($addOns) ? $item->add_ons : 'N/A',
+                'Attributes'=>!empty($attributes) ? $item->attributes : 'N/A',
                 'StoreId'=>$item->store_id,
                 'ModuleId'=>$item->module_id,
                 'Status'=>$item->status == 1 ? 'active' : 'inactive',
@@ -1177,7 +1198,7 @@ class ProductLogic
         return $item;
     }
 
-    public static function update_flash_stock($item, $quantity)
+    public static function update_flash_stock($item, $quantity, $decreaseStock =false)
     {
         $item = FlashSaleItem::Active()->whereHas('flashSale', function ($query) {
             $query->Active()->Running();
@@ -1185,8 +1206,13 @@ class ProductLogic
         ->where(['item_id' => $item->id])->first();
         if($item){
 
-            $item->sold = $item->sold + $quantity;
-            $item->available_stock = $item->stock - $item->sold;
+            if ($decreaseStock) {
+                $item->sold = max(0, $item->sold - $quantity);
+                $item->available_stock = $item->stock + $item->sold;
+            } else {
+                $item->sold += $quantity;
+                $item->available_stock = max(0, $item->stock - $item->sold);
+            }
         }
         return $item;
     }

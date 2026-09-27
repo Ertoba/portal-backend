@@ -40,7 +40,7 @@ class GenerateAdminRoute extends Command
             'print', 'download', 'export', 'edit', 'update', 'invoice', 'child', 'update-default-status', 'update-status',
             'system-currency', 'status', 'paidStatus', 'priority', 'remove-proof-image', 'select-customer', 'orders', 'logs',
             'refund_mode', 'account-transaction/create', 'provide-deliveryman-earnings/create', 'system-addons', 'social-media/create',
-            'drivemond'
+            'drivemond', 'trashed','admin/transactions/report/vendor-wise-taxes','admin/transactions/report/vendor-tax-report'
         ];
 
         $excludeTermsAjax = $this->getAjaxRoutes($adminRoutes);
@@ -392,6 +392,15 @@ class GenerateAdminRoute extends Command
             'rental::admin.provider.bulk-export' => ['dmin/rental/provider/bulk-export'],
             'rental::admin.provider.bulk-import' => ['admin/rental/provider/bulk-import'],
             'rental::admin.home-page-setup.download-app' => ['admin/rental/settings'],
+            'ride-share::admin.maps.fleet-map' => ['admin/ride-share/fleet-map/all-driver','admin/ride-share/fleet-map/driver-on-trip','admin/ride-share/fleet-map/driver-idle','admin/ride-share/fleet-map/all-customer'],
+            'ride-share::admin.trip-management.index' => ['admin/ride-share/ride/list/all','admin/ride-share/ride/list/pending','admin/ride-share/ride/list/accepted','admin/ride-share/ride/list/ongoing','admin/ride-share/ride/list/completed','admin/ride-share/ride/list/cancelled'],
+            'ride-share::admin.safety-alert.index' => ['admin/ride-share/safety-alert/list/customer','admin/ride-share/safety-alert/list/driver'],
+            'ride-share::admin.business-management.business-setup.safety-precaution' => ['admin/business-settings/safety-precaution/safety-alert'],
+            'ride-share::admin.business-management.business-setup.precautions' => ['admin/business-settings/safety-precaution/precaution'],
+            'ride-share::admin.rider-management.rider.list' => ['admin/users/rider'],
+            'ride-share::admin.rider-management.rider.index' => ['admin/users/rider/add'],
+            'ride-share::admin.rider-management.rider.new' => ['admin/users/rider/new'],
+            'ride-share::admin.rider-management.rider.deny' => ['admin/users/rider/deny'],
 
 
         ];

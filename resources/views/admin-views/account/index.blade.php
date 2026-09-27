@@ -24,6 +24,9 @@
                         <label class="form-label" for="type">{{translate('messages.collect_from')}}<span class="input-label-secondary"></span></label>
                             <select name="type" id="type" class="form-control">
                                 <option value="deliveryman">{{translate('messages.deliveryman')}}</option>
+                                @if(addon_published_status('RideShare'))
+                                <option value="rider">{{translate('messages.rider')}}</option>
+                                @endif
                                 <option value="store">{{translate('messages.store')}}</option>
                             </select>
                         </div>
@@ -44,6 +47,16 @@
                             </select>
                         </div>
                     </div>
+                    @if(addon_published_status('RideShare'))
+                    <div class="col-lg-4 col-sm-6">
+                        <div class="form-group mb-0">
+                            <label class="form-label" for="rider">{{translate('messages.rider')}}<span class="input-label-secondary"></span></label>
+                            <select id="rider" name="rider_id" data-placeholder="{{translate('messages.select_rider')}}" class="form-control" title="Select rider" disabled>
+
+                            </select>
+                        </div>
+                    </div>
+                    @endif
                     <div class="col-lg-4 col-sm-6">
                         <div class="form-group mb-0">
                             <label class="form-label" for="method">{{translate('messages.payment_method')}}<span class="input-label-secondary"></span></label>
@@ -121,7 +134,7 @@
                                     <img class="avatar avatar-xss avatar-4by3 mr-2"
                                         src="{{ asset('public/assets/admin') }}/svg/components/placeholder-csv-format.svg"
                                         alt="Image Description">
-                                    .{{ translate('messages.csv') }}
+                                    {{ translate('messages.csv') }}
                                 </a>
                             </div>
                         </div>
@@ -151,6 +164,8 @@
                                         <a href="{{route('admin.store.view',[$at->store['id'],'module_id'=>$at->store['module_id']])}}">{{ Str::limit($at->store->name, 20, '...') }}</a>
                                         @elseif($at->deliveryman)
                                         <a href="{{route('admin.users.delivery-man.preview',[$at->deliveryman->id])}}">{{ $at->deliveryman->f_name }} {{ $at->deliveryman->l_name }}</a>
+                                        @elseif($at->rider)
+                                        <a href="{{route('admin.users.rider.preview',[$at->rider->id])}}">{{ $at->rider->f_name }} {{ $at->rider->l_name }}</a>
                                         @else
                                             {{translate('messages.not_found')}}
                                         @endif
@@ -170,12 +185,12 @@
                                             data-ref="{{translate($at['ref'])}}"
                                             data-amount="{{\App\CentralLogics\Helpers::format_currency($at['amount'])}}"
                                             data-date="{{\App\CentralLogics\Helpers::time_date_format($at->created_at)}}"
-                                            data-type="{{ $at->from_type == 'deliveryman' ?  translate('DeliveryMan_Info') : translate('Store_Info') }}"
-                                            data-phone="{{ $at->store ?  $at?->store?->phone : $at?->deliveryman?->phone  }}"
-                                            data-address="{{ $at->store ?  $at?->store?->address : $at?->deliveryman?->last_location?->location ?? translate('address_not_found') }}"
-                                            data-latitude="{{ $at->store ?  $at?->store?->latitude : $at?->deliveryman?->last_location?->location ?? 0 }}"
-                                            data-longitude="{{ $at->store ?  $at?->store?->longitude : $at?->deliveryman?->last_location?->location ?? 0 }}"
-                                            data-name="{{ $at->store ?  $at?->store?->name : $at?->deliveryman?->f_name.' '.$at?->deliveryman?->l_name }}"
+                                            data-type="{{ $at->from_type == 'deliveryman' ?  translate('DeliveryMan_Info') : ($at->from_type == 'rider' ? translate('Rider_Info') : translate('Store_Info')) }}"
+                                            data-phone="{{ $at->store ?  $at?->store?->phone : ($at?->deliveryman ? $at?->deliveryman?->phone : $at?->rider?->phone)  }}"
+                                            data-address="{{ $at->store ?  $at?->store?->address : ($at?->deliveryman ? $at?->deliveryman?->last_location?->location : $at?->rider?->last_location?->location ?? translate('address_not_found')) }}"
+                                            data-latitude="{{ $at->store ?  $at?->store?->latitude : ($at?->deliveryman ? $at?->deliveryman?->last_location?->location : $at?->rider?->last_location?->latitude ?? 0) }}"
+                                            data-longitude="{{ $at->store ?  $at?->store?->longitude : ($at?->deliveryman ? $at?->deliveryman?->last_location?->longitude : $at?->rider?->last_location?->longitude ?? 0) }}"
+                                            data-name="{{ $at->store ?  $at?->store?->name : ($at?->deliveryman ? $at?->deliveryman?->f_name.' '.$at?->deliveryman?->l_name : ($at?->rider ? $at?->rider?->f_name.' '.$at?->rider?->l_name : translate('messages.not_found')) ) }}"
 
                                             class="btn action-btn btn--warning btn-outline-warning withdraw-info-show" ><i class="tio-visible"></i>
                                             </a>
@@ -292,7 +307,7 @@
 
     $('#store').select2({
         ajax: {
-            url: '{{url('/')}}/admin/store/get-stores',
+            url: '{{ route('admin.store.get-stores') }}',
             data: function (params) {
                 return {
                     q: params.term, // search term
@@ -340,6 +355,31 @@
         }
     });
 
+    $('#rider').select2({
+        ajax: {
+            url: '{{url('/')}}/admin/users/rider/get-deliverymen',
+            data: function (params) {
+                return {
+                    q: params.term, // search term
+                    page: params.page
+                };
+            },
+            processResults: function (data) {
+                return {
+                results: data
+                };
+            },
+            __port: function (params, success, failure) {
+                var $request = $.ajax(params);
+
+                $request.then(success);
+                $request.fail(failure);
+
+                return $request;
+            }
+        }
+    });
+
     $('#store').on('change', function() {
         $.get({
             url: '{{url('/')}}/admin/store/get-account-data/'+this.value,
@@ -353,6 +393,16 @@
     $('#deliveryman').on('change', function() {
         $.get({
             url: '{{url('/')}}/admin/users/delivery-man/get-account-data/'+this.value,
+            dataType: 'json',
+            success: function (data) {
+                $('#account_info').html('({{translate('messages.cash_in_hand')}}: '+data.cash_in_hand+' {{translate('messages.total_earning')}}: '+data.earning_balance+')');
+            },
+        });
+    })
+
+    $('#rider').on('change', function() {
+        $.get({
+            url: '{{url('/')}}/admin/users/rider/get-account-data/'+this.value,
             dataType: 'json',
             success: function (data) {
                 $('#account_info').html('({{translate('messages.cash_in_hand')}}: '+data.cash_in_hand+' {{translate('messages.total_earning')}}: '+data.earning_balance+')');

@@ -18,5 +18,9 @@ class BroadcastServiceProvider extends ServiceProvider
         // Broadcast::routes(['middleware' => ['web', 'auth:api']]);
 
         require base_path('routes/channels.php');
+
+        if(addon_published_status('RideShare')){
+            require base_path('Modules/RideShare/Routes/channels.php');
+        }
     }
 }

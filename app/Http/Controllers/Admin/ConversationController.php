@@ -9,6 +9,7 @@ use App\Models\UserInfo;
 use App\Models\Message;
 use App\Models\User;
 use App\Models\Admin;
+use App\Models\DeliveryMan;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -96,10 +97,15 @@ class ConversationController extends Controller
             $sender->save();
         }
 
-        $user = User::find($user_id);
-        $fcm_token=$user->cm_firebase_token;
-        $receiver = UserInfo::where('user_id', $user->id)->first();
-        $user = $receiver;
+        if($request->user_type == 'deliveryman'){
+            $user = DeliveryMan::withoutGlobalScope('delivery_only')->find($user_id);
+            $fcm_token=$user->fcm_token;
+            $receiver = UserInfo::where('deliveryman_id', $user->id)->first();
+        }else{
+            $user = User::find($user_id);
+            $fcm_token=$user->cm_firebase_token;
+            $receiver = UserInfo::where('user_id', $user->id)->first();
+        }
         if(!$receiver){
             $receiver = new UserInfo();
             $receiver->user_id = $user->id;
@@ -119,7 +125,7 @@ class ConversationController extends Controller
             $conversation->sender_id = 0;
             $conversation->sender_type = 'admin';
             $conversation->receiver_id = $receiver->id;
-            $conversation->receiver_type = 'user';
+            $conversation->receiver_type = $receiver->user_type == 'customer' ? 'user' : 'delivery_man';
             $conversation->last_message_time = Carbon::now()->toDateTimeString();
             $conversation->save();
 
@@ -158,6 +164,7 @@ class ConversationController extends Controller
         }
 
         $convs = Message::where(['conversation_id' => $conversation->id])->get();
+        $user = $receiver;
         return response()->json([
             'view' => view('admin-views.messages.partials._conversations', compact('convs', 'user', 'receiver'))->render()
         ]);

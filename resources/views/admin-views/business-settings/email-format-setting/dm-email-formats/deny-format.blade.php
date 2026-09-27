@@ -32,8 +32,8 @@
                     <div class="card-body">
                         <div class="maintenance-mode-toggle-bar d-flex flex-wrap justify-content-between border rounded align-items-center p-2">
                             <h5 class="text-capitalize m-0 text--primary pl-2">
-                                {{translate('Send_Mail_on_New_Deliveryman_Rejection?')}}
-                        <span class="form-label-secondary text--primary" data-toggle="tooltip" data-placement="right" data-original-title="{{ translate('If_Admin_rejects_a_Deliveryman’s_self-registration,_the_Deliveryman_will_get_an_automatic_rejection_mail.') }}">
+                                {{ \App\CentralLogics\Helpers::formatDeliverymanText(translate('Send_Mail_on_New_Deliveryman_Rejection?'), null, true) }}
+                        <span class="form-label-secondary text--primary" data-toggle="tooltip" data-placement="right" data-original-title="{{ \App\CentralLogics\Helpers::formatDeliverymanText(translate('If_Admin_rejects_a_Deliveryman’s_self-registration,_the_Deliveryman_will_get_an_automatic_rejection_mail.'), null, true) }}">
                                     <img src="{{asset('public/assets/admin/img/info-circle.svg')}}" alt="">
                                 </span>
                             </h5>
@@ -43,10 +43,10 @@
                                        data-type="status"
                                        data-image-on='{{asset('/public/assets/admin/img/modal')}}/place-order-on.png'
                                        data-image-off="{{asset('/public/assets/admin/img/modal')}}/place-order-off.png"
-                                       data-title-on="{{translate('Want_to_enable_Delivery_Man_deny_mail?')}}"
-                                       data-title-off="{{translate('Want_to_disable_Delivery_Man_deny_mail?')}}"
-                                       data-text-on="<p>{{translate('If_enabled,_Delivery_Men_will_receive_an_email_when_the_admin_rejects_their_registration_request.')}}</p>"
-                                       data-text-off="<p>{{translate('If_disabled,_Delivery_Men_will_not_receive_any_email_upon_rejection_for_registration.')}}</p>"
+                                       data-title-on="{{ \App\CentralLogics\Helpers::formatDeliverymanText(translate('Want_to_enable_Delivery_Man_deny_mail?'), null, true) }}"
+                                       data-title-off="{{ \App\CentralLogics\Helpers::formatDeliverymanText(translate('Want_to_disable_Delivery_Man_deny_mail?'), null, true) }}"
+                                       data-text-on="<p>{{ \App\CentralLogics\Helpers::formatDeliverymanText(translate('If_enabled,_Delivery_Men_will_receive_an_email_when_the_admin_rejects_their_registration_request.'), null, true) }}</p>"
+                                       data-text-off="<p>{{ \App\CentralLogics\Helpers::formatDeliverymanText(translate('If_disabled,_Delivery_Men_will_not_receive_any_email_upon_rejection_for_registration.'), null, true) }}</p>"
                                        id="mail-status" {{$mail_status == '1'?'checked':''}}>
                                 <span class="toggle-switch-label text mb-0">
                                     <span class="toggle-switch-indicator"></span>

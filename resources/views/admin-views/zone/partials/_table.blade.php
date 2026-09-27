@@ -123,7 +123,7 @@
                                   </div>
 
                                   <a href="{{ route('admin.business-settings.zone.surge-price.list', [$zone['id']]) }}"
-                                      class="btn action-btn btn-outline-theme-light" data-toggle="tooltip"
+                                      class="btn hoverActive action-btn btn-outline-theme-light" data-toggle="tooltip"
                                       data-placement="bottom"
                                       data-original-title="{{ translate('messages.surge_price') }}">
                                       <svg width="18" height="16" viewBox="0 0 18 16" fill="none"

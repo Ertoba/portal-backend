@@ -35,7 +35,7 @@
         <div class="col-sm-6 col-lg-3">
             <a class="order--card h-100" href="{{route('admin.order.list',['searching_for_deliverymen'])}}">
                 <div class="d-flex justify-content-between align-items-center">
-                    <h6 class="card-subtitle d-flex justify-content-between m-0 align-items-center">
+                    <h6 class="card-subtitle d-flex justify-content-between m-0 align-items-center text-hover--primary">
                         <img src="{{asset('/public/assets/admin/img/order-status/unassigned.svg')}}" alt="dashboard" class="oder--card-icon">
                         <span>{{translate('messages.unassigned_orders')}}</span>
                     </h6>
@@ -49,7 +49,7 @@
         <div class="col-sm-6 col-lg-3">
             <a class="order--card h-100" href="{{route('admin.order.list',['accepted'])}}">
                 <div class="d-flex justify-content-between align-items-center">
-                    <h6 class="card-subtitle d-flex justify-content-between m-0 align-items-center">
+                    <h6 class="card-subtitle d-flex justify-content-between m-0 align-items-center text-hover--primary">
                         <img src="{{asset('/public/assets/admin/img/order-status/accepted.svg')}}" alt="dashboard" class="oder--card-icon">
                         <span>{{translate('Accepted by Delivery Man')}}</span>
                     </h6>
@@ -62,7 +62,7 @@
         <div class="col-sm-6 col-lg-3">
             <a class="order--card h-100" href="{{route('admin.order.list',['processing'])}}">
                 <div class="d-flex justify-content-between align-items-center">
-                    <h6 class="card-subtitle d-flex justify-content-between m-0 align-items-center">
+                    <h6 class="card-subtitle d-flex justify-content-between m-0 align-items-center text-hover--primary">
                         <img src="{{asset('/public/assets/admin/img/order-status/packaging.svg')}}" alt="dashboard" class="oder--card-icon">
                         <span>{{translate('Packaging')}}</span>
                     </h6>
@@ -76,7 +76,7 @@
         <div class="col-sm-6 col-lg-3">
             <a class="order--card h-100" href="{{route('admin.order.list',['item_on_the_way'])}}">
                 <div class="d-flex justify-content-between align-items-center">
-                    <h6 class="card-subtitle d-flex justify-content-between m-0 align-items-center">
+                    <h6 class="card-subtitle d-flex justify-content-between m-0 align-items-center text-hover--primary">
                         <img src="{{asset('/public/assets/admin/img/order-status/out-for.svg')}}" alt="dashboard" class="oder--card-icon">
                         <span>{{translate('Out for Delivery')}}</span>
                     </h6>
@@ -90,7 +90,7 @@
         <div class="col-sm-6 col-lg-3">
             <a class="order--card h-100" href="{{route('admin.order.list',['delivered'])}}">
                 <div class="d-flex justify-content-between align-items-center">
-                    <h6 class="card-subtitle d-flex justify-content-between m-0 align-items-center">
+                    <h6 class="card-subtitle d-flex justify-content-between m-0 align-items-center text-hover--primary">
                         <img src="{{asset('/public/assets/admin/img/order-status/delivered.svg')}}" alt="dashboard" class="oder--card-icon">
                         <span>{{translate('messages.delivered')}}</span>
                     </h6>
@@ -104,7 +104,7 @@
         <div class="col-sm-6 col-lg-3">
             <a class="order--card h-100" href="{{route('admin.order.list',['canceled'])}}">
                 <div class="d-flex justify-content-between align-items-center">
-                    <h6 class="card-subtitle d-flex justify-content-between m-0 align-items-center">
+                    <h6 class="card-subtitle d-flex justify-content-between m-0 align-items-center text-hover--primary">
                         <img src="{{asset('/public/assets/admin/img/order-status/canceled.svg')}}" alt="dashboard" class="oder--card-icon">
                         <span>{{translate('messages.canceled')}}</span>
                     </h6>
@@ -118,7 +118,7 @@
         <div class="col-sm-6 col-lg-3">
             <a class="order--card h-100" href="{{route('admin.order.list',['refunded'])}}">
                 <div class="d-flex justify-content-between align-items-center">
-                    <h6 class="card-subtitle d-flex justify-content-between m-0 align-items-center">
+                    <h6 class="card-subtitle d-flex justify-content-between m-0 align-items-center text-hover--primary">
                         <img src="{{asset('/public/assets/admin/img/order-status/refunded.svg')}}" alt="dashboard" class="oder--card-icon">
                         <span>{{translate('messages.refunded')}}</span>
                     </h6>
@@ -132,7 +132,7 @@
         <div class="col-sm-6 col-lg-3">
             <a class="order--card h-100" href="{{route('admin.order.list',['failed'])}}">
                 <div class="d-flex justify-content-between align-items-center">
-                    <h6 class="card-subtitle d-flex justify-content-between m-0 align-items-center">
+                    <h6 class="card-subtitle d-flex justify-content-between m-0 align-items-center text-hover--primary">
                         <img src="{{asset('/public/assets/admin/img/order-status/payment-failed.svg')}}" alt="dashboard" class="oder--card-icon">
                         <span>{{translate('messages.payment_failed')}}</span>
                     </h6>

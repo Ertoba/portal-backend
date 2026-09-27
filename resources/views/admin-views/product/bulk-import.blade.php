@@ -163,7 +163,7 @@
                                         </div>
                                         <div class="filename">{{translate('Must_be_Excel_files_using_our_Excel_template_above')}}</div>
                                     </div>
-                                    <input type="file" name="products_file" class="form-control-file text--primary font-weight-bold action-upload-section-dot-area" id="products_file">
+                                    <input type="file" name="products_file" class="form-control-file text--primary font-weight-bold action-upload-section-dot-area" accept=".xls,.xlsx" id="products_file">
                                 </div>
                             </label>
 

@@ -23,146 +23,95 @@
     </div>
     <!-- End Page Header -->
     <div class="row g-3">
-        <div class="col-lg-6 mb-3 mb-lg-2">
-            <div class="card h-100">
-                <form action="{{ route('admin.promotional-banner.store') }}" method="POST"
-                    enctype="multipart/form-data">
-                    @csrf
+        <div class="col-lg-6">
+            <form action="{{ route('admin.promotional-banner.store') }}" method="POST"
+                enctype="multipart/form-data" class="h-100">
+                @csrf
+                <div class="card card-body h-100">
                     <input type="text" name="key" value="bottom_section_banner" hidden>
-                    <div class="card-body">
-                        <div class="row g-3">
-                            <div class="col-12 d-flex justify-content-between">
-                                <span class="d-flex g-1">
-                                    <img src="{{asset('public/assets/admin/img/other-banner.png')}}" class="h-85"
-                                        alt="">
-                                    <h3 class="form-label d-block mb-2">
-                                        {{translate('Bottom_Section_Banner')}}
-                                    </h3>
-                                </span>
+                    <div class="d-flex gap-1 align-items-center mb-4">
+                        <img src="{{asset('public/assets/admin/img/other-banner.png')}}" class="h-85"
+                            alt="">
+                        <h3 class="fs-16 mb-0">
+                            {{translate('Bottom_Section_Banner')}}
+                        </h3>
+                    </div>
+                    <div class="bg-light2 rounded h-100 p-3 p-sm-4">
+                        <div class="text-center">
+                            <div class="mb-4">
+                                <h4 class="mb-1">{{ translate('Upload_Banner') }} <span class="text-danger">*</span></h4>
                             </div>
-                            <div class="col-12">
-                                <h3 class="form-label d-block mb-5">
-                                    {{translate('Upload_Banner')}}
-                                </h3>
-                                <label class="__upload-img aspect-4-1 m-auto d-block position-relative">
-                                    <div class="img">
-                                        <img class="onerror-image"
-                                            src="{{\App\CentralLogics\Helpers::get_full_url('promotional_banner', $bottom_section_banner?->value ?? '', $bottom_section_banner?->storage[0]?->value ?? 'public', 'upload_placeholder')}}"
-                                            data-onerror-image="{{asset('/public/assets/admin/img/upload-placeholder.png')}}"
-                                            alt="">
-                                    </div>
-                                    <div class="">
-                                        <input type="file" name="image" hidden>
-                                        @if (isset($bottom_section_banner?->value))
-                                            <span id="bottom_section_banner" class="remove_image_button dynamic-checkbox"
-                                                data-id="bottom_section_banner" data-type="status"
-                                                data-image-on="{{asset('/public/assets/admin/img/modal')}}/mail-success.png"
-                                                data-image-off="{{asset('/public/assets/admin/img/modal')}}/mail-warning.png"
-                                                data-title-on="{{translate('Important!')}}"
-                                                data-title-off="{{translate('Warning!')}}"
-                                                data-text-on="<p>{{translate('Are_you_sure_you_want_to_remove_this_image')}}</p>"
-                                                data-text-off="<p>{{translate('Are_you_sure_you_want_to_remove_this_image.')}}</p>">
-                                                <i class="tio-clear"></i></span>
-                                        @endif
-                                    </div>
-                                </label>
-                                <div class="text-center mt-5">
-                                    <h3 class="form-label d-block mt-2">
-                                        {{translate('Banner_Image_Ratio_4:1')}}
-                                    </h3>
-                                    <p>{{translate('image_format_:_jpg_,_png_,_jpeg_|_maximum_size:_2_MB')}}</p>
-
-                                </div>
-                            </div>
-                        </div>
-                        <br>
-                        <br>
-                        <br>
-                        <div class="btn--container justify-content-end mt-20">
-                            <button type="submit"
-                                class="btn btn--primary mb-2">{{translate('messages.Submit')}}</button>
+                            @include('admin-views.partials._image-uploader', [
+                                'id' => 'image-input',
+                                'name' => 'image',
+                                'ratio' => '4:1',
+                                'isRequired' => false,
+                                'existingImage' => \App\CentralLogics\Helpers::get_full_url('promotional_banner', $bottom_section_banner?->value ?? '', $bottom_section_banner?->storage[0]?->value ?? 'public', 'upload_placeholder') ?? null,
+                                'imageExtension' => IMAGE_EXTENSION,
+                                'imageFormat' => IMAGE_FORMAT,
+                                'maxSize' => MAX_FILE_SIZE,
+                                'textPosition' => 'bottom'
+                                ])
                         </div>
                     </div>
-                </form>
-            </div>
-
+                    <div class="btn--container justify-content-end mt-4">
+                        <button type="submit"
+                            class="btn btn--primary mb-2">{{translate('messages.Submit')}}</button>
+                    </div>
+                </div>
+            </form>
         </div>
-        <div class="col-lg-6 mb-3 mb-lg-2">
-            <div class="card h-100">
-                <form action="{{ route('admin.promotional-banner.store') }}" method="POST"
-                    enctype="multipart/form-data">
-                    @csrf
+        <div class="col-lg-6">
+            <form action="{{ route('admin.promotional-banner.store') }}" method="POST"
+                enctype="multipart/form-data" class="h-100">
+                @csrf
+                <div class="card card-body h-100">
                     <input type="text" name="key" value="best_reviewed_section_banner" hidden>
-                    <div class="card-body">
-                        <div class="row g-3">
-                            <div class="col-12 d-flex justify-content-between">
-                                <span class="d-flex g-1">
-                                    <img src="{{asset('public/assets/admin/img/other-banner.png')}}" class="h-85"
-                                        alt="">
-                                    <h3 class="form-label d-block mb-2">
-                                        {{translate('Best_Reviewed_Section_Banner')}}
-                                    </h3>
-                                </span>
-                                <div>
-                                    <div class="blinkings">
-                                        <div>
-                                            <i class="tio-info-outined"></i>
-                                        </div>
-                                        <div class="business-notes">
-                                            <h6><img src="{{asset('/public/assets/admin/img/notes.png')}}" alt="">
-                                                {{translate('Note')}}</h6>
-                                            <div>
-                                                {{translate('messages.this_banner_is_only_for_react_web.')}}
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-12">
-                                <h3 class="form-label d-block mb-5 text-center">
-                                    {{translate('Upload_Banner')}}
-                                </h3>
-                                <label class="__upload-img aspect-235-375 m-auto d-block">
-                                    <div class="position-relative">
-                                        <div class="img">
-                                            <img class="onerror-image"
-                                                src="{{\App\CentralLogics\Helpers::get_full_url('promotional_banner', $best_reviewed_section_banner?->value ?? '', $best_reviewed_section_banner?->storage[0]?->value ?? 'public', 'upload_placeholder')}}"
-                                                data-onerror-image="{{asset('/public/assets/admin/img/upload-placeholder.png')}}"
-                                                alt="">
-                                        </div>
-                                        <input type="file" name="image" hidden>
-                                        @if (isset($best_reviewed_section_banner?->value))
-                                            <span id="best_reviewed_section_banner"
-                                                class="remove_image_button dynamic-checkbox"
-                                                data-id="best_reviewed_section_banner" data-type="status"
-                                                data-image-on="{{asset('/public/assets/admin/img/modal')}}/mail-success.png"
-                                                data-image-off="{{asset('/public/assets/admin/img/modal')}}/mail-warning.png"
-                                                data-title-on="{{translate('Important!')}}"
-                                                data-title-off="{{translate('Warning!')}}"
-                                                data-text-on="<p>{{translate('Are_you_sure_you_want_to_remove_this_image')}}</p>"
-                                                data-text-off="<p>{{translate('Are_you_sure_you_want_to_remove_this_image.')}}</p>">
-                                                <i class="tio-clear"></i></span>
-                                        @endif
-                                    </div>
-                                </label>
-
-                                <div class="text-center mt-5">
-                                    <h3 class="form-label d-block mt-2">
-                                        {{translate('Min_Size_for_Better_Resolution_235_x_375_px')}}
-                                    </h3>
-                                    <p>{{translate('image_format_:_jpg_,_png_,_jpeg_|_maximum_size:_2_MB')}}</p>
-
-                                </div>
-                            </div>
+                    <div class="d-flex align-items-center justify-content-between gap-3 mb-4">
+                        <div class="d-flex gap-1 align-items-center">
+                            <img src="{{asset('public/assets/admin/img/other-banner.png')}}" class="h-85"
+                                alt="">
+                            <h3 class="fs-16 mb-0">
+                                {{translate('Best_Reviewed_Section_Banner')}}
+                            </h3>
                         </div>
-                        <div class="btn--container justify-content-end mt-20">
-                            <button type="submit"
-                                class="btn btn--primary mb-2">{{translate('messages.Submit')}}</button>
+                        <div class="blinkings">
+                            <div>
+                                <i class="tio-info-outined"></i>
+                            </div>
+                            <div class="business-notes">
+                                <h6><img src="{{asset('/public/assets/admin/img/notes.png')}}" alt="">
+                                    {{translate('Note')}}</h6>
+                                <div>
+                                    {{translate('messages.this_banner_is_only_for_react_web.')}}
+                                </div>
+                            </div>
                         </div>
                     </div>
-                </form>
-            </div>
-
+                    <div class="bg-light2 rounded h-100 p-3 p-sm-4">
+                        <div class="text-center">
+                            <div class="mb-4">
+                                <h4 class="mb-1">{{ translate('Upload_Banner') }} <span class="text-danger">*</span></h4>
+                            </div>
+                            @include('admin-views.partials._image-uploader', [
+                                'id' => 'image-input',
+                                'name' => 'image',
+                                'ratio' => 'Min_Size_for_Better_Resolution_235_x_375_px',
+                                'isRequired' => false,
+                                'existingImage' => \App\CentralLogics\Helpers::get_full_url('promotional_banner', $best_reviewed_section_banner?->value ?? '', $best_reviewed_section_banner?->storage[0]?->value ?? 'public', 'upload_placeholder') ?? null,
+                                'imageExtension' => IMAGE_EXTENSION,
+                                'imageFormat' => IMAGE_FORMAT,
+                                'maxSize' => MAX_FILE_SIZE,
+                                'textPosition' => 'bottom'
+                                ])
+                        </div>
+                    </div>
+                    <div class="btn--container justify-content-end mt-4">
+                        <button type="submit"
+                            class="btn btn--primary mb-2">{{translate('messages.Submit')}}</button>
+                    </div>
+                </div>
+            </form>
         </div>
     </div>
 </div>

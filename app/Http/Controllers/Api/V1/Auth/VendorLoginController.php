@@ -147,7 +147,7 @@ class VendorLoginController extends Controller
             'password' => ['required', Password::min(8)->mixedCase()->letters()->numbers()->symbols()->uncompromised()],
             'zone_id' => 'required',
             'module_id' => 'required',
-            'logo' => 'required|image|max:5120|mimes:'.IMAGE_FORMAT_FOR_VALIDATION,
+            'logo' => 'required|image|max:10240|mimes:'.IMAGE_FORMAT_FOR_VALIDATION,
             'cover_photo' => 'nullable|image|max:10240|mimes:'.IMAGE_FORMAT_FOR_VALIDATION,
         ],[
             'password.required' => translate('The password is required'),
@@ -157,6 +157,8 @@ class VendorLoginController extends Controller
             'password.numbers' => translate('The password must contain numbers'),
             'password.symbols' => translate('The password must contain symbols'),
             'password.uncompromised' => translate('The password is compromised. Please choose a different one'),
+            'logo.max' => translate('messages.file_size_exceeds_limit', ['size' => MAX_FILE_SIZE]),
+            'cover_photo.max' => translate('messages.file_size_exceeds_limit', ['size' => MAX_FILE_SIZE]),
         ]);
 
         if($request->zone_id)
@@ -186,6 +188,13 @@ class VendorLoginController extends Controller
         if ($validator->fails()) {
             return response()->json(['errors' => Helpers::error_processor($validator)], 403);
         }
+
+        foreach (['logo', 'cover_photo', 'tin_certificate_image'] as $fileField) {
+            if ($request->hasFile($fileField)) {
+                Helpers::validateFile($request->file($fileField));
+            }
+        }
+
         $vendor = new Vendor();
         $vendor->f_name = $request->f_name;
         $vendor->l_name = $request->l_name;

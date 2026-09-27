@@ -70,7 +70,7 @@ class Campaign extends Model
     }
     public function stores()
     {
-        return $this->belongsToMany(Store::class)->withPivot('campaign_status');
+        return $this->belongsToMany(Store::class)->withPivot('campaign_status','updated_at','created_at');
     }
 
     public function getImageFullUrlAttribute(){

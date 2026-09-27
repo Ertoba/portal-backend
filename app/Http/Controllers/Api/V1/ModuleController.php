@@ -29,7 +29,9 @@ class ModuleController extends Controller
                 ->withCount([
                     'items',
                     'stores' => function ($query) use ($zone_id) {
-                        $query->whereIn('zone_id', $zone_id);
+                        $query->whereIn('zone_id', $zone_id)->whereHas('vendor', function ($query) {
+                            $query->where('status', 1);
+                        });
                     },
                 ])
                 ->whereHas('zones', function ($query) use ($zone_id) {
@@ -42,7 +44,9 @@ class ModuleController extends Controller
                 'items',
                 'stores' => function ($query) use ($request) {
                     $query->when($request->zone_id, function ($q) use ($request) {
-                        $q->where('zone_id', $request->zone_id);
+                        $q->where('zone_id', $request->zone_id)->whereHas('vendor', function ($query) {
+                            $query->where('status', 1);
+                        });
                     });
                 },
             ])

@@ -113,7 +113,7 @@
                         <thead class="border-0">
                             <tr class="border-0">
                                 <th>{{ translate('messages.desc') }}</th>
-                                <th class="w-10p"></th>
+                                <th class="w-10p">{{ translate('qty') }}</th>
                                 <th>{{ translate('messages.price') }}</th>
                             </tr>
                         </thead>
@@ -249,6 +249,15 @@
                                     -
                                     {{ \App\CentralLogics\Helpers::format_currency($order['coupon_discount_amount']) }}
                                 </dd>
+
+                                @if ($order->extra_discount_amount > 0)
+                                <dt class="col-6">{{ translate('messages.extra_discount') }}:</dt>
+                                <dd class="col-6">
+                                    -
+                                    {{ \App\CentralLogics\Helpers::format_currency($order['extra_discount_amount']) }}
+                                </dd>
+
+                                @endif
                                 @if ($order['ref_bonus_amount'] > 0)
                                     <dt class="col-6">{{ translate('messages.Referral_Discount') }}:</dt>
                                     <dd class="col-6">

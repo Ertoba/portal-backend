@@ -82,21 +82,27 @@
                 </h5>
                 <div class="card">
                     <div class="card-body">
-
+                        @php($counter_col_class = (addon_published_status('RideShare'))?'col-lg-2':'col-lg-3')
                         <div class="row g-3">
-                            <div class="col-sm-6 col-lg-3">
+                            <div class="col-sm-6 {{ $counter_col_class }}">
                                 <label for="app_download_count_numbers" class="form-label">{{translate('Total App Download')}}</label>
                                 <input id="app_download_count_numbers" type="number" min="0" max="9999999999" name="app_download_count_numbers" value="{{ $counter['app_download_count_numbers'] ?? '' }}" placeholder="{{translate('Ex: 500')}}" class="form-control">
                             </div>
-                            <div class="col-sm-6 col-lg-3">
+                            <div class="col-sm-6 {{ $counter_col_class }}">
                                 <label for="seller_count_numbers" class="form-label">{{translate('Total Seller')}}</label>
                                 <input id="seller_count_numbers" type="number" min="0" max="9999999999" name="seller_count_numbers" value="{{ $counter['seller_count_numbers'] ?? '' }}" placeholder="{{translate('Ex: 500')}}" class="form-control">
                             </div>
-                            <div class="col-sm-6 col-lg-3">
+                            <div class="col-sm-6 {{ $counter_col_class }}">
                                 <label for="deliveryman_count_numbers" class="form-label">{{translate('Total Delivery Man')}}</label>
                                 <input id="deliveryman_count_numbers" type="number" min="0" max="9999999999" name="deliveryman_count_numbers" value="{{ $counter['deliveryman_count_numbers'] ?? '' }}" placeholder="{{translate('Ex: 500')}}" class="form-control">
                             </div>
-                            <div class="col-sm-6 col-lg-3">
+                            @if(addon_published_status('RideShare'))
+                                <div class="col-sm-6 {{ $counter_col_class }}">
+                                    <label for="rider_count_numbers" class="form-label">{{translate('Total Rider')}}</label>
+                                    <input id="rider_count_numbers" type="number" min="0" max="9999999999" name="rider_count_numbers" value="{{ $counter['rider_count_numbers'] ?? '' }}" placeholder="{{translate('Ex: 500')}}" class="form-control">
+                                </div>
+                            @endif
+                            <div class="col-sm-6 {{ $counter_col_class }}">
                                 <label for="customer_count_numbers" class="form-label">{{translate('Total Customer')}}</label>
                                 <input id="customer_count_numbers" type="number" min="0" max="9999999999" name="customer_count_numbers" value="{{ $counter['customer_count_numbers'] ?? '' }}" placeholder="{{translate('Ex: 500')}}" class="form-control">
                             </div>

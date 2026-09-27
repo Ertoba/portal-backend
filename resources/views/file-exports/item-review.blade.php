@@ -35,6 +35,8 @@
             <th>{{ translate('Store_Name') }}</th>
             <th>{{ translate('Rating') }}</th>
             <th>{{ translate('Review') }}</th>
+            <th>{{ translate('Date') }}</th>
+            <th>{{ translate('Store_Reply') }}</th>
             <th>{{ translate('Status') }}</th>
 
         </thead>
@@ -50,6 +52,8 @@
         <td>{{ $review?->item?->store?->name ?? translate('messages.store_deleted') }}</td>
         <td> {{$review->rating}}</td>
         <td>{{$review->comment}}</td>
+        <td>{{ $review->created_at->format('d-m-Y') }}</td>
+        <td>{{$review->reply ?? translate('messages.Not_replied_Yet')}}</td>
         <td>{{ $review->status == 1 ? translate('messages.active') : translate('messages.inactive') }}</td>
 
             </tr>

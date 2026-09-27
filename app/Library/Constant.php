@@ -1,5 +1,9 @@
 <?php
 
+if (! defined('POINT_SRID')) {
+    define('POINT_SRID', 0); // For MariaDB use 4326.
+}
+
 //payment methods
 const GATEWAYS_PAYMENT_METHODS = [
     ['key' => 'ssl_commerz', 'value' => 'SSLCOMMERZ'],
@@ -1078,4 +1082,4 @@ const AUDIO_EXTENSION = '.mp3,.wav,.ogg';
 const FILE_FORMAT = 'pdf,doc,docx,ppt,pptx,txt,zip,rar,7z';
 const FILE_FORMAT_FOR_IMAGE_PICKER = 'jpeg|jpg|png|gif|webp';
 const FILE_EXTENSION = '.pdf,.doc,.docx,.zip,.p8';
-const MAX_FILE_SIZE = 2;
+const MAX_FILE_SIZE = 10;

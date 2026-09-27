@@ -27,6 +27,19 @@ class AutomatedMessage extends Model
         return $value;
     }
 
+    public function scopeActive($query)
+    {
+        return $query->where('status', 1);
+    }
+
+    public function scopeCustomer($query) {
+        return $query->where('question_for', 'customer');
+    }
+
+    public function scopeRider($query) {
+        return $query->withoutGlobalScope('customer_only')->where('question_for', 'rider');
+    }
+
     public function translations()
     {
         return $this->morphMany(Translation::class, 'translationable');
@@ -38,6 +51,10 @@ class AutomatedMessage extends Model
             $builder->with(['translations' => function ($query) {
                 return $query->where('locale', app()->getLocale());
             }]);
+        });
+
+        static::addGlobalScope('customer_only', function (Builder $builder) {
+            $builder->customer();
         });
     }
 }

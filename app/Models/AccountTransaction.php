@@ -51,6 +51,12 @@ class   AccountTransaction extends Model
         return $this->belongsTo(DeliveryMan::class)->whereNull('id');
     }
 
-
+    public function rider()
+    {
+        if ($this->from_type == 'rider') {
+            return $this->belongsTo(DeliveryMan::class,'from_id','id')->withoutGlobalScope('delivery_only')->where('is_ride', 1);
+        }
+        return $this->belongsTo(DeliveryMan::class)->whereNull('id');
+    }
 
 }

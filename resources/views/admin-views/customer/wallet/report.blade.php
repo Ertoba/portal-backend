@@ -137,7 +137,10 @@
                                 $order_refund_total = $data[0]->order_refund_total;
                                 $loyalty_point_total = $data[0]->loyalty_point_total;
                                 $order_place_total = $data[0]->total_debit;
+                                $add_fund = $data[0]->add_fund;
                                 $balance = $credit - $debit;
+                                $CashBack = $data[0]->CashBack;
+                                $referrer = $data[0]->referrer;
                             @endphp
 
                                 <!--Debit earned-->
@@ -196,11 +199,11 @@
                         <div class="card">
                             <div class="card-body" id="fund-statistics-board">
                                 <h5 class="text-center text-capitalize">{{translate('messages.fund_statistics')}}</h5>
-                                <div class="position-relative pie-chart">
+                                <div class="position-relative d-flex justify-content-center align-items-center pie-chart">
                                     <div id="doughnut-pie"></div>
                                     <!-- Total Orders -->
                                     <div class="total--orders">
-                                        <h4 class="text-uppercase mb-1">{{Helpers::number_format_short($add_fund_total+$order_refund_total+$loyalty_point_total+$order_place_total)}}</h4>
+                                        <h4 class="text-uppercase mb-1">{{Helpers::number_format_short($add_fund_total+$order_refund_total+$loyalty_point_total+$order_place_total +$add_fund + $CashBack + $referrer)}}</h4>
                                         <span class="text-capitalize">{{translate('messages.total')}}</span>
                                     </div>
                                     <!-- Total Orders -->
@@ -228,6 +231,24 @@
                                         <span class="indicator chart-bg-3"></span>
                                         <span class="info">
                                             {{translate('messages.Order place')}} ({{Helpers::format_currency($order_place_total)}})
+                                        </span>
+                                    </div>
+                                    <div class="chart--label">
+                                        <span class="indicator chart-bg-3"></span>
+                                        <span class="info">
+                                            {{translate('messages.Add Fund')}} ({{Helpers::format_currency($add_fund)}})
+                                        </span>
+                                    </div>
+                                    <div class="chart--label">
+                                        <span class="indicator chart-bg-4"></span>
+                                        <span class="info">
+                                            {{translate('messages.CashBack')}} ({{Helpers::format_currency($CashBack)}})
+                                        </span>
+                                    </div>
+                                    <div class="chart--label">
+                                        <span class="indicator chart-bg-4"></span>
+                                        <span class="info">
+                                            {{translate('messages.Referrer Bonus')}} ({{Helpers::format_currency($referrer)}})
                                         </span>
                                     </div>
                                 </div>
@@ -294,7 +315,7 @@
                             <img class="avatar avatar-xss avatar-4by3 mr-2"
                                  src="{{ asset('public/assets/admin') }}/svg/components/placeholder-csv-format.svg"
                                  alt="Image Description">
-                            .{{ translate('messages.csv') }}
+                            {{ translate('messages.csv') }}
                         </a>
                     </div>
                 </div>
@@ -390,21 +411,26 @@
         let options;
         let chart;
         options = {
-            series: [{{$add_fund_total}}, {{$order_refund_total}}, {{$loyalty_point_total}}, {{$order_place_total}}],
+            series: [{{$add_fund_total}}, {{$order_refund_total}}, {{$loyalty_point_total}}, {{$order_place_total}}, {{$add_fund}} ,{{ $CashBack }} ,{{ $referrer }}],
             chart: {
-                width: 180,
+                width: 280,
                 type: 'donut',
+                redrawOnWindowResize: true,
+                redrawOnParentResize: true
             },
             labels: [
                 '{{ translate('Admin Add Fund') }}',
                 '{{ translate('Order Refund') }}',
                 '{{ translate('Loyalty Point') }}',
-                '{{ translate('Order place') }}'
+                '{{ translate('Order place') }}',
+                '{{ translate('Add Fund') }}',
+                '{{ translate('CashBack') }}',
+                '{{ translate('Referrer Bonus') }}',
             ],
             dataLabels: {
                 enabled: false,
                 style: {
-                    colors: ['#0F4A4A', '#3F6E6E', '#6F9292', '#9FB7B7']
+                    colors: ['#0F4A4A', '#3F6E6E', '#6F9292', '#9FB7B7', '#b9e0e0, #d6e8e8', '#f1f9f9']
                 }
             },
             // responsive: [{

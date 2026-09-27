@@ -63,7 +63,7 @@
                                 <img class="avatar avatar-xss avatar-4by3 mr-2"
                                     src="{{ asset('public/assets/admin') }}/svg/components/placeholder-csv-format.svg"
                                     alt="Image Description">
-                                .{{ translate('messages.csv') }}
+                                {{ translate('messages.csv') }}
                             </a>
 
                         </div>
@@ -80,13 +80,18 @@
                            data-hs-datatables-options='{
                                     "order": [],
                                     "orderCellsTop": true,
-                                    "paging": false
+                                    "paging": false,
+                                    "columnDefs": [{
+                                        "targets": [8],
+                                        "width": "5%",
+                                        "orderable": false
+                                    }],
                                 }'>
                         <thead class="thead-light">
                         <tr>
                             <th>{{ translate('messages.sl') }}</th>
                             <th>{{ translate('messages.Review_Id') }}</th>
-                            <th class="w-10p">{{translate('messages.item')}}</th>
+                            <th class="w-20p">{{translate('messages.item')}}</th>
                             <th class="w-20p">{{translate('messages.customer')}}</th>
                             <th class="w-30p">{{translate('messages.review')}}</th>
                             <th>{{translate('messages.date')}}</th>

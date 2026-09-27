@@ -101,6 +101,7 @@
 
                     </div>
                 </div>
+            <input name="parent_id" value="{{ $category->parent_id??0 }}" hidden>
 
                 <div class="form-group mb-3">
                     <label class="input-label" for="">

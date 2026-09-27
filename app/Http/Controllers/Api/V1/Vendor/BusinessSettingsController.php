@@ -16,8 +16,8 @@ class BusinessSettingsController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'contact_number' => 'required|string|max:20',
-            'logo' => 'nullable|image|max:5120',
-            'cover_photo' => 'nullable|image|max:5120',
+            'logo' => 'nullable|image|max:10240',
+            'cover_photo' => 'nullable|image|max:10240',
             'meta_title' => 'max:100',
         ]);
 

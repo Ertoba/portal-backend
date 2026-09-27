@@ -28,6 +28,25 @@
         .pickup-zone-container {
             display: none;
         }
+
+        .capcha-spin {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
+}
+.capcha-spin:not(.active) {
+    animation-play-state: paused;
+    -webkit-animation-play-state: paused;
+    -moz-animation-play-state: paused;
+}
+
     </style>
 @endpush
 @section('content')
@@ -614,7 +633,8 @@
                                     </div>
                                     <div class="row mt-5">
                                         <div class="col-md-6 col-lg-4">
-                                            @php($recaptcha = \App\CentralLogics\Helpers::get_business_settings('recaptcha'))
+                                            @include('admin-views.partials._recaptcha')
+                                            {{-- @php($recaptcha = \App\CentralLogics\Helpers::get_business_settings('recaptcha'))
                                             @if (isset($recaptcha) && $recaptcha['status'] == 1)
                                                 <input type="hidden" name="g-recaptcha-response"
                                                        id="g-recaptcha-response">
@@ -633,7 +653,7 @@
                                                              class="recap-img"/>
                                                     </div>
                                                 </div>
-                                            @endif
+                                            @endif --}}
                                         </div>
                                     </div>
                                 </div>
@@ -830,6 +850,7 @@ $("#form-id").on('submit', function(e) {
 
 function submitForm() {
 
+    @if (\App\CentralLogics\Helpers::subscription_check())
     const radios = document.querySelectorAll('input[name="business_plan"]');
     let selectedValue = null;
     for (const radio of radios) {
@@ -859,10 +880,14 @@ function submitForm() {
             return;
         }
     }
+    @endif
 
-    $('.btn-disable').attr('disabled', true);
+    $('.btn-disable').prop('disabled', true);
 
     let formData = new FormData(document.getElementById('form-id'));
+    @if (!\App\CentralLogics\Helpers::subscription_check())
+    formData.append('business_plan', 'commission-base');
+    @endif
     $.ajaxSetup({
         headers: {
             'X-CSRF-TOKEN': "{{ csrf_token() }}"
@@ -881,7 +906,7 @@ function submitForm() {
         success: function (data) {
             $('#loading').hide();
             if (data.errors) {
-                $('.btn-disable').attr('disabled', false);
+                $('.btn-disable').prop('disabled', false);
                 for (let i = 0; i < data.errors.length; i++) {
                     toastr.error(data.errors[i].message, {
                         CloseButton: true,
@@ -993,6 +1018,7 @@ function submitForm() {
                 e.preventDefault();
             } else {
                 e.preventDefault();
+                $('.btn-disable').prop('disabled', true);
                 $.get({
                     url: '{{ route('admin.zone.check-location') }}',
                     dataType: 'json',
@@ -1003,9 +1029,11 @@ function submitForm() {
                     },
                     beforeSend: function () {
                         $('#loading').show();
+                        $('.btn-disable').prop('disabled', true);
                     },
                     success: function (data) {
                         $('#loading').hide();
+                        $('.btn-disable').prop('disabled', false);
                         if (data.errors) {
                             for (let i = 0; i < data.errors.length; i++) {
                                 toastr.error(data.errors[i].message, {
@@ -1044,11 +1072,14 @@ function submitForm() {
                             $('#show-step2').addClass('active');
                             $('#show-step1').removeClass('active');
                             $(window).scrollTop(0);
+                            @else
+                            $('#form-id').submit();
                             @endif
                         }
                     },
                     error: function () {
                         $('#loading').hide();
+                        $('.btn-disable').prop('disabled', false);
                     }
                 });
             }
@@ -1413,9 +1444,69 @@ function submitForm() {
 
         // Initial update
         updateArrows();
-
-
-
-
     </script>
+    <script>
+    $(document).on('click', '.reloadCaptcha', function () {
+        $.ajax({
+            url: "{{ route('reload-captcha') }}",
+            type: "GET",
+            dataType: 'json',
+            beforeSend: function () {
+                $('#loading').show()
+                $('.capcha-spin').addClass('active')
+            },
+            success: function (data) {
+                $('#reload-captcha').html(data.view);
+            },
+            complete: function () {
+                $('#loading').hide()
+                $('.capcha-spin').removeClass('active')
+            }
+        });
+    });
+
+</script>
+
+@if(isset($recaptcha) && $recaptcha['status'] == 1)
+    <script src="https://www.google.com/recaptcha/api.js?render={{$recaptcha['site_key']}}"></script>
+@endif
+@if(isset($recaptcha) && $recaptcha['status'] == 1)
+    <script>
+        $(document).ready(function () {
+            $('#signInBtn').click(function (e) {
+                if ($('#set_default_captcha_value').val() == 1) {
+                    $('#form-id').submit();
+                    return true;
+                }
+                e.preventDefault();
+                if (typeof grecaptcha === 'undefined') {
+                    toastr.error('Invalid recaptcha key provided. Please check the recaptcha configuration.');
+                    $('#reload-captcha').removeClass('d-none');
+                    $('#set_default_captcha_value').val('1');
+
+                    return;
+                }
+                grecaptcha.ready(function () {
+                    grecaptcha.execute('{{$recaptcha['site_key']}}', { action: 'submit' }).then(function (token) {
+                        $('#g-recaptcha-response').val(token);
+                        $('#form-id').submit();
+                    });
+                });
+                window.onerror = function (message) {
+                    var errorMessage = 'An unexpected error occurred. Please check the recaptcha configuration';
+                    if (message.includes('Invalid site key')) {
+                        errorMessage = 'Invalid site key provided. Please check the recaptcha configuration.';
+                    } else if (message.includes('not loaded in api.js')) {
+                        errorMessage = 'reCAPTCHA API could not be loaded. Please check the recaptcha API configuration.';
+                    }
+                    $('#reload-captcha').removeClass('d-none');
+                    $('#set_default_captcha_value').val('1');
+                    toastr.error(errorMessage)
+                    return true;
+                };
+            });
+        });
+    </script>
+@endif
+{{-- recaptcha scripts end --}}
 @endpush

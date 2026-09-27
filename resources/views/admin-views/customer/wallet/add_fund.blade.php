@@ -44,7 +44,9 @@
                                     <span class="form-label-secondary text-danger"
                                           data-toggle="tooltip" data-placement="right"
                                           data-original-title="{{ translate('messages.Required.')}}"> *
-                            </span>
+
+                                        </span>
+                                        <small id='user_balance'></small>
                                 </label>
                                 <input type="number" placeholder="{{translate('Ex: 50')}}" class="form-control" name="amount" min="0" id="amount" step=".01" required>
                             </div>
@@ -70,35 +72,7 @@
 @endsection
 
 @push('script_2')
-    <script>
-        $(document).on('ready', function () {
-            // INITIALIZATION OF DATATABLES
-            // =======================================================
-            var datatable = $.HSCore.components.HSDatatables.init($('#columnSearchDatatable'));
 
-            $('#column1_search').on('keyup', function () {
-                datatable
-                    .columns(1)
-                    .search(this.value)
-                    .draw();
-            });
-
-
-            $('#column3_search').on('change', function () {
-                datatable
-                    .columns(2)
-                    .search(this.value)
-                    .draw();
-            });
-
-
-            // INITIALIZATION OF SELECT2
-            // =======================================================
-            $('.js-select2-custom').each(function () {
-                var select2 = $.HSCore.components.HSSelect2.init($(this));
-            });
-        });
-    </script>
 
     <script>
 
@@ -182,5 +156,22 @@
                 }
             }
         });
+
+
+$('#customer').on('change', function () {
+    let customer_id = this.value;
+    if (!customer_id) return;
+
+    $.get({
+        url: '{{ route('admin.users.customer.wallet.getUserWallet') }}',
+        dataType: 'json',
+        data: { customer_id },
+        success: function (data) {
+            $('#user_balance').html('({{ translate('customer_Balance') }}: ' + data + ')');
+        }
+    });
+});
+
+
     </script>
 @endpush

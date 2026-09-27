@@ -371,6 +371,25 @@ $(document).on("click", ".confirm-Toggle", function () {
                 .removeAttr("required");
         }
     }
+    if (toggle_id === "cash_in_hand_overflow_rider") {
+        if ($("#cash_in_hand_overflow_rider").is(":checked")) {
+            $("#rider_max_cash_in_hand")
+                .removeAttr("readonly")
+                .attr("required", true);
+            $("#min_amount_to_pay_rider")
+                .removeAttr("readonly")
+                .attr("required", true);
+
+        } else {
+            $("#rider_max_cash_in_hand")
+                .attr("readonly", true)
+                .removeAttr("required");
+            $("#min_amount_to_pay_rider")
+                .attr("readonly", true)
+                .removeAttr("required");
+            
+        }
+    }
     if (toggle_id === "play-store-dm-status") {
         if ($("#play-store-dm-status").is(":checked")) {
             $("#playstore_url").removeAttr("readonly").attr("required", true);
@@ -550,21 +569,38 @@ $(document).on("click", ".location-reload-to-base", function () {
     nurl.searchParams.delete("search");
     location.href = nurl;
 });
-document.querySelectorAll('[name="search"]').forEach(function (element) {
-    element.addEventListener("input", function (event) {
-        if (this.value === "" && window.location.search !== "") {
-            let baseUrl = window.location.origin + window.location.pathname;
-            if ($(this).data("reload_url")) {
-                let reload_url = new URL($(this).data("reload_url"));
-                reload_url.searchParams.delete("search");
-                window.location.href = reload_url;
-            } else {
-                window.location.href = baseUrl;
-            }
 
+
+document.querySelectorAll('[name="search"]').forEach(function (element) {
+    element.addEventListener("input", function () {
+
+        if (this.value === "" && window.location.search !== "") {
+
+            let url = new URL($(this).data("reload_url") || window.location.href);
+
+            url.searchParams.delete("search");
+
+            window.location.href = url.toString();
         }
+
     });
 });
+
+// document.querySelectorAll('[name="search"]').forEach(function (element) {
+//     element.addEventListener("input", function (event) {
+//         if (this.value === "" && window.location.search !== "") {
+//             let baseUrl = window.location.origin + window.location.pathname;
+//             if ($(this).data("reload_url")) {
+//                 let reload_url = new URL($(this).data("reload_url"));
+//                 reload_url.searchParams.delete("search");
+//                 window.location.href = reload_url;
+//             } else {
+//                 window.location.href = baseUrl;
+//             }
+
+//         }
+//     });
+// });
 
 document.addEventListener("DOMContentLoaded", function () {
     const activeLink = document.querySelector(".nav-link.active");
@@ -1050,6 +1086,13 @@ if (typeof FormValidation === 'undefined') {
                     input.addEventListener('change', () => {
                         FormValidation.validateInput(input);
                     });
+
+                     if ($(input).hasClass('select2-hidden-accessible')) {
+                        $(input).on('select2:select select2:unselect', function () {
+                            FormValidation.validateInput(this);
+                        });
+                    }
+
                 });
 
                 form.dataset.validationInitialized = "true";
@@ -1789,5 +1832,67 @@ document.querySelectorAll('.table-toggle-btn').forEach(function (button) {
         }
 
         this.classList.toggle('active');
+    });
+});
+
+
+//Employee Role , Sub Checked / Unchecked
+$(document).on("change", ".sub_slect_all_wrapper .sub_select-all", function () {
+    const wrapper = $(this).closest(".sub_slect_all_wrapper");
+    const isChecked = this.checked;
+
+    wrapper
+        .find("input[type='checkbox']:not(.sub_select-all)")
+        .prop("checked", isChecked);
+});
+
+
+//Pragraph See more and See less > Use global
+$(document).ready(function () {
+    $('.see-more_pragraph').each(function () {
+        let $p = $(this);
+        let limit = parseInt($p.data('character'), 10);
+        let fullText = $.trim(
+            $p.clone().children('.see__moreBtn').remove().end().text()
+        );
+
+        if (fullText.length <= limit) {
+            $p.find('.see__moreBtn').addClass('d-none');
+            return;
+        }
+
+        let shortText = fullText.substring(0, limit) + '...';
+
+        $p.data('full', fullText);
+        $p.data('short', shortText);
+
+        $p.html(shortText + ' <span class="text-info see__moreBtn">See more</span>');
+    });
+    $(document).on('click', '.see__moreBtn', function () {
+        let $p = $(this).closest('.see-more_pragraph');
+        let isExpanded = $(this).hasClass('expanded');
+        if (isExpanded) {
+            $p.html(
+                $p.data('short') +
+                ' <span class="text-info see__moreBtn">See more</span>'
+            );
+        } else {
+            $p.html(
+                $p.data('full') +
+                ' <span class="text-info see__moreBtn expanded">See less</span>'
+            );
+        }
+    });
+});
+
+//Select2 Inside search add custom placeholder
+$(document).ready(function () {
+    $(document).on('select2:open', function (e) {
+        let selectElement = $(e.target);
+        let searchPlaceholder = selectElement.data('search-placeholder');
+        // attribute
+        if (searchPlaceholder) {
+            $('.select2-search__field').attr('placeholder', searchPlaceholder);
+        }
     });
 });

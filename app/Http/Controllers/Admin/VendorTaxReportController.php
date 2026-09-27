@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Exports\ParcelWiseTaxExport;
+
 use App\Exports\VendorTaxExport;
 use App\Exports\VendorWiseTaxExport;
 use App\Http\Controllers\Controller;

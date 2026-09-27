@@ -4,11 +4,12 @@
 
 @push('css_or_js')
 <link rel="stylesheet" href="{{asset('public/assets/admin/css/custom.css')}}">
-<link rel="stylesheet" href="{{asset('public/assets/admin/css/upload-single-image.css')}}">
+
 @endpush
 
 
 @section('content')
+ 
     <div class="content container-fluid config-inline-remove-class">
         <!-- Page Heading -->
         <div class="page-header">
@@ -263,10 +264,10 @@
                                     class="input-label-secondary" data-toggle="tooltip" data-placement="right"
                                     data-original-title="{{ translate('Specify_the_minimum_order_amount_required_for_customers_when_ordering_from_this_store.') }}"><img
                                         src="{{ asset('/public/assets/admin/img/info-circle.svg') }}"
-                                        alt="{{ translate('messages.self_delivery_hint') }}"></span></label>
-                            <input type="number" id="minimum_order" name="minimum_order" step="0.01" min="0"
-                                max="999999999" class="form-control" placeholder="100"
-                                value="{{ $store->minimum_order > 0 ? $store->minimum_order : '' }}">
+                                        alt="{{ translate('messages.self_delivery_hint') }}"></span> <span class="text-danger">*</span></label>
+                            <input type="number" id="minimum_order" name="minimum_order" step="0.01" min="1"
+                                max="999999999" class="form-control" placeholder="100" required
+                                value="{{ $store->minimum_order > 0 ? $store->minimum_order : 0 }}">
                         </div>
                         @if (config('module.' . $store->module->module_type)['order_place_to_schedule_interval'])
                             <div class=" col-md-4">
@@ -287,7 +288,7 @@
                                     class="input-label-secondary" data-toggle="tooltip" data-placement="right"
                                     data-original-title="{{ translate('Set_the_total_time_to_deliver_products.') }}"><img
                                         src="{{ asset('/public/assets/admin/img/info-circle.svg') }}"
-                                        alt="{{ translate('Set_the_total_time_to_deliver_products.') }}"></span></label>
+                                        alt="{{ translate('Set_the_total_time_to_deliver_products.') }}"></span> <span class="text-danger">*</span></label>
                             <div class="input-group">
                                 <input type="number" id="minimum_delivery_time" name="minimum_delivery_time"
                                     class="form-control" placeholder="Min: 10"
@@ -518,7 +519,7 @@
 @endsection
 
 @push('script_2')
-    <script src="{{asset('public/assets/admin/js/upload-single-image.js')}}"></script>
+
     <script>
         "use strict";
 

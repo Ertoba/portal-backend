@@ -54,6 +54,19 @@ class WithdrawRequestMail extends Mailable
         $body = Helpers::text_variable_data_format( value:$data['body']??'',delivery_man_name:$delivery_man_name??'',store_name:$store_name??'',transaction_id:$transaction_id??'');
         $footer_text = Helpers::text_variable_data_format( value:$data['footer_text']??'',delivery_man_name:$delivery_man_name??'',store_name:$store_name??'',transaction_id:$transaction_id??'');
         $copyright_text = Helpers::text_variable_data_format( value:$data['copyright_text']??'',delivery_man_name:$delivery_man_name??'',store_name:$store_name??'',transaction_id:$transaction_id??'');
-        return $this->subject(translate('Withdraw_Request'))->view('email-templates.new-email-format-'.$template, ['company_name'=>$company_name,'data'=>$data,'title'=>$title,'body'=>$body,'footer_text'=>$footer_text,'copyright_text'=>$copyright_text,'wallet'=>$wallet,'transaction_id'=>$wallet->id,'time'=>$wallet->created_at,'amount'=>$wallet->amount]);
+        $deliveryMan = $wallet?->deliveryman?->is_ride ? $wallet?->deliveryman : null;
+
+        return $this->subject(Helpers::formatDeliverymanText(translate('Withdraw_Request'), $deliveryMan))->view('email-templates.new-email-format-'.$template, [
+            'company_name'=>$company_name,
+            'data'=>$data,
+            'title'=>Helpers::formatDeliverymanText($title, $deliveryMan),
+            'body'=>Helpers::formatDeliverymanText($body, $deliveryMan),
+            'footer_text'=>Helpers::formatDeliverymanText($footer_text, $deliveryMan),
+            'copyright_text'=>Helpers::formatDeliverymanText($copyright_text, $deliveryMan),
+            'wallet'=>$wallet,
+            'transaction_id'=>$wallet->id,
+            'time'=>$wallet->created_at,
+            'amount'=>$wallet->amount
+        ]);
     }
 }

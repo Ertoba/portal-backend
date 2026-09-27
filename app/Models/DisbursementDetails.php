@@ -28,6 +28,11 @@ class DisbursementDetails extends Model
     {
         return $this->belongsTo(DeliveryMan::class);
     }
+
+    public function rider(){
+        return $this->belongsTo(DeliveryMan::class,'delivery_man_id')->withoutGlobalScope('delivery_only')->where('is_ride', 1);
+    }
+
     public function disbursement()
     {
         return $this->belongsTo(Disbursement::class);

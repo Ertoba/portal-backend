@@ -401,4 +401,10 @@ div.scroll-down {
     overflow: hidden;
 }
 
-
+.map-warper #rider-map-canvas {
+    height: 100%;
+    margin: 0px;
+    padding: 0px;
+    position: relative;
+    overflow: hidden;
+}

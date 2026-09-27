@@ -52,7 +52,7 @@
                                 @endif
                             </div>
                             <div class="col-sm-7 col-md-8">
-                                <div class="justify-content-around d-flex border h-auto flex-wrap form-control max-w-420 ml-auto">
+                                <div class="justify-content-around d-flex border h-auto flex-wrap form-control  ml-auto">
 
                                     @if (data_get($cash_on_delivery, 'status') == 1)
                                         <div class="form-check form-check-inline mx-4  ">
@@ -140,7 +140,7 @@
                                             <p class="m-0 fs-12">
                                                 {{ translate('To Setup parcel module delivery charge please visit') }}
                                                 <a
-                                                    href="#0"
+                                                    href="{{ route('admin.parcel.settings', ['module_id' => $module->id]) }}"
                                                     class="font-semibold text-title">{{ translate('Parcel Module > Delivery Setup') }}</a>
                                                 {{ translate('page.') }}</p>
                                         </div>
@@ -175,8 +175,48 @@
                                             <i class="tio-light-on theme-clr-dark fs-16"></i>
                                             <p class="m-0 fs-12">
                                                 {{ translate('Rental module doesn’t support delivery charges. You can set trip fare per vehicle from:') }}
-                                                <a href="#0"
-                                                   class="font-semibold text-title">{{ translate('Rental Module > Vehicle Management > Vehicle Setup > List.') }}</a>
+                                                <a href="{{ route('admin.rental.provider.vehicle.list', ['module_id' => $module->id]) }}"
+                                                   class="font-semibold text-title">
+                                                   {{ translate('Rental Module') }} > {{ translate('Vehicle Management') }} > {{ translate('Vehicle Setup') }} > {{ translate('List') }}
+                                                </a>
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <input type="hidden" value="distance"
+                               name="module_data[{{ $module->id }}][delivery_charge_type]">
+                        <input type="hidden" name="module_data[{{ $module->id }}][fixed_shipping_charge]"
+                               value="{{ $pivot?->fixed_shipping_charge ?? 0 }}">
+                        <input type="hidden" name="module_data[{{ $module->id }}][per_km_shipping_charge]"
+                               value="{{ $pivot?->per_km_shipping_charge ?? 0 }}">
+                        <input type="hidden" name="module_data[{{ $module->id }}][minimum_shipping_charge]"
+                               value="{{ $pivot?->minimum_shipping_charge ?? 0 }}">
+                        <input type="hidden" name="module_data[{{ $module->id }}][maximum_shipping_charge]"
+                               value="{{ $pivot?->maximum_shipping_charge ?? 0 }}">
+                        <input type="hidden" name="module_data[{{ $module->id }}][maximum_cod_order_amount]"
+                               value="{{ $pivot?->maximum_cod_order_amount ?? 0 }}">
+
+                    @elseif ($module->module_type == 'ride-share' && addon_published_status('RideShare'))
+                        <div class="col-md-12 mb-2" id="module_{{ $module->id }}">
+                            <div class="module-row card view-details-container overflow-hidden">
+                                <a href="#0"
+                                   class="card-header border-0 view-btn d-flex align-items-center justify-content-between flex-wrap gap-1">
+                                    <h5 class="m-0">{{ $module->module_name }}</h5>
+                                    <i class="tio-chevron-down fs-24 text-title"></i>
+                                </a>
+                                <div class="card-body view-details border-top">
+                                    <div
+                                        class="bg-opacity-primary-10 rounded py-2 px-3 d-flex flex-wrap gap-1 align-items-center">
+                                        <div class="gap-1 d-flex align-items-center">
+                                            <i class="tio-light-on theme-clr-dark fs-16"></i>
+                                            <p class="m-0 fs-12">
+                                                {{ translate('RideShare module doesn’t support delivery charges. You can set trip fare per zone from:') }}
+                                                <a href="{{ route('admin.ride-share.fare.trip.index', ['module_id' => $module->id]) }}"
+                                                   class="font-semibold text-title">
+                                                   {{ translate('RideShare Module') }} > {{ translate('Fare Management') }} > {{ translate('Trip Fare Setup') }}
+                                                </a>
                                             </p>
                                         </div>
                                     </div>
@@ -328,6 +368,21 @@
         "use strict";
 
         $(document).ready(function () {
+            let previousSelectedModules = ($('#choice_modules').val() || []).map(String);
+
+            function openModuleSection(moduleContainer) {
+                const viewBtn = moduleContainer.find('.view-btn').first();
+                if (!viewBtn.hasClass('active')) {
+                    viewBtn.trigger('click');
+                }
+
+                if (moduleContainer.length) {
+                    $('html, body').animate({
+                        scrollTop: moduleContainer.offset().top - 100
+                    }, 300);
+                }
+            }
+
             function toggleModuleSections() {
                 let selectedModules = $('#choice_modules').val() || [];
 
@@ -341,7 +396,18 @@
             toggleModuleSections();
 
             $('#choice_modules').on('change', function () {
+                const selectedModules = ($(this).val() || []).map(String);
+                const newlySelectedModules = selectedModules.filter(function (moduleId) {
+                    return !previousSelectedModules.includes(moduleId);
+                });
+
                 toggleModuleSections();
+
+                newlySelectedModules.forEach(function (moduleId) {
+                    openModuleSection($('#module_' + moduleId));
+                });
+
+                previousSelectedModules = selectedModules;
             });
 
             function toggleChargeFields(moduleContainer) {

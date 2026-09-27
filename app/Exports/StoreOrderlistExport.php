@@ -108,7 +108,7 @@ class StoreOrderlistExport implements  FromView, ShouldAutoSize, WithStyles ,Wit
 
                     $event->sheet->getDefaultRowDimension()->setRowHeight(30);
                     $event->sheet->getRowDimension(1)->setRowHeight(50);
-                    $event->sheet->getRowDimension(2)->setRowHeight(60);
+                    $event->sheet->getRowDimension(2)->setRowHeight(70);
                 },
         ];
     }
