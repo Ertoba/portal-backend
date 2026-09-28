@@ -2225,6 +2225,70 @@ class Helpers
         return $cache[$storeId] ??= \App\Models\StoreCategory::where('store_id', $storeId)->exists();
     }
 
+    public static function admin_workspace_modules(): array
+    {
+        return [
+            'module' => ['dashboard', 'pos', 'order', 'item', 'store', 'category', 'addon', 'attribute', 'unit', 'brand', 'banner', 'coupon', 'campaign', 'notification', 'advertisement', 'reels', 'parcel', 'ride', 'trip'],
+            'users' => ['employee_role', 'employee', 'customer_management', 'customer_wallet', 'customer_loyalty_point', 'contact_messages', 'cashback', 'deliveryman', 'rider', 'driver'],
+            'finance' => ['collect_cash', 'disbursement', 'provide_dm_earning', 'withdraw_list', 'deliveryman_payments'],
+            'reports' => ['report', 'expense_report', 'disbursement_report', 'transaction_report', 'trip_reports', 'ride_report'],
+            'dispatch' => ['order', 'all_dispatch', 'order_ms', 'fleet_view', 'heat_map'],
+            'settings' => ['module', 'zone', 'settings', 'subscription', 'pro_customer_subscription', 'customer_management', 'system_tax', 'gallery', 'login_setup', 'email_setups', 'apps_setting'],
+        ];
+    }
+
+    public static function admin_can_access_workspace($workspace): bool
+    {
+        $admin = auth('admin')->user();
+        if (!$admin || !$admin->role) {
+            return false;
+        }
+        if ($admin->role_id == 1) {
+            return true;
+        }
+        foreach (self::admin_workspace_modules()[$workspace] ?? [] as $module) {
+            if (self::module_permission_check($module)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public static function settings_workspace_landing_url()
+    {
+        if (self::module_permission_check('settings')) {
+            return route('admin.business-settings.business-setup');
+        }
+        if (self::module_permission_check('pro_customer_subscription') && \Illuminate\Support\Facades\Route::has('admin.pro-customer.benefits-setup')) {
+            return route('admin.pro-customer.benefits-setup');
+        }
+        return route('admin.business-settings.business-setup');
+    }
+
+    public static function admin_landing_url()
+    {
+        $admin = auth('admin')->user();
+        if (!$admin) {
+            return null;
+        }
+        if ($admin->role_id == 1 || self::module_permission_check('dashboard')) {
+            return route('admin.dashboard');
+        }
+        foreach ([
+            ['pos', 'admin.pos.index', []],
+            ['order', 'admin.order.list', ['all']],
+            ['item', 'admin.item.list', []],
+            ['store', 'admin.store.list', []],
+            ['customer_management', 'admin.users.customer.list', []],
+            ['settings', 'admin.business-settings.business-setup', []],
+        ] as [$module, $routeName, $params]) {
+            if (self::module_permission_check($module) && \Illuminate\Support\Facades\Route::has($routeName)) {
+                return route($routeName, $params);
+            }
+        }
+        return null;
+    }
+
     public static function getDisk()
     {
         $config = self::get_business_settings('local_storage');
