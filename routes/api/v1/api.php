@@ -82,6 +82,15 @@ Route::group(['namespace' => 'Api\V1', 'middleware'=>'localization'], function (
 
     // Module
     Route::get('module', 'ModuleController@index');
+    Route::get('module/top-offer', 'MiliV4CompatibilityController@topOffer');
+    Route::get('offers/items', 'MiliV4CompatibilityController@offerItems');
+    Route::get('offers/stores', 'MiliV4CompatibilityController@offerStores');
+    Route::get('stores/exclusive-deals', 'MiliV4CompatibilityController@exclusiveDeals');
+    Route::get('customer/order/last-orders', 'MiliV4CompatibilityController@lastOrders');
+    Route::get('customer/cart/get-all', 'MiliV4CompatibilityController@allCarts');
+    Route::get('customer/ai-chat/conversations', 'MiliV4CompatibilityController@aiConversations');
+    Route::get('customer/ai-chat/messages', 'MiliV4CompatibilityController@aiMessages');
+    Route::get('customer/saved-files', 'MiliV4CompatibilityController@savedFiles');
     Route::get('smart-banners', 'SmartBannerController@get_banners');
     Route::post('newsletter/subscribe','NewsletterController@index');
     Route::get('react-landing-page', 'ConfigController@react_landing_page')->middleware('actch:react_web');
