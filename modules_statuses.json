@@ -4,5 +4,6 @@
     "Controller": true,
     "TaxModule": true,
     "AI": true,
-    "RideShare": true
+    "RideShare": true,
+    "ReelsModule": true
 }
