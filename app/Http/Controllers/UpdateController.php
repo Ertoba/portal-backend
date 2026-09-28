@@ -40,8 +40,7 @@ class UpdateController extends Controller
         }
 
         Helpers::setEnvironmentValue('APP_MODE', 'live');
-        Helpers::setEnvironmentValue('SOFTWARE_VERSION', '3.8');
-        Helpers::setEnvironmentValue('APP_NAME', '6amMart' . time());
+        Helpers::setEnvironmentValue('SOFTWARE_VERSION', '4.0');
 
 
         // version_2.11.1
