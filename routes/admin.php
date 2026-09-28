@@ -873,5 +873,38 @@ Route::group(['namespace' => 'Admin', 'as' => 'admin.'], function () {
                 Route::get('export/{id}/{type?}', 'DeliveryManDisbursementController@export')->name('export');
             });
         });
+        // Additive v4 Pro Customer Admin routes. The entitlement guard and
+        // protected installer/activation routes remain untouched.
+        Route::group(['prefix' => 'pro-customer', 'as' => 'pro-customer.'], function () {
+            Route::group(['middleware' => ['module:customer_management']], function () {
+                Route::get('list', 'ProCustomerController@customerList')->name('list');
+                Route::get('export', 'ProCustomerController@customerExport')->name('export');
+                Route::post('subscription/cancel/{id}', 'ProCustomerController@subscriptionCancel')->name('subscription.cancel');
+                Route::post('subscription/start/{userId}', 'ProCustomerController@subscriptionStart')->name('subscription.start');
+                Route::post('subscription/renew/{id}', 'ProCustomerController@subscriptionRenew')->name('subscription.renew');
+                Route::post('subscription/shift/{id}', 'ProCustomerController@subscriptionShift')->name('subscription.shift');
+            });
+
+            Route::group(['middleware' => ['module:pro_customer_subscription']], function () {
+                Route::get('benefits-setup', 'ProCustomerController@benefitsSetup')->name('benefits-setup');
+                Route::post('benefits-setup/update', 'ProCustomerController@benefitsSetupUpdate')->name('benefits-setup.update');
+                Route::get('price-setup', 'ProCustomerController@priceSetup')->name('price-setup');
+                Route::post('plan/store', 'ProCustomerController@planStore')->name('plan.store');
+                Route::get('plan/edit/{id}', 'ProCustomerController@planEdit')->name('plan.edit');
+                Route::put('plan/update/{id}', 'ProCustomerController@planUpdate')->name('plan.update');
+                Route::get('plan/status/{id}/{status}', 'ProCustomerController@planStatus')->name('plan.status');
+                Route::delete('plan/delete/{id}', 'ProCustomerController@planDestroy')->name('plan.delete');
+                Route::get('transactions', 'ProCustomerController@transactions')->name('transactions');
+                Route::get('transaction/export', 'ProCustomerController@transactionExport')->name('transaction.export');
+                Route::get('additional-setup', 'ProCustomerController@additionalSetup')->name('additional-setup');
+                Route::post('faq/store', 'ProCustomerController@faqStore')->name('faq.store');
+                Route::get('faq/edit/{id}', 'ProCustomerController@faqEdit')->name('faq.edit');
+                Route::put('faq/update/{id}', 'ProCustomerController@faqUpdate')->name('faq.update');
+                Route::get('faq/status/{id}/{status}', 'ProCustomerController@faqStatus')->name('faq.status');
+                Route::delete('faq/delete/{id}', 'ProCustomerController@faqDestroy')->name('faq.delete');
+                Route::get('terms-and-conditions', 'ProCustomerController@termsSetup')->name('terms-and-conditions');
+                Route::post('terms-and-conditions/update', 'ProCustomerController@termsUpdate')->name('terms-and-conditions.update');
+            });
+        });
     });
 });

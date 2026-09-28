@@ -340,6 +340,14 @@ Route::group(['namespace' => 'Api\V1', 'middleware'=>'localization'], function (
     Route::get('most-tips', 'OrderController@most_tips');
     Route::get('stores/details/{id}', 'StoreController@get_details');
 
+    // Additive v4 Pro Customer API. This group does not alter the private
+    // entitlement/activation middleware or payment routes.
+    Route::group(['prefix' => 'pro-customer'], function () {
+        Route::get('plans', 'ProCustomerController@plans');
+        Route::get('faqs', 'ProCustomerController@faqs');
+        Route::get('terms-and-conditions', 'ProCustomerController@termsAndConditions');
+    });
+
     Route::group(['middleware'=>['module-check']], function(){
         Route::group(['prefix' => 'customer', 'middleware' => 'auth:api'], function () {
             Route::post('get-data', 'CustomerController@getCustomer');
@@ -395,6 +403,12 @@ Route::group(['namespace' => 'Api\V1', 'middleware'=>'localization'], function (
 
             Route::get('review-reminder', 'CustomerController@review_reminder');
             Route::get('review-reminder-cancel', 'CustomerController@review_reminder_cancel');
+
+            Route::prefix('pro-customer')->group(function () {
+                Route::post('subscribe', 'ProCustomerController@subscribe');
+                Route::post('cancel', 'ProCustomerController@cancel');
+                Route::get('active-offer', 'ProCustomerController@activeOffer');
+            });
 
         });
         Route::group(['prefix' => 'customer', 'middleware' => 'apiGuestCheck'], function () {
