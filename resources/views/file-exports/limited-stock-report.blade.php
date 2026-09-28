@@ -43,7 +43,7 @@
                 <td>{{$item['name']}}</td>
                 <td>
                     @if ($item->module->module_type != 'food')
-                    {{ $item->stock }}
+                    {{ max((int) $item->stock, 0) }}
                     @endif
                 </td>
                 <td>

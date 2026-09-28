@@ -1,6 +1,6 @@
 @extends('layouts.admin.app')
 
-@section('title', translate('messages.Add new category'))
+@section('title', translate('messages.Add new main category'))
 
 @push('css_or_js')
 @endpush
@@ -14,7 +14,7 @@
                     <img src="{{ asset('public/assets/admin/img/category.png') }}" class="w--20" alt="">
                 </span>
                 <span>
-                    {{ translate('add_new_category') }}
+                    {{ translate('Add Main Category') }}
                 </span>
             </h1>
         </div>
@@ -26,107 +26,120 @@
                     action="{{ isset($category) ? route('admin.category.update', [$category['id']]) : route('admin.category.store') }}"
                     method="post" enctype="multipart/form-data">
                     @csrf
-                    @if ($language)
-                        <ul class="nav nav-tabs mb-4 border-0">
-                            <li class="nav-item">
-                                <a class="nav-link lang_link active" href="#"
-                                    id="default-link">{{ translate('messages.default') }}</a>
-                            </li>
-                            @foreach ($language as $lang)
-                                <li class="nav-item">
-                                    <a class="nav-link lang_link" href="#"
-                                        id="{{ $lang }}-link">{{ \App\CentralLogics\Helpers::get_language_name($lang) . '(' . strtoupper($lang) . ')' }}</a>
-                                </li>
-                            @endforeach
-                        </ul>
-                    @endif
                     <div class="row align-items-lg-center">
-                        <div class="col-md-6">
-                            @if ($language)
-                                <div class="form-group lang_form" id="default-form">
-                                    <label class="input-label"
-                                        for="exampleFormControlInput1">{{ translate('messages.name') }}
-                                        ({{ translate('messages.default') }})
-                                        <span class="form-label-secondary text-danger" data-toggle="tooltip"
-                                            data-placement="right"
-                                            data-original-title="{{ translate('messages.Required.') }}"> *
-                                        </span>
-
-                                    </label>
-                                    <input type="text" name="name[]" value="{{ old('name.0') }}" class="form-control"
-                                        placeholder="{{ translate('messages.new_category') }}" maxlength="191">
-                                </div>
-                                <input type="hidden" name="lang[]" value="default">
-                                @foreach ($language as $key => $lang)
-                                    <div class="form-group d-none lang_form" id="{{ $lang }}-form">
+                        <div class="col-md-8 col-lg-8">
+                            <div class="bg-light rounded p-20 mb-3">
+                                @if ($language)
+                                    <ul class="nav nav-tabs mb-4 border-0">
+                                        <li class="nav-item">
+                                            <a class="nav-link lang_link active" href="#"
+                                                id="default-link">{{ translate('messages.default') }}</a>
+                                        </li>
+                                        @foreach ($language as $lang)
+                                            <li class="nav-item">
+                                                <a class="nav-link lang_link" href="#"
+                                                    id="{{ $lang }}-link">{{ \App\CentralLogics\Helpers::get_language_name($lang) . '(' . strtoupper($lang) . ')' }}</a>
+                                            </li>
+                                        @endforeach
+                                    </ul>
+                                @endif
+                                @if ($language)
+                                    <div class="form-group m-0 lang_form" id="default-form">
                                         <label class="input-label"
                                             for="exampleFormControlInput1">{{ translate('messages.name') }}
-                                            ({{ strtoupper($lang) }})
+                                            ({{ translate('messages.default') }})
+                                            <span class="form-label-secondary text-danger" data-toggle="tooltip"
+                                                data-placement="right"
+                                                data-original-title="{{ translate('messages.Required.') }}"> *
+                                            </span>
+
                                         </label>
-                                        <input type="text" name="name[]" value="{{ old('name.' . $key + 1) }}"
-                                            class="form-control" placeholder="{{ translate('messages.new_category') }}"
+                                        <input type="text" name="name[]" value="{{ old('name.0') }}" class="form-control"
+                                            placeholder="{{ translate('messages.new_main_category') }}" maxlength="191">
+                                    </div>
+                                    <input type="hidden" name="lang[]" value="default">
+                                    @foreach ($language as $key => $lang)
+                                        <div class="form-group m-0 d-none lang_form" id="{{ $lang }}-form">
+                                            <label class="input-label"
+                                                for="exampleFormControlInput1">{{ translate('messages.name') }}
+                                                ({{ strtoupper($lang) }})
+                                            </label>
+                                            <input type="text" name="name[]" value="{{ old('name.' . $key + 1) }}"
+                                                class="form-control" placeholder="{{ translate('messages.new_main_category') }}"
+                                                maxlength="191">
+                                        </div>
+                                        <input type="hidden" name="lang[]" value="{{ $lang }}">
+                                    @endforeach
+                                @else
+                                    <div class="form-group m-0">
+                                        <label class="input-label"
+                                            for="exampleFormControlInput1">{{ translate('messages.name') }}</label>
+                                        <input type="text" name="name" class="form-control"
+                                            placeholder="{{ translate('messages.new_main_category') }}" value="{{ old('name') }}"
                                             maxlength="191">
                                     </div>
-                                    <input type="hidden" name="lang[]" value="{{ $lang }}">
-                                @endforeach
-                            @else
-                                <div class="form-group">
-                                    <label class="input-label"
-                                        for="exampleFormControlInput1">{{ translate('messages.name') }}</label>
-                                    <input type="text" name="name" class="form-control"
-                                        placeholder="{{ translate('messages.new_category') }}" value="{{ old('name') }}"
-                                        maxlength="191">
-                                </div>
-                                <input type="hidden" name="lang[]" value="default">
-                            @endif
-                            <input name="position" value="0" class="initial-hidden">
-
-                            <div class="form-group">
-                                <label class="input-label" for="">
-                                    {{ translate('messages.Priority') }}
-                                </label>
-                                <select required name="priority"
-                                    data-original-title="{{ translate('messages.Select_Priority') }}"
-                                    class="custom-select">
-                                    <option value="0">{{ translate('messages.Normal') }}</option>
-                                    <option value="1">{{ translate('messages.Medium') }}</option>
-                                    <option value="2">{{ translate('messages.High') }}</option>
-                                </select>
+                                    <input type="hidden" name="lang[]" value="default">
+                                @endif
                             </div>
-
-                            @if ($categoryWiseTax)
-                                <span class="mb-2 d-block title-clr fw-normal">{{ translate('Select Tax Rate') }}</span>
-                                <select name="tax_ids[]" id="tax__rate"
-                                    class="form-control js-select2-custom js-select2-counting" multiple="multiple" required
-                                    placeholder="Type & Select Tax Rate">
-                                    @foreach ($taxVats as $taxVat)
-                                        <option value="{{ $taxVat->id }}"> {{ $taxVat->name }}
-                                            ({{ $taxVat->tax_rate }}%)
-                                        </option>
-                                    @endforeach
-                                </select>
-                            @endif
-
-                        </div>
-                        <div class="col-md-6">
-                            <div class="h-100 d-flex align-items-center flex-column">
-                                <label class="mb-3 text-center">{{ translate('messages.image') }} <small
-                                        class="text-danger">* ( {{ translate('messages.ratio') }} 1:1)</small></label>
-                                <label class="text-center my-auto position-relative d-inline-block">
-                                    <img class="img--176 border" id="viewer"
-                                        @if (isset($category)) src="{{ asset('storage/app/public/category') }}/{{ $category['image'] }}"
-                                        @else
-                                        src="{{ asset('public/assets/admin/img/upload-img.png') }}" @endif
-                                        alt="image" />
-                                    <div class="icon-file-group">
-                                        <div class="icon-file">
-                                            <input type="file" name="image" id="customFileEg1"
-                                                class="custom-file-input this-url  read-url"
-                                                accept=".webp, .jpg, .png, .jpeg, .gif, .bmp, .tif, .tiff|image/*">
-                                            <i class="tio-edit"></i>
+                            <div class="bg-light rounded p-20">
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <input name="position" value="0" class="initial-hidden">
+                                        <div class="form-group m-0">
+                                            <label class="input-label" for="">
+                                                {{ translate('messages.Priority') }}
+                                            </label>
+                                            <select required name="priority"
+                                                data-original-title="{{ translate('messages.Select_Priority') }}"
+                                                class="custom-select">
+                                                <option value="0">{{ translate('messages.Normal') }}</option>
+                                                <option value="1">{{ translate('messages.Medium') }}</option>
+                                                <option value="2">{{ translate('messages.High') }}</option>
+                                            </select>
                                         </div>
                                     </div>
-                                </label>
+                                    <div class="col-md-6">
+                                        @if ($categoryWiseTax)
+                                            <span class="mb-2 d-block title-clr fw-normal">{{ translate('Select Tax Rate') }}</span>
+                                            <select name="tax_ids[]" id="tax__rate"
+                                                class="form-control js-select2-custom js-select2-counting" multiple="multiple" required
+                                                placeholder="Type & Select Tax Rate">
+                                                @foreach ($taxVats as $taxVat)
+                                                    <option value="{{ $taxVat->id }}"> {{ $taxVat->name }}
+                                                        ({{ $taxVat->tax_rate }}%)
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                        @endif
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                        <div class="col-md-4 col-lg-4">
+                            <div class="bg-light rounded p-20 h-100">
+
+
+
+                                <div class="text-center py-1">
+                                    <div class="mx-auto text-center">
+                                        <div class="mb-4">
+                                            <h5 class="mb-1">{{ translate('Main Category Image') }}</h5>
+                                            <p class="mb-0 fs-12 gray-dark">{{ translate('Upload image') }}</p>
+                                        </div>
+                                        @include('admin-views.partials._image-uploader', [
+                                            'id' => 'category-image-input',
+                                            'name' => 'image',
+                                            'ratio' => '1:1',
+                                            'isRequired' => true,
+                                            'existingImage' => isset($category) ? ($category['image_full_url'] ?? '') : '',
+                                            'imageExtension' => IMAGE_EXTENSION,
+                                            'imageFormat' => IMAGE_FORMAT,
+                                            'maxSize' => MAX_FILE_SIZE,
+                                            'textPosition' => 'bottom',
+                                        ])
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -144,21 +157,21 @@
         <div class="card mt-3">
             <div class="card-header py-2 border-0">
                 <div class="search--button-wrapper">
-                    <h5 class="card-title">{{ translate('messages.category_list') }}<span
+                    <h5 class="card-title">{{ translate('messages.main_category_list') }}<span
                             class="badge badge-soft-dark ml-2" id="itemCount">{{ $categories->total() }}</span></h5>
 
                     <form class="search-form w-340-lg">
                         <!-- Search -->
                         <div class="input-group input--group">
                             <input type="search" name="search" value="{{ request()?->search ?? null }}"
-                                class="form-control h-40" placeholder="{{ translate('messages.search_categories') }}"
+                                class="form-control h-40" placeholder="{{ translate('messages.search_main_categories') }}"
                                 aria-label="{{ translate('messages.ex_:_categories') }}">
                             <input type="hidden" name="position" value="0">
                             <button type="submit" class="btn btn--primary h-40"><i class="tio-search"></i></button>
                         </div>
                         <!-- End Search -->
                     </form>
-                    @if (request()->get('search'))
+                    @if (request()->input('search'))
                         <button type="reset" class="btn btn--primary ml-2 location-reload-to-category"
                             data-url="{{ url()->full() }}">{{ translate('messages.reset') }}</button>
                     @endif
@@ -209,7 +222,6 @@
                         <thead class="bg-table-head">
                             <tr>
                                 <th class=" text-title border-0">{{ translate('sl') }}</th>
-                                <th class=" text-title border-0">{{ translate('messages.id') }}</th>
                                 <th class=" text-title border-0 w--1">{{ translate('messages.name') }}</th>
                                 <th class=" text-title border-0 text-center">{{ translate('messages.status') }}</th>
 
@@ -233,11 +245,18 @@
                             @foreach ($categories as $key => $category)
                                 <tr>
                                     <td>{{ $key + $categories->firstItem() }}</td>
-                                    <td>{{ $category->id }}</td>
                                     <td>
-                                        <span class="d-block fs-14 d-block text-title max-w-250 min-w-160">
-                                            {{ Str::limit($category['name'], 20, '...') }}
-                                        </span>
+                                        <div class="media-area d-flex gap-2 align-items-center">
+                                            <div class="w-40px min-w-40px h-40px rounded overflow-hidden border">
+                                                <img src="{{  $category['image_full_url'] }}" alt="" class="w-100 rounded object-cover">
+                                            </div>
+                                            <div>
+                                                <span class="fs-14 line--limit-2 text-title max-w-250 min-w-160">
+                                                    {{ Str::limit($category['name'], 20, '...') }}
+                                                </span>
+                                                <p class="m-0">#{{ $category->id }}</p>
+                                            </div>
+                                        </div>
                                     </td>
                                     <td>
                                         <label class="toggle-switch toggle-switch-sm"
@@ -261,10 +280,10 @@
                                                 data-type="status"
                                                 data-image-on="{{ asset('/public/assets/admin/img/status-ons.png') }}"
                                                 data-image-off="{{ asset('/public/assets/admin/img/off-danger.png') }}"
-                                                data-title-on="{{ translate('Do you want to Featured this category ?') }}"
-                                                data-title-off="{{ translate('Do you want to remove this category from featured ?') }}"
-                                                data-text-on="<p>{{ translate('If you turn on this category as a featured category it will show in customer app landing page.') }}"
-                                                data-text-off="<p>{{ translate('If you turn off this category from featured category it will not show in customer app landing page.') }}</p>"
+                                                data-title-on="{{ translate('Do you want to Featured this main category ?') }}"
+                                                data-title-off="{{ translate('Do you want to remove this main category from featured ?') }}"
+                                                data-text-on="<p>{{ translate('If you turn on this main category as a featured category it will show in customer app landing page.') }}"
+                                                data-text-off="<p>{{ translate('If you turn off this main category from featured category it will not show in customer app landing page.') }}</p>"
                                                 class="toggle-switch-input dynamic-checkbox"
                                                 id="featuredCheckbox{{ $category->id }}"
                                                 {{ $category->featured ? 'checked' : '' }}>
@@ -285,9 +304,12 @@
                                         <td>
                                             <span class="d-block fs-14 text-title text-body ">
                                                 @forelse ($category?->taxVats?->pluck('tax.name', 'tax.tax_rate')->toArray() as $key => $tax)
-                                                    <span> {{ $tax }} : <span class="font-bold">
+                                                    <span class="bg-light rounded py-2 px-3">
+                                                        {{ $tax }} :
+                                                        <span class="font-light">
                                                             ({{ $key }}%)
-                                                        </span> </span>
+                                                        </span>
+                                                    </span>
                                                     <br>
                                                 @empty
                                                     <span> {{ translate('messages.N/A') }} </span>
@@ -324,8 +346,8 @@
                                             </a>
                                             <a class="btn action-btn btn--danger btn-outline-danger form-alert"
                                                 href="javascript:" data-id="category-{{ $category['id'] }}"
-                                                data-message="{{ translate('Want to delete this category') }}"
-                                                title="{{ translate('messages.delete_category') }}"><i
+                                                data-message="{{ translate('Want to delete this main category') }}"
+                                                title="{{ translate('messages.delete_main_category') }}"><i
                                                     class="tio-delete-outlined"></i>
                                             </a>
                                             <form action="{{ route('admin.category.delete', [$category['id']]) }}"
@@ -412,6 +434,9 @@
                     $("#data-view").append(data.view);
                     initLangTabs();
                     initSelect2Dropdowns();
+                    if (typeof checkPreExistingImages === 'function') {
+                        checkPreExistingImages();
+                    }
                 },
                 complete: function() {
                     $('#loading').hide()

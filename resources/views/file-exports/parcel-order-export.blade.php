@@ -65,8 +65,11 @@
                     <div>{{Str::limit($order->parcel_category?$order->parcel_category->name:translate('messages.not_found'),20,'...')}}</div>
             </td>
                 <td>
+                    @php($delivery_address = is_array($order->delivery_address) ? $order->delivery_address : json_decode($order->delivery_address, true))
                     @if ($order->customer)
                         {{ $order->customer['f_name'] . ' ' . $order->customer['l_name'] }}
+                    @elseif (!empty($delivery_address['contact_person_name']))
+                        {{ $delivery_address['contact_person_name'] }}
                     @else
                         {{ translate('not_found') }}
                     @endif

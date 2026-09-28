@@ -320,8 +320,8 @@
 @endsection
 
 @push('script_2')
-<script async defer
-    src="https://maps.googleapis.com/maps/api/js?key={{\App\Models\BusinessSetting::where('key', 'map_api_key')->first()->value}}&callback=initialize&libraries=drawing,places,marker&v=3.61"></script>
+<script async
+    src="https://maps.googleapis.com/maps/api/js?key={{\App\Models\BusinessSetting::where('key', 'map_api_key')->first()->value}}&libraries=places,marker&v=quarterly&loading=async&callback=initialize"></script>
 <script>
     "use strict";
     $(".popover-wrapper").click(function () {
@@ -395,13 +395,160 @@
         })
     });
 
-    let map; // Global declaration of the map
-    let drawingManager;
+    let map;
+    let drawingPolyline = null;
+    let drawingPolygon = null;
+    let polygonClosed = false;
     let lastpolygon = null;
     let polygons = [];
+    let drawingMode = true;
+    let vertexMarkers = [];
+    const MIN_VERTICES = 3;
+
+    // translateY(50%) compensates for AdvancedMarkerElement's bottom-center
+    // anchor so the circle's center sits on the LatLng.
+    function vertexElement(highlighted) {
+        const size = highlighted ? 20 : 12;
+        const div = document.createElement('div');
+        div.style.cssText =
+            'width:' + size + 'px;' +
+            'height:' + size + 'px;' +
+            'border-radius:50%;' +
+            'background:' + (highlighted ? '#00b35c' : '#FF0000') + ';' +
+            'border:2px solid #fff;' +
+            'box-shadow:0 1px 3px rgba(0,0,0,0.3);' +
+            'cursor:' + (highlighted ? 'pointer' : 'default') + ';' +
+            'transform:translateY(50%);';
+        return div;
+    }
+
+    function currentPath() {
+        if (polygonClosed && drawingPolygon) return drawingPolygon.getPath().getArray();
+        if (drawingPolyline) return drawingPolyline.getPath().getArray();
+        return [];
+    }
+
+    function syncVertexMarkers() {
+        // AdvancedMarkerElement unmounts via `.map = null`, not setMap().
+        vertexMarkers.forEach(function (m) { m.map = null; });
+        vertexMarkers = [];
+        // After close, the editable Polygon draws its own vertex handles.
+        if (polygonClosed) return;
+        const { AdvancedMarkerElement } = google.maps.marker;
+        const path = currentPath();
+        path.forEach(function (latLng, idx) {
+            const isFirst = idx === 0;
+            const canClose = isFirst && path.length >= MIN_VERTICES;
+            const marker = new AdvancedMarkerElement({
+                position: latLng,
+                map: map,
+                content: vertexElement(canClose),
+                gmpClickable: canClose,
+                title: canClose ? "{{ translate('Click_to_close_polygon') }}" : "",
+                zIndex: 9999,
+            });
+            // AdvancedMarkerElement fires 'gmp-click', not 'click'.
+            if (canClose) marker.addListener("gmp-click", closePolygon);
+            vertexMarkers.push(marker);
+        });
+    }
+
+    function clearDrawing() {
+        if (drawingPolygon) {
+            drawingPolygon.setMap(null);
+            drawingPolygon = null;
+        }
+        if (drawingPolyline) {
+            drawingPolyline.getPath().clear();
+            drawingPolyline.setMap(map);       // re-show in case close hid it
+            lastpolygon = drawingPolyline;
+        }
+        polygonClosed = false;
+        vertexMarkers.forEach(function (m) { m.map = null; });
+        vertexMarkers = [];
+        $('#coordinates').val('');
+        auto_grow();
+    }
+
+    function updateCoordinates() {
+        const path = currentPath();
+        $('#coordinates').val(path.length ? path.toString() : '');
+        auto_grow();
+        syncVertexMarkers();
+    }
+
+    function closePolygon() {
+        if (!drawingPolyline) return;
+        const path = drawingPolyline.getPath().getArray();
+        if (path.length < MIN_VERTICES) return;
+
+        drawingPolyline.setMap(null);
+        drawingPolygon = new google.maps.Polygon({
+            map: map,
+            paths: path,
+            editable: true,
+            clickable: false,
+            strokeColor: "#FF0000",
+            strokeOpacity: 0.8,
+            strokeWeight: 2,
+            fillColor: "#FF0000",
+            fillOpacity: 0.1,
+        });
+        polygonClosed = true;
+        lastpolygon = drawingPolygon;
+
+        const polyPath = drawingPolygon.getPath();
+        google.maps.event.addListener(polyPath, "set_at", updateCoordinates);
+        google.maps.event.addListener(polyPath, "insert_at", updateCoordinates);
+        google.maps.event.addListener(polyPath, "remove_at", updateCoordinates);
+
+        // Polygon's built-in editable handles replace our custom dots.
+        vertexMarkers.forEach(function (m) { m.map = null; });
+        vertexMarkers = [];
+        updateCoordinates();
+    }
+
+    let handToolEl = null;
+    let shapeToolEl = null;
+
+    function setDrawingMode(drawing) {
+        drawingMode = drawing;
+        if (map) {
+            map.setOptions({ draggableCursor: drawing ? "crosshair" : null });
+        }
+        if (shapeToolEl) {
+            shapeToolEl.style.backgroundColor = drawing ? "#e7f0ff" : "#fff";
+            shapeToolEl.style.color = drawing ? "#050df2" : "#444";
+        }
+        if (handToolEl) {
+            handToolEl.style.backgroundColor = drawing ? "#fff" : "#e7f0ff";
+            handToolEl.style.color = drawing ? "#444" : "#050df2";
+        }
+    }
+
+    function buildDrawingControl() {
+        const wrapper = document.createElement("div");
+        wrapper.style.cssText = "margin:10px;display:flex;border-radius:4px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.3);background:#fff;font-family:Roboto,Arial,sans-serif;";
+
+        handToolEl = document.createElement("div");
+        handToolEl.title = "Hand Tool — pan the map";
+        handToolEl.style.cssText = "cursor:pointer;display:flex;align-items:center;justify-content:center;width:36px;height:36px;font-size:18px;color:#444;";
+        handToolEl.innerHTML = `<i class="tio-hand-draw"></i>`;
+
+        shapeToolEl = document.createElement("div");
+        shapeToolEl.title = "Shape Tool — click the map to connect the dots";
+        shapeToolEl.style.cssText = "cursor:pointer;display:flex;align-items:center;justify-content:center;width:36px;height:36px;font-size:18px;color:#444;border-left:1px solid #e6e6e6;";
+        shapeToolEl.innerHTML = `<i class="tio-free-transform"></i>`;
+
+        handToolEl.addEventListener("click", function () { setDrawingMode(false); });
+        shapeToolEl.addEventListener("click", function () { setDrawingMode(true); });
+
+        wrapper.appendChild(handToolEl);
+        wrapper.appendChild(shapeToolEl);
+        return wrapper;
+    }
 
     function resetMap(controlDiv) {
-        // Set CSS for the control border.
         const controlUI = document.createElement("div");
         controlUI.style.backgroundColor = "#fff";
         controlUI.style.border = "2px solid #fff";
@@ -413,7 +560,6 @@
         controlUI.style.textAlign = "center";
         controlUI.title = "Reset map";
         controlDiv.appendChild(controlUI);
-        // Set CSS for the control interior.
         const controlText = document.createElement("div");
         controlText.style.color = "rgb(25,25,25)";
         controlText.style.fontFamily = "Roboto,Arial,sans-serif";
@@ -423,11 +569,8 @@
         controlText.style.paddingRight = "2px";
         controlText.innerHTML = "X";
         controlUI.appendChild(controlText);
-        // Setup the click event listeners: simply set the map to Chicago.
         controlUI.addEventListener("click", () => {
-            lastpolygon.setMap(null);
-            $('#coordinates').val('');
-
+            clearDrawing();
         });
     }
 
@@ -445,23 +588,39 @@
 
         }
         map = new google.maps.Map(document.getElementById("map-canvas"), myOptions);
-        drawingManager = new google.maps.drawing.DrawingManager({
-            drawingMode: google.maps.drawing.OverlayType.POLYGON,
-            drawingControl: true,
-            drawingControlOptions: {
-                position: google.maps.ControlPosition.TOP_CENTER,
-                drawingModes: [google.maps.drawing.OverlayType.POLYGON]
-            },
-            polygonOptions: {
-                editable: true
-            }
+        // Polyline (not Polygon) during drawing — Polygon would auto-render
+        // the closing edge + fill once it has 3 vertices, pre-empting the
+        // user's "click first dot to close" gesture.
+        drawingPolyline = new google.maps.Polyline({
+            map: map,
+            editable: false,
+            clickable: false,
+            strokeColor: "#FF0000",
+            strokeOpacity: 0.8,
+            strokeWeight: 2,
         });
-        drawingManager.setMap(map);
+        drawingPolyline.setPath([]);
+        const polylinePath = drawingPolyline.getPath();
+        lastpolygon = drawingPolyline;
 
+        google.maps.event.addListener(polylinePath, "set_at", updateCoordinates);
+        google.maps.event.addListener(polylinePath, "insert_at", updateCoordinates);
+        google.maps.event.addListener(polylinePath, "remove_at", updateCoordinates);
 
-        //get current location block
-        // infoWindow = new google.maps.InfoWindow();
-        // Try HTML5 geolocation.
+        google.maps.event.addListener(map, "click", function (event) {
+            if (!drawingMode) return;
+            if (polygonClosed) return;
+            polylinePath.push(event.latLng);
+            updateCoordinates();
+        });
+
+        map.controls[google.maps.ControlPosition.LEFT_TOP].push(buildDrawingControl());
+        setDrawingMode(true);
+
+        const resetDiv = document.createElement("div");
+        resetMap(resetDiv);
+        map.controls[google.maps.ControlPosition.RIGHT_TOP].push(resetDiv);
+
         if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(
                 (position) => {
@@ -473,52 +632,32 @@
                 });
         }
 
-        drawingManager.addListener("overlaycomplete", function (event) {
-            if (lastpolygon) {
-                lastpolygon.setMap(null);
-            }
-            $('#coordinates').val(event.overlay.getPath().getArray());
-            lastpolygon = event.overlay;
-            auto_grow();
-        });
 
-        const resetDiv = document.createElement("div");
-        resetMap(resetDiv, lastpolygon);
-        map.controls[google.maps.ControlPosition.TOP_CENTER].push(resetDiv);
-
-        // Create the search box and link it to the UI element.
         const input = document.getElementById("pac-input");
         const searchBox = new google.maps.places.SearchBox(input);
         map.controls[google.maps.ControlPosition.TOP_CENTER].push(input);
-        // Bias the SearchBox results towards current map's viewport.
         map.addListener("bounds_changed", () => {
             searchBox.setBounds(map.getBounds());
         });
         let markers = [];
-        // Listen for the event fired when the user selects a prediction and retrieve
-        // more details for that place.
         searchBox.addListener("places_changed", () => {
             const places = searchBox.getPlaces();
 
             if (places.length == 0) {
                 return;
             }
-            // Clear out the old markers.
             markers.forEach((marker) => {
-                marker.setMap(null);
+                marker.map = null;
             });
             markers = [];
-            // For each place, get the icon, name and location.
             const bounds = new google.maps.LatLngBounds();
             places.forEach((place) => {
                 if (!place.geometry || !place.geometry.location) {
-                    console.log("Returned place contains no geometry");
                     return;
                 }
 
                 const { AdvancedMarkerElement } = google.maps.marker;
 
-                // Create a marker for each place.
                 markers.push(
                     new AdvancedMarkerElement({
                         map,
@@ -528,7 +667,6 @@
                 );
 
                 if (place.geometry.viewport) {
-                    // Only geocodes have viewport.
                     bounds.union(place.geometry.viewport);
                 } else {
                     bounds.extend(place.geometry.location);
@@ -536,10 +674,9 @@
             });
             map.fitBounds(bounds);
         });
+
+        set_all_zones();
     }
-
-    // initialize();
-
 
     function set_all_zones() {
         $.get({
@@ -554,6 +691,7 @@
                         strokeWeight: 2,
                         fillColor: "#FF0000",
                         fillOpacity: 0.1,
+                        clickable: false,
                     }));
                     polygons[i].setMap(map);
                 }
@@ -561,12 +699,13 @@
             },
         });
     }
-    $(document).on('ready', function () {
-        set_all_zones();
-    });
 
-
-    $('#zone_form').on('submit', function () {
+    $('#zone_form').on('submit', function (e) {
+        if (!polygonClosed) {
+            e.preventDefault();
+            toastr.warning("{{ translate('Connect_the_last_dot_to_the_first_dot_to_close_the_polygon_before_saving') }}");
+            return false;
+        }
         let formData = new FormData(this);
         $.ajaxSetup({
             headers: {
@@ -591,8 +730,7 @@
                 else {
                     $('.tab-content').find('input:text').val('');
                     $('input[name="name"]').val(null);
-                    lastpolygon.setMap(null);
-                    $('#coordinates').val(null);
+                    clearDrawing();
                     toastr.success("{{ translate('messages.zone_added_successfully') }}", {
                         CloseButton: true,
                         ProgressBar: true
@@ -612,9 +750,7 @@
 
     $('#reset_btn').click(function () {
         $('.tab-content').find('input:text').val('');
-
-        lastpolygon.setMap(null);
-        $('#coordinates').val(null);
+        clearDrawing();
     })
 </script>
 @endpush

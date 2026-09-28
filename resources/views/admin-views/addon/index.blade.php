@@ -151,7 +151,7 @@
                             data-placeholder="{{ translate('messages.select_store') }}"
                             class="js-data-example-ajax form-control store-filter" title="Select Restaurant">
                             @if (isset($store))
-                                <option value="{{ $store->id }}" selected>{{ $store->name }}</option>
+                                <option value="{{ $store->id }}" data-verified="{{ (int) $store->verified_seller }}" selected>{{ $store->name }}</option>
                             @else
                                 <option value="all" selected>{{ translate('messages.all_stores') }}</option>
                             @endif

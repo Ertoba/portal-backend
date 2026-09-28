@@ -375,7 +375,7 @@
                 <div class="text-center max-w-320 mx-auto">
                     <img src="{{asset('public/assets/admin/img/feature-status-on.png')}}" alt="icon" class="mb-3">
                     <h3 class="mb-2 px-xl-4">Turn ON Google Analytics</h3>
-                    <p class="mb-0 fs-12">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aliquam odio tellus, laoreet </p>
+                    <p class="mb-0 fs-12">This area shows a brief sample description for preview purposes.</p>
                 </div>
             </div>
             <div class="modal-footer justify-content-center border-0 pt-0 gap-2">

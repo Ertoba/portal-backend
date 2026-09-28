@@ -41,9 +41,9 @@
                     <div class="row g-3">
                         <div class="col-lg-6 col-xl-4">
                             <div class="max-w-353px">
-                                <h4 class="mb-2 mt-4">{{ translate('Select System') }}</h4>
+                                <h4 class="mb-2 mt-4">{{ translate('Category List') }}</h4>
                                 <p class="m-0 fs-12">
-                                    {{ translate('Select the systems you want to temporarily deactivate for maintenance') }}
+                                    {{ translate('Category List is the list of categories which are most ordered by the customers') }}
                                 </p>
                             </div>
                         </div>
@@ -54,7 +54,7 @@
                                     <div class="mb-10px">
                                         <h5 class="fs-14 font-semibold mb-1">{{ translate('Use default sorting list') }}</h5>
                                         <label class="form-label d-flex align-items-center m-0">
-        
+
                                             <div class="fs-13">
                                                 {{ translate('Currently sorting this section by priority') }}</div>
                                         </label>
@@ -62,7 +62,7 @@
                                     <div class="d-flex bg-white border rounded pt-2 px-3 justify-content-between align-items-centerr">
                                         <div class="w-0 flex-grow">
                                             <label class="form-label d-flex align-items-center m-0">
-        
+
                                                 <div class="fs-13">
                                                     {{ translate('Status') }}</div>
                                             </label>
@@ -84,7 +84,7 @@
                                     <div class="mb-10px">
                                         <h5 class="fs-14 font-semibold mb-1">{{ translate('Use custom sorting list') }}</h5>
                                         <label class="form-label d-flex align-items-center m-0">
-        
+
                                             <div class="fs-13">
                                                 {{ translate('Set customized condition to show this list') }}</div>
                                         </label>
@@ -92,7 +92,7 @@
                                     <div class="d-flex bg-white border rounded pt-2 px-3 justify-content-between align-items-centerr">
                                         <div class="w-0 flex-grow">
                                             <label class="form-label d-flex align-items-center m-0">
-        
+
                                                 <div class="fs-14 text-dark">
                                                     {{ translate('Status') }}</div>
                                             </label>
@@ -154,7 +154,7 @@
                                                     </span>
                                                 </label>
                                             </div>
-        
+
                                         </div>
                                     </div>
                                 </div>

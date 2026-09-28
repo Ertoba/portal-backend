@@ -9,86 +9,268 @@
 
 @section('content')
     <div class="content container-fluid">
+        @php
+            $verified_seller_badge = \App\CentralLogics\Helpers::get_business_settings('verified_seller_badge');
+        @endphp
         @include('admin-views.vendor.view.partials._header', ['store' => $store])
 
 
         @if (isset($store->vendor->status) && $store->vendor->status == 1)
-            <div class="row g-3 text-capitalize">
-                <!-- Earnings (Monthly) Card Example -->
-                <div class="col-md-4">
-                    <div class="card h-100 card--bg-1">
-                        <div class="card-body text-center d-flex flex-column justify-content-center align-items-center">
-                            <h5 class="cash--subtitle text-white">
-                                {{ translate('messages.collected_cash_by_store') }}
-                            </h5>
-                            <div class="d-flex align-items-center justify-content-center mt-3">
-                                <div class="cash-icon mr-3">
-                                    <img src="{{ asset('public/assets/admin/img/cash.png') }}" alt="img">
+            @php
+                $reviewsInfo = $store->reviews()->where('reviews.status', 1)->selectRaw('AVG(reviews.rating) as average_rating, COUNT(reviews.id) as total_reviews')->first();
+                $average_rating = round((float) ($reviewsInfo->average_rating ?? 0), 1);
+                $review_count = (int) ($reviewsInfo->total_reviews ?? 0);
+                $order_stats = $store->orders()->StoreOrder()->selectRaw("
+                COUNT(*) as total_orders,
+                SUM(CASE WHEN order_status = 'delivered' THEN 1 ELSE 0 END) as delivered_orders,
+                SUM(CASE WHEN order_status = 'canceled' THEN 1 ELSE 0 END) as canceled_orders
+            ")->first();
+                $total_orders = (int) ($order_stats->total_orders ?? 0);
+                $delivered_orders = (int) ($order_stats->delivered_orders ?? 0);
+                $canceled_orders = (int) ($order_stats->canceled_orders ?? 0);
+                $comparison_orders = $delivered_orders + $canceled_orders;
+                $performance_rate = $average_rating > 2 && $comparison_orders > 0 ? round(($delivered_orders / $comparison_orders) * 100) : null;
+            @endphp
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title m-0 d-flex align-items-center">
+                        <span class="ml-1">{{ translate('messages.store_info') }}</span>
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="taxi-banner taxi-banner2 radius-10 mb-20"
+                        style="background-image: url('{{ $store->cover_photo_full_url }}'); background-repeat: no-repeat; background-position: center; background-size: cover;">
+                        <div class="taxi-info-wrapper d-flex flex-wrap flex-sm-nowrap gap-30px">
+                            <div class="logo bg-white rounded-8 h-135px ratio--1 p-10px">
+                                <img   src="{{ $store->logo_full_url ?? asset('public/assets/admin/img/100x100/1.png') }}" width="150" class="rounded-8"
+                                    alt="">
+                            </div>
+                            <div class="taxi-info flex-grow-1">
+                                <div class="info-area mb-20">
+                                    <h3 class="fs-20 mb-0 fw-bold text--title d-flex align-items-center gap-2">
+                                        {{ $store->name }}
+                                        @include('partials._verified_store_badge', ['store' => $store])
+                                    </h3>
+                                    <span class="fs-12 lh--12 text-8797AB">{{ translate('Created at') }} {{ \App\CentralLogics\Helpers::date_format($store->created_at) }}</span>
                                 </div>
-                                <h2 class="cash--title text-white">
-                                    {{ \App\CentralLogics\Helpers::format_currency($wallet->collected_cash) }}</h2>
+                                <div class="details row g-xl-4 g-3 justify-content-between">
+                                    <div class="col-sm-6 col-lg-4 col-xxl-3">
+                                        <div class="details-single d-flex align-items-center gap-2">
+                                            <img src="{{ asset('public/assets/admin/img/icons/s-zone.png') }}" width="36" height="36"
+                                                class="rounded" alt="">
+                                            <div>
+                                                <h5 class="lh--12 mb-2px color-3C3C3C">
+                                                     {{ translate('messages.Zone') }}
+                                                </h5>
+                                                <span class="fs-13 lh--12 color-484848 opacity-70 d-block">
+                                                    {{ $store?->zone?->name ?? translate('zone_deleted') }}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-sm-6 col-lg-4 col-xxl-3">
+                                        <div class="details-single d-flex align-items-center gap-2">
+                                            <img src="{{ asset('public/assets/admin/img/icons/s-phone.png') }}" width="36" height="36"
+                                                class="rounded" alt="">
+                                            <div>
+                                                <h5 class="lh--12 mb-2px color-3C3C3C">
+                                                     {{ translate('messages.Phone') }}
+                                                </h5>
+                                                <span class="fs-13 lh--12 color-484848 opacity-70 d-block">
+                                                    <a href="tel:+{{ $store->phone }}">{{ $store->phone }}</a>
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-sm-6 col-lg-4 col-xxl-3">
+                                        <div class="details-single d-flex align-items-center gap-2">
+                                            <img src="{{ asset('public/assets/admin/img/icons/s-email.png') }}" width="36" height="36"
+                                                class="rounded" alt="">
+                                            <div>
+                                                <h5 class="lh--12 mb-2px color-3C3C3C">
+                                                     {{ translate('messages.Email') }}
+                                                </h5>
+                                                <span class="fs-13 lh--12 text-break color-484848 opacity-70 d-block">
+
+                                                    <a href="mailto:{{ $store->email }}" target="_blank">{{ $store->email }}</a>
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-sm-6 col-lg-4 col-xxl-3">
+                                        <div class="details-single d-flex align-items-center gap-2">
+                                            <img src="{{ asset('public/assets/admin/img/icons/s-address.png') }}" width="36" height="36"
+                                                class="rounded" alt="">
+                                            <div>
+                                                <h5 class="lh--12 mb-2px color-3C3C3C">
+                                                     {{ translate('messages.Address') }}
+                                                </h5>
+                                                <span class="fs-13 lh--12 color-primary d-block">
+                                                        <a href="https://www.google.com/maps/search/?api=1&query={{ data_get($store, 'latitude', 0) }},{{ data_get($store, 'longitude', 0) }}"
+                                                            target="_blank">{{ $store->address }}</a>
+
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                        <div class="card-footer pt-0 bg-transparent border-0">
-                            <button class="btn text-white text-capitalize bg--title h--45px w-100" id="collect_cash"
-                                type="button" data-toggle="modal" data-target="#collect-cash"
-                                title="Collect Cash">{{ translate('messages.collect_cash_from_store') }}
-                            </button>
-                            {{-- <a class="btn text-white text-capitalize bg--title h--45px w-100" href="{{$store->vendor->status ? route('admin.transactions.account-transaction.index') : '#'}}" title="{{translate('messages.goto_account_transaction')}}">{{translate('messages.collect_cash_from_store')}}</a> --}}
+                    </div>
+                    <h4 class="fs-16 fw-700 text-title mb-3">
+                        {{ translate('messages.Performance Evaluation') }}
+                    </h4>
+                    <div class="row g-xl-4 g-3">
+                        <div class="col-sm-6 col-lg-3">
+                            <div class="resturant-card g-100 bg--secondary p-3 d-flex align-items-center gap-1 justify-content-between">
+                                <p class="fs-14 mb-0 color-22232466">
+                                    {{ translate('messages.ratting') }}
+                                </p>
+                                <h4 class="fs-16 fw-700 text-title mb-0">
+                                    {{ $average_rating }}/5
+                                </h4>
+                            </div>
                         </div>
+                        <div class="col-sm-6 col-lg-3">
+                            <div class="resturant-card g-100 card--bg-2 p-3 d-flex align-items-center gap-1 justify-content-between">
+                                <p class="fs-14 mb-0 color-22232466">
+                                    {{ translate('messages.Total Order') }}
+                                </p>
+                                <h4 class="fs-16 fw-700 text-warning mb-0">
+                                    {{ $total_orders }}
+                                </h4>
+                            </div>
+                        </div>
+                        <div class="col-sm-6 col-lg-3">
+                            <div class="resturant-card g-100 card--bg-3 p-3 d-flex align-items-center gap-1 justify-content-between">
+                                <p class="fs-14 mb-0 color-22232466">
+                                    {{ translate('messages.Delivered') }}
+                                </p>
+                                <h4 class="fs-16 fw-700 text-success mb-0">
+                                    {{ $delivered_orders }}
+                                </h4>
+                            </div>
+                        </div>
+                        <div class="col-sm-6 col-lg-3">
+                            <div class="resturant-card g-100 card--bg-4 p-3 d-flex align-items-center gap-1 justify-content-between">
+                                <p class="fs-14 mb-0 color-22232466">
+                                    {{ translate('messages.cancel') }}
+                                </p>
+                                <h4 class="fs-16 fw-700 text-danger mb-0">
+                                    {{ $canceled_orders }}
+                                </h4>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="info-notes-bg px-3 py-2 rounded fz-11  gap-2 align-items-center d-flex mt-20">
+                        <img src="{{asset('public/assets/admin/img/info-idea.svg')}}" alt="">
+                        <span>
+
+                            @if (!is_null($performance_rate))
+                                {{translate('This store’s performance is rated as')}}
+                                <span class="fz-12px font-semibold {{ $performance_rate >= 80 ? 'text-success' : ($performance_rate >= 50 ? 'text-warning' : 'text-danger') }}">
+                                    <a class="{{ $performance_rate >= 80 ? 'text-success' : ($performance_rate >= 50 ? 'text-warning' : 'text-danger') }}" href="#0">
+                                        {{ $performance_rate >= 80 ? translate('GOOD') : ($performance_rate >= 50 ? translate('Average') : translate('Needs Improvement')) }}
+                                    </a>
+                                </span>
+                                {{translate('based on its overall activity, reliability, and service quality.')}}
+                            @else
+                                {{ translate('This store does not have much available data.') }}
+                            @endif
+                        </span>
                     </div>
                 </div>
-                <div class="col-md-8">
-                    <div class="row g-3">
-                        <!-- Panding Withdraw Card Example -->
-                        <div class="col-sm-6">
-                            <div class="resturant-card card--bg-2">
-                                <h4 class="title">
-                                    {{ \App\CentralLogics\Helpers::format_currency($wallet->pending_withdraw) }}</h4>
-                                <div class="subtitle">{{ translate('messages.pending_withdraw') }}</div>
-                                <img class="resturant-icon w--30"
-                                    src="{{ asset('public/assets/admin/img/transactions/pending.png') }}" alt="transaction">
-                            </div>
-                        </div>
-
+            </div>
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title m-0 d-flex align-items-center">
+                        <span class="ml-1">{{ translate('messages.wallet info') }}</span>
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3 text-capitalize">
                         <!-- Earnings (Monthly) Card Example -->
-                        <div class="col-sm-6">
-                            <div class="resturant-card card--bg-3">
-                                <h4 class="title">
-                                    {{ \App\CentralLogics\Helpers::format_currency($wallet->total_withdrawn) }}</h4>
-                                <div class="subtitle">{{ translate('messages.total_withdrawal_amount') }}</div>
-                                <img class="resturant-icon w--30"
-                                    src="{{ asset('public/assets/admin/img/transactions/withdraw-amount.png') }}"
-                                    alt="transaction">
+                        <div class="col-md-4">
+                            <div class="card h-100 border-0 bg-icon-primary rounded">
+                                <div class="card-body pb-0 text-center d-flex flex-column justify-content-center align-items-center">
+                                    <div class="d-flex align-items-center mb-2 justify-content-center">
+                                        <h2 class="cash--title text-white">
+                                            {{ \App\CentralLogics\Helpers::format_currency($wallet->collected_cash) }}</h2>
+                                    </div>
+                                    <p class="fs-14 text-title mb-20 text-white">
+                                        {{ translate('messages.collected_cash_by_store') }}
+                                    </p>
+                                    <div class="d-flex text-center justify-content-center pt-0 bg-transparent border-0">
+                                        <button class="btn px-4 btn-primary text-white text-capitalize h--45px fs-14" id="collect_cash"
+                                            type="button" data-toggle="modal" data-target="#collect-cash"
+                                            title="Collect Cash">{{ translate('messages.collect_cash_from_store') }}
+                                        </button>
+                                        {{-- <a class="btn px-4 text-white text-capitalize h--45px" href="{{$store->vendor->status ? route('admin.transactions.account-transaction.index') : '#'}}" title="{{translate('messages.goto_account_transaction')}}">{{translate('messages.collect_cash_from_store')}}</a> --}}
+                                    </div>
+                                </div>
                             </div>
                         </div>
+                        <div class="col-md-8">
+                            <div class="row g-3">
+                                <!-- Panding Withdraw Card Example -->
+                                <div class="col-sm-6">
+                                    <div class="resturant-card bg--secondary">
+                                        <h4 class="title text-info">
+                                            {{ \App\CentralLogics\Helpers::format_currency($wallet->pending_withdraw) }}</h4>
+                                        <div class="subtitle">{{ translate('messages.pending_withdraw') }}</div>
+                                        <div class="resturant-icon w-45px max-w-1000 mb-20 h-45px bg-white rounded-circle d-center min-w-45px">
+                                            <img class="" width="20" height="20"
+                                                src="{{ asset('public/assets/admin/img/transactions/pending.png') }}" alt="transaction">
+                                        </div>
+                                    </div>
+                                </div>
 
-                        <!-- Collected Cash Card Example -->
-                        <div class="col-sm-6">
-                            <div class="resturant-card card--bg-4">
-                                <h4 class="title">
-                                    {{ \App\CentralLogics\Helpers::format_currency($wallet->balance > 0 ? $wallet->balance : 0) }}
-                                </h4>
-                                <div class="subtitle">{{ translate('messages.withdraw_able_balance') }}</div>
-                                <img class="resturant-icon w--30"
-                                    src="{{ asset('public/assets/admin/img/transactions/withdraw-balance.png') }}"
-                                    alt="transaction">
-                            </div>
-                        </div>
+                                <!-- Earnings (Monthly) Card Example -->
+                                <div class="col-sm-6">
+                                    <div class="resturant-card bg--secondary">
+                                        <h4 class="title text-success">
+                                            {{ \App\CentralLogics\Helpers::format_currency($wallet->total_withdrawn) }}</h4>
+                                        <div class="subtitle">{{ translate('messages.total_withdrawal_amount') }}</div>
+                                        <div class="resturant-icon w-45px max-w-1000 mb-20 h-45px bg-white rounded-circle d-center min-w-45px">
+                                            <img class="" width="20" height="20"
+                                                src="{{ asset('public/assets/admin/img/transactions/withdraw-amount.png') }}"
+                                                alt="transaction">
+                                        </div>
+                                    </div>
+                                </div>
 
-                        <!-- Pending Requests Card Example -->
-                        <div class="col-sm-6">
-                            <div class="resturant-card card--bg-1">
-                                <h4 class="title">
-                                    {{ \App\CentralLogics\Helpers::format_currency($wallet->total_earning) }}</h4>
-                                <div class="subtitle">{{ translate('messages.total_earning') }}</div>
-                                <img class="resturant-icon w--30"
-                                    src="{{ asset('public/assets/admin/img/transactions/earning.png') }}"
-                                    alt="transaction">
+                                <!-- Collected Cash Card Example -->
+                                <div class="col-sm-6">
+                                    <div class="resturant-card bg--secondary">
+                                        <h4 class="title text-danger">
+                                            {{ \App\CentralLogics\Helpers::format_currency($wallet->balance > 0 ? $wallet->balance : 0) }}
+                                        </h4>
+                                        <div class="subtitle">{{ translate('messages.withdraw_able_balance') }}</div>
+                                        <div class="resturant-icon w-45px max-w-1000 h-45px bg-white rounded-circle d-center min-w-45px">
+                                            <img class="" width="20" height="20"
+                                                src="{{ asset('public/assets/admin/img/transactions/withdraw-balance.png') }}"
+                                                alt="transaction">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Pending Requests Card Example -->
+                                <div class="col-sm-6">
+                                    <div class="resturant-card bg--secondary">
+                                        <h4 class="title text-warning">
+                                            {{ \App\CentralLogics\Helpers::format_currency($wallet->total_earning) }}</h4>
+                                        <div class="subtitle">{{ translate('messages.total_earning') }}</div>
+                                        <div class="resturant-icon w-45px max-w-1000  h-45px bg-white rounded-circle d-center min-w-45px">
+                                            <img class="" width="20" height="20"
+                                                src="{{ asset('public/assets/admin/img/transactions/earning.png') }}"
+                                                alt="transaction">
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
+
                         </div>
                     </div>
-
                 </div>
             </div>
             <div class="card mt-4">
@@ -153,9 +335,9 @@
                     <div class="card h-100">
                         <div class="card-header">
                             <h5 class="card-title m-0 d-flex align-items-center">
-                                <span class="card-header-icon mr-2">
+                                <!-- <span class="card-header-icon mr-2">
                                     <i class="tio-user"></i>
-                                </span>
+                                </span> -->
                                 <span class="ml-1">{{ translate('messages.owner_info') }}</span>
                             </h5>
                         </div>
@@ -191,15 +373,15 @@
                     <div class="card h-100">
                         <div class="card-header">
                             <h5 class="card-title m-0 d-flex align-items-center">
-                                <span class="card-header-icon mr-2">
+                                <!-- <span class="card-header-icon mr-2">
                                     <i class="tio-crown"></i>
-                                </span>
+                                </span> -->
                                 <span class="ml-1">{{ translate('messages.Business_Plan') }}</span>
                             </h5>
                         </div>
                         <div class="card-body">
                             <div class="resturant--info-address">
-                                <ul class="address-info address-info-2 list-unstyled list-unstyled-py-3 text-dark">
+                                <ul class="address-info address-info-2 p-0 list-unstyled list-unstyled-py-3 text-dark">
 
                                     @if ($store->store_business_model == 'commission')
                                         <li>

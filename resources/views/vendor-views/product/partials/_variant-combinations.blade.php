@@ -21,12 +21,12 @@
                         <td class="text-center">
                             <label class="control-label m-0">{{ $combination['name'] }}</label>
                         </td>
-                        <td>
-                            <input type="number" name="price_{{ $combination['name'] }}" value="{{ $combination['price'] }}" min="0" step="0.01"
+                        <td class="error-wrapper">
+                            <input type="number" name="price_{{ $combination['name'] }}" value="{{ $combination['price'] }}" min="0" step="{{ \App\CentralLogics\Helpers::getDecimalPlaces() }}" max="999999999999.999"
                                    class="form-control" required>
                         </td>
                         @if ($stock)
-                            <td><input type="number" name="stock_{{ $combination['name'] }}" value="{{ $combination['stock'] }}" min="0"
+                            <td class="error-wrapper"><input type="number" name="stock_{{ $combination['name'] }}" value="{{ $combination['stock'] }}" min="0"
                                        class="form-control" required></td>
                         @endif
 

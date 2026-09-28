@@ -55,7 +55,7 @@
     @endif
     <div class="tab-content">
         <div class="tab-pane fade show active">
-            <form action="{{ route('admin.business-settings.react-landing-page-settings', 'company-section') }}" method="POST" enctype="multipart/form-data">
+            <form action="{{ route('admin.business-settings.react-landing-page-settings-update', 'company-section') }}" method="POST" enctype="multipart/form-data">
                 @csrf
                 <h5 class="card-title mb-3 mt-3">
                     <div class="d-flex justify-content-between align-items-center w-100">
@@ -229,7 +229,7 @@
                                 <div class="form-group">
                                     <label for="company_button_name" class="form-label text-capitalize">
                                         {{translate('Button Name')}}
-                                        <span class="input-label-secondary text--title" data-toggle="tooltip" data-placement="right" data-original-title="Lorem ipsum">
+                                        <span class="input-label-secondary text--title" data-toggle="tooltip" data-placement="right" data-original-title="{{ translate('messages.The call-to-action label shown on the landing page button.') }}">
                                             <i class="tio-info-outined"></i>
                                         </span>
                                     </label>

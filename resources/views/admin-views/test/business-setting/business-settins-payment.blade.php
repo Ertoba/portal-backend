@@ -187,7 +187,7 @@
                </div>
                <div class="btn--container justify-content-end mt-20">
                     <button type="reset" class="btn btn--reset min-w-120px">{{ translate('messages.reset') }}</button>
-                    <button type="{{ env('APP_MODE') != 'demo' ? 'submit' : 'button' }}"
+                    <button type="{{ getEnvMode() != 'demo' ? 'submit' : 'button' }}"
                         class="btn btn--primary call-demo min-w-120px"><i class="tio-save">x</i>
                         {{ translate('save_information') }}</button>
                 </div>

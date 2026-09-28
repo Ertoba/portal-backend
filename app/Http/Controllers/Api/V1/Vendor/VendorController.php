@@ -5,11 +5,13 @@ namespace App\Http\Controllers\Api\V1\Vendor;
 use App\Models\Item;
 use App\Models\Admin;
 use App\Models\Order;
+use App\CentralLogics\DeliveryFeeLogic;
 use App\Models\Store;
 use App\Library\Payer;
 use App\Models\Coupon;
 use App\Models\Vendor;
 use App\Traits\Payment;
+use App\Traits\ManagesProCustomerSubscription;
 use App\Models\Campaign;
 use App\Library\Receiver;
 use App\Models\StoreWallet;
@@ -27,7 +29,6 @@ use App\CentralLogics\StoreLogic;
 use App\Mail\WithdrawRequestMail;
 use App\CentralLogics\CouponLogic;
 use App\Models\AccountTransaction;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Mail;
@@ -41,6 +42,8 @@ use Modules\Rental\Emails\ProviderWithdrawRequestMail;
 
 class VendorController extends Controller
 {
+    use ManagesProCustomerSubscription;
+
     public function get_profile(Request $request)
     {
         $vendor = $request['vendor'];
@@ -167,10 +170,10 @@ class VendorController extends Controller
                 }
 
 
-                if( $st?->storeConfig?->minimum_stock_for_warning > 0){
+                if( $st?->storeConfig?->show_low_stock_count && $st?->storeConfig?->minimum_stock_for_warning > 0){
                     $items=  $st?->items()->where('stock' ,'<=' , $st?->storeConfig?->minimum_stock_for_warning );
                 } else{
-                    $items=  $st?->items()->where('stock',0 );
+                    $items=  $st?->items()->whereRaw('1 = 0');
                 }
 
                 $out_of_stock_count=  $st?->module->module_type != 'food' ?  $items->orderby('stock')->latest()->count() : 0;
@@ -187,6 +190,8 @@ class VendorController extends Controller
         $store->save();
         return response()->json(['message' => $store->active?translate('messages.store_opened'):translate('messages.store_temporarily_closed')], 200);
     }
+
+
 
     public function get_earning_data(Request $request)
     {
@@ -512,23 +517,32 @@ class VendorController extends Controller
         $order = Order::whereHas('store.vendor', function($query) use($vendor){
             $query->where('id', $vendor->id);
         })
-        ->with(['customer','details'])
+        ->with(['customer','details','orderProDiscount','store','payments'])
         ->where('id', $request['order_id'])
         ->Notpos()
         ->first();
         if(!$order){
             return response()->json(['errors'=>[['code'=>'order_id', 'message'=>trans('messages.order_data_not_found')]]],404);
         }
+        $pro_discount = (float) ($order->orderProDiscount?->amount_saved ?? 0);
+        $is_editable = $order->is_editable;
         $details = isset($order->details)?$order->details:null;
         if ($details != null && $details->count() > 0) {
             $details = $details = Helpers::order_details_data_formatting($details);
             $details[0]['is_guest'] = (int)$order->is_guest;
+            $details[0]['pro_discount'] = $pro_discount;
+            $details[0]['is_editable'] = $is_editable;
             return response()->json($details, 200);
         } else if ($order->order_type == 'parcel' || $order->prescription_order == 1) {
             $order->delivery_address = json_decode($order->delivery_address, true);
             if($order->prescription_order && $order->order_attachment){
                 $order->order_attachment = is_array($order->order_attachment)? $order->order_attachment : json_decode($order->order_attachment, true);
             }
+            $order['pro_discount'] = $pro_discount;
+            $order['is_editable'] = $is_editable;
+            unset($order['orderProDiscount']);
+            unset($order['store']);
+            unset($order['payments']);
             return response()->json(($order), 200);
         }
 
@@ -552,7 +566,7 @@ class VendorController extends Controller
         $order = Order::whereHas('store.vendor', function($query) use($vendor){
             $query->where('id', $vendor->id);
         })
-        ->with(['customer','details','delivery_man','payments'])
+        ->with(['customer','details','delivery_man','payments','orderProDiscount'])
         ->where('id', $request['order_id'])
         ->first();
         if(!$order){
@@ -670,7 +684,6 @@ class VendorController extends Controller
             unset($item['stores']);
             array_push($data, $item);
         }
-        // $data = CampaignLogic::get_basic_campaigns($vendor->stores[0]->id, $request['limite'], $request['offset']);
         return response()->json($data, 200);
     }
 
@@ -742,7 +755,7 @@ class VendorController extends Controller
 
         $type = $request->query('type', 'all');
         $category_id = $request->category_id??0;
-        $paginator = Item::with('tags');
+        $paginator = Item::with(['tags', 'ecommerce_item_details.brand']);
 
           if($category_id != 0)
         {
@@ -968,6 +981,12 @@ class VendorController extends Controller
                                 ['code' => 'coupon', 'message' => translate('messages.coupon_usage_limit_over')]
                             ]
                         ], 406);
+                    } else if ($staus == 409) {
+                        return response()->json([
+                            'errors' => [
+                                ['code' => 'coupon', 'message' => translate('messages.coupon_not_valid_for_this_zone')]
+                            ]
+                        ], 403);
                     } else if ($staus == 404) {
                         return response()->json([
                             'errors' => [
@@ -1013,8 +1032,6 @@ class VendorController extends Controller
 
         $total_price = max($total_price, 0);
 
-
-
              $settings = BusinessSetting::whereIn('key', [
                 'dm_tips_status',
                 'additional_charge_status',
@@ -1030,7 +1047,6 @@ class VendorController extends Controller
             $extra_packaging_data      = json_decode($extra_packaging_data_raw, true) ?? [];
 
 
-            //Added DM TIPS
 
             if ($dm_tips_manage_status == 1) {
                 $order->dm_tips = $order->dm_tips ?? $request->dm_tips ?? 0;
@@ -1043,28 +1059,6 @@ class VendorController extends Controller
             if ($additional_charge_status == 1) {
                 $order->additional_charge = $additional_charge ?? 0;
             }
-
-                    $taxData =  \Modules\TaxModule\Services\CalculateTaxService::getCalculatedTax(
-                    amount: $total_price ,
-                    productIds: [],
-                    taxPayer: 'prescription',
-                    storeData: true,
-                    additionalCharges: $additionalCharges,
-                    addonIds: [],
-                    orderId: null,
-                    storeId:  $store->id
-                );
-
-                $tax_amount = $taxData['totalTaxamount'];
-                $tax_included = $taxData['include'];
-                $orderTaxIds = $taxData['orderTaxIds'] ?? [];
-                $tax_status = $tax_included ?  'included' : 'excluded';
-
-                $order->total_tax_amount = round($tax_amount, config('round_up_to_digit'));
-                $order->tax_status = $tax_status;
-
-
-
 
             $free_delivery_over = BusinessSetting::where('key', 'free_delivery_over')->first()->value;
             if (isset($free_delivery_over)) {
@@ -1089,13 +1083,47 @@ class VendorController extends Controller
                 $coupon->increment('total_uses');
             }
 
+            $proStore = Store::with('module')->find($order->store_id);
+            $proRecompute = $this->recomputeOrderProDiscountOnEdit(
+                order: $order,
+                subtotal: (float) ($product_price + $total_addon_price),
+                totalPrice: (float) $total_price,
+                moduleType: $proStore?->module?->module_type,
+                deliveryCharge: (float) $order->delivery_charge,
+            );
+            $pro_discount_amount = (float) $proRecompute['discount'];
+            $total_price         = (float) $proRecompute['total_price'];
+            $order->delivery_charge = (float) $proRecompute['delivery_charge'];
+            if ($proRecompute['delivery_savings'] > 0) {
+                $free_delivery_by = $proRecompute['free_delivery_by'];
+            }
+
+                    $taxData =  \Modules\TaxModule\Services\CalculateTaxService::getCalculatedTax(
+                    amount: $total_price ,
+                    productIds: [],
+                    taxPayer: 'prescription',
+                    storeData: true,
+                    additionalCharges: $additionalCharges,
+                    addonIds: [],
+                    orderId: null,
+                    storeId:  $store->id
+                );
+
+                $tax_amount = $taxData['totalTaxamount'];
+                $tax_included = $taxData['include'];
+                $orderTaxIds = $taxData['orderTaxIds'] ?? [];
+                $tax_status = $tax_included ?  'included' : 'excluded';
+
+                $order->total_tax_amount = round($tax_amount, config('round_up_to_digit'));
+                $order->tax_status = $tax_status;
+
             $order->coupon_discount_amount = round($coupon_discount_amount, config('round_up_to_digit'));
             $order->coupon_discount_title = $coupon ? $coupon->title : '';
 
             $order->store_discount_amount = round($store_discount_amount, config('round_up_to_digit'));
-
             $order->order_amount = round($total_price + $order->total_tax_amount + $order->delivery_charge, config('round_up_to_digit'));
             $order->free_delivery_by = $free_delivery_by;
+            $order->order_amount = DeliveryFeeLogic::applyDeliveryTypeToAmount($order, (float) $order->order_amount);
             $order->order_amount = $order->order_amount + $order->dm_tips + $order->additional_charge;
             $order->save();
         }
@@ -1113,6 +1141,8 @@ class VendorController extends Controller
             }
             $order = Order::find($request->order_id);
             $product_price = $order['order_amount'] + $order->store_discount_amount -$order['delivery_charge']-$order['total_tax_amount']-$order['dm_tips'] - $order->additional_charge;
+            $existing_pro_saved = (float) ($order->orderProDiscount?->amount_saved ?? 0);
+            $product_price += $existing_pro_saved;
 
 
             if($request->discount_amount > $product_price)
@@ -1150,27 +1180,35 @@ class VendorController extends Controller
             }
 
 
-            //Added service charge
             $order->additional_charge =$order->additional_charge;
 
             if ($additional_charge_status == 1) {
                 $order->additional_charge = $additional_charge ?? 0;
-                // $additionalCharges['tax_on_additional_charge'] = $order->additional_charge;
             }
 
 
 
-            // extra packaging charge
 
-            // $order->extra_packaging_amount =  (!empty($extra_packaging_data) && $request?->extra_packaging_amount > 0 && $store && ($extra_packaging_data[$store->module->module_type] == '1') && ($store?->storeConfig?->extra_packaging_status == '1')) ? $store?->storeConfig?->extra_packaging_amount : 0;
 
-            // if ($order->extra_packaging_amount > 0) {
-            //     $additionalCharges['tax_on_packaging_charge'] =  $order->extra_packaging_amount;
-            // }
 
+
+                $proStore  = Store::with('module')->find($order->store_id);
+                $afterDisc = max((float) ($product_price - $request->discount_amount), 0);
+                $proRecompute = $this->recomputeOrderProDiscountOnEdit(
+                    order: $order,
+                    subtotal: (float) $product_price,
+                    totalPrice: $afterDisc,
+                    moduleType: $proStore?->module?->module_type,
+                    deliveryCharge: (float) $order->delivery_charge,
+                );
+                $pro_discount_amount    = (float) $proRecompute['discount'];
+                $order->delivery_charge = (float) $proRecompute['delivery_charge'];
+                if ($proRecompute['delivery_savings'] > 0) {
+                    $order->free_delivery_by = $proRecompute['free_delivery_by'];
+                }
 
                     $taxData =  \Modules\TaxModule\Services\CalculateTaxService::getCalculatedTax(
-                    amount: $product_price-$request->discount_amount,
+                    amount: $product_price - $request->discount_amount - $pro_discount_amount,
                     productIds: [],
                     taxPayer: 'prescription',
                     storeData: true,
@@ -1190,7 +1228,7 @@ class VendorController extends Controller
 
                 $order->discount_on_product_by= 'vendor';
             $order->store_discount_amount = round($request->discount_amount, config('round_up_to_digit'));
-            $order->order_amount = $product_price+$order['delivery_charge']+$order['total_tax_amount']+$order['dm_tips'] -$order->store_discount_amount  +$order->additional_charge;
+            $order->order_amount = $product_price+$order['delivery_charge']+$order['total_tax_amount']+$order['dm_tips'] -$order->store_discount_amount  +$order->additional_charge - $pro_discount_amount;
             $order->save();
         }
             $order?->orderTaxes()?->delete();
@@ -1277,13 +1315,6 @@ class VendorController extends Controller
         } catch (\Exception $e) {
             info($e->getMessage());
             return response()->json(['message' => translate('messages.push_notification_faild')], 403);
-        }
-        try {
-            if (config('order_delivery_verification') && Cache::add('order_delivery_verification_sms_' . $order->id, true, now()->addSeconds(60))) {
-                Helpers::sendOrderDeliveryVerificationOtp($order, true);
-            }
-        } catch (\Exception $e) {
-            info($e->getMessage());
         }
         return response()->json([], 200);
     }

@@ -1,6 +1,16 @@
 
 <!DOCTYPE html>
 <?php
+    if(addon_published_status('RideShare')){
+        $toggle_rider_registration = \App\CentralLogics\Helpers::get_data_settings(RIDE_SHARE_BUSINESS_SETTINGS, 'toggle_rider_registration')?->value ?? false;
+        if($toggle_rider_registration == 1){
+            $toggle_rider_registration = true;
+        }else{
+            $toggle_rider_registration = false;
+        }
+    } else {
+        $toggle_rider_registration = false;
+    }
     $landing_site_direction = session()->get('landing_site_direction');
     $country= \App\CentralLogics\Helpers::get_business_settings('country')  ;
     $countryCode= strtolower($country??'auto');
@@ -15,323 +25,240 @@
     <title>@yield('title')</title>
     @include('layouts.landing._seo')
 
-    <link rel="stylesheet" href="{{ asset('public/assets/landing/css/bootstrap.min.css') }}" />
-    <link rel="stylesheet" href="{{ asset('public/assets/landing/css/customize-animate.css') }}" />
-    <link rel="stylesheet" href="{{ asset('public/assets/landing/css/odometer.css') }}" />
-    <link rel="stylesheet" href="{{ asset('public/assets/landing/css/owl.min.css') }}" />
-    <link rel="stylesheet" href="{{ asset('public/assets/admin/css/toastr.css') }}">
-    <link rel="stylesheet" href="{{ asset('public/assets/landing/css/main.css') }}"/>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;600;700;900&family=Syne:wght@700;800&display=swap" rel="stylesheet" />
 
+    <link rel="stylesheet" href="{{ asset('public/assets/landing/css/bootstrap.min.css') }}" />
+    <link rel="stylesheet" href="{{ asset('public/assets/landing/css/odometer.css') }}" />
+    <link rel="stylesheet" href="{{ asset('public/assets/admin/css/toastr.css') }}">
+    <link rel="stylesheet" href="{{ asset('public/assets/admin/css/app-toast.css') }}">
+    <link rel="stylesheet" href="{{ asset('public/assets/landing/css/landing.css') }}"/>
     <link rel="stylesheet" href="{{asset('public/assets/admin/intltelinput/css/intlTelInput.css')}}">
 
+    @php($backgroundChange = \App\CentralLogics\Helpers::get_business_settings('backgroundChange') ?? [])
+    @if (isset($backgroundChange['primary_1_hex']))
+    <style>
+        :root {
+            --primary: {{ $backgroundChange['primary_1_hex'] }};
+            --primary-dark: {{ $backgroundChange['primary_1_hex'] }};
+            --primary-rgb: {{ $backgroundChange['primary_1_rgb'] ?? '255,107,0' }};
+        }
+    </style>
+    @endif
 
     <link rel="icon" type="image/x-icon" href="{{\App\CentralLogics\Helpers::iconFullUrl()}}">
     @stack('css_or_js')
-     @php($backgroundChange = \App\CentralLogics\Helpers::get_business_settings('backgroundChange')??[])
-    @if (isset($backgroundChange['primary_1_hex']) && isset($backgroundChange['primary_2_hex']))
-        <style>
-            :root {
-                --base-1: <?php echo $backgroundChange['primary_1_hex']; ?>;
-                --base-rgb: <?php echo $backgroundChange['primary_1_rgb']; ?>;
-                --base-2: <?php echo $backgroundChange['primary_2_hex']; ?>;
-                --base-rgb-2:<?php echo $backgroundChange['primary_2_rgb']; ?>;
-            }
-        </style>
-    @endif
 </head>
 
 <body>
 
     @php($fixed_link = \App\Models\DataSetting::where(['key'=>'fixed_link','type'=>'admin_landing_page'])->first())
     @php($fixed_link = isset($fixed_link->value)?json_decode($fixed_link->value, true):null)
-    <!-- ==== Preloader ==== -->
-    <div id="landing-loader"></div>
-    <!-- ==== Preloader ==== -->
-    <!-- ==== Header Section Starts Here ==== -->
-    <header>
-        <div class="navbar-bottom">
-            <div class="container">
-                <div class="navbar-bottom-wrapper">
 
-                    <a href="{{route('home')}}" class="logo">
-                        <img class="onerror-image"  data-onerror-image="{{ asset('public/assets/admin/img/160x160/img2.jpg') }}"
+    <!-- Mobile menu overlay -->
+    <div class="mobile-menu" id="mobileMenu">
+        <button class="close-mob" id="closeMob">&times;</button>
+        <a href="{{route('home')}}" onclick="closeMobile()">{{ translate('messages.home') }}</a>
+        <a href="{{route('about-us')}}" onclick="closeMobile()">{{ translate('messages.about_us') }}</a>
+        <a href="{{route('privacy-policy')}}" onclick="closeMobile()">{{ translate('messages.privacy_policy') }}</a>
+        <a href="{{route('terms-and-conditions')}}" onclick="closeMobile()">{{ translate('messages.terms_and_condition') }}</a>
+        <a href="{{route('contact-us')}}" onclick="closeMobile()">{{ translate('messages.contact_us') }}</a>
+        @if (isset($toggle_store_registration) && $toggle_store_registration)
+            <a href="{{ route('restaurant.create') }}" onclick="closeMobile()">{{ translate('messages.vendor_registration') }}</a>
+        @endif
+        @if (isset($toggle_dm_registration) && $toggle_dm_registration)
+            <a href="{{ route('deliveryman.create') }}" onclick="closeMobile()">{{ translate('messages.deliveryman_registration') }}</a>
+        @endif
+        @if (isset($toggle_rider_registration) && $toggle_rider_registration)
+            <a href="{{ route('rider.create') }}" onclick="closeMobile()">{{ translate('messages.rider_registration') }}</a>
+        @endif
+        @if (isset($fixed_link) && isset($fixed_link['web_app_url_status']) && $fixed_link['web_app_url_status'] && !empty($fixed_link['web_app_url']))
+            <a href="{{ $fixed_link['web_app_url'] }}" target="_blank" onclick="closeMobile()" class="mob-browse-web">{{ translate('Browse web') }}</a>
+        @endif
+    </div>
 
-                    src="{{ \App\CentralLogics\Helpers::logoFullUrl()}}"
-
-                    alt="image">
-                    </a>
-                    <ul class="menu">
-                        <li>
-                            <a id="home-link" href="{{route('home')}}" class="{{ Request::is('/') ? 'active' : '' }}"><span>მთავარი</span></a>
-                        </li>
-                        <li>
-                            <a href="{{route('about-us')}}" class="{{ Request::is('about-us') ? 'active' : '' }}"><span>ჩვენს შესახებ</span></a>
-                        </li>
-                        <li>
-                            <a href="{{route('privacy-policy')}}" class="{{ Request::is('privacy-policy') ? 'active' : '' }}"><span>კონფიდენციალურობის პოლიტიკა</span></a>
-                        </li>
-                        <li>
-                            <a href="{{route('terms-and-conditions')}}" class="{{ Request::is('terms-and-conditions') ? 'active' : '' }}"><span>წესები და პირობები</span></a>
-                        </li>
-                        <li>
-                            <a href="{{route('contact-us')}}"  class="{{ Request::is('contact-us') ? 'active' : '' }}"><span>კონტაქტი</span></a>
-                        </li>
-                        @if ($fixed_link &&$fixed_link['web_app_url_status'])
-                            <div class="me-2 d-lg-none">
-                                <a class="cmn--btn me-xl-auto py-2" href="{{ $fixed_link['web_app_url'] }}" target="_blank">ვებ-აპის გახსნა</a>
-                            </div>
-                        @endif
-                    </ul>
-                    <div class="nav-toggle d-lg-none ms-auto me-3">
-                        <span></span>
-                        <span></span>
-                        <span></span>
-                    </div>
-                    @php( $local = session()->has('landing_local')?session('landing_local'):null)
-                    @php($lang = \App\CentralLogics\Helpers::get_business_settings('system_language') )
-                    @php($active_lang = collect($lang ?? [])->where('status', 1)->values())
-                    @if ($active_lang->count() > 1)
-                        <div class="dropdown--btn-hover position-relative">
-                            <a class="dropdown--btn border-0 px-3 header--btn text-capitalize d-flex align-items-center" href="javascript:void(0)">
-                                @foreach($active_lang as $data)
-                                @if($data['code']==$local)
-                                    <span class="me-1">{{$data['code']}}</span>
-                                @elseif(!$local &&  $data['default'] == true)
-                                    <span class="me-1">{{$data['code']}}</span>
-                                @endif
-                                @endforeach
-                                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M7.24701 11.14L2.45101 5.658C1.88501 5.013 2.34501 4 3.20401 4H12.796C12.9883 3.99984 13.1765 4.05509 13.3381 4.15914C13.4998 4.26319 13.628 4.41164 13.7075 4.58669C13.7869 4.76175 13.8142 4.956 13.7861 5.14618C13.758 5.33636 13.6757 5.51441 13.549 5.659L8.75301 11.139C8.65915 11.2464 8.5434 11.3325 8.41352 11.3915C8.28364 11.4505 8.14265 11.481 8.00001 11.481C7.85737 11.481 7.71638 11.4505 7.5865 11.3915C7.45663 11.3325 7.34087 11.2464 7.24701 11.139V11.14Z" fill="#768D82"/>
-                                </svg>
-                            </a>
-                            <ul class="dropdown-list py-0" style="min-width:120px; top:100%">
-                                @foreach($active_lang as $key =>$data)
-                                    <li class="py-0">
-                                        <a class="" href="{{route('lang',[$data['code']])}}">
-                                            {{$data['code']}}
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <hr class="dropdown-divider my-0">
-                                    </li>
-                                @endforeach
-                            </ul>
-                        </div>
-                    @endif
-                    @if ($fixed_link &&$fixed_link['web_app_url_status'])
-                        <div class="me-2 d-none d-lg-block">
-                            <a class="cmn--btn me-xl-auto py-2" href="{{ $fixed_link['web_app_url'] }}" target="_blank">ვებ-აპის გახსნა</a>
-                        </div>
-                    @endif
-                    @if (isset($toggle_dm_registration) || isset($toggle_store_registration))
-                    <div class="dropdown--btn-hover position-relative">
-                        <a class="dropdown--btn header--btn text-capitalize d-flex align-items-center" href="javascript:void(0)">
-                            <span class="me-1">შემოგვიერთდი</span>
-                            <svg width="12" height="7" viewBox="0 0 12 7" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path
-                                    d="M6.00224 5.46105L1.33333 0.415128C1.21002 0.290383 1 0.0787335 1 0.0787335C1 0.0787335 0.708488 -0.0458817 0.584976 0.0788632L0.191805 0.475841C0.0680976 0.600389 7.43292e-08 0.766881 7.22135e-08 0.9443C7.00978e-08 1.12172 0.0680976 1.28801 0.191805 1.41266L5.53678 6.80682C5.66068 6.93196 5.82624 7.00049 6.00224 7C6.17902 7.00049 6.34439 6.93206 6.46839 6.80682L11.8082 1.41768C11.9319 1.29303 12 1.12674 12 0.949223C12 0.771804 11.9319 0.605509 11.8082 0.480765L11.415 0.0838844C11.1591 -0.174368 10.9225 0.222512 10.6667 0.480765L6.00224 5.46105Z"
-                                    fill="#000000" />
-                            </svg>
-                        </a>
-
-                        <ul class="dropdown-list">
-                            @if ($toggle_store_registration)
-                            <li>
-                                <a class="" href="{{ route('restaurant.create') }}">
-                                    ვენდორის რეგისტრაცია
-                                </a>
-                            </li>
-                            @if ($toggle_dm_registration)
-                                <li>
-                                    <hr class="dropdown-divider">
-                                </li>
+    <!-- Header -->
+    <nav class="main-nav">
+        <div class="container">
+            <a href="{{route('home')}}" class="nav-logo max-w-70px-mobile">
+                <img class="onerror-image object-fit-contain" data-onerror-image="{{ asset('public/assets/admin/img/160x160/img2.jpg') }}" src="{{ \App\CentralLogics\Helpers::logoFullUrl()}}" alt="image" />
+            </a>
+            <div class="nav-links gap-3 gap-lg-4">
+                <a href="{{route('home')}}" class="{{ Request::is('/') ? 'active-link' : '' }}">{{ translate('messages.home') }}</a>
+                <a href="{{route('about-us')}}" class="{{ Request::is('about-us') ? 'active-link' : '' }}">{{ translate('messages.about_us') }}</a>
+                <a href="{{route('privacy-policy')}}" class="{{ Request::is('privacy-policy') ? 'active-link' : '' }}">{{ translate('messages.privacy_policy') }}</a>
+                <a href="{{route('terms-and-conditions')}}" class="{{ Request::is('terms-and-conditions') ? 'active-link' : '' }}">{{ translate('messages.terms_and_condition') }}</a>
+                <a href="{{route('contact-us')}}" class="{{ Request::is('contact-us') ? 'active-link' : '' }}">{{ translate('messages.contact_us') }}</a>
+            </div>
+            <div class="nav-right">
+                @php( $local = session()->has('landing_local')?session('landing_local'):null)
+                @php($lang = \App\CentralLogics\Helpers::get_business_settings('system_language') )
+                @if ($lang)
+                <div class="lang-sw" id="langSw">
+                    <div class="lang-current" onclick="document.getElementById('langSw').classList.toggle('open')">
+                        &#x1F310;
+                        @foreach($lang as $data)
+                            @if($data['code']==$local)
+                                <span>{{ strtoupper($data['code']) }}</span>
+                            @elseif(!$local && $data['default'] == true)
+                                <span>{{ strtoupper($data['code']) }}</span>
                             @endif
-                        @endif
-                        @if ($toggle_dm_registration)
-                            <li><a class=""
-                                    href="{{ route('deliveryman.create') }}">კურიერის რეგისტრაცია</a>
-                            </li>
-                        @endif
-                        </ul>
+                        @endforeach
+                        <svg viewBox="0 0 10 10" fill="none"><path d="M2.5 3.75L5 6.25L7.5 3.75" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
                     </div>
-                    @endif
+                    <div class="lang-dd">
+                        @foreach($lang as $key => $data)
+                            @if($data['status']==1)
+                                <a href="{{route('lang',[$data['code']])}}" class="{{ ($data['code']==$local || (!$local && $data['default'] == true)) ? 'active' : '' }}">
+                                    {{ $data['code'] }}
+                                </a>
+                            @endif
+                        @endforeach
+                    </div>
                 </div>
+                @endif
+
+                @if (isset($fixed_link) && isset($fixed_link['web_app_url_status']) && $fixed_link['web_app_url_status'] && !empty($fixed_link['web_app_url']))
+                <a href="{{ $fixed_link['web_app_url'] }}" target="_blank" class="btn-browse-web">{{ translate('Browse web') }}</a>
+                @endif
+
+                @if (isset($toggle_dm_registration) || isset($toggle_store_registration) || isset($toggle_rider_registration))
+                <div class="join-wrap">
+                    <button class="btn-join">{{ translate('Join us') }} <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2.5 3.75L5 6.25L7.5 3.75" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button>
+                    <div class="join-dd">
+                        @if (isset($toggle_store_registration) && $toggle_store_registration)
+                        <a href="{{ route('restaurant.create') }}" class="{{ Request::is('vendor*') ? 'active' : '' }}">
+                            <span class="ji" style="background:rgba(255,107,0,.1);color:#FF6B00;">&#x1F3EA;</span>
+                            {{ translate('messages.vendor_registration') }}
+                        </a>
+                        @endif
+                        @if (isset($toggle_dm_registration) && $toggle_dm_registration)
+                        <a href="{{ route('deliveryman.create') }}" class="{{ Request::is('deliveryman*') ? 'active' : '' }}">
+                            <span class="ji" style="background:rgba(0,190,101,.1);color:#00BE65;">&#x1F6F5;</span>
+                            {{ translate('messages.deliveryman_registration') }}
+                        </a>
+                        @endif
+                        @if (isset($toggle_rider_registration) && $toggle_rider_registration)
+                        <a href="{{ route('rider.create') }}" class="{{ Request::is('rider*') ? 'active' : '' }}">
+                            <span class="ji" style="background:rgba(0,121,227,.1);color:#0079E3;">&#x1F697;</span>
+                            {{ translate('messages.rider_registration') }}
+                        </a>
+                        @endif
+                    </div>
+                </div>
+                @endif
+
+                <button class="mob-btn" id="mobBtn" aria-label="Menu"><span></span><span></span><span></span></button>
             </div>
         </div>
-    </header>
-    <!-- ==== Header Section Ends Here ==== -->
-    @yield('content')
-    <!-- ======= Footer Section ======= -->
+    </nav>
 
-    <footer>
+    @yield('content')
+
+    <!-- Footer -->
+    <footer class="footer">
         @php($fixed_newsletter_title = \App\Models\DataSetting::where(['type' => 'admin_landing_page','key' => 'fixed_newsletter_title'])->first())
         @php($fixed_newsletter_title = isset($fixed_newsletter_title->value) ? $fixed_newsletter_title->value: null)
         @php($fixed_newsletter_sub_title = \App\Models\DataSetting::where(['type' => 'admin_landing_page','key' => 'fixed_newsletter_sub_title'])->first())
         @php($fixed_newsletter_sub_title = isset($fixed_newsletter_sub_title->value) ? $fixed_newsletter_sub_title->value: null)
         @php($fixed_footer_article_title = \App\Models\DataSetting::where(['type' => 'admin_landing_page','key' => 'fixed_footer_article_title'])->first())
         @php($fixed_footer_article_title = isset($fixed_footer_article_title->value) ? $fixed_footer_article_title->value: null)
-        <div class="newsletter-section">
-            <div class="container">
-                <div class="newsletter-wrapper">
-                    <div class="newsletter-content position-relative">
-                        <h3 class="title">{{ $fixed_newsletter_title }}</h3>
-                        <div class="text">
-                            {{ $fixed_newsletter_sub_title }}
-                        </div>
-                        <form method="post" action="{{route('newsletter.subscribe')}}">
-                            @csrf
-                            <div class="input--grp">
-                                <input type="email" name="email" required class="form-control" placeholder="შეიყვანეთ თქვენი ელფოსტა">
-                                <button class="search-btn" type="submit">
-                                    <svg width="46" height="46" viewBox="0 0 46 46" fill="none"
-                                        xmlns="http://www.w3.org/2000/svg">
-                                        <rect width="46" height="46" rx="23" fill="url(#paint0_linear_28_1864)" />
-                                        <path
-                                            d="M25.9667 22.997L19.3001 29.2222C19.1353 29.3866 18.8556 29.6667 18.8556 29.6667C18.8556 29.6667 18.691 30.0553 18.8558 30.22L19.3803 30.7443C19.5448 30.9092 19.7648 31 19.9992 31C20.2336 31 20.4533 30.9092 20.618 30.7443L27.7448 23.6176C27.9101 23.4524 28.0006 23.2317 28 22.997C28.0006 22.7613 27.9102 22.5408 27.7448 22.3755L20.6246 15.2557C20.46 15.0908 20.2403 15 20.0057 15C19.7713 15 19.5516 15.0908 19.3868 15.2557L18.8624 15.78C18.5212 16.1212 19.0456 16.4367 19.3868 16.7778L25.9667 22.997Z"
-                                            fill="white" />
-                                        <defs>
-                                            <linearGradient id="paint0_linear_28_1864" x1="-2.04694e-07" y1="23.4694"
-                                                x2="47.5207" y2="23.4694" gradientUnits="userSpaceOnUse">
-                                                <stop stop-color="#34DD8E" />
-                                                <stop offset="1" stop-color="#00D571" />
-                                            </linearGradient>
-                                        </defs>
-                                    </svg>
-                                </button>
-                            </div>
-                        </form>
+
+        <div class="container">
+            <!-- Newsletter -->
+            <div class="newsletter-area">
+                <h2>{{ $fixed_newsletter_title ?? translate('Sign Up to Our Newsletter') }}</h2>
+                <p>{{ $fixed_newsletter_sub_title ?? translate('Receive Latest News, Updates and Many Other News Every Week') }}</p>
+                <form class="nl-form" method="post" action="{{route('newsletter.subscribe')}}">
+                    @csrf
+                    <input type="email" name="email" placeholder="{{ translate('Enter your email address') }}" required />
+                    <button type="submit">{{ translate('Subscribe') }}</button>
+                </form>
+            </div>
+
+            <!-- Footer Grid -->
+            <div class="footer-grid">
+                <div class="f-brand">
+                    <a href="{{route('home')}}" class="nav-logo">
+                        <img class="onerror-image" data-onerror-image="{{ asset('public/assets/admin/img/160x160/img2.jpg') }}" src="{{\App\CentralLogics\Helpers::logoFullUrl()}}" alt="image" />
+                    </a>
+                    <p>{{ $fixed_footer_article_title }}</p>
+                    <div class="f-social">
+                        @php($social_media = \App\Models\SocialMedia::where('status', 1)->get())
+                        @if (isset($social_media))
+                            @foreach ($social_media as $social)
+                            <a href="{{ $social->link }}" target="_blank" aria-label="{{ $social->name }}">
+                                <img src="{{ asset('public/assets/landing/img/footer/'. $social->name.'.svg') }}" alt="{{ $social->name }}">
+                            </a>
+                            @endforeach
+                        @endif
+                    </div>
+                    @php($landing_page_links_footer = \App\Models\DataSetting::where(['type' => 'admin_landing_page','key' => 'download_user_app_links'])->first())
+                    @php($landing_page_links_footer = isset($landing_page_links_footer->value) ? json_decode($landing_page_links_footer->value, true) : null)
+                    @php($footer_playstore_url = \App\Models\BusinessSetting::where('key', 'app_url_android')->value('value'))
+                    @php($footer_appstore_url = \App\Models\BusinessSetting::where('key', 'app_url_ios')->value('value'))
+                    @if ((isset($landing_page_links_footer['playstore_url_status']) && $footer_playstore_url) || (isset($landing_page_links_footer['apple_store_url_status']) && $footer_appstore_url))
+                    <div class="f-app-row">
+                        @if (isset($landing_page_links_footer['playstore_url_status']) && $footer_playstore_url)
+                        <a href="{{ $footer_playstore_url }}" target="_blank" class="f-app-link">
+                            <svg viewBox="0 0 24 24"><path d="M3.609 1.814L13.792 12 3.61 22.186a.996.996 0 01-.61-.92V2.734a1 1 0 01.609-.92zm10.89 10.893l2.302 2.302-10.937 6.333 8.635-8.635zm3.199-1.4l2.834 1.638a1 1 0 010 1.726l-2.834 1.638-2.56-2.56 2.56-2.442zM5.864 1.458L16.8 7.79l-2.302 2.302-8.635-8.635z" fill="currentColor"/></svg>
+                            <span class="fal-text"><span class="fal-sm">Get it on</span><span class="fal-lg">Google Play</span></span>
+                        </a>
+                        @endif
+                        @if (isset($landing_page_links_footer['apple_store_url_status']) && $footer_appstore_url)
+                        <a href="{{ $footer_appstore_url }}" target="_blank" class="f-app-link">
+                            <svg viewBox="0 0 24 24"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z" fill="currentColor"/></svg>
+                            <span class="fal-text"><span class="fal-sm">Download on the</span><span class="fal-lg">App Store</span></span>
+                        </a>
+                        @endif
+                    </div>
+                    @endif
+                </div>
+
+                @php($landing_data_footer =\App\Models\DataSetting::where('type', 'admin_landing_page')->whereIn('key', ['shipping_policy_status','refund_policy_status','cancellation_policy_status'])->pluck('value','key')->toArray())
+                <div>
+                    <h5>{{translate("messages.Suppport")}}</h5>
+                    <div class="f-links">
+                        <a href="{{route('privacy-policy')}}">{{ translate('messages.privacy_policy') }}</a>
+                        <a href="{{route('terms-and-conditions')}}">{{ translate('messages.terms_and_condition') }}</a>
+                        @if (isset($landing_data_footer['refund_policy_status']) && $landing_data_footer['refund_policy_status'] == 1)
+                        <a href="{{route('refund')}}">{{ translate('messages.Refund Policy') }}</a>
+                        @endif
+                        @if (isset($landing_data_footer['shipping_policy_status']) && $landing_data_footer['shipping_policy_status'] == 1)
+                        <a href="{{route('shipping-policy')}}">{{ translate('messages.Shipping Policy') }}</a>
+                        @endif
+                        @if (isset($landing_data_footer['cancellation_policy_status']) && $landing_data_footer['cancellation_policy_status'] == 1)
+                        <a href="{{route('cancelation')}}">{{ translate('messages.Cancelation Policy') }}</a>
+                        @endif
+                    </div>
+                </div>
+
+                <div>
+                    <h5>{{translate("messages.Contact_Us")}}</h5>
+                    <div class="f-contact">
+                        <a href="#">&#x1F4CD; {{ \App\CentralLogics\Helpers::get_settings('address') }}</a>
+                        <a href="mailto:{{ \App\CentralLogics\Helpers::get_settings('email_address') }}">&#x2709;&#xFE0F; {{ \App\CentralLogics\Helpers::get_settings('email_address') }}</a>
+                        <a href="tel:{{ \App\CentralLogics\Helpers::get_settings('phone') }}">&#x1F4DE; {{ \App\CentralLogics\Helpers::get_settings('phone') }}</a>
                     </div>
                 </div>
             </div>
-        </div>
-        <div class="footer-bottom">
-            <div class="container">
-                <div class="footer-wrapper ps-xl-5">
-                    <div class="footer-widget">
-                        <div class="footer-logo">
-                            <a class="logo">
-                                <img  class="onerror-image"  data-onerror-image="{{ asset('public/assets/admin/img/160x160/img2.jpg') }}" src="{{\App\CentralLogics\Helpers::logoFullUrl()}}" alt="image">
-                            </a>
-                        </div>
-                        <div class="txt">
-                            {{ $fixed_footer_article_title }}
-                        </div>
-                        <ul class="social-icon">
-                            @php($social_media = \App\Models\SocialMedia::where('status', 1)->get())
-                            @if (isset($social_media))
-                                @foreach ($social_media as $social)
-                                <li>
-                                    <a href="{{ $social->link }}" target="_blank">
-                                        <img src="{{ asset('public/assets/landing/img/footer/'. $social->name.'.svg') }}" alt="">
-                                    </a>
-                                </li>
-                                @endforeach
-                            @endif
-                        </ul>
-                        @php($landing_page_links = \App\Models\DataSetting::where(['type' => 'admin_landing_page','key' => 'download_user_app_links'])->first())
-                        @php($landing_page_links = isset($landing_page_links->value) ? json_decode($landing_page_links->value, true) : null)
-                        @if (isset($landing_page_links['playstore_url_status']) || isset( $landing_page_links['apple_store_url_status']))
-                        <div class="app-btn-grp">
-                            @if (isset($landing_page_links['playstore_url_status']))
-                            <a href="{{ isset($landing_page_links['playstore_url']) ? $landing_page_links['playstore_url'] : '' }}">
-                                <img src="{{ asset('public/assets/landing/img/google.svg') }}" alt="">
-                            </a>
-                            @endif
-                            @if (isset($landing_page_links['apple_store_url_status']))
-                            <a href="{{ isset($landing_page_links['apple_store_url']) ? $landing_page_links['apple_store_url'] : '' }}">
-                                <img src="{{ asset('public/assets/landing/img/apple.svg') }}" alt="">
-                            </a>
-                            @endif
-                        </div>
-                        @endif
-                    </div>
-                    @php($landing_data =\App\Models\DataSetting::where('type', 'admin_landing_page')->whereIn('key', ['shipping_policy_status','refund_policy_status','cancellation_policy_status'])->pluck('value','key')->toArray())
-                    <div class="footer-widget widget-links">
-                        <h5 class="subtitle mt-2 text-white">მხარდაჭერა</h5>
-                        <ul>
-                            <li>
-                                <a href="{{route('privacy-policy')}}">კონფიდენციალურობის პოლიტიკა</a>
-                            </li>
-                            <li>
-                                <a href="{{route('terms-and-conditions')}}">წესები და პირობები</a>
-                            </li>
 
-                            @if (isset($landing_data['refund_policy_status']) && $landing_data['refund_policy_status']  == 1)
-                            <li>
-                                <a href="{{route('refund')}}">თანხის დაბრუნების პოლიტიკა</a>
-                            </li>
-                            @endif
-                            @if (isset($landing_data['shipping_policy_status']) && $landing_data['shipping_policy_status']  == 1)
-                            <li>
-                                <a href="{{route('shipping-policy')}}">მიწოდების პოლიტიკა</a>
-                            </li>
-                            @endif
-                            @if (isset($landing_data['cancellation_policy_status']) && $landing_data['cancellation_policy_status']  == 1)
-                            <li>
-                                <a href="{{route('cancelation')}}">გაუქმების პოლიტიკა</a>
-                            </li>
-                            @endif
-
-                        </ul>
-                    </div>
-                    <div class="footer-widget widget-links">
-                        <h5 class="subtitle mt-2 text-white">კონტაქტი</h5>
-                        <ul>
-                            <li>
-                                <a>
-                                    <svg width="16" height="16" viewBox="0 0 12 16" fill="none"
-                                        xmlns="http://www.w3.org/2000/svg">
-                                        <path
-                                            d="M10.2379 2.73992C9.26683 1.06417 7.54208 0.0403906 5.62411 0.00126563C5.54223 -0.000421875 5.45983 -0.000421875 5.37792 0.00126563C3.45998 0.0403906 1.73523 1.06417 0.764169 2.73992C-0.228393 4.4528 -0.25555 6.5103 0.691513 8.24376L4.65911 15.5059C4.66089 15.5091 4.66267 15.5123 4.66451 15.5155C4.83908 15.8189 5.15179 16 5.50108 16C5.85033 16 6.16304 15.8189 6.33757 15.5155C6.33942 15.5123 6.3412 15.5091 6.34298 15.5059L10.3106 8.24376C11.2576 6.5103 11.2304 4.4528 10.2379 2.73992ZM5.50101 7.25002C4.26036 7.25002 3.25101 6.24067 3.25101 5.00002C3.25101 3.75936 4.26036 2.75002 5.50101 2.75002C6.74167 2.75002 7.75101 3.75936 7.75101 5.00002C7.75101 6.24067 6.7417 7.25002 5.50101 7.25002Z"
-                                            fill="white" />
-                                    </svg>
-                                    {{ \App\CentralLogics\Helpers::get_settings('address') }}
-                                </a>
-                            </li>
-                            <li>
-                                <a href="mailto:{{ \App\CentralLogics\Helpers::get_settings('email_address') }}">
-                                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none"
-                                        xmlns="http://www.w3.org/2000/svg">
-                                        <path
-                                            d="M0.333768 2.97362C2.52971 4.83334 6.38289 8.10516 7.51539 9.12531C7.66742 9.263 7.83049 9.333 7.99977 9.333C8.16871 9.333 8.33149 9.26366 8.48317 9.12663C9.61664 8.10547 13.4698 4.83334 15.6658 2.97362C15.8025 2.85806 15.8234 2.65494 15.7127 2.51366C15.4568 2.18719 15.0753 2 14.6664 2H1.33311C0.924268 2 0.542737 2.18719 0.286893 2.51369C0.176205 2.65494 0.197049 2.85806 0.333768 2.97362Z"
-                                            fill="white" />
-                                        <path
-                                            d="M15.8067 3.98127C15.6885 3.92627 15.5495 3.94546 15.4512 4.02946C13.0159 6.0939 9.90788 8.74008 8.93 9.62124C8.38116 10.1167 7.61944 10.1167 7.06931 9.62058C6.027 8.68146 2.53675 5.71433 0.548813 4.02943C0.449844 3.94543 0.310531 3.9269 0.193344 3.98124C0.0755312 4.03596 0 4.1538 0 4.28368V12.6665C0 13.4019 0.597969 13.9998 1.33334 13.9998H14.6667C15.402 13.9998 16 13.4019 16 12.6665V4.28368C16 4.1538 15.9245 4.03565 15.8067 3.98127Z"
-                                            fill="white" />
-                                    </svg>
-                                    {{ \App\CentralLogics\Helpers::get_settings('email_address') }}
-                                </a>
-                            </li>
-                            <li>
-                                <a href="tel:{{ \App\CentralLogics\Helpers::get_settings('phone') }}">
-                                    <svg width="16" height="14" viewBox="0 0 14 14" fill="none"
-                                        xmlns="http://www.w3.org/2000/svg">
-                                        <path
-                                            d="M13.6043 10.2746L11.6505 8.32085C10.9528 7.62308 9.76655 7.90222 9.48744 8.80928C9.27812 9.4373 8.58035 9.78618 7.95236 9.6466C6.55683 9.29772 4.67287 7.48353 4.32398 6.01822C4.11465 5.39021 4.53331 4.69244 5.1613 4.48314C6.0684 4.20403 6.3475 3.01783 5.64974 2.32007L3.696 0.366327C3.13778 -0.122109 2.30047 -0.122109 1.81203 0.366327L0.486277 1.69208C-0.839476 3.08761 0.62583 6.78576 3.90533 10.0653C7.18482 13.3448 10.883 14.8799 12.2785 13.4843L13.6043 12.1586C14.0927 11.6003 14.0927 10.763 13.6043 10.2746Z"
-                                            fill="white" />
-                                    </svg>
-                                    {{ \App\CentralLogics\Helpers::get_settings('phone') }}
-                                </a>
-                            </li>
-                        </ul>
-                    </div>
-                </div>
-                <div class="copyright text-center mt-3">
-                    &copy; {{ \App\CentralLogics\Helpers::get_settings('footer_text') }}
-                        by {{ \App\CentralLogics\Helpers::get_settings('business_name') }}
-                </div>
+            <div class="footer-bottom-bar">
+                &copy; {{ \App\CentralLogics\Helpers::get_settings('footer_text') }}
+                by {{ \App\CentralLogics\Helpers::get_settings('business_name') }}
             </div>
         </div>
     </footer>
-    <!-- ======= Footer Section ======= -->
+
     <script src="{{ asset('public/assets/landing/js/jquery-3.6.0.min.js') }}"></script>
     <script src="{{ asset('public/assets/landing/js/bootstrap.min.js') }}"></script>
     <script src="{{ asset('public/assets/landing/js/viewport.jquery.js') }}"></script>
-    <script src="{{ asset('public/assets/landing/js/wow.min.js') }}"></script>
     <script src="{{ asset('public/assets/landing/js/odometer.min.js') }}"></script>
-    <script src="{{ asset('public/assets/landing/js/owl.min.js') }}"></script>
-    <script src="{{ asset('public/assets/landing/js/main.js') }}"></script>
     <script src="{{ asset('public/assets/admin/js/toastr.js') }}"></script>
+    <script src="{{ asset('public/assets/admin/js/app-toast.js') }}"></script>
+    <script src="{{ asset('public/assets/admin/js/field-error-toast.js') }}"></script>
+    <script src="{{ asset('public/assets/admin/intltelinput/js/intlTelInput.min.js')}}"></script>
     {!! Toastr::message() !!}
     @if ($errors->any())
         <script>
@@ -344,177 +271,61 @@
         </script>
     @endif
 
-
     @stack('script_2')
 
     <script>
         "use strict";
- $(".main-category-slider").owlCarousel({
-            loop: true,
-            nav: false,
-            dots: true,
-            items: 1,
-            margin: 12,
-            autoplay: true,
-            rtl: {{ $landing_site_direction === 'rtl'?'true':'false' }},
-        });
-        $(".testimonial-slider").owlCarousel({
-            loop: false,
-            margin: 15,
-            responsiveClass: true,
-            nav: false,
-            dots: false,
-            autoplay: true,
-            autoplayTimeout: 2000,
-            autoplayHoverPause: true,
-            items: 1,
-            rtl: {{ $landing_site_direction === 'rtl'?'true':'false' }},
-            responsive: {
-                768: {
-                    items: 2,
-                    margin: 20,
-                },
-                992: {
-                    items: 3,
-                    margin: 20,
-                },
-                1200: {
-                    items: 3,
-                    margin: 22,
-                },
-            },
-        });
-        $(".owl-prev").html('<i class="fas fa-angle-left">');
-        $(".owl-next").html('<i class="fas fa-angle-right">');
-        let sync1 = $("#sync1");
-         let sync2 = $("#sync2");
-         let thumbnailItemClass = ".owl-item";
-         let slides = sync1
-            .owlCarousel({
-                // startPosition: 12,
-                items: 1,
-                loop: false,
-                margin: 30,
-                mouseDrag: true,
-                touchDrag: true,
-                pullDrag: false,
-                scrollPerPage: true,
-                autoplayHoverPause: false,
-                nav: false,
-                dots: false,
-                // center: true,
-                rtl: {{ $landing_site_direction === 'rtl'?'true':'false' }},
-            })
-            .on("changed.owl.carousel", syncPosition);
+        // Init Bootstrap tooltips
+        $(function(){ $('[data-toggle="tooltip"]').tooltip(); });
 
-        function syncPosition(el) {
-            let  $owl_slider = $(this).data("owl.carousel");
-            let loop = $owl_slider.options.loop;
-            let current;
-            if (loop) {
-                let count = el.item.count - 1;
-                 current = Math.round(
-                    el.item.index - el.item.count / 2 - 0.5
-                );
-                if (current < 0) {
-                    current = count;
-                }
-                if (current > count) {
-                    current = 0;
-                }
-            } else {
-                 current = el.item.index;
-            }
+        // Mobile menu
+        document.getElementById('mobBtn').addEventListener('click',()=>document.getElementById('mobileMenu').classList.add('open'));
+        document.getElementById('closeMob').addEventListener('click',()=>document.getElementById('mobileMenu').classList.remove('open'));
+        function closeMobile(){document.getElementById('mobileMenu').classList.remove('open')}
 
-            let owl_thumbnail = sync2.data("owl.carousel");
-            let itemClass = "." + owl_thumbnail.options.itemClass;
-
-            let thumbnailCurrentItem = sync2
-                .find(itemClass)
-                .removeClass("synced")
-                .eq(current);
-            thumbnailCurrentItem.addClass("synced");
-
-            if (!thumbnailCurrentItem.hasClass("active")) {
-                let duration = 500;
-                sync2.trigger("to.owl.carousel", [current, duration, true]);
-            }
-        }
-
-        let thumbs = sync2
-            .owlCarousel({
-                // startPosition: 12,
-                items: 2,
-                loop: false,
-                margin: 0,
-                autoplay: false,
-                nav: true,
-                navText: ["",""],
-                dots: false,
-                mouseDrag: true,
-                touchDrag: true,
-                rtl: {{ $landing_site_direction === 'rtl'?'true':'false' }},
-                responsive: {
-                    400: {
-                        items: 3,
-                    },
-                    768: {
-                        items: 6,
-                    },
-                    1200: {
-                        items: 6,
-                    },
-                },
-                onInitialized: function (e) {
-                    let thumbnailCurrentItem = $(e.target)
-                        .find(thumbnailItemClass)
-                        .eq(this._current);
-                    thumbnailCurrentItem.addClass("synced");
-                },
-            })
-            .on("click", thumbnailItemClass, function (e) {
-                e.preventDefault();
-                let duration = 500;
-                let itemIndex = $(e.target).parents(thumbnailItemClass).index();
-                sync1.trigger("to.owl.carousel", [itemIndex, duration, true]);
-            })
-            .on("changed.owl.carousel", function (el) {
-                let number = el.item.index;
-                let  $owl_slider = sync1.data("owl.carousel");
-                $owl_slider.to(number, 500, true);
-            });
-        sync1.owlCarousel();
-
+        // Language dropdown close on outside click
+        document.addEventListener('click',e=>{const sw=document.getElementById('langSw');if(sw&&!sw.contains(e.target))sw.classList.remove('open')})
     </script>
-        <script src="{{asset('public/assets/admin/intltelinput/js/intlTelInput.min.js')}}"></script>
 
-<script>
-            "use strict";
+    <script>
+        "use strict";
+        function initTelInputs() {
             const inputs = document.querySelectorAll('input[type="tel"]');
             inputs.forEach(input => {
-                window.intlTelInput(input, {
+                const iti = window.intlTelInput(input, {
                     initialCountry: "{{$countryCode}}",
                     utilsScript: "{{ asset('public/assets/admin/intltelinput/js/utils.js') }}",
                     autoInsertDialCode: true,
                     nationalMode: false,
                     formatOnDisplay: false,
+                    strictMode: true,
+                    @if (\App\CentralLogics\Helpers::get_business_settings('country_picker_status') != 1)
+                        onlyCountries: ["{{$countryCode}}"],
+                    @endif
                 });
+                const restoreDialCode = () => {
+                    if (input.value.trim() === '') {
+                        input.value = '+' + iti.getSelectedCountryData().dialCode;
+                    }
+                };
+                input.addEventListener('blur', restoreDialCode);
+                input.closest('form')?.addEventListener('submit', restoreDialCode);
             });
-
-
-            function keepNumbersAndPlus(inputString) {
-                let regex = /[0-9+]/g;
-                let filteredString = inputString.match(regex);
-            return filteredString ? filteredString.join('') : '';
-            }
-
-            $(document).on('keyup', 'input[type="tel"]', function () {
-                $(this).val(keepNumbersAndPlus($(this).val()));
-                });
-
-
-</script>
+            $(document).off('keyup.telinput').on('keyup.telinput', 'input[type="tel"]', function () {
+                const iti = window.intlTelInputGlobals.getInstance(this);
+                if (!iti) return;
+                let val = $(this).val();
+                if (val.trim() === '') {
+                    val = '+' + iti.getSelectedCountryData().dialCode;
+                } else {
+                    const plus = val.startsWith('+') ? '+' : '';
+                    val = plus + val.replace(/[^\d]/g, '');
+                }
+                $(this).val(val);
+            });
+        }
+        initTelInputs();
+    </script>
 
 </body>
-
 </html>

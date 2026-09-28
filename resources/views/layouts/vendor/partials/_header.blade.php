@@ -13,7 +13,17 @@
                 </button>
                 <!-- End Navbar Vertical Toggle -->
             </div>
-
+            @if(\App\CentralLogics\Helpers::check_website_builder_status())
+            <div class="" id="vendor-dashboard-builder-button">
+                <a href="{{ route('vendor.builder.index', ['page' => 'global-settings']) }}"
+                   class="website-builder-btn">
+                    <span class="website-builder-icon">
+                        <img src="{{ asset('public/assets/admin/img/builder.svg') }}" alt="" >
+                    </span>
+                    <span>{{ translate('Build Your Custom Website') }}</span>
+                </a>
+            </div>
+            @endif
             <!-- Secondary Content -->
             <div class="navbar-nav-wrap-content-right">
                 <!-- Navbar -->
@@ -66,6 +76,7 @@
                             </div>
                         </div>
                     </li>
+                    @if (\App\CentralLogics\Helpers::employee_module_permission_check('chat'))
                     <li class="nav-item d-none d-sm-inline-block mr-4">
                         <!-- Notification -->
                         <div class="hs-unfold">
@@ -80,6 +91,7 @@
                         </div>
                         <!-- End Notification -->
                     </li>
+                    @endif
 
 
 

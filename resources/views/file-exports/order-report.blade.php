@@ -46,6 +46,7 @@
                 <th>{{ translate('messages.item_discount') }}</th>
                 <th>{{ translate('messages.coupon_discount') }}</th>
                 <th>{{ translate('messages.referral_discount') }}</th>
+                <th>{{ translate('messages.Pro_Discount') }}</th>
                 <th>{{ translate('messages.discounted_amount') }}</th>
                 <th>{{  \App\CentralLogics\Helpers::get_business_data('additional_charge_name')??translate('messages.additional_charge')  }}</th>
                 <th>{{ translate('messages.extra_packaging_amount') }}</th>
@@ -61,8 +62,11 @@
                 <td>{{ $key+1 }}</td>
                 <td>{{ $order->id }}</td>
                 <td>
+                    @php($delivery_address = is_array($order->delivery_address) ? $order->delivery_address : json_decode($order->delivery_address, true))
                     @if ($order->customer)
                         {{ $order->customer['f_name'] . ' ' . $order->customer['l_name'] }}
+                    @elseif (!empty($delivery_address['contact_person_name']))
+                        {{ $delivery_address['contact_person_name'] }}
                     @else
                         {{ translate('not_found') }}
                     @endif
@@ -74,7 +78,7 @@
                         {{ translate('messages.not_found') }}
                     @endif
                 </td>
-                <td>{{ \App\CentralLogics\Helpers::number_format_short($order['order_amount'] - $order->additional_charge -$order['dm_tips']-$order['total_tax_amount']-$order['delivery_charge']+$order['coupon_discount_amount'] + $order['store_discount_amount'] + $order['ref_bonus_amount'] - $order['extra_packaging_amount'] +$order['flash_admin_discount_amount'] +$order['flash_store_discount_amount'] + $order['extra_discount_amount'] ) }}</td>
+                <td>{{ \App\CentralLogics\Helpers::number_format_short($order['order_amount'] - $order->additional_charge -$order['dm_tips']-$order['total_tax_amount']-\App\CentralLogics\DeliveryFeeLogic::adjustedFeeForOrder($order)['adjusted']+$order['coupon_discount_amount'] + $order['store_discount_amount'] + $order['ref_bonus_amount'] - $order['extra_packaging_amount'] +$order['flash_admin_discount_amount'] +$order['flash_store_discount_amount'] + $order['extra_discount_amount'] + ($order->orderProDiscount?->amount_saved ?? 0) ) }}</td>
                 @if ($order->discount_type == 'flash_sale')
                 <td>{{ \App\CentralLogics\Helpers::number_format_short($order['flash_admin_discount_amount'] +$order['flash_store_discount_amount'] ) }}</td>
                 @else
@@ -83,7 +87,8 @@
                 @endif
                 <td>{{ \App\CentralLogics\Helpers::number_format_short($order['coupon_discount_amount']) }}</td>
                 <td>{{ \App\CentralLogics\Helpers::number_format_short($order['ref_bonus_amount']) }}</td>
-                <td>{{ \App\CentralLogics\Helpers::number_format_short($order['coupon_discount_amount'] + $order['store_discount_amount'] + $order['ref_bonus_amount'] + $order['extra_discount_amount'] ) }}</td>
+                <td>{{ \App\CentralLogics\Helpers::number_format_short($order->orderProDiscount?->amount_saved ?? 0) }}</td>
+                <td>{{ \App\CentralLogics\Helpers::number_format_short($order['coupon_discount_amount'] + $order['store_discount_amount'] + $order['ref_bonus_amount'] + $order['extra_discount_amount'] + ($order->orderProDiscount?->amount_saved ?? 0) ) }}</td>
                 <td>{{ \App\CentralLogics\Helpers::number_format_short($order['additional_charge']) }}</td>
                 <td>{{ \App\CentralLogics\Helpers::number_format_short($order['extra_packaging_amount']) }}</td>
                 <td>{{ \App\CentralLogics\Helpers::number_format_short($order['total_tax_amount']) }}</td>

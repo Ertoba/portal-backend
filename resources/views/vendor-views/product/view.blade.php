@@ -41,12 +41,9 @@
                 <div class="card-body">
                     <div class="row align-items-md-center">
                         <div class="col-lg-5 col-md-6 mb-3 mb-md-0">
-                            <div class="d-flex flex-wrap align-items-center food--media">
-                                <img class="avatar avatar-xxl avatar-4by3 mr-4 onerror-image"
-                                    src="{{ $product['image_full_url'] }}"
-                                    data-onerror-image="{{ asset('public/assets/admin/img/160x160/img2.jpg') }}"
-                                    alt="Image Description">
-                                <div class="d-block">
+                            <div class="d-flex flex-wrap gap-4 align-items-center food--media">
+                                @include('partials._product-media-slider', ['product' => $product])
+                                <div class="d-block text-center">
                                     <div class="rating--review">
                                         <h1 class="title">{{ number_format($product->avg_rating, 1) }}<span
                                                 class="out-of">/5</span></h1>
@@ -150,6 +147,14 @@
                 </div>
             </div>
         </div>
+        <div class="info-notes-bg px-3 py-2 rounded fz-11  gap-2 align-items-center d-flex mt-20 mb-20">
+            <img src="{{asset('public/assets/admin/img/info-idea.svg')}}" alt="">
+            <span>
+                {{translate('Customer selected this item for monthly repeat')}}
+                <strong class="text-title"> {{translate('(Qty: 67).')}}</strong>
+                {{translate('Please update your stock to ensure smooth sales.')}}.
+            </span>
+        </div>
         <!-- End Card -->
         @if (\App\CentralLogics\Helpers::get_store_data()->review_permission)
             <!-- Description Card Start -->
@@ -232,7 +237,7 @@
                                     @endif
 
                                     @if ($product->module->module_type != 'food')
-                                        <td class="px-4">{{ $product->stock }}</td>
+                                        <td class="px-4">{{ max((int) $product->stock, 0) }}</td>
                                     @endif
 
                                     @if (in_array($product->module->module_type, ['pharmacy']))
@@ -432,8 +437,7 @@
                                     <div>
                                         <h5 class="d-block text-hover-primary mb-1">
                                             {{ Str::limit($review->customer['f_name'] . ' ' . $review->customer['l_name']) }}
-                                            <i class="tio-verified text-primary" data-toggle="tooltip"
-                                                data-placement="top" title="Verified Customer"></i></h5>
+                                            </h5>
                                         <span
                                             class="d-block font-size-sm text-body">{{ Str::limit($review->customer->phone) }}</span>
                                     </div>
@@ -597,8 +601,7 @@
                                                     <div>
                                                         <h5 class="d-block text-hover-primary mb-1">
                                                             {{ Str::limit($review->customer['f_name'] . ' ' . $review->customer['l_name']) }}
-                                                            <i class="tio-verified text-primary" data-toggle="tooltip"
-                                                                data-placement="top" title="Verified Customer"></i></h5>
+                                                            </h5>
                                                         <span
                                                             class="d-block font-size-sm text-body">{{ Str::limit($review->comment) }}</span>
                                                     </div>

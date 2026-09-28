@@ -44,22 +44,64 @@
 
         <div class="col-12">
 
-            <div class="card mt-2">
-                <div class="card-header card-header-shadow">
-                    <h5 class="card-title">
-                        <span>
-                            <span class="page-header-icon">
-                                <i class="tio-robot"></i>
+            <form action="{{ route('admin.business-settings.openAISettingsUpdate') }}" method="post">
+                @csrf
+                @method('put')
+
+                @if (addon_published_status('AI'))
+                    @php($ai_chat_status = $data['ai_chat_status'] ?? 0)
+                    <div class="card mt-2">
+                        <div class="card-body p-20">
+                            <div class="d-flex align-items-center justify-content-between gap-2 flex-sm-nowrap flex-wrap">
+                                <div>
+                                    <h4 class="mb-1">
+                                        <span class="page-header-icon mr-1">
+                                            <i class="tio-robot"></i>
+                                        </span>
+                                        {{ translate('AI Chat Agent') }}
+                                    </h4>
+                                    <p class="fs-12 m-0">
+                                        {{ translate('Allow customers to use the AI chat assistant from the customer app and web.') }}
+                                    </p>
+                                </div>
+                                <div class="d-flex flex-sm-nowrap flex-wrap justify-content-end align-items-center gap-3">
+                                    <div class="mb-0">
+                                        <label class="toggle-switch toggle-switch-sm mb-0">
+                                            <input type="checkbox"
+                                                data-id="ai_chat_status" data-type="toggle"
+                                                data-image-on="{{ asset('/public/assets/admin/img/modal/mail-success.png') }}"
+                                                data-image-off="{{ asset('/public/assets/admin/img/modal/mail-warning.png') }}"
+                                                data-title-on="<strong>{{ translate('Turn on the AI Chat Agent?') }}</strong>"
+                                                data-title-off="<strong>{{ translate('Turn off the AI Chat Agent?') }}</strong>"
+                                                data-text-on="<p>{{ translate('Customers will be able to ask questions and get conversational replies from the AI assistant on both the customer app and the website. A valid OpenAI configuration is required (see the AI Configuration tab); without it, requests will fail even when this toggle is on.') }}</p>"
+                                                data-text-off="<p>{{ translate('The chat assistant will be unavailable to customers on both the app and the website, and all AI chat API requests will be rejected. Existing conversations are kept and will reappear once you turn the agent back on.') }}</p>"
+                                                class="status toggle-switch-input dynamic-checkbox-toggle"
+                                                name="ai_chat_status" id="ai_chat_status" value="1"
+                                                {{ $ai_chat_status == 1 ? 'checked' : '' }}>
+                                            <span class="toggle-switch-label text mb-0">
+                                                <span class="toggle-switch-indicator"></span>
+                                            </span>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                @endif
+
+                <div class="card mt-2">
+                    <div class="card-header card-header-shadow">
+                        <h5 class="card-title">
+                            <span>
+                                <span class="page-header-icon">
+                                    <i class="tio-robot"></i>
+                                </span>
+                                {{ translate('Vendor_limits_on_using_AI') }}
                             </span>
-                            {{ translate('Vendor_limits_on_using_AI') }}
-                        </span>
 
-                    </h5>
-                </div>
+                        </h5>
+                    </div>
 
-                <form action="{{ route('admin.business-settings.openAISettingsUpdate') }}" method="post">
-                    @csrf
-                    @method('put')
                     <div class="card-body">
                         <div class="py-2">
                             <div class="row g-3 align-items-end">
@@ -125,17 +167,11 @@
 
                         </div>
 
-                        <div class="mb-4 mt-4 col-12">
-                            <div class="btn--container justify-content-end">
-                                <button type="reset" id="reset_btn"
-                                    class="btn btn--reset location-reload">{{ translate('Reset') }}</button>
-                                <button type="{{ env('APP_MODE') != 'demo' ? 'submit' : 'button' }}" id="submit"
-                                    class="btn btn--primary call-demo">{{ translate('Save_Information') }}</button>
-                            </div>
-                        </div>
                     </div>
-                </form>
-            </div>
+                </div>
+
+                @include('admin-views.partials._floating-submit-button')
+            </form>
         </div>
     </div>
 @endsection

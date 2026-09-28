@@ -52,9 +52,7 @@
         <td>
             @if($review->customer)
                 <div>
-                    <h5 class="d-block text-hover-primary mb-1">{{Str::limit($review->customer['f_name']." ".$review->customer['l_name'])}} <i
-                            class="tio-verified text-primary" data-toggle="tooltip" data-placement="top"
-                            title="Verified Customer"></i></h5>
+                    <h5 class="d-block text-hover-primary mb-1">{{Str::limit($review->customer['f_name']." ".$review->customer['l_name'])}} </h5>
                     <span class="d-block font-size-sm text-body">({{Str::limit($review->customer->phone)}})</span>
                 </div>
             @else

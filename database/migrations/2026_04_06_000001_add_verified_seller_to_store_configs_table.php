@@ -11,14 +11,9 @@ return new class extends Migration
      */
     public function up(): void
     {
-        $tableName = Schema::hasTable('store_configs') ? 'store_configs' : 'storeConfigs';
-        Schema::table($tableName, function (Blueprint $table) use ($tableName) {
-            if (!Schema::hasColumn($tableName, 'verified_seller')) {
-                $table->boolean('verified_seller')->default(0);
-            }
-            if (!Schema::hasColumn($tableName, 'has_seen_verified_badge_popup')) {
-                $table->boolean('has_seen_verified_badge_popup')->default(0);
-            }
+        Schema::table(Schema::hasTable('store_configs') ? 'store_configs' : 'storeConfigs', function (Blueprint $table) {
+            $table->boolean('verified_seller')->default(0);
+            $table->boolean('has_seen_verified_badge_popup')->default(0);
         });
     }
 

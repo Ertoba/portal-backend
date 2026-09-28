@@ -53,7 +53,7 @@ class CouponAddRequest extends FormRequest
             'start_date' => 'required',
             'expire_date' => 'required',
             'discount' => 'required',
-            'coupon_type' => 'required|in:zone_wise,store_wise,free_delivery,first_order,default',
+            'coupon_type' => 'required|in:zone_wise,store_wise,free_delivery,first_order,pro_customer,default',
             'zone_ids' => 'required_if:coupon_type,zone_wise',
             'store_ids' => 'required_if:coupon_type,store_wise',
             'title.0' => 'required',

@@ -491,6 +491,17 @@ $site_direction = \App\CentralLogics\Helpers::system_default_direction();
                                                                                 </td>
                                                                             </tr>
                                                                         @endif
+                                                                        @if (($order->orderProDiscount?->amount_saved ?? 0) > 0)
+                                                                            <tr>
+                                                                                <td style="width: 40%"></td>
+                                                                                <td class="p-1 px-3">
+                                                                                    {{ translate('messages.Pro_Discount') }}
+                                                                                </td>
+                                                                                <td class="text-right p-1 px-3">
+                                                                                    {{ \App\CentralLogics\Helpers::format_currency($order->orderProDiscount->amount_saved) }}
+                                                                                </td>
+                                                                            </tr>
+                                                                        @endif
 
                                                                         @if ($order?->extra_packaging_amount > 0)
                                                                             <tr>

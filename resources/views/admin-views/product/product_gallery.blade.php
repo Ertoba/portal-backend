@@ -46,7 +46,7 @@
                                         class="js-data-example-ajax form-control store-filter" required title="Select Store"
                                         oninvalid="this.setCustomValidity('{{ translate('messages.please_select_store') }}')">
                                         @if ($store)
-                                            <option value="{{ $store->id }}" selected>{{ $store->name }}</option>
+                                            <option value="{{ $store->id }}" data-verified="{{ (int) $store->verified_seller }}" selected>{{ $store->name }}</option>
                                         @else
                                             <option value="all" selected>{{ translate('messages.all_stores') }}</option>
                                         @endif

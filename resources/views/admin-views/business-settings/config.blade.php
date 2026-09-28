@@ -52,7 +52,7 @@
                     </div>
                 </div>
                 <div class="py-1"></div>
-                <form action="{{env('APP_MODE')!='demo'?route('admin.business-settings.third-party.config-update'):'javascript:'}}" method="post"
+                <form action="{{getEnvMode()!='demo'?route('admin.business-settings.third-party.config-update'):'javascript:'}}" method="post"
                       enctype="multipart/form-data">
                     @csrf
                     <div class="row gy-3">
@@ -60,20 +60,20 @@
                             <div class="form-group mb-0">
                                 <label for="map_api_key" class="input-label">{{translate('messages.map_api_key')}} ({{translate('messages.client')}})</label>
                                 <input id="map_api_key" type="text" placeholder="{{translate('messages.map_api_key')}} ({{translate('messages.client')}})" class="form-control" name="map_api_key"
-                                    value="{{env('APP_MODE')!='demo'?$map_api_key??'':''}}" required>
+                                    value="{{getEnvMode()!='demo'?$map_api_key??'':''}}" required>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="form-group mb-0">
                                 <label for="map_api_key_server" class="input-label">{{translate('messages.map_api_key')}} ({{translate('messages.server')}})</label>
                                 <input id="map_api_key_server" type="text" placeholder="{{translate('messages.map_api_key')}} ({{translate('messages.server')}})" class="form-control" name="map_api_key_server"
-                                    value="{{env('APP_MODE')!='demo'?$map_api_key_server??'':''}}" required>
+                                    value="{{getEnvMode()!='demo'?$map_api_key_server??'':''}}" required>
                             </div>
                         </div>
                         <div class="col-md-12">
                             <div class="btn--container justify-content-end">
                                 <button type="reset" class="btn btn--reset">{{translate('messages.reset')}}</button>
-                                <button type="{{env('APP_MODE')!='demo'?'submit':'button'}}"  class="btn btn--primary call-demo">{{translate('messages.save')}}</button>
+                                <button type="{{getEnvMode()!='demo'?'submit':'button'}}"  class="btn btn--primary call-demo">{{translate('messages.save')}}</button>
                             </div>
                         </div>
                     </div>

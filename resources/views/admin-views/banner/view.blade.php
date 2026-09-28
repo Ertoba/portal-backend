@@ -83,7 +83,7 @@
                                                 <select name="store_id" id="store_id" class="form-control">
                                                     @forelse($allstores as $store)
                                                     @if(!in_array($store->id, $store_ids))
-                                                    <option value="{{$store->id}}" >{{$store->name}}</option>
+                                                    <option value="{{$store->id}}" data-verified="{{ (int) $store->verified_seller }}" >{{$store->name}}</option>
                                                     @endif
                                                     @empty
                                                     <option value="">{{ translate('messages.no_data_found') }}</option>
@@ -99,6 +99,10 @@
                                 <th></th>
                                 <th colspan="3">
                                     <form action="javascript:" id="search-form">
+                                        <input type="hidden" name="banner_id" value="{{ $banner->id }}">
+                                        @foreach($store_ids as $search_store_id)
+                                            <input type="hidden" name="store_ids[]" value="{{ $search_store_id }}">
+                                        @endforeach
                                         <!-- Start Search -->
                                         <div class="input-group input--group">
                                             <input id="datatableSearch_" type="search" name="search" class="form-control" placeholder="{{translate('messages.search')}}" aria-label="Search" required>

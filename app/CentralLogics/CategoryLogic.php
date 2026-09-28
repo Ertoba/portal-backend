@@ -2,10 +2,8 @@
 
 namespace App\CentralLogics;
 
-use App\Models\BusinessSetting;
 use App\Models\Category;
 use App\Models\Item;
-use App\Models\PriorityList;
 use App\Models\Store;
 use Illuminate\Support\Facades\DB;
 
@@ -21,13 +19,13 @@ class CategoryLogic
         return Category::where(['parent_id' => $parent_id])->get();
     }
 
-    public static function products($category_id, $zone_id, int $limit,int $offset, $type)
+    public static function products($category_id, $zone_id, int $limit,int $offset, $type, $user_id = null)
     {
 
-        $category_sub_category_item_default_status = BusinessSetting::where('key', 'category_sub_category_item_default_status')->first()?->value ?? 1;
-        $category_sub_category_item_sort_by_general = PriorityList::where('name', 'category_sub_category_item_sort_by_general')->where('type','general')->first()?->value ?? '';
-        $category_sub_category_item_sort_by_unavailable = PriorityList::where('name', 'category_sub_category_item_sort_by_unavailable')->where('type','unavailable')->first()?->value ?? '';
-        $category_sub_category_item_sort_by_temp_closed = PriorityList::where('name', 'category_sub_category_item_sort_by_temp_closed')->where('type','temp_closed')->first()?->value ?? '';
+        $category_sub_category_item_default_status = Helpers::get_business_settings('category_sub_category_item_default_status') ?? 1;
+        $category_sub_category_item_sort_by_general = Helpers::getPriorityList(name: 'category_sub_category_item_sort_by_general', type: 'general');
+        $category_sub_category_item_sort_by_unavailable = Helpers::getPriorityList(name: 'category_sub_category_item_sort_by_unavailable', type: 'unavailable');
+        $category_sub_category_item_sort_by_temp_closed = Helpers::getPriorityList(name: 'category_sub_category_item_sort_by_temp_closed', type: 'temp_closed');
 
         $query = Item::
         whereHas('module.zones', function($query)use($zone_id){
@@ -58,6 +56,7 @@ class CategoryLogic
             ->active()->type($type);
 
             if ($category_sub_category_item_default_status == '1'){
+                $query = PersonalizationService::applyItemPersonalization($query, $user_id);
                 $query = $query->latest();
             } else {
                 if(config('module.current_module_data')['module_type']  !== 'food'){
@@ -100,13 +99,13 @@ class CategoryLogic
         ];
     }
 
-    public static function category_products($category_ids, $zone_id, int $limit,int $offset, $type, $filter=null, $min=false, $max=false, $rating_count=null, $brand_ids = null)
+    public static function category_products($category_ids, $zone_id, int $limit,int $offset, $type, $filter=null, $min=false, $max=false, $rating_count=null, $brand_ids = null, $user_id = null)
     {
 
-        $category_sub_category_item_default_status = BusinessSetting::where('key', 'category_sub_category_item_default_status')->first()?->value ?? 1;
-        $category_sub_category_item_sort_by_general = PriorityList::where('name', 'category_sub_category_item_sort_by_general')->where('type','general')->first()?->value ?? '';
-        $category_sub_category_item_sort_by_unavailable = PriorityList::where('name', 'category_sub_category_item_sort_by_unavailable')->where('type','unavailable')->first()?->value ?? '';
-        $category_sub_category_item_sort_by_temp_closed = PriorityList::where('name', 'category_sub_category_item_sort_by_temp_closed')->where('type','temp_closed')->first()?->value ?? '';
+        $category_sub_category_item_default_status = Helpers::get_business_settings('category_sub_category_item_default_status') ?? 1;
+        $category_sub_category_item_sort_by_general = Helpers::getPriorityList(name: 'category_sub_category_item_sort_by_general', type: 'general');
+        $category_sub_category_item_sort_by_unavailable = Helpers::getPriorityList(name: 'category_sub_category_item_sort_by_unavailable', type: 'unavailable');
+        $category_sub_category_item_sort_by_temp_closed = Helpers::getPriorityList(name: 'category_sub_category_item_sort_by_temp_closed', type: 'temp_closed');
 
         $category_ids = isset($category_ids)?(is_array($category_ids)?$category_ids:json_decode($category_ids)):[];
         $brand_ids = isset($brand_ids)?(is_array($brand_ids)?$brand_ids:json_decode($brand_ids)):[];
@@ -183,6 +182,7 @@ class CategoryLogic
             });
 
             if ($category_sub_category_item_default_status != '1'){
+                $query = PersonalizationService::applyItemPersonalization($query, $user_id, $filter);
                 $query = $query->latest();
             } else {
 
@@ -216,9 +216,8 @@ class CategoryLogic
             }
 
 
-            $item_categories =  $query->pluck('category_id')->toArray();
             $paginator = $query->paginate($limit, ['*'], 'page', $offset);
-            $item_categories = array_unique($item_categories);
+            $item_categories = collect($paginator->items())->pluck('category_id')->unique()->toArray();
 
             $categories = Category::withCount(['products','childes'])->with(['childes' => function($query)  {
                 $query->withCount(['products','childes']);
@@ -240,7 +239,7 @@ class CategoryLogic
     }
 
 
-    public static function category_stores($category_ids, $zone_id, int $limit,int $offset, $type,$longitude=0,$latitude=0,$filter=null,$rating_count=null)
+    public static function category_stores($category_ids, $zone_id, int $limit,int $offset, $type,$longitude=0,$latitude=0,$filter=null,$rating_count=null, ?array $store_filter = null, $user_id = null)
     {
         $category_ids = isset($category_ids)?(is_array($category_ids)?$category_ids:json_decode($category_ids)):[];
         $paginator = Store::
@@ -301,8 +300,10 @@ class CategoryLogic
             ->when($filter && in_array('fast_delivery',$filter),function ($qurey){
                 return $qurey->orderBy('min_delivery_time');
             })
-            ->latest()
-            ->paginate($limit, ['*'], 'page', $offset);
+            ->when($store_filter, fn ($q) => $q->applyStoreFilter($store_filter));
+
+            $paginator = PersonalizationService::applyStorePersonalization($paginator, $user_id, $filter);
+            $paginator = $paginator->latest()->paginate($limit, ['*'], 'page', $offset);
 
 
         $paginator->each(function ($store) {
@@ -438,7 +439,7 @@ class CategoryLogic
     }
 
 
-    public static function featured_category_products($zone_id, int $limit,int $offset, $type)
+    public static function featured_category_products($zone_id, int $limit,int $offset, $type, $user_id = null)
     {
         $paginator = Item::active()->type($type)
             ->whereHas('module.zones', function($query)use($zone_id){
@@ -458,34 +459,12 @@ class CategoryLogic
                 ->orwherehas('category.parent',function($query){
                     $query->where(['featured' => 1 , 'status' => 1 , 'module_id' => config('module.current_module_data')['id']]);
                 });
-            })
+            });
 
-            ->latest()->paginate($limit, ['*'], 'page', $offset);
+            $paginator = PersonalizationService::applyItemPersonalization($paginator, $user_id);
+            $paginator = $paginator->latest()->paginate($limit, ['*'], 'page', $offset);
 
-        $item_categories = Item::active()->type($type)
-            ->whereHas('module.zones', function($query)use($zone_id){
-                $query->whereIn('zones.id', json_decode($zone_id, true));
-            })
-            ->whereHas('store', function($query)use($zone_id){
-                $query->whereIn('zone_id', json_decode($zone_id, true))->whereHas('zone.modules',function($query){
-                    $query->when(config('module.current_module_data'), function($query){
-                        $query->where('modules.id', config('module.current_module_data')['id']);
-                    });
-                });
-            })
-            ->where(function($query){
-                $query->whereHas('category',function($q){
-                    return $q->where(['featured' => 1 , 'status' => 1 , 'module_id' => config('module.current_module_data')['id']]);
-                })
-                ->orwherehas('category.parent',function($query){
-                    $query->where(['featured' => 1 , 'status' => 1 , 'module_id' => config('module.current_module_data')['id']]);
-                });
-            })
-
-
-            ->pluck('category_id')->toArray();
-
-        $item_categories = array_unique($item_categories);
+        $item_categories = collect($paginator->items())->pluck('category_id')->unique()->toArray();
 
         $categories = Category::where(['status' => 1])->whereIn('id',$item_categories)->get(['id','name','image']);
 

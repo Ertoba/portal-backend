@@ -5,6 +5,8 @@ namespace App\Http\Requests\Admin;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Carbon;
+use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\Config;
 
 /**
  * @property array name
@@ -33,7 +35,9 @@ class BrandUpdateRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => 'required|max:100|unique:brands,name,'.$this->id,
+            'name' => ['required', 'max:100', Rule::unique('brands', 'name')->ignore($this->id)->where(function ($query) {
+                $query->where('module_id', Config::get('module.current_module_id'))->orWhereNull('module_id');
+            })],
             'name.0' => 'required',
         ];
     }

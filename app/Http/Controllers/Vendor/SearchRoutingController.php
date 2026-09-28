@@ -50,9 +50,16 @@ class SearchRoutingController extends Controller
         $moduleType = $store_data->module_type;
         $module_id = $store_data->module_id;
         $searchKeyword = $request->input('search');
+        $searchKeyword = is_scalar($searchKeyword) ? trim((string) $searchKeyword) : '';
         $userType = auth('vendor')->check() ? 'vendor' : 'vendor-employee';
 
         session(['search_keyword' => $searchKeyword]);
+
+        if ($searchKeyword === '') {
+            return [];
+        }
+
+        $rawKeyword = $searchKeyword;
 
         //1st layer
         $formattedRoutes = [];
@@ -64,6 +71,12 @@ class SearchRoutingController extends Controller
             if (!addon_published_status('Rental')) {
                 $routes = array_filter($routes, function ($route) {
                     return $route['moduleType'] !== 'rental';
+                });
+            }
+
+            if (!Helpers::check_website_builder_status()) {
+                $routes = array_filter($routes, function ($route) {
+                    return !Str::startsWith($route['URI'], 'vendor-panel/builder');
                 });
             }
 
@@ -581,6 +594,7 @@ class SearchRoutingController extends Controller
                 }
             }
         } else {
+            $searchKeyword = addcslashes($searchKeyword, '%_\\');
 
             //Store
             $store = Store::where('id', $store_id)->where('name', 'LIKE', '%' . $searchKeyword . '%')
@@ -1381,7 +1395,7 @@ class SearchRoutingController extends Controller
         $result = array_merge($formattedRoutes, $validRoutes);
         $result = collect($result);
         $result = $result->unique('fullRoute')->values()->all();
-        return $this->sortBySearchKeyword($result, $searchKeyword);
+        return $this->sortBySearchKeyword($result, $rawKeyword);
     }
 
     private function routeFullUrl($uri)

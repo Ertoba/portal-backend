@@ -12,14 +12,56 @@ use Illuminate\Http\Request;
 class AppServiceProvider extends ServiceProvider
 {
     use AddonHelper;
+
+    private const BUILDER_MODULE_PATH    = 'Modules/Builder';
+    private const BUILDER_ADAPTER_PATH   = 'Builder';
+    private const BUILDER_CONTRACT_NS    = 'Modules\\Builder\\Contracts\\';
+    private const BUILDER_ADAPTER_NS     = 'App\\Builder\\';
+
     /**
-     * Register any application services. 
+     * Register any application services.
      *
      * @return void
      */
     public function register()
     {
-        //
+        $this->registerBuilderBindings();
+    }
+
+    /**
+     * Auto-discover host adapters in app/Builder/ and bind each one
+     * to whichever Modules\Builder\Contracts\* interface it implements.
+     */
+    private function registerBuilderBindings(): void
+    {
+        // Gate on the 6amMart addon-activation status, not just disk
+        // presence. A customer may have installed Builder (files
+        // extracted to Modules/Builder/) but not yet clicked "Activate"
+        // in the admin panel — in that state `is_published` is 0 and
+        // the host adapters should stay dormant.
+        if (!\addon_published_status('Builder')) {
+            return;
+        }
+
+        $adapterPath = app_path(self::BUILDER_ADAPTER_PATH);
+
+        if (!is_dir($adapterPath)) {
+            return;
+        }
+
+        foreach (glob($adapterPath . '/*.php') as $file) {
+            $class = self::BUILDER_ADAPTER_NS . basename($file, '.php');
+
+            if (!class_exists($class)) {
+                continue;
+            }
+
+            foreach (class_implements($class) ?: [] as $interface) {
+                if (str_starts_with($interface, self::BUILDER_CONTRACT_NS)) {
+                    $this->app->bind($interface, $class);
+                }
+            }
+        }
     }
 
     /**

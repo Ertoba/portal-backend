@@ -107,7 +107,7 @@
                             </div>
                         </form>
 
-                        @if(request()->get('search'))
+                        @if(request()->input('search'))
                             <button type="reset" class="btn btn--primary ml-2 location-reload-to-base" data-url="{{url()->full()}}">{{translate('messages.reset')}}</button>
                         @endif
 
@@ -164,7 +164,7 @@
                                         <a href="{{route('admin.store.view',[$at->store['id'],'module_id'=>$at->store['module_id']])}}">{{ Str::limit($at->store->name, 20, '...') }}</a>
                                         @elseif($at->deliveryman)
                                         <a href="{{route('admin.users.delivery-man.preview',[$at->deliveryman->id])}}">{{ $at->deliveryman->f_name }} {{ $at->deliveryman->l_name }}</a>
-                                        @elseif($at->rider)
+                                        @elseif($at->rider &&   addon_published_status('RideShare'))
                                         <a href="{{route('admin.users.rider.preview',[$at->rider->id])}}">{{ $at->rider->f_name }} {{ $at->rider->l_name }}</a>
                                         @else
                                             {{translate('messages.not_found')}}

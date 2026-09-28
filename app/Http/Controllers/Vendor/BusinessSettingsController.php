@@ -26,12 +26,16 @@ class BusinessSettingsController extends Controller
 
         $store = Helpers::get_store_data();
         $store = Store::withoutGlobalScope('translate')->findOrFail($store->id);
+        $admin_website_builder_status = Helpers::get_business_settings('admin_website_builder_status');
 
         if($store->module_type == 'rental' ){
             $zones=Zone::active()->get(['id','name']);
-            return view('rental::provider.settings.settings', compact('store','zones'));
+            // Website builder is not offered to rental providers — force the
+            // flag off so the enable toggle never renders in their settings.
+            $admin_website_builder_status = 0;
+            return view('rental::provider.settings.settings', compact('store','zones','admin_website_builder_status'));
         }
-        return view('vendor-views.business-settings.restaurant-index', compact('store'));
+        return view('vendor-views.business-settings.restaurant-index', compact('store','admin_website_builder_status'));
     }
 
     public function store_setup(Store $store, Request $request)
@@ -71,13 +75,37 @@ class BusinessSettingsController extends Controller
         );
         $conf->extra_packaging_amount = $request->extra_packaging_amount ?? 0;
         $conf->extra_packaging_status = $request->extra_packaging_status ?? 0;
-        $conf->minimum_stock_for_warning = $request->minimum_stock_for_warning ?? 0;
+        $conf->minimum_stock_for_warning = $request->has('minimum_stock_for_warning')
+            ? (int) ($request->minimum_stock_for_warning ?? 0)
+            : ($conf->minimum_stock_for_warning ?? 0);
+        $conf->show_low_stock_count = $request->has('show_low_stock_count')
+            ? (int) ($request->show_low_stock_count ?? 0)
+            : ($conf->show_low_stock_count ?? 1);
         $conf->save();
         if($store->module_type == 'rental' && addon_published_status('Rental')){
             Toastr::success(translate('messages.provider settings updated!'));
         }else{
             Toastr::success(translate('messages.store_settings_updated'));
         }
+        return back();
+    }
+
+    public function stock_setup(Store $store, Request $request)
+    {
+        $request->validate([
+            'show_low_stock_count' => 'nullable|in:1',
+            'minimum_stock_for_warning' => 'nullable|integer|min:0|max:999999999',
+        ], [
+            'minimum_stock_for_warning.integer' => translate('messages.minimum_stock_for_warning_must_be_an_integer'),
+        ]);
+
+        $conf = StoreConfig::firstOrNew(['store_id' => $store->id]);
+        $conf->show_low_stock_count = $request->has('show_low_stock_count') ? 1 : 0;
+        $conf->minimum_stock_for_warning = (int) ($request->minimum_stock_for_warning ?? 0);
+        $conf->save();
+
+        Toastr::success(translate('messages.stock_settings_updated'));
+
         return back();
     }
     public function updateStoreMetaData(Store $store, Request $request)
@@ -132,7 +160,7 @@ class BusinessSettingsController extends Controller
         }
 
 
-        if($request->menu == 'halal_tag_status' || $request->menu == 'extra_packaging_status' || $request->menu == 'extra_packaging_amount' ){
+        if(in_array($request->menu, ['halal_tag_status', 'extra_packaging_status', 'extra_packaging_amount', 'can_edit_order'])){
 
             $conf = StoreConfig::firstOrNew(
                 ['store_id' =>  $store->id]
@@ -150,6 +178,24 @@ class BusinessSettingsController extends Controller
 
         $store[$request->menu] = $request->status;
         $store->save();
+        if($store->module->module_type == 'rental' && addon_published_status('Rental')){
+            Toastr::success(translate('messages.provider settings updated!'));
+        }else{
+            Toastr::success(translate('messages.store settings updated!'));
+        }
+        return back();
+    }
+
+    public function website_builder_status(Store $store, Request $request)
+    {
+        $store->storeConfig()->updateOrInsert(
+            [
+                'store_id' => $store->id,
+            ],
+            [
+                'website_builder_status' => $request->status,
+            ]
+        );
         if($store->module->module_type == 'rental' && addon_published_status('Rental')){
             Toastr::success(translate('messages.provider settings updated!'));
         }else{

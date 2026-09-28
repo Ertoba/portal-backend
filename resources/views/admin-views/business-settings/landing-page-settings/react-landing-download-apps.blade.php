@@ -84,7 +84,7 @@
 
         <div class="card mb-20">
             <form class="custom-validation"
-                  action="{{ route('admin.business-settings.react-landing-page-settings', 'download-app-section') }}"
+                  action="{{ route('admin.business-settings.react-landing-page-settings-update', 'download-app-section') }}"
                   method="POST" enctype="multipart/form-data">
                 @csrf
                 <div class="card-body">
@@ -331,7 +331,7 @@
                 @php($download_user_app_links = \App\Models\DataSetting::where(['key' => 'download_user_app_links', 'type' => 'react_landing_page'])->first())
                 @php($download_user_app_links = isset($download_user_app_links->value) ? json_decode($download_user_app_links->value, true) : null)
                 <form
-                    action="{{ route('admin.business-settings.react-landing-page-settings', 'download-app-button-section') }}"
+                    action="{{ route('admin.business-settings.react-landing-page-settings-update', 'download-app-button-section') }}"
                     method="POST" enctype="multipart/form-data">
                     @csrf
                     <div class="card">
@@ -531,7 +531,7 @@
                                                 </label>
                                             </div>
                                             <div class="__bg-F8F9FC-card">
-                                                <div class="form-group mb-md-0">
+                                                <!-- <div class="form-group mb-md-0">
                                                     <div class="d-flex justify-content-between align-items-center mb-2">
                                                         <label for="playstore_url"
                                                                class="form-label text-capitalize m-0">
@@ -549,7 +549,10 @@
                                                            placeholder="{{translate('Ex: https://play.google.com/store/apps')}}"
                                                            class="form-control h--45px" name="playstore_url"
                                                            value="{{ $download_user_app_links['playstore_url'] ?? ''}}">
-                                                </div>
+                                                </div> -->
+                                                @include('admin-views.business-settings.landing-page-settings.partials._app-download-link-status', [
+                                                    'isConfigured' => \App\CentralLogics\Helpers::get_business_settings('app_url_android'),
+                                                ])
                                             </div>
                                         </div>
                                     </div>
@@ -580,7 +583,7 @@
                                                 </label>
                                             </div>
                                             <div class="__bg-F8F9FC-card">
-                                                <div class="form-group mb-md-0">
+                                                <!-- <div class="form-group mb-md-0">
                                                     <div class="d-flex justify-content-between align-items-center mb-2">
                                                         <label for="apple_store_url"
                                                                class="form-label text-capitalize m-0">
@@ -597,7 +600,10 @@
                                                            placeholder="{{translate('Ex: https://www.apple.com/app-store/')}}"
                                                            class="form-control h--45px" name="apple_store_url"
                                                            value="{{ $download_user_app_links['apple_store_url'] ?? ''}}">
-                                                </div>
+                                                </div> -->
+                                                @include('admin-views.business-settings.landing-page-settings.partials._app-download-link-status', [
+                                                    'isConfigured' => \App\CentralLogics\Helpers::get_business_settings('app_url_ios'),
+                                                ])
                                             </div>
                                         </div>
                                     </div>
@@ -632,8 +638,7 @@
                 </div>
                 <div class="custom-offcanvas-body custom-offcanvas-body-100  p-20">
                     <section class="common-section-view bg-white border rounded-10 my-xl-2 mx-xl-2">
-                        <div
-                            class="common-section-inner d-flex flex-xl-nowrap justify-content-xl-between justify-content-center flex-wrap align-items-center gap-xxl-20 cus-gradient rounded-10 p-3">
+                        <div class="common-section-inner d-flex flex-xl-nowrap justify-content-xl-between justify-content-center flex-wrap align-items-center gap-xxl-20 cus-gradient rounded-10 p-3">
                             <div>
                                 <div class="mb-xl-4 mb-3">
                                     <h2 class="mb-1 fs-20">
@@ -684,13 +689,13 @@
                                             </a>
                                         </div>
                                     </div>
+                                    <div class="user-app-thumb max-w-280 d-center mt-xl-0 mt-3">
+                                        <img src="{{ $download_user_app_image?->value ? \App\CentralLogics\Helpers::get_full_url(
+                                        'download_user_app_image', $download_user_app_image->value, $download_user_app_image->storage[0]?->value ?? 'public', 'aspect_1')
+                                        : asset('/public/assets/admin/img/400x400/user-app.png') }}" alt="user-app"
+                                            class="object-contain w-100">
+                                    </div>
                                 </div>
-                            </div>
-                            <div class="user-app-thumb max-w-280 d-center mt-xl-0 mt-3">
-                                <img src="{{ $download_user_app_image?->value ? \App\CentralLogics\Helpers::get_full_url(
-                                'download_user_app_image', $download_user_app_image->value, $download_user_app_image->storage[0]?->value ?? 'public', 'aspect_1')
-                                : asset('/public/assets/admin/img/400x400/user-app.png') }}" alt="user-app"
-                                     class="object-contain w-100">
                             </div>
                         </div>
                     </section>

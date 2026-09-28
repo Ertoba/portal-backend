@@ -34,8 +34,13 @@ class BrandController extends BaseController
     {
     }
 
-    public function index(?Request $request): View|Collection|LengthAwarePaginator|null
+    public function index(?Request $request): View|Collection|LengthAwarePaginator|RedirectResponse|null
     {
+        if (!in_array(Config::get('module.current_module_type'), ['ecommerce', 'grocery'])) {
+            Toastr::error(translate('messages.this_feature_is_only_for_shop_and_grocery_module'));
+            return back();
+        }
+
         return $this->getListView($request);
     }
 

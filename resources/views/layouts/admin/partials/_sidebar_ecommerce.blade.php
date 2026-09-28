@@ -423,6 +423,30 @@
                             </li>
                         @endif
                         <!-- End advertisement -->
+                        @if (
+                            addon_published_status('ReelsModule')
+                            && \App\CentralLogics\Helpers::module_permission_check('reels')
+                            && \Modules\ReelsModule\Support\ReelModuleConfig::isAllowedType(config('module.current_module_type'))
+                        )
+                            <li class="nav-item">
+                                <small class="nav-subtitle">{{ translate('messages.Reels_Management') }}</small>
+                                <small class="tio-more-horizontal nav-subtitle-replacer"></small>
+                            </li>
+                            <li class="navbar-vertical-aside-has-menu @yield('reels_create')">
+                                <a class="js-navbar-vertical-aside-menu-link nav-link" href="{{ route('admin.reels.create') }}"
+                                   title="{{ translate('messages.Create_Reels') }}">
+                                    <i class="tio-video-camera-outlined nav-icon"></i>
+                                    <span class="navbar-vertical-aside-mini-mode-hidden-elements text-truncate">{{ translate('messages.Create_Reels') }}</span>
+                                </a>
+                            </li>
+                            <li class="navbar-vertical-aside-has-menu @yield('reels_list')">
+                                <a class="js-navbar-vertical-aside-menu-link nav-link" href="{{ route('admin.reels.index') }}"
+                                   title="{{ translate('messages.Reels_List') }}">
+                                    <i class="tio-format-bullets nav-icon"></i>
+                                    <span class="navbar-vertical-aside-mini-mode-hidden-elements text-truncate">{{ translate('messages.Reels_List') }}</span>
+                                </a>
+                            </li>
+                        @endif
                     @endif
 
                     <!-- End marketing section -->
@@ -451,17 +475,17 @@
                                 style="display:{{ Request::is('admin/category*') ? 'block' : 'none' }}">
                                 <li class="nav-item   @yield('main_category') {{ request()->input('position') == 0 && Request::is('admin/category/add') ? 'active' : '' }}">
                                     <a class="nav-link " href="{{ route('admin.category.add',['position'=>0]) }}"
-                                       title="{{ translate('messages.category') }}">
+                                       title="{{ translate('messages.Main_Category') }}">
                                         <span class="tio-circle nav-indicator-icon"></span>
-                                        <span class="text-truncate">{{ translate('messages.category') }}</span>
+                                        <span class="text-truncate">{{ translate('messages.Main_Category') }}</span>
                                     </a>
                                 </li>
 
                                 <li class="nav-item   @yield('sub_category') {{ request()->input('position') == 1 && Request::is('admin/category/add') ? 'active' : '' }}">
                                     <a class="nav-link " href="{{ route('admin.category.add',['position'=>1]) }}"
-                                       title="{{ translate('messages.sub_category') }}">
+                                       title="{{ translate('messages.Main_Sub_Category') }}">
                                         <span class="tio-circle nav-indicator-icon"></span>
-                                        <span class="text-truncate">{{ translate('messages.sub_category') }}</span>
+                                        <span class="text-truncate">{{ translate('messages.Main_Sub_Category') }}</span>
                                     </a>
                                 </li>
 
@@ -485,6 +509,18 @@
                         </li>
                     @endif
                     <!-- End Category -->
+
+                    <!-- Store Category -->
+                    @if (\App\CentralLogics\Helpers::storeCategoryStatus() && \App\CentralLogics\Helpers::module_permission_check('category'))
+                        <li class="navbar-vertical-aside-has-menu {{ Request::is('admin/store-category*') ? 'active' : '' }}">
+                            <a class="js-navbar-vertical-aside-menu-link nav-link"
+                               href="{{ route('admin.store-category.list') }}" title="{{ translate('messages.Store_Categories') }}">
+                                <i class="tio-folder-bookmarked nav-icon"></i>
+                                <span class="navbar-vertical-aside-mini-mode-hidden-elements text-truncate">{{ translate('messages.Store_Categories') }}</span>
+                            </a>
+                        </li>
+                    @endif
+                    <!-- End Store Category -->
 
                     <!-- Attributes -->
                     @if (\App\CentralLogics\Helpers::module_permission_check('attribute'))

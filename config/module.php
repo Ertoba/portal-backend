@@ -25,7 +25,7 @@ return [
         'allergy'=>true,
         'basic'=>false,
         'halal'=>true,
-        'brand'=>false,
+        'brand'=>true,
         'generic_name'=>false,
         'description'=>'In this type, You can set delivery slot start after x minutes from current time, No available time for items and has stock for items.',
         'is_rental'=>false,

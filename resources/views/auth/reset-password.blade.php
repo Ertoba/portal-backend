@@ -203,7 +203,7 @@
         });
 </script>
 
-@if(env('APP_MODE')=='demo')
+@if(getEnvMode()=='demo')
     <script>
         "use strict";
         $('.copy_cred').on('click', function () {
@@ -217,9 +217,5 @@
     </script>
 @endif
 
-<!-- IE Support -->
-<script>
-    if (/MSIE \d|Trident.*rv:/.test(navigator.userAgent)) document.write('<script src="{{asset('public//assets/admin')}}/vendor/babel-polyfill/polyfill.min.js"><\/script>');
-</script>
 </body>
 </html>

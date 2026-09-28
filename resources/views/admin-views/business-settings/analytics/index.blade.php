@@ -117,8 +117,8 @@
                                                   <input type="hidden" name="type" value="{{ $tool['key'] }}">
                                                 <div class="flex-xs-wrap d-flex align-items-center gap-3">
                                                     <textarea  name="script_id" rows="1" class="form-control" placeholder="{{ translate('Enter the ID') }}">{!! $data?->script_id ?? '' !!}</textarea>
-                                                    <button type="{{ env('APP_MODE') != 'demo' ? 'submit' : 'button' }}"
-                                                        class="btn py-1 min-w-100px h-40px btn--primary {{ env('APP_MODE') != 'demo' ? '' : 'call-demo-alert' }}"> {{ translate('save') }}</button>
+                                                    <button type="{{ getEnvMode() != 'demo' ? 'submit' : 'button' }}"
+                                                        class="btn py-1 min-w-100px h-40px btn--primary {{ getEnvMode() != 'demo' ? '' : 'call-demo-alert' }}"> {{ translate('save') }}</button>
                                                 </div>
                                             </div>
                                         </div>

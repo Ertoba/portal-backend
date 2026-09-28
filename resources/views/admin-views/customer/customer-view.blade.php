@@ -22,7 +22,7 @@
         </div>
         @include('admin-views.customer.partials._tab_view')
         <!-- End Page Header -->
-        @if ($customer['f_name'])
+        @if ($customer['f_name'] && (int) ($customer['sub_tenant_id'] ?? 0) <= 0)
         <div class="card mb-3">
             <div class="card-body">
                 <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
@@ -41,7 +41,7 @@
         @endif
 
         <div class="row mb-3 g-2">
-            <div class="col-lg-6">
+            <div class="col-lg-{{ (int) ($customer['sub_tenant_id'] ?? 0) > 0 ? 12 : 6 }}">
                 <div class="card">
                     <div class="card-body">
                         <div class="d-flex flex-wrap gap-3">
@@ -71,6 +71,7 @@
                     </div>
                 </div>
             </div>
+            @if ((int) ($customer['sub_tenant_id'] ?? 0) <= 0)
             <div class="col-lg-6">
                 <div class="card">
                     <div class="card-body">
@@ -101,6 +102,7 @@
                     </div>
                 </div>
             </div>
+            @endif
         </div>
 
         <div class="row" id="printableArea">
@@ -123,7 +125,7 @@
                                 </form>
 
                             </div>
-                            @if(request()->get('search'))
+                            @if(request()->input('search'))
                                  <button type="reset" class="btn btn--primary ml-2 location-reload-to-base" data-url="{{url()->full()}}">{{translate('messages.reset')}}</button>
                                  @endif
                         </div>

@@ -24,7 +24,7 @@
                         </td>
                         <td class="error-wrapper">
                             <input type="number" name="price_{{ $combination['name'] }}" value="{{ $combination['price'] }}" min="0"
-                                step="0.01" class="form-control" required>
+                                step="{{ \App\CentralLogics\Helpers::getDecimalPlaces() }}" max="999999999999.999" class="form-control" required>
                         </td>
                         @if ($stock)
                             <td class="error-wrapper"><input type="number" name="stock_{{ $combination['name'] }}"

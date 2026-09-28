@@ -1,7 +1,6 @@
 @extends('layouts.landing.app')
 @section('title', translate('messages.deliveryman_registration'))
 @push('css_or_js')
-<link rel="stylesheet" href="{{asset('public/assets/admin/css/style.css')}}">
 @endpush
 @section('content')
 
@@ -10,275 +9,175 @@
 $countryCode= strtolower($country?$country->value:'auto');
 
 ?>
-    <section class="about-section py-5 position-relative">
+    <!-- Page Hero Banner -->
+    <section class="page-hero">
         <div class="container">
-            <!-- Page Header -->
-            <div class="section-header">
-                <h2 class="title mb-2">{{translate("messages.Deliveryman")}} <span class="text--base">{{translate("messages.Application")}}</span></h2>
+            <h1>{{ translate('messages.Deliveryman') }} {{ translate('messages.registration') }}</h1>
+            <div class="breadcrumb">
+                <a href="{{ route('home') }}">{{ translate('messages.home') }}</a> / {{ translate('messages.Deliveryman') }} {{ translate('messages.registration') }}
             </div>
-            <!-- End Page Header -->
+        </div>
+    </section>
+
+    <section class="reg-section">
+        <div class="reg-container">
+            <div class="reg-card">
                 <form class="validate-form" action="{{ route('deliveryman.store') }}" method="post" enctype="multipart/form-data" id="form-id">
                     @csrf
-                    <div class="card __card mb-3">
-                        <div class="card-header">
-                            <h5 class="card-title">
-                                <svg width="20" x="0" y="0" viewBox="0 0 460.8 460.8" style="enable-background:new 0 0 512 512" xml:space="preserve" class=""><g><g><g><g>
-                                        <path d="M230.432,239.282c65.829,0,119.641-53.812,119.641-119.641C350.073,53.812,296.261,0,230.432,0
-                                            S110.792,53.812,110.792,119.641S164.604,239.282,230.432,239.282z" fill="#020202" data-original="#000000" class=""></path>
-                                        <path d="M435.755,334.89c-3.135-7.837-7.314-15.151-12.016-21.943c-24.033-35.527-61.126-59.037-102.922-64.784
-                                            c-5.224-0.522-10.971,0.522-15.151,3.657c-21.943,16.196-48.065,24.555-75.233,24.555s-53.29-8.359-75.233-24.555
-                                            c-4.18-3.135-9.927-4.702-15.151-3.657c-41.796,5.747-79.412,29.257-102.922,64.784c-4.702,6.792-8.882,14.629-12.016,21.943
-                                            c-1.567,3.135-1.045,6.792,0.522,9.927c4.18,7.314,9.404,14.629,14.106,20.898c7.314,9.927,15.151,18.808,24.033,27.167
-                                            c7.314,7.314,15.673,14.106,24.033,20.898c41.273,30.825,90.906,47.02,142.106,47.02s100.833-16.196,142.106-47.02
-                                            c8.359-6.269,16.718-13.584,24.033-20.898c8.359-8.359,16.718-17.241,24.033-27.167c5.224-6.792,9.927-13.584,14.106-20.898
-                                            C436.8,341.682,437.322,338.024,435.755,334.89z" fill="#020202" data-original="#000000" class=""></path>
-                                    </g>
-                                </g>
-                            </g>
-                            </svg>{{ translate('messages.deliveryman_info') }}</h5>
+                    <!-- Section 1: Deliveryman Info -->
+                    <h3 class="sec-head">
+                        <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                        {{ translate('messages.deliveryman_info') }}
+                    </h3>
+
+                    <!-- Left: First + Last name | Right: DM image -->
+                    <div class="row-2">
+                        <div>
+                            <div class="form-group">
+                                <label>{{ translate('messages.first_name') }} <span class="req">*</span></label>
+                                <input type="text" name="f_name" placeholder="{{ translate('messages.first_name') }}" required value="{{ old('f_name') }}">
+                            </div>
+                            <div class="form-group">
+                                <label>{{ translate('messages.last_name') }} <span class="req">*</span></label>
+                                <input type="text" name="l_name" placeholder="{{ translate('messages.last_name') }}" required value="{{ old('l_name') }}">
+                            </div>
                         </div>
-                        <div class="card-body">
-                            <div class="row">
-                                <div class="col-sm-6">
-                                    <div class="form-group mb-3">
-                                        <label class="input-label"
-                                            for="exampleFormControlInput1">{{ translate('messages.first_name') }}
-                                        <small
-                                            class="text-danger">*</small> </label>
-                                        <input type="text" name="f_name" class="form-control __form-control"
-                                            placeholder="{{ translate('messages.first_name') }}" required
-                                            value="{{ old('f_name') }}">
+                        <div class="form-group">
+                            <label>{{ translate('messages.deliveryman_image') }} <span class="req">*</span> <span style="font-weight:400;color:var(--text);font-size:.75rem">({{ translate('messages.ratio') }} 1:1)</span></label>
+                            <div class="upload-area" id="dmImageArea" onclick="document.getElementById('customFileEg1').click()">
+                                <img id="viewer" class="preview-img" src="" alt="" style="display:none">
+                                <div class="upload-placeholder">
+                                    <div class="upload-icon">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
                                     </div>
+                                    <p><strong>{{ translate('Drop Here') }}</strong></p>
+                                    <div class="upload-note">{{ translate('Drag & Drop or Click to upload') }} &middot; JPG, PNG ({{ translate('Max') }} 2MB)</div>
                                 </div>
-                                <div class="col-sm-6">
-                                    <div class="form-group mb-3">
-                                        <label class="input-label"
-                                            for="exampleFormControlInput1">{{ translate('messages.last_name') }}
-                                        <small
-                                            class="text-danger">*</small> </label>
-                                        <input type="text" name="l_name" class="form-control __form-control"
-                                            placeholder="{{ translate('messages.last_name') }}"
-                                            value="{{ old('l_name') }}" required>
-                                    </div>
-                                </div>
-                                <div class="col-sm-4">
-                                    <div class="form-group mb-3">
-                                        <label class="input-label"
-                                            for="exampleFormControlInput1">{{ translate('messages.email') }}
-                                        <small
-                                            class="text-danger">*</small> </label>
-                                        <input type="email" name="email" class="form-control __form-control"
-                                            placeholder="{{ translate('messages.Ex:') }} ex@example.com" value="{{ old('email') }}" required>
-                                    </div>
-                                </div>
-                                <div class="col-sm-4" id="earning">
-                                    <div class="form-group mb-3">
-                                        <label class="input-label"
-                                            for="exampleFormControlInput1">{{ translate('messages.deliveryman_type') }}
-                                        <small
-                                            class="text-danger">*</small> </label>
-                                        <select name="earning" class="form-control __form-control">
-                                            <option value="1">{{ translate('messages.freelancer') }}</option>
-                                            <option value="0">{{ translate('messages.salary_based') }}</option>
-                                        </select>
-                                    </div>
-                                </div>
-                                <div class="col-sm-4" id="ref_code" style="display: none;">
-                                    <div class="form-group mb-3">
-                                        <label class="input-label"
-                                            for="exampleFormControlInput1">{{ translate('messages.referral_code') }}
-                                        </label>
-                                        <input type="text" id="referral_code"  name="referral_code" class="form-control __form-control"
-                                            placeholder="{{ translate('messages.Ex: STAKXPFIDK') }}"
-                                            value="">
-                                    </div>
-                                </div>
-                                <div class="col-sm-6 col-12">
-                                    <div class="form-group mb-3">
-                                        <label class="input-label"
-                                            for="exampleFormControlInput1">{{ translate('messages.zone') }}
-                                        <small
-                                            class="text-danger">*</small> </label>
-                                        <select name="zone_id" class="form-control __form-control" required
-                                            data-placeholder="{{ translate('messages.select_zone') }}">
-                                            <option value="" readonly="true" hidden="true">{{ translate('messages.select_zone') }}</option>
-                                            @foreach (\App\Models\Zone::active()->get() as $zone)
-                                                @if (isset(auth('admin')->user()->zone_id))
-                                                    @if (auth('admin')->user()->zone_id == $zone->id)
-                                                        <option value="{{ $zone->id }}" selected>{{ $zone->name }}
-                                                        </option>
-                                                    @endif
-                                                @else
-                                                    <option value="{{ $zone->id }}">{{ $zone->name }}</option>
-                                                @endif
-                                            @endforeach
-                                        </select>
-                                    </div>
-                                </div>
-                                <div class="col-sm-6 col-12">
-                                    <div class="form-group">
-                                      <label class="input-label"
-                                                for="exampleFormControlInput1">{{ translate('messages.Vehicle') }}
-                                            <small
-                                            class="text-danger">*</small> </label>
-                                            <select name="vehicle_id" class="form-control __form-control" required
-                                                data-placeholder="{{ translate('messages.select_vehicle') }}">
-                                                <option value="" readonly="true" hidden="true">{{ translate('messages.select_vehicle') }}</option>
-                                                @foreach (\App\Models\DMVehicle::where('status',1)->get(['id','type']) as $v)
-                                                            <option value="{{ $v->id }}" >{{ $v->type }}
-                                                            </option>
-                                                @endforeach
-                                            </select>
-                                    </div>
-                                </div>
-                                <div class="col-sm-6">
-                                    <div class="form-group mb-3">
-                                        <label class="input-label"
-                                            for="exampleFormControlInput1">{{ translate('messages.identity_type') }}
-                                            <small
-                                            class="text-danger">*</small> </label>
-                                        <select name="identity_type" class="form-control __form-control">
-                                            <option value="passport">{{ translate('messages.passport') }}</option>
-                                            <option value="driving_license">{{ translate('messages.driving_license') }}</option>
-                                            <option value="nid">{{ translate('messages.nid') }}</option>
-                                            <option value="restaurant_id">{{ translate('messages.store_id') }}</option>
-                                        </select>
-                                    </div>
-                                </div>
-                                <div class="col-sm-6">
-                                    <div class="form-group mb-3">
-                                        <label class="input-label"
-                                            for="exampleFormControlInput1">{{ translate('messages.identity_number') }}
-                                        <small
-                                            class="text-danger">*</small> </label>
-                                        <input type="text" name="identity_number" class="form-control __form-control"
-                                            value="{{ old('identity_number') }}" placeholder="{{ translate('messages.Ex:') }} DH-23434-LS" required>
-                                    </div>
-                                </div>
-                                <div class="col-sm-12">
-                                    <div class="form-group mb-0">
-                                        <label class="input-label">{{ translate('messages.identity_image') }}
-                                            <small
-                                            class="text-danger">*</small>
-                                        </label>
-                                        <div>
-                                            <div class="row" id="coba"></div>
-                                        </div>
-                                    </div>
-                                </div>
+                                <div class="upload-change">{{ translate('Click to change image') }}</div>
+                                <input type="file" name="image" id="customFileEg1" class="single_file_input" accept=".webp, .jpg, .png, .jpeg, .gif, .bmp, .tif, .tiff|image/*" required>
                             </div>
                         </div>
                     </div>
-                    <div class="card __card mb-3">
-                        <div class="card-header">
-                            <h5 class="card-title">
-                                <svg width="20" x="0" y="0" viewBox="0 0 460.8 460.8" style="enable-background:new 0 0 512 512" xml:space="preserve" class=""><g><g><g><g>
-                                        <path d="M230.432,239.282c65.829,0,119.641-53.812,119.641-119.641C350.073,53.812,296.261,0,230.432,0
-                                            S110.792,53.812,110.792,119.641S164.604,239.282,230.432,239.282z" fill="#020202" data-original="#000000" class=""></path>
-                                        <path d="M435.755,334.89c-3.135-7.837-7.314-15.151-12.016-21.943c-24.033-35.527-61.126-59.037-102.922-64.784
-                                            c-5.224-0.522-10.971,0.522-15.151,3.657c-21.943,16.196-48.065,24.555-75.233,24.555s-53.29-8.359-75.233-24.555
-                                            c-4.18-3.135-9.927-4.702-15.151-3.657c-41.796,5.747-79.412,29.257-102.922,64.784c-4.702,6.792-8.882,14.629-12.016,21.943
-                                            c-1.567,3.135-1.045,6.792,0.522,9.927c4.18,7.314,9.404,14.629,14.106,20.898c7.314,9.927,15.151,18.808,24.033,27.167
-                                            c7.314,7.314,15.673,14.106,24.033,20.898c41.273,30.825,90.906,47.02,142.106,47.02s100.833-16.196,142.106-47.02
-                                            c8.359-6.269,16.718-13.584,24.033-20.898c8.359-8.359,16.718-17.241,24.033-27.167c5.224-6.792,9.927-13.584,14.106-20.898
-                                            C436.8,341.682,437.322,338.024,435.755,334.89z" fill="#020202" data-original="#000000" class=""></path>
-                                    </g>
-                                </g>
-                            </g>
-                            </svg>{{ translate('messages.login_info') }}
-                            </h5>
-                        </div>
-                        <div class="card-body">
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="form-group mb-3">
-                                        <label class="input-label" for="phone">{{ translate('messages.phone') }}</label>
-                                        <div class="input-group">
-                                            <input type="tel" name="phone" id="phone" placeholder="{{ translate('messages.Ex:') }} 017********"
-                                                class="form-control __form-control" value="{{ old('tel') }}" required>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="form-group mb-3">
-                                        <label class="input-label"
-                                            for="exampleFormControlInput1">{{ translate('messages.password') }}
-                                            <small
-                                            class="text-danger">*</small>  <span class="form-label-secondary" data-toggle="tooltip" data-placement="right"
-        data-original-title="{{ translate('messages.Must_contain_at_least_one_number_and_one_uppercase_and_lowercase_letter_and_symbol,_and_at_least_8_or_more_characters') }}"><img src="{{ asset('/public/assets/admin/img/info-circle.svg') }}" alt="{{ translate('messages.Must_contain_at_least_one_number_and_one_uppercase_and_lowercase_letter_and_symbol,_and_at_least_8_or_more_characters') }}"></span></label>
-                                        <input type="password" name="password" class="form-control __form-control" pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}" title="{{ translate('messages.Must_contain_at_least_one_number_and_one_uppercase_and_lowercase_letter_and_symbol,_and_at_least_8_or_more_characters') }}"
-                                        placeholder="{{ translate('messages.password_length_placeholder', ['length' => '8+']) }}"
-                                        aria-label="8+ characters required"
-                                            value="{{ old('password') }}" required>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="row d-flex">
-                                <div class="col-lg-6">
-                                    <div class="form-group pt-3 mb-5">
-                                        <label  class="input-label">{{ translate('messages.deliveryman_image') }}<small
-                                            class="text-danger">* ( {{ translate('messages.ratio') }} 1:1 )</small></label>
-                                        <label class="position-relative w-140px">
-                                            <img class="__register-img mb-3 image--border h-140px" id="viewer"
-                                                src="{{ asset('public/assets/admin/img/upload-img.png') }}"
-                                                alt="delivery-man image" />
-                                            <div class="icon-file-group">
-                                                <div class="icon-file">
-                                                    <input type="file" name="image" id="customFileEg1" class="form-control __form-control single_file_input"
-                                                    accept=".webp, .jpg, .png, .jpeg, .gif, .bmp, .tif, .tiff|image/*" required>
-                                                    <img src="{{asset('/public/assets/admin/img/pen.png')}}" alt="">
-                                                </div>
-                                            </div>
-                                        </label>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="row">
-                                <div class="col-sm-4 col-12">
-                                    @include('admin-views.partials._recaptcha')
-                                    
-                                    {{-- recaptcha --}}
-                                    {{-- @php($recaptcha = \App\CentralLogics\Helpers::get_business_settings('recaptcha'))
-                                    @if(isset($recaptcha) && $recaptcha['status'] == 1)
-                                        <input type="hidden" name="g-recaptcha-response" id="g-recaptcha-response">
 
-                                        <input type="hidden" name="set_default_captcha" id="set_default_captcha_value" value="0" >
-                                        <div class="row p-2 d-none" id="reload-captcha">
-                                            <div class="col-6 pr-0">
-                                                <input type="text" class="form-control form-control-lg border-0" name="custome_recaptcha"
-                                                        id="custome_recaptcha" required placeholder="{{\__('Enter recaptcha value')}}" autocomplete="off" value="{{env('APP_DEBUG')?session('six_captcha'):''}}">
-                                            </div>
-                                            <div class="col-6 bg-white rounded d-flex">
-                                                <img src="<?php echo $custome_recaptcha->inline(); ?>" class="rounded w-100" />
-                                                <div class="p-3 pr-0 capcha-spin reloadCaptcha">
-                                                    <i class="tio-cached"></i>
-                                                </div>
-                                            </div>
-                                        </div>
+                    <!-- Email | DM Type | Referral Code -->
+                    <div class="row-3">
+                        <div class="form-group">
+                            <label>{{ translate('messages.email') }} <span class="req">*</span></label>
+                            <input type="email" name="email" placeholder="{{ translate('messages.Ex:') }} ex@example.com" value="{{ old('email') }}" required>
+                        </div>
+                        <div class="form-group" id="earning">
+                            <label>{{ translate('messages.deliveryman_type') }} <span class="req">*</span></label>
+                            <select name="earning">
+                                <option value="1" {{ old('earning', '1') == '1' ? 'selected' : '' }}>{{ translate('messages.freelancer') }}</option>
+                                <option value="0" {{ old('earning') == '0' ? 'selected' : '' }}>{{ translate('messages.salary_based') }}</option>
+                            </select>
+                        </div>
+                        <div class="form-group" id="ref_code" style="display: none;">
+                            <label>{{ translate('messages.referral_code') }}</label>
+                            <input type="text" id="referral_code" name="referral_code" placeholder="{{ translate('messages.Ex: STAKXPFIDK') }}" value="{{ old('referral_code') }}">
+                        </div>
+                    </div>
+
+                    <!-- Zone | Vehicle -->
+                    <div class="row-2">
+                        <div class="form-group">
+                            <label>{{ translate('messages.zone') }} <span class="req">*</span></label>
+                            <select name="zone_id" required>
+                                <option value="" hidden>{{ translate('messages.select_zone') }}</option>
+                                @foreach (\App\Models\Zone::active()->get() as $zone)
+                                    @if (auth('admin')?->user()?->zone_id)
+                                        @if (auth('admin')->user()->zone_id == $zone->id)
+                                            <option value="{{ $zone->id }}" selected>{{ $zone->name }}</option>
+                                        @endif
                                     @else
-                                        <div class="row p-2" id="reload-captcha">
-                                            <div class="col-6 pr-0">
-                                                <input type="text" class="form-control form-control-lg border-0" name="custome_recaptcha"
-                                                        id="custome_recaptcha" required placeholder="{{\__('Enter recaptcha value')}}" autocomplete="off" value="{{env('APP_DEBUG')?session('six_captcha'):''}}">
-                                            </div>
-                                            <div class="col-6 bg-white rounded d-flex">
-                                                <img src="<?php echo $custome_recaptcha->inline(); ?>" class="rounded w-100" />
-                                                <div class="p-3 pr-0 capcha-spin reloadCaptcha">
-                                                    <i class="tio-cached"></i>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    @endif --}}
-                                </div>
+                                        <option value="{{ $zone->id }}" {{ old('zone_id') == $zone->id ? 'selected' : '' }}>{{ $zone->name }}</option>
+                                    @endif
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>{{ translate('messages.Vehicle') }} <span class="req">*</span></label>
+                            <select name="vehicle_id" required>
+                                <option value="" hidden>{{ translate('messages.select_vehicle') }}</option>
+                                @foreach (\App\Models\DMVehicle::where('status',1)->get(['id','type']) as $v)
+                                    <option value="{{ $v->id }}" {{ old('vehicle_id') == $v->id ? 'selected' : '' }}>{{ $v->type }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Section 2: Identity Verification -->
+                    <h3 class="sec-head section-gap">
+                        <svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M6 12h4M6 16h8M14 8h4"/><circle cx="9" cy="8" r="2"/></svg>
+                        {{ translate('messages.identity_verification') }}
+                    </h3>
+
+                    <!-- Identity type | Identity number -->
+                    <div class="row-2">
+                        <div class="form-group">
+                            <label>{{ translate('messages.identity_type') }} <span class="req">*</span></label>
+                            <select name="identity_type">
+                                <option value="passport" {{ old('identity_type', 'passport') == 'passport' ? 'selected' : '' }}>{{ translate('messages.passport') }}</option>
+                                <option value="driving_license" {{ old('identity_type') == 'driving_license' ? 'selected' : '' }}>{{ translate('messages.driving_license') }}</option>
+                                <option value="nid" {{ old('identity_type') == 'nid' ? 'selected' : '' }}>{{ translate('messages.nid') }}</option>
+                                <option value="restaurant_id">{{ translate('messages.store_id') }}</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>{{ translate('messages.identity_number') }} <span class="req">*</span></label>
+                            <input type="text" name="identity_number" value="{{ old('identity_number') }}" placeholder="{{ translate('messages.Ex:') }} DH-23434-LS" required>
+                        </div>
+                    </div>
+
+                    <!-- Identity images -->
+                    <div class="form-group">
+                        <label>{{ translate('messages.identity_image') }} <span class="req">*</span></label>
+                        <div class="row" id="coba"></div>
+                    </div>
+
+                    <!-- Section 3: Login Info -->
+                    <h3 class="sec-head section-gap">
+                        <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+                        {{ translate('messages.login_info') }}
+                    </h3>
+
+                    <!-- Phone | Password -->
+                    <div class="row-2">
+                        <div class="form-group">
+                            <label>{{ translate('messages.phone') }} <span class="req">*</span></label>
+                            <input type="tel" name="phone" id="phone" placeholder="{{ translate('messages.Ex:') }} 017********" value="{{ old('phone') }}" required>
+                        </div>
+                        <div class="form-group">
+                            <label>{{ translate('messages.password') }} <span class="req">*</span></label>
+                            <div class="pw-wrap">
+                                <input type="password" name="password" id="dm-password" pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}" title="{{ translate('messages.Must_contain_at_least_one_number_and_one_uppercase_and_lowercase_letter_and_symbol,_and_at_least_8_or_more_characters') }}" placeholder="{{ translate('messages.password_length_placeholder', ['length' => '8+']) }}" value="{{ old('password') }}" required>
+                                <button type="button" class="eye-btn"><svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
                             </div>
                         </div>
                     </div>
-                    <div class="text-end">
-                        <button type="submit" class="cmn--btn border-0 outline-0" id="signInBtn">{{ translate('messages.submit') }}</button>
-                    </div>
-                </form>
-        </div>
 
+                    <!-- Confirm Password -->
+                    <div class="row-2">
+                        <div class="form-group">
+                            <label>{{ translate('messages.confirm_password') }} <span class="req">*</span></label>
+                            <div class="pw-wrap">
+                                <input type="password" id="dm-confirm-password" placeholder="{{ translate('messages.password_length_placeholder', ['length' => '8+']) }}" required>
+                                <button type="button" class="eye-btn"><svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+                            </div>
+                            <div id="pw-match-error" class="form-hint" style="color:#e74c3c;display:none">{{ translate('messages.password_does_not_match') }}</div>
+                        </div>
+                        <div></div>
+                    </div>
+
+                    @include('admin-views.partials._recaptcha')
+                    <div class="terms-check">
+                        <input type="checkbox" id="dmTerms" />
+                        <label for="dmTerms">{{ translate('messages.i_agree_to_the') }} <a href="{{ route('privacy-policy') }}" target="_blank">{{ translate('messages.privacy_policy') }}</a> {{ translate('messages.and') }} <a href="{{ route('terms-and-conditions') }}" target="_blank">{{ translate('messages.terms_and_condition') }}</a></label>
+                    </div>
+                    <button type="submit" class="submit-btn" id="signInBtn" disabled>{{ translate('messages.submit') }}</button>
+                </form>
+            </div>
+        </div>
     </section>
 
 @endsection
@@ -309,6 +208,34 @@ $countryCode= strtolower($country?$country->value:'auto');
                     form.addEventListener('submit', (e) => {
                         let isFormValid = FormValidation.validateForm(form);
                         let isFileValid = true;
+
+                        // Confirm password check
+                        var pw = document.getElementById('dm-password');
+                        var cpw = document.getElementById('dm-confirm-password');
+                        if (pw && cpw && pw.value !== cpw.value) {
+                            isFormValid = false;
+                            document.getElementById('pw-match-error').style.display = 'block';
+                            cpw.style.borderColor = '#e74c3c';
+                        }
+
+                        // Identity image check
+                        var identityImages = form.querySelectorAll('input[name="identity_image[]"]');
+                        var hasIdentityImage = false;
+                        identityImages.forEach(function(inp) {
+                            if (inp.files && inp.files.length > 0) hasIdentityImage = true;
+                        });
+                        var cobaEl = document.getElementById('coba');
+                        if (!hasIdentityImage && cobaEl) {
+                            isFormValid = false;
+                            var cobaGroup = cobaEl.closest('.form-group');
+                            var existingErr = cobaGroup ? cobaGroup.querySelector('.form-validation-error') : null;
+                            if (!existingErr && cobaGroup) {
+                                var errDiv = document.createElement('div');
+                                errDiv.className = 'form-validation-error text-danger mt-1 small';
+                                errDiv.textContent = '{{ translate("Please upload at least one identity image.") }}';
+                                cobaEl.insertAdjacentElement('afterend', errDiv);
+                            }
+                        }
 
                         if (window.fileValidators) {
                             const formValidators = window.fileValidators.filter(validator =>
@@ -443,24 +370,36 @@ $countryCode= strtolower($country?$country->value:'auto');
 
                 FormValidation.clearError(input);
 
+                // Required check — text/select/textarea
                 if (input.type !== 'file' && input.hasAttribute('required') && !input.value.trim()) {
                     isValid = false;
-                    errorMessage = 'This field is required.';
+                    errorMessage = '{{ translate("This field is required.") }}';
                 }
 
+                // Phone validation — must have digits beyond just the country code
+                else if (input.type === 'tel' && input.hasAttribute('required')) {
+                    const digits = input.value.replace(/[^0-9]/g, '');
+                    if (digits.length < 10) {
+                        isValid = false;
+                        errorMessage = '{{ translate("Please enter a valid phone number.") }}';
+                    }
+                }
+
+                // Email validation
                 else if (input.type === 'email' && input.value.trim()) {
                     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
                     if (!emailRegex.test(input.value.trim())) {
                         isValid = false;
-                        errorMessage = 'Please enter a valid email address.';
+                        errorMessage = '{{ translate("Please enter a valid email address.") }}';
                     }
                 }
 
+                // Confirm password match
                 else if ((input.name === 'confirmPassword' || input.name === 'confirm-password') && input.value.trim()) {
                     const passwordInput = document.querySelector("input[name='password']");
                     if (passwordInput && input.value !== passwordInput.value) {
                         isValid = false;
-                        errorMessage = input.getAttribute('data-msg') || 'Password does not match.';
+                        errorMessage = input.getAttribute('data-msg') || '{{ translate("Password does not match.") }}';
                     }
                 }
 
@@ -479,7 +418,7 @@ $countryCode= strtolower($country?$country->value:'auto');
                 const formGroup = input.closest('.form-group');
                 const container = formGroup ? formGroup : input.parentNode;
 
-                const inputName = input.getAttribute('name');
+                const inputName = input.getAttribute('name') || input.getAttribute('id');
                 let errorDiv = container.querySelector(`.form-validation-error[data-for="${inputName}"]`);
 
                 if (!errorDiv) {
@@ -487,10 +426,11 @@ $countryCode= strtolower($country?$country->value:'auto');
                     errorDiv.className = 'form-validation-error text-danger mt-1 small';
                     errorDiv.setAttribute('data-for', inputName);
 
-                    const inputGroup = input.closest('.input-group');
+                    // Find the outermost wrapper to insert after (not inside)
+                    const wrapper = input.closest('.pw-wrap') || input.closest('.iti') || input.closest('.input-group');
 
-                    if (inputGroup) {
-                        inputGroup.insertAdjacentElement('afterend', errorDiv);
+                    if (wrapper) {
+                        wrapper.insertAdjacentElement('afterend', errorDiv);
                     } else {
                         input.insertAdjacentElement('afterend', errorDiv);
                     }
@@ -694,14 +634,16 @@ $countryCode= strtolower($country?$country->value:'auto');
             window.FileUploadValidator = FileUploadValidator;
         })();
 
+        // DM image preview with upload-area state
         function readURL(input) {
             if (input.files && input.files[0]) {
                 var reader = new FileReader();
-
                 reader.onload = function(e) {
-                    $('#viewer').attr('src', e.target.result);
+                    var viewer = document.getElementById('viewer');
+                    viewer.src = e.target.result;
+                    viewer.style.display = 'block';
+                    document.getElementById('dmImageArea').classList.add('has-preview');
                 }
-
                 reader.readAsDataURL(input.files[0]);
             }
         }
@@ -709,6 +651,62 @@ $countryCode= strtolower($country?$country->value:'auto');
         $("#customFileEg1").change(function() {
             readURL(this);
         });
+
+        // DM image drag & drop
+        (function(){
+            var area = document.getElementById('dmImageArea');
+            if(!area) return;
+            area.addEventListener('dragover', function(e){ e.preventDefault(); area.style.borderColor='var(--green)'; });
+            area.addEventListener('dragleave', function(){ area.style.borderColor=''; });
+            area.addEventListener('drop', function(e){
+                e.preventDefault(); area.style.borderColor='';
+                var inp = document.getElementById('customFileEg1');
+                if(inp){ inp.files = e.dataTransfer.files; readURL(inp); }
+            });
+        })();
+
+        // Password eye toggle
+        document.querySelectorAll('.eye-btn').forEach(function(btn){
+            btn.addEventListener('click', function(e){
+                e.preventDefault();
+                var inp = btn.parentElement.querySelector('input');
+                var show = inp.type === 'password';
+                inp.type = show ? 'text' : 'password';
+                btn.innerHTML = show
+                    ? '<svg viewBox="0 0 24 24"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>'
+                    : '<svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
+            });
+        });
+
+        // Confirm password match validation
+        (function(){
+            var pw = document.getElementById('dm-password');
+            var cpw = document.getElementById('dm-confirm-password');
+            var err = document.getElementById('pw-match-error');
+            if(!pw || !cpw) return;
+            function check(){
+                if(cpw.value.length === 0){ err.style.display='none'; cpw.style.borderColor=''; return; }
+                if(pw.value !== cpw.value){
+                    err.style.display='block';
+                    cpw.style.borderColor='#e74c3c';
+                } else {
+                    err.style.display='none';
+                    cpw.style.borderColor='var(--green)';
+                }
+            }
+            cpw.addEventListener('input', check);
+            pw.addEventListener('input', function(){ if(cpw.value) check(); });
+        })();
+
+        // Terms checkbox - enable/disable submit
+        (function(){
+            var cb = document.getElementById('dmTerms');
+            var btn = document.getElementById('signInBtn');
+            if(!cb || !btn) return;
+            cb.addEventListener('change', function(){
+                btn.disabled = !cb.checked;
+            });
+        })();
 
         $('select[name="earning"]').on('change', function() {
             if (this.value === '1') {

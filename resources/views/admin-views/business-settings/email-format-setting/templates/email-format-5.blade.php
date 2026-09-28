@@ -1,6 +1,3 @@
-<?php
-$company_name = App\Models\BusinessSetting::where('key', 'business_name')->first()->value;
-?>
 <table class="email-template-table-style">
     <tr>
         <td class="email-template-table-td-style">
@@ -28,7 +25,7 @@ $company_name = App\Models\BusinessSetting::where('key', 'business_name')->first
             <span class="border-top"></span>
             <span class="d-block" id="mail-footer" class="email-template-table-td-span-3  mail-footer">{{ $data['footer_text'] ?? translate('Please_contact_us_for_any_queries,_we’re_always_happy_to_help.') }}</span>
             <span class="d-block">{{ translate('Thanks_&_Regards') }},</span>
-            <span class="d-block" class="email-template-table-td-span-4">{{ $company_name }}</span>
+            <span class="d-block" class="email-template-table-td-span-4">{{ \App\CentralLogics\Helpers::get_business_settings('business_name', false) }}</span>
             @php($store_logo = \App\Models\BusinessSetting::where(['key' => 'logo'])->first())
             <img class="email-template-img onerror-image"
             src="{{ $data?->logo ? $data->logo_full_url : \App\CentralLogics\Helpers::get_full_url('business',$store_logo?->value,$store_logo?->storage[0]?->value ?? 'public', 'favicon') }}"
@@ -61,9 +58,8 @@ $company_name = App\Models\BusinessSetting::where('key', 'business_name')->first
                 </a>
             </span>
             <span class="copyright" id="mail-copyright">
-                {{ $data['copyright_text']?? translate('Copyright 2023 6ammart. All right reserved') }}
+                {{ $data['copyright_text']?? \App\CentralLogics\Helpers::copyright_text() }}
             </span>
         </td>
     </tr>
 </table>
-<script src="{{asset('public/assets/admin')}}/js/view-pages/common.js"></script>

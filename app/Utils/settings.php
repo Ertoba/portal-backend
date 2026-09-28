@@ -56,9 +56,9 @@ if (!function_exists('getWebConfig')) {
         {
             $result = '';
             if ($type == 'class') {
-                $result = env('APP_MODE') != 'demo' ? '' : 'call-demo';
+                $result = getEnvMode() != 'demo' ? '' : 'call-demo';
             } elseif ($type == 'button') {
-                $result = env('APP_MODE') != 'demo' ? 'submit' : 'button';
+                $result = getEnvMode() != 'demo' ? 'submit' : 'button';
             }
             return $result;
         }
@@ -67,7 +67,7 @@ if (!function_exists('getWebConfig')) {
     if (!function_exists('showDemoModeInputValue')) {
         function showDemoModeInputValue($value = null): string
         {
-            return env('APP_MODE') != 'demo' ? $value : '';
+            return getEnvMode() != 'demo' ? $value : '';
         }
     }
 }

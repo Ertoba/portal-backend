@@ -13,6 +13,7 @@ use App\Models\StoreWallet;
 use App\Models\WithdrawRequest;
 use Brian2694\Toastr\Facades\Toastr;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\View;
 use Maatwebsite\Excel\Facades\Excel;
 
@@ -136,136 +137,167 @@ class StoreDisbursementController extends Controller
 
     public function status(Request $request)
     {
-        $disbursements=DisbursementDetails::where(['disbursement_id'=>$request->disbursement_id])->whereIn('store_id',$request->store_ids)->get();
+        try {
+            DB::transaction(function () use ($request) {
+                $disbursements = DisbursementDetails::with(['store.vendor', 'withdraw_method'])
+                    ->where(['disbursement_id' => $request->disbursement_id])
+                    ->whereIn('store_id', $request->store_ids)
+                    ->lockForUpdate()
+                    ->get();
 
-        foreach ($disbursements as $disbursement){
-            $wallet=  StoreWallet::where('vendor_id',$disbursement->store->vendor_id)->first();
-
-
-            if ( (string) $wallet->total_earning <  (string) ($wallet->total_withdrawn + $wallet->pending_withdraw) ) {
-                return response()->json([
-                    'status' => 'error',
-                    'message'=> translate('messages.Blalnce_mismatched_total_earning_is_too_low_for').' '.$disbursement->store?->name,
-                ]);
-            }
-
-            if($request->status == 'completed'){
-                if($disbursement->status != 'completed') {
-                    $withdraw = new WithdrawRequest();
-                    $withdraw->vendor_id = $disbursement->store?->vendor?->id;
-                    $withdraw->amount = $disbursement['disbursement_amount'];
-                    $withdraw->withdrawal_method_id = $disbursement['payment_method'];
-                    $withdraw->withdrawal_method_fields = $disbursement->withdraw_method->method_fields;
-                    $withdraw->approved = 1;
-                    $withdraw->transaction_note =$disbursement->id;
-                    $withdraw->type = 'disbursement';
-
-                    if($disbursement->status== 'canceled'){
-                        $wallet->increment('total_withdrawn', $disbursement['disbursement_amount']);
-                        } else{
-                            $wallet->decrement('pending_withdraw', $disbursement['disbursement_amount']);
-                            $wallet->increment('total_withdrawn', $disbursement['disbursement_amount']);
-                        }
-                    $withdraw->save();
-                }
-            }elseif ($request->status == 'canceled'){
-                if($disbursement->status == 'completed'){
-                    return response()->json([
-                        'status' => 'error',
-                        'message'=> translate('messages.can_not_cancel_completed_disbursement_,_uncheck_completed_disbursements')
-                    ]);
+                foreach ($disbursements as $disbursement) {
+                    $this->syncStoreDisbursementStatus($disbursement, $request->status);
                 }
 
-                $wallet->decrement('pending_withdraw', $disbursement['disbursement_amount']);
-            }
-            $disbursement->status = $request->status;
-            $disbursement->save();
+                self::check_status($request->disbursement_id);
+            });
+        } catch (\Throwable $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => $e->getMessage(),
+            ]);
         }
-
-        self::check_status($request->disbursement_id);
-
 
         return response()->json([
             'status' => 'success',
-            'message'=> translate('messages.status_updated')
+            'message' => translate('messages.status_updated')
         ]);
     }
 
-    public function statusById($id,$status)
+    public function statusById($id, $status)
     {
-        $disbursement=DisbursementDetails::find($id);
-        $wallet=  StoreWallet::where('vendor_id',$disbursement->store->vendor_id)->first();
+        try {
+            DB::transaction(function () use ($id, $status) {
+                $disbursement = DisbursementDetails::with(['store.vendor', 'withdraw_method'])
+                    ->lockForUpdate()
+                    ->findOrFail($id);
 
-        if ((string) $wallet->total_earning <  (string) ($wallet->total_withdrawn + $wallet->pending_withdraw) ) {
-            Toastr::error(translate('messages.Blalnce_mismatched_total_earning_is_too_low'));
+                $this->syncStoreDisbursementStatus($disbursement, $status);
+                self::check_status($disbursement->disbursement_id);
+            });
+            Toastr::success(translate('messages.status_updated'));
             return back();
+        } catch (\Throwable $e) {
+            Toastr::error($e->getMessage());
+            return back();
+        }
+    }
 
+    private function syncStoreDisbursementStatus(DisbursementDetails $disbursement, string $status): void
+    {
+        $store = $disbursement->store;
+        $wallet = StoreWallet::where('vendor_id', $store?->vendor_id)->lockForUpdate()->first();
+
+        if (!$wallet) {
+            throw new \RuntimeException(translate('messages.wallet_not_found'));
         }
 
-        if($status == 'completed'){
-            $withdraw = new WithdrawRequest();
-            $withdraw->vendor_id = $disbursement->store?->vendor?->id;
-            $withdraw->amount = $disbursement['disbursement_amount'];
-            $withdraw->withdrawal_method_id = $disbursement['payment_method'];
-            $withdraw->withdrawal_method_fields = $disbursement->withdraw_method->method_fields;
+        $amount = (float) $disbursement->disbursement_amount;
+        $currentStatus = $disbursement->status;
+        $totalEarning = (float) $wallet->total_earning;
+        $totalWithdrawn = (float) $wallet->total_withdrawn;
+        $pendingWithdraw = (float) $wallet->pending_withdraw;
+        $cashInHand = (float) ($wallet->collected_cash ?? 0);
+
+        if (($totalEarning - ($totalWithdrawn + $pendingWithdraw + $cashInHand)) < 0) {
+            throw new \RuntimeException(translate('messages.balance_mismatched_total_earning_is_too_low'));
+        }
+
+        if ($currentStatus === $status) {
+            return;
+        }
+
+        if ($status === 'completed') {
+            if ($currentStatus === 'pending') {
+                if ($pendingWithdraw < $amount) {
+                    throw new \RuntimeException(translate('messages.pending_withdraw_is_lower_than_disbursement_amount'));
+                }
+
+                $wallet->pending_withdraw = $pendingWithdraw - $amount;
+                $wallet->total_withdrawn = $totalWithdrawn + $amount;
+            } elseif ($currentStatus === 'canceled') {
+                $wallet->total_withdrawn = $totalWithdrawn + $amount;
+            }
+
+            $withdraw = WithdrawRequest::firstOrNew([
+                'transaction_note' => $disbursement->id,
+                'vendor_id' => $store?->vendor?->id,
+            ]);
+
+            $withdraw->amount = $amount;
+            $withdraw->withdrawal_method_id = $disbursement->payment_method;
+            $withdraw->withdrawal_method_fields = $disbursement->withdraw_method?->method_fields;
             $withdraw->approved = 1;
-            $withdraw->transaction_note = $id;
             $withdraw->type = 'disbursement';
-
-            if($disbursement->status== 'canceled'){
-                $wallet->increment('total_withdrawn', $disbursement['disbursement_amount']);
-                } else{
-                    $wallet->decrement('pending_withdraw', $disbursement['disbursement_amount']);
-                    $wallet->increment('total_withdrawn', $disbursement['disbursement_amount']);
-                }
             $withdraw->save();
-        }
-        elseif ($status == 'canceled'){
-            if($disbursement->status == 'completed'){
-                Toastr::error(translate('messages.can_not_cancel_completed_disbursement_,_uncheck_completed_disbursements'));
-                return back();
+        } elseif ($status === 'canceled') {
+            if ($currentStatus === 'completed') {
+                throw new \RuntimeException(translate('messages.can_not_cancel_completed_disbursement_,_uncheck_completed_disbursements'));
             }
-            $wallet->decrement('pending_withdraw', $disbursement['disbursement_amount']);
 
-        }elseif ($status == 'pending'){
-            if($disbursement->status == 'completed'){
-                $withdraw = WithdrawRequest::where('transaction_note',$id)->where('vendor_id', $disbursement->store->vendor_id)->first();
-                if ($withdraw){
-                    $withdraw->delete();
+            if ($currentStatus === 'pending') {
+                if ($pendingWithdraw < $amount) {
+                    throw new \RuntimeException(translate('messages.pending_withdraw_is_lower_than_disbursement_amount'));
                 }
+
+                $wallet->pending_withdraw = $pendingWithdraw - $amount;
             }
-            $wallet->decrement('total_withdrawn', $disbursement['disbursement_amount']);
-            $wallet->increment('pending_withdraw', $disbursement['disbursement_amount']);
+        } elseif ($status === 'pending') {
+            if ($currentStatus === 'completed') {
+                if ($totalWithdrawn < $amount) {
+                    throw new \RuntimeException(translate('messages.total_withdrawn_is_lower_than_disbursement_amount'));
+                }
+
+                WithdrawRequest::where('transaction_note', $disbursement->id)
+                    ->where('vendor_id', $store->vendor_id)
+                    ->delete();
+
+                $wallet->total_withdrawn = $totalWithdrawn - $amount;
+                $wallet->pending_withdraw = $pendingWithdraw + $amount;
+            } elseif ($currentStatus === 'canceled') {
+                $wallet->pending_withdraw = $pendingWithdraw + $amount;
+            }
         }
 
+        $newBalance = (float) $wallet->total_earning
+            - (
+                (float) $wallet->total_withdrawn
+                + (float) $wallet->pending_withdraw
+                + (float) ($wallet->collected_cash ?? 0)
+            );
+
+        if ($newBalance < 0) {
+            throw new \RuntimeException(translate('messages.balance_would_become_negative_after_this_status_change'));
+        }
+
+        $wallet->save();
         $disbursement->status = $status;
         $disbursement->save();
-
-        self::check_status($disbursement->disbursement_id);
-
-        Toastr::success(translate('messages.status_updated'));
-        return back();
     }
     public function generate_disbursement()
     {
-        $stores = Store::all();
+        $stores = Store::where('status', 1)
+            ->has('disbursement_method')
+            ->with('vendor.wallet', 'disbursement_method')
+            ->select(['id', 'vendor_id', 'module_id'])
+            ->get();
         $disbursement_details = [];
         $total_amount = 0;
 
+        $lastId = Disbursement::max('id') ?? 999;
         $disbursement = new Disbursement();
-        $disbursement->id = 1000 + Disbursement::count() + 1;
-        if (Disbursement::find($disbursement->id)) {
-            $disbursement->id = Disbursement::orderBy('id', 'desc')->first()->id + 1;
-        }
+        $disbursement->id = $lastId + 1;
         $disbursement->title = 'Disbursement # '.$disbursement->id;
         $minimum_amount = BusinessSetting::where(['key' => 'store_disbursement_min_amount'])->first()?->value;
         foreach ($stores as $store){
             if(isset($store->vendor->wallet)){
 
-                $total_earning = $store->vendor->wallet->total_earning ?? 0;
-                $total_withdraw = ($store->vendor->wallet->total_withdrawn ?? 0) + ($store->vendor->wallet->pending_withdraw ?? 0);
-                $total_cash_in_hand = $store->vendor->wallet->collected_cash ?? 0;
-                $disbursement_amount = ((string) $total_earning> (string) ($total_withdraw+$total_cash_in_hand))?(  ($total_earning - ($total_withdraw+$total_cash_in_hand))):0;
+                $total_earning = $store->vendor->wallet->total_earning;
+                $total_withdraw = $store->vendor->wallet->total_withdrawn + $store->vendor->wallet->pending_withdraw;
+                $total_cash_in_hand = $store->vendor->wallet->collected_cash;
+                $disbursement_amount = ((string) $total_earning > (string) ($total_withdraw+$total_cash_in_hand))
+                    ? ($total_earning - ($total_withdraw+$total_cash_in_hand))
+                    : 0;
 
                 if ($disbursement_amount > $minimum_amount && isset($store->disbursement_method)){
 

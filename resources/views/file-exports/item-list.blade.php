@@ -103,7 +103,7 @@
                         @if (Config::get('module.current_module_type') == 'food')
                             <td> {{ $item->veg == 1 ? translate('Veg') : translate('Non_Veg') }}</td>
                         @else
-                            <td>{{ $item->stock }}</td>
+                            <td>{{ max((int) $item->stock, 0) }}</td>
                         @endif
                         <td>
                             {{ \App\CentralLogics\Helpers::format_currency($item->price) }}

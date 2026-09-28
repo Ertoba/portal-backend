@@ -2,6 +2,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\CentralLogics\Helpers;
+use App\CentralLogics\PersonalizationService;
 use App\Models\Advertisement;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
@@ -53,7 +54,50 @@ class AdvertisementController extends Controller
             return $Advertisement;
         });
 
+        // Personalize ad order for authenticated users
+        if(auth('api')->check()){
+            $Advertisement = PersonalizationService::reorderByPreference($Advertisement, auth('api')->id(), 'store_id', 'store');
+        }
+
+        $this->attachStoreFormatting($Advertisement);
+
         return response()->json($Advertisement, 200);
     }
 
+    private function attachStoreFormatting($advertisements): void
+    {
+        if (! $advertisements || $advertisements->isEmpty()) {
+            return;
+        }
+
+        $store_ids = $advertisements->pluck('store.id')->filter()->unique()->values()->all();
+        $top_items_by_store = \App\Models\Store::topItemsByIds($store_ids, 3);
+
+        $advertisements->each(function ($advertisement) use ($top_items_by_store) {
+            $store = $advertisement->store;
+            if (! $store) {
+                return;
+            }
+
+            $items = $top_items_by_store[(int) $store->id] ?? collect();
+            $top_items = $items->map(function ($item) {
+                return [
+                    'id' => (int) $item->id,
+                    'name' => $item->name,
+                    'image_full_url' => $item->image_full_url,
+                    'price' => (float) $item->price,
+                    'discount' => (float) $item->discount,
+                    'discount_type' => $item->discount_type,
+                    'order_count' => (int) $item->order_count,
+                    'avg_rating' => (float) ($item->avg_rating ?? 0),
+                ];
+            })->values()->all();
+
+            $advertisement->unsetRelation('store');
+            $advertisement->setAttribute('store', \App\CentralLogics\StoreLogic::format_store_for_listing($store, [
+                'top_items' => $top_items,
+                'with_items' => true,
+            ]));
+        });
+    }
 }

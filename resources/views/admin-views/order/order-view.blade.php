@@ -3,15 +3,39 @@
 @section('title', translate('Order Details'))
 
 @push('css_or_js')
-
-    <style type="text/css" media="print">
-  .addon-quantity-input {
-    display: none;
-}
-.visibility-visible {
-    display: flex !important;
-}
-
+    <link rel="stylesheet" href="{{ asset('public/assets/admin/css/view-pages/order-edit-offcanvas.css') }}">
+    <style>
+        .delivery-info-card .delivery-info-label {
+            display: inline-flex;
+            align-items: center;
+            color: #6B7385;
+        }
+        .delivery-info-card .delivery-info-label::after {
+            content: ":";
+            margin-inline-start: 6px;
+        }
+        /* Name & Location rows: aligned 72px label column */
+        .delivery-info-card .delivery-info-row > .delivery-info-label {
+            min-width: 72px;
+            justify-content: flex-start;
+            margin-inline-end: 12px;
+        }
+        /* House | Floor | Road row: natural-width labels, no column alignment */
+        .delivery-info-card .delivery-info-hfr { column-gap: 0; row-gap: 8px; }
+        .delivery-info-card .delivery-info-hfr > .delivery-info-label { margin-inline-end: 8px; }
+        .delivery-info-card .delivery-info-hfr > .text-dark { margin-inline-end: 14px; }
+        .delivery-info-card .delivery-info-hfr > .text-dark:last-child { margin-inline-end: 0; }
+        .delivery-info-card .delivery-info-sep {
+            display: inline-block;
+            width: 1px;
+            align-self: stretch;
+            background: #D6DBE3;
+            margin-inline-end: 14px;
+        }
+        .delivery-info-card .card-title i {
+            font-size: 18px;
+            color: var(--title-clr, #1B2336);
+        }
     </style>
 @endpush
 
@@ -20,11 +44,8 @@
 
 @section('content')
     <?php
-    $deliverman_tips = 0;
     $campaign_order = isset($order?->details[0]?->item_campaign_id )  ? true : false;
-    $reasons=\App\Models\OrderCancelReason::where('status', 1)->where('user_type' ,'admin' )->get();
-    $tax_included =0;
-    $max_processing_time = $order->store?explode('-', $order->store['delivery_time'])[0]:0;
+    $reasons=\App\Models\OrderCancelReason::where('status', 1)->where('user_type' ,'admin' )->get(['id', 'reason']);
     ?>
     <div class="content container-fluid">
         <!-- Page Header -->
@@ -73,17 +94,22 @@
                     <div class="card-header border-0 align-items-start flex-wrap">
                         <div class="order-invoice-left d-flex d-sm-block justify-content-between">
                             <div>
-                                <h1 class="page-header-title d-flex align-items-center __gap-5px">
+                                <h1 class="page-header-title d-flex flex-wrap align-items-center __gap-5px">
                                     {{ translate('messages.order') }} #{{ $order['id'] }}
                                     @if ($campaign_order)
-                                        <span class="badge badge-soft-success ml-sm-3">
+                                        <span class="badge badge-soft-success">
                                             {{ translate('messages.campaign_order') }}
                                         </span>
                                     @endif
                                     @if ($order->edited)
-                                        <span class="badge badge-soft-dark ml-sm-3">
+                                        <span class="badge badge-soft-dark">
                                             {{ translate('messages.edited') }}
                                         </span>
+                                    @endif
+                                    @if ($order->orderEditLogs && $order->orderEditLogs->count() > 0)
+                                        <button type="button" class="btn p-0 fs-12 text-info font-weight-medium outline-0 shadow-none offcanvas-trigger" data-target="#offcanvas__history_log">
+                                            ({{ translate('messages.Edit_History_Log') }})
+                                        </button>
                                     @endif
                                 </h1>
                                 <span class="mt-2 d-block d-flex align-items-center __gap-5px">
@@ -94,7 +120,9 @@
                                 <h6 class="mt-2 pt-1 mb-2 fw-medium d-flex align-items-center __gap-5px">
                                     <i class="tio-shop"></i>
                                     <span>{{ translate('messages.store') }}</span> <span>:</span> <span
-                                        class="badge text-body bg-light2 py-1 px-2 font-weight-normal">{{ Str::limit($order->store ? $order->store->name : translate('messages.store deleted!'), 25, '...') }}</span>
+                                        class="badge text-body bg-light2 py-1 px-2 font-weight-normal d-inline-flex align-items-center __gap-5px">{{ Str::limit($order->store ? $order->store->name : translate('messages.store deleted!'), 25, '...') }}
+                                        @include('partials._verified_store_badge', ['store' => $order->store])
+                                    </span>
                                 </h6>
                                 @if ($order->schedule_at && $order->scheduled)
                                     <h6 class="text-capitalize d-flex align-items-center __gap-5px">
@@ -166,12 +194,19 @@
                         <div class="order-invoice-right mt-3 mt-sm-0">
                             <div class="btn--container ml-auto align-items-center justify-content-end">
 
-                                @if ( !$editing && in_array($order->order_status, ['pending', 'confirmed', 'processing', 'accepted']) &&
+                                @if (in_array($order->order_status, ['pending']) &&
                                         isset($order->store) && !$campaign_order &&
                                         $order->prescription_order == 0 && count($order?->payments) == 0 && $order?->ref_bonus_amount == 0 && $order?->flash_admin_discount_amount == 0 && ($order->payment_method == 'cash_on_delivery'))
-                                    <button class="btn btn-sm btn--danger btn-outline-danger font-regular edit-order" type="button">
-                                        <i class="tio-edit"></i> {{ translate('messages.edit') }}
-                                    </button>
+                                    @if ($editing)
+                                        <button type="button" class="btn-outline-base btn btn--primary print--btn font-regular d-none d-sm-block reopen-edit-offcanvas">
+                                            <i class="tio-edit"></i> {{ translate('messages.edit') }}
+                                        </button>
+                                    @else
+                                        <button type="button" class="btn-outline-base btn btn--primary print--btn font-regular d-none d-sm-block" data-toggle="modal"
+                                            data-target="#edit_order_confirmation-btn">
+                                            <i class="tio-edit"></i> {{ translate('messages.edit') }}
+                                        </button>
+                                    @endif
                                 @endif
                                 <a class="btn btn--primary print--btn font-regular d-none d-sm-block"
                                    href={{ route('admin.order.generate-invoice', [$order['id']]) }}>
@@ -302,16 +337,16 @@
                     </div>
 
                     @if ($order->order_attachment)
-                                    @php
-                                        $order_images = json_decode($order->order_attachment,true) ?? [];
-                                    @endphp
+                        @php
+                            $order_images = json_decode($order->order_attachment,true) ?? [];
+                        @endphp
                     <div class="px-20">
                         <h4 class="fs-14 mb-10px">{{ translate('messages.Prescription') }}</h4>
                         <div class="tabs-slide-wrap tabs-slide-wrap-prescription position-relative">
                             <div class="tabs-inner d-flex align-items-center gap-xxl-20 gap-3">
 
                                 @foreach ($order_images as $key => $item)
-                                            @php($item = is_array($item)?$item:['img'=>$item,'storage'=>'public'])
+                                            <?php $item = is_array($item)?$item:['img'=>$item,'storage'=>'public']; ?>
 
                                               <div class="tabs-slide_items">
                                                     <div class="prescription-thumb h-100px aspect-ratio-1 overflow-hidden rounded" data-toggle="modal"
@@ -335,8 +370,8 @@
                                                             <img  src="{{\App\CentralLogics\Helpers::get_full_url('order', $item['img'], $item['storage']??'public') }}"
                                                                   class="initial--22 w-100">
                                                         </div>
-                                                        @php($storage = $item['storage']??'public')
-                                                        @php($file = $storage == 's3'?base64_encode('order/' . $item['img']):base64_encode('public/order/' . $item['img']))
+                                                        <?php $storage = $item['storage']??'public'; ?>
+                                                        <?php $file = $storage == 's3'?base64_encode('order/' . $item['img']):base64_encode('public/order/' . $item['img']); ?>
                                                         <div class="modal-footer">
                                                             <a class="btn btn-primary"
                                                                href="{{ route('admin.file-manager.download', [$file,$storage]) }}"><i
@@ -373,97 +408,23 @@
 
                     <!-- Body -->
                     <div class="card-body px-0">
-                        <!-- item cart -->
-                        @if ($editing && !$campaign_order)
-                            <hr>
-                            <div class="row  px-4 py-5">
-                                <div class="col-12">
-                                    <div class="row justify-content-end">
-                                        <div class="col-sm-6">
-                                            <form id="search-form">
-                                                <!-- Search -->
-                                                <div class="input-group input--group">
-                                                    <input id="datatableSearch" type="search"
-                                                           value="{{ $keyword ? $keyword : '' }}" name="search"
-                                                           class="form-control h--45px" placeholder="Search here"
-                                                           aria-label="Search here">
-                                                    <button class="btn btn--secondary h--45px"><i
-                                                            class="tio-search"></i></button>
-                                                </div>
-                                                <!-- End Search -->
-                                            </form>
-                                        </div>
-                                        <div class="col-sm-6">
-                                            <div class="input-group header-item w-100">
-                                                <select name="category" id="category"
-                                                        class="form-control js-select2-custom mx-1 set-category-filter"
-                                                        title="{{ translate('messages.select_category') }}">
-                                                    <option value="">{{ translate('messages.all_categories') }}
-                                                    </option>
-                                                    @foreach ($categories as $item)
-                                                        <option value="{{ $item->id }}"
-                                                            {{ $category == $item->id ? 'selected' : '' }}>
-                                                            {{ $item->name }}</option>
-                                                    @endforeach
-                                                </select>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-12 mt-5" id="items">
-                                    <div class="row g-3 mb-auto justify-content-center">
-                                        @foreach ($products as $product)
-                                            <div class="order--item-box item-box">
-                                                @include('admin-views.order.partials._single_product', [
-                                                    'product' => $product,
-                                                    'store_data' => $order->store,
-                                                ])
-                                                {{-- <hr class="d-sm-none"> --}}
-                                            </div>
-                                        @endforeach
-                                    </div>
-                                </div>
-                                <div class="col-12">
-                                    {!! $products->withQueryString()->links() !!}
-                                </div>
-                            </div>
-                        @endif
-
-
                                 <?php
-                                $coupon = null;
+
                                 $total_addon_price = 0;
                                 $product_price = 0;
+                                $delivery_fee_info = \App\CentralLogics\DeliveryFeeLogic::adjustedFeeForOrder($order);
                                 if ($order->prescription_order == 1) {
-                                    $product_price = $order['order_amount'] - $order['delivery_charge'] - $order['total_tax_amount'] - $order['dm_tips'] - $order['additional_charge'] + $order['store_discount_amount'];
+                                    $product_price = $order['order_amount'] - $delivery_fee_info['adjusted'] - $order['total_tax_amount'] - $order['dm_tips'] - $order['additional_charge'] + $order['store_discount_amount'];
                                     if($order->tax_status == 'included'){
                                         $product_price += $order['total_tax_amount'];
                                     }
                                 }
-                                $store_discount_amount = 0;
-                                $admin_flash_discount_amount = $order['flash_admin_discount_amount'];
-                                $ref_bonus_amount = $order['ref_bonus_amount'];
-                                $extra_packaging_amount = $order['extra_packaging_amount'];
-                                $store_flash_discount_amount = $order['flash_store_discount_amount'];
-                                $additional_charge = $order['additional_charge'];
-                                $del_c = $order['delivery_charge'];
-                                if ($editing) {
-                                    $del_c = $order['original_delivery_charge'];
-                                }
-                                if ($order->coupon_code) {
-                                    $coupon = \App\Models\Coupon::where(['code' => $order['coupon_code']])->first();
-                                    if ($editing && $coupon->coupon_type == 'free_delivery') {
-                                        $del_c = 0;
-                                        $coupon = null;
-                                    }
-                                }
+
+
+
                                 $details = $order->details;
-                                if ($editing) {
-                                    $details = session('order_cart');
-                                } else {
-                                    foreach ($details as $key => $item) {
-                                        $details[$key]->status = true;
-                                    }
+                                foreach ($details as $key => $item) {
+                                    $details[$key]->status = true;
                                 }
                                 ?>
                             <div class="table-responsive pb-0">
@@ -483,14 +444,8 @@
                                     @foreach ($details as $key => $detail)
                                         @if (isset($detail->item_id) && $detail->status)
                                                 <?php
-                                                if (!$editing) {
-                                                    $detail->item = json_decode($detail->item_details, true);
-                                                }
-                                                $product = \App\Models\Item::where(['id' => data_get($detail->item,'id')])->first();
-                                                        if(!$product){
-                                                            $detail->item = json_decode($detail->item_details, true);
-                                                        }
-
+                                                $detail->item = json_decode($detail->item_details, true);
+                                                $product = \App\Models\Item::where(['id' => data_get($detail->item, 'id')])->first();
                                                 ?>
 
                                             <tr>
@@ -503,26 +458,13 @@
                                                 </td>
                                                 <td>
                                                     <div class="media media--sm">
-                                                        @if ($editing)
-                                                            <div class="avatar avatar-lg mr-3 cursor-pointer quick-view-cart-item" data-key="{{ $key }}"
-                                                                 title="{{ translate('messages.click_to_edit_this_item') }}">
-                                                                    <span
-                                                                        class="avatar-status avatar-lg-status avatar-status-dark"><i
-                                                                            class="tio-edit"></i></span>
-                                                                <img class="img-fluid rounded aspect-ratio-1 onerror-image"
-                                                                     src="{{ $product?->image_full_url ??asset('public/assets/admin/img/100x100/2.png') }}"
-                                                                     data-onerror-image="{{ asset('public/assets/admin/img/100x100/2.png') }}"
-                                                                     alt="Image Description">
-                                                            </div>
-                                                        @else
-                                                            <a class="avatar avatar-lg mr-3"
-                                                               href="{{ route('admin.item.view', [$detail->item['id'],'module_id' => $order->module_id]) }}">
-                                                                <img class="img-fluid rounded aspect-ratio-1 onerror-image"
-                                                                     src="{{ $product?->image_full_url ?? asset('public/assets/admin/img/100x100/2.png') }}"
-                                                                     data-onerror-image="{{ asset('public/assets/admin/img/100x100/2.png') }}"
-                                                                     alt="Image Description">
-                                                            </a>
-                                                        @endif
+                                                        <a class="avatar avatar-lg mr-3"
+                                                           href="{{ route('admin.item.view', [$detail->item['id'],'module_id' => $order->module_id]) }}">
+                                                            <img class="img-fluid rounded aspect-ratio-1 onerror-image"
+                                                                 src="{{ $product?->image_full_url ?? asset('public/assets/admin/img/100x100/2.png') }}"
+                                                                 data-onerror-image="{{ asset('public/assets/admin/img/100x100/2.png') }}"
+                                                                 alt="Image Description">
+                                                        </a>
                                                         <div class="media-body">
                                                             <div>
                                                                 <strong class="line--limit-1 card-text font-medium">
@@ -576,7 +518,7 @@
                                                                         $detailsVariation = isset(json_decode($detail['variation'], true)[0]) ? json_decode($detail['variation'], true)[0] : json_decode($detail['variation'], true);
                                                                     ?>
                                                                         @foreach ($detailsVariation as $key1 => $variation)
-                                                                            @if ($key1 != 'stock' || ($order->store && config('module.' . $order->store->module->module_type)['stock']))
+                                                                            @if ($key1 != 'stock')
                                                                                 <div class="font-size-sm text-body">
                                                                                         <span>{{ $key1 }} :
                                                                                         </span>
@@ -609,31 +551,28 @@
                                                                             {{ \App\CentralLogics\Helpers::format_currency($addon['price']) }}
                                                                         </span>
                                                                 </div>
-                                                                @php($total_addon_price += $addon['price'] * $addon['quantity'])
+                                                                <?php $total_addon_price += $addon['price'] * $addon['quantity']; ?>
                                                             @endforeach
                                                         </div>
                                                     </td>
                                                 @endif
                                                 <td class="text-right">
                                                     <div>
-                                                        @php($amount = $detail['price'] * $detail['quantity'])
+                                                        <?php $amount = $detail['price'] * $detail['quantity']; ?>
                                                         <h5>{{ \App\CentralLogics\Helpers::format_currency($amount) }}
                                                         </h5>
                                                     </div>
                                                 </td>
                                             </tr>
 
-                                            @php($product_price += $amount)
+                                            <?php $product_price += $amount; ?>
 
-                                            @php($store_discount_amount += $detail['discount_on_item']  * ( $detail['discount_on_product_by'] == 'store_discount' ? 1 :$detail['quantity']  ))
                                             <!-- End Media -->
 
 
                                         @elseif(isset($detail->item_campaign_id) && $detail->status)
                                                 <?php
-                                                if (!$editing) {
-                                                    $detail->campaign = json_decode($detail->item_details, true);
-                                                }
+                                                $detail->campaign = json_decode($detail->item_details, true);
                                                 $campaign = \App\Models\ItemCampaign::where(['id' => $detail->campaign['id']])->first();
                                                 ?>
                                             <tr>
@@ -646,26 +585,13 @@
                                                 </td>
                                                 <td>
                                                     <div class="media media--sm">
-                                                        @if ($editing)
-                                                            <div class="avatar avatar-xl mr-3  cursor-pointer quick-view-cart-item" data-key="{{ $key }}"
-                                                                 title="{{ translate('messages.click_to_edit_this_item') }}">
-                                                                    <span
-                                                                        class="avatar-status avatar-lg-status avatar-status-dark"><i
-                                                                            class="tio-edit"></i></span>
-                                                                    <img class="img-fluid rounded onerror-image"
-                                                                        src="{{ $campaign?->image_full_url ?? asset('public/assets/admin/img/900x400/img1.jpg') }}"
-                                                                        data-onerror-image="{{ asset('public/assets/admin/img/160x160/img2.jpg') }}"
-                                                                        alt="Image Description">
-                                                                </div>
-                                                            @else
-                                                                <a class="avatar avatar-xl mr-3"
-                                                                    href="{{ route('admin.campaign.view', ['item', $detail->campaign['id']]) }}">
-                                                                    <img class="img-fluid rounded onerror-image"
-                                                                        src="{{ $campaign?->image_full_url ?? asset('public/assets/admin/img/900x400/img1.jpg') }}"
-                                                                        data-onerror-image="{{ asset('public/assets/admin/img/160x160/img2.jpg') }}"
-                                                                        alt="Image Description">
-                                                                </a>
-                                                            @endif
+                                                        <a class="avatar avatar-xl mr-3"
+                                                            href="{{ route('admin.campaign.view', ['item', $detail->campaign['id']]) }}">
+                                                            <img class="img-fluid rounded onerror-image"
+                                                                src="{{ $campaign?->image_full_url ?? asset('public/assets/admin/img/900x400/img1.jpg') }}"
+                                                                data-onerror-image="{{ asset('public/assets/admin/img/160x160/img2.jpg') }}"
+                                                                alt="Image Description">
+                                                        </a>
 
                                                         <div class="media-body">
                                                             <div>
@@ -717,7 +643,7 @@
                                                                         <strong><u>{{ translate('messages.variation') }}
                                                                                 :</u></strong>
                                                                         @foreach (json_decode($detail['variation'], true)[0] as $key1 => $variation)
-                                                                            @if ($key1 != 'stock' || ($order->store && config('module.' . $order->store->module->module_type)['stock']))
+                                                                            @if ($key1 != 'stock')
                                                                                 <div class="font-size-sm text-body">
                                                                                         <span>{{ $key1 }} :
                                                                                         </span>
@@ -748,23 +674,22 @@
                                                                             {{ \App\CentralLogics\Helpers::format_currency($addon['price']) }}
                                                                         </span>
                                                                 </div>
-                                                                @php($total_addon_price += $addon['price'] * $addon['quantity'])
+                                                                <?php $total_addon_price += $addon['price'] * $addon['quantity']; ?>
                                                             @endforeach
                                                         </div>
                                                     </td>
                                                 @endif
                                                 <td class="text-right">
                                                     <div>
-                                                        @php($amount = $detail['price'] * $detail['quantity'])
+                                                        <?php $amount = $detail['price'] * $detail['quantity']; ?>
                                                         <h5>{{ \App\CentralLogics\Helpers::format_currency($amount) }}
                                                         </h5>
                                                     </div>
                                                 </td>
                                             </tr>
 
-                                            @php($product_price += $amount)
+                                            <?php $product_price += $amount; ?>
 
-                                            @php($store_discount_amount += $detail['discount_on_item'] *  ( $detail['discount_on_product_by'] == 'store_discount' ?  1:$detail['quantity'] ))
                                             <!-- End Media -->
 
                                         @endif
@@ -774,62 +699,10 @@
                                 </table>
                             </div>
                                 <?php
-                                $coupon_discount_amount = $order['coupon_discount_amount'];
-                                $old_store_discount_amount =0;
-                                $total_price = $product_price + $total_addon_price - $store_discount_amount - $coupon_discount_amount - $admin_flash_discount_amount - $ref_bonus_amount - $store_flash_discount_amount - $extra_packaging_amount;
 
                                 $total_tax_amount = $order['total_tax_amount'];
                                 if($order->tax_status == 'included'){
                                     $total_tax_amount=0;
-                                }
-                                $deliverman_tips = $order['dm_tips'];
-
-                                if ($editing) {
-
-                                    $store_discount = \App\CentralLogics\Helpers::get_store_discount($order->store);
-                                    if (isset($store_discount)) {
-                                        if ($product_price + $total_addon_price < $store_discount['min_purchase']) {
-                                            $store_discount_amount = 0;
-                                        }
-
-                                        if ($store_discount_amount > $store_discount['max_discount'] && $store_discount_amount > $store_discount['max_discount']) {
-                                            $old_store_discount_amount = $store_discount_amount;
-                                            $store_discount_amount = $store_discount['max_discount'];
-                                        }
-                                      $store_discount_amount=  max($store_discount_amount,$old_store_discount_amount);
-                                    }
-
-                                    $coupon_discount_amount = $coupon ? \App\CentralLogics\CouponLogic::get_discount($coupon, $product_price + $total_addon_price - $store_discount_amount ) : $order['coupon_discount_amount'];
-
-                                    $tax_amount = session()->get('edit_tax_amount');
-                                    $total_price = $product_price + $total_addon_price - $store_discount_amount - $coupon_discount_amount;
-
-                                    $total_tax_amount = $tax_amount;
-
-                                    $total_tax_amount = round($total_tax_amount, 2);
-
-                                    $tax_included = session()->get('edit_tax_included');
-                                    if ($tax_included ==  1){
-                                        $total_tax_amount=0;
-                                    }
-
-                                    $store_discount_amount = round($store_discount_amount, 2);
-
-                                    if ($order?->store?->free_delivery) {
-                                        $del_c = 0;
-                                    }
-
-                                    $free_delivery_over = \App\Models\BusinessSetting::where('key', 'free_delivery_over')->first()->value;
-                                    if (isset($free_delivery_over)) {
-                                        if ($free_delivery_over <= $product_price + $total_addon_price - $coupon_discount_amount - $store_discount_amount) {
-                                            $del_c = 0;
-                                        }
-                                    }
-                                    if ($order->order_type == 'take_away') {
-                                        $del_c = 0;
-                                    }
-                                } else {
-                                    $store_discount_amount = $order['store_discount_amount'];
                                 }
 
                                 ?>
@@ -853,7 +726,7 @@
                                     @endif
 
                                     <dt class="col-6 color-8a8a8a fs-12">{{ translate('messages.subtotal') }}
-                                        @if ($order->tax_status == 'included' ||  $tax_included ==  1)
+                                        @if ($order->tax_status == 'included')
                                             ({{ translate('messages.TAX_Included') }})
                                         @endif
                                         :</dt>
@@ -862,14 +735,19 @@
                                     </dd>
                                     <dt class="col-6 color-8a8a8a fs-12">{{ translate('messages.discount') }}:</dt>
                                     <dd class="col-6 text-dark fs-14">
-                                        - {{ \App\CentralLogics\Helpers::format_currency($store_discount_amount + $admin_flash_discount_amount  + $store_flash_discount_amount) }}
+                                        - {{ \App\CentralLogics\Helpers::format_currency($order['store_discount_amount'] + $order['flash_admin_discount_amount']  + $order['flash_store_discount_amount']) }}
                                     </dd>
 
 
 
-                                    <dt class="col-6 color-8a8a8a fs-12">{{ translate('messages.coupon_discount') }}:</dt>
+                                    <dt class="col-6 color-8a8a8a fs-12">{{ translate('messages.coupon_discount') }}
+                                        @if ($order->orderProDiscount && $order->orderProDiscount->benefit_type === 'coupon')
+                                            <i class="tio-info-outined" data-toggle="tooltip"
+                                               title="{{ translate('Pro Customer coupon applied.') }}"></i>
+                                        @endif
+                                        :</dt>
                                     <dd class="col-6 text-dark fs-14">
-                                        - {{ \App\CentralLogics\Helpers::format_currency($coupon_discount_amount) }}
+                                        - {{ \App\CentralLogics\Helpers::format_currency($order['coupon_discount_amount']) }}
                                     </dd>
 
 
@@ -881,10 +759,16 @@
                                     </dd>
 
                                     @endif
-                                        @if ($ref_bonus_amount > 0)
+                                        @if ($order['ref_bonus_amount'] > 0)
                                             <dt class="col-6 color-8a8a8a fs-12">{{ translate('messages.Referral_Discount') }}:</dt>
                                             <dd class="col-6 text-dark fs-14">
-                                                - {{ \App\CentralLogics\Helpers::format_currency($ref_bonus_amount) }}
+                                                - {{ \App\CentralLogics\Helpers::format_currency($order['ref_bonus_amount']) }}
+                                            </dd>
+                                        @endif
+                                        @if (($order->orderProDiscount?->amount_saved ?? 0) > 0)
+                                            <dt class="col-6 color-8a8a8a fs-12">{{ translate('messages.Pro_Discount') }}:</dt>
+                                            <dd class="col-6 text-dark fs-14">
+                                                - {{ \App\CentralLogics\Helpers::format_currency($order->orderProDiscount->amount_saved) }}
                                             </dd>
                                         @endif
                                         @if ($order->tax_status == 'excluded' && $total_tax_amount > 0 || $order->tax_status == null  )
@@ -897,30 +781,43 @@
 
                                         @endif
 
-                                         <dt class="col-6 color-8a8a8a fs-12">{{ translate('messages.delivery_fee') }}
-                                             @if ($order->free_delivery_by == 'admin')
-                                             <i class="tio-info-outined" data-toggle="tooltip" title="{{ translate('Delivery fee is applicable and will be covered by the admin.') }}"></i>
 
+                                         <dt class="col-6 color-8a8a8a fs-12">{{ translate('messages.delivery_fee') }}
+                                             @if (
+                                                 $order->orderProDiscount
+                                                 && $order->orderProDiscount->benefit_type === 'delivery_fee'
+                                                 && ($order->orderProDiscount->delivery_fee_reduction_amount ?? 0) > 0
+                                             )
+                                                 @if ($order->orderProDiscount->delivery_offer_type === 'full_free')
+                                                     <i class="tio-info-outined" data-toggle="tooltip"
+                                                        title="{{ translate('messages.Pro_Customer_free_delivery_applied') }}"></i>
+                                                 @else
+                                                     <i class="tio-info-outined" data-toggle="tooltip"
+                                                        title="{{ translate('messages.Pro_Customer_partial_delivery_discount_applied') }} ({{ (float) ($order->orderProDiscount->delivery_charge_discount_percentage ?? 0) }}%)"></i>
+                                                 @endif
+                                             @elseif ($order->free_delivery_by == 'admin')
+                                                 <i class="tio-info-outined" data-toggle="tooltip" title="{{ translate('Delivery fee is applicable and will be covered by the admin.') }}"></i>
                                              @elseif ($order->free_delivery_by == 'vendor')
-                                             <i class="tio-info-outined" data-toggle="tooltip" title="{{ translate('Delivery fee is applicable and will be covered by the Vendor.') }}"></i>
+                                                 <i class="tio-info-outined" data-toggle="tooltip" title="{{ translate('Delivery fee is applicable and will be covered by the Vendor.') }}"></i>
                                              @endif
                                                  :</dt>
                                          <dd class="col-6 text-dark fs-14">
-                                             + {{ \App\CentralLogics\Helpers::format_currency($del_c) }}
+                                             + {{ \App\CentralLogics\Helpers::format_currency($order['delivery_charge']) }}
 
                                          </dd>
+                                         @include('partials.delivery-type-row', ['order' => $order, 'layout' => 'dl'])
                                     <dt class="col-6 color-8a8a8a fs-12">{{ translate('messages.delivery_man_tips') }}</dt>
                                     <dd class="col-6 text-dark fs-14">
-                                        + {{ \App\CentralLogics\Helpers::format_currency($deliverman_tips) }}</dd>
+                                        + {{ \App\CentralLogics\Helpers::format_currency($order['dm_tips']) }}</dd>
                                     <dt class="col-6 color-8a8a8a fs-12">{{ \App\CentralLogics\Helpers::get_business_data('additional_charge_name')??\App\CentralLogics\Helpers::get_business_data('additional_charge_name')??translate('messages.additional_charge') }}</dt>
 
                                     <dd class="col-6 text-dark fs-14">
-                                        + {{ \App\CentralLogics\Helpers::format_currency($additional_charge) }}</dd>
+                                        + {{ \App\CentralLogics\Helpers::format_currency($order['additional_charge']) }}</dd>
 
-                                    @if ($extra_packaging_amount > 0)
+                                    @if ($order['extra_packaging_amount'] > 0)
                                         <dt class="col-6 color-8a8a8a fs-12">{{ translate('messages.Extra_Packaging_Amount') }}:</dt>
                                         <dd class="col-6 text-dark fs-14">
-                                            + {{ \App\CentralLogics\Helpers::format_currency($extra_packaging_amount) }}
+                                            + {{ \App\CentralLogics\Helpers::format_currency($order['extra_packaging_amount']) }}
                                         </dd>
                                     @endif
 
@@ -928,7 +825,7 @@
                                     <dt class="col-6 text-dar text-bold fs-16">{{ translate('messages.total') }} {{ $order->tax_status == 'included' ? '('.translate('messages.TAX_Included').')'  :'' }} : </dt>
                                     <dd class="col-6 text-dark font-weight-bolder fs-16">
 
-                                        {{ \App\CentralLogics\Helpers::format_currency($product_price + $del_c + $total_tax_amount + $total_addon_price + $deliverman_tips + $additional_charge - $coupon_discount_amount - $store_discount_amount - $admin_flash_discount_amount - $store_flash_discount_amount - $ref_bonus_amount +$extra_packaging_amount - $order->extra_discount_amount )  }}
+                                        {{ \App\CentralLogics\Helpers::format_currency($order->order_amount )  }}
                                     </dd>
                                     @if ($order?->payments)
                                         @foreach ($order?->payments as $payment)
@@ -950,16 +847,18 @@
                                         @endforeach
                                     @endif
                                 </dl>
+                                @if ($order->edited)
+                                    <div class="text-right">
+                                        <div class="d-inline-flex p-2 px-3 rounded gap-2 bg-opacity-warning-10 mt-3">
+                                            <i class="tio-info text-warning"></i>
+                                            <p class="fz-12px mb-0">
+                                                {{translate('Total bill has been updated after the edits.')}}
+                                            </p>
+                                        </div>
+                                    </div>
+                                @endif
                                 <!-- End Row -->
                             </div>
-                            @if ($editing)
-                                <div class="col-12">
-                                    <div class="btn--container justify-content-end">
-                                        <button class="btn btn-sm btn--reset cancel-edit-order" type="button" >{{ translate('messages.cancel') }}</button>
-                                        <button class="btn btn-sm btn--primary submit-edit-order" type="button">{{ translate('messages.submit') }}</button>
-                                    </div>
-                                </div>
-                            @endif
                         </div>
                         <!-- End Row -->
                     </div>
@@ -992,7 +891,7 @@
                                 </li>
                                 @if ($order->payment_status == 'paid' || $order->payment_status == 'partially_paid' )
                                     @if ( $order?->payments)
-                                        @php( $pay_infos =$order->payments()->where('payment_status','paid')->get())
+                                        <?php $pay_infos =$order->payments()->where('payment_status','paid')->get(); ?>
                                         @foreach ($pay_infos as $pay_info)
                                             <li>
                                                 <span class="name">{{ translate('Amount_paid_by') }} {{ translate($pay_info->payment_method) }} </span>
@@ -1009,7 +908,7 @@
 
                                 @if ($order->payment_status == 'paid' || $order->payment_status == 'partially_paid')
                                     @if ( $order?->payments)
-                                        @php( $amount =$order->payments()->where('payment_status','paid')->sum('amount'))
+                                        <?php $amount =$order->payments()->where('payment_status','paid')->sum('amount'); ?>
                                         <li>
                                             <span class="name">{{ translate('Amount_Returned_To_Wallet') }} </span>
                                             <span class="info">  {{ \App\CentralLogics\Helpers::format_currency($amount)  }} </span>
@@ -1028,7 +927,7 @@
                     </div>
 
                 @endif
-                @php($refund = \App\Models\BusinessSetting::where(['key' => 'refund_active_status'])->first())
+                <?php $refund = \App\Models\BusinessSetting::where(['key' => 'refund_active_status'])->first(); ?>
 
                 @if (!empty($order->refund))
                     @if (
@@ -1058,10 +957,10 @@
                                 <label class="input-label"
                                        for="exampleFormControlInput1">{{ translate('messages.image') }} : </label>
                                 <div class="row g-3">
-                                    @php($data = isset($order->refund->image) ? json_decode($order->refund->image, true) : 0)
+                                    <?php $data = isset($order->refund->image) ? json_decode($order->refund->image, true) : 0; ?>
                                     @if ($data)
                                         @foreach ($data as $key => $img)
-                                            @php($img = is_array($img)?$img:['img'=>$img,'storage'=>'public'])
+                                            <?php $img = is_array($img)?$img:['img'=>$img,'storage'=>'public']; ?>
                                             <div class="col-3">
                                                 <img class="img__aspect-1 rounded border w-100 onerror-image" data-toggle="modal"
                                                      data-target="#imagemodal{{ $key }}"
@@ -1088,8 +987,8 @@
 
                                                                 class="initial--22 w-100">
                                                         </div>
-                                                        @php($storage = $img['storage']??'public')
-                                                        @php($file = $storage == 's3'?base64_encode('refund/' . $img['img']):base64_encode('public/refund/' . $img['img']))
+                                                        <?php $storage = $img['storage']??'public'; ?>
+                                                        <?php $file = $storage == 's3'?base64_encode('refund/' . $img['img']):base64_encode('public/refund/' . $img['img']); ?>
                                                         <div class="modal-footer">
                                                             <a class="btn btn-primary"
                                                                href="{{ route('admin.file-manager.download', [$file,$storage]) }}"><i
@@ -1187,8 +1086,8 @@
                                 @if($order->is_unpaid_order)
                                     <div class="text-center bg-light2 rounded p-xxl-20 p-3">
                                         <h4 class="text-danger fs-14px fw-medium mb-2">{{ translate('messages.Payment_failed!') }}</h4>
-                                        @php($isCashOnDelivery = App\CentralLogics\Helpers::get_business_settings('cash_on_delivery')['status'] ?? false)
-                                        @php($isZoneCashOnDelivery = $order?->zone->cash_on_delivery)
+                                        <?php $isCashOnDelivery = App\CentralLogics\Helpers::get_business_settings('cash_on_delivery')['status'] ?? false; ?>
+                                        <?php $isZoneCashOnDelivery = $order?->zone->cash_on_delivery; ?>
                                         @if($isCashOnDelivery && $isZoneCashOnDelivery)
                                             <p class="fs-12 text-dark mb-20">{{ translate('messages.the customer\'s payment couldn\'t be processed. Please switch to COD.') }}</p>
                                         @endif
@@ -1272,7 +1171,7 @@
                                                             ?>
                                                         {{ $message }}
                                                     </button>
-                                                    @php($order_delivery_verification = (bool) \App\Models\BusinessSetting::where(['key' => 'order_delivery_verification'])->first()->value)
+                                                    <?php $order_delivery_verification = (bool) \App\Models\BusinessSetting::where(['key' => 'order_delivery_verification'])->first()->value; ?>
                                                     <div class="dropdown-menu text-capitalize" aria-labelledby="dropdownMenuButton">
                                                         <a class="dropdown-item {{ $order['order_status'] == 'pending' ? 'active' : '' }} route-alert"
                                                         data-url="{{ route('admin.order.status', ['id' => $order['id'], 'order_status' => 'pending']) }}" data-message="{{ translate('Change status to pending ?') }}"
@@ -1372,7 +1271,7 @@
                                     </div>
                                 </a>
                             </div>
-                            @php($address = $order->dm_last_location)
+                            <?php $address = $order->dm_last_location; ?>
                             <div class="d-flex justify-content-between align-items-center">
                                 <h5 class="text-dark">{{ translate('messages.last_location') }}</h5>
                             </div>
@@ -1404,12 +1303,11 @@
                             <div class="bg-light2 p-10px rounded mb-10px">
                                 <a class="media align-items-center deco-none customer--information-single"
                                    href="{{ route('admin.users.customer.view', [$order->customer['id']]) }}">
-                                    <div class="avatar avatar-circle">
-                                        <img class="avatar-img onerror-image"
-                                             data-onerror-image="{{ asset('public/assets/admin/img/160x160/img1.jpg') }}"
-                                             src="{{ $order->customer->image_full_url }}"
-                                             alt="Image Description">
-                                    </div>
+                                    @include('partials._user-avatar', [
+                                        'imageUrl'  => $order->customer->image_full_url,
+                                        'proStatus' => $order->customer->pro_status ?? false,
+                                        'size'      => 42,
+                                    ])
                                     <div class="media-body">
                                         <span class="fz--14px text--title font-semibold text-hover-primary d-block">
                                             {{ $order->customer['f_name'] . ' ' . $order->customer['l_name'] }}
@@ -1437,7 +1335,7 @@
                             </span>
                         @endif
                         @if ($order->receiver_details)
-                            @php($receiver_details = $order->receiver_details)
+                            <?php $receiver_details = $order->receiver_details; ?>
                             <h5 class="card-title mt-3">
                                     <span class="card-header-icon">
                                         <i class="tio-user"></i>
@@ -1483,13 +1381,11 @@
                         @endif
 
                         @if ($order->delivery_address)
-                            @php($address = json_decode($order->delivery_address, true))
-                            <div class="bg-light2 p-10px rounded mb-10px">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <h5 class="card-title text-dark">
-                                        <span class="card-header-icon">
-                                            <i class="tio-user"></i>
-                                        </span>
+                            <?php $address = json_decode($order->delivery_address, true); ?>
+                            <div class="bg-light2 p-3 rounded mb-10px delivery-info-card">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <h5 class="card-title text-dark mb-0 d-flex align-items-center gap-2">
+                                        <i class="tio-truck"></i>
                                         <span>{{ translate('messages.delivery_info') }}</span>
                                     </h5>
                                     @if ($order->order_status != 'delivered' && $order['partially_paid_amount'] == 0)
@@ -1500,46 +1396,55 @@
                                     @endif
                                 </div>
                                 @if (isset($address))
-                                    <div class="delivery--information-single mt-3">
-                                        <span class="name">{{ translate('messages.name') }}</span>
-                                        <span class="info">{{ data_get($address,'contact_person_name', translate('messages.N/A')) }}</span>
-                                        <span class="name">{{ translate('messages.contact') }}</span>
-                                        <a class="deco-none info" href="tel:{{ data_get($address,'contact_person_number', translate('messages.N/A'))  }}">
-                                            {{ data_get($address,'contact_person_number', translate('messages.N/A')) }}</a>
-                                                @if ( data_get($address,'house') != '')
-                                                    <span class="name">{{ translate('House') }}</span> <span
-                                                    class="info">{{data_get($address,'house', translate('messages.N/A')) }}</span>
-                                                @endif
-                                                @if (data_get($address,'floor') != '')
-                                                    <span class="name">{{ translate('Floor') }}</span> <span
-                                                    class="info">{{ data_get($address,'floor', translate('messages.N/A'))  }}</span>
-                                                @endif
+                                    <?php
+                                        $hfr = [];
+                                        if (data_get($address,'house') != '') $hfr[] = ['label' => translate('House'), 'value' => data_get($address,'house')];
+                                        if (data_get($address,'floor') != '') $hfr[] = ['label' => translate('Floor'), 'value' => data_get($address,'floor')];
+                                        if (data_get($address,'road')  != '') $hfr[] = ['label' => translate('Road'),  'value' => data_get($address,'road')];
+                                    ?>
 
-                                                @if ( data_get($address,'road') != '')
-                                                    <span class="name">{{ translate('Road') }}</span> <span
-                                                    class="info">{{ data_get($address,'road', translate('messages.N/A')) }}</span>
-                                                @endif
+                                    <div class="d-flex align-items-baseline mb-3 fs-13 delivery-info-row">
+                                        <span class="text-muted delivery-info-label">{{ translate('messages.name') }}</span>
+                                        <span class="text-dark fw-500">
+                                            {{ data_get($address,'contact_person_name', translate('messages.N/A')) }}
+                                            @if (data_get($address,'contact_person_number'))
+                                                <a class="text-muted deco-none ml-1" href="tel:{{ data_get($address,'contact_person_number') }}">({{ data_get($address,'contact_person_number') }})</a>
+                                            @endif
+                                        </span>
+                                    </div>
 
-                                        <div>
-                                            @if (isset($address['address']))
-                                                @if ( data_get($address,'latitude', null) &&  data_get($address,'longitude', null))
-                                                    <a target="_blank" class="d-flex align-items-center mt-2"
-                                                       href="http://maps.google.com/maps?z=12&t=m&q=loc:{{ $address['latitude'] }}+{{ $address['longitude'] }}">
-                                                        <i class="tio-poi"></i>{{ $address['address'] }}
-                                                    </a>
-                                                @else
-                                                    <i class="tio-poi"></i>{{ $address['address'] }}
+                                    @if (count($hfr))
+                                        <div class="d-flex flex-wrap align-items-center mb-3 fs-13 delivery-info-hfr">
+                                            @foreach ($hfr as $idx => $item)
+                                                @if ($idx > 0)
+                                                    <span class="delivery-info-sep" aria-hidden="true"></span>
                                                 @endif
+                                                <span class="text-muted delivery-info-label">{{ $item['label'] }}</span>
+                                                <span class="text-dark fw-500">{{ $item['value'] }}</span>
+                                            @endforeach
+                                        </div>
+                                    @endif
+
+                                    @if (isset($address['address']))
+                                        <div class="d-flex align-items-baseline fs-13 delivery-info-row">
+                                            <span class="text-muted delivery-info-label">{{ translate('Location') }}</span>
+                                            @if (data_get($address,'latitude') && data_get($address,'longitude'))
+                                                <a target="_blank" class="text--primary deco-none flex-grow-1"
+                                                   href="http://maps.google.com/maps?z=12&t=m&q=loc:{{ $address['latitude'] }}+{{ $address['longitude'] }}">
+                                                    {{ $address['address'] }}
+                                                </a>
+                                            @else
+                                                <span class="text--primary flex-grow-1">{{ $address['address'] }}</span>
                                             @endif
                                         </div>
-                                    </div>
+                                    @endif
                                 @endif
                             </div>
                         @endif
                     </div>
                 </div>
                 <!-- Customer Card -->
-                @php($data = isset($order->order_proof) ? json_decode($order->order_proof, true) : [])
+                <?php $data = isset($order->order_proof) ? json_decode($order->order_proof, true) : []; ?>
                 @if ( in_array($order->order_status, [ 'handover', 'delivered', 'picked_up']) || ($data != null && count($data) > 0) )
                 {{-- @dump($data) --}}
                     <!-- order proof -->
@@ -1556,7 +1461,7 @@
                                        for="order_proof">{{ translate('messages.image') }} : </label>
                                 <div class="row g-3">
                                     @foreach ($data as $key => $img)
-                                        @php($img = is_array($img)?$img:['img'=>$img,'storage'=>'public'])
+                                        <?php $img = is_array($img)?$img:['img'=>$img,'storage'=>'public']; ?>
                                         <div class="col-3">
                                             <img class="img__aspect-1 rounded border w-100 onerror-image" data-toggle="modal"
                                                  data-target="#imagemodal{{ $key }}"
@@ -1581,8 +1486,8 @@
                                                         <img src="{{\App\CentralLogics\Helpers::get_full_url('order',$img['img'],$img['storage']) }}"
                                                              class="initial--22 w-100">
                                                     </div>
-                                                    @php($storage = $img['storage'] ?? 'public')
-                                                    @php($file = $storage == 's3'?base64_encode('order/' . $img['img']):base64_encode('public/order/' . $img['img']))
+                                                    <?php $storage = $img['storage'] ?? 'public'; ?>
+                                                    <?php $file = $storage == 's3'?base64_encode('order/' . $img['img']):base64_encode('public/order/' . $img['img']); ?>
                                                     <div class="modal-footer">
                                                         <a class="btn btn-primary"
                                                            href="{{ route('admin.file-manager.download', [$file,$storage]) }}"><i
@@ -1621,8 +1526,9 @@
                                              alt="Image Description">
                                     </div>
                                     <div class="media-body">
-                                        <span class="fz--14px text--title font-semibold text-hover-primary d-block">
+                                        <span class="fz--14px text--title font-semibold text-hover-primary d-flex align-items-center __gap-5px">
                                             {{ $order->store['name'] }}
+                                            @include('partials._verified_store_badge', ['store' => $order->store])
                                         </span>
                                         <span>{{ $order->store->orders_count }} {{ translate('messages.orders') }}</span>
                                         <span class="text--title font-normal d-flex align-items-center">
@@ -1728,11 +1634,11 @@
                     <div class="modal-body">
                         <div class="flex-grow-1 mx-auto">
                             <div class="d-flex flex-wrap __gap-12px __new-coba" id="coba">
-                                @php($proof = isset($order->order_proof) ? json_decode($order->order_proof, true) : 0)
+                                <?php $proof = isset($order->order_proof) ? json_decode($order->order_proof, true) : 0; ?>
                                 @if ($proof)
 
                                     @foreach ($proof as $key => $photo)
-                                        @php($photo = is_array($photo)?$photo:['img'=>$photo,'storage'=>'public'])
+                                        <?php $photo = is_array($photo)?$photo:['img'=>$photo,'storage'=>'public']; ?>
                                         <div class="spartan_item_wrapper min-w-176px max-w-176px">
                                             <img class="img--square"
                                                  src="{{\App\CentralLogics\Helpers::get_full_url('order',$photo['img'],$photo['storage']) }}"
@@ -2003,7 +1909,7 @@
                                         <h4 class="mb-3 fs-16">{{ translate('messages.customer_information') }}</h4>
                                         <div class="d-flex flex-column gap-2">
                                             @if($order->is_guest)
-                                                @php($customer_details = json_decode($order['delivery_address'],true))
+                                                <?php $customer_details = json_decode($order['delivery_address'],true); ?>
 
                                                 <div class="d-flex align-items-center gap-2">
                                                     <span class="customer-namekey">{{translate('Name')}}</span>:
@@ -2191,865 +2097,368 @@
                 </div>
             </div>
         </div>
+
+
+    <!-- Order edit offcanvas -->
+    <div id="offcanvas__order_edit" class="custom-offcanvas d-flex flex-column justify-content-between" style="--offcanvas-width: 750px !important;">
+        <div>
+            <div class="custom-offcanvas-header bg-light d-flex justify-content-between align-items-center">
+                <div class="px-3 py-3 d-flex justify-content-between w-100">
+                    <div>
+                        <h2 class="mb-1">{{ translate('Edit Item') }}</h2>
+                        <div class="d-flex flex-wrap align-items-center gap-4">
+                            <h3 class="page-header-title mb-0 d-flex align-items-center gap-2">
+                                <span class="font--max-sm fs-14">{{ translate('Order') }} #{{ $order['id'] }}</span>
+                                <?php
+                                $statusBadge = match($order->order_status) {
+                                    'pending'    => 'badge-soft-info',
+                                    'confirmed','accepted' => 'badge-soft-success',
+                                    'processing' => 'badge-soft-warning',
+                                    'handover','picked_up' => 'badge-soft-primary',
+                                    'delivered'  => 'badge-soft-success',
+                                    'canceled'   => 'badge-soft-danger',
+                                    default      => 'badge-soft-secondary',
+                                };
+                                ?>
+                                <span class="badge {{ $statusBadge }} font-regular m-0">{{ translate(str_replace('_', ' ', $order->order_status)) }}</span>
+                            </h3>
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="fs-14 font-regular d-block text-dark">{{ translate('Order_Placed') }} :</span>
+                                <span class="fs-14 font-semibold d-block text-dark">{{ date('d M Y ' . config('timeformat'), strtotime($order['created_at'])) }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <button type="button"
+                        class="btn-close h-32px min-w-32 border rounded-circle d-center bg--secondary location-reload offcanvas-close fz-15px p-0"
+                        aria-label="Close">&times;
+                    </button>
+                </div>
+            </div>
+            <div class="custom-offcanvas-body p-20">
+                <div class="mb-20 position-relative edit-search-form">
+                    <div class="form-control position-relative bg-white d-flex align-items-center gap-2">
+                        <i class="tio-search"></i>
+                        <input id="food_search" type="search" class="h-100 fs-12 bg-transparent w-100 border-0 rounded-0" placeholder="{{ translate('Search by food name') }}" autocomplete="off" data-store-id="{{ $order->store_id }}">
+                        <div class="search-wrap-manage w-100 z-index-99" id="search-dropdown" style="display:none;">
+                            <div class="search-items-wrap p-sm-3 p-2 rounded bg-white d-flex flex-column gap-2">
+                                <div id="food-search-result"></div>
+                                <div id="food-search-no-data" class="d-none">
+                                    <h6 class="text-center bg-light py-5 px-3 rounded">{{ translate('no_data_found') }}</h6>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+
+                <div id="data-view" class="pb-5 mb-5">
+                    @include('admin-views.order.partials._edit_cart_list', ['cart' => $cart, 'editing' => $editing, 'order' => $order])
+                </div>
+
+            </div>
+            <div class="offcanvas-footer position-absolute bottom-0 start-0 w-100 bg-white p-3 d-flex align-items-center justify-content-end gap-3">
+                <button type="button" class="btn min-w-120 btn--reset location-reload reset">{{ translate('Cancel') }}</button>
+                <button type="button" class="btn min-w-120 btn--primary submit-edit-order">{{ translate('Update Cart') }}</button>
+            </div>
+        </div>
+    </div>
+    <div id="offcanvasOverlay_fixed" class="offcanvasOverlay_fixed"></div>
+
+
+    <!-- History Log -->
+     <div id="offcanvas__history_log" class="custom-offcanvas d-flex flex-column justify-content-between" style="--offcanvas-width: 570px">
+        <div>
+            <div class="custom-offcanvas-header bg-light d-flex justify-content-between align-items-center">
+                <div class="px-3 py-3 d-flex justify-content-between w-100">
+                    <div class="d-flex flex-wrap align-items-center gap-2">
+                        <h2 class="mb-0 fs-18 font-medium">{{ translate('messages.Edit_History_Log') }}</h2>
+                        <h3 class="page-header-title mb-0 d-flex align-items-center gap-2">
+                            <span class="font--max-sm fs-14 font-normal fs-14">(# {{ $order['id'] }})</span>
+                        </h3>
+                    </div>
+                    <button type="button"
+                        class="btn-close w-25px h-25px border rounded-circle d-center bg--secondary offcanvas-close fz-15px p-0"
+                        aria-label="Close">&times;
+                    </button>
+                </div>
+            </div>
+            <div class="custom-offcanvas-body p-20">
+                <div class="card p-10px">
+                    <div class="table-responsive pt-0">
+                        <div class="p-1">
+                            <table class="table table-borderless table-thead-bordered table-nowrap table-align-middle card-table dataTable no-footer mb-0">
+                                <thead class="border-0 initial-94 bg-light">
+                                    <tr>
+                                        <th class="border-0 text-dark text-nowrap">{{ translate('messages.sl') }}</th>
+                                        <th class="border-0 text-dark text-nowrap">{{ translate('messages.date_&_time') }}</th>
+                                        <th class="border-0 text-dark text-nowrap">{{ translate('messages.remark') }}</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php
+                                    $logRemarkLabels = [
+                                        'edited_item_quantity' => translate('messages.edited_item_quantity'),
+                                        'add_new_item'         => translate('messages.added_new_item'),
+                                        'delete_item'          => translate('messages.removed_item'),
+                                    ];
+                                    ?>
+                                    @forelse ($order->orderEditLogs as $logKey => $editLog)
+                                        <tr>
+                                            <td>
+                                                <div>{{ $logKey + 1 }}</div>
+                                            </td>
+                                            <td class="fs-14">
+                                                <span class="d-block text-dark">
+                                                    {{ $editLog->created_at?->format('d M Y') }}
+                                                </span>
+                                                <span class="text-muted">
+                                                    {{ $editLog->created_at?->format(config('timeformat') == 'h:i A' ? 'h:i A' : config('timeformat', 'h:i a')) }}
+                                                </span>
+                                            </td>
+                                            <td class="fs-14">
+                                                <div class="mb-0 text-dark fs-14 lh-1 line--limit-2 min-w-120">
+                                                    {{ $logRemarkLabels[$editLog->log] ?? translate(str_replace('_', ' ', $editLog->log ?? 'edited')) }}
+                                                </div>
+                                                <div class="text-info fs-12">
+                                                    {{ translate('messages.edit_by') }} {{ translate('messages.' . ($editLog->edited_by ?? 'admin')) }}
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    @empty
+                                        <tr>
+                                            <td colspan="3" class="text-center text-muted py-3">
+                                                {{ translate('messages.no_edit_history') }}
+                                            </td>
+                                        </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="offcanvasOverlay" class="offcanvas-overlay"></div>
+
+    <!-- Confiramtion Modal -->
+    <div class="modal shedule-modal fade" id="edit_order_confirmation-btn" tabindex="-1" aria-labelledby="exampleModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content pb-5 max-w-500">
+                <div class="modal-header">
+                    <button type="button"
+                        class="close bg-modal-btn w-30px h-30 rounded-circle position-absolute right-0 top-0 m-2 z-2"
+                        data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="text-center mb-1">
+                        <img src="{{asset('public/assets/admin/img/delete-confirmation.png')}}" alt="icon" class="mb-3">
+                        <h3 class="mb-2">{{ translate('messages.Are You sure you want to edit this order?') }}</h3>
+                        <p class="mb-0">{{ translate('messages.If you edit this order, some product details will be updated, which may affect the total price. ') }}</p>
+                    </div>
+                </div>
+                <div class="modal-footer justify-content-center border-0 pt-0 gap-2">
+                    <button type="button" class="btn min-w-120px btn--reset" data-dismiss="modal">{{ translate('messages.no') }}</button>
+                    <a href="{{ route('admin.order.edit', $order->id) }}" class="btn min-w-120px btn--primary">{{ translate('messages.yes') }}</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confiramtion Modal -->
+    <div class="modal fade z-1051" id="food_list_delete" tabindex="-1" aria-labelledby="exampleModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content pb-5 max-w-500">
+                <div class="modal-header">
+                    <button type="button"
+                        class="close bg-modal-btn w-30px h-30 rounded-circle position-absolute right-0 top-0 m-2 z-2"
+                        data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="text-center mb-1">
+                        <img src="{{asset('public/assets/admin/img/delete-confirmation.png')}}" alt="icon" class="mb-3">
+                        @if ($order->store && $order->store->module && $order->store->module->module_type == 'food')
+                            <h3 class="mb-2">{{ translate('messages.Are You Sure You Want To Delete This Food?') }}</h3>
+                            <p class="mb-0">{{ translate('messages.If you delete this food item, it will be removed from the list. You will need to add it again by searching in the food list.') }}</p>
+                        @else
+                            <h3 class="mb-2">{{ translate('messages.Are You Sure You Want To Delete This Item?') }}</h3>
+                            <p class="mb-0">{{ translate('messages.If you delete this item, it will be removed from the list. You will need to add it again by searching in the item list.') }}</p>
+                        @endif
+                    </div>
+                </div>
+                <div class="modal-footer justify-content-center border-0 pt-0 gap-2">
+                    <button type="button" class="btn min-w-120px btn--reset" data-dismiss="modal">{{ translate('messages.no') }}</button>
+                    <button type="button" class="btn min-w-120px btn--primary" id="confirm-remove-cart-item" data-dismiss="modal">{{ translate('messages.yes') }}</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <?php
+        $defaultLocation = App\CentralLogics\Helpers::get_business_settings('default_location');
+        $mapApiKey = \App\Models\BusinessSetting::where('key', 'map_api_key')->first()->value ?? '';
+        $orderStoreData = $order->store ? [
+            'latitude'  => $order->store->latitude,
+            'longitude' => $order->store->longitude,
+            'name_short'=> Str::limit($order?->store?->name, 15, '...'),
+            'address'   => $order->store->address,
+            'zone_id'   => $order->store->zone_id,
+            'logo_url'  => $order?->store?->logo_full_url ?? asset('public/assets/admin/img/160x160/img1.jpg'),
+        ] : null;
+        $orderCustomerData = $order->customer ? [
+            'f_name'    => $order->customer->f_name,
+            'l_name'    => $order->customer->l_name,
+            'image_url' => $order?->customer?->image_full_url ?? asset('public/assets/admin/img/160x160/img1.jpg'),
+        ] : null;
+        $orderDmData = $order->delivery_man ? [
+            'f_name'    => $order->delivery_man->f_name,
+            'l_name'    => $order->delivery_man->l_name,
+            'image_url' => $order?->delivery_man?->image_full_url ?? asset('public/assets/admin/img/160x160/img1.jpg'),
+        ] : null;
+        $orderDmLastLocation = ($order->delivery_man && $order->dm_last_location) ? [
+            'latitude'  => $order->dm_last_location['latitude'],
+            'longitude' => $order->dm_last_location['longitude'],
+            'location'  => $order->dm_last_location['location'],
+        ] : null;
+        $orderAddressData = isset($address) ? [
+            'latitude'  => $address['latitude'] ?? null,
+            'longitude' => $address['longitude'] ?? null,
+            'address'   => $address['address'] ?? '',
+        ] : null;
+    ?>
+
+    <?php
+    $pageRoutes = [
+        'orderStatus'         => route('admin.order.status') . '?id=' . $order->id . '&order_status=canceled',
+        'quickViewCartItem'   => route('admin.order.quick-view-cart-item'),
+        'quickView'           => route('admin.order.quick-view'),
+        'variantPrice'        => route('admin.item.variant-price'),
+        'addToCart'           => route('admin.order.add-to-cart'),
+        'removeFromCart'      => route('admin.order.remove-from-cart'),
+        'orderUpdate'         => route('admin.order.update', $order->id),
+        'searchItems'         => route('admin.order.search-items'),
+        'cartList'            => route('admin.order.cart-list'),
+        'updateCartQuantity'  => route('admin.order.update-cart-quantity'),
+        'addDeliveryManBase'  => url('/admin/order/add-delivery-man/' . $order->id) . '/',
+        'zoneCoordinatesBase' => url('/admin/zone/get-coordinates') . '/',
+    ];
+    $pageTranslations = [
+        'self_delivery_disable'       => translate('messages.Self_Delivery_is_Disable'),
+        'are_you_sure'                => translate('messages.are_you_sure'),
+        'are_you_sure_q'              => translate('messages.Are you sure ?'),
+        'change_status_canceled'      => translate('messages.Change status to canceled ?'),
+        'no'                          => translate('messages.no'),
+        'yes'                         => translate('messages.yes'),
+        'no_cap'                      => translate('messages.No'),
+        'yes_cap'                     => translate('messages.Yes'),
+        'submit'                      => translate('messages.submit'),
+        'cancel'                      => translate('messages.Cancel'),
+        'enter_verification_code'     => translate('Enter order verification code'),
+        'enter_processing_time'       => translate('Enter processing time'),
+        'enter_processing_time_label' => translate('Enter Processing time in minutes'),
+        'select_reason'               => translate('Select Reason'),
+        'invalid_image_type'          => translate('messages.please_only_input_png_or_jpg_type_file'),
+        'file_too_big'                => translate('messages.file_size_too_big'),
+        'already_in_cart'             => translate('messages.product_already_added_in_cart'),
+        'added_to_cart'               => translate('messages.product_has_been_added_in_cart'),
+        'order_updated'               => translate('messages.order_updated_successfully'),
+        'remove_item_confirm'         => translate('messages.you_want_to_remove_this_order_item'),
+        'item_removed'                => translate('messages.item_has_been_removed_from_cart'),
+        'submit_all_confirm'          => translate('messages.you_want_to_submit_all_changes_for_this_order'),
+        'cart_empty'                  => translate('messages.cart_is_empty'),
+        'update_failed'               => translate('messages.order_update_failed'),
+        'delivery_man_added'          => translate('Successfully added'),
+        'last_location_warning'       => translate('Only available when order is out for delivery!'),
+        'out_of_coverage'             => translate('messages.out_of_coverage'),
+        'not_available_now'           => translate('messages.not_available'),
+        'stock_qty'                   => translate('messages.Stock Qty'),
+        'out_of_stock'                => translate('messages.out_of_stock'),
+        'unavailable'                 => translate('messages.unavailable'),
+        'veg'                         => translate('messages.veg'),
+        'non_veg'                     => translate('messages.non_veg'),
+        'halal'                       => translate('messages.Halal'),
+        'price'                       => translate('messages.Price'),
+        'add_to_cart'                 => translate('messages.add_to_cart'),
+        'update_cart'                 => translate('messages.update_cart'),
+    ];
+    $mapAddress = null;
+    if (!empty($order->delivery_address)) {
+        $decoded = is_array($order->delivery_address) ? $order->delivery_address : json_decode($order->delivery_address, true);
+        if (is_array($decoded)) {
+            $mapAddress = [
+                'latitude'  => $decoded['latitude'] ?? 0,
+                'longitude' => $decoded['longitude'] ?? 0,
+                'address'   => $decoded['address'] ?? '',
+            ];
+        }
+    }
+    $mapStore = $order->store ? [
+        'latitude'   => $order->store->latitude,
+        'longitude'  => $order->store->longitude,
+        'name_short' => Str::limit($order->store->name ?? '', 20, '...'),
+        'logo_url'   => $order->store->logo_full_url ?? '',
+        'address'    => $order->store->address ?? '',
+        'zone_id'    => $order->store->zone_id ?? null,
+    ] : null;
+    $mapCustomer = $order->customer ? [
+        'f_name'    => $order->customer->f_name ?? '',
+        'l_name'    => $order->customer->l_name ?? '',
+        'image_url' => $order->customer->image_full_url ?? '',
+    ] : null;
+    $mapDeliveryMan = $order->delivery_man ? [
+        'f_name'    => $order->delivery_man->f_name ?? '',
+        'l_name'    => $order->delivery_man->l_name ?? '',
+        'image_url' => $order->delivery_man->image_full_url ?? '',
+    ] : null;
+    $mapDmLastLocation = ($order->delivery_man && $order->delivery_man->last_location) ? [
+        'latitude'  => $order->delivery_man->last_location->latitude,
+        'longitude' => $order->delivery_man->last_location->longitude,
+        'location'  => $order->delivery_man->last_location->location ?? '',
+    ] : null;
+    $pageMapConfig = [
+        'mapApiKey'       => \App\Models\BusinessSetting::where('key', 'map_api_key')->first()?->value ?? '',
+        'orderType'       => $order->order_type,
+        'defaultLocation' => ['lat' => 23.757989, 'lng' => 90.360587],
+        'store'           => $mapStore,
+        'customer'        => $mapCustomer,
+        'deliveryMan'     => $mapDeliveryMan,
+        'dmLastLocation'  => $mapDmLastLocation,
+        'address'         => $mapAddress,
+        'markerIcons'     => [
+            'restaurant'  => asset('public/assets/admin/img/restaurant_map.png'),
+            'deliveryBoy' => asset('public/assets/admin/img/delivery_boy_map.png'),
+            'customer'    => asset('public/assets/admin/img/customer_location.png'),
+        ],
+        'fallbackImages'  => [
+            'store'       => asset('public/assets/admin/img/160x160/img1.jpg'),
+            'storeAlt'    => asset('public/assets/admin/img/100x100/1.png'),
+            'customer'    => asset('public/assets/admin/img/160x160/img1.jpg'),
+            'deliveryMan' => asset('public/assets/admin/img/160x160/img1.jpg'),
+        ],
+    ];
+    ?>
+    <div id="order-page-config"
+         hidden
+         data-order-id="{{ $order->id }}"
+         data-order-proof-count="{{ ($order->order_proof && is_array($order->order_proof)) ? count(json_decode($order->order_proof)) : 0 }}"
+         data-open-edit-offcanvas="{{ (isset($editing) && $editing && session()->pull('open_edit_offcanvas')) ? 1 : 0 }}"
+         data-img-upload="{{ asset('public/assets/admin/img/upload-img.png') }}"
+         data-img-placeholder="{{ asset('public/assets/admin/img/100x100/2.png') }}"
+         data-delivery-men='@json($deliveryMen)'
+         data-routes='@json($pageRoutes)'
+         data-translations='@json($pageTranslations)'
+         data-map='@json($pageMapConfig)'></div>
+
 @endsection
 
 @push('script_2')
-    <script>
-        $(document).on("click", ".addon-quantity-input-toggle", function (event) {
-            let cb = $(event.target);
-            if (cb.is(":checked")) {
-                cb.siblings(".addon-quantity-input").css({ visibility: "visible" });
-            } else {
-                cb.siblings(".addon-quantity-input").css({ visibility: "hidden" });
-            }
-        });
-        $(document).on("click", ".decrease-button", function () {
-            let addonId = $(this).data("id");
-            let addon_quantity_input = $('input[name="addon-quantity' + addonId + '"]');
-            let currentValue = parseInt(addon_quantity_input.val(), 10);
-            if (currentValue > 1) {
-                addon_quantity_input.val(currentValue - 1);
-                getVariantPrice();
-            }
-        });
-        $(document).on("click", ".increase-button", function () {
-            let addonId = $(this).data("id");
-            let addon_quantity_input = $('input[name="addon-quantity' + addonId + '"]');
-            let currentValue = parseInt(addon_quantity_input.val(), 10);
-            addon_quantity_input.val(currentValue + 1);
-            getVariantPrice();
-        });
-        $('#search-form').on('submit', function(e) {
-            e.preventDefault();
-            var keyword = $('#datatableSearch').val();
-            var nurl = new URL('{!! url()->full() !!}');
-            nurl.searchParams.set('keyword', keyword);
-            location.href = nurl;
-        });
-
-        $('.set-category-filter').on('change', function() {
-            let id = $(this).val();
-            var nurl = new URL('{!! url()->full() !!}');
-            nurl.searchParams.set('category_id', id);
-            location.href = nurl;
-        })
-
-        $('.addon_quantity_input_toggle').on('change', function(event) {
-            addon_quantity_input_toggle(event);
-        })
-
-        function addon_quantity_input_toggle(e) {
-            var cb = $(e.target);
-            if (cb.is(":checked")) {
-                cb.siblings('.addon-quantity-input').css({
-                    'visibility': 'visible'
-                });
-            } else {
-                cb.siblings('.addon-quantity-input').css({
-                    'visibility': 'hidden'
-                });
-            }
-        }
-
-        $('.quick-view-cart-item').on('click',function (){
-            let key = $(this).data('key');
-            $.get({
-                url: '{{ route('admin.order.quick-view-cart-item') }}',
-                dataType: 'json',
-                data: {
-                    key: key,
-                    order_id: '{{ $order->id }}',
-                },
-                beforeSend: function() {
-                    $('#loading').show();
-                },
-                success: function(data) {
-                    $('#quick-view').modal('show');
-                    $('#quick-view-modal').empty().html(data.view);
-                },
-                complete: function() {
-                    $('#loading').hide();
-                },
-            });
-        })
-
-        $('.quick-view').on('click',function (){
-            let product_id = $(this).data('product-id');
-            quickView(product_id);
-        })
-
-        function quickView(product_id) {
-            $.get({
-                url: '{{ route('admin.order.quick-view') }}',
-                dataType: 'json',
-                data: {
-                    product_id: product_id,
-                    order_id: '{{ $order->id }}',
-                },
-                beforeSend: function() {
-                    $('#loading').show();
-                },
-                success: function(data) {
-                    console.log("success...")
-                    $('#quick-view').modal('show');
-                    $('#quick-view-modal').empty().html(data.view);
-                },
-                complete: function() {
-                    $('#loading').hide();
-                },
-            });
-        }
-
-        function cartQuantityInitialize() {
-            $('.btn-number').click(function(e) {
-                e.preventDefault();
-
-                var fieldName = $(this).attr('data-field');
-                var type = $(this).attr('data-type');
-                var input = $("input[name='" + fieldName + "']");
-                var currentVal = parseInt(input.val());
-
-                if (!isNaN(currentVal)) {
-                    if (type == 'minus') {
-
-                        if (currentVal > input.attr('min')) {
-                            input.val(currentVal - 1).change();
-                        }
-                        if (parseInt(input.val()) == input.attr('min')) {
-                            $(this).attr('disabled', true);
-                        }
-
-                    } else if (type == 'plus') {
-
-                        if (currentVal < input.attr('max')) {
-                            input.val(currentVal + 1).change();
-                        }
-                        if (parseInt(input.val()) == input.attr('max')) {
-                            $(this).attr('disabled', true);
-                        }
-
-                    }
-                } else {
-                    input.val(0);
-                }
-            });
-
-            $('.input-number').focusin(function() {
-                $(this).data('oldValue', $(this).val());
-            });
-
-            $('.input-number').change(function() {
-
-                minValue = parseInt($(this).attr('min'));
-                maxValue = parseInt($(this).attr('max'));
-                valueCurrent = parseInt($(this).val());
-
-                var name = $(this).attr('name');
-                if (valueCurrent >= minValue) {
-                    $(".btn-number[data-type='minus'][data-field='" + name + "']").removeAttr('disabled')
-                } else {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Cart',
-                        text: 'Sorry, the minimum value was reached'
-                    });
-                    $(this).val($(this).data('oldValue'));
-                }
-                if (valueCurrent <= maxValue) {
-                    $(".btn-number[data-type='plus'][data-field='" + name + "']").removeAttr('disabled')
-                } else {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Cart',
-                        text: 'Sorry, stock limit exceeded.'
-                    });
-                    $(this).val($(this).data('oldValue'));
-                }
-            });
-            $(".input-number").keydown(function(e) {
-                // Allow: backspace, delete, tab, escape, enter and .
-                if ($.inArray(e.keyCode, [46, 8, 9, 27, 13, 190]) !== -1 ||
-                    // Allow: Ctrl+A
-                    (e.keyCode == 65 && e.ctrlKey === true) ||
-                    // Allow: home, end, left, right
-                    (e.keyCode >= 35 && e.keyCode <= 39)) {
-                    // let it happen, don't do anything
-                    return;
-                }
-                // Ensure that it is a number and stop the keypress
-                if ((e.shiftKey || (e.keyCode < 48 || e.keyCode > 57)) && (e.keyCode < 96 || e.keyCode > 105)) {
-                    e.preventDefault();
-                }
-            });
-        }
-
-        function getVariantPrice() {
-            if ($('#add-to-cart-form input[name=quantity]').val() > 0) {
-                $.ajaxSetup({
-                    headers: {
-                        'X-CSRF-TOKEN': $('meta[name="_token"]').attr('content')
-                    }
-                });
-                $.ajax({
-                    type: "POST",
-                    url: '{{ route('admin.item.variant-price') }}',
-                    data: $('#add-to-cart-form').serializeArray(),
-                    success: function(data) {
-                        $('#add-to-cart-form #chosen_price_div').removeClass('d-none');
-                        $('#add-to-cart-form #chosen_price_div #chosen_price').html(data.price);
-                    }
-                });
-            }
-        }
-
-
-        $(document).on('click', '.update_order_item', function () {
-
-
-            update_order_item();
-        })
-
-        function update_order_item(form_id = 'add-to-cart-form') {
-            $.ajaxSetup({
-                headers: {
-                    'X-CSRF-TOKEN': $('meta[name="_token"]').attr('content')
-                }
-            });
-            $.post({
-                url: '{{ route('admin.order.add-to-cart') }}',
-                data: $('#' + form_id).serializeArray(),
-                beforeSend: function() {
-                    $('#loading').show();
-                },
-                success: function(data) {
-                    if (data.data == 1) {
-                        Swal.fire({
-                            icon: 'info',
-                            title: 'Cart',
-                            text: "{{ translate('messages.product_already_added_in_cart') }}"
-                        });
-                        return false;
-                    } else if (data.data == 0) {
-                        toastr.success('{{ translate('messages.product_has_been_added_in_cart') }}', {
-                            CloseButton: true,
-                            ProgressBar: true
-                        });
-                        location.reload();
-                        return false;
-                    } else if (data.data == 'variation_error') {
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'Cart',
-                            text: data.message
-                        });
-                        return false;
-                    }
-                    $('.call-when-done').click();
-
-                    toastr.success('{{ translate('messages.order_updated_successfully') }}', {
-                        CloseButton: true,
-                        ProgressBar: true
-                    });
-                    location.reload();
-                },
-                complete: function() {
-                    $('#loading').hide();
-                }
-            });
-        }
-
-
-        $(document).on('click', '.removeFromCart', function () {
-            let key = $(this).data('key');
-            removeFromCart(key);
-        })
-
-        function removeFromCart(key) {
-            Swal.fire({
-                title: '{{ translate('messages.are_you_sure') }}',
-                text: '{{ translate('messages.you_want_to_remove_this_order_item') }}',
-                type: 'warning',
-                showCancelButton: true,
-                cancelButtonColor: 'default',
-                confirmButtonColor: '#FC6A57',
-                cancelButtonText: '{{ translate('messages.no') }}',
-                confirmButtonText: '{{ translate('messages.yes') }}',
-                reverseButtons: true
-            }).then((result) => {
-                if (result.value) {
-                    $.post('{{ route('admin.order.remove-from-cart') }}', {
-                        _token: '{{ csrf_token() }}',
-                        key: key,
-                        order_id: '{{ $order->id }}'
-                    }, function(data) {
-                        if (data.errors) {
-                            for (var i = 0; i < data.errors.length; i++) {
-                                toastr.error(data.errors[i].message, {
-                                    CloseButton: true,
-                                    ProgressBar: true
-                                });
-                            }
-                        } else {
-                            toastr.success(
-                                '{{ translate('messages.item_has_been_removed_from_cart') }}', {
-                                    CloseButton: true,
-                                    ProgressBar: true
-                                });
-                            location.reload();
-                        }
-
-                    });
-                }
-            })
-
-        }
-
-        $('.edit-order').on('click',function (){
-            Swal.fire({
-                title: '{{ translate('messages.are_you_sure') }}',
-                text: '{{ translate('messages.you_want_to_edit_this_order') }}',
-                type: 'warning',
-                showCancelButton: true,
-                cancelButtonColor: 'default',
-                confirmButtonColor: '#FC6A57',
-                cancelButtonText: '{{ translate('messages.no') }}',
-                confirmButtonText: '{{ translate('messages.yes') }}',
-                reverseButtons: true
-            }).then((result) => {
-                if (result.value) {
-                    location.href = '{{ route('admin.order.edit', $order->id) }}';
-                }
-            })
-        })
-
-        $('.cancel-edit-order').on('click',function (){
-            Swal.fire({
-                title: '{{ translate('messages.are_you_sure') }}',
-                text: '{{ translate('messages.you_want_to_cancel_editing') }}',
-                type: 'warning',
-                showCancelButton: true,
-                cancelButtonColor: 'default',
-                confirmButtonColor: '#FC6A57',
-                cancelButtonText: '{{ translate('messages.no') }}',
-                confirmButtonText: '{{ translate('messages.yes') }}',
-                reverseButtons: true
-            }).then((result) => {
-                if (result.value) {
-                    location.href = '{{ route('admin.order.edit', $order->id) }}?cancle=true';
-                }
-            })
-        })
-
-        $('.submit-edit-order').on('click',function (){
-            Swal.fire({
-                title: '{{ translate('messages.are_you_sure') }}',
-                text: '{{ translate('messages.you_want_to_submit_all_changes_for_this_order') }}',
-                type: 'warning',
-                showCancelButton: true,
-                cancelButtonColor: 'default',
-                confirmButtonColor: '#FC6A57',
-                cancelButtonText: '{{ translate('messages.no') }}',
-                confirmButtonText: '{{ translate('messages.yes') }}',
-                reverseButtons: true
-            }).then((result) => {
-                if (result.value) {
-                    location.href = '{{ route('admin.order.update', $order->id) }}';
-                }
-            })
-        })
-    </script>
-
-    <script
-        src="https://maps.googleapis.com/maps/api/js?key={{ \App\Models\BusinessSetting::where('key', 'map_api_key')->first()->value }}&libraries=places,marker&v=3.61">
-    </script>
-    <script>
-        // INITIALIZATION OF SELECT2
-        // =======================================================
-        $('.js-select2-custom').each(function () {
-            var select2 = $.HSCore.components.HSSelect2.init($(this));
-        });
-
-        $('.add-delivery-man').on('click',function (){
-            id = $(this).data('id');
-            $.ajax({
-                type: "GET",
-                url: '{{ url('/') }}/admin/order/add-delivery-man/{{ $order['id'] }}/' + id,
-                success: function(data) {
-                    location.reload();
-                    console.log(data)
-                    toastr.success('Successfully added', {
-                        CloseButton: true,
-                        ProgressBar: true
-                    });
-                },
-                error: function(response) {
-                    console.log(response);
-                    toastr.error(response.responseJSON.message, {
-                        CloseButton: true,
-                        ProgressBar: true
-                    });
-                }
-            });
-        })
-
-        $('.order_status_change_alert').on('click', function (){
-            let route = $(this).data('url');
-            let message = $(this).data('message');
-            let processing = $(this).data('processing');
-            order_status_change_alert(route, message, processing);
-        })
-
-        function order_status_change_alert(route, message, processing = false) {
-            if (processing) {
-                Swal.fire({
-                    //text: message,
-                    title: '{{ translate('messages.Are you sure ?') }}',
-                    type: 'warning',
-                    showCancelButton: true,
-                    cancelButtonColor: 'default',
-                    confirmButtonColor: '#FC6A57',
-                    cancelButtonText: '{{ translate('messages.Cancel') }}',
-                    confirmButtonText: '{{ translate('messages.submit') }}',
-                    inputPlaceholder: "{{ translate('Enter processing time') }}",
-                    input: 'text',
-                    html: message + '<br/>'+'<label>{{ translate('Enter Processing time in minutes') }}</label>',
-                    inputValue: processing,
-                    preConfirm: (processing_time) => {
-                        location.href = route + '&processing_time=' + processing_time;
-                    },
-                    allowOutsideClick: () => !Swal.isLoading()
-                })
-            } else {
-                Swal.fire({
-                    title: '{{ translate('messages.Are you sure ?') }}',
-                    text: message,
-                    type: 'warning',
-                    showCancelButton: true,
-                    cancelButtonColor: 'default',
-                    confirmButtonColor: '#FC6A57',
-                    cancelButtonText: '{{ translate('messages.No') }}',
-                    confirmButtonText: '{{ translate('messages.Yes') }}',
-                    reverseButtons: true
-                }).then((result) => {
-                    if (result.value) {
-                        location.href = route;
-                    }
-                })
-            }
-        }
-
-
-        function last_location_view() {
-            toastr.warning('Only available when order is out for delivery!', {
-                CloseButton: true,
-                ProgressBar: true
-            });
-        }
-        $(document).ready(function () {
-            // Event handler for 'canceled-status' click
-
-        });
-    </script>
-    <script>
-        var deliveryMan = <?php echo json_encode($deliveryMen); ?>;
-        var map = null;
-        const mapId = "{{ \App\Models\BusinessSetting::where('key', 'map_api_key')->first()->value }}"
-        @if ($order->order_type == 'parcel')
-        var myLatlng = new google.maps.LatLng({{ $address['latitude'] }}, {{ $address['longitude'] }});
-        @else
-        @php($default_location = App\CentralLogics\Helpers::get_business_settings('default_location'))
-        var myLatlng = new google.maps.LatLng(
-            {{ isset($order->store) ? $order->store->latitude : (isset($default_location) ? $default_location['lat'] : 0) }},
-            {{ isset($order->store) ? $order->store->longitude : (isset($default_location['lng']) ? $default_location['lng'] : 0) }}
-        );
-        @endif
-        var dmbounds = new google.maps.LatLngBounds(null);
-        var locationbounds = new google.maps.LatLngBounds(null);
-        var dmMarkers = [];
-        dmbounds.extend(myLatlng);
-        locationbounds.extend(myLatlng);
-        var myOptions = {
-            center: myLatlng,
-            zoom: 13,
-            mapTypeId: google.maps.MapTypeId.ROADMAP,
-            mapId: mapId,
-
-            panControl: true,
-            mapTypeControl: false,
-            panControlOptions: {
-                position: google.maps.ControlPosition.RIGHT_CENTER
-            },
-            zoomControl: true,
-            zoomControlOptions: {
-                style: google.maps.ZoomControlStyle.LARGE,
-                position: google.maps.ControlPosition.RIGHT_CENTER
-            },
-            scaleControl: false,
-            streetViewControl: false,
-            streetViewControlOptions: {
-                position: google.maps.ControlPosition.RIGHT_CENTER
-            }
-        };
-
-        function initializeGMap() {
-
-            map = new google.maps.Map(document.getElementById("map_canvas"), myOptions);
-
-            var infowindow = new google.maps.InfoWindow();
-            @if ($order->store)
-            var activeIconContent = document.createElement("img");
-                activeIconContent.src = "{{ asset('public/assets/admin/img/restaurant_map.png') }}";
-                activeIconContent.alt = "Active DM";
-                activeIconContent.style.width = '100%';
-                activeIconContent.style.height = '100%';
-                activeIconContent.style.borderRadius = '50%';
-            var Restaurantmarker = new google.maps.marker.AdvancedMarkerElement({
-                map: map,
-                position: new google.maps.LatLng({{ $order->store->latitude }},
-                    {{ $order->store->longitude }}),
-                title: "{{ Str::limit($order?->store?->name, 15, '...') }}",
-                content: activeIconContent,
-            });
-
-            google.maps.event.addListener(Restaurantmarker, 'click', (function(Restaurantmarker) {
-                return function() {
-
-                    infowindow.setContent(
-                        "<div style='float:left'><img style='max-height:40px;wide:auto;' src='{{ $order?->store?->logo_full_url ?? asset('public/assets/admin/img/160x160/img1.jpg') }}'></div><div class='text-break' style='float:right; padding: 10px;'><b>{{ Str::limit($order?->store?->name, 15, '...') }}</b><br /> {{ $order->store->address }}</div>"
-                    );
-
-                    infowindow.open(map, Restaurantmarker);
-                }
-            })(Restaurantmarker));
-            @endif
-
-            map.fitBounds(dmbounds);
-            for (var i = 0; i < deliveryMan.length; i++) {
-                if (deliveryMan[i].lat) {
-                    // var contentString = "<div style='float:left'><img style='max-height:40px;wide:auto;' src='{{ asset('storage/app/public/delivery-man') }}/"+deliveryMan[i].image+"'></div><div style='float:right; padding: 10px;'><b>"+deliveryMan[i].name+"</b><br/> "+deliveryMan[i].location+"</div>";
-                    var point = new google.maps.LatLng(deliveryMan[i].lat, deliveryMan[i].lng);
-                    dmbounds.extend(point);
-                    map.fitBounds(dmbounds);
-                    var activeIconContent = document.createElement("img");
-                activeIconContent.src = "{{ asset('public/assets/admin/img/delivery_boy_map.png') }}";
-                activeIconContent.alt = "Active DM";
-                activeIconContent.style.width = '100%';
-                activeIconContent.style.height = '100%';
-                activeIconContent.style.borderRadius = '50%';
-                    var marker = new google.maps.marker.AdvancedMarkerElement({
-                        map: map,
-                        position: point,
-                        title: deliveryMan[i].location,
-                        content: activeIconContent,
-                    });
-                    dmMarkers[deliveryMan[i].id] = marker;
-                    google.maps.event.addListener(marker, 'click', (function(marker, i) {
-                        return function() {
-                            infowindow.setContent(
-                                "<div style='float:left'><img style='max-height:40px;wide:auto;' src='"+ deliveryMan[i].image_link +"'></div><div style='float:right; padding: 10px;'><b>" + deliveryMan[i].name + "</b><br/> " + deliveryMan[i].location + "</div>");
-                            infowindow.open(map, marker);
-                        }
-                    })(marker, i));
-                }
-
-            };
-        }
-
-        function initMap() {
-            let map = new google.maps.Map(document.getElementById("map"), {
-                zoom: 13,
-                center: {
-                    lat: {{ isset($order->store) ? $order->store->latitude : '23.757989' }},
-                    lng: {{ isset($order->store) ? $order->store->longitude : '90.360587' }}
-                },
-                mapId: mapId,
-            });
-
-            let zonePolygon = null;
-
-            //get current location block
-            let infoWindow = new google.maps.InfoWindow();
-            // Try HTML5 geolocation.
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(
-                    (position) => {
-                        myLatlng = {
-                            lat: position.coords.latitude,
-                            lng: position.coords.longitude,
-                        };
-                        infoWindow.setPosition(myLatlng);
-                        infoWindow.setContent("Location found.");
-                        infoWindow.open(map);
-                        map.setCenter(myLatlng);
-                    },
-                    () => {
-                        handleLocationError(true, infoWindow, map.getCenter());
-                    }
-                );
-            } else {
-                // Browser doesn't support Geolocation
-                handleLocationError(false, infoWindow, map.getCenter());
-            }
-            //-----end block------
-            const input = document.getElementById("pac-input");
-            const searchBox = new google.maps.places.SearchBox(input);
-            map.controls[google.maps.ControlPosition.TOP_CENTER].push(input);
-            let markers = [];
-            const bounds = new google.maps.LatLngBounds();
-            searchBox.addListener("places_changed", () => {
-                const places = searchBox.getPlaces();
-
-                if (places.length == 0) {
-                    return;
-                }
-                // Clear out the old markers.
-                markers.forEach((marker) => {
-                    marker.setMap(null);
-                });
-                markers = [];
-                // For each place, get the icon, name and location.
-                places.forEach((place) => {
-                    if (!place.geometry || !place.geometry.location) {
-                        console.log("Returned place contains no geometry");
-                        return;
-                    }
-                    console.log(place.geometry.location);
-                    if (!google.maps.geometry.poly.containsLocation(
-                        place.geometry.location,
-                        zonePolygon
-                    )) {
-                        toastr.error('{{ translate('messages.out_of_coverage') }}', {
-                            CloseButton: true,
-                            ProgressBar: true
-                        });
-                        return false;
-                    }
-
-                    document.getElementById('latitude').value = place.geometry.location.lat();
-                    document.getElementById('longitude').value = place.geometry.location.lng();
-                    markers.push(
-                        new google.maps.marker.AdvancedMarkerElement({
-                            map,
-                            title: place.name,
-                            position: place.geometry.location,
-                        })
-                    );
-
-                    if (place.geometry.viewport) {
-                        bounds.union(place.geometry.viewport);
-                    } else {
-                        bounds.extend(place.geometry.location);
-                    }
-                });
-                map.fitBounds(bounds);
-            });
-            @if ($order->store)
-            $.get({
-                url: '{{ url('/') }}/admin/zone/get-coordinates/{{ $order->store->zone_id }}',
-                dataType: 'json',
-                success: function(data) {
-                    zonePolygon = new google.maps.Polygon({
-                        paths: data.coordinates,
-                        strokeColor: "#FF0000",
-                        strokeOpacity: 0.8,
-                        strokeWeight: 2,
-                        fillColor: 'white',
-                        fillOpacity: 0,
-                    });
-                    zonePolygon.setMap(map);
-                    zonePolygon.getPaths().forEach(function(path) {
-                        path.forEach(function(latlng) {
-                            bounds.extend(latlng);
-                            map.fitBounds(bounds);
-                        });
-                    });
-                    map.setCenter(data.center);
-                    google.maps.event.addListener(zonePolygon, 'click', function(mapsMouseEvent) {
-                        infoWindow.close();
-                        // Create a new InfoWindow.
-                        infoWindow = new google.maps.InfoWindow({
-                            position: mapsMouseEvent.latLng,
-                            content: JSON.stringify(mapsMouseEvent.latLng.toJSON(), null,
-                                2),
-                        });
-                        var coordinates = JSON.stringify(mapsMouseEvent.latLng.toJSON(), null, 2);
-                        var coordinates = JSON.parse(coordinates);
-
-                        document.getElementById('latitude').value = coordinates['lat'];
-                        document.getElementById('longitude').value = coordinates['lng'];
-                        infoWindow.open(map);
-                    });
-                },
-            });
-            @endif
-
-        }
-
-        $(document).ready(function() {
-
-            // Re-init map before show modal
-            $('#myModal').on('shown.bs.modal', function(event) {
-                initMap();
-                var button = $(event.relatedTarget);
-                $("#dmassign-map").css("width", "100%");
-                $("#map_canvas").css("width", "100%");
-            });
-
-            // Trigger map resize event after modal shown
-            $('#myModal').on('shown.bs.modal', function() {
-                initializeGMap();
-                google.maps.event.trigger(map, "resize");
-                map.setCenter(myLatlng);
-            });
-
-            // Address change modal modal shown
-            $('#shipping-address-modal').on('shown.bs.modal', function() {
-                initMap();
-                // google.maps.event.trigger(map, "resize");
-                // map.setCenter(myLatlng);
-            });
-
-
-            function initializegLocationMap() {
-                map = new google.maps.Map(document.getElementById("location_map_canvas"), myOptions);
-
-                var infowindow = new google.maps.InfoWindow();
-
-                @if ($order->customer && isset($address))
-                var activeIconContent = document.createElement("img");
-                activeIconContent.src = "{{ asset('public/assets/admin/img/customer_location.png') }}";
-                activeIconContent.alt = "Active DM";
-                activeIconContent.style.width = '100%';
-                activeIconContent.style.height = '100%';
-                activeIconContent.style.borderRadius = '50%';
-                var marker = new google.maps.marker.AdvancedMarkerElement({
-                    map: map,
-                    position: new google.maps.LatLng({{ $address['latitude'] }},
-                        {{ $address['longitude'] }}),
-                    title: "{{ $order->customer->f_name }} {{ $order->customer->l_name }}",
-                    content: activeIconContent,
-                });
-
-                google.maps.event.addListener(marker, 'click', (function(marker) {
-                    return function() {
-                        infowindow.setContent(
-                            "<div style='float:left'><img style='max-height:40px;wide:auto;' src='{{ $order?->customer?->image_full_url ?? asset('public/assets/admin/img/160x160/img1.jpg') }}'></div><div style='float:right; padding: 10px;'><b>{{ $order->customer->f_name }} {{ $order->customer->l_name }}</b><br />{{ $address['address'] }}</div>"
-                        );
-                        infowindow.open(map, marker);
-                    }
-                })(marker));
-                locationbounds.extend(marker.position);
-                @endif
-                @if ($order->delivery_man && $order->dm_last_location)
-                var activeIconContent = document.createElement("img");
-                activeIconContent.src = "{{ asset('public/assets/admin/img/delivery_boy_map.png') }}";
-                activeIconContent.alt = "Active DM";
-                activeIconContent.style.width = '100%';
-                activeIconContent.style.height = '100%';
-                activeIconContent.style.borderRadius = '50%';
-                var dmmarker = new google.maps.marker.AdvancedMarkerElement({
-                    map: map,
-                    position: new google.maps.LatLng({{ $order->dm_last_location['latitude'] }},
-                        {{ $order->dm_last_location['longitude'] }}),
-                    title: "{{ $order->delivery_man->f_name }} {{ $order->delivery_man->l_name }}",
-                    content: activeIconContent,
-                });
-
-                google.maps.event.addListener(dmmarker, 'click', (function(dmmarker) {
-                    return function() {
-                        infowindow.setContent(
-                            "<div style='float:left'><img style='max-height:40px;wide:auto;' src='{{ $order?->delivery_man?->image_full_url ?? asset('public/assets/admin/img/160x160/img1.jpg') }}'></div> <div style='float:right; padding: 10px;'><b>{{ $order->delivery_man->f_name }} {{ $order->delivery_man->l_name }}</b><br /> {{ $order->dm_last_location['location'] }}</div>"
-                        );
-                        infowindow.open(map, dmmarker);
-                    }
-                })(dmmarker));
-                locationbounds.extend(dmmarker.position);
-                @endif
-
-                @if ($order->store)
-                var activeIconContent = document.createElement("img");
-                activeIconContent.src = "{{ asset('public/assets/admin/img/restaurant_map.png') }}";
-                activeIconContent.style.width = '25px';
-                activeIconContent.alt = "Active DM";
-                activeIconContent.style.width = '100%';
-                activeIconContent.style.height = '100%';
-                activeIconContent.style.borderRadius = '50%';
-                var Retaurantmarker = new google.maps.marker.AdvancedMarkerElement({
-                    map: map,
-                    position: new google.maps.LatLng({{ $order->store->latitude }},
-                        {{ $order->store->longitude }}),
-                    title: "{{ Str::limit($order?->store?->name, 15, '...') }}",
-                    content:activeIconContent,
-                });
-
-                google.maps.event.addListener(Retaurantmarker, 'click', (function(Retaurantmarker) {
-                    return function() {
-                        infowindow.setContent(
-                            "<div style='float:left'><img style='max-height:40px;wide:auto;' src='{{ $order?->store?->logo_full_url ?? asset('public/assets/admin/img/100x100/1.png') }}'></div> <div style='float:right; padding: 10px;'><b>{{ Str::limit($order?->store?->name, 15, '...') }}</b><br /> {{ $order->store->address }}</div>"
-                        );
-                        infowindow.open(map, Retaurantmarker);
-                    }
-                })(Retaurantmarker));
-                locationbounds.extend(Retaurantmarker.position);
-                @endif
-
-
-                google.maps.event.addListenerOnce(map, 'idle', function() {
-                    map.fitBounds(locationbounds);
-                });
-            }
-
-            // Re-init map before show modal
-            $('#locationModal').on('shown.bs.modal', function(event) {
-                initializegLocationMap();
-            });
-
-
-            $('.dm_list').on('click', function() {
-                var id = $(this).data('id');
-                map.panTo(dmMarkers[id].position);
-                map.setZoom(13);
-            });
-        })
-    </script>
-
+    <script src="https://maps.googleapis.com/maps/api/js?key={{ \App\Models\BusinessSetting::where('key', 'map_api_key')->first()->value }}&libraries=places,marker,geometry&v=3.61"></script>
     <script src="{{ asset('public/assets/admin/js/spartan-multi-image-picker.js') }}"></script>
-    <script type="text/javascript">
-        $(function() {
-            $("#coba").spartanMultiImagePicker({
-                fieldName: 'order_proof[]',
-                maxCount: 6-{{ ($order->order_proof && is_array($order->order_proof))?count(json_decode($order->order_proof)):0 }},
-                rowHeight: '176px !important',
-                groupClassName: 'spartan_item_wrapper min-w-176px max-w-176px',
-                maxFileSize: '',
-                placeholderImage: {
-                    image: "{{ asset('public/assets/admin/img/upload-img.png') }}",
-                    width: '176px'
-                },
-                dropFileLabel: "Drop Here",
-                onAddRow: function(index, file) {
-
-                },
-                onRenderedPreview: function(index) {
-
-                },
-                onRemoveRow: function(index) {
-
-                },
-                onExtensionErr: function(index, file) {
-                    toastr.error(
-                        "{{ translate('messages.please_only_input_png_or_jpg_type_file') }}", {
-                            CloseButton: true,
-                            ProgressBar: true
-                        });
-                },
-                onSizeErr: function(index, file) {
-                    toastr.error("{{ translate('messages.file_size_too_big') }}", {
-                        CloseButton: true,
-                        ProgressBar: true
-                    });
-                }
-            });
-        });
-    </script>
+    <script src="{{ asset('public/assets/admin/js/view-pages/order-edit-offcanvas.js') }}"></script>
 @endpush

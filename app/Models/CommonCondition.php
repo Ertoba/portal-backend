@@ -5,7 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Str;
+use App\Traits\GeneratesSlug;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -22,7 +22,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
  */
 class CommonCondition extends Model
 {
-    use HasFactory;
+    use HasFactory, GeneratesSlug;
 
     /**
      * The attributes that are mass assignable.
@@ -83,23 +83,6 @@ class CommonCondition extends Model
      * @param $name
      * @return string
      */
-    private function generateSlug($name): string
-    {
-        $slug = Str::slug($name);
-        if ($max_slug = static::where('slug', 'like',"{$slug}%")->latest('id')->value('slug')) {
-
-            if($max_slug == $slug) return "{$slug}-2";
-
-            $max_slug = explode('-',$max_slug);
-            $count = array_pop($max_slug);
-            if (isset($count) && is_numeric($count)) {
-                $max_slug[]= ++$count;
-                return implode('-', $max_slug);
-            }
-        }
-        return $slug;
-    }
-
     /**
      * @param $value
      * @return mixed

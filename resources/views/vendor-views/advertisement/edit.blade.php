@@ -71,7 +71,12 @@ active
 
                                 <div class="lang_form" id="default-form">
                                     <div class="mb-20">
-                                        <label class="form-label">{{ translate('Advertisement_Title') }}   ({{ translate('Default') }})</label>
+                                        <label class="form-label">{{ translate('Advertisement_Title') }}   ({{ translate('Default') }})
+                                            <span class="form-label-secondary text-danger"
+                                       data-toggle="tooltip" data-placement="right"
+                                       data-original-title="{{ translate('messages.Required.') }}"> *
+                                   </span>
+                                        </label>
                                         <input type="text" class="form-control" id="title" name="title[]"
                                             value="{{  $advertisement?->getRawOriginal('title') }}" placeholder="{{ translate('Exclusive_Offer') }}" maxlength="255"
                                             data-preview-text="preview-title">
@@ -151,14 +156,24 @@ active
 
 
                         <div class="mb-20">
-                            <label class="form-label">{{ translate('Advertisement_Type') }}</label>
+                            <label class="form-label">{{ translate('Advertisement_Type') }}
+                                <span class="form-label-secondary text-danger"
+                                       data-toggle="tooltip" data-placement="right"
+                                       data-original-title="{{ translate('messages.Required.') }}"> *
+                                   </span>
+                            </label>
                             <select class="js-select form-control w-100 promotion_type" name="advertisement_type">
                                 <option value="video_promotion" {{ $advertisement?->add_type == 'video_promotion' ? 'selected' : '' }}>{{ translate('Video_Promotion') }}</option>
                                 <option value="store_promotion" {{ $advertisement?->add_type == 'store_promotion' ? 'selected' : '' }} >{{ translate('store_promotion') }}</option>
                             </select>
                         </div>
                         <div class="mb-20">
-                            <label class="form-label">{{ translate('Validity') }}</label>
+                            <label class="form-label">{{ translate('Validity') }}
+                                <span class="form-label-secondary text-danger"
+                                       data-toggle="tooltip" data-placement="right"
+                                       data-original-title="{{ translate('messages.Required.') }}"> *
+                                   </span>
+                            </label>
                             <div class="position-relative">
                                 <i class="tio-calendar-month icon-absolute-on-right"></i>
                                 <input type="text" class="form-control h-45 position-relative bg-transparent" name="dates" value="{{ Carbon\Carbon::parse($advertisement?->start_date)->format('m/d/Y')  . ' - '.  Carbon\Carbon::parse($advertisement?->end_date)->format('m/d/Y')  }}" placeholder="dd/mm/yyyy - dd/mm/yyyy">
@@ -166,7 +181,12 @@ active
                         </div>
 
                         <div class="promotion-typewise-upload-box" id="video-upload-box">
-                            <label class="form-label">{{ translate('Upload Related Files') }}</label>
+                            <label class="form-label">{{ translate('Upload Related Files') }}
+                                <span class="form-label-secondary text-danger"
+                                       data-toggle="tooltip" data-placement="right"
+                                       data-original-title="{{ translate('messages.Required.') }}"> *
+                                   </span>
+                            </label>
                             <div class="border rounded p-3">
                                 <div class="d-flex flex-column align-items-center gap-3">
                                     <p class="title-color mb-0 ">{{ translate('Upload Your Video') }}
@@ -184,7 +204,7 @@ active
                                     </div>
 
                                     <p class="opacity-75 max-w220 mx-auto text-center fs-12">
-                                        {{ translate('Maximum 10 MB') }}
+                                        {{ translate('Maximum 5 MB') }}
                                         <br>
                                         {{ translate('Supports: MP4, WEBM, MKV') }}
                                     </p>
@@ -208,7 +228,12 @@ active
                                 </div>
                             </div>
                             <br>
-                            <label class="form-label">{{ translate('Upload Related Files') }}</label>
+                            <label class="form-label">{{ translate('Upload Related Files') }}
+                                <span class="form-label-secondary text-danger"
+                                       data-toggle="tooltip" data-placement="right"
+                                       data-original-title="{{ translate('messages.Required.') }}"> *
+                                   </span>
+                            </label>
                             <div class="d-flex flex-wrap flex-sm-nowrap justify-content-center gap-3 border rounded p-3">
                                 <div class="d-flex flex-column align-items-center gap-3 flex-shrink-0">
                                     <p class="title-color mb-0">{{ translate('Profile Image') }} <span class="text-danger">({{ translate('Ratio - 1:1') }})</span></p>
@@ -228,7 +253,7 @@ active
                                     <p class="opacity-75 max-w220 mx-auto text-center fs-12">
                                         {{ translate('Supports: PNG, JPG, JPEG, WEBP') }}
                                         <br>
-                                        {{ translate('Maximum 10 MB') }}
+                                        {{ translate('Maximum 2 MB') }}
                                     </p>
                                 </div>
                                 <div class="d-flex flex-column align-items-center gap-3">
@@ -248,7 +273,7 @@ active
                                     <p class="opacity-75 max-w220 mx-auto text-center fs-12">
                                         {{ translate('Supports: PNG, JPG, JPEG, WEBP') }}
                                         <br>
-                                        {{ translate('Maximum 10 MB') }}
+                                        {{ translate('Maximum 2 MB') }}
                                     </p>
                                 </div>
                             </div>

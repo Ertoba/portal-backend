@@ -395,6 +395,72 @@
                                     </div>
                                 </div>
                             </div>
+                            <div class="p-xxl-20 p-3 shadow-sm bg-white rounded mb-20" id="extra_packaging_section">
+                                <div class="">
+                                    <div class="row g-1 align-items-center">
+                                        <div class="col-xxl-9 col-lg-8 col-md-7 col-sm-6">
+                                            <div>
+                                                <h4 class="mb-1">
+                                                    {{ translate('Monthly Order Setup') }}
+                                                </h4>
+                                                <p class="mb-0 fs-12">
+                                                    {{ translate('Enable this option to display the monthly order feature on the Add to Cart page for the Pharmacy and Grocery modules only.') }}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <div class="col-xxl-3 col-lg-4 col-md-5 col-sm-6">
+                                            <div class="">
+                                                <div class="form-group mb-0">
+                                                    <label class="toggle-switch h--45px toggle-switch-sm d-flex justify-content-between border rounded px-3 py-0 form-control">
+                                                        <span class="pr-1 d-flex align-items-center switch--label">
+                                                            <span class="line--limit-1">
+                                                                {{translate('messages.Status') }}
+                                                            </span>
+                                                        </span>
+                                                        <input type="checkbox" class="status toggle-switch-input" name="monthly_order_reminder" value="1" {{ Helpers::get_business_settings('monthly_order_reminder') == 1 ? 'checked' : '' }}>
+                                                        <span class="toggle-switch-label text">
+                                                            <span class="toggle-switch-indicator"></span>
+                                                        </span>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="p-xxl-20 p-3 shadow-sm bg-white rounded mb-20">
+                                <div class="">
+                                    <div class="row g-1 align-items-center">
+                                        <div class="col-xxl-9 col-lg-8 col-md-7 col-sm-6">
+                                            <div>
+                                                <h4 class="mb-1">
+                                                    {{ translate('Re-order Feature') }}
+                                                </h4>
+                                                <p class="mb-0 fs-12">
+                                                    {{ translate('By turning on customer can easily reorder from their past order List.') }}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <div class="col-xxl-3 col-lg-4 col-md-5 col-sm-6">
+                                            <div class="">
+                                                <div class="form-group mb-0">
+                                                    <label class="toggle-switch h--45px toggle-switch-sm d-flex justify-content-between border rounded px-3 py-0 form-control">
+                                                        <span class="pr-1 d-flex align-items-center switch--label">
+                                                            <span class="line--limit-1">
+                                                                {{translate('messages.Status') }}
+                                                            </span>
+                                                        </span>
+                                                        <input type="checkbox" class="status toggle-switch-input" name="repeat_order_option" value="1" {{ Helpers::get_business_settings('repeat_order_option') == 1 ? 'checked' : '' }}>
+                                                        <span class="toggle-switch-label text">
+                                                            <span class="toggle-switch-indicator"></span>
+                                                        </span>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                             <div class="p-xxl-20 p-3 shadow-sm bg-white rounded mb-20" id="other_setup_section">
                                 <div class="mb-20">
                                     <div>
@@ -616,7 +682,7 @@
                             </div>
                             <div class="btn--container justify-content-end mt-20">
                                 <button type="reset" class="btn btn--reset">{{ translate('messages.reset') }}</button>
-                                <button type="{{ env('APP_MODE') != 'demo' ? 'submit' : 'button' }}"
+                                <button type="{{ getEnvMode() != 'demo' ? 'submit' : 'button' }}"
                                     class="btn btn--primary call-demo">{{ translate('Submit') }}</button>
                             </div>
                         </form>

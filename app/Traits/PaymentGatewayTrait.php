@@ -63,21 +63,6 @@ trait PaymentGatewayTrait
                 "TZS" => "Tanzanian Shilling",
                 "ZMW" => "Zambian Kwacha"
             ],
-            "flitt" => [
-                "GEL" => "Georgian Lari",
-                "USD" => "United States Dollar",
-                "EUR" => "Euro",
-                "AMD" => "Armenian Dram",
-                "AZN" => "Azerbaijanian Manat",
-                "KZT" => "Tenge",
-                "MDL" => "Moldovian Leu",
-                "UZS" => "Uzbekistan Sum"
-            ],
-            "keepz" => [
-                "GEL" => "Georgian Lari",
-                "USD" => "United States Dollar",
-                "EUR" => "Euro"
-            ],
             "foloosi" => [
                 "AED" => "United Arab Emirates Dirham",
                 "SAR" => "Saudi Riyal",
@@ -346,6 +331,181 @@ trait PaymentGatewayTrait
                 "PLN" => "Polish Zloty",
                 "CZK" => "Czech Koruna",
                 "HUF" => "Hungarian Forint"
+            ],
+            "cinetpay" => [
+                "XOF" => "West African CFA franc",
+                "XAF" => "Central African CFA franc",
+                "GNF" => "Guinean franc",
+                "CDF" => "Congolese franc",
+                "USD" => "United States Dollar"
+            ],
+            "mercadopago_pix" => [
+                "BRL" => "Brazilian Real"
+            ],
+            "adyen" => [
+                "USD" => "United States Dollar",
+                "EUR" => "Euro",
+                "GBP" => "Pound Sterling",
+                "AUD" => "Australian Dollar",
+                "CAD" => "Canadian Dollar",
+                "JPY" => "Japanese Yen",
+                "CHF" => "Swiss Franc",
+                "CNY" => "Chinese Yuan",
+                "HKD" => "Hong Kong Dollar",
+                "SGD" => "Singapore Dollar",
+                "SEK" => "Swedish Krona",
+                "NOK" => "Norwegian Krone",
+                "DKK" => "Danish Krone",
+                "PLN" => "Polish Zloty",
+                "NZD" => "New Zealand Dollar",
+                "INR" => "Indian Rupee",
+                "BRL" => "Brazilian Real",
+                "MXN" => "Mexican Peso",
+                "ZAR" => "South African Rand",
+                "AED" => "United Arab Emirates Dirham"
+            ],
+            "checkout" => [
+                "USD" => "United States Dollar",
+                "EUR" => "Euro",
+                "GBP" => "Pound Sterling",
+                "AED" => "United Arab Emirates Dirham",
+                "SAR" => "Saudi Riyal",
+                "AUD" => "Australian Dollar",
+                "CAD" => "Canadian Dollar",
+                "CHF" => "Swiss Franc",
+                "HKD" => "Hong Kong Dollar",
+                "JPY" => "Japanese Yen",
+                "SGD" => "Singapore Dollar",
+                "SEK" => "Swedish Krona",
+                "NOK" => "Norwegian Krone",
+                "DKK" => "Danish Krone",
+                "NZD" => "New Zealand Dollar",
+                "PLN" => "Polish Zloty",
+                "QAR" => "Qatari Riyal",
+                "KWD" => "Kuwaiti Dinar",
+                "BHD" => "Bahraini Dinar",
+                "OMR" => "Omani Rial"
+            ],
+            "braintree" => [
+                "USD" => "United States Dollar",
+                "EUR" => "Euro",
+                "GBP" => "Pound Sterling",
+                "AUD" => "Australian Dollar",
+                "CAD" => "Canadian Dollar",
+                "JPY" => "Japanese Yen",
+                "CHF" => "Swiss Franc",
+                "HKD" => "Hong Kong Dollar",
+                "NZD" => "New Zealand Dollar",
+                "SGD" => "Singapore Dollar",
+                "SEK" => "Swedish Krona",
+                "NOK" => "Norwegian Krone",
+                "DKK" => "Danish Krone",
+                "PLN" => "Polish Zloty",
+                "CZK" => "Czech Koruna",
+                "HUF" => "Hungarian Forint",
+                "ILS" => "Israeli New Shekel",
+                "MXN" => "Mexican Peso",
+                "MYR" => "Malaysian Ringgit",
+                "PHP" => "Philippine Peso",
+                "TWD" => "New Taiwan Dollar",
+                "THB" => "Thai Baht",
+                "TRY" => "Turkish Lira"
+            ],
+            "square" => [
+                "USD" => "United States Dollar",
+                "CAD" => "Canadian Dollar",
+                "GBP" => "Pound Sterling",
+                "AUD" => "Australian Dollar",
+                "JPY" => "Japanese Yen",
+                "EUR" => "Euro"
+            ],
+            "authorize_net" => [
+                "USD" => "United States Dollar",
+                "CAD" => "Canadian Dollar",
+                "GBP" => "Pound Sterling",
+                "EUR" => "Euro",
+                "AUD" => "Australian Dollar",
+                "NZD" => "New Zealand Dollar"
+            ],
+            "2c2p" => [
+                "SGD" => "Singapore Dollar",
+                "THB" => "Thai Baht",
+                "MYR" => "Malaysian Ringgit",
+                "IDR" => "Indonesian Rupiah",
+                "PHP" => "Philippine Peso",
+                "VND" => "Vietnamese Dong",
+                "HKD" => "Hong Kong Dollar",
+                "USD" => "United States Dollar"
+            ],
+            "gocardless" => [
+                "GBP" => "Pound Sterling",
+                "EUR" => "Euro",
+                "USD" => "United States Dollar",
+                "AUD" => "Australian Dollar",
+                "CAD" => "Canadian Dollar",
+                "NZD" => "New Zealand Dollar",
+                "SEK" => "Swedish Krona",
+                "DKK" => "Danish Krone"
+            ],
+            "payu" => [
+                "INR" => "Indian Rupee",
+                "PLN" => "Polish Zloty",
+                "USD" => "United States Dollar",
+                "EUR" => "Euro",
+                "TRY" => "Turkish Lira",
+                "ZAR" => "South African Rand",
+                "RON" => "Romanian Leu",
+                "CZK" => "Czech Koruna",
+                "HUF" => "Hungarian Forint"
+            ],
+            "vnpay" => [
+                "VND" => "Vietnamese Dong"
+            ],
+            "omise" => [
+                "THB" => "Thai Baht",
+                "JPY" => "Japanese Yen",
+                "SGD" => "Singapore Dollar",
+                "MYR" => "Malaysian Ringgit",
+                "USD" => "United States Dollar"
+            ],
+            "paypay" => [
+                "JPY" => "Japanese Yen"
+            ],
+            "moyasar" => [
+                "SAR" => "Saudi Riyal",
+                "USD" => "United States Dollar"
+            ],
+            "kashier" => [
+                "EGP" => "Egyptian Pound",
+                "USD" => "United States Dollar"
+            ],
+            "opay" => [
+                "NGN" => "Nigerian Naira"
+            ],
+            "pawapay" => [
+                "ZMW" => "Zambian Kwacha",
+                "TZS" => "Tanzanian Shilling",
+                "UGX" => "Ugandan Shilling",
+                "RWF" => "Rwandan Franc",
+                "GHS" => "Ghanaian Cedi",
+                "KES" => "Kenyan Shilling",
+                "XOF" => "West African CFA Franc",
+                "XAF" => "Central African CFA Franc",
+                "CDF" => "Congolese Franc",
+                "MWK" => "Malawian Kwacha"
+            ],
+            "conekta" => [
+                "MXN" => "Mexican Peso"
+            ],
+            "openpay" => [
+                "MXN" => "Mexican Peso",
+                "COP" => "Colombian Peso",
+                "PEN" => "Peruvian Sol"
+            ],
+            "line_pay" => [
+                "JPY" => "Japanese Yen",
+                "TWD" => "New Taiwan Dollar",
+                "THB" => "Thai Baht"
             ]
         ];
 

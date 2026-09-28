@@ -10,21 +10,14 @@ if (!function_exists('translate')) {
         App::setLocale($local);
 
         try {
-            $key = preg_replace('/^messages\./i', '', trim($key));
-            $lang_path = base_path('resources/lang/' . $local . '/messages.php');
-            $lang_array = file_exists($lang_path) ? include($lang_path) : [];
+            $lang_array = include(base_path('resources/lang/' . $local . '/messages.php'));
+            $processed_key = ucfirst(str_replace('_', ' ', removeSpecialCharacters($key)));
             $key = removeSpecialCharacters($key);
-            $processed_key = ucfirst(trim(str_replace('_', ' ', $key)));
-
             if (!array_key_exists($key, $lang_array)) {
+                $lang_array[$key] = $processed_key;
+                $str = "<?php return " . var_export($lang_array, true) . ";";
+                file_put_contents(base_path('resources/lang/' . $local . '/messages.php'), $str);
                 $result = $processed_key;
-
-                $lang_directory = dirname($lang_path);
-                if (is_array($lang_array) && file_exists($lang_directory) && (is_writable($lang_path) || is_writable($lang_directory))) {
-                    $lang_array[$key] = $processed_key;
-                    $str = "<?php return " . var_export($lang_array, true) . ";";
-                    file_put_contents($lang_path, $str);
-                }
             } else {
                 $result = __('messages.' . $key);
             }

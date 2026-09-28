@@ -9,10 +9,10 @@
 @section('content')
     <div class="content container-fluid">
         <!--- Admin Tax Report -->
-        <h2 class="mb-20">{{ translate('messages.Generate Tax Report') }}</h3>
+        <h2 class="mb-20">{{ translate('messages.Order Tax Report') }}</h3>
             <div class="card p-20 mb-20">
                 <div class="mb-20">
-                    <h3 class="mb-1">{{ translate('messages.Admin Tax Report') }}</h3>
+                    {{-- <h3 class="mb-1">{{ translate('messages.Admin Tax Report') }}</h3> --}}
 
                     <p class="mb-1 fz-12">
                         {{ translate('To generate you tax report please select & input following field and submit for the result') }}.

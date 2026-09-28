@@ -39,7 +39,7 @@
                     <div class="col-sm-6 col-md-3">
                         <select name="module_id" class="form-control js-select2-custom set-filter" data-url="{{ url()->full() }}" data-filter="module_id" title="{{translate('messages.select_modules')}}">
                             <option value="" {{!request('module_id') ? 'selected':''}}>{{translate('messages.all_modules')}}</option>
-                            @foreach (\App\Models\Module::notParcel()->get() as $module)
+                            @foreach (\App\Models\Module::notParcel()->WithoutAdditionalModules()->get(['id', 'module_name']) as $module)
                                 <option
                                     value="{{$module->id}}" {{request('module_id') == $module->id?'selected':''}}>
                                     {{$module['module_name']}}
@@ -61,7 +61,7 @@
                     <div class="col-sm-6 col-md-3">
                         <select name="store_id" data-placeholder="{{translate('messages.select_store')}}" class="js-data-example-ajax form-control set-filter" data-url="{{ url()->full() }}" data-filter="store_id" >
                             @if(isset($store))
-                            <option value="{{$store->id}}" selected>{{$store->name}}</option>
+                            <option value="{{$store->id}}" data-verified="{{ (int) $store->verified_seller }}" selected>{{$store->name}}</option>
                             @else
                             <option value="all" selected>{{translate('messages.all_stores')}}</option>
                             @endif
@@ -123,7 +123,7 @@
                     </div>
                     <!-- End Search -->
                     </form>
-                    @if(request()->get('search'))
+                    @if(request()->input('search'))
                         <button type="reset" class="btn btn--primary ml-2 location-reload-to-base" data-url="{{url()->full()}}">{{translate('messages.reset')}}</button>
                     @endif<!-- Unfold -->
                     <div class="hs-unfold mr-2">
@@ -224,7 +224,7 @@
                                 @endif
                             </td>
                             <td>
-                                {{$item->module->module_type == 'food'? translate('N/A') : $item->stock}}
+                                {{$item->module->module_type == 'food'? translate('N/A') : max((int) $item->stock, 0)}}
                             </td>
                             <td>
                                 {{$item->orders_sum_quantity ?? 0}}

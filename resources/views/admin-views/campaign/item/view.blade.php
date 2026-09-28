@@ -279,9 +279,12 @@
                             </td>
                             <td>{{date('d M Y',strtotime($order->order['created_at']))}}</td>
                             <td>
-                                @if($order->order->customer)
+                                @php($delivery_address = $order->order ? (is_array($order->order->delivery_address) ? $order->order->delivery_address : json_decode($order->order->delivery_address, true)) : null)
+                                @if($order->order && $order->order->customer)
                                     <a class="text-body text-capitalize"
                                        href="{{route('admin.customer.view',[$order->order['user_id']])}}">{{$order->order->customer['f_name'].' '.$order->order->customer['l_name']}}</a>
+                                @elseif (!empty($delivery_address['contact_person_name']))
+                                    <strong>{{$delivery_address['contact_person_name']}}</strong>
                                 @else
                                     <label class="badge badge-danger">{{translate('messages.invalid_customer_data')}}</label>
                                 @endif

@@ -67,60 +67,98 @@
 
                 @includeif('admin-views.product.partials._title_and_discription')
 
-                <div class="col-lg-6">
+               <div class="col-md-6">
                     <div class="card h-100">
                         <div class="card-body d-flex flex-wrap align-items-center">
-                            <div class="w-100 d-flex gap-3 flex-wrap flex-lg-nowrap">
-                                <div class="flex-grow-1 mx-auto overflow-x-auto scrollbar-primary">
-                                    <label class="text-dark d-block">
-                                        {{ translate('messages.item_image') }}
-                                        <small>( {{ translate('messages.ratio') }} 1:1 )</small>
-                                    </label>
-                                    <div class="d-flex __gap-12px __new-coba overflow-x-auto pb-2" id="coba">
+                            <div class="mb-20">
+                                <h3 class="mb-0">{{ translate('Item_Thumbnail') }}
+                                    @if (Config::get('module.current_module_type') != 'food')
+                                    <span class="text-danger">*</span>
+                                    @endif
+                                </h3>
+                                <p class="fs-12 mb-0">
+                                    {{ translate('Upload additional images.') . translate(IMAGE_FORMAT) .' '. translate('Image size : Max') .' ' .MAX_FILE_SIZE. translate('MB (1:1)')  }}
+                                </p>
+                            </div>
+                            <div class="__bg-F8F9FC-card d-center w-100 p-3">
 
-                                        <input type="hidden" id="removedImageKeysInput" name="removedImageKeys"
-                                            value="">
-                                        @foreach ($product->images as $key => $photo)
-                                            @php($photo = is_array($photo) ? $photo : ['img' => $photo, 'storage' => 'public'])
-                                            <div id="product_images_{{ $key }}"
-                                                class="spartan_item_wrapper min-w-176px max-w-176px">
-                                                <img class="img--square onerror-image"
-                                                    src="{{ \App\CentralLogics\Helpers::get_full_url('product', $photo['img'] ?? '', $photo['storage']) }}"
-                                                    data-onerror-image="{{ asset('public/assets/admin/img/upload-img.png') }}"
-                                                    alt="Product image">
-                                                <a href="#" data-key={{ $key }}
-                                                    data-photo="{{ $photo['img'] }}"
-                                                    class="spartan_remove_row function_remove_img"><i
-                                                        class="tio-add-to-trash"></i></a>
-
-                                            </div>
-                                        @endforeach
-                                    </div>
-                                </div>
-                                <div class="flex-grow-1 mx-auto pb-2 flex-shrink-0">
-                                    <label class="text-dark d-block">
-                                        {{ translate('messages.item_thumbnail') }}
-                                        <small class="text-danger">* ( {{ translate('messages.ratio') }} 1:1 )</small>
-                                    </label>
-                                    <label class="d-inline-block m-0 position-relative error-wrapper">
-                                        <img class="img--176 border onerror-image" id="viewer"
-                                            src="{{ $product['image_full_url'] ?? asset('public/assets/admin/img/upload-img.png') }}"
-                                            data-onerror-image="{{ asset('public/assets/admin/img/upload-img.png') }}"
-                                            alt="thumbnail" />
-                                        <div class="icon-file-group">
-                                            <div class="icon-file">
-                                                <input type="file" name="image" id="customFileEg1"
-                                                    class="custom-file-input read-url"
-                                                    accept=".webp, .jpg, .png, .jpeg, .webp, .gif, .bmp, .tif, .tiff|image/*">
-                                                <i class="tio-edit"></i>
-                                            </div>
+                                <input type="hidden" id="removedImageKeysInput" name="removedImageKeys" value="">
+                                <div class="w-100 py-5">
+                                    <div class="">
+                                        <div class="text-center py-2">
+                                            @include('admin-views.partials._image-uploader', [
+                                                    'id' => 'image-input',
+                                                    'name' => 'image',
+                                                    'ratio' => '1:1',
+                                                    'isRequired' =>false,
+                                                    'existingImage' => $product['image_full_url'] ?? asset('public/assets/admin/img/upload-img.png') ,
+                                                    'imageExtension' => IMAGE_EXTENSION,
+                                                    'imageFormat' => IMAGE_FORMAT,
+                                                    'maxSize' => MAX_FILE_SIZE,
+                                                    ])
                                         </div>
-                                    </label>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
+
+                @include('admin-views.product.partials._product-video', ['product' => $product])
+                <div class="col-md-12">
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="mb-20">
+                                <h3 class="text-dark mb-1">
+                                    {{ translate('messages.Product Additional Images') }}
+                                </h3>
+                                <p class="fs-12 mb-0">
+                                    {{ translate('messages.update additional images. JPG, JPEG, PNG Image size : Max 2 MB (1:1)') }}
+                                </p>
+                            </div>
+                            <div class="__bg-F8F9FC-card p-3">
+                                <div class="flex-grow-1 mx-auto overflow-x-auto scrollbar-primary">
+                                    <div class="identity_documnet_body multiple_coba-img tabs-slide-wrap position-relative">
+                                        <div class="tabs-inner pt-1 d-flex gap-3 identity_documnet_wrap" id="coba">
+
+                                            @foreach($product->images as $key => $img)
+                                            @php($photo = is_array($img) ? $img : ['img' => $img, 'storage' => 'public'])
+                                                <div class="spartan_item_wrapper size--md existing_image" id="existing_image_{{ $key }}">
+                                                    <div style="position: relative;">
+                                                        <label class="file_upload" style="width: 100%; height: 100px; border: 2px dashed #ddd; border-radius: 3px; cursor: pointer; text-align: center; overflow: hidden; padding: 5px; margin-top: 5px; margin-bottom : 5px; position : relative; display: flex; align-items: center; margin: auto; justify-content: center; flex-direction: column;">
+                                                            <div class="spartan_item_loader" data-spartanindexloader="0" style=" position: absolute; width: 100%; height: 100px; background: rgba(255,255,255, 0.7); z-index: 22; text-align: center; align-items: center; margin: auto; justify-content: center; flex-direction: column; display : none; font-size : 1.7em; color: #CECECE"><i class="fas fa-sync fa-spin"></i></div>
+                                                            <img class="img--100 rounded border" style="width: 100%; margin: 0px auto; vertical-align: middle;" src="{{ \App\CentralLogics\Helpers::get_full_url('product', $photo['img'] ?? '', $photo['storage']) }}">
+                                                            <a href="javascript:void(0)" style="right: 3px; top: 3px; background: transparent; border-radius: 3px; width: 30px; height: 30px; line-height: 30px; text-align: center; text-decoration: none; color: rgb(255, 7, 0); position: absolute !important;" data-key="{{ $key }}"
+                                                            data-photo="{{ $photo['img'] }}"
+                                                            data-img="{{ $photo['img'] ?? '' }}" class="spartan_remove_row function_remove_img remove-existing-image-btn"><i class="tio-add-to-trash"></i></a>
+                                                            </div>
+                                                        </label>
+
+
+                                                </div>
+                                            @endforeach
+                                        </div>
+                                        <div class="arrow-area">
+                                            <div class="button-prev align-items-center">
+                                                <button type="button"
+                                                    class="btn btn-click-prev mr-auto border-0 btn-primary rounded-circle fs-12 p-2 d-center">
+                                                    <i class="tio-chevron-left fs-24"></i>
+                                                </button>
+                                            </div>
+                                            <div class="button-next align-items-center pt-5">
+                                                <button type="button"
+                                                    class="btn btn-click-next ml-auto border-0 btn-primary rounded-circle fs-12 p-2 d-center">
+                                                    <i class="tio-chevron-right fs-24"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
 
                 @includeif('admin-views.product.partials._category_and_general')
                 @includeif('admin-views.product.partials._price_and_stock')
@@ -301,26 +339,10 @@
 @endpush
 
 @push('script_2')
-
-    <script src="{{ asset('public/assets/admin') }}/js/tags-input.min.js"></script>
-    <script src="{{ asset('public/assets/admin/js/spartan-multi-image-picker.js') }}"></script>
-    <script src="{{ asset('public/assets/admin') }}/js/view-pages/vendor/product-index.js"></script>
-
-    <script src="{{ asset('public/assets/admin/js/AI/products/product-title-autofill.js') }}"></script>
-    <script src="{{ asset('public/assets/admin/js/AI/products/product-description-autofill.js') }}"></script>
-    <script src="{{ asset('public/assets/admin/js/AI/products/general-setup-autofill.js') }}"></script>
-    <script src="{{ asset('public/assets/admin/js/AI/products/product-others-autofill.js') }}"></script>
-    @if ($module_type == 'food')
-        <script src="{{ asset('public/assets/admin/js/AI/products/variation-setup-auto-fill.js') }}"></script>
-    @else
-        <script src="{{ asset('public/assets/admin/js/AI/products/other-variation-setup-auto-fill.js') }}"></script>
-    @endif
-    <script src="{{ asset('public/assets/admin/js/AI/products/seo-section-autofill.js') }}"></script>
-
-    <script src="{{ asset('public/assets/admin/js/AI/products/ai-sidebar.js') }}"></script>
-
-    <script src="{{ asset('/public/assets/admin/js/AI/products/compressor/image-compressor.js') }}"></script>
-    <script src="{{ asset('/public/assets/admin/js/AI/products/compressor/compressor.min.js') }}"></script>
+    @include('admin-views.product.partials._shared-script-assets', [
+        'moduleType' => $module_type,
+        'viewPageScript' => 'public/assets/admin/js/view-pages/vendor/product-index.js',
+    ])
 
 
 
@@ -330,140 +352,9 @@
 
         mod_type = "{{ $module_type }}";
 
-        function add_new_option_button() {
-            $('#empty-variation').hide();
-            count++;
-            let add_option_view = `
-                            <div class="__bg-F8F9FC-card count_div view_new_option mb-2">
-                                <div>
-                                    <div class="d-flex align-items-center justify-content-between mb-3">
-                                        <label class="form-check form--check">
-                                            <input id="options[` + count + `][required]" name="options[` + count + `][required]" class="form-check-input" type="checkbox">
-                                            <span class="form-check-label">{{ translate('Required') }}</span>
-                                        </label>
-                                        <div>
-                                            <button type="button" class="btn btn-danger btn-sm delete_input_button"
-                                                title="{{ translate('Delete') }}">
-                                                <i class="tio-add-to-trash"></i>
-                                            </button>
-                                        </div>
-                                    </div>
-                                    <div class="row g-2">
-                                        <div class="col-xl-4 col-lg-6">
-                                            <label for="">{{ translate('name') }}</label>
-                                            <input required name=options[` + count +
-                `][name] class="form-control new_option_name" type="text" data-count="` +
-                count + `">
-                                        </div>
-
-                                        <div class="col-xl-4 col-lg-6">
-                                            <div>
-                                                <label class="input-label text-capitalize d-flex align-items-center"><span class="line--limit-1">{{ translate('messages.selcetion_type') }} </span>
-                                                </label>
-                                                <div class="resturant-type-group px-0">
-                                                    <label class="form-check form--check mr-2 mr-md-4">
-                                                        <input class="form-check-input show_min_max" data-count="` +
-                count + `" type="radio" value="multi"
-                                                        name="options[` + count + `][type]" id="type` + count +
-                `" checked
-                                                        >
-                                                        <span class="form-check-label">
-                                                            {{ translate('Multiple Selection') }}
-                        </span>
-                    </label>
-
-                    <label class="form-check form--check mr-2 mr-md-4">
-                        <input class="form-check-input hide_min_max" data-count="` + count + `" type="radio" value="single"
-                            name="options[` + count + `][type]" id="type` + count +
-                `"
-                                                        >
-                                                        <span class="form-check-label">
-                                                            {{ translate('Single Selection') }}
-                        </span>
-                    </label>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-xl-4 col-lg-6">
-                            <div class="row g-2">
-                                <div class="col-6">
-                                    <label for="">{{ translate('Min') }}</label>
-                                                    <input id="min_max1_` + count + `" required  name="options[` +
-                count + `][min]" class="form-control" type="number" min="1">
-                                                </div>
-                                                <div class="col-6">
-                                                    <label for="">{{ translate('Max') }}</label>
-                                                    <input id="min_max2_` + count + `"   required name="options[` +
-                count + `][max]" class="form-control" type="number" min="1">
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div id="option_price_` + count + `" >
-                                        <div class="bg-white border rounded p-3 pb-0 mt-3">
-                                            <div  id="option_price_view_` + count +
-                `">
-                                                <div class="row g-3 add_new_view_row_class mb-3">
-                                                    <div class="col-md-4 col-sm-6">
-                                                        <label for="">{{ translate('Option_name') }}</label>
-                                                        <input class="form-control" required type="text" name="options[` +
-                count +
-                `][values][0][label]" id="">
-                                                    </div>
-                                                    <div class="col-md-4 col-sm-6">
-                                                        <label for="">{{ translate('Additional_price') }}</label>
-                                                        <input class="form-control" required type="number" min="0" step="0.01" name="options[` +
-                count + `][values][0][optionPrice]" id="">
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div class="row mt-3 p-3 mr-1 d-flex "  id="add_new_button_` + count +
-                `">
-                                                <button type="button" class="btn btn--primary btn-outline-primary add_new_row_button" data-count="` +
-                count + `">{{ translate('Add_New_Option') }}</button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>`;
-
-            $("#add_new_option").append(add_option_view);
-        }
-        $(document).ready(function() {
-            $("#add_new_option_button").click(function(e) {
-                add_new_option_button();
-            });
-        });
-
-        function add_new_row_button(data) {
-            countRow = 1 + $('#option_price_view_' + data).children('.add_new_view_row_class').length;
-            let add_new_row_view = `
-            <div class="row add_new_view_row_class mb-3 position-relative pt-3 pt-sm-0">
-                <div class="col-md-4 col-sm-5">
-                        <label for="">{{ translate('Option_name') }}</label>
-                        <input class="form-control" required type="text" name="options[` + data + `][values][` +
-                countRow + `][label]" id="">
-                    </div>
-                    <div class="col-md-4 col-sm-5">
-                        <label for="">{{ translate('Additional_price') }}</label>
-                        <input class="form-control"  required type="number" min="0" step="0.01" name="options[` +
-                data +
-                `][values][` + countRow + `][optionPrice]" id="">
-                    </div>
-                    <div class="col-sm-2 max-sm-absolute">
-                        <label class="d-none d-sm-block">&nbsp;</label>
-                        <div class="mt-1">
-                            <button type="button" class="btn btn-danger btn-sm deleteRow"
-                                title="{{ translate('Delete') }}">
-                                <i class="tio-add-to-trash"></i>
-                            </button>
-                        </div>
-                </div>
-            </div>`;
-            $('#option_price_view_' + data).append(add_new_row_view);
-
-        }
+        @include('admin-views.product.partials._shared-variation-builder-script', [
+            'optionWrapperClass' => '__bg-F8F9FC-card count_div view_new_option mb-2',
+        ])
 
 
 
@@ -480,17 +371,6 @@
         });
 
 
-
-
-
-        function add_more_customer_choice_option(i, name) {
-            let n = name;
-
-            $('#customer_choice_options').append(
-                `<div class="__choos-item"><div><input type="hidden" name="choice_no[]" value="${i}"><input type="text" class="form-control d-none" name="choice[]" value="${n}" placeholder="{{ translate('messages.choice_title') }}" readonly> <label class="form-label">${n}</label> </div><div><input type="text" class="form-control combination_update" name="choice_options_${i}[]" placeholder="{{ translate('messages.enter_choice_values') }}" data-role="tagsinput"></div></div>`
-            );
-            $("input[data-role=tagsinput], select[multiple][data-role=tagsinput]").tagsinput();
-        }
 
 
 
@@ -611,43 +491,55 @@
             });
         });
 
-        function initImagePicker() {
-            $("#coba").spartanMultiImagePicker({
-                fieldName: 'item_images[]',
-                maxCount: 5,
-                rowHeight: '176px !important',
-                groupClassName: 'spartan_item_wrapper min-w-176px max-w-176px',
-                maxFileSize: 1024 * 1024 * 2,
-                placeholderImage: {
-                    image: "{{ asset('public/assets/admin/img/upload-img.png') }}",
-                    width: '176px'
-                },
-                dropFileLabel: "Drop Here",
-                onAddRow: function(index, file) {
-                    setTimeout(function() {
-                        let $newInput = $("#coba .spartan_item_wrapper").last();
-                        if ($newInput.length) {
-                            $newInput[0].scrollIntoView({
-                                behavior: "smooth",
-                                inline: "end",
-                                block: "nearest"
-                            });
-                        }
-                    }, 50);
-                },
-                onExtensionErr: function(index, file) {
-                    toastr.error("{{ translate('messages.please_only_input_png_or_jpg_type_file') }}", {
-                        CloseButton: true,
-                        ProgressBar: true
-                    });
-                },
-                onSizeErr: function(index, file) {
-                    toastr.error("{{ translate('messages.file_size_too_big') }}", {
-                        CloseButton: true,
-                        ProgressBar: true
-                    });
-                }
-            });
+      function initImagePicker() {
+
+             let existingImages = $("#coba .existing_image").detach();
+
+            let newCoba = $('<div class="tabs-inner pt-1 d-flex gap-3 identity_documnet_wrap" id="coba"></div>');
+
+            $("#coba").replaceWith(newCoba);
+
+            newCoba.append(existingImages);
+
+            let existingCount = existingImages.length;
+            let maxCount = 5 - existingCount;
+            console.log('Existing: ' + existingCount + ', Max: ' + maxCount);
+
+            if (maxCount > 0) {
+                $("#coba").spartanMultiImagePicker({
+                    fieldName: 'item_images[]',
+                    maxCount: maxCount,
+                    rowHeight: '100px',
+                    groupClassName: 'spartan_item_wrapper size--md',
+                    maxFileSize: {{ MAX_FILE_SIZE }} * 1024 * 1024,
+                    placeholderImage: {
+                        image: '{{asset('public/assets/admin/img/400x400/coba-placeholder.png')}}',
+                        width: '100%'
+                    },
+                    dropFileLabel: "Drop Here",
+                    onAddRow: function (index, file) {
+                        // Handle logic after adding new image if needed
+                    },
+                    onRenderedPreview: function (index) {
+
+                    },
+                    onRemoveRow: function (index) {
+
+                    },
+                    onExtensionErr: function (index, file) {
+                        toastr.error('Please only input png or jpg type file', {
+                            CloseButton: true,
+                            ProgressBar: true
+                        });
+                    },
+                    onSizeErr: function (index, file) {
+                        toastr.error('File size too big', {
+                            CloseButton: true,
+                            ProgressBar: true
+                        });
+                    }
+                });
+            }
         }
 
         $(function() {
@@ -694,11 +586,12 @@
             $('input[name="current_stock"]').val(total_qty);
         });
 
-
-        // $('#product_form').on('keydown', function(e) {
-        //     if (e.key === 'Enter') {
-        //     e.preventDefault(); // Prevent submission on Enter
-        //     }
-        // });
+        $(document).on('click', '.remove-existing-image-btn', function(){
+            let key = $(this).data('key');
+            let img = $(this).data('img');
+            $('#existing_image_' + key).remove();
+            $('form').append('<input type="hidden" name="delete_item_image[]" value="' + img + '">');
+            initSpatanImagePicker();
+        });
     </script>
 @endpush

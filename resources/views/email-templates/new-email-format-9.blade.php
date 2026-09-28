@@ -388,6 +388,13 @@ width: 24px;
                                                                         <td class="text-right p-1 px-3">{{ \App\CentralLogics\Helpers::format_currency($order->ref_bonus_amount) }}</td>
                                                                     </tr>
                                                                     @endif
+                                                                    @if (($order->orderProDiscount?->amount_saved ?? 0) > 0)
+                                                                    <tr>
+                                                                        <td style="width: 40%"></td>
+                                                                        <td class="p-1 px-3">{{ translate('messages.Pro_Discount') }}</td>
+                                                                        <td class="text-right p-1 px-3">{{ \App\CentralLogics\Helpers::format_currency($order->orderProDiscount->amount_saved) }}</td>
+                                                                    </tr>
+                                                                    @endif
                                                                     <tr>
                                                                         <td style="width: 40%"></td>
                                                                         <td class="p-1 px-3">{{ translate('messages.coupon_discount') }}</td>

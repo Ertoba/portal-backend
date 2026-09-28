@@ -5,10 +5,12 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use App\CentralLogics\Helpers;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\Str;
+use App\Traits\GeneratesSlug;
 
 class PageSeoData extends Model
 {
+    use GeneratesSlug;
+
     protected $guarded = ['id'];
     protected $appends = ['image_full_url'];
     protected $with = ['storage', 'translations'];
@@ -84,23 +86,6 @@ class PageSeoData extends Model
                 return $query->where('locale', app()->getLocale());
             }]);
         });
-    }
-
-       private function generateSlug($name)
-    {
-        $slug = Str::slug($name);
-        if ($max_slug = static::where('slug', 'like',"{$slug}%")->latest('id')->value('slug')) {
-
-            if($max_slug == $slug) return "{$slug}-2";
-
-            $max_slug = explode('-',$max_slug);
-            $count = array_pop($max_slug);
-            if (isset($count) && is_numeric($count)) {
-                $max_slug[]= ++$count;
-                return implode('-', $max_slug);
-            }
-        }
-        return $slug;
     }
 
 

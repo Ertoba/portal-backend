@@ -1,14 +1,16 @@
 <?php
 
-use App\Http\Middleware\ActivationCheckMiddleware;
+use App\Http\Middleware\MiliFeatureAccessMiddleware;
 use App\Http\Middleware\AdminMiddleware;
 use App\Http\Middleware\AdminRentalModuleCheckMiddleware;
 // Core Laravel web middleware
 use App\Http\Middleware\APIGuestMiddleware;
+use App\Http\Middleware\MaintenanceMode;
 use App\Http\Middleware\Authenticate;
 use App\Http\Middleware\CurrentModule;
 use App\Http\Middleware\DmTokenIsValid;
 use App\Http\Middleware\EncryptCookies;
+use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\InstallationMiddleware;
 use App\Http\Middleware\Localization;
 // Custom middleware
@@ -40,11 +42,15 @@ use Illuminate\View\Middleware\ShareErrorsFromSession;
 return Application::configure(basePath: dirname(__DIR__))
 
     ->withRouting(
-        commands: __DIR__ . '/../routes/console.php',
+        // commands: __DIR__ . '/../routes/console.php',
         health: '/up',
     )
 
     ->withMiddleware(function (Middleware $middleware) {
+
+        $middleware->web(append: [
+            HandleInertiaRequests::class,
+        ]);
 
         $middleware->use([
             \App\Http\Middleware\PreventRequestsDuringMaintenance::class,
@@ -78,7 +84,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'dm.api' => DmTokenIsValid::class,
             'module' => ModulePermissionMiddleware::class,
             'installation-check' => InstallationMiddleware::class,
-            'actch' => ActivationCheckMiddleware::class,
+            'mili.feature' => MiliFeatureAccessMiddleware::class,
             'localization' => LocalizationMiddleware::class,
             'subscription' => Subscription::class,
             'react' => ReactValid::class,
@@ -94,11 +100,14 @@ return Application::configure(basePath: dirname(__DIR__))
             'current-module' => CurrentModule::class,
             'admin-rental-module' => AdminRentalModuleCheckMiddleware::class,
             'provider-rental-module' => ProviderRentalModuleCheckMiddleware::class,
+            'maintenance' => MaintenanceMode::class,
         ]);
     })
 
     ->withExceptions(function (Exceptions $exceptions) {
-        //
+        $exceptions->shouldRenderJsonWhen(function ($request, \Throwable $e) {
+            return $request->is('api/*') || $request->expectsJson() || $request->wantsJson();
+        });
     })
 
     ->create();

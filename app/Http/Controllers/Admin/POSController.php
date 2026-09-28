@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Models\Order;
 use App\Models\OrderDetail;
 use App\Traits\PlaceNewOrder;
+use App\Traits\POSDeliveryTypeTrait;
 use Brian2694\Toastr\Facades\Toastr;
 use Illuminate\Http\Request;
 use App\CentralLogics\Helpers;
@@ -30,6 +31,8 @@ use Illuminate\Support\Facades\Session;
 class POSController extends Controller
 {
     use PlaceNewOrder;
+    use POSDeliveryTypeTrait;
+
     public function index(Request $request)
     {
         $time = Carbon::now()->toTimeString();
@@ -58,9 +61,26 @@ class POSController extends Controller
             }
         }
 
-        if (empty(session('cart')) || count(session('cart')) === 0) {
-            session()->forget('tax_amount');
-            session()->forget('tax_included');
+        $hasNavParams = $request->filled('search')
+            || $request->filled('category_id')
+            || $request->filled('page');
+
+        if (!$hasNavParams && (empty(session('cart')) || count(session('cart')) === 0)) {
+            session()->forget([
+                'tax_amount',
+                'tax_included',
+                'customer_id',
+                'address',
+                'delivery_type',
+                'delivery_type_charge',
+                'cart_product_ids',
+                'pos_pro_discount',
+                'pos_pro_benefit_type',
+                'pos_pro_delivery_offer_type',
+                'pos_pro_delivery_percentage',
+                'pos_pro_min_order_amount',
+                'pos_pro_min_order_status',
+            ]);
         }
 
         $productQuery = Item::withoutGlobalScope(StoreScope::class)->active()
@@ -581,12 +601,22 @@ class POSController extends Controller
 
     public function emptyCart(Request $request)
     {
-        session()->forget('cart');
-        session()->forget('tax_amount');
-        session()->forget('tax_included');
-        session()->forget('address');
-        session()->forget('cart_product_ids');
-        session()->forget('customer_id');
+        session()->forget([
+            'cart',
+            'tax_amount',
+            'tax_included',
+            'address',
+            'cart_product_ids',
+            'customer_id',
+            'delivery_type',
+            'delivery_type_charge',
+            'pos_pro_discount',
+            'pos_pro_benefit_type',
+            'pos_pro_delivery_offer_type',
+            'pos_pro_delivery_percentage',
+            'pos_pro_min_order_amount',
+            'pos_pro_min_order_status',
+        ]);
         return response()->json([], 200);
     }
 
@@ -735,8 +765,8 @@ class POSController extends Controller
         $order->module_id = $store->module_id;
         $order->user_id = $request->user_id;
         $order->dm_vehicle_id = $vehicle_id;
-        $order->delivery_charge = $this->calculatePosDeliveryFee($store->id,$order->distance );
-        $order->original_delivery_charge = $this->calculatePosDeliveryFee($store->id,$order->distance );
+        $order->delivery_charge          = 0;
+        $order->original_delivery_charge = 0;
         $order->delivery_address = isset($address)?json_encode($address):null;
         $order->checked = 1;
         $order->zone_id = $store->zone_id;
@@ -782,6 +812,35 @@ class POSController extends Controller
         $total_price = $product_price + $total_addon_price - $store_discount_amount - $flash_sale_admin_discount_amount - $flash_sale_vendor_discount_amount;
         $totalDiscount = $store_discount_amount + $flash_sale_admin_discount_amount + $flash_sale_vendor_discount_amount;
 
+        $isProCustomer       = $customer && (int) $customer->pro_status === 1;
+        $pro_discount_amount = 0.0;
+        $pro_offer           = ['status' => false, 'benefit' => null];
+        if ($isProCustomer) {
+            $proApply            = $this->applyProCustomerDiscount(
+                $customer->id,
+                $product_price + $total_addon_price,
+                $total_price,
+                $store?->module?->module_type,
+            );
+            $pro_offer           = $proApply['offer'];
+            $pro_discount_amount = (float) $proApply['discount'];
+            $total_price         = (float) $proApply['total_price'];
+            $totalDiscount      += $pro_discount_amount;
+        }
+
+        $pos_delivery_calc = $this->calculatePosDeliveryFee(
+            $store->id,
+            $order->distance,
+            $request->user_id,
+            (float) $total_price,
+        );
+        $order->delivery_charge          = $pos_delivery_calc['delivery_fee'];
+        $order->original_delivery_charge = $pos_delivery_calc['original_delivery_charge'];
+        $pro_delivery_savings            = (float) ($pos_delivery_calc['original_delivery_charge'] - $pos_delivery_calc['delivery_fee']);
+        if (!empty($pos_delivery_calc['free_delivery_by'])) {
+            $order->free_delivery_by = $pos_delivery_calc['free_delivery_by'];
+        }
+
         $order->flash_admin_discount_amount = round($flash_sale_admin_discount_amount, config('round_up_to_digit'));
         $order->flash_store_discount_amount = round($flash_sale_vendor_discount_amount, config('round_up_to_digit'));
         $finalCalculatedTax =  Helpers::getFinalCalculatedTax($order_details, $additionalCharges, $totalDiscount, $total_price, $store->id);
@@ -799,7 +858,23 @@ class POSController extends Controller
             $order->store_discount_amount= $store_discount_amount;
             $order->tax_percentage = 0;
             $order->total_tax_amount = $tax_amount;
+            $pos_eligible_amount = max(0, $product_price + $total_addon_price - $store_discount_amount - ($flash_sale_admin_discount_amount ?? 0) - ($flash_sale_vendor_discount_amount ?? 0));
+            $pos_effective_delivery = \App\CentralLogics\DeliveryFeeLogic::effectiveFee(
+                (float) $order->delivery_charge,
+                $store,
+                $pos_eligible_amount,
+                \App\CentralLogics\DeliveryFeeLogic::resolveCouponCodeFromSession(),
+            );
+            if ($pos_effective_delivery['is_free']) {
+
+                $order->delivery_charge  = 0;
+                $order->free_delivery_by = $pos_effective_delivery['free_by'];
+                $pro_delivery_savings    = 0.0;
+            }
+
             $order->order_amount = $total_price + $tax_amount + $order->delivery_charge;
+            // Apply saver time logic to order
+            $this->applySaverToOrder($order, (int) $order->module_id, (int) $order->zone_id, (float) $order->delivery_charge);
             $order->adjusment = $request->amount - ($total_price + $tax_amount + $order->delivery_charge);
             $order->payment_method = $request->type == 'wallet'?'wallet':'cash_on_delivery';
 
@@ -844,6 +919,20 @@ class POSController extends Controller
             };
             $order->save();
 
+            if ($isProCustomer && ($pro_offer['status'] ?? false)) {
+                $amountSaved = $pro_discount_amount > 0 ? $pro_discount_amount : $pro_delivery_savings;
+                if ($amountSaved > 0) {
+                    $this->recordOrderProDiscount(
+                        orderId: (int) $order->id,
+                        userId: (int) $customer->id,
+                        proOffer: $pro_offer,
+                        amountSaved: (float) $amountSaved,
+                        originalDeliveryCharge: $order->original_delivery_charge ?? null,
+                        moduleType: $store?->module?->module_type,
+                    );
+                }
+            }
+
             if ($request->order_type !== 'parcel') {
                 $taxMapCollection = collect($taxMap);
                 foreach ($order_details as $key => $item) {
@@ -880,12 +969,23 @@ class POSController extends Controller
                 $store->increment('total_order');
             }
 
-            session()->forget('cart');
-            session()->forget('tax_amount');
-            session()->forget('tax_include');
-            session()->forget('address');
-            session()->forget('cart_product_ids');
-            session()->forget('customer_id');
+            session()->forget([
+                'cart',
+                'tax_amount',
+                'tax_included',
+                'tax_include',
+                'address',
+                'cart_product_ids',
+                'customer_id',
+                'delivery_type',
+                'delivery_type_charge',
+                'pos_pro_discount',
+                'pos_pro_benefit_type',
+                'pos_pro_delivery_offer_type',
+                'pos_pro_delivery_percentage',
+                'pos_pro_min_order_amount',
+                'pos_pro_min_order_status',
+            ]);
             session(['last_order' => $order->id]);
             Helpers::send_order_notification($order);
 
@@ -966,17 +1066,52 @@ class POSController extends Controller
     public function extra_charge(Request $request)
     {
         $distance_data = $request->distancMileResult ?? 1;
-        $storeId=$request->store_id;
-        $delivery_fee = $this->calculatePosDeliveryFee($storeId,$distance_data);
+        $storeId       = $request->store_id;
+        $userId        = $request->customer_id ?: Session::get('customer_id');
 
-        return response()->json($delivery_fee,200);
+        $delivery_calc = $this->calculatePosDeliveryFee(
+            $storeId,
+            $distance_data,
+            $userId,
+            Helpers::posCartSubtotal(),
+        );
+
+        return response()->json($delivery_calc['delivery_fee'], 200);
     }
 
     public function getUserData(Request $request){
         if($request->customer_id){
             $user= User::where('id', $request->customer_id)->first();
             if ($user) {
-                Session::put('customer_id', $request->customer_id);
+                $previousCustomerId = (int) (Session::get('customer_id') ?? 0);
+                $newCustomerId      = (int) $request->customer_id;
+
+                if ($previousCustomerId !== $newCustomerId) {
+                    Session::forget([
+                        'address',
+                        'delivery_type',
+                        'delivery_type_charge',
+                        'pos_pro_discount',
+                        'pos_pro_benefit_type',
+                        'pos_pro_delivery_offer_type',
+                        'pos_pro_delivery_percentage',
+                        'pos_pro_min_order_amount',
+                        'pos_pro_min_order_status',
+                    ]);
+                }
+
+                Session::put('customer_id', $newCustomerId);
+
+                $cartForRecompute  = Session::get('cart');
+                $cartStoreId       = is_array($cartForRecompute) || $cartForRecompute instanceof \Illuminate\Support\Collection
+                    ? ($cartForRecompute['store_id'] ?? null)
+                    : null;
+                $storeForRecompute = $cartStoreId ? Store::with('module')->find($cartStoreId) : null;
+                if ($storeForRecompute) {
+                    $this->setPosCalculatedTax($storeForRecompute);
+                    $this->refreshPosAddressDeliveryFee($storeForRecompute, $newCustomerId);
+                }
+
                 $user = [
                     'id' => $user->id,
                     'customer_name' => $user->f_name . ' ' . $user->l_name,
@@ -988,5 +1123,31 @@ class POSController extends Controller
             return response()->json($user,200);
         }
         return response()->json([],200);
+    }
+    // Get saver delivery types
+    public function getDeliveryTypes(Request $request)
+    {
+        $moduleId = (int) ($request->query('module_id') ?? Config::get('module.current_module_id'));
+        $zoneId   = (int) $request->query('zone_id');
+
+        $store = $request->filled('store_id') ? Store::query()->find($request->query('store_id')) : null;
+        if ($zoneId <= 0 && $store) {
+            $zoneId = (int) ($store->zone_id ?? 0);
+        }
+        $selfDelivery = $store ? (bool) $store->sub_self_delivery : null;
+
+        $deliveryFee = $request->filled('delivery_fee')
+            ? (float) $request->query('delivery_fee')
+            : (float) (session('address.delivery_fee') ?? 0);
+
+        return response()->json($this->loadDeliveryTypes($moduleId, $zoneId, $deliveryFee, $selfDelivery));
+    }
+
+    // Set Saver Delivery type
+
+    public function setDeliveryType(Request $request)
+    {
+        $this->storeDeliveryType($request);
+        return response()->json(['success' => true]);
     }
 }

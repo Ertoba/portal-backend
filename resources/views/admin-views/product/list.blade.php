@@ -47,7 +47,7 @@
                             data-url="{{route("admin.store.get-stores")}}"
                             data-placeholder="{{translate('messages.select_store')}}" class="js-data-example-ajax form-control" required title="Select Store" >
                                 @if($store)
-                                <option value="{{$store->id}}" selected>{{$store->name}}</option>
+                                <option value="{{$store->id}}" data-verified="{{ (int) $store->verified_seller }}" selected>{{$store->name}}</option>
                                 @else
                                 <option value="all" selected>{{translate('messages.all_stores')}}</option>
                                 @endif
@@ -55,7 +55,7 @@
                             </div>
                         </div>
                         <div class="col-sm-6 col-md-3">
-                            @if(!isset(auth('admin')->user()->zone_id))
+                            @if(!auth('admin')?->user()?->zone_id)
                             <div class="select-item">
                                 <select name="zone_id" class="form-control js-select2-custom">
                                     <option value="" {{!request('zone_id')?'selected':''}}>{{ translate('messages.All_Zones') }}</option>
@@ -132,7 +132,7 @@
                         </div>
                         <!-- End Search -->
                     </form>
-                    @if(request()->get('search'))
+                    @if(request()->input('search'))
                     <button type="reset" class="btn btn--primary ml-2 location-reload-to-base" data-url="{{url()->full()}}">{{translate('messages.reset')}}</button>
                     @endif
 
@@ -231,7 +231,7 @@
                         <tr>
                             <td>{{$key+$items->firstItem()}}</td>
                             <td>
-                                <a class="media align-items-center" href="{{route('admin.item.view',[$item['id']])}}">
+                                <a class="media align-items-center min-w-220" href="{{route('admin.item.view',[$item['id']])}}">
                                     <img class="avatar avatar-lg mr-3 onerror-image"
 
                                     src="{{ $item['image_full_url'] ?? asset('public/assets/admin/img/160x160/img2.jpg') }}"
@@ -248,7 +248,7 @@
                             @if (Config::get('module.current_module_type') != 'food')
                             <td>
                                 <div class="d-flex align-items-center gap-2">
-                                    <h5 class="text-hover-primary fw-medium mb-0">{{$item->stock}}</h5>
+                                    <h5 class="text-hover-primary fw-medium mb-0">{{ max((int) $item->stock, 0) }}</h5>
                                     <span data-toggle="modal"  data-id="{{ $item->id }}"  data-target="#update-quantity" class="text-primary tio-add-circle fs-22 cursor-pointer update-quantity"></span>
                                 </div>
                             </td>

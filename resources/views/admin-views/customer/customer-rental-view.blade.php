@@ -126,7 +126,7 @@ active
                                 </form>
 
                             </div>
-                            @if(request()->get('search'))
+                            @if(request()->input('search'))
                                  <button type="reset" class="btn btn--primary ml-2 location-reload-to-base" data-url="{{url()->full()}}">{{translate('messages.reset')}}</button>
                                  @endif
                         </div>

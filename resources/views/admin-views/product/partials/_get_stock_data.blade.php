@@ -10,7 +10,7 @@
         </div>
         <div class="d-flex gap-2 fs-16 align-items-center">
             <span>{{ translate('Current_Stock') }} </span>:
-            <span class="font-semibold text-dark">{{ $product->stock }}</span>
+            <span class="font-semibold text-dark">{{ max((int) $product->stock, 0) }}</span>
         </div>
     </div>
 </div>
@@ -20,7 +20,7 @@
     <label for="total_qty" class="input-label" >
         {{translate('Total_Quantity')}}
     </label>
-    <input type="number" min="1" class="form-control" id="total_qty" name="current_stock" value="{{$product->stock}}" id="quantity" {{count(json_decode($product['variations'],true)) > 0 ? 'readonly' : ""}}>
+    <input type="number" min="1" class="form-control" id="total_qty" name="current_stock" value="{{ max((int) $product->stock, 0) }}" id="quantity" {{count(json_decode($product['variations'],true)) > 0 ? 'readonly' : ""}}>
 </div>
 
 @if (count(json_decode($product['variations'],true)) > 0)
@@ -48,12 +48,12 @@
                         <input value="{{ $combination['type'] }}" name="type[]" type="hidden">
                         <input type="number" name="price_{{ $key  }}_{{ $combination['type'] }}"
                         value="{{$combination['price'] ?? 0}}" min="0"
-                        step="0.01"
+                        step="{{ \App\CentralLogics\Helpers::getDecimalPlaces() }}" max="999999999999.999"
                         class="form-control" >
                     </td>
                     <td class="w-200 error-wrapper">
                         <input type="number" name="stock_{{ $key  }}_{{ $combination['type'] }}"
-                            value="{{ $combination['stock'] ?? 0 }}" min="1" max="999999999" class="form-control update_qty"
+                            value="{{ max($combination['stock'] ?? 0, 0) }}" min="1" max="999999999" class="form-control update_qty"
                             required>
                     </td>
                 </tr>

@@ -9829,4 +9829,5 @@ Smartly or Earn. ',
   'Remove verified badge' => 'Remove verified badge',
   'You have new ride request, Check Please.' => 'You have new ride request, Check Please.',
   'sent a new Safety Alert for' => 'Sent a new Safety Alert for',
+  'link_expired' => 'Link expired',
 );

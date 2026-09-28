@@ -28,6 +28,15 @@
                     </div>
                     <div class="item">
                         <div class="max-349 mx-auto mb-20 text-center">
+                            <img src="{{asset('/public/assets/admin/img/notice-2.png')}}" alt="" class="mb-20">
+                            <h5 class="modal-title">{{translate('If You Want to Change Text Color To Primary Color')}}</h5>
+                            <p>
+                                {{translate("Replace the text with ($ text $) format")}}
+                            </p>
+                        </div>
+                    </div>
+                    <div class="item">
+                        <div class="max-349 mx-auto mb-20 text-center">
                             <img src="{{asset('/public/assets/admin/img/notice-3.png')}}" alt="" class="mb-20">
                             <h5 class="modal-title">{{translate('Let’s See The Changes!')}}</h5>
                             <p>

@@ -10,6 +10,7 @@ class ProvideDMEarning extends Model
 {
     use HasFactory;
 
+    protected $guarded = ['id'];
     public function delivery_man()
     {
         return $this->belongsTo(DeliveryMan::class, 'delivery_man_id');

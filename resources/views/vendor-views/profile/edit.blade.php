@@ -165,7 +165,7 @@
                                 </div>
 
                             <div class="d-flex justify-content-end">
-                                <button type="button" data-id="seller-profile-form" data-message="{{ translate('Want to update seller info') }}" class="btn btn-primary {{env('APP_MODE')!='demo'?'form-alert':'call-demo'}}">{{ translate('messages.Save_changes') }}</button>
+                                <button type="button" data-id="seller-profile-form" data-message="{{ translate('Want to update seller info') }}" class="btn btn-primary {{getEnvMode()!='demo'?'form-alert':'call-demo'}}">{{ translate('messages.Save_changes') }}</button>
                             </div>
 
                             <!-- End Form -->
@@ -231,7 +231,7 @@
                             <!-- End Form Group -->
 
                             <div class="d-flex justify-content-end">
-                                <button type="button" data-id="changePasswordForm" data-message="{{translate('messages.want_to_update_password')}}" class="btn btn-primary {{env('APP_MODE')!='demo'?'form-alert':'call-demo'}}">{{translate('messages.Save_changes')}}</button>
+                                <button type="button" data-id="changePasswordForm" data-message="{{translate('messages.want_to_update_password')}}" class="btn btn-primary {{getEnvMode()!='demo'?'form-alert':'call-demo'}}">{{translate('messages.Save_changes')}}</button>
                             </div>
                         </form>
                         <!-- End Form -->

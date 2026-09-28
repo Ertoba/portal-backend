@@ -4,6 +4,7 @@
 
 @push('css_or_js')
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <link rel="stylesheet" href="{{ asset('public/assets/admin/css/delivery-type.css') }}">
 @endpush
 
 @section('content')
@@ -109,7 +110,13 @@
                             <div class="d-flex flex-wrap flex-row p-2 add--customer-btn">
                                 <select id='customer' name="customer_id"
                                     data-placeholder="{{ translate('messages.walk_in_customer') }}"
-                                    class="js-data-example-ajax form-control"></select>
+                                    class="js-data-example-ajax form-control">
+                                    @if (isset($customer) && $customer)
+                                        <option selected value="{{ $customer->id }}">
+                                            {{ $customer->f_name . ' ' . $customer->l_name }} ({{ $customer->phone }})
+                                        </option>
+                                    @endif
+                                </select>
                                 <button class="btn btn--primary px-3" data-toggle="modal"
                                     data-target="#add-customer">{{ translate('messages.add_new_customer') }}</button>
                             </div>
@@ -132,6 +139,14 @@
                             @endif
                         </div>
 
+
+                        @include('partials.delivery-type-selector', [
+                            'getUrl'            => route('vendor.pos.delivery_type.get'),
+                            'setUrl'            => route('vendor.pos.delivery_type.set'),
+                            'zoneId'            => \App\CentralLogics\Helpers::get_store_data()?->zone_id ?? '',
+                            'moduleId'          => \App\CentralLogics\Helpers::get_store_data()?->module_id ?? '',
+                            'storeDeliveryTime' => \App\CentralLogics\Helpers::get_store_data()?->delivery_time ?? '',
+                        ])
 
                         <div class='w-100' id="cart">
                             @include('vendor-views.pos._cart')
@@ -245,11 +260,12 @@
 @endsection
 
 @push('script_2')
-    <script
-        src="https://maps.googleapis.com/maps/api/js?key={{ \App\Models\BusinessSetting::where('key', 'map_api_key')->first()->value }}&libraries=places,marker&callback=initMap&v=3.61">
+    <script async
+        src="https://maps.googleapis.com/maps/api/js?key={{ \App\Models\BusinessSetting::where('key', 'map_api_key')->first()->value }}&libraries=places,marker&callback=initMap&loading=async&v=weekly">
     </script>
 
     <script src="{{asset('public/assets/admin/js/view-pages/pos.js')}}"></script>
+    <script src="{{asset('public/assets/admin/js/views/delivery-type-selector.js')}}?v={{ @filemtime(public_path('assets/admin/js/views/delivery-type-selector.js')) ?: 1 }}"></script>
     <script>
         "use strict";
         $(document).on('click', '.place-order-submit', function (event) {
@@ -265,6 +281,21 @@
 
 
 
+
+        function togglePinLoading(isLoading) {
+            let $btn = $('.delivery-Address-Store');
+            if (!$btn.length) {
+                return;
+            }
+            if (isLoading) {
+                if (!$btn.data('original-html')) {
+                    $btn.data('original-html', $btn.html());
+                }
+                $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>{{ translate('calculating') }}...');
+            } else {
+                $btn.prop('disabled', false).html($btn.data('original-html'));
+            }
+        }
 
         function initMap() {
         const mapId = "{{ \App\Models\BusinessSetting::where('key', 'map_api_key')->first()->value }}"
@@ -282,6 +313,10 @@
 
             //get current location block
             let infoWindow = new google.maps.InfoWindow();
+            const geoErrorMessages = {
+                geolocationFailed: "{{ translate('The Geolocation service failed') }}",
+                noGeolocationSupport: "{{ translate('Your browser doesn`t support geolocation') }}",
+            };
             // Try HTML5 geolocation.
 
             if (navigator.geolocation) {
@@ -297,68 +332,40 @@
                         map.setCenter(myLatlng);
                     },
                     () => {
-                        handleLocationError(true, infoWindow, map.getCenter());
+                        handleLocationError(true, infoWindow, map.getCenter(), map, geoErrorMessages);
                     }
                 );
             } else {
                 // Browser doesn't support Geolocation
-                handleLocationError(false, infoWindow, map.getCenter());
+                handleLocationError(false, infoWindow, map.getCenter(), map, geoErrorMessages);
             }
             //-----end block------
-            const input = document.getElementById("pac-input");
-            const searchBox = new google.maps.places.SearchBox(input);
-            map.controls[google.maps.ControlPosition.TOP_CENTER].push(input);
-            let markers = [];
             const bounds = new google.maps.LatLngBounds();
-            searchBox.addListener("places_changed", () => {
-                const places = searchBox.getPlaces();
-
-                if (places.length === 0) {
-                    return;
-                }
-                // Clear out the old markers.
-                markers.forEach((marker) => {
-                    marker.setMap(null);
-                });
-                markers = [];
-                // For each place, get the icon, name and location.
-                places.forEach((place) => {
-                    if (!place.geometry || !place.geometry.location) {
-
-                        return;
-                    }
-                    if (!google.maps.geometry.poly.containsLocation(
-                            place.geometry.location,
-                            zonePolygon
-                        )) {
-                        toastr.error('{{ translate('messages.out_of_coverage') }}', {
-                            CloseButton: true,
-                            ProgressBar: true
-                        });
-                        return false;
-                    }
-
-                    document.getElementById('latitude').value = place.geometry.location.lat();
-                    document.getElementById('longitude').value = place.geometry.location.lng();
-                    const { AdvancedMarkerElement } = google.maps.marker;
-
-                    // Create a marker for each place.
-                    markers.push(
-                        new AdvancedMarkerElement({
-                            map,
-                            title: place.name,
-                            position: place.geometry.location,
-                        })
-                    );
-
-                    if (place.geometry.viewport) {
-                        // Only geocodes have viewport.
-                        bounds.union(place.geometry.viewport);
-                    } else {
-                        bounds.extend(place.geometry.location);
-                    }
-                });
-                map.fitBounds(bounds);
+            posInitPlaceSearch({
+                map: map,
+                inputId: "pac-input",
+                outOfCoverageMessage: '{{ translate('messages.out_of_coverage') }}',
+                getZonePolygon: () => zonePolygon,
+                @if ($store_data)
+                onLocationSelected: function (location, address) {
+                    togglePinLoading(true);
+                    posCalculateDeliveryDistance({
+                        origins: [
+                            { lat: {{ $store_data['latitude'] }}, lng: {{ $store_data['longitude'] }} },
+                            "{{ $store_data->address }}"
+                        ],
+                        destinations: [
+                            address,
+                            { lat: location.lat(), lng: location.lng() }
+                        ],
+                        geocodedAddress: address,
+                        extraChargeUrl: '{{ route('vendor.pos.extra_charge') }}',
+                        currencySymbol: '{{ \App\CentralLogics\Helpers::currency_symbol() }}',
+                        warningMessage: '{{ translate('Please pin a more precise location to calculate delivery fee') }}',
+                        toggleLoading: togglePinLoading,
+                    });
+                },
+                @endif
             });
             @if ($store_data)
                 $.get({
@@ -400,106 +407,36 @@
                             let geocoder  = new google.maps.Geocoder();
                             let latlng = new google.maps.LatLng(coordinates['lat'], coordinates['lng']);
 
+                            togglePinLoading(true);
+
                             geocoder.geocode({
                                 'latLng': latlng
                             }, function(results, status) {
-                                if (status === google.maps.GeocoderStatus.OK) {
-                                    if (results[1]) {
-                                        let address = results[1].formatted_address;
-                                        // initialize services
-                                        const geocoder = new google.maps.Geocoder();
-                                        const service = new google.maps.DistanceMatrixService();
-                                        // build request
-                                        const origin1 = {
-                                            lat: {{ $store_data['latitude'] }},
-                                            lng: {{ $store_data['longitude'] }}
-                                        };
-                                        const origin2 = "{{ $store_data->address }}";
-                                        const destinationA = address;
-                                        const destinationB = {
-                                            lat: coordinates['lat'],
-                                            lng: coordinates['lng']
-                                        };
-                                        const request = {
-                                            origins: [origin1, origin2],
-                                            destinations: [destinationA, destinationB],
-                                            travelMode: google.maps.TravelMode.DRIVING,
-                                            unitSystem: google.maps.UnitSystem.METRIC,
-                                            avoidHighways: false,
-                                            avoidTolls: false,
-                                        };
-
-                                        // get distance matrix response
-                                        service.getDistanceMatrix(request).then((response) => {
-                                            // put response
-                                            let distancMeter = response.rows[0]
-                                                .elements[0].distance['value'];
-
-                                            let distanceMile = distancMeter / 1000;
-                                            let distancMileResult = Math.round((
-                                                    distanceMile + Number.EPSILON) *
-                                                100) / 100;
-
-                                            document.getElementById('distance').value = distancMileResult;
-                                            document.getElementById('address').value =response.destinationAddresses[1];
-
-
-                                        <?php
-                                        $module_wise_delivery_charge = $store_data->zone->modules()->where('modules.id', $store_data->module_id)->first();
-
-                                        if($store_data->sub_self_delivery ){
-                                                $per_km_shipping_charge = $store_data?->per_km_shipping_charge ?? 0;
-                                                $minimum_shipping_charge = $store_data?->minimum_shipping_charge ?? 0;
-                                                $maximum_shipping_charge = $store_data?->maximum_shipping_charge?? 0;
-
-                                                $self_delivery_status = 1;
-                                        } else{
-                                                $self_delivery_status = 0;
-
-                                            if ($module_wise_delivery_charge) {
-                                                $per_km_shipping_charge = $module_wise_delivery_charge->pivot->delivery_charge_type == 'distance' ? $module_wise_delivery_charge->pivot->per_km_shipping_charge ?? 0 : $module_wise_delivery_charge->pivot->fixed_shipping_charge ?? 0;
-                                                $minimum_shipping_charge = $module_wise_delivery_charge->pivot->delivery_charge_type == 'distance' ? $module_wise_delivery_charge->pivot->minimum_shipping_charge ?? 0 : $module_wise_delivery_charge->pivot->fixed_shipping_charge ?? 0;
-                                                $maximum_shipping_charge = $module_wise_delivery_charge->pivot->delivery_charge_type == 'distance' ? $module_wise_delivery_charge->pivot->maximum_shipping_charge ?? 0 : $module_wise_delivery_charge->pivot->fixed_shipping_charge ?? 0;
-                                            } else {
-                                                $per_km_shipping_charge = (float)\App\Models\BusinessSetting::where(['key' => 'per_km_shipping_charge'])->first()->value;
-                                                $minimum_shipping_charge = (float)\App\Models\BusinessSetting::where(['key' => 'minimum_shipping_charge'])->first()->value;
-                                                $maximum_shipping_charge = 0;
-                                            }
-                                        }
-
-
-                                        ?>
-
-                                        $.get({
-                                                url: '{{ route('vendor.pos.extra_charge') }}',
-                                                dataType: 'json',
-                                                data: {
-                                                    distancMileResult: distancMileResult,
-                                                    self_delivery_status: {{ $self_delivery_status }},
-                                                },
-                                                success: function(data) {
-                                                   let extra_charge = data;
-                                                    let original_delivery_charge =  (distancMileResult * {{$per_km_shipping_charge}} > {{$minimum_shipping_charge}}) ? distancMileResult * {{$per_km_shipping_charge}} : {{$minimum_shipping_charge}};
-                                                    let delivery_amount = ({{ $maximum_shipping_charge }} > {{ $minimum_shipping_charge }} && original_delivery_charge + extra_charge > {{ $maximum_shipping_charge }} ? {{ $maximum_shipping_charge }} : original_delivery_charge + extra_charge);
-                                                    let delivery_charge =Math.round(( delivery_amount + Number.EPSILON) * 100) / 100;
-                                                document.getElementById('delivery_fee').value = delivery_charge;
-                                                $('#delivery_fee').siblings('strong').html(delivery_charge + '{{ \App\CentralLogics\Helpers::currency_symbol() }}');
-
-                                                },
-                                                error:function(){
-                                                    let original_delivery_charge =  (distancMileResult * {{$per_km_shipping_charge}} > {{$minimum_shipping_charge}}) ? distancMileResult * {{$per_km_shipping_charge}} : {{$minimum_shipping_charge}};
-
-                                                    let delivery_charge =Math.round((
-                                                ({{ $maximum_shipping_charge }} > {{ $minimum_shipping_charge }} && original_delivery_charge  > {{ $maximum_shipping_charge }} ? {{ $maximum_shipping_charge }} : original_delivery_charge)
-                                                + Number.EPSILON) * 100) / 100;
-                                                document.getElementById('delivery_fee').value = delivery_charge;
-                                                $('#delivery_fee').siblings('strong').html(delivery_charge + '{{ \App\CentralLogics\Helpers::currency_symbol() }}');
-                                                }
-                                            });
-                                        });
-
-                                    }
+                                if (status !== google.maps.GeocoderStatus.OK || !results[1]) {
+                                    togglePinLoading(false);
+                                    toastr.warning('{{ translate('Please pin a more precise location to calculate delivery fee') }}', {
+                                        CloseButton: true,
+                                        ProgressBar: true
+                                    });
+                                    return;
                                 }
+
+                                let address = results[1].formatted_address;
+                                posCalculateDeliveryDistance({
+                                    origins: [
+                                        { lat: {{ $store_data['latitude'] }}, lng: {{ $store_data['longitude'] }} },
+                                        "{{ $store_data->address }}"
+                                    ],
+                                    destinations: [
+                                        address,
+                                        { lat: coordinates['lat'], lng: coordinates['lng'] }
+                                    ],
+                                    geocodedAddress: address,
+                                    extraChargeUrl: '{{ route('vendor.pos.extra_charge') }}',
+                                    currencySymbol: '{{ \App\CentralLogics\Helpers::currency_symbol() }}',
+                                    warningMessage: '{{ translate('Please pin a more precise location to calculate delivery fee') }}',
+                                    toggleLoading: togglePinLoading,
+                                });
                             });
                         });
                     },
@@ -710,6 +647,8 @@
                 _token: '{{ csrf_token() }}'
             }, function() {
                 $('#del-add').empty();
+                $('#customer_id').val('');
+                $('#customer').val(null).trigger('change');
                 updateCart();
                 toastr.info('{{ translate('messages.item_has_been_removed_from_cart') }}', {
                     CloseButton: true,
@@ -718,13 +657,74 @@
             });
         });
 
+        function setPosContactFields(name, phone) {
+            var nameEl  = document.getElementById('contact_person_name');
+            var phoneEl = document.getElementById('contact_person_number');
+            if (nameEl)  { nameEl.value  = name  || ''; }
+            if (phoneEl) { phoneEl.value = phone || ''; }
+        }
+
+        function updateCartThen(callback) {
+            $.post('<?php echo e(route('vendor.pos.cart_items')); ?>', {
+                _token: '<?php echo e(csrf_token()); ?>'
+            }, function (data) {
+                $('#cart').empty().html(data);
+                if (typeof initTelInputs === 'function') { initTelInputs(); }
+                syncDeliveryTypeFromCart();
+                if (typeof callback === 'function') {
+                    callback();
+                }
+            });
+        }
+
+        $(document).on('change', '#customer', function () {
+            var customerId = $(this).val();
+
+            $('#del-add').empty();
+
+            if (!customerId) {
+                updateCartThen(function () {
+                    setPosContactFields('', '');
+                });
+                return;
+            }
+
+            $.get({
+                url: '{{ route('vendor.pos.getUserData') }}',
+                dataType: 'json',
+                data: { customer_id: customerId },
+                success: function (data) {
+                    if (data && data.view) {
+                        $('#del-add').empty().html(data.view);
+                    }
+                    updateCartThen(function () {
+                        setPosContactFields(
+                            data && data.customer_name,
+                            data && data.customer_phone
+                        );
+                    });
+                },
+            });
+        });
+
+        function syncDeliveryTypeFromCart() {
+            if (window.deliveryTypeSelector && typeof window.deliveryTypeSelector.syncFromCart === 'function') {
+                window.deliveryTypeSelector.syncFromCart();
+            }
+        }
+
         function updateCart() {
             $.post('<?php echo e(route('vendor.pos.cart_items')); ?>', {
                 _token: '<?php echo e(csrf_token()); ?>'
             }, function(data) {
                 $('#cart').empty().html(data);
+                if (typeof initTelInputs === 'function') { initTelInputs(); }
+                syncDeliveryTypeFromCart();
             });
         }
+
+        document.addEventListener('delivery-type:changed', function () { updateCart(); });
+        $(function () { syncDeliveryTypeFromCart(); });
 
         $(document).on('click', '.delivery-Address-Store', function () {
             $.ajaxSetup({
@@ -747,15 +747,26 @@
                                 ProgressBar: true
                             });
                         }
-                    } else {
-                        $('#del-add').empty().html(data.view);
+                        $('#loading').hide();
+                        return;
                     }
+                    $('#del-add').empty().html(data.view);
                     updateCart();
                     $('.call-when-done').click();
+                    $('#paymentModal').modal('hide');
+                    setTimeout(function () {
+                        $('.modal-backdrop').remove();
+                        $('body').removeClass('modal-open').css({
+                            'overflow': '',
+                            'padding-right': '',
+                        });
+                    }, 300);
+                },
+                error: function () {
+                    $('#loading').hide();
                 },
                 complete: function() {
                     $('#loading').hide();
-                    $('#paymentModal').modal('hide');
                 }
             });
         });

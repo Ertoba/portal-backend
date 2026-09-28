@@ -102,62 +102,62 @@
                                         <div class="form-group mb-0">
                                             <label for="name" class="form-label">{{ translate('messages.mailer_name') }}</label><br>
                                             <input id="name" type="text" placeholder="{{ translate('messages.Ex:') }} Alex" class="form-control" name="name"
-                                                value="{{ env('APP_MODE') != 'demo' ? $data['name'] ?? '' : '' }}" required>
+                                                value="{{ getEnvMode() != 'demo' ? $data['name'] ?? '' : '' }}" required>
                                         </div>
                                     </div>
                                     <div class="col-md-4">
                                         <div class="form-group mb-0">
                                             <label for="host" class="form-label">{{ translate('messages.host') }}</label><br>
                                             <input id="host" type="text" class="form-control" name="host" placeholder="{{translate('messages.Ex_:_mail.6am.one')}}"
-                                                value="{{ env('APP_MODE') != 'demo' ? $data['host'] ?? '' : '' }}" required>
+                                                value="{{ getEnvMode() != 'demo' ? $data['host'] ?? '' : '' }}" required>
                                         </div>
                                     </div>
                                     <div class="col-md-4">
                                         <div class="form-group mb-0">
                                             <label for="driver" class="form-label">{{ translate('messages.driver') }}</label><br>
                                             <input id="driver" type="text" class="form-control" name="driver" placeholder="{{translate('messages.Ex : smtp')}}"
-                                                value="{{ env('APP_MODE') != 'demo' ? $data['driver'] ?? '' : '' }}" required>
+                                                value="{{ getEnvMode() != 'demo' ? $data['driver'] ?? '' : '' }}" required>
                                         </div>
                                     </div>
                                     <div class="col-md-4">
                                         <div class="form-group mb-0">
                                             <label for="port" class="form-label">{{ translate('messages.port') }}</label><br>
                                             <input id="port" type="text" class="form-control" name="port" placeholder="{{translate('messages.Ex : 587')}}"
-                                                value="{{ env('APP_MODE') != 'demo' ? $data['port'] ?? '' : '' }}" required>
+                                                value="{{ getEnvMode() != 'demo' ? $data['port'] ?? '' : '' }}" required>
                                         </div>
                                     </div>
                                     <div class="col-sm-12">
                                         <div class="form-group mb-0">
                                             <label for="username" class="form-label">{{ translate('messages.username') }}</label><br>
                                             <input id="username" type="text" placeholder="{{ translate('messages.Ex:') }} ex@yahoo.com" class="form-control" name="username"
-                                                value="{{ env('APP_MODE') != 'demo' ? $data['username'] ?? '' : '' }}" required>
+                                                value="{{ getEnvMode() != 'demo' ? $data['username'] ?? '' : '' }}" required>
                                         </div>
                                     </div>
                                     <div class="col-md-4">
                                         <div class="form-group mb-0">
                                             <label for="email" class="form-label">{{ translate('messages.email_id') }}</label><br>
                                             <input id="email" type="text" placeholder="{{ translate('messages.Ex:') }} ex@yahoo.com" class="form-control" name="email"
-                                                value="{{ env('APP_MODE') != 'demo' ? $data['email_id'] ?? '' : '' }}" required>
+                                                value="{{ getEnvMode() != 'demo' ? $data['email_id'] ?? '' : '' }}" required>
                                         </div>
                                     </div>
                                     <div class="col-md-4">
                                         <div class="form-group mb-0">
                                             <label for="encryption" class="form-label">{{ translate('messages.encryption') }}</label><br>
                                             <input id="encryption" type="text" placeholder="{{ translate('messages.Ex:') }} tls" class="form-control" name="encryption"
-                                                value="{{ env('APP_MODE') != 'demo' ? $data['encryption'] ?? '' : '' }}" required>
+                                                value="{{ getEnvMode() != 'demo' ? $data['encryption'] ?? '' : '' }}" required>
                                         </div>
                                     </div>
                                     <div class="col-md-4">
                                         <div class="form-group mb-0">
                                             <label for="password" class="form-label">{{ translate('messages.password') }}</label><br>
                                             <input id="password" type="text" class="form-control" name="password" placeholder="{{translate('messages.Ex : 5+ Characters')}}"
-                                                value="{{ env('APP_MODE') != 'demo' ? $data['password'] ?? '' : '' }}" required>
+                                                value="{{ getEnvMode() != 'demo' ? $data['password'] ?? '' : '' }}" required>
                                         </div>
                                     </div>
                                     <div class="col-sm-12">
                                         <div class="btn--container justify-content-end">
                                             <button type="reset" class="btn btn--reset">{{translate('messages.reset')}}</button>
-                                            <button type="{{ env('APP_MODE') != 'demo' ? 'submit' : 'button' }}"
+                                            <button type="{{ getEnvMode() != 'demo' ? 'submit' : 'button' }}"
                                             class="btn btn--primary call-demo"
                                             >{{ translate('messages.save') }}</button>
                                         </div>

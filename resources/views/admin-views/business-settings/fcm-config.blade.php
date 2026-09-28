@@ -57,7 +57,7 @@
             <div class="card-body">
                 <div class="tab-content">
                     <div class="tab-pane fade show active" id="firebase">
-                        <form action="{{env('APP_MODE')!='demo'?route('admin.business-settings.update-fcm'):'javascript:'}}" method="post"
+                        <form action="{{getEnvMode()!='demo'?route('admin.business-settings.update-fcm'):'javascript:'}}" method="post"
                                 enctype="multipart/form-data">
                             @csrf
 {{--                            @php($key=\App\Models\BusinessSetting::where('key','push_notification_key')->first())--}}
@@ -65,7 +65,7 @@
 {{--                                <label class="input-label"--}}
 {{--                                        for="push_notification_key">{{translate('messages.server_key')}}</label>--}}
 {{--                                <textarea id="push_notification_key" name="push_notification_key" class="form-control" placeholder="{{translate('Ex: AAAAaBcDeFgHiJkLmNoPqRsTuVwXyZ0123456789')}}"--}}
-{{--                                            required>{{env('APP_MODE')!='demo'?$key->value??'':''}}</textarea>--}}
+{{--                                            required>{{getEnvMode()!='demo'?$key->value??'':''}}</textarea>--}}
 {{--                            </div>--}}
                             @php($serviceFileContent = \App\CentralLogics\Helpers::get_business_settings('push_notification_service_file_content'))
                             <div class="form-group">
@@ -75,7 +75,7 @@
                                     </i>
                                 </label>
                                 <textarea name="push_notification_service_file_content" class="form-control" rows="15"
-                                          required>{{env('APP_MODE')!='demo'?($serviceFileContent?json_encode($serviceFileContent):''):''}}</textarea>
+                                          required>{{getEnvMode()!='demo'?($serviceFileContent?json_encode($serviceFileContent):''):''}}</textarea>
                             </div>
                             <div class="form-group">
                                 <label class="input-label" for="apiKey">{{translate('messages.api_key')}}</label>
@@ -140,11 +140,24 @@
                                         </div>
                                     </div>
                                 </div>
+                                <div class="col-lg-8 col-sm-12">
+                                    <div class="form-group">
+                                        <label class="input-label" for="vapidKey">{{translate('Web Push VAPID Key')}}
+                                            <i class="tio-info cursor-pointer" data-toggle="tooltip" data-placement="top"
+                                               title="{{ translate('Firebase Console → Project Settings → Cloud Messaging → Web configuration → Web Push certificates → Key pair') }}">
+                                            </i>
+                                        </label>
+                                        <div class="d-flex">
+                                            <input id="vapidKey" type="text" value="{{$fcm_credentials['vapidKey']??''}}"
+                                                name="vapidKey" class="form-control" placeholder="{{ translate('Required for storefront web push (e.g. BIYqKZ2ZlXRJ...)') }}">
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
 
                             <div class="btn--container justify-content-end">
                                 <button type="reset" class="btn btn--reset">{{translate('messages.reset')}}</button>
-                                <button type="{{env('APP_MODE')!='demo'?'submit':'button'}}" class="btn btn--primary call-demo">{{translate('messages.submit')}}</button>
+                                <button type="{{getEnvMode()!='demo'?'submit':'button'}}" class="btn btn--primary call-demo">{{translate('messages.submit')}}</button>
                             </div>
                         </form>
                     </div>

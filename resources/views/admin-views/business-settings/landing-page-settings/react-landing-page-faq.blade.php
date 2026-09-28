@@ -98,7 +98,7 @@
 
             <div class="card-body">
                 <div class="card p-xxl-4 p-3 mb-20 border-0">
-                    <form action="{{ route('admin.business-settings.react-landing-page-settings', 'faq-section') }}"
+                    <form action="{{ route('admin.business-settings.react-landing-page-settings-update', 'faq-section') }}"
                           method="POST" enctype="multipart/form-data">
                         @csrf
                         <div class="row g-3">
@@ -217,7 +217,7 @@
                                 {{ translate('Add and manage individual questions and answers for each user type.') }}
                             </p>
                         </div>
-                        <form action="{{ route('admin.business-settings.react-landing-page-settings', 'faq-store') }}"
+                        <form action="{{ route('admin.business-settings.react-landing-page-settings-update', 'faq-store') }}"
                               method="POST">
                             @csrf
                             <div class="row g-3">

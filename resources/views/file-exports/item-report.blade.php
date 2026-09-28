@@ -67,7 +67,7 @@
                     @endif
                 </td>
                 <td>
-                    {{$item->module->module_type == 'food'? translate('N/A') : $item->stock}}
+                    {{$item->module->module_type == 'food'? translate('N/A') : max((int) $item->stock, 0)}}
                 </td>
                 <td>
                     {{$item->orders_sum_quantity ?? 0}}

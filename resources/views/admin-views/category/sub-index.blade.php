@@ -1,6 +1,6 @@
 @extends('layouts.admin.app')
 
-@section('title',translate('messages.Add new sub category'))
+@section('title',translate('messages.Add new main sub category'))
 
 @push('css_or_js')
     <meta name="csrf-token" content="{{ csrf_token() }}">
@@ -15,7 +15,7 @@
                     <img src="{{asset('public/assets/admin/img/edit.png')}}" class="w--20" alt="">
                 </span>
                 <span>
-                    {{translate('messages.add_new_sub_category')}}
+                    {{translate('messages.add_new_main_sub_category')}}
                 </span>
             </h1>
         </div>
@@ -49,20 +49,20 @@
                                 data-original-title="{{ translate('messages.Required.')}}"> *
                                 </span>
                             </label>
-                            <input type="text" name="name[]" class="form-control" placeholder="{{translate('messages.new_sub_category')}}" maxlength="191"  >
+                            <input type="text" name="name[]" class="form-control" placeholder="{{translate('messages.new_main_sub_category')}}" maxlength="191"  >
                         </div>
                         <input type="hidden" name="lang[]" value="default">
                         @foreach($language as $lang)
                             <div class="form-group d-none lang_form col-sm-6" id="{{$lang}}-form">
                                 <label class="input-label" for="exampleFormControlInput1">{{translate('messages.name')}} ({{strtoupper($lang)}})</label>
-                                <input type="text" name="name[]" class="form-control" placeholder="{{translate('messages.new_sub_category')}}" maxlength="191"  >
+                                <input type="text" name="name[]" class="form-control" placeholder="{{translate('messages.new_main_sub_category')}}" maxlength="191"  >
                             </div>
                             <input type="hidden" name="lang[]" value="{{$lang}}">
                         @endforeach
                     @else
                         <div class="form-group col-sm-6">
                             <label class="input-label" for="exampleFormControlInput1">{{translate('messages.name')}}</label>
-                            <input type="text" name="name" class="form-control" placeholder="{{translate('messages.new_sub_category')}}" value="{{old('name')}}" maxlength="191">
+                            <input type="text" name="name" class="form-control" placeholder="{{translate('messages.new_main_sub_category')}}" value="{{old('name')}}" maxlength="191">
                         </div>
                         <input type="hidden" name="lang[]" value="default">
                     @endif
@@ -105,19 +105,19 @@
         <div class="card mt-2">
             <div class="card-header py-2 border-0">
                 <div class="search--button-wrapper">
-                    <h5 class="card-title">{{translate('messages.sub_category_list')}}<span class="badge badge-soft-dark ml-2" id="itemCount">{{$categories->total()}}</span></h5>
+                    <h5 class="card-title">{{translate('messages.main_sub_category_list')}}<span class="badge badge-soft-dark ml-2" id="itemCount">{{$categories->total()}}</span></h5>
 
                     <form   class="search-form">
                         <!-- Search -->
                         <div class="input-group input--group">
-                            <input id="datatableSearch" data-reload_url="{{url()->full()}}" name="search" value="{{ request()?->search ?? null }}"  type="search" class="form-control" placeholder="{{translate('messages.ex_:_search_sub_categories')}}" aria-label="{{translate('messages.ex_:_sub_categories')}}">
+                            <input id="datatableSearch" data-reload_url="{{url()->full()}}" name="search" value="{{ request()?->search ?? null }}"  type="search" class="form-control" placeholder="{{translate('messages.ex_:_search_main_sub_categories')}}" aria-label="{{translate('messages.ex_:_main_sub_categories')}}">
                             <input type="hidden" name="position" value="1">
                             <input type="hidden" name="sub_category" value="1">
                             <button type="submit" class="btn btn--secondary"><i class="tio-search"></i></button>
                         </div>
                         <!-- End Search -->
                     </form>
-                    @if(request()->get('search'))
+                    @if(request()->input('search'))
                     <button type="reset" class="btn btn--primary ml-2 location-reload-to-category" data-url="{{url()->full()}}">{{translate('messages.reset')}}</button>
                     @endif
                     <!-- Unfold -->
@@ -167,7 +167,7 @@
                                 <th class="border-0">{{translate('sl')}}</th>
                                 <th class="border-0">{{translate('messages.id')}}</th>
                                 <th class="border-0 w--1">{{translate('messages.main_category')}}</th>
-                                <th class="border-0 text-center">{{translate('messages.sub_category')}}</th>
+                                <th class="border-0 text-center">{{translate('messages.main_sub_category')}}</th>
                                 <th class="border-0 text-center">{{translate('messages.status')}}</th>
                                 @if (Config::get('module.current_module_type') == 'ecommerce')
                                 <th class="border-0 text-center">{{translate('messages.featured')}}</th>
@@ -187,7 +187,7 @@
                                 <td>{{$category->id}}</td>
                                 <td>
                                     <span class="d-block font-size-sm text-body">
-                                        {{ $category?->parent?->name ? Str::limit($category->parent['name'],20,'...') : translate('Invalid_Category') }}
+                                        {{ $category?->parent?->name ? Str::limit($category->parent['name'],20,'...') : translate('Invalid_Main_Category') }}
                                     </span>
                                 </td>
                                 <td class="text-center">
@@ -212,10 +212,10 @@
                                                 data-type="status"
                                                 data-image-on="{{ asset('/public/assets/admin/img/status-ons.png') }}"
                                                 data-image-off="{{ asset('/public/assets/admin/img/off-danger.png') }}"
-                                                data-title-on="{{ translate('Do you want to Featured this sub category ?') }}"
-                                                data-title-off="{{ translate('Don’t you want to Featured this sub category?') }}"
-                                                data-text-on="<p>{{ translate('If you turn on this sub category as a featured category it will show in customer app landing page.') }}"
-                                                data-text-off="<p>{{ translate('If you turn off this sub category from featured category it will not show in customer app landing page.') }}</p>"
+                                                data-title-on="{{ translate('Do you want to Featured this main sub category ?') }}"
+                                                data-title-off="{{ translate('Don’t you want to Featured this main sub category?') }}"
+                                                data-text-on="<p>{{ translate('If you turn on this main sub category as a featured category it will show in customer app landing page.') }}"
+                                                data-text-off="<p>{{ translate('If you turn off this main sub category from featured category it will not show in customer app landing page.') }}</p>"
                                                 class="toggle-switch-input dynamic-checkbox"
                                                 id="featuredCheckbox{{ $category->id }}"
                                                 {{ $category->featured ? 'checked' : '' }}>
@@ -252,7 +252,7 @@
                                                 <i class="tio-edit"></i>
                                             </a>
                                         <a class="btn action-btn btn--danger btn-outline-danger form-alert" href="javascript:"
-                                           data-id="category-{{$category['id']}}" data-message="{{ translate('Want to delete this category') }}" title="{{translate('messages.delete_category')}}"><i class="tio-delete-outlined"></i>
+                                           data-id="category-{{$category['id']}}" data-message="{{ translate('Want to delete this main sub category') }}" title="{{translate('messages.delete_main_sub_category')}}"><i class="tio-delete-outlined"></i>
                                         </a>
                                         <form action="{{route('admin.category.delete',[$category['id']])}}" method="post" id="category-{{$category['id']}}">
                                             @csrf @method('delete')

@@ -18,6 +18,32 @@ use App\Models\SubscriptionBillingAndRefundHistory;
 use Brian2694\Toastr\Facades\Toastr;
 use Modules\Rental\Entities\Trips;
 
+/*
+ * True when the given user belongs to a storefront (tenant or sub-tenant
+ * set) AND the Builder wallet-features master switch is off. Lets the
+ * shared host pipeline (wallet/loyalty/referral/cashback credits, refund
+ * flow, related notifications) skip side effects for storefront customers
+ * without affecting host customers (who carry tenant_id = sub_tenant_id = 0).
+ */
+if (! function_exists('storefront_wallet_disabled_for_user')) {
+    function storefront_wallet_disabled_for_user($userId): bool
+    {
+        if (\config('builder.wallet_features_enabled', true)) {
+            return false;
+        }
+        if (! $userId) {
+            return false;
+        }
+        $user = \App\Models\User::withoutGlobalScope(\App\Scopes\HostScope::class)
+            ->select(['id', 'tenant_id', 'sub_tenant_id'])
+            ->find($userId);
+        if (! $user) {
+            return false;
+        }
+        return ((int) $user->tenant_id) > 0 || ((int) $user->sub_tenant_id) > 0;
+    }
+}
+
 if (! function_exists('translate')) {
     function translate($key, $replace = [])
     {
@@ -76,6 +102,15 @@ if (! function_exists('collect_cash_success')) {
                 $account_transaction->from_type = 'deliveryman';
                 $account_transaction->from_id = $user_data->id;
                 $account_transaction->created_by = 'deliveryman';
+            }
+            elseif($data->attribute === 'rider_collect_cash_payments'){
+                $user_data = DeliveryMan::withoutGlobalScope('delivery_only')->findOrFail($data->attribute_id);
+                $user_data->status = 1;
+                $user_data->save();
+                $current_balance = $user_data?->wallet?->collected_cash ?? 0;
+                $account_transaction->from_type = 'rider';
+                $account_transaction->from_id = $user_data->id;
+                $account_transaction->created_by = 'rider';
             }
             else{
                 return 0;
@@ -312,7 +347,7 @@ if (!function_exists('config_settings')) {
                 if (Config::has($configKey)) {
                     $data = Config::get($configKey);
                 } else {
-                    $data = config('app.app_mode', 'live');
+                    $data = env('APP_MODE')??config('app.app_mode');
                     Config::set($configKey, $data);
                 }
                 return $data;
@@ -329,7 +364,42 @@ if (!function_exists('config_settings')) {
                 return $module?->id;
             }
     }
+}
 
+if (! function_exists('pro_customer_subscription_success')) {
+    function pro_customer_subscription_success($data)
+    {
+        // Idempotency: avoid double-applying if the gateway retries the callback.
+        $reference = 'pr_' . $data->id;
+        if (\App\Models\ProCustomerTransaction::where('transaction_reference', $reference)->exists()) {
+            return true;
+        }
 
+        $additional = is_array($data->additional_data) ? $data->additional_data : json_decode($data->additional_data ?? '[]', true);
+        $planId = $additional['plan_id'] ?? null;
+        $mode = $additional['mode'] ?? 'start';
 
+        $user = \App\Models\User::find($data->payer_id);
+        $plan = \App\Models\ProCustomerSubscriptionPlan::find($planId);
+        if (!$user || !$plan) {
+            return false;
+        }
+
+        $applier = new class { use \App\Traits\ManagesProCustomerSubscription; };
+        $applier->applyProCustomerPlan($user, $plan, [
+            'payment_method' => $data->payment_method,
+            'payment_status' => 'success',
+            'transaction_reference' => $reference,
+            'paid_at' => now(),
+        ], $mode);
+
+        return true;
+    }
+}
+
+if (! function_exists('pro_customer_subscription_failed')) {
+    function pro_customer_subscription_failed($data)
+    {
+        return true;
+    }
 }

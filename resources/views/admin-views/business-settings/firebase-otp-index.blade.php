@@ -2,7 +2,6 @@
 
 @section('title', translate('Firebase OTP Verification'))
 
-
 @section('content')
     <div class="content container-fluid">
         <!-- Page Header -->
@@ -15,52 +14,57 @@
                     {{translate('Firebase OTP Verification')}}
                 </span>
             </h1>
+
             @include('admin-views.business-settings.partials.third-party-links')
-                <div class="">
-                    <div class="text--primary-2  mx-4 d-flex flex-wrap justify-content-end align-items-center" type="button" data-toggle="modal" data-target="#instructionsModal">
-                        <strong class="mr-2">{{translate('How it Works')}}</strong>
-                        <div class="blinkings">
-                            <i class="tio-info-outined"></i>
-                        </div>
+            <div class="">
+                <div class="text--primary-2  mx-4 d-flex flex-wrap justify-content-end align-items-center" type="button" data-toggle="modal" data-target="#instructionsModal">
+                    <strong class="mr-2">{{translate('How it Works')}}</strong>
+                    <div class="blinkings">
+                        <i class="tio-info text-gray1 fs-16"></i>
                     </div>
                 </div>
             </div>
+        </div>
         <!-- End Page Header -->
 
 
 
         <form
-            action="{{env('APP_MODE')!='demo'?route('admin.business-settings.third-party.firebase_otp_update',['recaptcha']):'javascript:'}}"
+            action="{{getEnvMode()!='demo'?route('admin.business-settings.third-party.firebase_otp_update',['recaptcha']):'javascript:'}}"
             method="post">
             @csrf
+            <div class="d-flex gap-2 fs-12 text-dark px-3 py-2 rounded bg-warning mb-3" style="--bs-bg-opacity: 0.1;">
+                <span class="text-info lh-1 fs-14">
+                    <i class="tio-info"></i>
+                </span>
+                <span>
+                    {{ translate('messages.Web Api Key field need to fill properly otherwise OTP authentication can’t work.') }}
+                </span>
+            </div>
             <div class="row g-3">
                 <div class="col-lg-12">
+
                     <div class="card">
                         <div class="card-body">
-                            <div class="row g-3 align-items-end">
-                                <div class="col-lg-6 col-sm-6">
+                            <div class="d-flex align-items-center justify-content-between mb-20">
+                                <div class="">
+                                    <div class="">
+                                        <h3 class="mb-1 fs-16">{{ translate('Firebase Authentication') }}</h3>
+                                        <p class="mb-0 gray-dark fs-12">
+                                            {{ translate('To work the firebase OTP properly need to use exact API key.') }}
+                                        </p>
+                                    </div>
+                                </div>
+                                <div class="d-flex gap-2">
                                     @php($firebase_otp_verification = \App\Models\BusinessSetting::where('key', 'firebase_otp_verification')->first())
                                     @php($firebase_otp_verification = $firebase_otp_verification ? $firebase_otp_verification->value : '')
                                     <div class="form-group mb-0">
-
-                                        <label
-                                            class="toggle-switch h--45px toggle-switch-sm d-flex justify-content-between border rounded px-3 py-0 form-control">
-                                            <span class="pr-1 d-flex align-items-center switch--label">
-                                                <span class="line--limit-1">
-                                                    {{ translate('Firebase_OTP_Verification_Status') }}
-                                                </span>
-                                                <span class="form-label-secondary text-danger d-flex"
-                                                      data-toggle="tooltip" data-placement="right"
-                                                      data-original-title="{{ translate('If_this_field_is_active_customers_get_the_OTP_through_Firebase.') }}"><img
-                                                        src="{{ asset('/public/assets/admin/img/info-circle.svg') }}"
-                                                        alt="{{ translate('messages.firebase_otp_verification') }}"> *
-                                                </span>
-                                            </span>
+                                        <label class="toggle-switch h--45px toggle-switch-sm">
                                             <input type="checkbox"
                                                    data-id="firebase_otp_verification"
                                                    data-type="toggle"
-                                                   data-image-on="{{ asset('/public/assets/admin/img/modal/order-delivery-verification-on.png') }}"
-                                                   data-image-off="{{ asset('/public/assets/admin/img/modal/order-delivery-verification-off.png') }}"
+                                                   data-image-on="{{ asset('public/assets/admin/img/modal/order-delivery-verification-on.png') }}"
+                                                   data-image-off="{{ asset('public/assets/admin/img/modal/order-delivery-verification-off.png') }}"
                                                    data-title-on="<strong>{{translate('Want to enable Firebase OTP Verification?')}}</strong>"
                                                    data-title-off="<strong>{{translate('Want to disable Firebase OTP Verification?')}}</strong> "
                                                    data-text-on="<p>{{ translate('With Firebase OTP enabled, verification codes will be sent through Firebase.') .' </p>' .'  <p>   <strong>
@@ -76,30 +80,37 @@
                                         </label>
                                     </div>
                                 </div>
-                                <div class="col-lg-6 col-sm-6">
-                                    @php($firebase_web_api_key = \App\Models\BusinessSetting::where('key', 'firebase_web_api_key')->first())
-                                    <div class="form-group mb-0">
-                                        <label class=" input-label text-capitalize"
-                                               for="firebase_web_api_key">
-                                            <span>
-                                                {{ translate('Web_API_key') }}
-                                            </span>
+                            </div>
+                            <div class="bg-light2 p-xl-20 p-3 rounded">
+                                <div class="row g-3 align-items-end">
+                                    <div class="col-lg-12">
+                                        @php($firebase_web_api_key = \App\Models\BusinessSetting::where('key', 'firebase_web_api_key')->first())
+                                        <div class="form-group mb-0">
+                                            <label class=" input-label text-capitalize"
+                                                   for="firebase_web_api_key">
+                                                <span>
+                                                    {{ translate('Web_API_key') }}
+                                                </span>
+                                                <span class="form-label-secondary m-0" data-toggle="tooltip" data-placement="right" data-original-title="{{ translate('Enter_the_maximum_cash_amount_stores_can_hold._If_this_number_exceeds,_stores_will_be_suspended_and_not_receive_any_orders.') }}">
+                                                    <i class="tio-info text-gray1 fs-16"></i>
+                                                </span>
 
-                                            {{-- <span class="form-label-secondary"
-                                                  data-toggle="tooltip" data-placement="right"
-                                                  data-original-title="{{ translate('Enter_the_maximum_cash_amount_stores_can_hold._If_this_number_exceeds,_stores_will_be_suspended_and_not_receive_any_orders.') }}"><img
-                                                    src="{{ asset('/public/assets/admin/img/info-circle.svg') }}"
-                                                    alt="{{ translate('messages.dm_cancel_order_hint') }}"></span> --}}
-                                        </label>
-                                        <input type="text" name="firebase_web_api_key" class="form-control"
-                                               id="firebase_web_api_key"
-                                               value="{{ $firebase_web_api_key ? $firebase_web_api_key->value : '' }}"  required>
+                                                {{-- <span class="form-label-secondary"
+                                                      data-toggle="tooltip" data-placement="right"
+                                                      data-original-title="{{ translate('Enter_the_maximum_cash_amount_stores_can_hold._If_this_number_exceeds,_stores_will_be_suspended_and_not_receive_any_orders.') }}"><img
+                                                        src="{{ asset('public/assets/admin/img/info-circle.svg') }}"
+                                                        alt="{{ translate('messages.dm_cancel_order_hint') }}"></span> --}}
+                                            </label>
+                                            <input type="text" name="firebase_web_api_key" class="form-control"
+                                                   id="firebase_web_api_key"
+                                                   value="{{ $firebase_web_api_key ? $firebase_web_api_key->value : '' }}"  required>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                            <div class="btn--container justify-content-end mt-20">
+                            <div class="btn--container justify-content-end mt-4">
                                 <button type="reset" class="btn btn--reset">{{ translate('messages.reset') }}</button>
-                                <button type="{{ env('APP_MODE') != 'demo' ? 'submit' : 'button' }}"
+                                <button type="{{ getEnvMode() != 'demo' ? 'submit' : 'button' }}"
                                         class="btn btn--primary call-demo">{{ translate('save_information') }}</button>
                             </div>
                         </div>
@@ -116,7 +127,7 @@
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header d-flex justify-content-end">
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <button type="button" class="close bg-modal-btn w-30px h-30 rounded-circle position-absolute right-0 top-0 m-2 z-2" data-dismiss="modal" aria-label="Close">
                         <span aria-hidden="true">&times;</span>
                     </button>
                 </div>
@@ -128,7 +139,7 @@
                     <h5 class="modal-title my-3" id="instructionsModalLabel">{{translate('Instructions')}}</h5>
                     <p>{{ translate('For configuring OTP in the Firebase, you must create a Firebase project first.If you haven’t created any project for your application yet, please create a project first.') }}
                     </p>
-                    <p>{{ translate('Now go the') }} <a href="https://console.firebase.google.com/" target="_blank">Firebase console </a>{{ translate('and follow the instructions below') }} -</p>
+                    <p>{{ translate('Now go the') }} <a href="https://console.firebase.google.com/" target="_blank" class="text-underline text-info">Firebase console </a>{{ translate('and follow the instructions below') }} -</p>
                     <ol class="d-flex flex-column __gap-5px __instructions">
                         <li>{{ translate('Go to your Firebase project.') }}</li>
                         <li>{{ translate('Navigate to the Build menu from the left sidebar and select Authentication.') }}</li>

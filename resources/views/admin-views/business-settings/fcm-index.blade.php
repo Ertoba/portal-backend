@@ -85,6 +85,8 @@
                                 data-filter="module_type"
                                 title="{{translate('messages.select_modules')}}">
                                     @foreach (config('module.module_type') as $module)
+                                        @continue($module === 'rental' && !addon_published_status('Rental'))
+                                        @continue($module === 'ride-share' && !addon_published_status('RideShare'))
                                         <option
                                             value="{{$module}}" {{$mod_type == $module?'selected':''}}>
                                             {{ucfirst(translate($module))}}
@@ -792,11 +794,288 @@
                                         </div>
                                         <input type="hidden" name="lang[]" value="{{$lang}}">
                                         <input type="hidden" name="module_type" value="{{$mod_type}}">
+
+                                        <div class="col-12">
+                                            @php($mor = \App\Models\NotificationMessage::with('translations')->where('key', 'monthly_order_reminder')->first())
+                                            @php($monthly_order_reminder_days_before = \App\CentralLogics\Helpers::get_business_settings('monthly_order_reminder_days_before') ?? 3)
+                                            @php($monthly_order_reminder_before_unit = \App\CentralLogics\Helpers::get_business_settings('monthly_order_reminder_before_unit') ?? 'day')
+                                            <?php
+                                                $translate_mor = [];
+                                                if (isset($mor->translations) && count($mor->translations)) {
+                                                    foreach ($mor->translations as $t) {
+                                                        if ($t->locale == $lang && $t->key == 'monthly_order_reminder') {
+                                                            $translate_mor[$lang]['message'] = $t->value;
+                                                        }
+                                                    }
+                                                }
+                                            ?>
+                                            <h5 class="mb-3">{{ translate('messages.Monthly Order Notification') }}</h5>
+                                            <div class="row g-3 align-items-end">
+                                                <div class="col-lg-6">
+                                                    <div class="form-group mb-0">
+                                                        <div class="d-flex flex-wrap justify-content-between mb-2">
+                                                            <span class="d-block form-label">
+                                                                {{translate('messages.Monthly Order Reminder Message')}} ({{ strtoupper($lang) }})
+                                                            </span>
+                                                            @if ($lang == 'en')
+                                                                <label class="switch--custom-label toggle-switch d-flex align-items-center mb-0"
+                                                                        for="monthly_order_reminder_status">
+                                                                    <input type="checkbox"
+                                                                           class="status toggle-switch-input add-required-attribute"
+                                                                           name="monthly_order_reminder_status"
+                                                                           data-textarea-name="monthly_order_reminder"
+                                                                           value="1"
+                                                                           id="monthly_order_reminder_status" {{ $mor ? ($mor['status'] == 1 ? 'checked' : '') : '' }}>
+                                                                    <span class="toggle-switch-label">
+                                                                        <span class="toggle-switch-indicator"></span>
+                                                                        </span>
+                                                                </label>
+
+                                                            @endif
+                                                        </div>
+
+                                                        <textarea name="monthly_order_reminder[]" placeholder="{{translate('Write your message')}}" class="form-control monthly_order_reminder">{!! (isset($translate_mor) && isset($translate_mor[$lang])) ? $translate_mor[$lang]['message'] : ($mor ? $mor['message'] : '') !!}</textarea>
+                                                    </div>
+                                                </div>
+                                                @if ($lang == 'en')
+                                                <div class="col-lg-6">
+                                                    <div class="form-group mb-0">
+                                                        <label class="d-block form-label">
+                                                            {{ translate('messages.Send Reminder Before') }}
+                                                        </label>
+                                                        <div class="d-flex border rounded overflow-hidden">
+                                                            <input type="number" name="monthly_order_reminder_days_before" class="form-control rounded-0 border-0"
+                                                                value="{{ $monthly_order_reminder_days_before }}" min="1" placeholder="{{ translate('messages.Ex: 3') }}">
+                                                            <select name="monthly_order_reminder_before_unit"
+                                                                class="custom-select rounded-0 border-0 bg-modal-btn form-control w-90px">
+                                                                <option value="day" {{ $monthly_order_reminder_before_unit == 'day' ? 'selected' : '' }}>{{ translate('messages.Day') }}</option>
+                                                                <option value="week" {{ $monthly_order_reminder_before_unit == 'week' ? 'selected' : '' }}>{{ translate('messages.Week') }}</option>
+                                                                <option value="month" {{ $monthly_order_reminder_before_unit == 'month' ? 'selected' : '' }}>{{ translate('messages.Month') }}</option>
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                @endif
+                                            </div>
+                                        </div>
+
+                                        @if (\App\CentralLogics\Helpers::get_business_settings('pro_member_status') == 1)
+                                        @php($ser = \App\Models\NotificationMessage::with('translations')->where('key', 'subscription_expire_reminder')->first())
+                                        @php($sa = \App\Models\NotificationMessage::with('translations')->where('key', 'subscription_activated')->first())
+                                        @php($se = \App\Models\NotificationMessage::with('translations')->where('key', 'subscription_expired')->first())
+                                        @php($sc = \App\Models\NotificationMessage::with('translations')->where('key', 'subscription_canceled')->first())
+                                        <?php
+                                            $translate_ser = [];
+                                            if (isset($ser->translations) && count($ser->translations)) {
+                                                foreach ($ser->translations as $t) {
+                                                    if ($t->locale == $lang && $t->key == 'subscription_expire_reminder') {
+                                                        $translate_ser[$lang]['message'] = $t->value;
+                                                    }
+                                                }
+                                            }
+                                            $translate_sa = [];
+                                            if (isset($sa->translations) && count($sa->translations)) {
+                                                foreach ($sa->translations as $t) {
+                                                    if ($t->locale == $lang && $t->key == 'subscription_activated') {
+                                                        $translate_sa[$lang]['message'] = $t->value;
+                                                    }
+                                                }
+                                            }
+                                            $translate_se = [];
+                                            if (isset($se->translations) && count($se->translations)) {
+                                                foreach ($se->translations as $t) {
+                                                    if ($t->locale == $lang && $t->key == 'subscription_expired') {
+                                                        $translate_se[$lang]['message'] = $t->value;
+                                                    }
+                                                }
+                                            }
+                                            $translate_sc = [];
+                                            if (isset($sc->translations) && count($sc->translations)) {
+                                                foreach ($sc->translations as $t) {
+                                                    if ($t->locale == $lang && $t->key == 'subscription_canceled') {
+                                                        $translate_sc[$lang]['message'] = $t->value;
+                                                    }
+                                                }
+                                            }
+                                        ?>
+                                        <div class="col-12 mt-4" id="subscription-notification-{{ $lang }}">
+                                            <div class="bg-light rounded p-3 p-xxl-20">
+                                                <h4 class="mb-3">{{ translate('messages.Subscription notification') }} ({{ strtoupper($lang) }})</h4>
+                                                <div class="row g-3">
+                                                    {{-- Subscription Expire Reminder --}}
+                                                    <div class="col-12">
+                                                        <div class="bg-white rounded p-3 p-xxl-20">
+                                                            <div class="d-flex align-items-center justify-content-between gap-2 flex-sm-nowrap flex-wrap mb-3">
+                                                                <div>
+                                                                    <h4 class="mb-1">{{ translate('messages.Subscription Expire Reminder') }}</h4>
+                                                                    <p class="fs-12 m-0">{{ translate('messages.Configure the messages of automatic reminder for customers before expire their subscription') }}</p>
+                                                                </div>
+                                                                @if ($lang == 'en')
+                                                                <div class="d-flex align-items-center gap-2 flex-wrap">
+                                                                    @if ($subscription_reminder_enabled)
+                                                                        <button type="button" class="btn btn--primary" data-toggle="modal" data-target="#subscriptionSchedulerModal">{{ translate('messages.Check_Dependencies') }}</button>
+                                                                    @endif
+                                                                    <label class="switch--custom-label toggle-switch d-flex align-items-center mb-0" for="subscription_expire_reminder_status">
+                                                                        <input type="checkbox"
+                                                                               data-id="subscription_expire_reminder_status"
+                                                                               data-type="toggle"
+                                                                               data-image-on="{{ asset('/public/assets/admin/img/modal/schedule-on.png') }}"
+                                                                               data-image-off="{{ asset('/public/assets/admin/img/modal/schedule-off.png') }}"
+                                                                               data-title-on="{{ translate('By Turning ON Notification Message For') }} <strong>{{ translate('messages.Subscription Expire Reminder') }}</strong>"
+                                                                               data-title-off="{{ translate('By Turning OFF Notification Message For') }} <strong>{{ translate('messages.Subscription Expire Reminder') }}</strong>"
+                                                                               data-text-on="<p>{{ translate('Customer will receive a proper notification message for this event') }}</p>"
+                                                                               data-text-off="<p>{{ translate('Customer will not receive any notification message for this event') }}</p>"
+                                                                               class="status toggle-switch-input dynamic-checkbox-toggle"
+                                                                               name="subscription_expire_reminder_status"
+                                                                               data-textarea-name="subscription_expire_reminder"
+                                                                               value="1"
+                                                                               id="subscription_expire_reminder_status" {{ $ser ? ($ser['status'] == 1 ? 'checked' : '') : '' }}>
+                                                                        <span class="toggle-switch-label">
+                                                                            <span class="toggle-switch-indicator"></span>
+                                                                        </span>
+                                                                    </label>
+                                                                </div>
+                                                                @endif
+                                                            </div>
+                                                            <div class="row g-3 align-items-end">
+                                                                <div class="col-lg-6">
+                                                                    <div class="form-group mb-0">
+                                                                        <label class="d-block form-label">
+                                                                            {{ translate('messages.Expire Reminder Message') }} ({{ strtoupper($lang) }})
+                                                                        </label>
+                                                                        <textarea name="subscription_expire_reminder[]" class="form-control min-h-45px subscription_expire_reminder" rows="1"
+                                                                            placeholder="{{ translate('messages.Your subscription expires in 2 days. Please renew.') }}">{!! (isset($translate_ser) && isset($translate_ser[$lang])) ? $translate_ser[$lang]['message'] : '' !!}</textarea>
+                                                                    </div>
+                                                                </div>
+                                                                @if ($lang == 'en')
+                                                                <div class="col-lg-6">
+                                                                    <div class="form-group mb-0">
+                                                                        <label class="d-block form-label">
+                                                                            {{ translate('messages.Send reminder before Expire') }}
+                                                                        </label>
+                                                                        <div class="d-flex border rounded overflow-hidden">
+                                                                            <input type="number" name="subscription_reminder_before_time" class="form-control rounded-0 border-0"
+                                                                                value="{{ $subscription_reminder_before_time ?? 0 }}" min="0" placeholder="{{ translate('messages.Ex: 3') }}">
+                                                                            <select name="subscription_reminder_before"
+                                                                                class="custom-select rounded-0 border-0 bg-modal-btn form-control w-90px">
+                                                                                <option value="hour" {{ ($subscription_reminder_before ?? 'days') == 'hour' ? 'selected' : '' }}>{{ translate('messages.Hour') }}</option>
+                                                                                <option value="days" {{ ($subscription_reminder_before ?? 'days') == 'days' ? 'selected' : '' }}>{{ translate('messages.Days') }}</option>
+                                                                            </select>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                                @endif
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    {{-- Subscription Activated --}}
+                                                    <div class="col-lg-6">
+                                                        <div class="form-group mb-0">
+                                                            <div class="d-flex flex-wrap justify-content-between mb-2">
+                                                                <span class="d-block form-label">
+                                                                    {{ translate('messages.Subscription Activated message') }} ({{ strtoupper($lang) }})
+                                                                </span>
+                                                                @if ($lang == 'en')
+                                                                <label class="switch--custom-label toggle-switch d-flex align-items-center mb-0" for="subscription_activated_status">
+                                                                    <input type="checkbox"
+                                                                           data-id="subscription_activated_status"
+                                                                           data-type="toggle"
+                                                                           data-image-on="{{ asset('/public/assets/admin/img/modal/crown_on.png') }}"
+                                                                           data-image-off="{{ asset('/public/assets/admin/img/modal/crown_off.png') }}"
+                                                                           data-title-on="{{ translate('By Turning ON Notification Message For') }} <strong>{{ translate('messages.Subscription Activated message') }}</strong>"
+                                                                           data-title-off="{{ translate('By Turning OFF Notification Message For') }} <strong>{{ translate('messages.Subscription Activated message') }}</strong>"
+                                                                           data-text-on="<p>{{ translate('Customer will receive a proper notification message for this event') }}</p>"
+                                                                           data-text-off="<p>{{ translate('Customer will not receive any notification message for this event') }}</p>"
+                                                                           class="status toggle-switch-input dynamic-checkbox-toggle"
+                                                                           name="subscription_activated_status"
+                                                                           data-textarea-name="subscription_activated"
+                                                                           value="1"
+                                                                           id="subscription_activated_status" {{ $sa ? ($sa['status'] == 1 ? 'checked' : '') : '' }}>
+                                                                    <span class="toggle-switch-label">
+                                                                        <span class="toggle-switch-indicator"></span>
+                                                                    </span>
+                                                                </label>
+                                                                @endif
+                                                            </div>
+                                                            <textarea name="subscription_activated[]" placeholder="{{ translate('messages.Ex : Subscription activated successfully') }}" class="form-control subscription_activated">{!! (isset($translate_sa) && isset($translate_sa[$lang])) ? $translate_sa[$lang]['message'] : '' !!}</textarea>
+                                                        </div>
+                                                    </div>
+
+                                                    {{-- Subscription Expired --}}
+                                                    <div class="col-lg-6">
+                                                        <div class="form-group mb-0">
+                                                            <div class="d-flex flex-wrap justify-content-between mb-2">
+                                                                <span class="d-block form-label">
+                                                                    {{ translate('messages.Subscription Expire Message') }} ({{ strtoupper($lang) }})
+                                                                </span>
+                                                                @if ($lang == 'en')
+                                                                <label class="switch--custom-label toggle-switch d-flex align-items-center mb-0" for="subscription_expired_status">
+                                                                    <input type="checkbox"
+                                                                           data-id="subscription_expired_status"
+                                                                           data-type="toggle"
+                                                                           data-image-on="{{ asset('/public/assets/admin/img/modal/status-on.png') }}"
+                                                                           data-image-off="{{ asset('/public/assets/admin/img/modal/status-off.png') }}"
+                                                                           data-title-on="{{ translate('By Turning ON Notification Message For') }} <strong>{{ translate('messages.Subscription Expire Message') }}</strong>"
+                                                                           data-title-off="{{ translate('By Turning OFF Notification Message For') }} <strong>{{ translate('messages.Subscription Expire Message') }}</strong>"
+                                                                           data-text-on="<p>{{ translate('Customer will receive a proper notification message for this event') }}</p>"
+                                                                           data-text-off="<p>{{ translate('Customer will not receive any notification message for this event') }}</p>"
+                                                                           class="status toggle-switch-input dynamic-checkbox-toggle"
+                                                                           name="subscription_expired_status"
+                                                                           data-textarea-name="subscription_expired"
+                                                                           value="1"
+                                                                           id="subscription_expired_status" {{ $se ? ($se['status'] == 1 ? 'checked' : '') : '' }}>
+                                                                    <span class="toggle-switch-label">
+                                                                        <span class="toggle-switch-indicator"></span>
+                                                                    </span>
+                                                                </label>
+                                                                @endif
+                                                            </div>
+                                                            <textarea name="subscription_expired[]" placeholder="{{ translate('messages.Ex : Your Subscription has been expired ') }}" class="form-control subscription_expired">{!! (isset($translate_se) && isset($translate_se[$lang])) ? $translate_se[$lang]['message'] : '' !!}</textarea>
+                                                        </div>
+                                                    </div>
+
+                                                    {{-- Subscription Canceled --}}
+                                                    <div class="col-lg-6">
+                                                        <div class="form-group mb-0">
+                                                            <div class="d-flex flex-wrap justify-content-between mb-2">
+                                                                <span class="d-block form-label">
+                                                                    {{ translate('messages.Subscription Canceled message') }} ({{ strtoupper($lang) }})
+                                                                </span>
+                                                                @if ($lang == 'en')
+                                                                <label class="switch--custom-label toggle-switch d-flex align-items-center mb-0" for="subscription_canceled_status">
+                                                                    <input type="checkbox"
+                                                                           data-id="subscription_canceled_status"
+                                                                           data-type="toggle"
+                                                                           data-image-on="{{ asset('/public/assets/admin/img/modal/status-on.png') }}"
+                                                                           data-image-off="{{ asset('/public/assets/admin/img/modal/status-off.png') }}"
+                                                                           data-title-on="{{ translate('By Turning ON Notification Message For') }} <strong>{{ translate('messages.Subscription Canceled message') }}</strong>"
+                                                                           data-title-off="{{ translate('By Turning OFF Notification Message For') }} <strong>{{ translate('messages.Subscription Canceled message') }}</strong>"
+                                                                           data-text-on="<p>{{ translate('Customer will receive a proper notification message for this event') }}</p>"
+                                                                           data-text-off="<p>{{ translate('Customer will not receive any notification message for this event') }}</p>"
+                                                                           class="status toggle-switch-input dynamic-checkbox-toggle"
+                                                                           name="subscription_canceled_status"
+                                                                           data-textarea-name="subscription_canceled"
+                                                                           value="1"
+                                                                           id="subscription_canceled_status" {{ $sc ? ($sc['status'] == 1 ? 'checked' : '') : '' }}>
+                                                                    <span class="toggle-switch-label">
+                                                                        <span class="toggle-switch-indicator"></span>
+                                                                    </span>
+                                                                </label>
+                                                                @endif
+                                                            </div>
+                                                            <textarea name="subscription_canceled[]" placeholder="{{ translate('messages.Ex : Your Subscription has been canceled') }}" class="form-control subscription_canceled">{!! (isset($translate_sc) && isset($translate_sc[$lang])) ? $translate_sc[$lang]['message'] : '' !!}</textarea>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        @endif
                                     </div>
                                 </div>
                                 @endforeach
                             @endif
-                            <div class="btn--container justify-content-end">
+                            <div class="btn--container justify-content-end mt-4">
                                 <button type="reset" class="btn btn--reset">{{translate('messages.reset')}}</button>
                                 <button type="submit" class="btn btn--primary">{{translate('messages.submit')}}</button>
                             </div>
@@ -863,4 +1142,103 @@
         </div>
 
     </div>
+
+    @if ($subscription_reminder_enabled)
+        <?php
+            $subscriptionCronLine = '* * * * * cd ' . base_path() . ' && php artisan schedule:run >> /dev/null 2>&1';
+            $subscriptionSchedulerSupervisor = "[program:6ammart-scheduler]\n"
+                . "process_name=%(program_name)s\n"
+                . "command=php " . base_path('artisan') . " schedule:work\n"
+                . "autostart=true\n"
+                . "autorestart=true\n"
+                . "user=www-data\n"
+                . "numprocs=1\n"
+                . "redirect_stderr=true\n"
+                . "stdout_logfile=" . storage_path('logs/scheduler.log') . "\n"
+                . "stopwaitsecs=60";
+        ?>
+
+        <div class="modal" id="subscriptionSchedulerModal" tabindex="-1" role="dialog" aria-labelledby="subscriptionSchedulerModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="subscriptionSchedulerModalLabel">{{ translate('Subscription Reminder Scheduler Dependency') }}</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <p class="fs-13 mb-3">
+                            {{ translate('Laravel\'s scheduler runs customer-subscription:reminder based on the unit you selected (minute / hour / day). The command finds Pro customers whose subscription will expire within the configured window and sends them a push notification. Pick ONE launcher for the scheduler.') }}
+                        </p>
+                        <p class="fs-12 mb-3">
+                            <span class="badge badge-soft-primary">
+                                {{ translate('messages.Send reminder before Expire') }}: {{ $subscription_reminder_before_time }}
+                                @switch($subscription_reminder_before)
+                                    @case('hour') {{ translate('messages.Hour') }} @break
+                                    @case('min')  {{ translate('messages.Minute') }} @break
+                                    @default      {{ translate('messages.Days') }}
+                                @endswitch
+                            </span>
+                        </p>
+
+                        <div class="bg-light rounded p-3 mb-3">
+                            <h6 class="mb-2">{{ translate('Option 1 — Cron drives the scheduler') }}</h6>
+                            <p class="fs-12 mb-2">
+                                {{ translate('Add this single line to your server crontab. Cron will trigger schedule:run every minute and Laravel decides when the subscription reminder fires.') }}
+                            </p>
+                            <div class="input--group input-group">
+                                <input type="text" value="{{ $subscriptionCronLine }}" class="form-control" id="subscriptionCronCommand" readonly>
+                                <button type="button" class="btn btn-primary subscriptionCronCopy">{{ translate('Copy') }}</button>
+                            </div>
+                        </div>
+
+                        <div class="bg-light rounded p-3 mb-0">
+                            <h6 class="mb-2">{{ translate('Option 2 — Supervisor drives the scheduler (no cron)') }}</h6>
+                            <p class="fs-12 mb-2">
+                                {{ translate('Use this if you can\'t install a cron entry. Supervisor keeps schedule:work alive; it internally invokes schedule:run every 60 seconds.') }}
+                            </p>
+                            <textarea class="form-control mb-2" id="subscriptionSchedulerSupervisorBlock" rows="10" readonly>{{ $subscriptionSchedulerSupervisor }}</textarea>
+                            <button type="button" class="btn btn-primary subscriptionSchedulerSupervisorCopy">{{ translate('Copy') }}</button>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">{{ translate('Close') }}</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
 @endsection
+
+@push('script_2')
+    <script>
+        "use strict";
+        $(function () {
+            function copySubscriptionEl(id) {
+                var el = document.getElementById(id);
+                if (!el) return;
+                el.select();
+                el.setSelectionRange(0, 99999);
+                try {
+                    document.execCommand("copy");
+                    toastr.success('{{ translate('Copied to clipboard!') }}');
+                } catch (err) {
+                    if (navigator.clipboard) {
+                        navigator.clipboard.writeText(el.value).then(function () {
+                            toastr.success('{{ translate('Copied to clipboard!') }}');
+                        });
+                    }
+                }
+            }
+            $(document).on('click', '.subscriptionCronCopy', function (e) {
+                e.preventDefault();
+                copySubscriptionEl('subscriptionCronCommand');
+            });
+            $(document).on('click', '.subscriptionSchedulerSupervisorCopy', function (e) {
+                e.preventDefault();
+                copySubscriptionEl('subscriptionSchedulerSupervisorBlock');
+            });
+        });
+    </script>
+@endpush

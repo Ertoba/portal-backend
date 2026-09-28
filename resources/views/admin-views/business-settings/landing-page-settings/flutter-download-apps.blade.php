@@ -54,7 +54,7 @@
             @php($download_user_app_image=\App\Models\DataSetting::withoutGlobalScope('translate')->where('type','flutter_landing_page')->where('key','download_user_app_image')->first())
             @php($download_user_app_links = \App\Models\DataSetting::withoutGlobalScope('translate')->where(['key'=>'download_user_app_links','type'=>'flutter_landing_page'])->first())
             @php($download_user_app_links = isset($download_user_app_links->value)?json_decode($download_user_app_links->value, true):null)
-            <form action="{{ route('admin.business-settings.flutter-landing-page-settings', 'download-app-section') }}" method="POST" enctype="multipart/form-data">
+            <form action="{{ route('admin.business-settings.flutter-landing-page-settings-update', 'download-app-section') }}" method="POST" enctype="multipart/form-data">
                 @csrf
                 <h5 class="card-title mb-3 mt-3">
                     <span class="card-header-icon mr-2"><i class="tio-settings-outlined"></i></span> <span>{{translate('Download User App Section Content')}}</span>
@@ -179,26 +179,17 @@
                                 </label>
                             </div>
                         </div>
-                        <div class="row g-3 mt-3">
-                            <div class="col-md-6">
-                                <h5 class="card-title mb-2">
-                                    <img src="{{asset('public/assets/admin/img/playstore.png')}}" class="mr-2" alt="">
-                                    {{translate('Playstore Button')}}
-                                </h5>
-                                <div class="__bg-F8F9FC-card">
-                                    <div class="form-group mb-md-0">
-                                        <div class="d-flex justify-content-between align-items-center mb-2">
-                                            <label   for="playstore_url" class="form-label text-capitalize m-0">
-                                                {{translate('Download Link')}}
-                                                <span class="input-label-secondary text--title" data-toggle="tooltip" data-placement="right" data-original-title="{{ translate('When_disabled,_the_Play_Store_download_button_will_be_hidden_from_the_landing_page') }}">
-                                                    <i class="tio-info-outined"></i>
-                                                </span>
-                                            </label>
+                        <div class="__bg-F8F9FC-card mt-3">
+                            <div class="row g-3 ">
+                                <div class="col-md-6">
+                                    <div class="bg-white runded p-3">
+                                        <div class="d-flex mb-2 align-items-center gap-2 flex-wrap justify-content-between">
+                                            <h5 class="card-title mb-0">
+                                                <img src="{{asset('public/assets/admin/img/playstore.png')}}" class="mr-2" alt="">
+                                                {{translate('Playstore Button')}}
+                                            </h5>
                                             <label class="toggle-switch toggle-switch-sm m-0">
                                                 <input type="checkbox" name="playstore_url_status"
-
-
-
                                                        id="play-store-dm-status"
                                                        data-id="play-store-dm-status"
                                                        data-type="toggle"
@@ -207,34 +198,29 @@
                                                        data-title-on="{{ translate('Want_to_enable_the_Play_Store_button_for_User_App?') }}"
                                                        data-title-off="{{ translate('Want_to_disable_the_Play_Store_button_for_User_App?') }}"
                                                        data-text-on="<p>{{ translate('If_enabled,_the_User_app_download_button_will_be_visible_on_the_Landing_page.') }}</p>"
-                                                       data-text-off="<p>{{ translate('If_disabled,_this_button_will_be_hidden_from_the_landing_page.')}}</p>"
+                                                       data-text-off="<p>{{ translate('If_disabled,_this_button_will_be_hidden_from_the_landing_page.') }}</p>"
                                                        class="status toggle-switch-input dynamic-checkbox-toggle"
-
-                                                       value="1" {{(isset($download_user_app_links) && $download_user_app_links['playstore_url_status'])?'checked':''}}>
+                                                       value="1" {{(isset($download_user_app_links) && $download_user_app_links['playstore_url_status']) ? 'checked' : ''}}>
                                                 <span class="toggle-switch-label text mb-0">
                                                     <span class="toggle-switch-indicator"></span>
                                                 </span>
                                             </label>
                                         </div>
-                                        <input id="playstore_url" type="text" placeholder="{{translate('Ex: https://play.google.com/store/apps')}}" class="form-control h--45px" name="playstore_url" value="{{ $download_user_app_links['playstore_url']?? ''}}">
+                                        <div class="__bg-F8F9FC-card">
+                                            @include('admin-views.business-settings.landing-page-settings.partials._app-download-link-status', [
+                                                'isConfigured' => \App\CentralLogics\Helpers::get_business_settings('app_url_android'),
+                                            ])
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                            <div class="col-md-6">
-                                <h5 class="card-title mb-2">
-                                    <img src="{{asset('public/assets/admin/img/ios.png')}}" class="mr-2" alt="">
-                                    {{translate('App Store Button')}}
-                                </h5>
-                                <div class="__bg-F8F9FC-card">
-                                    <div class="form-group mb-md-0">
-                                        <div class="d-flex justify-content-between align-items-center mb-2">
-                                            <label for="apple_store_url" class="form-label text-capitalize m-0">
-                                                {{translate('Download Link')}}
-                                                <span class="input-label-secondary text--title" data-toggle="tooltip" data-placement="right" data-original-title="{{ translate('When_disabled,_the_App_Store_download_button_will_be_hidden_from_the_landing_page') }}">
-                                                    <i class="tio-info-outined"></i>
-                                                </span>
-                                            </label>
-                                            <label  class="toggle-switch toggle-switch-sm m-0">
+                                <div class="col-md-6 ">
+                                    <div class="bg-white runded p-3">
+                                        <div class="d-flex mb-2 align-items-center gap-2 flex-wrap justify-content-between">
+                                            <h5 class="card-title mb-0">
+                                                <img src="{{asset('public/assets/admin/img/ios.png')}}" class="mr-2" alt="">
+                                                {{translate('App Store Button')}}
+                                            </h5>
+                                            <label class="toggle-switch toggle-switch-sm m-0">
                                                 <input type="checkbox" name="apple_store_url_status"
                                                        id="apple-dm-status"
                                                        data-id="apple-dm-status"
@@ -246,14 +232,17 @@
                                                        data-text-on="<p>{{ translate('if_enabled,_the_user_app_download_button_will_be_visible_on_the_landing_page.') }}</p>"
                                                        data-text-off="<p>{{ translate('if_disabled,_this_button_will_be_hidden_from_the_landing_page.') }}</p>"
                                                        class="status toggle-switch-input dynamic-checkbox-toggle"
-                                                       value="1"
-                                                    {{(isset($download_user_app_links) && $download_user_app_links['apple_store_url_status'])?'checked':''}}>
+                                                       value="1" {{(isset($download_user_app_links) && $download_user_app_links['apple_store_url_status']) ? 'checked' : ''}}>
                                                 <span class="toggle-switch-label text mb-0">
                                                     <span class="toggle-switch-indicator"></span>
                                                 </span>
                                             </label>
                                         </div>
-                                        <input id="apple_store_url" type="text" placeholder="{{translate('Ex: https://www.apple.com/app-store/')}}" class="form-control h--45px" name="apple_store_url" value="{{ $download_user_app_links['apple_store_url'] ?? ''}}">
+                                        <div class="__bg-F8F9FC-card">
+                                            @include('admin-views.business-settings.landing-page-settings.partials._app-download-link-status', [
+                                                'isConfigured' => \App\CentralLogics\Helpers::get_business_settings('app_url_ios'),
+                                            ])
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -279,4 +268,3 @@
     <!-- How it Works -->
     @include('admin-views.business-settings.landing-page-settings.partial.how-it-work-flutter')
 @endsection
-

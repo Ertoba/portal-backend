@@ -17,11 +17,8 @@
                         <div class="col-lg-4 col-md-6">
                             <label class="form-label">{{ translate('Date Range') }}</label>
                             <div class="position-relative">
-                                @php
-                                    $dataRange = Carbon\Carbon::parse($startDate)->format('m/d/Y') . ' - ' . Carbon\Carbon::parse($endDate)->format('m/d/Y');
-                                @endphp
                                 <i class="tio-calendar-month icon-absolute-on-right"></i>
-                                <input type="text" data-title="{{ translate('Select_Date_Range') }}" name="dates" value="{{ $dataRange  ?? null }}" class="date-range-picker form-control">
+                                <input type="text" data-title="{{ translate('Select_Date_Range') }}" name="dates" value="{{ $dateRange ?? null }}" class="date-range-picker form-control">
                             </div>
                         </div>
                         <div class="col-lg-4 col-md-6">
@@ -29,7 +26,7 @@
                             <select name="store_id" data-placeholder="{{ translate('Select Vendor') }}"
                                 class="js-data-example-ajax form-control  custom-select custom-select-color border rounded w-100">
                                 @if (isset($store))
-                                    <option value="{{ $store->id }}" selected>{{ $store->name }}</option>
+                                    <option value="{{ $store->id }}" data-verified="{{ (int) $store->verified_seller }}" selected>{{ $store->name }}</option>
                                 @else
                                     <option value="all" selected>{{ translate('messages.all_vendors') }}</option>
                                 @endif
@@ -94,7 +91,7 @@
                                 <button type="submit" class="btn btn--secondary"><i class="tio-search"></i></button>
                             </div>
                         </form>
-                        @if (request()->get('search'))
+                        @if (request()->input('search'))
                             <button type="reset" class="btn btn--primary ml-2 location-reload-to-base"
                                 data-url="{{ url()->full() }}">{{ translate('messages.reset') }}</button>
                         @endif

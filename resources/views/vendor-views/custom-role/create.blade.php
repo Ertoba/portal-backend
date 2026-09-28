@@ -218,6 +218,23 @@
                                                     <label class="form-check-label qcont text-dark" for="banner">{{translate('messages.Banner')}}</label>
                                                 </div>
                                             </div>
+
+                                             @if (
+                                                addon_published_status('ReelsModule')
+                                                && \App\CentralLogics\Helpers::get_business_settings('vendor_can_upload_reels')
+                                                && \Modules\ReelsModule\Support\ReelModuleConfig::isAllowedType(\App\CentralLogics\Helpers::get_store_data()?->module?->module_type)
+                                                )
+                                            <div class="check-item p-2">
+                                                <div class="form-group form-check form--check m-0">
+                                                    <input type="checkbox" name="modules[]" value="reels" class="form-check-input rounded"
+                                                            id="reels">
+                                                    <label class="form-check-label qcont text-dark" for="reels">{{translate('messages.reels')}}</label>
+                                                </div>
+                                            </div>
+
+                                            @endif
+
+
                                         </div>
                                     </div>
                                 </div>

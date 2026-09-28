@@ -7,7 +7,7 @@ use Modules\ReelsModule\Http\Controllers\Vendor\ReelController as VendorReelCont
 Route::group([
     'prefix' => 'admin/reels',
     'as' => 'admin.reels.',
-    'middleware' => ['admin', 'module:reels', 'current-module', 'actch:admin_panel'],
+    'middleware' => ['admin', 'module:reels', 'current-module', 'mili.feature:admin_panel'],
 ], function () {
     Route::get('/', [ReelController::class, 'index'])->name('index');
     Route::get('/items', [ReelController::class, 'items'])->name('items');
@@ -22,7 +22,7 @@ Route::group([
 Route::group([
     'prefix' => 'vendor-panel/reels',
     'as' => 'vendor.reels.',
-    'middleware' => ['vendor', 'module:reels', 'actch:admin_panel'],
+    'middleware' => ['vendor', 'module:reels', 'mili.feature:admin_panel'],
 ], function () {
     Route::get('/', [VendorReelController::class, 'index'])->name('index');
     Route::get('/create', [VendorReelController::class, 'create'])->name('create');

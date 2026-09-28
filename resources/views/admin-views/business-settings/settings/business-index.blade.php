@@ -6,7 +6,6 @@
 <div class="content">
     <form class="validate-form" action="{{ route('admin.business-settings.update-setup') }}" method="post" enctype="multipart/form-data">
             @csrf
-            @php($name = \App\Models\BusinessSetting::where('key', 'business_name')->first())
         <div class="container-fluid">
             <!-- Page Header -->
             <div class="page-header">
@@ -39,70 +38,24 @@
                             <div
                                 class="maintenance-mode-toggle-bar d-flex flex-wrap justify-content-between border rounded align-items-center py-2 px-3">
                                 @php($config = \App\CentralLogics\Helpers::get_business_settings('maintenance_mode'))
+                                <?php
+                                $maintenance_mode_data = \App\Models\DataSetting::where('type', 'maintenance_mode')
+                                    ->whereIn('key', ['maintenance_system_setup', 'maintenance_duration_setup', 'maintenance_message_setup'])
+                                    ->pluck('value', 'key')
+                                    ->map(fn($v) => json_decode($v, true))
+                                    ->toArray();
+                                $selectedMaintenanceSystem   = data_get($maintenance_mode_data, 'maintenance_system_setup', []);
+                                $selectedMaintenanceDuration = data_get($maintenance_mode_data, 'maintenance_duration_setup', []);
+                                $selectedMaintenanceMessage  = data_get($maintenance_mode_data, 'maintenance_message_setup', []);
+                                ?>
                                 <h5 class="text-capitalize m-0 font-weight-normal fs-14 text-dark">
                                     {{ translate('maintenance_mode') }}
                                 </h5>
                                 <label class="toggle-switch toggle-switch-sm">
                                     <input type="checkbox"
-                                    data-id="maintenance_mode"
-                                    data-type="toggle"
-                                    data-image-on="{{ asset('/public/assets/admin/img/modal/info-warning.png') }}"
-                                    data-image-off="{{ asset('/public/assets/admin/img/modal/info-warning.png') }}"
-                                    data-title-on="{{ translate('Are you sure to enable Maintenance Mode?') }}"
-                                    data-title-off="{{ translate('Are you sure to disable Maintenance Mode?') }}"
-                                    data-text-on="{{ translate('This will temporarily disable the selected systems at the scheduled date and time. You can turn it off anytime after maintenance is complete.') }}"
-                                    data-text-off="{{ translate('This will make your app and website live. Customers will be able to browse your services and place orders again.') }}"
-                                    data-footer-text-on="<div class='text-info'>{{ translate('Note : Don’t forget to save the information before leaving this page.') }}</div>"
-                                    data-footer-text-off="<div class='text-info'>{{ translate('Note : Don’t forget to save the information before leaving this page.') }}</div>"
-                                    class="status toggle-switch-input dynamic-checkbox-toggle"
-                                    id="maintenance_mode"
-                                    {{ isset($config) && $config ? 'checked' : '' }}>
-                                    <span class="toggle-switch-label text mb-0">
-                                        <span class="toggle-switch-indicator"></span>
-                                    </span>
-                                </label>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            @php($websiteTestModeStatus = \App\CentralLogics\Helpers::get_business_settings('website_test_mode_status'))
-            @php($websiteTestModeMessage = \App\CentralLogics\Helpers::get_business_settings('website_test_mode_message') ?? 'ვებგვერდი სატესტო რეჟიმშია!')
-            <div class="card mb-3" id="website_test_mode_section">
-                <div class="card-header">
-                    <div>
-                        <h3 class="mb-1">{{ translate('messages.website_test_mode_banner') }}</h3>
-                        <p class="mb-0 fs-12">{{ translate('messages.website_test_mode_banner_hint') }}</p>
-                    </div>
-                </div>
-                <div class="card-body">
-                    <div class="row g-3 align-items-center">
-                        <div class="col-lg-8">
-                            <label class="form-label" for="website_test_mode_message">
-                                {{ translate('messages.website_test_mode_message') }}
-                            </label>
-                            <input
-                                id="website_test_mode_message"
-                                type="text"
-                                name="website_test_mode_message"
-                                value="{{ old('website_test_mode_message', $websiteTestModeMessage) }}"
-                                class="form-control"
-                                maxlength="160"
-                                placeholder="ვებგვერდი სატესტო რეჟიმშია!">
-                        </div>
-                        <div class="col-lg-4">
-                            <div class="maintenance-mode-toggle-bar d-flex flex-wrap justify-content-between border rounded align-items-center py-2 px-3">
-                                <h5 class="text-capitalize m-0 font-weight-normal fs-14 text-dark">
-                                    {{ translate('messages.website_test_mode_status') }}
-                                </h5>
-                                <input type="hidden" name="website_test_mode_status" value="0">
-                                <label class="toggle-switch toggle-switch-sm mb-0">
-                                    <input
-                                        type="checkbox"
-                                        name="website_test_mode_status"
-                                        value="1"
-                                        class="toggle-switch-input"
-                                        {{ old('website_test_mode_status', $websiteTestModeStatus) ? 'checked' : '' }}>
+                                        class="toggle-switch-input maintenance-mode-toggle"
+                                        id="maintenance_mode"
+                                        {{ isset($config) && $config ? 'checked' : '' }}>
                                     <span class="toggle-switch-label text mb-0">
                                         <span class="toggle-switch-indicator"></span>
                                     </span>
@@ -136,7 +89,7 @@
                                                         for="business_name">{{ translate('Business Name') }} <span
                                                             class="text-danger">*</span></label>
                                                     <input id="business_name" type="text" name="business_name"
-                                                        value="{{ $name->value ?? '' }}" class="form-control"
+                                                        value="{{ \App\CentralLogics\Helpers::get_business_settings('business_name', false) ?? '' }}" class="form-control"
                                                         placeholder="{{ translate('Type your business name') }}" required>
                                                 </div>
                                             </div>
@@ -1020,6 +973,318 @@
 </div>
 <div id="offcanvasOverlay" class="offcanvas-overlay"></div>
 
+
+
+<div class="modal fade" id="maintenance-off-mode-modal">
+    <div class="modal-dialog modal-dialog-centered status-warning-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal">
+                    <span aria-hidden="true" class="tio-clear"></span>
+                </button>
+            </div>
+            <form method="post" action="{{ route('admin.maintenance-mode') }}">
+                @csrf
+                <input type="hidden" name="maintenance_mode_off" value="1">
+                <div class="modal-body pb-5 pt-0">
+                    <div class="max-349 mx-auto mb-20">
+                        <div class="text-center">
+                            <img width="80" src="{{ asset('public/assets/admin/img/modal/maintenance-off.png') }}" class="mb-20" alt="">
+                            <h5 class="modal-title">{{ translate('Are you sure?') }}</h5>
+                        </div>
+                        <div class="text-center">
+                            <p>{{ translate('Do you want to turn off Maintenance mode? Turning it off will activate all systems that were deactivated.') }}</p>
+                        </div>
+                        <div class="btn--container justify-content-center">
+                            <button data-dismiss="modal" type="button" class="btn btn--cancel min-w-120px">{{ translate('Cancel') }}</button>
+                            <button type="submit" class="btn btn--primary min-w-120px">{{ translate('Yes') }}</button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="maintenance-mode-modal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header pt-3">
+                <h3>{{ translate('Maintenance Mode') }}</h3>
+                <button type="button" class="close bg-modal-btn w-30px h-30 rounded-circle position-absolute right-0 top-0 m-2 z-2" data-dismiss="modal">
+                    <span aria-hidden="true" class="tio-clear"></span>
+                </button>
+            </div>
+            <form method="post" action="{{route('admin.maintenance-mode')}}" id="maintenance-mode-form">
+                @csrf
+                <div class="modal-body pt-3 px-0">
+                    <div class="px-4 mb-20">
+                        <div class="bg-light rounded p-3">
+                            <div class="row g-3">
+                                <div class="col-xxl-6 col-lg-8 col-md-7 col-sm-6">
+                                    <div>
+                                        <p class="mb-0 fs-12">
+                                            {{ translate('Turn on the Maintenance Mode will temporarily deactivate your selected systems as of your chosen date and time.') }}
+                                        </p>
+                                    </div>
+                                </div>
+                                <div class="col-xxl-6 col-lg-4 col-md-5 col-sm-6">
+                                    <div class="maintenance-mode-toggle-bar bg-white d-flex py-2 flex-wrap justify-content-between border rounded align-items-center y-2 px-3">
+                                        <h5 class="text-capitalize m-0 font-weight-normal fs-14 text-dark">
+                                            {{ translate('maintenance_mode') }}
+                                        </h5>
+                                        <label class="toggle-switch toggle-switch-sm">
+                                            <input type="checkbox" class="toggle-switch-input" id="maintenanceModalToggle" {{ isset($config) && $config ? 'checked' : '' }}>
+                                            <span class="toggle-switch-label text mb-0">
+                                                <span class="toggle-switch-indicator"></span>
+                                            </span>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="d-flex px-4 flex-column gap-4" id="maintenanceFormBody">
+                        <div class="bg-light rounded p-20">
+                            <div class="row mb-4">
+                                <div class="col-xl-4">
+                                    <h5 class="mb-2">{{ translate('Select System') }} <span class="text-danger">*</span></h5>
+                                    <p class="fs-12">{{ translate('Select the systems you want to temporarily deactivate for maintenance') }}</p>
+                                </div>
+                                <div class="col-xl-8">
+                                    <div class="border p-3 p-sm-3 bg-white rounded system_select-inner">
+                                        <div class="d-flex flex-wrap gap-4">
+                                            <div class="form-group m-0">
+                                                <div class="custom-control custom-checkbox">
+                                                    <input type="checkbox" class="custom-control-input system-checkbox" id="allSystem"
+                                                        {{ in_array('vendor_panel', $selectedMaintenanceSystem) &&
+                                                           in_array('user_mobile_app', $selectedMaintenanceSystem) &&
+                                                           in_array('user_web_app', $selectedMaintenanceSystem) &&
+                                                           in_array('deliveryman_app', $selectedMaintenanceSystem) &&
+                                                           in_array('vendor_app', $selectedMaintenanceSystem) ? 'checked' : '' }}>
+                                                    <label class="custom-control-label" for="allSystem">
+                                                        <h5 class="mb-0 font-light lh-24 text-reset">{{ translate('All System') }}</h5>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                            <div class="form-group m-0">
+                                                <div class="custom-control custom-checkbox">
+                                                    <input type="checkbox" class="custom-control-input system-checkbox" name="user_mobile_app" id="mobile_app"
+                                                        {{ in_array('user_mobile_app', $selectedMaintenanceSystem) ? 'checked' : '' }}>
+                                                    <label class="custom-control-label" for="mobile_app">
+                                                        <h5 class="mb-0 font-light lh-24 text-reset">{{ translate('Mobile App') }}</h5>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                            <div class="form-group m-0">
+                                                <div class="custom-control custom-checkbox">
+                                                    <input type="checkbox" class="custom-control-input system-checkbox" name="user_web_app" id="web_app"
+                                                        {{ in_array('user_web_app', $selectedMaintenanceSystem) ? 'checked' : '' }}>
+                                                    <label class="custom-control-label" for="web_app">
+                                                        <h5 class="mb-0 font-light lh-24 text-reset">{{ translate('Web App') }}</h5>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                            <div class="form-group m-0">
+                                                <div class="custom-control custom-checkbox">
+                                                    <input type="checkbox" class="custom-control-input system-checkbox" name="vendor_panel" id="vendor_panel"
+                                                        {{ in_array('vendor_panel', $selectedMaintenanceSystem) ? 'checked' : '' }}>
+                                                    <label class="custom-control-label" for="vendor_panel">
+                                                        <h5 class="mb-0 font-light lh-24 text-reset">{{ translate('Vendor Panel') }}</h5>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                            <div class="form-group m-0">
+                                                <div class="custom-control custom-checkbox">
+                                                    <input type="checkbox" class="custom-control-input system-checkbox" name="vendor_app" id="vendor_app"
+                                                        {{ in_array('vendor_app', $selectedMaintenanceSystem) ? 'checked' : '' }}>
+                                                    <label class="custom-control-label" for="vendor_app">
+                                                        <h5 class="mb-0 font-light lh-24 text-reset">{{ translate('Vendor App') }}</h5>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                            <div class="form-group m-0">
+                                                <div class="custom-control custom-checkbox">
+                                                    <input type="checkbox" class="custom-control-input system-checkbox" name="deliveryman_app" id="deliveryman_app"
+                                                        {{ in_array('deliveryman_app', $selectedMaintenanceSystem) ? 'checked' : '' }}>
+                                                    <label class="custom-control-label" for="deliveryman_app">
+                                                        <h5 class="mb-0 font-light lh-24 text-reset">{{ translate('Deliveryman App') }}</h5>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                            <div class="form-group m-0">
+                                                <div class="custom-control custom-checkbox">
+                                                    <input type="checkbox" class="custom-control-input system-checkbox" name="react_website" id="react_website"
+                                                        {{ in_array('react_website', $selectedMaintenanceSystem) ? 'checked' : '' }}>
+                                                    <label class="custom-control-label" for="react_website">
+                                                        <h5 class="mb-0 font-light lh-24 text-reset">{{ translate('React Website') }}</h5>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                            @if (addon_published_status('RideShare'))
+                                            <div class="form-group m-0">
+                                                <div class="custom-control custom-checkbox">
+                                                    <input type="checkbox" class="custom-control-input system-checkbox" name="rider_app" id="rider_app"
+                                                        {{ in_array('rider_app', $selectedMaintenanceSystem) ? 'checked' : '' }}>
+                                                    <label class="custom-control-label" for="rider_app">
+                                                        <h5 class="mb-0 font-light lh-24 text-reset">{{ translate('Rider App') }}</h5>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                            @endif
+                                            @if (addon_published_status('Builder'))
+                                            <div class="form-group m-0">
+                                                <div class="custom-control custom-checkbox">
+                                                    <input type="checkbox" class="custom-control-input system-checkbox" name="vendor_storefront" id="vendor_storefront"
+                                                        {{ in_array('vendor_storefront', $selectedMaintenanceSystem) ? 'checked' : '' }}>
+                                                    <label class="custom-control-label" for="vendor_storefront">
+                                                        <h5 class="mb-0 font-light lh-24 text-reset">{{ translate('Vendor Storefront') }}</h5>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                            @endif
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="border-bottom mb-4"></div>
+                            <div class="row mb-4">
+                                <div class="col-xl-4">
+                                    <h5 class="mb-2">{{ translate('Maintenance Date') }} & {{ translate('Time') }} <span class="text-danger">*</span></h5>
+                                    <p class="fs-12">{{ translate('Choose the maintenance mode duration for your selected system.') }}</p>
+                                </div>
+                                <div class="col-xl-8">
+                                    <div class="d-flex flex-wrap gap-4 min-h-45px align-items-center bg-white border px-3 py-2 rounded mb-3">
+                                        <div class="form-check form--check">
+                                            <input class="form-check-input" type="radio" name="maintenance_duration"
+                                                    {{ isset($selectedMaintenanceDuration['maintenance_duration']) && $selectedMaintenanceDuration['maintenance_duration'] == 'one_day' ? 'checked' : '' }}
+                                                    value="one_day" id="one_day">
+                                            <label class="form-check-label opacity-100" for="one_day">{{ translate('For 24 Hours') }}</label>
+                                        </div>
+                                        <div class="form-check form--check">
+                                            <input class="form-check-input" type="radio" name="maintenance_duration"
+                                                    {{ isset($selectedMaintenanceDuration['maintenance_duration']) && $selectedMaintenanceDuration['maintenance_duration'] == 'one_week' ? 'checked' : '' }}
+                                                    value="one_week" id="one_week">
+                                            <label class="form-check-label opacity-100" for="one_week">{{ translate('For 1 Week') }}</label>
+                                        </div>
+                                        <div class="form-check form--check">
+                                            <input class="form-check-input" type="radio" name="maintenance_duration"
+                                                    {{ isset($selectedMaintenanceDuration['maintenance_duration']) && $selectedMaintenanceDuration['maintenance_duration'] == 'until_change' ? 'checked' : '' }}
+                                                    value="until_change" id="until_change">
+                                            <label class="form-check-label opacity-100" for="until_change">{{ translate('Until I change') }}</label>
+                                        </div>
+                                        <div class="form-check form--check">
+                                            <input class="form-check-input" type="radio" name="maintenance_duration"
+                                                    {{ isset($selectedMaintenanceDuration['maintenance_duration']) && $selectedMaintenanceDuration['maintenance_duration'] == 'customize' ? 'checked' : '' }}
+                                                    value="customize" id="customize">
+                                            <label class="form-check-label opacity-100" for="customize">{{ translate('Customize') }}</label>
+                                        </div>
+                                    </div>
+                                    <div class="">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <label class="form-label">{{ translate('Start Date') }} <span class="text-danger">*</span></label>
+                                                <input type="datetime-local" class="form-control h-40" name="start_date" id="startDate"
+                                                        value="{{ old('start_date', $selectedMaintenanceDuration['start_date'] ?? '') }}" required>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label">{{ translate('End Date') }} <span class="text-danger">*</span></label>
+                                                <input type="datetime-local" class="form-control h-40" name="end_date" id="endDate"
+                                                        value="{{ old('end_date', $selectedMaintenanceDuration['end_date'] ?? '') }}" required>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-12">
+                                                <small id="dateError" class="form-text text-danger" style="display: none;">{{ translate('Start date cannot be greater than end date.') }}</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="accordion" id="accordionExample">
+                                <div id="collapseThree" class="collapse" aria-labelledby="headingThree" data-parent="#accordionExample">
+                                    <div class="border-top pt-4">
+                                        <div class="row align-items-center">
+                                            <div class="col-xl-4">
+                                                <h5 class="mb-2">{{ translate('Maintenance Massage') }}</h5>
+                                                <p>{{ translate('Select & type what massage you want to see your selected system when maintenance mode is active.') }}</p>
+                                            </div>
+                                            <div class="col-xl-8">
+                                                <div class="">
+                                                    <div class="mb-20">
+                                                        <label class="form-label">{{ translate('Show Contact Info') }}</label>
+                                                        <div class="d-flex flex-wrap gap-5 align-items-center border rounded bg-white py-2 px-3 min-h-45px">
+                                                            <div class="form-group m-0">
+                                                                <div class="custom-control custom-checkbox">
+                                                                    <input type="checkbox" class="custom-control-input" name="business_number" id="business_number"
+                                                                        {{ isset($selectedMaintenanceMessage['business_number']) && $selectedMaintenanceMessage['business_number'] == 1 ? 'checked' : '' }}>
+                                                                    <label class="custom-control-label" for="business_number">
+                                                                        <h5 class="mb-0 font-light lh-24 text-reset">{{ translate('Business Number') }}</h5>
+                                                                    </label>
+                                                                </div>
+                                                            </div>
+                                                            <div class="form-group m-0">
+                                                                <div class="custom-control custom-checkbox">
+                                                                    <input type="checkbox" class="custom-control-input" name="business_email" id="business_email"
+                                                                        {{ isset($selectedMaintenanceMessage['business_email']) && $selectedMaintenanceMessage['business_email'] == 1 ? 'checked' : '' }}>
+                                                                    <label class="custom-control-label" for="business_email">
+                                                                        <h5 class="mb-0 font-light lh-24 text-reset">{{ translate('Business Email') }}</h5>
+                                                                    </label>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="form-group mb-0">
+                                                        <label class="form-label">{{ translate('Message Title') }} <span class="text-danger">*</span></label>
+                                                        <input type="text" class="form-control h-40" name="maintenance_message" id="maintenance_message"
+                                                            placeholder="{{ translate('We are Working On Something Special!') }}"
+                                                            maxlength="100" value="{{ $selectedMaintenanceMessage['maintenance_message'] ?? '' }}">
+                                                        <div class="d-flex justify-content-end">
+                                                            <span class="text-counting text-body-light text-right d-block mt-1">0/100</span>
+                                                        </div>
+                                                    </div>
+                                                    <div class="form-group mt-3">
+                                                        <label class="form-label">{{ translate('Message Body') }} <span class="text-danger">*</span></label>
+                                                        <div class="character-count">
+                                                            <textarea class="form-control character-count-field h-40" rows="1" name="message_body" id="message_body" maxlength="100" placeholder="{{ translate('We are Working On Something Special!') }}">{{ $selectedMaintenanceMessage['message_body'] ?? '' }}</textarea>
+                                                            <div class="d-flex justify-content-end">
+                                                                <span class="text-counting text-body-light text-right d-block mt-1">0/100</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="m-0 text-center d-center" id="headingThree">
+                                    <div class="mb-0">
+                                        <button class="advance-button font-weight-medium outline-0 shadow-none d-block mb-3 btn p-0 text-underline text--primary collapsed" type="button" data-toggle="collapse" data-target="#collapseThree" aria-expanded="false" aria-controls="collapseThree">
+                                            <span class="advance-text">
+                                                {{ translate('Advanced Settings') }}
+                                            </span>
+                                            <span class="basic-text">
+                                                {{ translate('basic Settings') }}
+                                            </span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <div class="btn--container justify-content-end py-3">
+                        <button type="reset" class="btn btn--reset min-w-120px" data-dismiss="modal">{{ translate('cancel') }}</button>
+                        <button type="{{ getEnvMode() != 'demo' ? 'submit' : 'button' }}" class="btn btn--primary {{ getEnvMode() == 'demo' ? 'demo_check' : '' }} min-w-120px" id="submit">
+                            {{ translate('save') }}
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 @endsection
 
 
@@ -1242,17 +1507,11 @@
                     $('#additional_charge_note').slideUp();
                 }
             } else if (toggle_id === 'maintenance_mode') {
-                var maintenance_mode = $('#maintenance_mode').is(':checked');
-                $.ajax({
-                    url: '{{ route('admin.maintenance-mode') }}',
-                    method: 'get',
-                    data: {
-                        maintenance_mode: maintenance_mode ? 1 : 0
-                    },
-                    success: function (data) {
-                        toastr.success(data.message);
-                    },
-                });
+                if ($('#maintenance_mode').is(':checked')) {
+                    $('#maintenance-mode-modal').modal('show');
+                } else {
+                    $('#maintenance-off-mode-modal').modal('show');
+                }
             }
         }, 0);
     });
@@ -1264,6 +1523,135 @@
         } else {
             $('.additional__body').hide();
             $('#additional_charge_note').hide();
+        }
+    });
+
+    const maintenanceIsOn = {{ isset($config) && $config ? 'true' : 'false' }};
+
+    function setMaintenanceFormDisabled(disabled) {
+        const $body = $('#maintenanceFormBody');
+        const $save = $('#submit');
+        $body.find('input, select, textarea, button').not('#maintenanceModalToggle').prop('disabled', disabled);
+        $body.css({ 'opacity': disabled ? '0.5' : '1', 'pointer-events': disabled ? 'none' : '' });
+        $save.prop('disabled', disabled);
+    }
+
+    $(document).on('click', '.maintenance-mode-toggle', function (e) {
+        e.preventDefault();
+        $('#maintenance-mode-modal').modal('show');
+    });
+
+    $('#maintenanceModalToggle').on('change', function () {
+        if ($(this).prop('checked')) {
+            setMaintenanceFormDisabled(false);
+        } else {
+            if (maintenanceIsOn) {
+                $(this).prop('checked', true);
+                $('#maintenance-mode-modal').modal('hide');
+                $('#maintenance-off-mode-modal').modal('show');
+            } else {
+                setMaintenanceFormDisabled(true);
+            }
+        }
+    });
+
+    $(document).on('click', '.demo_check', function (e) {
+        e.preventDefault();
+        toastr.warning('{{ translate('Sorry! You can not enable maintenance mode in demo!') }}');
+    });
+
+    // All-system checkbox toggle
+    $(document).on('change', '.system-checkbox', function () {
+        const $all = $('#allSystem');
+        const $others = $('.system-checkbox').not($all);
+        if ($(this).is($all)) {
+            $others.prop('checked', $all.prop('checked'));
+        } else {
+            $all.prop('checked', $others.length === $others.filter(':checked').length);
+        }
+    });
+
+    const fmtMaintenanceDT = dt => {
+        const pad = n => String(n).padStart(2, '0');
+        return dt.getFullYear() + '-' + pad(dt.getMonth() + 1) + '-' + pad(dt.getDate()) + 'T' + pad(dt.getHours()) + ':' + pad(dt.getMinutes());
+    };
+
+    const applyMaintenanceDateMin = () => {
+        const min = fmtMaintenanceDT(new Date());
+        $('#startDate').attr('min', min);
+        $('#endDate').attr('min', $('#startDate').val() || min);
+    };
+
+    $('input[name="maintenance_duration"]').on('change', function () {
+        const val = $(this).val();
+        const fmt = fmtMaintenanceDT;
+        const now = new Date();
+        const $dateRow = $('#startDate').closest('.row');
+        if (val === 'one_day') {
+            $('#startDate').val(fmt(now));
+            $('#endDate').val(fmt(new Date(now.getTime() + 86400000)));
+            $dateRow.hide();
+            $('#startDate, #endDate').removeAttr('required');
+        } else if (val === 'one_week') {
+            $('#startDate').val(fmt(now));
+            $('#endDate').val(fmt(new Date(now.getTime() + 604800000)));
+            $dateRow.hide();
+            $('#startDate, #endDate').removeAttr('required');
+        } else if (val === 'until_change') {
+            $dateRow.hide();
+            $('#startDate, #endDate').removeAttr('required');
+        } else {
+            $('#startDate').val('').attr('required', true);
+            $('#endDate').val('').attr('required', true);
+            applyMaintenanceDateMin();
+            $dateRow.show();
+        }
+    });
+
+    $('#startDate').on('change', function () {
+        const min = fmtMaintenanceDT(new Date());
+        if (this.value && this.value < min) {
+            this.value = min;
+        }
+        $('#endDate').attr('min', this.value || min);
+        if ($('#endDate').val() && $('#endDate').val() < this.value) {
+            $('#endDate').val('');
+        }
+    });
+
+    $('#maintenance-mode-modal').on('show.bs.modal', function () {
+        setMaintenanceFormDisabled(!maintenanceIsOn);
+
+        const val = $('input[name="maintenance_duration"]:checked').val();
+        if (val === 'customize') {
+            $('#startDate').closest('.row').show();
+            $('#startDate, #endDate').attr('required', true);
+            applyMaintenanceDateMin();
+        } else {
+            $('#startDate').closest('.row').hide();
+            $('#startDate, #endDate').removeAttr('required');
+        }
+        $('#collapseThree').removeClass('show');
+        $('#maintenance_message, #message_body').removeAttr('required');
+        $('#accordionExample .advance-button').addClass('collapsed').attr('aria-expanded', 'false');
+    });
+
+    $('#collapseThree').on('shown.bs.collapse', function () {
+        $('#maintenance_message, #message_body').attr('required', true);
+    }).on('hidden.bs.collapse', function () {
+        $('#maintenance_message, #message_body').removeAttr('required');
+    });
+
+    $('#maintenance-mode-form').on('submit', function (e) {
+        if ($('.system-checkbox').not('#allSystem').filter(':checked').length === 0) {
+            e.preventDefault();
+            toastr.error('{{ translate("Please select at least one system") }}');
+            return false;
+        }
+        if ($('input[name="maintenance_duration"]:checked').length === 0) {
+            e.preventDefault();
+            toastr.error('{{ translate("Please select a maintenance date & time duration") }}');
+            return false;
         }
     });
 </script>

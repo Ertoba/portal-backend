@@ -49,7 +49,7 @@ Route::group(['namespace' => 'Api\V1', 'middleware'=>'localization'], function (
 
         Route::post('guest/request','CustomerAuthController@guest_request');
 
-        Route::group(['prefix' => 'delivery-man','middleware' => 'actch:deliveryman_app'], function () {
+        Route::group(['prefix' => 'delivery-man','middleware' => 'mili.feature:deliveryman_app'], function () {
             Route::post('login', 'DeliveryManLoginController@login');
             Route::post('store', 'DeliveryManLoginController@store');
 
@@ -58,7 +58,7 @@ Route::group(['namespace' => 'Api\V1', 'middleware'=>'localization'], function (
             Route::post('firebase-verify-token', 'DMPasswordResetController@firebase_auth_verify');
             Route::put('reset-password', 'DMPasswordResetController@reset_password_submit');
         });
-        Route::group(['prefix' => 'vendor','middleware' => 'actch:vendor_app'], function () {
+        Route::group(['prefix' => 'vendor','middleware' => 'mili.feature:vendor_app'], function () {
             Route::post('login', 'VendorLoginController@login');
             Route::post('forgot-password', 'VendorPasswordResetController@reset_password_request');
             Route::post('verify-token', 'VendorPasswordResetController@verify_token');
@@ -74,8 +74,8 @@ Route::group(['namespace' => 'Api\V1', 'middleware'=>'localization'], function (
     Route::group(['prefix' => 'vendor','namespace' => 'Vendor'], function () {
         Route::get('package-view', 'SubscriptionController@package_view');
         Route::post('business_plan', 'SubscriptionController@business_plan');
-        Route::post('subscription/payment/api', 'SubscriptionController@subscription_payment_api')->name('subscription_payment_api');
-        Route::post('package-renew', 'SubscriptionController@package_renew_change_update_api');
+        // Route::post('subscription/payment/api', 'SubscriptionController@subscription_payment_api')->name('subscription_payment_api');
+        // Route::post('package-renew', 'SubscriptionController@package_renew_change_update_api');
         Route::post('cancel-subscription', 'SubscriptionController@cancelSubscription');
         Route::get('check-product-limits', 'SubscriptionController@checkProductLimits');
     });
@@ -93,10 +93,10 @@ Route::group(['namespace' => 'Api\V1', 'middleware'=>'localization'], function (
     Route::get('customer/saved-files', 'MiliV4CompatibilityController@savedFiles');
     Route::get('smart-banners', 'SmartBannerController@get_banners');
     Route::post('newsletter/subscribe','NewsletterController@index');
-    Route::get('react-landing-page', 'ConfigController@react_landing_page')->middleware('actch:react_web');
+    Route::get('react-landing-page', 'ConfigController@react_landing_page')->middleware('mili.feature:react_web');
     Route::get('flutter-landing-page', 'ConfigController@flutter_landing_page');
 
-    Route::group(['prefix' => 'delivery-man','middleware' => 'actch:deliveryman_app' ], function () {
+    Route::group(['prefix' => 'delivery-man','middleware' => 'mili.feature:deliveryman_app' ], function () {
         Route::get('last-location', 'DeliverymanController@get_last_location');
 
 
@@ -168,7 +168,7 @@ Route::group(['namespace' => 'Api\V1', 'middleware'=>'localization'], function (
         });
     });
 
-    Route::group(['prefix' => 'vendor', 'namespace' => 'Vendor', 'middleware'=>['vendor.api','actch:vendor_app']], function () {
+    Route::group(['prefix' => 'vendor', 'namespace' => 'Vendor', 'middleware'=>['vendor.api','mili.feature:vendor_app']], function () {
         Route::get('notifications', 'VendorController@get_notifications');
         Route::get('profile', 'VendorController@get_profile');
         Route::post('update-active-status', 'VendorController@active_status');
@@ -329,7 +329,7 @@ Route::group(['namespace' => 'Api\V1', 'middleware'=>'localization'], function (
         Route::get('direction-api', 'ConfigController@direction_api');
         Route::get('place-api-details', 'ConfigController@place_api_details');
         Route::get('geocode-api', 'ConfigController@geocode_api');
-        Route::get('get-PaymentMethods', 'ConfigController@getPaymentMethods');
+        // Route::get('get-PaymentMethods', 'ConfigController@getPaymentMethods');
         Route::get('get-analytic-scripts', 'ConfigController@analyticScripts');
 
     });

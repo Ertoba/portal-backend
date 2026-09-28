@@ -20,6 +20,7 @@
                 <!-- Navbar -->
                 <ul class="navbar-nav align-items-center flex-row flex-grow-1 __navbar-nav">
 
+                    @if (\App\CentralLogics\Helpers::admin_can_access_workspace('users'))
                     <li class="nav-item __nav-item">
                         <a href="{{ route('admin.users.dashboard')}}" id="tourb-6"
                            class="__nav-link {{ Request::is('admin/users*') ? 'active' : '' }}">
@@ -27,7 +28,9 @@
                             <span>{{ translate('Users')}}</span>
                         </a>
                     </li>
+                    @endif
 
+                    @if (\App\CentralLogics\Helpers::admin_can_access_workspace('finance') || \App\CentralLogics\Helpers::admin_can_access_workspace('reports'))
                     <li class="nav-item __nav-item">
                         <a href="{{ route('admin.transactions.store.withdraw_list')}}" id="tourb-7"
                            class="__nav-link {{ Request::is('admin/transactions*') ? 'active' : '' }}">
@@ -36,9 +39,11 @@
                             <span>{{ translate('Transactions & Reports')}}</span>
                         </a>
                     </li>
+                    @endif
 
+                    @if (\App\CentralLogics\Helpers::admin_can_access_workspace('settings'))
                     <li class="nav-item __nav-item">
-                        <a href="{{ route('admin.business-settings.business-setup') }}" id="tourb-3"
+                        <a href="{{ \App\CentralLogics\Helpers::settings_workspace_landing_url() }}" id="tourb-3"
                            class="__nav-link {{ Request::is('admin/business-settings*') ? 'active' : '' }}">
                             <img src="{{asset('/public/assets/admin/img/new-img/setting-icon.svg')}}" alt="public/img">
                             <span>{{ translate('messages.Settings') }}</span>
@@ -120,6 +125,7 @@
                             </div>
                         </div>
                     </li>
+                    @endif
                     @if (\App\CentralLogics\Helpers::module_permission_check('order'))
                         <li class="nav-item __nav-item">
                             <a href="{{ route('admin.dispatch.dashboard')}}" id="tourb-8"
@@ -144,6 +150,7 @@
                         </button>
                     </li>
 
+                    @if(\App\CentralLogics\Helpers::module_permission_check('customer_management'))
                     <li class="nav-item max-sm-m-0  mr-lg-3">
                         <a class="btn btn-icon rounded-circle nav-msg-icon p-0 h-100 w-100 d-flex justify-content-center"
                            href="{{route('admin.message.list')}}">
@@ -156,17 +163,18 @@
                             @endif
                         </a>
                     </li>
-                    @if(addon_published_status('RideShare'))
+                    @endif
+                    @if(addon_published_status('RideShare') && \App\CentralLogics\Helpers::module_permission_check('fleet_view'))
                         <li class="nav-item max-sm-m-0  mr-lg-3">
                             @php($safetyAlert=\Modules\RideShare\Entities\TripManagement\RideSafetyAlert::where('status', 'pending'))
                             @php($safety=$safetyAlert->count())
                             @php($latestSafetyAlert=$safetyAlert->latest()->first())
-                            <a class="btn btn-icon rounded-circle nav-msg-icon p-0 h-100 w-100 d-flex justify-content-center @if($latestSafetyAlert) safety-alert-header-icon @endif"
+                            <a id="v1-safety-link" class="btn btn-icon rounded-circle nav-msg-icon p-0 h-100 w-100 d-flex justify-content-center @if($latestSafetyAlert) safety-alert-header-icon @endif"
                             @if($latestSafetyAlert) data-user-id="{{ $latestSafetyAlert->sent_by }}" @endif
                             href="{{route('admin.ride-share.safety-alerts',['module_id'=>\App\Models\Module::where('module_type','ride-share')->first()->id ?? 0])}}">
                                 <img src="{{asset('/public/assets/admin/img/new-img/shield-check.svg')}}" class="d-block" alt="public/img">
                                 @if($safety!=0)
-                                    <span class="btn-status btn-status-danger">{{ $safety }}</span>
+                                    <span class="btn-status btn-status-danger" id="v1-safety-badge">{{ $safety }}</span>
                                 @endif
                             </a>
                         </li>

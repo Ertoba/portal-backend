@@ -31,7 +31,7 @@
             </h5>
         </div>
         <div class="card-body">
-            <form action="{{route('vendor.custom-role.update',[$role['id']])}}" method="post">
+            <form action="{{route('vendor.custom-role.update-role',[$role['id']])}}" method="post">
                 @csrf
                 @php($language=\App\Models\BusinessSetting::where('key','language')->first())
                 @php($language = $language->value ?? null)
@@ -92,7 +92,7 @@
                     <div class="d-flex align-items-center flex-wrap justify-content-between select--all-checkes">
                         <h5 class="input-label m-0 text-capitalize">{{translate('messages.Module Wise Permission')}}</h5>
                         <div class="check-item p-2 d-flex align-items-center gap-2 pb-0 w-auto cursor-pointer">
-                            <label for="select-all" class="fs-14 font-semibold text-title m-0">{{ translate('messages.All Module Permission') }}</label>
+                            <label for="select-all" class="fs-14 text-nowrap font-semibold text-title m-0">{{ translate('messages.All Module Permission') }}</label>
                             <div class="form-group form-check form--check m-0 ml-2">
                                 <input type="checkbox" value="" class="form-check-input rounded position-relative rounded" id="select-all">
                             </div>
@@ -238,6 +238,22 @@
                                                     <label class="form-check-label qcont text-dark" for="banner">{{translate('messages.Banner')}}</label>
                                                 </div>
                                             </div>
+
+                                             @if (
+                                                addon_published_status('ReelsModule')
+                                                && \App\CentralLogics\Helpers::get_business_settings('vendor_can_upload_reels')
+                                                && \Modules\ReelsModule\Support\ReelModuleConfig::isAllowedType(\App\CentralLogics\Helpers::get_store_data()?->module?->module_type)
+                                                )
+                                                <div class="check-item p-2">
+                                                    <div class="form-group form-check form--check m-0">
+                                                        <input type="checkbox" name="modules[]" value="reels" class="form-check-input rounded"
+                                                                id="reels" {{in_array('reels',(array)json_decode($role['modules']))?'checked':''}}>
+                                                        <label class="form-check-label qcont text-dark" for="reels">{{translate('messages.reels')}}</label>
+                                                    </div>
+                                                </div>
+                                                @endif
+
+
                                         </div>
                                     </div>
                                 </div>

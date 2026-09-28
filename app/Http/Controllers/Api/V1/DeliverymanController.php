@@ -2,12 +2,22 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+if (trait_exists(\Modules\RideShare\Traits\TransactionManagement\TransactionTrait::class)) {
+    class_alias(
+        \Modules\RideShare\Traits\TransactionManagement\TransactionTrait::class,
+        __NAMESPACE__ . '\ConditionalTransactionTrait'
+    );
+} else {
+    trait ConditionalTransactionTrait {}
+}
+
 
 
 ini_set('memory_limit', '-1');
 
 use App\CentralLogics\Helpers;
 use App\CentralLogics\OrderLogic;
+use App\CentralLogics\ProductLogic;
 use App\Http\Controllers\Controller;
 use App\Library\Payer;
 use App\Library\Payment as PaymentInfo;
@@ -16,6 +26,7 @@ use App\Mail\WithdrawRequestMail;
 use App\Models\AccountTransaction;
 use App\Models\Admin;
 use App\Models\BusinessSetting;
+use App\Models\DataSetting;
 use App\Models\DeliveryHistory;
 use App\Models\DeliveryMan;
 use App\Models\DeliverymanLoyaltyPointHistory;
@@ -37,22 +48,39 @@ use App\Models\Zone;
 use App\Traits\Payment;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rules\Password;
 use MatanYadaev\EloquentSpatial\Objects\Point;
+use Modules\RideShare\Entities\TripManagement\RideRequest;
+use Modules\RideShare\Entities\UserManagement\RiderDetail;
+use Modules\RideShare\Entities\VehicleManagement\RiderVehicle;
+use Modules\RideShare\Http\Resources\UserManagement\DriverLevelResource;
+use Modules\RideShare\Http\Resources\UserManagement\TimeTrackResource;
+use Modules\RideShare\Interface\UserManagement\Service\TimeTrackServiceInterface;
+use Modules\RideShare\Interface\UserManagement\Service\UserLastLocationServiceInterface;
 
 class DeliverymanController extends Controller
 {
+    use ConditionalTransactionTrait;
+
     public function get_profile(Request $request)
     {
-        $dm = DeliveryMan::with(['rating'])->where(['auth_token' => $request['token']])->first();
-        $min_amount_to_pay_dm = BusinessSetting::where('key', 'min_amount_to_pay_dm')->first()->value ?? 0;
-        $dm['avg_rating'] = (float) (!empty($dm->rating[0]) ? $dm->rating[0]->average : 0);
-        $dm['rating_count'] = (float) (!empty($dm->rating[0]) ? $dm->rating[0]->rating_count : 0);
+        $dm = DeliveryMan::with(['rating','userinfo'])->where(['auth_token' => $request['token']])->first();
+
+        
+        if(addon_published_status('RideShare')){
+            $min_amount_to_pay_dm = DataSetting::where('key', 'min_amount_to_pay_rider')->first()->value ?? 0;
+            $dm['avg_rating'] = (float) (($dm->combinedRating->average) ? $dm->combinedRating->average : (!empty($dm->rating[0]) ? $dm->rating[0]->average : 0));
+            $dm['rating_count'] = (float) (($dm->combinedRating->total) ? $dm->combinedRating->total : (!empty($dm->rating[0]) ? $dm->rating[0]->rating_count : 0));
+            }else{
+            $min_amount_to_pay_dm = BusinessSetting::where('key', 'min_amount_to_pay_dm')->first()->value ?? 0;
+            $dm['avg_rating'] = (float) (!empty($dm->rating[0]) ? $dm->rating[0]->average : 0);
+            $dm['rating_count'] = (float) (!empty($dm->rating[0]) ? $dm->rating[0]->rating_count : 0);
+        }
+        
         $dm['order_count'] = (int) $dm->orders->count();
         $dm['todays_order_count'] = (int) $dm->todaysorders->count();
         $dm['this_week_order_count'] = (int) $dm->this_week_orders->count();
@@ -95,6 +123,8 @@ class DeliverymanController extends Controller
         $dm['pending_withdraw'] = (float) ($dm?->wallet?->pending_withdraw ?? 0);
         $dm['withdraw_able_balance'] = (float) ($dm['balance'] - $dm?->wallet?->collected_cash > 0 ? abs($dm['balance'] - $dm?->wallet?->collected_cash) : 0);
         $dm['Payable_Balance'] = (float) ($dm?->wallet?->collected_cash ?? 0);
+        $dm['total_delivery_income'] =(float)($dm->order_transaction()->sum('original_delivery_charge'));
+        $dm['total_delivery_tips'] =(float)($dm->order_transaction()->sum('dm_tips'));
 
         $over_flow_balance = $dm['balance'] - $dm?->wallet?->collected_cash;
 
@@ -139,11 +169,57 @@ class DeliverymanController extends Controller
             $dm['over_flow_block_warning'] = true;
         }
 
+        if($dm['balance'] > 0 ){
+            $dm['dynamic_balance'] = (float) abs($wallet_earning);
+                if($dm?->wallet?->balance ==  $wallet_earning){
+                    $dm['dynamic_balance_type']  = translate('messages.Withdrawable_Balance') ;
+                } else{
+                    $dm['dynamic_balance_type']  = translate('messages.Balance').' '.(translate('Unadjusted')) ;
+                }
+
+        } else{
+            $dm['dynamic_balance']   =  (float) abs($dm?->wallet?->collected_cash) ?? 0;
+            $dm['dynamic_balance_type']  = translate('messages.Payable_Balance') ;
+        }
+
         unset($dm['orders']);
         unset($dm['rating']);
         unset($dm['todaysorders']);
         unset($dm['this_week_orders']);
         unset($dm['wallet']);
+
+        if(addon_published_status('RideShare') && $dm->is_ride == 1){
+
+            $riderVehicle = RiderVehicle::withoutGlobalScope('translate')->with(['brand', 'model', 'category'])->where('rider_id', $dm->id)->first();
+            $dm['rider_vehicle'] = $riderVehicle;
+            $trips = $dm->driverTrips->where('payment_status', PAID);
+            $tips = $trips->sum('tips');
+            $totalEarning = $trips->sum('paid_fare');
+            $totalCommission = 0;
+            foreach ($trips as $trip) {
+                $totalCommission += $trip?->fee?->admin_commission ?? 0;
+            }
+
+
+            $dm['rider_level'] = DriverLevelResource::make($dm->level);
+            $dm['trip_income'] = ($totalEarning - $totalCommission - $tips);
+            $dm['total_trip_commission'] = $totalCommission;
+            $dm['total_trip_earning'] = $totalEarning;
+            $dm['total_trip_tips'] = $tips;
+            $dm['paid_amount'] = 0; // TODO: need to check if this is required or not, if required then need to add the logic for this.
+            $dm['level_up_reward_amount'] = 0; // TODO: need to check if this is required or not, if required then need to add the logic for this.
+            $dm['total_income'] = $dm['trip_income'] + $dm['total_delivery_income'];
+            $dm['total_tips'] = $tips + $dm['total_delivery_tips'];
+            $dm['ride_count'] =(integer)$dm->driverTrips->count();
+            $dm['todays_ride_count'] =(integer)$dm->todays_rides->count();
+            $dm['this_week_ride_count'] =(integer)$dm->this_week_rides->count();
+
+            $dm['time_track'] = $dm->latestTrack ? TimeTrackResource::make($dm->latestTrack) : null;
+
+            $dm['todays_earning'] +=(float)($dm->todays_rides->where('payment_status', PAID)->sum('paid_fare') - $dm->todays_rides->where('payment_status', PAID)->sum('fee.admin_commission') + $dm->todays_rides->where('payment_status', PAID)->sum('tips'));
+            $dm['this_week_earning'] +=(float)($dm->this_week_rides->where('payment_status', PAID)->sum('paid_fare') - $dm->this_week_rides->where('payment_status', PAID)->sum('fee.admin_commission') + $dm->this_week_rides->where('payment_status', PAID)->sum('tips'));
+            $dm['this_month_earning'] +=(float)($dm->this_month_rides->where('payment_status', PAID)->sum('paid_fare') - $dm->this_month_rides->where('payment_status', PAID)->sum('fee.admin_commission') + $dm->this_month_rides->where('payment_status', PAID)->sum('tips'));
+        }
 
         return response()->json($dm, 200);
     }
@@ -206,6 +282,61 @@ class DeliverymanController extends Controller
         $dm = DeliveryMan::with(['rating'])->where(['auth_token' => $request['token']])->first();
         $dm->active = $dm->active ? 0 : 1;
         $dm->save();
+
+        if(addon_published_status('RideShare') && $dm->is_ride == 1){
+            if($dm->driverDetails != null) {
+                $details = $dm->driverDetails;
+            } else {
+                $details = new RiderDetail();
+                $details->user_id = $dm->id;
+            }
+
+            $details->is_online = $dm->active?1:0;
+            $details->availability_status = $dm->active? 'available': 'unavailable';
+            $details->save();
+
+            //update ride share data
+
+            $trackCriteria = [
+                'user_id' => $dm->id,
+                'date' => date('Y-m-d')
+            ];
+            $track = app(TimeTrackServiceInterface::class)->findOneBy(criteria: $trackCriteria,
+                relations: ['latestLog'], orderBy: ['created_at' => 'desc']);
+
+            if (!$track) {
+                $trackData = [
+                    'user_id' => $dm->id,
+                    'date' => now()
+                ];
+                $track = app(TimeTrackServiceInterface::class)->create($trackData);
+
+                //need to set driver to online if he is offline
+                $track->logs()->create([
+                    'online_at' => now(),
+                ]);
+            }
+
+            if (!$details['is_online']) {
+                //means he is going to be offline
+
+                $track->latestLog()->update([
+                    'offline_at' => now()
+                ]);
+                $track->total_online += Carbon::parse($track?->latestLog?->online_at)->diffInMinutes(now());
+                $track->save();
+
+            }
+
+            if ($details['is_online']) {
+                //means he is going to be online
+                $track->total_offline += Carbon::parse($track->latestLog?->offline_at)->diffInMinutes(now());
+                $track->save();
+                $track->latestLog()->create([
+                    'online_at' => now()
+                ]);
+            }
+        }
 
         return response()->json(['message' => translate('messages.active_status_updated')], 200);
     }
@@ -284,8 +415,8 @@ class DeliverymanController extends Controller
                 'accepted',
                 'confirmed',
                 'processing',
-                'picked_up',
                 'handover',
+                'picked_up',
             ],
             'history' => [
                 'delivered',
@@ -382,6 +513,21 @@ class DeliverymanController extends Controller
             return response()->json(['errors' => Helpers::error_processor($validator)], 403);
         }
         $dm = DeliveryMan::where(['auth_token' => $request['token']])->first();
+
+        if(addon_published_status('RideShare') && $dm->is_ride == 1){
+            $hasRunningTrip = RideRequest::whereIn('current_status', ['accepted','ongoing'])
+            ->where('driver_id', $dm->id)
+            ->exists();
+
+            if($hasRunningTrip){
+                return response()->json([
+                    'errors' => [
+                        ['code' => 'running_trip', 'message' => translate('You already have a ongoing ride. Please complete it before accepting a new order.')]
+                    ]
+                ], 409);
+            }
+        }
+
         $order = Order::where('id', $request['order_id'])
             // ->whereIn('order_status', ['pending', 'confirmed'])
             ->whereNull('delivery_man_id')
@@ -430,7 +576,7 @@ class DeliverymanController extends Controller
         $dm_max_cash_status = Helpers::get_business_settings('cash_in_hand_overflow_delivery_man');
         $dm_max_cash = Helpers::get_business_settings('dm_max_cash_in_hand');
         $value = $dm_max_cash;
-        
+
 
         if ($dm_max_cash_status == 1 && ($order->payment_method == 'cash_on_delivery' || $payments) && (($cash_in_hand + $order->order_amount) >= $value)) {
 
@@ -490,7 +636,26 @@ class DeliverymanController extends Controller
             'created_at' => now(),
             'updated_at' => now()
         ]);
-        event(new \App\Events\DeliveryLocationUpdated($dm->id, $request['latitude'], $request['longitude'], $request['location'] ?? ''));
+
+        if(addon_published_status('RideShare') && $dm->is_ride == 1){
+            if(isset($request['zone_id']) && ($request['zone_id'] != null)) {
+                $data = [
+                    'type' => 'rider',
+                    'latitude' => $request->latitude,
+                    'longitude' => $request->longitude,
+                    'zone_id' => $request->zone_id,
+                    'user_id' => auth('delivery_men')->id()
+                ];
+
+                $lastLocation = app(UserLastLocationServiceInterface::class)->findOneBy(criteria: ['user_id' => auth('delivery_men')->id(), 'type' => 'rider']);
+                if (!$lastLocation) {
+                    app(UserLastLocationServiceInterface::class)->create(data: $data);
+                } else {
+                    app(UserLastLocationServiceInterface::class)->update(id: $lastLocation->id, data: $data);
+                }
+            }
+        }
+
         return response()->json(['message' => translate('location recorded')], 200);
     }
 
@@ -559,14 +724,6 @@ class DeliverymanController extends Controller
             info($e->getMessage());
 
             return response()->json(['message' => translate('messages.push_notification_faild')], 403);
-        }
-
-        try {
-            if (config('order_delivery_verification') && Cache::add('order_delivery_verification_sms_' . $order->id, true, now()->addSeconds(60))) {
-                Helpers::sendOrderDeliveryVerificationOtp($order, true);
-            }
-        } catch (\Exception $e) {
-            info($e->getMessage());
         }
 
         return response()->json([], 200);
@@ -706,6 +863,34 @@ class DeliverymanController extends Controller
                 $dm->current_orders = $dm->current_orders > 1 ? $dm->current_orders - 1 : 0;
                 $dm->save();
             }
+
+
+
+            $hasStock = config('module.' . $order->module->module_type)['stock'];
+            $hasFlashDiscount = $order->flash_admin_discount_amount > 0 && $order->flash_store_discount_amount > 0;
+
+            if ($hasStock || $hasFlashDiscount) {
+                foreach ($order->details as $detail) {
+
+                    $item = $detail->campaign ?? $detail->item;
+
+                    if ($hasStock) {
+                        $variant = json_decode($detail->variation, true);
+                        $variantType = !empty($variant) ? $variant[0]['type'] : null;
+                        ProductLogic::update_stock($item, -$detail->quantity, $variantType)?->save();
+                    }
+
+                    if ($hasFlashDiscount) {
+                        ProductLogic::update_flash_stock($detail->item, $detail->quantity, true)?->save();
+                    }
+                }
+            }
+
+
+
+
+
+
             if ($order->is_guest == 0) {
                 OrderLogic::refund_before_delivered($order);
             }
@@ -909,9 +1094,11 @@ class DeliverymanController extends Controller
 
         $dm = DeliveryMan::where(['auth_token' => $request['token']])->first();
 
+        $target = $dm->is_ride == 1 ? 'rider' : 'deliveryman';
+
         $notifications = Notification::active()->where(function ($q) use ($dm) {
             $q->whereNull('zone_id')->orWhere('zone_id', $dm->zone_id);
-        })->where('tergat', 'deliveryman')->where('created_at', '>=', \Carbon\Carbon::today()->subDays(7))->get();
+        })->where('tergat', $target)->where('created_at', '>=', \Carbon\Carbon::today()->subDays(7))->get();
 
         $user_notifications = UserNotification::where('delivery_man_id', $dm->id)->where('created_at', '>=', \Carbon\Carbon::today()->subDays(7))->get();
 
@@ -977,6 +1164,12 @@ class DeliverymanController extends Controller
             'business_name' => BusinessSetting::where(['key' => 'business_name'])->first()?->value,
             'business_logo' => \App\CentralLogics\Helpers::get_full_url('business', $store_logo?->value, $store_logo?->storage[0]?->value ?? 'public'),
         ];
+
+        if($dm->is_ride == 1){
+            $attribute = 'rider_collect_cash_payments';
+        }else{
+            $attribute = 'deliveryman_collect_cash_payments';
+        }
         $payment_info = new PaymentInfo(
             success_hook: 'collect_cash_success',
             failure_hook: 'collect_cash_fail',
@@ -988,7 +1181,7 @@ class DeliverymanController extends Controller
             additional_data: $additional_data,
             payment_amount: $request->amount,
             external_redirect_link: $request->has('callback') ? $request['callback'] : session('callback'),
-            attribute: 'deliveryman_collect_cash_payments',
+            attribute: $attribute,
             attribute_id: $dm->id,
         );
 
@@ -1030,6 +1223,7 @@ class DeliverymanController extends Controller
                 'created_at' => now(),
                 'updated_at' => now(),
             ];
+
         } else {
             $data = [
                 'delivery_man_id' => $dm->id,
@@ -1043,10 +1237,24 @@ class DeliverymanController extends Controller
             ];
             $wallet->total_withdrawn = $wallet->total_withdrawn + $wallet->collected_cash;
             $wallet->collected_cash = 0;
+
         }
 
         $wallet->save();
         DB::table('provide_d_m_earnings')->insert($data);
+
+        // if(addon_published_status('RideShare') && $dm->is_ride == 1){
+        //     $dm_ride_account = $this->getUserAccount($dm->id, DRIVER);
+
+        //     if ($adj_amount > 0) {
+        //         $adjustedAmount = $dm_ride_account->receivable_balance;
+        //     } else {
+        //         $adjustedAmount = $dm_ride_account->payable_balance;
+        //     }
+
+        //     $this->adjustWalletTransaction($dm, $adjustedAmount);
+        // }
+
 
         return response()->json(['message' => translate('messages.Delivery_man_wallet_adjustment_successfull')], 200);
     }
@@ -1115,7 +1323,7 @@ class DeliverymanController extends Controller
 
         foreach ($paginator->items() as $item) {
             $item['amount'] = (float) $item['amount'];
-            $item['status'] = 'approved';
+            $item['status'] = 'Approved';
             $item['payment_time'] = \App\CentralLogics\Helpers::time_date_format($item->created_at);
 
             $temp[] = $item;
@@ -1146,12 +1354,7 @@ class DeliverymanController extends Controller
         $key = explode(' ', $request['search']);
         $paginator = DisbursementWithdrawalMethod::where('delivery_man_id', $dm['id'])
             ->whereHas('withdraw_method', function ($query) {
-                $query->where('is_active', 1)
-                    ->where('method_name', '!=', 'Keepz Split Receiver');
-            })
-            ->where(function ($query) {
-                $query->whereNull('method_fields')
-                    ->orWhere('method_fields', 'not like', '%keepz_receiver_identifier%');
+                $query->where('is_active', 1);
             })
             ->when(
                 isset($key),
@@ -1192,10 +1395,7 @@ class DeliverymanController extends Controller
 
     public function withdraw_method_list()
     {
-        $wi = WithdrawalMethod::where('is_active', 1)
-            ->get()
-            ->reject(fn (WithdrawalMethod $method) => $this->isKeepzSplitMethod($method))
-            ->values();
+        $wi = WithdrawalMethod::where('is_active', 1)->get();
 
         return response()->json($wi, 200);
     }
@@ -1212,11 +1412,7 @@ class DeliverymanController extends Controller
 
         $dm = DeliveryMan::where(['auth_token' => $request['token']])->first();
 
-        $method = WithdrawalMethod::where('is_active', 1)->find($request['withdraw_method_id']);
-        if (!$method || $this->isKeepzSplitMethod($method)) {
-            return response()->json(['errors' => [['code' => 'withdraw_method_id', 'message' => translate('messages.method_not_found')]]], 404);
-        }
-
+        $method = WithdrawalMethod::find($request['withdraw_method_id']);
         $fields = array_column($method->method_fields, 'input_name');
         $values = $request->all();
 
@@ -1251,13 +1447,7 @@ class DeliverymanController extends Controller
             return response()->json(['errors' => Helpers::error_processor($validator)], 403);
         }
         $dm = DeliveryMan::where(['auth_token' => $request['token']])->first();
-        $method = DisbursementWithdrawalMethod::where('id', $request->id)
-            ->where('delivery_man_id', $dm['id'])
-            ->first();
-        if (!$method) {
-            return response()->json(['errors' => [['code' => 'id', 'message' => translate('messages.method_not_found')]]], 404);
-        }
-
+        $method = DisbursementWithdrawalMethod::find($request->id);
         $method->is_default = $request->is_default;
         $method->save();
         DisbursementWithdrawalMethod::whereNot('id', $request->id)->where('delivery_man_id', $dm['id'])->update(['is_default' => 0]);
@@ -1275,25 +1465,10 @@ class DeliverymanController extends Controller
             return response()->json(['errors' => Helpers::error_processor($validator)], 403);
         }
 
-        $dm = DeliveryMan::where(['auth_token' => $request['token']])->first();
-        $method = DisbursementWithdrawalMethod::where('id', $request->id)
-            ->where('delivery_man_id', $dm['id'])
-            ->first();
-        if (!$method) {
-            return response()->json(['errors' => [['code' => 'id', 'message' => translate('messages.method_not_found')]]], 404);
-        }
-
+        $method = DisbursementWithdrawalMethod::find($request->id);
         $method->delete();
 
         return response()->json(['message' => translate('messages.method_deleted_successfully')], 200);
-    }
-
-    private function isKeepzSplitMethod(WithdrawalMethod $method): bool
-    {
-        $fieldNames = array_column($method->method_fields ?? [], 'input_name');
-
-        return $method->method_name === 'Keepz Split Receiver'
-            || in_array('keepz_receiver_identifier', $fieldNames, true);
     }
 
     public function disbursement_report(Request $request)
@@ -1624,6 +1799,28 @@ class DeliverymanController extends Controller
         return response()->json($data, 200);
     }
 
+    public function income_statement(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'limit' => 'required',
+            'offset' => 'required'
+        ]);
+        if ($validator->fails()) {
+            return response()->json(['errors' => Helpers::error_processor($validator)], 403);
+        }
+        $dm = DeliveryMan::where(['auth_token' => $request['token']])->first();
+        $orders = OrderTransaction::where(['delivery_man_id' => $dm['id']])->paginate($request['limit'], ['*'], 'page', $request['offset']);
+
+        $data = [
+            'total_size' => $orders->total(),
+            'limit' => $request['limit'],
+            'offset' => $request['offset'],
+            'data' => $orders->items(),
+        ];
+        
+        return response()->json($data, 200);
+    }
+
     public function withdraw_list(Request $request)
     {
         $dm = DeliveryMan::where(['auth_token' => $request['token']])->first();
@@ -1815,6 +2012,5 @@ class DeliverymanController extends Controller
         return response()->json(['message' => translate('messages.Loyalty_point_converted_successfully')], 200);
 
     }
-
 
 }

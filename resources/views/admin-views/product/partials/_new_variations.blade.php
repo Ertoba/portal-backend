@@ -82,7 +82,7 @@
                             </div>
                             <div class="col-md-4 col-sm-6 error-wrapper">
                                 <label for="">{{ translate('Additional_price') }}</label>
-                                <input class="form-control" required type="number" min="0" step="0.01"
+                                <input class="form-control" required type="number" min="0" step="{{ \App\CentralLogics\Helpers::getDecimalPlaces() }}" max="999999999999.999"
                                     name="options[{{ $key }}][values][{{ $key_value }}][optionPrice]"
                                     value="{{ request()->product_gellary == 1 ? null : $value['optionPrice'] }}">
                             </div>

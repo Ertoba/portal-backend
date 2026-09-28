@@ -353,25 +353,6 @@
                             </div>
                         @endif
 
-                        @if ($store->module->module_type != 'food')
-                            <div class="col-sm-4 col-12">
-                                <div class="">
-                                    <label class="input-label text-capitalize"
-                                        for="minimum_stock_for_warning">{{ translate('messages.Minimum_stock_for_warning') }}
-                                        <span data-toggle="tooltip" data-placement="right"
-                                            data-original-title="{{ translate('When_the_stock_of_a_product_reaches_its_minimum_value_that_you_have_set,_you_will_receive_a_warning_to_update_the_stock._Additionally,_these_products_will_appear_in_the_Admin’s_Low_Stock_list.') }}"
-                                            class="input-label-secondary"><img
-                                                src="{{ asset('/public/assets/admin/img/info-circle.svg') }}"
-                                                alt="{{ translate('messages.Minimum_stock_for_warning') }}"></span>
-                                    </label>
-                                    <input type="number" id="minimum_stock_for_warning" name="minimum_stock_for_warning"
-                                        min="0" max="999999999" class="form-control"
-                                        placeholder="{{ translate('messages.Ex: 5') }}"
-                                        value="{{ $store?->storeConfig?->minimum_stock_for_warning ?? '' }}">
-                                </div>
-                            </div>
-                        @endif
-
                         <div class="col-sm-{{ $store->module->module_type != 'food' ? '4' : '6' }} col-12">
                             <div class="">
                                 <label class="d-flex justify-content-between switch toggle-switch-sm text-dark"
@@ -439,7 +420,117 @@
                 </form>
             </div>
         </div>
-        <div class="card mb-3">
+        @if ($store->module->module_type != 'food')
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h5 class="card-title">
+                        <span class="card-header-icon">
+                            <i class="tio-apps"></i>
+                        </span>
+                        <span>{{ translate('messages.Stock_Setup') }}</span>
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form action="{{ route('vendor.business-settings.update-stock-setup', [$store['id']]) }}" method="post">
+                        @csrf
+                        <div class="row align-items-end g-3">
+                            <div class="col-md-4">
+                                <div class="">
+                                    <label class="toggle-switch toggle-switch-sm d-flex justify-content-between border border-secondary rounded px-4 form-control"
+                                        for="show_low_stock_count">
+                                        <span class="pr-2">{{ translate('messages.Show_Low_Stock_Count') }}
+                                            <span class="form-label-secondary" data-toggle="tooltip" data-placement="right"
+                                                data-original-title="{{ translate('messages.If_enabled_low_stock_count_and_warning_products_will_be_visible_to_customer.') }}"><img
+                                                    src="{{ asset('/public/assets/admin/img/info-circle.svg') }}"
+                                                    alt="{{ translate('messages.Show_Low_Stock_Count') }}"></span>
+                                        </span>
+                                        <input type="checkbox" class="toggle-switch-input" name="show_low_stock_count"
+                                            id="show_low_stock_count" value="1"
+                                            {{ ($store?->storeConfig?->show_low_stock_count == 1) ? 'checked' : '' }}>
+                                        <span class="toggle-switch-label">
+                                            <span class="toggle-switch-indicator"></span>
+                                        </span>
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="input-label text-capitalize"
+                                    for="minimum_stock_for_warning_stock_card">{{ translate('messages.Minimum_stock_for_warning') }}
+                                    <span data-toggle="tooltip" data-placement="right"
+                                        data-original-title="{{ translate('When_the_stock_of_a_product_reaches_its_minimum_value_that_you_have_set,_you_will_receive_a_warning_to_update_the_stock._Additionally,_these_products_will_appear_in_the_Admin’s_Low_Stock_list.') }}"
+                                        class="input-label-secondary"><img
+                                            src="{{ asset('/public/assets/admin/img/info-circle.svg') }}"
+                                            alt="{{ translate('messages.Minimum_stock_for_warning') }}"></span>
+                                </label>
+                                <input type="number" id="minimum_stock_for_warning_stock_card" name="minimum_stock_for_warning"
+                                    min="0" max="999999999" class="form-control"
+                                    placeholder="{{ translate('messages.Ex: 5') }}"
+                                    value="{{ $store?->storeConfig?->minimum_stock_for_warning ?? '' }}">
+                            </div>
+                            <div class="col-12">
+                                <div class="btn--container mt-3 justify-content-end">
+                                    <button type="reset" class="btn btn--reset">{{ translate('messages.reset') }}</button>
+                                    <button type="submit" class="btn btn--primary">{{ translate('messages.update') }}</button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        @endif
+        @if(addon_published_status('Builder') && $admin_website_builder_status == 1)
+
+            <div class="card mt-3" id="admin_website_builder_section">
+                <div class="card-body">
+                    <div class="mb-20">
+                        <div class="row g-1 align-items-center">
+                            <div class="col-xxl-9 col-lg-8 col-md-7 col-sm-6">
+                                <div>
+                                    <h4 class="mb-1">
+                                        {{ translate('Vendor Website Builder') }}
+                                    </h4>
+                                    <p class="mb-0 fs-12">
+                                        {{ translate('Enable this option to allow vendors to set up and manage their own website.') }}
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="col-xxl-3 col-lg-4 col-md-5 col-sm-6">
+                                <div class="">
+                                    <div class="form-group mb-0">
+                                        <label
+                                            class="toggle-switch h--45px toggle-switch-sm d-flex justify-content-between border rounded px-3 py-0 form-control">
+                                            <span class="pr-1 d-flex align-items-center switch--label">
+                                                <span class="line--limit-1">
+                                                    {{translate('Status') }}
+                                                </span>
+                                            </span>
+                                            <input type="checkbox"
+                                                data-id="website_builder_status"
+                                                data-type="toggle"
+                                                data-image-on="{{ asset('/public/assets/admin/img/modal/store-reg-on.png') }}"
+                                                data-image-off="{{ asset('/public/assets/admin/img/modal/store-reg-off.png') }}"
+                                                data-title-on="<strong>{{translate('Are you sure to enable vendor Website setup?')}}</strong>"
+                                                data-title-off="<strong>{{translate('Are you sure to disable vendor Website setup?')}}</strong>"
+                                                data-text-on="<p>{{ translate('If enabled, vendors will have the freedom to create, edit, and manage their own websites independently.') }}</p>"
+                                                data-text-off="<p>{{ translate('If disabled, vendors will not be able to create or manage their own websites.') }}</p>"
+                                                class="status toggle-switch-input dynamic-checkbox"
+                                                value="1"
+                                                name="website_builder_status" id="website_builder_status"
+                                                {{ $store->storeConfig?->website_builder_status == 1?'checked':'' }}>
+                                            <span class="toggle-switch-label text">
+                                                <span class="toggle-switch-indicator"></span>
+                                            </span>
+                                                </label>
+                                                <form action="{{route('vendor.business-settings.website-builder-status',[$store->id,$store->storeConfig?->website_builder_status?0:1])}}"  method="get"  id="website_builder_status_form"></form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+            @endif
+        <div class="card mb-3 mt-3">
             <div class="card-header">
                 <h5 class="card-title">
                     <span class="card-header-icon">
@@ -637,6 +728,10 @@
                 } else {
                     $('#gst').attr('readonly', true);
                 }
+            });
+
+            $("#show_low_stock_count").on('change', function() {
+                // Low stock count visibility is separate from warning threshold.
             });
         });
 

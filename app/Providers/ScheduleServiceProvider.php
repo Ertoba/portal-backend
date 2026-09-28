@@ -47,6 +47,12 @@ class ScheduleServiceProvider extends ServiceProvider
                 ->runInBackground()
                 ->withoutOverlapping()
                 ->appendOutputTo(storage_path('logs/schedule.log'));
+
+            $schedule->command('payments:reconcile-flitt')
+                ->everyFiveMinutes()
+                ->runInBackground()
+                ->withoutOverlapping()
+                ->appendOutputTo(storage_path('logs/schedule.log'));
         });
     }
 

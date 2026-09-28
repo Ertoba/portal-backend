@@ -33,7 +33,7 @@
                                     <button type="submit" class="btn btn--secondary"><i class="tio-search"></i></button>
                                 </div>
                             </form>
-                           @if(request()->get('search'))
+                           @if(request()->input('search'))
                                 <button type="reset" class="btn btn--primary ml-2 location-reload-to-base" data-url="{{url()->full()}}">{{translate('messages.reset')}}</button>
                                 @endif
 

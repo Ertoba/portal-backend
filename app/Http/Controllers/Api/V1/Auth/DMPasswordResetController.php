@@ -29,11 +29,12 @@ class DMPasswordResetController extends Controller
         if ($validator->fails()) {
             return response()->json(['errors' => Helpers::error_processor($validator)], 403);
         }
-        $firebase_otp_verification = BusinessSetting::where('key', 'firebase_otp_verification')->first()->value??0;
+        $firebase_otp_verification = BusinessSetting::where('key', 'firebase_otp_verification')->first()?->value ?? 0;
         $deliveryman = DeliveryMan::withoutGlobalScope('delivery_only')->Where(['phone' => $request['phone']])->first();
 
         if (isset($deliveryman)) {
-            if($firebase_otp_verification || env('APP_MODE') =='demo')
+            $send_otp_via = BusinessSetting::where('key', 'send_otp_via')->first()?->value ?? 'sms';
+            if(($firebase_otp_verification && $send_otp_via == 'firebase') || getEnvMode() =='demo')
             {
                 return response()->json(['message' => translate('messages.otp_sent_successfull')], 200);
             }
@@ -43,7 +44,7 @@ class DMPasswordResetController extends Controller
             $otp_interval_time= 60; //seconds
             $verification_data= DB::table('password_resets')->where('email', $deliveryman['email'])->first();
             if(isset($verification_data) &&  Carbon::parse($verification_data->created_at)->DiffInSeconds() < $otp_interval_time){
-                $time= $otp_interval_time - Carbon::parse($verification_data->created_at)->DiffInSeconds();
+                $time= round($otp_interval_time - Carbon::parse($verification_data->created_at)->DiffInSeconds());
                 $errors = [];
                 array_push($errors, ['code' => 'otp', 'message' =>  translate('messages.please_try_again_after_').$time.' '.translate('messages.seconds')]);
                 return response()->json([
@@ -145,7 +146,7 @@ class DMPasswordResetController extends Controller
             return response()->json(['errors' => $errors
             ], 404);
         }
-        if(env('APP_MODE')=='demo')
+        if(getEnvMode()=='demo')
         {
             if($request['reset_token'] == '123456')
             {
@@ -170,10 +171,8 @@ class DMPasswordResetController extends Controller
             $verification_data= DB::table('password_resets')->where('email', $user->email)->first();
 
             if(isset($verification_data)){
-                $time= $temp_block_time - Carbon::parse($verification_data->temp_block_time)->DiffInSeconds();
-
                 if(isset($verification_data->temp_block_time ) && Carbon::parse($verification_data->temp_block_time)->DiffInSeconds() <= $temp_block_time){
-                    $time= $temp_block_time - Carbon::parse($verification_data->temp_block_time)->DiffInSeconds();
+                    $time= round($temp_block_time - Carbon::parse($verification_data->temp_block_time)->DiffInSeconds());
 
                     $errors = [];
                     array_push($errors, ['code' => 'otp_block_time', 'message' => translate('messages.please_try_again_after_').CarbonInterval::seconds($time)->cascade()->forHumans()
@@ -242,7 +241,7 @@ class DMPasswordResetController extends Controller
         if ($validator->fails()) {
             return response()->json(['errors' => Helpers::error_processor($validator)], 403);
         }
-        if(env('APP_MODE')=='demo')
+        if(getEnvMode()=='demo')
         {
             if($request['reset_token']=="123456")
             {
@@ -287,7 +286,7 @@ class DMPasswordResetController extends Controller
         }
 
 
-        $webApiKey = BusinessSetting::where('key', 'firebase_web_api_key')->first()->value??'';
+        $webApiKey = BusinessSetting::where('key', 'firebase_web_api_key')->first()?->value ?? '';
 
 //        $firebaseOTPVerification = Helpers::get_business_settings('firebase_otp_verification');
 //        $webApiKey = $firebaseOTPVerification ? $firebaseOTPVerification['web_api_key'] : '';

@@ -40,22 +40,26 @@
                             <div class="col-md-6">
                                 <div class="row g-3">
                                     <div class="col-md-6">
-                                        <label for="name" class="form-label">{{translate('Reviewer Name')}}
+                                        <label for="name" class="form-label">{{translate('Reviewer Name')}}<span class="form-label-secondary" data-toggle="tooltip" data-placement="right" data-original-title="{{ translate('Write_the_name_within_30_characters') }}">
+                                                <img src="{{ asset('public/assets/admin/img/info-circle.svg') }}" alt="">
+                                            </span>
                                             <span class="form-label-secondary text-danger"
                                                   data-toggle="tooltip" data-placement="right"
                                                   data-original-title="{{ translate('messages.Required.')}}"> *
                                                 </span>
                                         </label>
-                                        <input required id="name" type="text" name="name" value="{{ $review->name }}" class="form-control" placeholder="{{translate('Ex:  John Doe')}}">
+                                        <input required id="name" type="text" maxlength="30" name="name" value="{{ $review->name }}" class="form-control" placeholder="{{translate('Ex:  John Doe')}}">
                                     </div>
                                     <div class="col-md-6">
-                                        <label for="designation" class="form-label">{{translate('Designation')}}
+                                        <label for="designation" class="form-label">{{translate('Designation')}}<span class="form-label-secondary" data-toggle="tooltip" data-placement="right" data-original-title="{{ translate('Write_the_designation_within_30_characters') }}">
+                                                <img src="{{ asset('public/assets/admin/img/info-circle.svg') }}" alt="">
+                                            </span>
                                             <span class="form-label-secondary text-danger"
                                                   data-toggle="tooltip" data-placement="right"
                                                   data-original-title="{{ translate('messages.Required.')}}"> *
                                                 </span>
                                         </label>
-                                        <input required id="designation" type="text" name="designation" value="{{ $review->designation }}" class="form-control" placeholder="{{translate('Ex:  CTO')}}">
+                                        <input required id="designation" type="text" maxlength="30" name="designation" value="{{ $review->designation }}" class="form-control" placeholder="{{translate('Ex:  CTO')}}">
                                     </div>
                                     <div class="col-md-12">
                                         <label for="review" class="form-label">{{translate('messages.review')}}<span
@@ -227,3 +231,4 @@
     <!-- How it Works -->
     @include('admin-views.business-settings.landing-page-settings.partial.how-it-work')
 @endsection
+

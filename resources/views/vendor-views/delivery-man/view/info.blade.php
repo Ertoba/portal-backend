@@ -330,16 +330,13 @@
                             <td>
                                 @if ($review->customer)
                                     <div class="d-flex align-items-center">
-                                        <div class="avatar avatar-circle">
-                                            <img class="avatar-img onerror-image" width="75" height="75"
-                                                 data-onerror-image="{{asset('public/assets/admin/img/160x160/img1.jpg')}}"
-                                                 src="{{ $review->customer->image_full_url }}"
-                                                alt="Image Description">
-                                        </div>
+                                        @include('partials._user-avatar', [
+                                            'imageUrl'  => $review->customer->image_full_url,
+                                            'proStatus' => $review->customer->pro_status ?? false,
+                                            'size'      => 75,
+                                        ])
                                         <div class="ml-3">
-                                        <span class="d-block h5 text-hover-primary mb-0">{{$review->customer['f_name']." ".$review->customer['l_name']}} <i
-                                                class="tio-verified text-primary" data-toggle="tooltip" data-placement="top"
-                                                title="Verified Customer"></i></span>
+                                        <span class="d-block h5 text-hover-primary mb-0">{{$review->customer['f_name']." ".$review->customer['l_name']}} </span>
                                             <span class="d-block font-size-sm text-body">{{$review->customer->email}}</span>
                                         </div>
                                     </div>

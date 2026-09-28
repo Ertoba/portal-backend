@@ -88,7 +88,11 @@
                 })
                 .then(response => response.json())
                 .then(orderData => {
-                    var rzp1 = new Razorpay({
+                    if (!orderData.status || !orderData.order_id) {
+                        throw new Error(orderData.message || "Unable to initialize Razorpay checkout.");
+                    }
+
+                    var options = {
                         "key": "{{ config()->get('razor_config.api_key') }}",
                         "amount": orderData.amount,
                         "currency": orderData.currency,
@@ -96,6 +100,7 @@
                         "description": "{{ $data->payment_amount }}",
                         "image": "{{ $business_logo }}",
                         "order_id": orderData.order_id,
+                        "webview_intent": true,
                         "callback_url": "{{ route('razor-pay.callback', ['payment_data' => base64_encode($data->id)])  }}",
                         "handler": function (response) {
                             console.log("Payment successful!", response);
@@ -111,10 +116,21 @@
                             "email": "{{ $payer?->email ?? '' }}",
                             "contact": "{{ $payer?->phone ?? '' }}"
                         },
+                        "readonly": {
+                            "contact": true,
+                            "email": true,
+                            "name": true
+                        },
+                        "modal": {
+                            "ondismiss": function () {
+                                window.location.href = '{{ route('razor-pay.cancel', ['payment_id' => $data->id]) }}';
+                            }
+                        },
                         "theme": {
                             "color": "#ff7529"
                         }
-                    });
+                    };
+                    var rzp1 = new Razorpay(options);
 
                     rzpButton.onclick = function (e) {
                         rzp1.open();

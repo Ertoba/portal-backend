@@ -46,7 +46,7 @@ active
                 <div class="min--200">
                     <select name="store_id" data-placeholder="{{translate('messages.select_store')}}" class="js-data-example-ajax form-control set-filter" data-url="{{ url()->full() }}" data-filter="store_id">
                         @if(isset($store))
-                            <option value="{{$store->id}}" selected>{{$store->name}}</option>
+                            <option value="{{$store->id}}" data-verified="{{ (int) $store->verified_seller }}" selected>{{$store->name}}</option>
                         @else
                             <option value="all" selected>{{translate('messages.all_stores')}}</option>
                         @endif
@@ -65,13 +65,13 @@ active
                     <div id="usersExportDropdown"
                         class="hs-unfold-content dropdown-unfold dropdown-menu dropdown-menu-sm-right">
                         <span class="dropdown-header">{{ translate('messages.download_options') }}</span>
-                        <a id="export-excel" class="dropdown-item" href="{{route('admin.transactions.report.stock-wise-report-export', ['type'=>'excel',request()->getQueryString()])}}">
+                        <a id="export-excel" class="dropdown-item" href="{{route('admin.transactions.report.stock-wise-report-export', ['type'=>'excel', 'module_id'=>Config::get('module.current_module_id') ?? request()->query('module_id'), request()->getQueryString()])}}">
                             <img class="avatar avatar-xss avatar-4by3 mr-2"
                                 src="{{ asset('public/assets/admin') }}/svg/components/excel.svg"
                                 alt="Image Description">
                             {{ translate('messages.excel') }}
                         </a>
-                        <a id="export-csv" class="dropdown-item" href="{{route('admin.transactions.report.stock-wise-report-export', ['type'=>'csv',request()->getQueryString()])}}">
+                        <a id="export-csv" class="dropdown-item" href="{{route('admin.transactions.report.stock-wise-report-export', ['type'=>'csv', 'module_id'=>Config::get('module.current_module_id') ?? request()->query('module_id'), request()->getQueryString()])}}">
                             <img class="avatar avatar-xss avatar-4by3 mr-2"
                                 src="{{ asset('public/assets/admin') }}/svg/components/placeholder-csv-format.svg"
                                 alt="Image Description">
@@ -121,7 +121,7 @@ active
                     <tr>
                         <td>{{$key+$items->firstItem()}}</td>
                         <td>
-                            <a class="media align-items-center" href="{{route('admin.item.view',[$item['id'],'module_id'=>$item['module_id']])}}">
+                            <a class="media align-items-center min-w-220" href="{{route('admin.item.view',[$item['id'],'module_id'=>$item['module_id']])}}">
                                 <img class="avatar avatar-lg mr-3 onerror-image"
 
                                 src="{{ $item['image_full_url'] ?? asset('public/assets/admin/img/160x160/img2.jpg') }}"
@@ -146,7 +146,7 @@ active
                             @endif
                         </td>
                         <td>
-                            {{$item->stock}}
+                            {{ max((int) $item->stock, 0) }}
                         </td>
                         <td>
                             <a class="btn action-btn btn--primary btn-outline-primary update-quantity" href="javascript:" title="{{translate('messages.edit_quantity')}}" data-id="{{ $item->id }}" data-toggle="modal" data-target="#update-quantity"><i class="tio-edit"></i>

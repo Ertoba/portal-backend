@@ -38,18 +38,15 @@
                     <!-- Body -->
                     <div class="card-body">
                         <div class="row align-items-md-center">
-                            <div class="col-lg-5 col-md-6 mb-3 mb-md-0">
-                                <div class="d-flex flex-wrap align-items-center food--media">
-                                    <img class="avatar avatar-xxl avatar-4by3 mr-4 onerror-image"
-                                        src="{{ $product['image_full_url'] ?? asset('public/assets/admin/img/160x160/img2.jpg') }}"
-                                        data-onerror-image="{{ asset('public/assets/admin/img/160x160/img2.jpg') }}"
-                                        alt="Image Description">
-                                    <div class="d-block">
-                                        <div class="rating--review">
-                                            <h1 class="title">{{ number_format($product->avg_rating, 1) }}<span
-                                                    class="out-of">/5</span></h1>
+                            <div class="col-xl-6 col-lg-6 col-md-6 mb-3 mb-md-0">
+                                <div class="d-flex gap-3 flex-sm-nowrap flex-wrap align-items-center food--media">                                
+                                    @include('partials._product-media-slider', ['product' => $product])
 
-
+                                    <div class="d-block min-w--120 review-xxl-45">
+                                        <div class="rating--review rating--review02 text-left">
+                                            <h2 class="">{{ number_format($product->avg_rating, 1) }}<span
+                                                class="out-of">/5</span>
+                                            </h2>
                                             <div class="rating">
                                                 @foreach (range(1, 5) as $i)
                                                     <span>
@@ -72,7 +69,7 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="col-lg-7 col-md-6 mx-auto">
+                            <div class="col-xl-6 col-lg-6 col-md-6 mx-auto">
                                 <ul class="list-unstyled list-unstyled-py-2 mb-0 rating--review-right py-3">
                                     @php($total = $product->rating ? array_sum(json_decode($product->rating, true)) : 0)
                                     <!-- Review Ratings -->
@@ -230,18 +227,20 @@
                         </thead>
                         <tbody>
                             <tr>
-                                <td class="px-4 max-w--220px">
-                                    <div class="">
+                                <td class="px-4">
+                                    <div class="line--limit-3 min-w-220 max-w--220px">
                                         {!! $product['description'] !!}
                                     </div>
                                 </td>
                                 @if (in_array($product->module->module_type, ['food', 'grocery']))
                                     <td class="px-4">
-                                        @if ($product->nutritions)
-                                            @foreach ($product->nutritions as $nutrition)
-                                                {{ $nutrition->nutrition }}{{ !$loop->last ? ',' : '.' }}
-                                            @endforeach
-                                        @endif
+                                        <div class="min-w-135px">
+                                            @if ($product->nutritions)
+                                                @foreach ($product->nutritions as $nutrition)
+                                                    {{ $nutrition->nutrition }}{{ !$loop->last ? ',' : '.' }}
+                                                @endforeach
+                                            @endif
+                                        </div>
                                     </td>
                                     <td class="px-4">
                                         @if ($product->allergies)
@@ -252,7 +251,7 @@
                                     </td>
                                 @endif
                                 @if (Config::get('module.current_module_type') != 'food')
-                                    <td class="px-4">{{ $product->stock }}</td>
+                                    <td class="px-4">{{ max((int) $product->stock, 0) }}</td>
                                 @endif
                                 @if (in_array($product->module->module_type, ['pharmacy']))
                                     <td class="px-4">
@@ -461,18 +460,15 @@
                                     @if ($review->customer)
                                         <a class="d-flex align-items-center"
                                             href="{{ route('admin.customer.view', [$review['user_id']]) }}">
-                                            <div class="avatar avatar-circle">
-                                                <img class="avatar-img onerror-image"
-                                                    data-onerror-image="{{ asset('public/assets/admin/img/160x160/img1.jpg') }}"
-                                                    width="75" height="75"
-                                                    src="{{ $review->customer->image_full_url ?? asset('public/assets/admin/img/160x160/img1.jpg') }}"
-                                                    alt="Image Description">
-                                            </div>
+                                            @include('partials._user-avatar', [
+                                                'imageUrl'  => $review->customer->image_full_url,
+                                                'proStatus' => $review->customer->pro_status ?? false,
+                                                'size'      => 75,
+                                            ])
                                             <div class="ml-3">
                                                 <span
                                                     class="d-block h5 text-hover-primary mb-0">{{ $review->customer['f_name'] . ' ' . $review->customer['l_name'] }}
-                                                    <i class="tio-verified text-primary" data-toggle="tooltip"
-                                                        data-placement="top" title="Verified Customer"></i></span>
+                                                    </span>
                                                 <span
                                                     class="d-block font-size-sm text-body">{{ $review->customer->email }}</span>
                                             </div>

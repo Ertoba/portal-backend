@@ -7,7 +7,7 @@ use App\Http\Controllers\Vendor\SubscriptionController;
 
 Route::group(['namespace' => 'Vendor', 'as' => 'vendor.'], function () {
 
-    Route::group(['middleware' => ['vendor', 'actch:admin_panel']], function () {
+    Route::group(['middleware' => ['vendor', 'maintenance', 'mili.feature:admin_panel']], function () {
 
         Route::post('search-routing', 'SearchRoutingController@index')->name('search.routing');
         Route::get('recent-search', 'SearchRoutingController@recentSearch')->name('recent.search');
@@ -17,6 +17,7 @@ Route::group(['namespace' => 'Vendor', 'as' => 'vendor.'], function () {
         Route::get('/', 'DashboardController@dashboard')->name('dashboard');
         Route::get('/get-store-data', 'DashboardController@store_data')->name('get-store-data');
         Route::post('/store-token', 'DashboardController@updateDeviceToken')->name('store.token');
+        Route::post('/verified-badge-popup-seen', 'DashboardController@verifiedBadgePopupSeen')->name('verified-badge-popup-seen');
 
         Route::group(['middleware' => ['module:reviews' ,'subscription:reviews']], function () {
             Route::get('/reviews', 'ReviewController@index')->name('reviews');
@@ -45,6 +46,11 @@ Route::group(['namespace' => 'Vendor', 'as' => 'vendor.'], function () {
                 Route::post('order', 'POSController@place_order')->name('order');
                 Route::post('customer-store', 'POSController@customer_store')->name('customer-store');
                 Route::get('data', 'POSController@extra_charge')->name('extra_charge');
+                Route::get('get-user-data', 'POSController@getUserData')->name('getUserData');
+                Route::group(['prefix' => 'delivery-type', 'as' => 'delivery_type.'], function () {
+                    Route::get('get', 'POSController@getDeliveryTypes')->name('get');
+                    Route::post('set', 'POSController@setDeliveryType')->name('set');
+                });
             });
         });
 
@@ -76,11 +82,29 @@ Route::group(['namespace' => 'Vendor', 'as' => 'vendor.'], function () {
             Route::get('export-sub-categories', 'CategoryController@export_sub_categories')->name('export-sub-categories');
         });
 
+        Route::group(['prefix' => 'store-category', 'as' => 'store-category.'], function () {
+            Route::get('list', 'StoreCategoryController@index')->name('list');
+            Route::get('create', 'StoreCategoryController@create')->name('create');
+            Route::post('store', 'StoreCategoryController@store')->name('store');
+            Route::get('edit/{id}', 'StoreCategoryController@getUpdateView')->name('edit');
+            Route::post('update/{id}', 'StoreCategoryController@update')->name('update');
+            Route::get('status', 'StoreCategoryController@updateStatus')->name('status');
+            Route::get('priority/{id}', 'StoreCategoryController@updatePriority')->name('priority');
+            Route::delete('delete', 'StoreCategoryController@delete')->name('delete');
+            Route::get('get-all', 'StoreCategoryController@getAll')->name('get-all');
+            Route::get('export', 'StoreCategoryController@exportList')->name('export');
+
+            // Assign uncategorized items to a My Category
+            Route::get('items/{id}', 'StoreCategoryController@assignItemsView')->name('items');
+            Route::get('items/{id}/search', 'StoreCategoryController@searchAssignableItems')->name('items.search');
+            Route::post('items/{id}/assign', 'StoreCategoryController@storeAssignedItems')->name('items.assign');
+        });
+
         Route::group(['prefix' => 'custom-role', 'as' => 'custom-role.', 'middleware' => ['module:role' ,'subscription:role']], function () {
             Route::get('create', 'CustomRoleController@create')->name('create');
             Route::post('create', 'CustomRoleController@store')->name('store');
             Route::get('edit/{id}', 'CustomRoleController@edit')->name('edit');
-            Route::post('update/{id}', 'CustomRoleController@update')->name('update');
+            Route::post('update/{id}', 'CustomRoleController@update')->name('update-role');
             Route::delete('delete/{id}', 'CustomRoleController@distroy')->name('delete');
         });
 
@@ -121,6 +145,7 @@ Route::group(['namespace' => 'Vendor', 'as' => 'vendor.'], function () {
         Route::group(['prefix' => 'item', 'as' => 'item.', 'middleware' => ['module:item' ,'subscription:item']], function () {
             Route::get('add-new', 'ItemController@index')->name('add-new');
             Route::post('variant-combination', 'ItemController@variant_combination')->name('variant-combination');
+            Route::post('variant-price', 'ItemController@variant_price')->name('variant-price');
             Route::post('store', 'ItemController@store')->name('store');
             Route::get('edit/{id}', 'ItemController@edit')->name('edit');
             Route::post('update/{id}', 'ItemController@update')->name('update');
@@ -183,7 +208,7 @@ Route::group(['namespace' => 'Vendor', 'as' => 'vendor.'], function () {
             Route::post('request', 'WalletController@w_request')->name('withdraw-request');
             Route::delete('close/{id}', 'WalletController@close_request')->name('close-request');
             Route::get('method-list', 'WalletController@method_list')->name('method-list');
-            Route::post('make-collected-cash-payment', 'WalletController@make_payment')->name('make_payment');
+            Route::post('make-collected-cash-payment', 'WalletController@make_payment')->name('wallet_make_payment');
             Route::post('make-wallet-adjustment', 'WalletController@make_wallet_adjustment')->name('make_wallet_adjustment');
 
             Route::get('wallet-payment-list', 'WalletController@wallet_payment_list')->name('wallet_payment_list');
@@ -240,7 +265,10 @@ Route::group(['namespace' => 'Vendor', 'as' => 'vendor.'], function () {
             Route::put('status-update/{id}', 'OrderController@status')->name('status-update');
             Route::post('add-to-cart', 'OrderController@add_to_cart')->name('add-to-cart');
             Route::post('remove-from-cart', 'OrderController@remove_from_cart')->name('remove-from-cart');
-            Route::get('update/{order}', 'OrderController@update')->name('update');
+            Route::post('update-cart-quantity', 'OrderController@update_cart_quantity')->name('update-cart-quantity');
+            Route::get('cart-list', 'OrderController@cart_list')->name('cart-list');
+            Route::get('search-items', 'OrderController@search_items')->name('search-items');
+            Route::post('update/{order}', 'OrderController@update')->name('update');
             Route::get('edit-order/{order}', 'OrderController@edit')->name('edit');
             Route::get('details/{id}', 'OrderController@details')->name('details');
             Route::get('status', 'OrderController@status')->name('status');
@@ -263,8 +291,10 @@ Route::group(['namespace' => 'Vendor', 'as' => 'vendor.'], function () {
                 Route::get('remove-schedule/{store_schedule}', 'BusinessSettingsController@remove_schedule')->name('remove-schedule');
                 Route::get('update-active-status', 'BusinessSettingsController@active_status')->name('update-active-status');
                 Route::post('update-setup/{store}', 'BusinessSettingsController@store_setup')->name('update-setup');
+                Route::post('update-stock-setup/{store}', 'BusinessSettingsController@stock_setup')->name('update-stock-setup');
                 Route::post('update-meta-data/{store}', 'BusinessSettingsController@updateStoreMetaData')->name('update-meta-data');
                 Route::get('toggle-settings-status/{store}/{status}/{menu}', 'BusinessSettingsController@store_status')->name('toggle-settings');
+                Route::get('website-builder-status/{store}/{status}', 'BusinessSettingsController@website_builder_status')->name('website-builder-status');
             });
 
             Route::group(['middleware' => ['module:notification_setup' ,'subscription:notification_setup']], function () {
@@ -293,18 +323,27 @@ Route::group(['namespace' => 'Vendor', 'as' => 'vendor.'], function () {
 
         Route::group(['prefix' => 'report', 'as' => 'report.'], function () {
             Route::post('set-date', 'ReportController@set_date')->name('set-date');
-                Route::group(['middleware' => ['module:expense_report' ,'subscription:expense_report']], function () {
-                    Route::get('expense-report', 'ReportController@expense_report')->name('expense-report');
-                    Route::get('expense-export', 'ReportController@expense_export')->name('expense-export');
-                });
-                Route::group(['middleware' => ['module:disbursement_report' ,'subscription:disbursement_report']], function () {
-                    Route::get('disbursement-report', 'ReportController@disbursement_report')->name('disbursement-report');
-                    Route::get('disbursement-report-export/{type}', 'ReportController@disbursement_report_export')->name('disbursement-report-export');
-                });
-                Route::group(['middleware' => ['module:vat_report' ,'subscription:vat_report']], function () {
-                    Route::get('vendor-tax-report', 'VendorTaxReportController@vendorTax')->name('vendorTax');
-                    Route::get('vendor-tax-export', 'VendorTaxReportController@vendorTaxExport')->name('vendorTaxExport');
-                });
+            Route::group(['middleware' => ['module:expense_report' ,'subscription:expense_report']], function () {
+                Route::get('store-earning-report', 'StoreEarningReportController@getStoreEarningReport')->name('store-earning-report');
+                Route::get('store-earning-summary', 'StoreEarningReportController@getStoreEarningSummary')->name('store-earning-summary');
+                Route::get('store-earning-breakdown', 'StoreEarningReportController@getStoreEarningBreakdown')->name('store-earning-breakdown');
+                Route::get('store-expense-breakdown', 'StoreEarningReportController@getStoreExpenseBreakdown')->name('store-expense-breakdown');
+                Route::get('store-earning-trend', 'StoreEarningReportController@getStoreEarningTrend')->name('store-earning-trend');
+                Route::get('store-earning-transactions', 'StoreEarningReportController@getStoreEarningTransactions')->name('store-earning-transactions');
+                Route::get('store-earning-export', 'StoreEarningReportController@exportStoreEarningTransactions')->name('store-earning-export');
+            });
+            Route::group(['middleware' => ['module:expense_report' ,'subscription:expense_report']], function () {
+                Route::get('expense-report', 'ReportController@expense_report')->name('expense-report');
+                Route::get('expense-export', 'ReportController@expense_export')->name('expense-export');
+            });
+            Route::group(['middleware' => ['module:disbursement_report' ,'subscription:disbursement_report']], function () {
+                Route::get('disbursement-report', 'ReportController@disbursement_report')->name('disbursement-report');
+                Route::get('disbursement-report-export/{type}', 'ReportController@disbursement_report_export')->name('disbursement-report-export');
+            });
+            Route::group(['middleware' => ['module:vat_report' ,'subscription:vat_report']], function () {
+                Route::get('vendor-tax-report', 'VendorTaxReportController@vendorTax')->name('vendorTax');
+                Route::get('vendor-tax-export', 'VendorTaxReportController@vendorTaxExport')->name('vendorTaxExport');
+            });
         });
     });
 });

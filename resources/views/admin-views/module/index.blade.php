@@ -35,7 +35,7 @@
                         <div class="input-group input--group">
                             <input id="datatableSearch" name="search" type="search" class="form-control" placeholder="{{translate('ex_:_Search_Module_by_Name')}}" aria-label="{{translate('messages.search_here')}}" value="{{request()->query('search')}}">
                             <button type="submit" class="btn btn--secondary"><i class="tio-search"></i></button>
-                            @if(request()->get('search'))
+                            @if(request()->input('search'))
                             <button type="reset" class="btn btn--primary ml-2 location-reload-to-base" data-url="{{url()->full()}}">{{translate('messages.reset')}}</button>
                             @endif
                         </div>
@@ -49,6 +49,9 @@
                         <select id="module_type" name="module_type" class="form-control h--45px set-filter" data-url="{{ url()->full() }}" data-filter="module_type">
                             <option value="all" {{ request('module_type') == 'all' ? 'selected' : '' }}>{{ translate('messages.all_module_type') }}</option>
                             @foreach (config('module.module_type') as $key)
+                                {{-- Hide addon-based module types whose addon isn't published --}}
+                                @continue($key === 'rental' && !addon_published_status('Rental'))
+                                @continue($key === 'ride-share' && !addon_published_status('RideShare'))
                                 <option class="" value="{{$key}}" {{ request('module_type') == $key ? 'selected' : '' }}>{{translate($key)}}</option>
                             @endforeach
                         </select>

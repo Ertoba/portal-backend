@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use App\CentralLogics\Helpers;
+use App\Models\DataSetting;
+use App\Scopes\HostScope;
 use App\Scopes\StoreScope;
 use App\Scopes\ZoneScope;
 use App\Traits\DemoMaskable;
@@ -55,6 +57,7 @@ class User extends Authenticatable
         'wallet_balance' => 'float',
         'loyalty_point' => 'integer',
         'ref_by' => 'integer',
+        'pro_status' => 'boolean',
     ];
     protected $appends = ['image_full_url'];
     public function getImageFullUrlAttribute(){
@@ -134,6 +137,35 @@ class User extends Authenticatable
         static::addGlobalScope('storage', function ($builder) {
             $builder->with('storage');
         });
+
+        // Per-storefront identity scoping. Default-filters User queries to
+        // host rows (`tenant_id = 0 AND sub_tenant_id = 0`). Backend
+        // operators (admin/vendor/vendor_employee guards) auto-bypass.
+        // Storefront adapter applies its own scope via withoutGlobalScope.
+        static::addGlobalScope(new HostScope());
+
+        static::retrieved(function () {
+            static $checked = false;
+            if ($checked) {
+                return;
+            }
+            $checked = true;
+
+            $lastRun = DataSetting::where([
+                'key' => 'subscription_expiry_last_run_at',
+                'type' => 'notification_settings',
+            ])->first()?->value;
+
+            if ($lastRun && \Illuminate\Support\Carbon::parse($lastRun)->isAfter(now()->subDay())) {
+                return;
+            }
+
+            try {
+                (new class { use \App\Traits\ManagesProCustomerSubscription; })->expireDueSubscriptions();
+            } catch (\Throwable $e) {
+                info('subscription_expiry_user_booted: ' . $e->getMessage());
+            }
+        });
     }
     protected static function boot()
     {
@@ -154,5 +186,25 @@ class User extends Authenticatable
             }
         });
 
+    }
+
+    public function item_visit_log()
+    {
+        return $this->morphedByMany(Item::class ,'visitor_log' );
+    }
+
+    public function proCustomerSubscriptions()
+    {
+        return $this->hasMany(\App\Models\ProCustomerSubscription::class);
+    }
+
+    public function activeProCustomerSubscription()
+    {
+        return $this->hasOne(\App\Models\ProCustomerSubscription::class)->where('status', 'active')->latestOfMany();
+    }
+
+    public function proCustomerTransactions()
+    {
+        return $this->hasMany(\App\Models\ProCustomerTransaction::class);
     }
 }

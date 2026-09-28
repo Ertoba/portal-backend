@@ -135,6 +135,81 @@
 
                         </div>
                     </div>
+                    @php($pro_member_status = $data['pro_member_status'] ?? 0)
+                    <div class="card mb-20 p-20">
+                        <div class="d-flex align-items-center justify-content-between gap-2 flex-sm-nowrap flex-wrap">
+                            <div>
+                                <h4 class="mb-1">{{translate('Pro Customer')}}</h4>
+                                <p class="fs-12 m-0">
+                                    {{translate('Enable to allow Pro Customer. Ensure subscription')}}
+                                    @if($pro_member_status == 1)
+                                        <a href="{{ route('admin.pro-customer.benefits-setup') }}" class="fs-12 font-weight-medium text-info text-underline m-0">{{translate('setup')}}</a>
+                                    @else
+                                        <span class="fs-12 font-weight-medium text-muted m-0">{{translate('setup')}}</span>
+                                    @endif
+                                    {{translate('is complete and Setup the')}}
+                                    @if($pro_member_status == 1)
+                                        <a href="{{ route('admin.business-settings.fcm-index') }}#subscription-notification-en" class="fs-12 font-weight-medium text-info text-underline m-0">{{translate('push notification')}}</a>.
+                                    @else
+                                        <span class="fs-12 font-weight-medium text-muted m-0">{{translate('push notification')}}</span>.
+                                    @endif
+                                </p>
+                            </div>
+                            <div class="d-flex flex-sm-nowrap flex-wrap justify-content-end justify-content-end align-items-center gap-3">
+                                <div class="mb-0">
+                                    <label class="toggle-switch toggle-switch-sm mb-0">
+                                        <input type="checkbox"
+                                            data-id="pro_member_status" data-type="toggle"
+                                            data-image-on="{{ asset('/public/assets/admin/img/modal/crown_on.png') }}"
+                                            data-image-off="{{ asset('/public/assets/admin/img/modal/crown_off.png') }}"
+                                            data-title-on="<strong>{{ translate('Want to enable Pro Customer feature?') }}</strong>"
+                                            data-title-off="<strong>{{ translate('Want to disable Pro Customer feature?') }}</strong>"
+                                            data-text-on="<p>{{ translate('If you enable this, customers can subscribe to Pro Customer plans.') }}</p>"
+                                            data-text-off="<p>{{ translate('If you disable the subscription plan, new customers won’t be able to subscribe. Existing subscribersSubscribers keep benefits until expiry, then the feature will be unavailable.') }}</p>"
+                                            class="status toggle-switch-input dynamic-checkbox-toggle"
+                                            name="pro_member_status" id="pro_member_status" value="1"
+                                            {{ $pro_member_status == 1 ? 'checked' : '' }}>
+                                        <span class="toggle-switch-label text mb-0">
+                                            <span class="toggle-switch-indicator"></span>
+                                        </span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    @if (addon_published_status('AI'))
+                        @php($customer_personalization_status = $data['customer_personalization_status'] ?? 0)
+                        <div class="card mb-20 p-20" id="customer-personalization">
+                            <div class="d-flex align-items-center justify-content-between gap-2 flex-sm-nowrap flex-wrap">
+                                <div>
+                                    <h4 class="mb-1">{{ translate('AI Personalization') }}</h4>
+                                    <p class="fs-12 m-0">
+                                        {{ translate('Show each customer a more relevant order of items, stores, and categories.') }}
+                                    </p>
+                                </div>
+                                <div class="d-flex flex-sm-nowrap flex-wrap justify-content-end align-items-center gap-3">
+                                    <div class="mb-0">
+                                        <label class="toggle-switch toggle-switch-sm mb-0">
+                                            <input type="checkbox"
+                                                data-id="customer_personalization_status" data-type="toggle"
+                                                data-image-on="{{ asset('/public/assets/admin/img/modal/schedule-on.png') }}"
+                                                data-image-off="{{ asset('/public/assets/admin/img/modal/schedule-off.png') }}"
+                                                data-title-on="<strong>{{ translate('Enable AI Personalization?') }}</strong>"
+                                                data-title-off="<strong>{{ translate('Disable AI Personalization?') }}</strong>"
+                                                data-text-on="<p>{{ translate('Listings are tailored to each customer for a more relevant shopping experience.') }}</p>"
+                                                data-text-off="<p>{{ translate('Customers will see the standard listing order.') }}</p>"
+                                                class="status toggle-switch-input dynamic-checkbox-toggle"
+                                                name="customer_personalization_status" id="customer_personalization_status" value="1"
+                                                {{ $customer_personalization_status == 1 ? 'checked' : '' }}>
+                                            <span class="toggle-switch-label text mb-0">
+                                                <span class="toggle-switch-indicator"></span>
+                                            </span>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    @endif
                     <div class="card mb-20 card-container" id="customer-wallet">
                         <div class="card-body">
                             <div class="d-flex align-items-center justify-content-between gap-2 flex-sm-nowrap flex-wrap">
@@ -248,7 +323,7 @@
                                                     <p class="mb-0 mt-2 fs-12 color-656565">{{ translate('To add fund for a customer visit') }} <a target="_blank" href="{{ route('admin.users.customer.wallet.add-fund') }}" class="text-primary text-underline fw-semibold">{{ translate('Add Fund') }}</a> {{ translate('page.') }}</p>
                                                 </li>
                                             </ul>
-                                        
+
                                     </div>
                                 </div>
                             </div>
@@ -547,6 +622,11 @@
 
         <!-- End Table -->
     </div>
+
+
+
+
+
     <div id="global_guideline_offcanvas" style="overflow-y: auto;"
          class="custom-offcanvas d-flex flex-column justify-content-between global_guideline_offcanvas">
         <div>
@@ -697,6 +777,8 @@
         </div>
     </div>
     <div id="offcanvasOverlay" class="offcanvas-overlay"></div>
+
+
 
 @endsection
 

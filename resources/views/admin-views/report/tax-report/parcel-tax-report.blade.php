@@ -17,11 +17,8 @@
                         <div class="col-lg-4 col-md-6">
                             <label class="form-label">{{ translate('Date Range') }}</label>
                             <div class="position-relative">
-                                @php
-                                    $dataRange = Carbon\Carbon::parse($startDate)->format('m/d/Y') . ' - ' . Carbon\Carbon::parse($endDate)->format('m/d/Y');
-                                @endphp
                                 <i class="tio-calendar-month icon-absolute-on-right"></i>
-                                <input type="text" data-title="{{ translate('Select_Date_Range') }}" name="dates" value="{{ $dataRange  ?? null }}" class="date-range-picker form-control">
+                                <input type="text" data-title="{{ translate('Select_Date_Range') }}" name="dates" value="{{ $dateRange ?? null }}" class="date-range-picker form-control">
 
                             </div>
                         </div>
@@ -211,6 +208,17 @@
 @push('script_2')
     <script>
         "use strict";
+
+        $(function() {
+            $('input[name="dates"]').daterangepicker({
+                startDate: moment('{{ $startDate }}'),
+                endDate: moment('{{ $endDate }}'),
+                maxDate: moment(),
+                locale: {
+                    format: 'MM/DD/YYYY'
+                }
+            });
+        });
 
         $(document).on('ready', function() {
             $('.js-data-example-ajax').select2({

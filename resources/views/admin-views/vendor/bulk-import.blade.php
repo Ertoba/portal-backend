@@ -168,9 +168,11 @@
                                     <div class="filename">{{translate('Must_be_Excel_files_using_our_Excel_template_above')}}</div>
                                 </div>
                                 <input type="file" name="products_file" class="form-control-file text--primary font-weight-bold action-upload-section-dot-area" id="products_file">
+                                <small class="text-danger d-none" id="file_error">
+                                    {{ translate('Please_upload_a_valid_Excel_file_(.xlsx,_._xls,_._csv)_under_2MB') }}
+                                </small>
                             </div>
                         </label>
-
                     </div>
                 </div>
                 <div class="btn--container justify-content-end mt-20">
@@ -234,4 +236,35 @@ $(".action-upload-section-dot-area").on("change", function () {
         })
     }
         </script>
+        <script>
+document.getElementById('products_file').addEventListener('change', function () {
+    const fileInput = this;
+    const file = fileInput.files[0];
+    const errorBox = document.getElementById('file_error');
+    const submitBtn = document.querySelector('.update_or_import');
+    errorBox.classList.add('d-none');
+
+    if (file) {
+        const allowedExtensions = ['xlsx', 'xls', 'csv'];
+        const fileExtension = file.name.split('.').pop().toLowerCase();
+
+        if (!allowedExtensions.includes(fileExtension)) {
+            submitBtn.disabled = true;
+            errorBox.textContent = "Invalid file type. Only .xlsx, .xls, and .csv files are allowed.";
+            errorBox.classList.remove('d-none');
+            fileInput.value = '';
+            return;
+        }
+
+        if (file.size > 2048 * 1024) { // 2MB
+            submitBtn.disabled = true;
+            errorBox.textContent = "File size must be less than 2MB.";
+            errorBox.classList.remove('d-none');
+            fileInput.value = '';
+            return;
+        }
+        submitBtn.disabled = false;
+    }
+});
+</script>
 @endpush

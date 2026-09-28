@@ -18,6 +18,8 @@ use App\Models\Contact;
 use App\Models\Campaign;
 use App\Models\CashBack;
 use App\Models\Category;
+use App\Models\StoreCategory;
+use App\Models\ProCustomerSubscription;
 use App\Models\AdminRole;
 use App\Models\Attribute;
 use App\Models\DMVehicle;
@@ -58,11 +60,31 @@ class SearchRoutingController extends Controller
     public function index(Request $request)
     {
         $searchKeyword = $request->input('search');
+
+        $searchKeyword = is_scalar($searchKeyword) ? trim((string) $searchKeyword) : '';
         session(['search_keyword' => $searchKeyword]);
+
+        if ($searchKeyword === '') {
+            return [];
+        }
+
+        $rawKeyword = $searchKeyword;
         $currentModuleType = config('module.current_module_type') ?? null;
         $currentModuleId = config('module.current_module_id') ?? null;
         //1st layer
         $formattedRoutes = [];
+        // Build a set of all currently-registered GET admin route URIs so we
+        // can drop stale entries from admin_formatted_routes.json (some pages
+        // — e.g. the report routes — were moved under admin/transactions/...
+        // but the JSON still lists their old admin/report/... URIs, which 404).
+        $registeredAdminUris = [];
+        foreach (Route::getRoutes()->getRoutesByMethod()['GET'] ?? [] as $registered) {
+            $u = $registered->uri();
+            if (str_starts_with($u, 'admin')) {
+                $registeredAdminUris[$u] = true;
+            }
+        }
+
         $jsonFilePath = public_path('admin_formatted_routes.json');
         if (file_exists($jsonFilePath)) {
             $fileContents = file_get_contents($jsonFilePath);
@@ -86,6 +108,13 @@ class SearchRoutingController extends Controller
 
             foreach ($routes as $route) {
                 $uri = $route['URI'];
+
+                // Skip entries whose URI doesn't resolve to a real route (the
+                // JSON ships some stale URIs from earlier admin route layouts).
+                if (!isset($registeredAdminUris[$uri])) {
+                    continue;
+                }
+
                 if (Str::contains(strtolower($route['keywords']), strtolower($searchKeyword)) || Str::contains(strtolower($route['URI']), strtolower($searchKeyword))) {
                     $hasParameters = preg_match('/\{(.*?)\}/', $uri);
 
@@ -267,6 +296,22 @@ class SearchRoutingController extends Controller
                     if (isset($categoryRoutes)) {
                         foreach ($categoryRoutes as $route) {
                             $validRoutes[] = $this->filterRoute(model: $category, route: $route, type: 'category', prefix: 'Category');
+                        }
+                    }
+                }
+
+                $storeCategory = StoreCategory::when(is_numeric($currentModuleId), function ($query) use ($currentModuleId) {
+                    return $query->where('module_id', $currentModuleId);
+                })->find($searchKeyword);
+
+                if ($storeCategory) {
+                    $storeCategoryRoutes = $adminRoutes->filter(function ($route) {
+                        return str_contains($route->uri(), 'store-category') && str_contains($route->uri(), 'edit');
+                    });
+
+                    if (isset($storeCategoryRoutes)) {
+                        foreach ($storeCategoryRoutes as $route) {
+                            $validRoutes[] = $this->filterRoute(model: $storeCategory, route: $route, prefix: 'Store Category', name: $storeCategory?->name);
                         }
                     }
                 }
@@ -458,7 +503,7 @@ class SearchRoutingController extends Controller
 
 
 
-            if (in_array($currentModuleType, ['ecommerce'])) {
+            if (in_array($currentModuleType, ['grocery', 'ecommerce'])) {
                 // Brand
                 $Brand = Brand::when(is_numeric($currentModuleId), function ($query) use ($currentModuleId) {
                     return $query->where(function ($query) use ($currentModuleId) {
@@ -495,7 +540,7 @@ class SearchRoutingController extends Controller
                     $couponRoutes = $adminRoutes->filter(function ($route) {
                         return str_contains($route->uri(), 'rental/coupon') && (!str_contains($route->uri(), 'status') && !str_contains($route->uri(), 'export'));
                     });
-                } elseif ($currentModuleType == 'ride-share') {
+                } elseif (addon_published_status('RideShare') && class_exists(RideRequest::class) && $currentModuleType == 'ride-share') {
                     $couponRoutes = $adminRoutes->filter(function ($route) {
                         return str_contains($route->uri(), 'ride-share/promotion/coupon-setup') && (!str_contains($route->uri(), 'status') && !str_contains($route->uri(), 'export'));
                     });
@@ -899,7 +944,7 @@ class SearchRoutingController extends Controller
                 }
             }
 
-            if ($currentModuleType == 'ride-share') {
+            if (addon_published_status('RideShare') && class_exists(RideRequest::class) && $currentModuleType == 'ride-share') {
                 $rideRequest = RideRequest::where('ref_id',$searchKeyword)->first();
                 if ($rideRequest) {
                     $tripRoutes = $adminRoutes->filter(function ($route) {
@@ -918,6 +963,8 @@ class SearchRoutingController extends Controller
 
 
         } else {
+            $searchKeyword = addcslashes($searchKeyword, '%_\\');
+
             //Store
             $stores = Store::when(is_numeric($currentModuleId), function ($query) use ($currentModuleId) {
                 return $query->where('module_id', $currentModuleId);
@@ -1073,6 +1120,27 @@ class SearchRoutingController extends Controller
                         foreach ($categories as $category) {
                             foreach ($categoryRoutes as $route) {
                                 $validRoutes[] = $this->filterRoute(model: $category, route: $route, type: 'category', prefix: 'Category');
+                            }
+                        }
+                    }
+                }
+
+                $storeCategories = StoreCategory::when(is_numeric($currentModuleId), function ($query) use ($currentModuleId) {
+                    return $query->where('module_id', $currentModuleId);
+                })->where(function ($query) use ($searchKeyword) {
+                    $query->where('name', 'LIKE', '%' . $searchKeyword . '%');
+                })
+                    ->get();
+
+                if ($storeCategories) {
+                    $storeCategoryRoutes = $adminRoutes->filter(function ($route) {
+                        return str_contains($route->uri(), 'store-category') && str_contains($route->uri(), 'edit');
+                    });
+
+                    if (isset($storeCategoryRoutes)) {
+                        foreach ($storeCategories as $storeCategory) {
+                            foreach ($storeCategoryRoutes as $route) {
+                                $validRoutes[] = $this->filterRoute(model: $storeCategory, route: $route, prefix: 'Store Category', name: $storeCategory?->name);
                             }
                         }
                     }
@@ -1295,7 +1363,7 @@ class SearchRoutingController extends Controller
                 }
             }
 
-            if (in_array($currentModuleType, ['ecommerce'])) {
+            if (in_array($currentModuleType, ['grocery', 'ecommerce'])) {
                 //Brand
                 $Brands = Brand::when(is_numeric($currentModuleId), function ($query) use ($currentModuleId) {
                     return $query->where(function ($query) use ($currentModuleId) {
@@ -1348,7 +1416,7 @@ class SearchRoutingController extends Controller
                     $couponRoutes = $adminRoutes->filter(function ($route) {
                         return str_contains($route->uri(), 'rental/coupon') && (!str_contains($route->uri(), 'status') && !str_contains($route->uri(), 'export'));
                     });
-                } elseif ($currentModuleType == 'ride-share') {
+                } elseif (addon_published_status('RideShare') && class_exists(RideRequest::class) && $currentModuleType == 'ride-share') {
                     $couponRoutes = $adminRoutes->filter(function ($route) {
                         return str_contains($route->uri(), 'ride-share/promotion/coupon-setup') && (!str_contains($route->uri(), 'status') && !str_contains($route->uri(), 'export'));
                     });
@@ -1413,7 +1481,7 @@ class SearchRoutingController extends Controller
                         return str_contains($route->uri(), 'admin/rental/banner') && !str_contains($route->uri(), 'status') && !str_contains($route->uri(), 'export');
                     });
                 }
-                else if ($currentModuleType == 'ride-share') {
+                else if (addon_published_status('RideShare') && class_exists(RideRequest::class) && $currentModuleType == 'ride-share') {
                     $bannerRoutes = $adminRoutes->filter(function ($route) {
                         return str_contains($route->uri(), 'admin/ride-share/promotion/banner-setup') && !str_contains($route->uri(), 'status') && !str_contains($route->uri(), 'export');
                     });
@@ -1529,6 +1597,32 @@ class SearchRoutingController extends Controller
                     foreach ($customers as $customer) {
                         foreach ($customerRoutes as $route) {
                             $validRoutes[] = $this->filterRoute(model: $customer, route: $route, type: 'customer', name: $customer->f_name . ' ' . $customer->l_name, prefix: 'Customer');
+                        }
+                    }
+                }
+            }
+
+            $proCustomerSubscriptions = ProCustomerSubscription::with('user')
+                ->whereHas('user', function ($query) use ($searchKeyword) {
+                    $query->where('f_name', 'LIKE', '%' . $searchKeyword . '%')
+                        ->orWhere('l_name', 'LIKE', '%' . $searchKeyword . '%')
+                        ->orWhere('email', 'LIKE', '%' . $searchKeyword . '%')
+                        ->orWhere('phone', 'LIKE', '%' . $searchKeyword . '%')
+                        ->orWhereRaw("CONCAT(f_name, ' ', l_name) LIKE ?", ['%' . $searchKeyword . '%'])
+                        ->orWhereRaw("CONCAT(f_name,l_name) LIKE ?", ['%' . $searchKeyword . '%'])
+                        ->orWhereRaw("CONCAT(l_name,f_name) LIKE ?", ['%' . $searchKeyword . '%']);
+                })
+                ->get();
+
+            if ($proCustomerSubscriptions) {
+                $proCustomerRoutes = $adminRoutes->filter(function ($route) {
+                    return str_contains($route->getName(), 'admin.pro-customer.list');
+                });
+
+                if (isset($proCustomerRoutes)) {
+                    foreach ($proCustomerSubscriptions as $proCustomerSubscription) {
+                        foreach ($proCustomerRoutes as $route) {
+                            $validRoutes[] = $this->filterRoute(model: $proCustomerSubscription, route: $route, prefix: 'Pro Customer', name: $proCustomerSubscription?->user?->f_name . ' ' . $proCustomerSubscription?->user?->l_name, searchKeyword: $proCustomerSubscription?->user?->f_name);
                         }
                     }
                 }
@@ -2064,7 +2158,7 @@ class SearchRoutingController extends Controller
             }
 
 
-            if ($currentModuleType == 'ride-share') {
+            if (addon_published_status('RideShare') && class_exists(RideRequest::class) && $currentModuleType == 'ride-share') {
 
                 //  RideRequest
                 $rideRequest = RideRequest::with('customer')->when(is_numeric($currentModuleId), function ($query) use ($currentModuleId) {
@@ -2200,11 +2294,23 @@ class SearchRoutingController extends Controller
 
         }
 
+        $builderKeyword = strtolower($rawKeyword);
+        if ($builderKeyword !== '' && (str_contains('website builder vendor website builder page builder', $builderKeyword) || str_contains($builderKeyword, 'builder'))) {
+            $builderUri = 'admin/business-settings/business-setup/store';
+            $validRoutes[] = [
+                'routeName' => 'Vendor Website Builder',
+                'URI' => $builderUri,
+                'fullRoute' => url($builderUri),
+                'module_type' => null,
+                'data_from' => 'files',
+            ];
+        }
+
         $result = array_merge($formattedRoutes, $validRoutes);
         $result = collect($result);
         $result = $result->unique('fullRoute')->values()->all();
 
-        return $this->sortBySearchKeyword($result, $searchKeyword);
+        return $this->sortBySearchKeyword($result, $rawKeyword);
     }
 
     private function routeFullUrl($uri)

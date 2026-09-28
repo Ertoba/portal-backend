@@ -81,6 +81,10 @@
                                 alt="{{ translate('messages.veg_non_veg') }}"></span></label>
                         <textarea id="description" class="ckeditor form-control" name="description[]"></textarea>
                     </div>
+                    <div class="form-group">
+                        <label class="input-label d-flex">{{ translate('Short_description') }} ({{ translate('messages.default') }})</label>
+                        <textarea class="form-control" name="short_description[]" maxlength="100" rows="2" placeholder="{{ translate('messages.Write_a_short_description') }}"></textarea>
+                    </div>
                 </div>
 
                 <input type="hidden" name="lang[]" value="default">
@@ -98,6 +102,10 @@
                                 alt="{{ translate('messages.veg_non_veg') }}"></span></label>
                         <textarea id="description{{ $lang }}" class="ckeditor form-control" name="description[]"></textarea>
                     </div>
+                    <div class="form-group">
+                        <label class="input-label d-flex">{{ translate('Short_description') }} ({{strtoupper($lang)}})</label>
+                        <textarea class="form-control" name="short_description[]" maxlength="100" rows="2" placeholder="{{ translate('messages.Write_a_short_description') }}"></textarea>
+                    </div>
                 </div>
 
                 <input type="hidden" name="lang[]" value="{{$lang}}">
@@ -110,6 +118,10 @@
                 <div class="form-group">
                     <label class="input-label">{{ translate('Business_Module_description')}}</label>
                     <textarea id="description" class="ckeditor form-control" name="description"></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="input-label">{{ translate('Short_description') }}</label>
+                    <textarea class="form-control" name="short_description" maxlength="100" rows="2" placeholder="{{ translate('messages.Write_a_short_description') }}"></textarea>
                 </div>
                 <input type="hidden" name="lang[]" value="default">
                 @endif

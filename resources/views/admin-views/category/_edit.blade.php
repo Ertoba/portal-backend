@@ -4,7 +4,7 @@
     @csrf
     <div>
         <div class="custom-offcanvas-header bg--secondary d-flex justify-content-between align-items-center px-3 py-3">
-            <h3 class="mb-0">{{ $category->position == 0 ? translate('Edit_Category') : translate('Edit_Sub_Category') }}</h2>
+            <h3 class="mb-0">{{ $category->position == 0 ? translate('Edit_Main_Category') : translate('Edit_Main_Sub_Category') }}</h2>
                 <button type="button"
                         class="btn-close w-25px h-25px border rounded-circle d-center bg--secondary text-dark offcanvas-close fz-15px p-0"
                         aria-label="Close">&times;
@@ -15,7 +15,7 @@
                 <div class="mb-15">
                     <h4 class="mb-0">{{ translate('Availability') }}</h4>
                     <p class="fz-12px">
-                        {{ translate('If_you_turn_off_this_status_this_category_will_not_be_available') }}
+                        {{ translate('If_you_turn_off_this_status_this_main_category_will_not_be_available') }}
                     </p>
                 </div>
                 <label class="border d-flex align-items-center bg-white-n justify-content-between rounded p-10px px-3">
@@ -36,12 +36,12 @@
                 @if ($language)
                     <ul class="nav nav-tabs mb-4 border-0">
                         <li class="nav-item">
-                            <a class="nav-link lang_link1 active" href="#"
+                            <a class="nav-link text-nowrap lang_link1 active" href="#"
                                id="default-link">{{ translate('messages.default') }}</a>
                         </li>
                         @foreach ($language as $lang)
                             <li class="nav-item">
-                                <a class="nav-link lang_link1" href="#"
+                                <a class="nav-link text-nowrap lang_link1" href="#"
                                    id="{{ $lang }}-link">{{ \App\CentralLogics\Helpers::get_language_name($lang) . '(' . strtoupper($lang) . ')' }}</a>
                             </li>
                         @endforeach
@@ -52,7 +52,7 @@
                         @if ($language)
                             <div class="form-group lang_form1" id="default-form1">
                                 <label class="input-label"
-                                       for="exampleFormControlInput1">{{ $category->position == 0 ? translate('Category_Name') : translate('Sub_Category_Name') }}
+                                       for="exampleFormControlInput1">{{ $category->position == 0 ? translate('Main_Category_Name') : translate('Main_Sub_Category_Name') }}
                                     ({{ translate('messages.default') }})
                                     <span class="form-label-secondary text-danger" data-toggle="tooltip"
                                           data-placement="right"
@@ -61,7 +61,7 @@
 
                                 </label>
                                 <input type="text" name="name[]" value="{{ $category?->getRawOriginal('name') }}"
-                                       class="form-control" placeholder="{{ translate('messages.new_category') }}"
+                                       class="form-control" placeholder="{{ translate('messages.new_main_category') }}"
                                        maxleng="255">
                             </div>
                             <input type="hidden" name="lang[]" value="default">
@@ -79,21 +79,21 @@
 
                                 <div class="form-group d-none lang_form1" id="{{ $lang }}-form1">
                                     <label class="input-label"
-                                           for="exampleFormControlInput1">{{ $category->position == 0 ? translate('Category_Name') : translate('Sub_Category_Name') }}
+                                           for="exampleFormControlInput1">{{ $category->position == 0 ? translate('Main_Category_Name') : translate('Main_Sub_Category_Name') }}
                                         ({{ strtoupper($lang) }})
                                     </label>
                                     <input type="text" name="name[]" value="{{ $translate[$lang]['name'] ?? '' }}"
                                            class="form-control"
-                                           placeholder="{{ translate('messages.Type_Category_Name') }}" maxlength="191">
+                                           placeholder="{{ translate('messages.Type_Main_Category_Name') }}" maxlength="191">
                                 </div>
                                 <input type="hidden" name="lang[]" value="{{ $lang }}">
                             @endforeach
                         @else
                             <div class="form-group">
                                 <label class="input-label"
-                                       for="exampleFormControlInput1">{{ $category->position == 0 ? translate('Category_Name') : translate('Sub_Category_Name') }}</label>
+                                       for="exampleFormControlInput1">{{ $category->position == 0 ? translate('Main_Category_Name') : translate('Main_Sub_Category_Name') }}</label>
                                 <input type="text" name="name" class="form-control"
-                                       placeholder="{{ translate('messages.new_category') }}"
+                                       placeholder="{{ translate('messages.new_main_category') }}"
                                        value="{{ $category?->getRawOriginal('name') }}" maxlength="191">
                             </div>
                             <input type="hidden" name="lang[]" value="default">
@@ -137,30 +137,27 @@
                 @endif
                 @if ($category->position == 0 )
                     <div class="col-md-12">
-                        <div class="bg--secondary rounded p-20 mb-20">
 
-                            <div class="h-100 d-flex align-items-center flex-column">
-                                <label class="mb-4 text-center text-title">
-                                    {{ translate('messages.image') }}
-                                    <small
-                                        class="color-656566 d-block"> {{ translate('messages.Upload image') }}</small>
-                                </label>
-                                <label class="text-center my-auto position-relative d-inline-block">
-                                    <img class="img--176 border--dashed rounded viewer_img" id=""
-                                         src="{{ $category['image_full_url'] }}"
-                                         data-onerror-image="{{ asset('public/assets/admin/img/upload-img.png') }}"
-                                         alt=""/>
-                                    <div class="icon-file-group">
-                                        <div class="icon-file">
-                                            <input type="file" name="image" id=""
-                                                   class="custom-file-input custom__FileEg read-url"
-                                                   accept=".webp, .jpg, .png, .jpeg, .gif, .bmp, .tif, .tiff|image/*">
-                                            <i class="tio-edit"></i>
-                                        </div>
-                                    </div>
-                                </label>
+
+                        <div class="text-center py-1">
+                            <div class="mx-auto text-center">
+                                <div class="mb-4">
+                                    <h5 class="mb-1">{{ translate('Main Category Image') }}</h5>
+                                    <p class="mb-0 fs-12 gray-dark">{{ translate('Upload image') }}</p>
+                                </div>
+                                @include('admin-views.partials._image-uploader', [
+                                    'id' => 'category-image-input-' . $category['id'],
+                                    'name' => 'image',
+                                    'ratio' => '1:1',
+                                    'isRequired' => empty($category['image_full_url']),
+                                    'existingImage' => $category['image_full_url'] ?? '',
+                                    'imageExtension' => IMAGE_EXTENSION,
+                                    'imageFormat' => IMAGE_FORMAT,
+                                    'maxSize' => MAX_FILE_SIZE,
+                                    'textPosition' => 'bottom',
+                                    'show_clear_button' => false,
+                                ])
                             </div>
-
                         </div>
                     </div>
                 @endif
@@ -171,7 +168,7 @@
     <div
         class="align-items-center bg-white bottom-0 d-flex gap-3 justify-content-center mt-auto offcanvas-footer p-3 position-sticky">
         <button type="button"
-                class="btn w-100 btn--secondary offcanvas-close h--40px">{{ translate('Cancel') }}</button>
+                class="btn w-100 btn--reset offcanvas-close h--40px">{{ translate('Cancel') }}</button>
         <button type="submit" class="btn w-100 btn--primary h--40px">{{ translate('Update') }}</button>
     </div>
 </form>

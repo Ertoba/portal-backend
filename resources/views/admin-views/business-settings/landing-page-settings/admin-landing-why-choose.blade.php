@@ -49,7 +49,7 @@
     @endif
     <div class="tab-content">
         <div class="tab-pane fade show active">
-            <form action="{{ route('admin.business-settings.admin-landing-page-settings', 'why-choose-title') }}" method="POST" enctype="multipart/form-data">
+            <form action="{{ route('admin.business-settings.admin-landing-page-settings-update', 'why-choose-title') }}" method="POST" enctype="multipart/form-data">
                 @csrf
                 <div class="card mb-3">
                     <div class="card-body">
@@ -119,7 +119,7 @@
                     </div>
                 </div>
             </form>
-                <form action="{{ route('admin.business-settings.admin-landing-page-settings', 'special-criteria-list') }}" method="POST" enctype="multipart/form-data">
+                <form action="{{ route('admin.business-settings.admin-landing-page-settings-update', 'special-criteria-list') }}" method="POST" enctype="multipart/form-data">
                     @csrf
                 <h5 class="card-title mb-3 mt-3">
                     <span class="card-header-icon mr-2"><i class="tio-settings-outlined"></i></span> <span>{{translate('Special Criteria List Section ')}}</span>
@@ -141,7 +141,8 @@
                                               data-toggle="tooltip" data-placement="right"
                                               data-original-title="{{ translate('messages.Required.')}}"> *
                                                 </span></label>
-                                                <input required id="title" type="text" maxlength="40" name="title[]" class="form-control" placeholder="{{translate('messages.title_here...')}}">
+                                                <input required id="title" type="text" maxlength="40" name="title[]" class="form-control char-count-input" placeholder="{{translate('messages.title_here...')}}">
+                                                <small class="char-count text-muted d-block text-right mt-1"><span class="current">0</span>/40</small>
                                 </div>
                                 <input type="hidden" name="lang[]" value="default">
                                     @foreach(json_decode($language) as $lang)
@@ -153,7 +154,8 @@
                                                         <img src="{{ asset('public/assets/admin/img/info-circle.svg') }}"
                                                             alt="">
                                                     </span></label>
-                                                <input  id="title{{$lang}}" type="text" maxlength="40" name="title[]" class="form-control" placeholder="{{translate('messages.title_here...')}}">
+                                                <input id="title{{$lang}}" type="text" maxlength="40" name="title[]" class="form-control char-count-input" placeholder="{{translate('messages.title_here...')}}">
+                                                <small class="char-count text-muted d-block text-right mt-1"><span class="current">0</span>/40</small>
                                     </div>
                                         <input type="hidden" name="lang[]" value="{{$lang}}">
                                     @endforeach
@@ -166,7 +168,8 @@
                                                         <img src="{{ asset('public/assets/admin/img/info-circle.svg') }}"
                                                             alt="">
                                                     </span></label>
-                                                <input id="title" type="text" maxlength="40" name="title[]" class="form-control" placeholder="{{translate('messages.title_here...')}}">
+                                                <input id="title" type="text" maxlength="40" name="title[]" class="form-control char-count-input" placeholder="{{translate('messages.title_here...')}}">
+                                                <small class="char-count text-muted d-block text-right mt-1"><span class="current">0</span>/40</small>
                                 </div>
                                     <input type="hidden" name="lang[]" value="default">
                                 @endif
@@ -296,4 +299,20 @@
     <!-- How it Works -->
     @include('admin-views.business-settings.landing-page-settings.partial.how-it-work')
 @endsection
+
+@push('script_2')
+<script>
+    "use strict";
+    $(document).ready(function() {
+        $('.char-count-input').each(function() {
+            var $input = $(this);
+            var $counter = $input.siblings('.char-count').find('.current');
+            $counter.text($input.val().length);
+        });
+        $(document).on('input', '.char-count-input', function() {
+            $(this).siblings('.char-count').find('.current').text($(this).val().length);
+        });
+    });
+</script>
+@endpush
 

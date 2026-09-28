@@ -9,12 +9,12 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\Builder;
 
-use Illuminate\Support\Str;
+use App\Traits\GeneratesSlug;
 use Modules\TaxModule\Entities\Taxable;
 
 class AddonCategory extends Model
 {
-    use HasFactory;
+    use HasFactory, GeneratesSlug;
 
     protected $guarded = ['id'];
      protected $casts = [
@@ -44,23 +44,6 @@ class AddonCategory extends Model
             $category->slug = $category->generateSlug($category->name);
             $category->save();
         });
-    }
-
-    private function generateSlug($name): string
-    {
-        $slug = Str::slug($name);
-        if ($max_slug = static::where('slug', 'like', "{$slug}%")->latest('id')->value('slug')) {
-
-            if ($max_slug == $slug) return "{$slug}-2";
-
-            $max_slug = explode('-', $max_slug);
-            $count = array_pop($max_slug);
-            if (isset($count) && is_numeric($count)) {
-                $max_slug[] = ++$count;
-                return implode('-', $max_slug);
-            }
-        }
-        return $slug;
     }
 
     public function getNameAttribute($value): string

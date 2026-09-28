@@ -23,10 +23,10 @@
         <!-- Card -->
         <div class="card">
             <!-- Header -->
-            <div class="card-header border-0 py-2">
+            <div class="card-header border-0 py-2 flex-wrap flex-lg-nowrap gap-2">
                 <h5 class="card-title">
                     {{translate('messages.Review_list')}}<span class="badge badge-soft-dark ml-2" id="itemCount">{{$reviews->total()}}</span></h5>
-                <div class="search--button-wrapper justify-content-end">
+                <div class="search--button-wrapper justify-content-lg-end">
                     <form  class="search-form">
                         <!-- Search -->
                         <div class="input-group input--group">
@@ -36,12 +36,12 @@
                         <!-- End Search -->
                     </form>
 
-                    @if(request()->get('search'))
+                    @if(request()->input('search'))
                     <button type="reset" class="btn btn--primary ml-2 location-reload-to-base" data-url="{{url()->full()}}">{{translate('messages.reset')}}</button>
                     @endif
 
                     <div class="hs-unfold mr-2">
-                        <a class="js-hs-unfold-invoker btn btn-sm btn-white dropdown-toggle min-height-40" href="javascript:;"
+                        <a class="js-hs-unfold-invoker btn btn-sm btn-white dropdown-toggle min-height-40 w-max-content" href="javascript:;"
                             data-hs-unfold-options='{
                                     "target": "#usersExportDropdown",
                                     "type": "css-animation"

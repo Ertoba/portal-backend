@@ -1,6 +1,6 @@
 @extends('layouts.vendor.app')
 
-@section('title', translate('messages.category'))
+@section('title', translate('messages.Main_Category'))
 
 @push('css_or_js')
 @endpush
@@ -11,10 +11,10 @@
         <div class="page-header">
             <h1 class="page-header-title">
                 <span class="page-header-icon">
-                    <img src="{{ asset('public/assets/admin/img/categories.png') }}" class="w--20" alt="">
+                    <img src="{{ asset('public/assets/admin/img/category.png') }}" class="w--20" alt="">
                 </span>
                 <span>
-                    {{ translate('messages.category_list') }} <span class="badge badge-soft-dark ml-2"
+                    {{ translate('messages.Main Category List') }} <span class="badge badge-soft-dark ml-2"
                         id="itemCount">{{ $categories->total() }}</span>
                 </span>
             </h1>
@@ -30,10 +30,10 @@
                                 <!-- Search -->
                                 <div class="input-group input--group">
                                     <input type="search" value="{{ request()?->search ?? null }}" name="search"
-                                        class="form-control min-height-45"
-                                        placeholder="{{ translate('messages.search_categories') }}"
+                                        class="form-control min-h-40px"
+                                        placeholder="{{ translate('messages.search_main_categories') }}"
                                         aria-label="{{ translate('messages.ex_:_categories') }}">
-                                    <button type="submit" class="btn btn--secondary min-height-45"><i
+                                    <button type="submit" class="btn btn--secondary py-2 min-h-40px"><i
                                             class="tio-search"></i></button>
                                 </div>
                                 <!-- End Search -->
@@ -86,44 +86,69 @@
                                 }'>
                                 <thead class="thead-light">
                                     <tr>
-                                        <th class="w-33p border-0 text-center">{{ translate('messages.#') }}</th>
-                                        <th class="w-33p border-0 text-center">{{ translate('messages.category_id') }}</th>
-                                        <th class="w-33p border-0 text-center">{{ translate('messages.category_name') }}
+                                        <th class="w-33p px-4 border-0">{{ translate('messages.#') }}</th>
+                                        <th class="w-33p border-0">
+                                            {{ translate('messages.Main_Category_Name') }}
                                         </th>
 
                                         @if ($categoryWiseTax)
                                             <th class="border-0 ">{{ translate('messages.Vat/Tax') }}</th>
                                         @endif
+                                        <th class="w-33p border-0 text-center">
+                                            {{ translate('messages.priority') }}
+                                        </th>
                                     </tr>
                                 </thead>
 
                                 <tbody id="table-div">
                                     @foreach ($categories as $key => $category)
                                         <tr>
-                                            <td class="text-center">{{ $key + $categories->firstItem() }}</td>
-                                            <td class="text-center">{{ $category->id }}</td>
-                                            <td class="text-center">
-                                                <span class="d-block font-size-sm text-body">
-                                                    {{ Str::limit($category['name'], 20, '...') }}
-                                                </span>
+                                            <td class="px-4">{{ $key + $categories->firstItem() }}</td>
+                                            <td class="">
+                                                <div class="media-area d-flex gap-2 align-items-center">
+                                                    <div class="w-40px min-w-40 h-40px rounded overflow-hidden border">
+                                                        <img src="{{  $category['image_full_url'] }}" alt="" class="w-100 rounded object-cover">
+                                                    </div>
+                                                    <div>
+                                                        <span class="fs-14 line--limit-2 text-title max-w-250 min-w-160">
+                                                            {{ Str::limit($category['name'], 20, '...') }}
+                                                        </span>
+                                                        <p class="m-0">{{ translate('ID') }} #{{ $category->id }}</p>
+                                                    </div>
+                                                </div>
+
                                             </td>
 
 
 
                                             @if ($categoryWiseTax)
-                                                <td>
-                                                    <span class="d-block font-size-sm text-body">
-                                                        @forelse ($category?->taxVats?->pluck('tax.name', 'tax.tax_rate')->toArray() as $key => $tax)
-                                                            <span> {{ $tax }} : <span class="font-bold">
-                                                                    ({{ $key }}%)
-                                                                </span> </span>
-                                                            <br>
-                                                        @empty
-                                                            <span> {{ translate('messages.no_tax') }} </span>
-                                                        @endforelse
-                                                    </span>
-                                                </td>
+                                            <td>
+                                                <span class="d-block font-size-sm text-body">
+                                                    @forelse ($category?->taxVats?->pluck('tax.name', 'tax.tax_rate')->toArray() as $key => $tax)
+                                                        <span class="bg-light rounded py-2 px-3">
+                                                             {{ $tax }} :
+                                                             <span class="font-light">
+                                                                ({{ $key }}%)
+                                                            </span>
+                                                        </span>
+                                                        <br>
+                                                    @empty
+                                                        <span> {{ translate('messages.no_tax') }} </span>
+                                                    @endforelse
+                                                </span>
+                                            </td>
                                             @endif
+                                            <td class="px-4 text-center">
+                                                <span class="d-inline-block {{ $category->priority == 0 ? 'text-title' : '' }} {{ $category->priority == 1 ? 'text-info' : '' }} {{ $category->priority == 2 ? 'text-success' : '' }}">
+                                                    @if ($category->priority == 2)
+                                                        {{ translate('messages.high') }}
+                                                    @elseif ($category->priority == 1)
+                                                        {{ translate('messages.medium') }}
+                                                    @else
+                                                        {{ translate('messages.normal') }}
+                                                    @endif
+                                                </span>
+                                            </td>
                                         </tr>
                                     @endforeach
                                 </tbody>
@@ -146,6 +171,15 @@
                 </div>
             </div>
         </div>
+
+
     </div>
 
+    <div id="offcanvas__categoryBtn" class="custom-offcanvas d-flex flex-column justify-content-between">
+        <div id="data-view" class="h-100">
+        </div>
+    </div>
+    <div id="offcanvasOverlay" class="offcanvas-overlay"></div>
+
 @endsection
+

@@ -37,7 +37,9 @@ class AIServiceProvider extends ServiceProvider
      */
     protected function registerCommands(): void
     {
-        // $this->commands([]);
+        $this->commands([
+            \Modules\AI\app\Console\Commands\ComputeCustomerPreferences::class,
+        ]);
     }
 
     /**
@@ -45,10 +47,14 @@ class AIServiceProvider extends ServiceProvider
      */
     protected function registerCommandSchedules(): void
     {
-        // $this->app->booted(function () {
-        //     $schedule = $this->app->make(Schedule::class);
-        //     $schedule->command('inspire')->hourly();
-        // });
+        $this->app->booted(function () {
+            $schedule = $this->app->make(\Illuminate\Console\Scheduling\Schedule::class);
+            $schedule->command('preferences:compute --rebuild')
+                ->hourly()
+                ->runInBackground()
+                ->withoutOverlapping()
+                ->appendOutputTo(storage_path('logs/schedule.log'));
+        });
     }
 
     /**

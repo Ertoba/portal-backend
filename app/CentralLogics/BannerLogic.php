@@ -32,9 +32,12 @@ class BannerLogic
                 });
 
             if (config('module.current_module_data')) {
-                $banners = $banners->whereHas('zone.modules', function ($query) use ($moduleId) {
-                    $query->where('modules.id',$moduleId);
-                }) ->module($moduleId);
+                $banners = $banners->where(function ($query) use ($moduleId) {
+                    $query->whereNull('zone_id')
+                        ->orWhereHas('zone.modules', function ($query) use ($moduleId) {
+                            $query->where('modules.id', $moduleId);
+                        });
+                })->module($moduleId);
             }
 
                return  $banners = $banners->get();

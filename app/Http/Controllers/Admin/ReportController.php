@@ -23,10 +23,16 @@ use App\Exports\ExpenseReportExport;
 use App\Exports\ItemReportExport;
 use App\Exports\LimitedStockReportExport;
 use App\Exports\OrderReportExport;
+use App\Exports\ParcelReportExport;
 use App\Exports\StoreOrderReportExport;
 use App\Exports\StoreSalesReportExport;
 use App\Exports\StoreSummaryReportExport;
 use App\Exports\TransactionReportExport;
+use App\Exports\ParcelTransactionReportExport;
+use App\Exports\ParcelExpenseReportExport;
+use App\Exports\RentalExpenseReportExport;
+use App\Exports\RideshareExpenseReportExport;
+use App\Exports\OtherExpenseReportExport;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\View;
@@ -55,12 +61,14 @@ class ReportController extends Controller
             $to = $request->to ?? null;
         }
 
-        $zone_id = $request->query('zone_id', isset(auth('admin')->user()->zone_id) ? auth('admin')->user()->zone_id : 'all');
+        $zone_id = $request->query('zone_id', auth('admin')?->user()?->zone_id ?: 'all');
         $zone = is_numeric($zone_id) ? Zone::findOrFail($zone_id) : null;
         $store_id = $request->query('store_id', 'all');
         $store = is_numeric($store_id) ? Store::findOrFail($store_id) : null;
 
-        $order_transactions = OrderTransaction::with('order', 'order.details', 'order.customer', 'order.store', 'delivery_man')->when(isset($zone), function ($query) use ($zone) {
+        $order_transactions = OrderTransaction::with('order', 'order.details', 'order.customer', 'order.store', 'delivery_man')->whereHas('order', function ($q) {
+            $q->where('order_type', '!=', 'parcel');
+        })->when(isset($zone), function ($query) use ($zone) {
             return $query->where('zone_id', $zone->id);
         })
                         ->when(isset($key), function ($query) use ($key) {
@@ -98,7 +106,9 @@ class ReportController extends Controller
             })->orderBy('created_at', 'desc')
             ->paginate(config('default_pagination'))->withQueryString();
 
-        $admin_earned = OrderTransaction::with('order', 'order.details', 'order.customer', 'order.store')->when(isset($zone), function ($query) use ($zone) {
+        $admin_earned = OrderTransaction::with('order', 'order.details', 'order.customer', 'order.store')->whereHas('order', function ($q) {
+            $q->where('order_type', '!=', 'parcel');
+        })->when(isset($zone), function ($query) use ($zone) {
             return $query->where('zone_id', $zone->id);
         })
                         ->when(isset($key), function ($query) use ($key) {
@@ -137,7 +147,9 @@ class ReportController extends Controller
             ->notRefunded()
             ->sum(DB::raw('admin_commission'));
 
-        $admin_earned_delivery_commission = OrderTransaction::with('order', 'order.details', 'order.customer', 'order.store')->when(isset($zone), function ($query) use ($zone) {
+        $admin_earned_delivery_commission = OrderTransaction::with('order', 'order.details', 'order.customer', 'order.store')->whereHas('order', function ($q) {
+            $q->where('order_type', '!=', 'parcel');
+        })->when(isset($zone), function ($query) use ($zone) {
             return $query->where('zone_id', $zone->id);
         })
                         ->when(isset($key), function ($query) use ($key) {
@@ -177,7 +189,9 @@ class ReportController extends Controller
             ->sum(DB::raw('case when delivery_man_id is null then original_delivery_charge else delivery_fee_comission end'));
 
 
-        $store_earned = OrderTransaction::with('order', 'order.details', 'order.customer', 'order.store')->when(isset($zone), function ($query) use ($zone) {
+        $store_earned = OrderTransaction::with('order', 'order.details', 'order.customer', 'order.store')->whereHas('order', function ($q) {
+            $q->where('order_type', '!=', 'parcel');
+        })->when(isset($zone), function ($query) use ($zone) {
             return $query->where('zone_id', $zone->id);
         })
                         ->when(isset($key), function ($query) use ($key) {
@@ -217,7 +231,9 @@ class ReportController extends Controller
             ->sum(DB::raw('store_amount'));
             // ->sum(DB::raw('store_amount - tax'));
 
-        $deliveryman_earned = OrderTransaction::with('order', 'order.details', 'order.customer', 'order.store')->when(isset($zone), function ($query) use ($zone) {
+        $deliveryman_earned = OrderTransaction::with('order', 'order.details', 'order.customer', 'order.store')->whereHas('order', function ($q) {
+            $q->where('order_type', '!=', 'parcel');
+        })->when(isset($zone), function ($query) use ($zone) {
             return $query->where('zone_id', $zone->id);
         })
                         ->when(isset($key), function ($query) use ($key) {
@@ -270,12 +286,14 @@ class ReportController extends Controller
             $from = $request->from ?? null;
             $to = $request->to ?? null;
         }
-        $zone_id = $request->query('zone_id', isset(auth('admin')->user()->zone_id) ? auth('admin')->user()->zone_id : 'all');
+        $zone_id = $request->query('zone_id', auth('admin')?->user()?->zone_id ?: 'all');
         $zone = is_numeric($zone_id) ? Zone::findOrFail($zone_id) : null;
         $store_id = $request->query('store_id', 'all');
         $store = is_numeric($store_id) ? Store::findOrFail($store_id) : null;
 
-        $order_transactions = OrderTransaction::when(isset($zone), function ($query) use ($zone) {
+        $order_transactions = OrderTransaction::whereHas('order', function ($q) {
+            $q->where('order_type', '!=', 'parcel');
+        })->when(isset($zone), function ($query) use ($zone) {
             return $query->where('zone_id', $zone->id);
         })
                         ->when(isset($key), function ($query) use ($key) {
@@ -313,7 +331,9 @@ class ReportController extends Controller
             })->orderBy('created_at', 'desc')
             ->get();
 
-            $admin_earned = OrderTransaction::with('order', 'order.details', 'order.customer', 'order.store')->when(isset($zone), function ($query) use ($zone) {
+            $admin_earned = OrderTransaction::with('order', 'order.details', 'order.customer', 'order.store')->whereHas('order', function ($q) {
+                $q->where('order_type', '!=', 'parcel');
+            })->when(isset($zone), function ($query) use ($zone) {
                 return $query->where('zone_id', $zone->id);
             })
                             ->when(isset($key), function ($query) use ($key) {
@@ -353,7 +373,9 @@ class ReportController extends Controller
                 ->sum(DB::raw('admin_commission -  delivery_fee_comission'));
             // ->sum(DB::raw('(admin_commission + admin_expense) - delivery_fee_comission'));
 
-            $admin_earned_delivery_commission = OrderTransaction::with('order', 'order.details', 'order.customer', 'order.store')->when(isset($zone), function ($query) use ($zone) {
+            $admin_earned_delivery_commission = OrderTransaction::with('order', 'order.details', 'order.customer', 'order.store')->whereHas('order', function ($q) {
+                $q->where('order_type', '!=', 'parcel');
+            })->when(isset($zone), function ($query) use ($zone) {
                 return $query->where('zone_id', $zone->id);
             })
                             ->when(isset($key), function ($query) use ($key) {
@@ -391,7 +413,9 @@ class ReportController extends Controller
                 })->orderBy('created_at', 'desc')
                 ->sum(DB::raw('case when delivery_man_id is null then original_delivery_charge else delivery_fee_comission end'));
 
-            $store_earned = OrderTransaction::with('order', 'order.details', 'order.customer', 'order.store')->when(isset($zone), function ($query) use ($zone) {
+            $store_earned = OrderTransaction::with('order', 'order.details', 'order.customer', 'order.store')->whereHas('order', function ($q) {
+                $q->where('order_type', '!=', 'parcel');
+            })->when(isset($zone), function ($query) use ($zone) {
                 return $query->where('zone_id', $zone->id);
             })
                             ->when(isset($key), function ($query) use ($key) {
@@ -431,7 +455,9 @@ class ReportController extends Controller
                 ->sum(DB::raw('store_amount'));
                 // ->sum(DB::raw('store_amount - tax'));
 
-            $deliveryman_earned = OrderTransaction::with('order', 'order.details', 'order.customer', 'order.store')->when(isset($zone), function ($query) use ($zone) {
+            $deliveryman_earned = OrderTransaction::with('order', 'order.details', 'order.customer', 'order.store')->whereHas('order', function ($q) {
+                $q->where('order_type', '!=', 'parcel');
+            })->when(isset($zone), function ($query) use ($zone) {
                 return $query->where('zone_id', $zone->id);
             })
                             ->when(isset($key), function ($query) use ($key) {
@@ -471,7 +497,7 @@ class ReportController extends Controller
                 ->orderBy('created_at', 'desc')
                 ->sum(DB::raw('original_delivery_charge + dm_tips'));
 
-                $delivered = Order::when(isset($zone), function ($query) use ($zone) {
+                $delivered = Order::where('order_type', '!=', 'parcel')->when(isset($zone), function ($query) use ($zone) {
                     return $query->where('zone_id', $zone->id);
                 })
                 ->when(isset($key), function ($query) use ($key) {
@@ -515,7 +541,7 @@ class ReportController extends Controller
                     })
                     ->Notpos()
                     ->sum('order_amount');
-                $canceled = Order::when(isset($zone), function ($query) use ($zone) {
+                $canceled = Order::where('order_type', '!=', 'parcel')->when(isset($zone), function ($query) use ($zone) {
                     return $query->where('zone_id', $zone->id);
                 })
                 ->when(isset($key), function ($query) use ($key) {
@@ -588,7 +614,7 @@ class ReportController extends Controller
     public function item_wise_report(Request $request)
     {
 
-        $zone_id = $request->query('zone_id', isset(auth('admin')->user()->zone_id) ? auth('admin')->user()->zone_id : 'all');
+        $zone_id = $request->query('zone_id', auth('admin')?->user()?->zone_id ?: 'all');
         $store_id = $request->query('store_id', 'all');
         $category_id = $request->query('category_id', 'all');
         $filter = $request->query('filter', 'all_time');
@@ -608,7 +634,7 @@ class ReportController extends Controller
         $from = session('from_date');
         $to = session('to_date');
 
-        $zone_id = $request->query('zone_id', isset(auth('admin')->user()->zone_id) ? auth('admin')->user()->zone_id : 'all');
+        $zone_id = $request->query('zone_id', auth('admin')?->user()?->zone_id ?: 'all');
         $store_id = $request->query('store_id', 'all');
         $category_id = $request->query('category_id', 'all');
         $filter = $request->query('filter', 'all_time');
@@ -645,7 +671,7 @@ class ReportController extends Controller
         $from = session('from_date');
         $to = session('to_date');
 
-        $zone_id = $request->query('zone_id', isset(auth('admin')->user()->zone_id) ? auth('admin')->user()->zone_id : 'all');
+        $zone_id = $request->query('zone_id', auth('admin')?->user()?->zone_id ?: 'all');
         $store_id = $request->query('store_id', 'all');
         $category_id = $request->query('category_id', 'all');
         $filter = $request->query('filter', 'all_time');
@@ -697,6 +723,224 @@ class ReportController extends Controller
         return view('admin-views.report.order-transactions', compact('order_transactions'));
     }
 
+    public function parcel_transaction_report(Request $request)
+    {
+        $key = explode(' ', $request['search']);
+
+        $from = null;
+        $to = null;
+        $filter = $request->query('filter', 'all_time');
+        if ($filter == 'custom') {
+            $from = $request->from ?? null;
+            $to = $request->to ?? null;
+        }
+
+        $zone_id = $request->query('zone_id', auth('admin')?->user()?->zone_id ?: 'all');
+        $zone = is_numeric($zone_id) ? Zone::findOrFail($zone_id) : null;
+
+        $parcelModuleIds = \App\Models\Module::where('module_type', 'parcel')->pluck('id')->all();
+        $module_id = $request->query('module_id');
+        if ($module_id && ! in_array((int) $module_id, $parcelModuleIds, true)) {
+            $module_id = null;
+        }
+
+        $base = function () use ($zone, $key, $module_id, $parcelModuleIds, $from, $to, $filter) {
+            return OrderTransaction::whereHas('order', function ($q) {
+                    $q->where('order_type', 'parcel');
+                })
+                ->when(! empty($parcelModuleIds), function ($q) use ($module_id, $parcelModuleIds) {
+                    if ($module_id) {
+                        $q->where('module_id', $module_id);
+                    } else {
+                        $q->whereIn('module_id', $parcelModuleIds);
+                    }
+                })
+                ->when(isset($zone), function ($q) use ($zone) {
+                    return $q->where('zone_id', $zone->id);
+                })
+                ->when(isset($key), function ($q) use ($key) {
+                    return $q->where(function ($qq) use ($key) {
+                        foreach ($key as $value) {
+                            $qq->orWhere('order_id', 'like', "%{$value}%");
+                        }
+                    });
+                })
+                ->when($filter == 'custom' && $from && $to, function ($q) use ($from, $to) {
+                    return $q->whereBetween('created_at', [$from . ' 00:00:00', $to . ' 23:59:59']);
+                })
+                ->when($filter == 'this_year', function ($q) {
+                    return $q->whereYear('created_at', now()->format('Y'));
+                })
+                ->when($filter == 'this_month', function ($q) {
+                    return $q->whereMonth('created_at', now()->format('m'))->whereYear('created_at', now()->format('Y'));
+                })
+                ->when($filter == 'previous_year', function ($q) {
+                    return $q->whereYear('created_at', date('Y') - 1);
+                })
+                ->when($filter == 'this_week', function ($q) {
+                    return $q->whereBetween('created_at', [now()->startOfWeek()->format('Y-m-d H:i:s'), now()->endOfWeek()->format('Y-m-d H:i:s')]);
+                });
+        };
+
+        $order_transactions = $base()
+            ->with('order', 'order.details', 'order.customer', 'delivery_man')
+            ->orderBy('created_at', 'desc')
+            ->paginate(config('default_pagination'))
+            ->withQueryString();
+
+        $admin_earned = (clone $base())->notRefunded()->sum(DB::raw('admin_commission'));
+
+        $admin_earned_delivery_commission = (clone $base())
+            ->sum(DB::raw('case when delivery_man_id is null then original_delivery_charge else delivery_fee_comission end'));
+
+        $deliveryman_earned = (clone $base())
+            ->whereNotNull('delivery_man_id')
+            ->sum(DB::raw('original_delivery_charge + dm_tips'));
+
+        return view('admin-views.report.parcel-transaction-report', compact(
+            'order_transactions', 'zone', 'filter', 'admin_earned',
+            'admin_earned_delivery_commission', 'deliveryman_earned', 'key', 'from', 'to', 'module_id'
+        ));
+    }
+
+    public function parcel_transaction_export(Request $request)
+    {
+        $key = explode(' ', $request['search']);
+
+        $from = null;
+        $to = null;
+        $filter = $request->query('filter', 'all_time');
+        if ($filter == 'custom') {
+            $from = $request->from ?? null;
+            $to = $request->to ?? null;
+        }
+
+        $zone_id = $request->query('zone_id', auth('admin')?->user()?->zone_id ?: 'all');
+        $zone = is_numeric($zone_id) ? Zone::findOrFail($zone_id) : null;
+
+        $parcelModuleIds = \App\Models\Module::where('module_type', 'parcel')->pluck('id')->all();
+        $module_id = $request->query('module_id');
+        if ($module_id && ! in_array((int) $module_id, $parcelModuleIds, true)) {
+            $module_id = null;
+        }
+
+        $base = function () use ($zone, $key, $module_id, $parcelModuleIds, $from, $to, $filter) {
+            return OrderTransaction::whereHas('order', function ($q) {
+                    $q->where('order_type', 'parcel');
+                })
+                ->when(! empty($parcelModuleIds), function ($q) use ($module_id, $parcelModuleIds) {
+                    if ($module_id) {
+                        $q->where('module_id', $module_id);
+                    } else {
+                        $q->whereIn('module_id', $parcelModuleIds);
+                    }
+                })
+                ->when(isset($zone), function ($q) use ($zone) {
+                    return $q->where('zone_id', $zone->id);
+                })
+                ->when(isset($key), function ($q) use ($key) {
+                    return $q->where(function ($qq) use ($key) {
+                        foreach ($key as $value) {
+                            $qq->orWhere('order_id', 'like', "%{$value}%");
+                        }
+                    });
+                })
+                ->when($filter == 'custom' && $from && $to, function ($q) use ($from, $to) {
+                    return $q->whereBetween('created_at', [$from . ' 00:00:00', $to . ' 23:59:59']);
+                })
+                ->when($filter == 'this_year', function ($q) {
+                    return $q->whereYear('created_at', now()->format('Y'));
+                })
+                ->when($filter == 'this_month', function ($q) {
+                    return $q->whereMonth('created_at', now()->format('m'))->whereYear('created_at', now()->format('Y'));
+                })
+                ->when($filter == 'previous_year', function ($q) {
+                    return $q->whereYear('created_at', date('Y') - 1);
+                })
+                ->when($filter == 'this_week', function ($q) {
+                    return $q->whereBetween('created_at', [now()->startOfWeek()->format('Y-m-d H:i:s'), now()->endOfWeek()->format('Y-m-d H:i:s')]);
+                });
+        };
+
+        $order_transactions = $base()
+            ->with('order', 'order.details', 'order.customer', 'delivery_man')
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        $admin_earned = (clone $base())->notRefunded()->sum(DB::raw('admin_commission'));
+        $admin_earned_delivery_commission = (clone $base())
+            ->sum(DB::raw('case when delivery_man_id is null then original_delivery_charge else delivery_fee_comission end'));
+        $deliveryman_earned = (clone $base())
+            ->whereNotNull('delivery_man_id')
+            ->sum(DB::raw('original_delivery_charge + dm_tips'));
+
+        $parcelOrderBase = function () use ($zone, $key, $module_id, $parcelModuleIds, $from, $to, $filter) {
+            return Order::where('order_type', 'parcel')
+                ->when(! empty($parcelModuleIds), function ($q) use ($module_id, $parcelModuleIds) {
+                    if ($module_id) {
+                        $q->where('module_id', $module_id);
+                    } else {
+                        $q->whereIn('module_id', $parcelModuleIds);
+                    }
+                })
+                ->when(isset($zone), function ($q) use ($zone) {
+                    return $q->where('zone_id', $zone->id);
+                })
+                ->when(isset($key), function ($q) use ($key) {
+                    return $q->where(function ($qq) use ($key) {
+                        foreach ($key as $value) {
+                            $qq->orWhere('id', 'like', "%{$value}%");
+                        }
+                    });
+                })
+                ->when($filter == 'custom' && $from && $to, function ($q) use ($from, $to) {
+                    return $q->whereBetween('created_at', [$from . ' 00:00:00', $to . ' 23:59:59']);
+                })
+                ->when($filter == 'this_year', function ($q) {
+                    return $q->whereYear('created_at', now()->format('Y'));
+                })
+                ->when($filter == 'this_month', function ($q) {
+                    return $q->whereMonth('created_at', now()->format('m'))->whereYear('created_at', now()->format('Y'));
+                })
+                ->when($filter == 'previous_year', function ($q) {
+                    return $q->whereYear('created_at', date('Y') - 1);
+                })
+                ->when($filter == 'this_week', function ($q) {
+                    return $q->whereBetween('created_at', [now()->startOfWeek()->format('Y-m-d H:i:s'), now()->endOfWeek()->format('Y-m-d H:i:s')]);
+                })
+                ->Notpos();
+        };
+
+        $delivered = (clone $parcelOrderBase())
+            ->whereIn('order_status', ['delivered', 'refund_requested', 'refund_request_canceled'])
+            ->sum('order_amount');
+        $canceled = (clone $parcelOrderBase())
+            ->where('order_status', 'refunded')
+            ->sum(DB::raw('order_amount - delivery_charge - dm_tips'));
+
+        $data = [
+            'order_transactions' => $order_transactions,
+            'search' => $request->search ?? null,
+            'from' => (($filter == 'custom') && $from) ? $from : null,
+            'to' => (($filter == 'custom') && $to) ? $to : null,
+            'zone' => is_numeric($zone_id) ? Helpers::get_zones_name($zone_id) : null,
+            'module' => $module_id ? Helpers::get_module_name($module_id) : null,
+            'admin_earned' => $admin_earned + $admin_earned_delivery_commission,
+            'deliveryman_earned' => $deliveryman_earned,
+            'delivered' => $delivered,
+            'canceled' => $canceled,
+            'filter' => $filter,
+        ];
+
+        if ($request->type == 'excel') {
+            return Excel::download(new ParcelTransactionReportExport($data), 'ParcelTransactionReport.xlsx');
+        } elseif ($request->type == 'csv') {
+            return Excel::download(new ParcelTransactionReportExport($data), 'ParcelTransactionReport.csv');
+        }
+
+        return redirect()->route('admin.transactions.report.parcel-transaction-report');
+    }
+
 
     public function set_date(Request $request)
     {
@@ -716,7 +960,7 @@ class ReportController extends Controller
         $from = session('from_date');
         $to = session('to_date');
 
-        $zone_id = $request->query('zone_id', isset(auth('admin')->user()->zone_id) ? auth('admin')->user()->zone_id : 'all');
+        $zone_id = $request->query('zone_id', auth('admin')?->user()?->zone_id ?: 'all');
         $store_id = $request->query('store_id', 'all');
         $category_id = $request->query('category_id', 'all');
         $filter = $request->query('filter', 'all_time');
@@ -834,65 +1078,6 @@ class ReportController extends Controller
         ]);
     }
 
-    public function day_search(Request $request)
-    {
-        $key = explode(' ', $request['search']);
-
-        if (session()->has('from_date') == false) {
-            session()->put('from_date', date('Y-m-01'));
-            session()->put('to_date', date('Y-m-30'));
-        }
-        $from = session('from_date');
-        $to = session('to_date');
-
-        $zone_id = $request->query('zone_id', isset(auth('admin')->user()->zone_id) ? auth('admin')->user()->zone_id : 'all');
-        $zone = is_numeric($zone_id) ? Zone::findOrFail($zone_id) : null;
-        $store_id = $request->query('store_id', 'all');
-        $store = is_numeric($store_id) ? Store::findOrFail($store_id) : null;
-        $filter = $request->query('filter', 'all_time');
-
-        $order_transactions = OrderTransaction::when(isset($zone), function ($query) use ($zone) {
-            return $query->where('zone_id', $zone->id);
-        })
-            ->when(isset($store), function ($query) use ($store) {
-                return $query->whereHas('order', function ($q) use ($store) {
-                    $q->where('store_id', $store->id);
-                });
-            })
-            ->when(request('module_id'), function ($query) {
-                return $query->module(request('module_id'));
-            })
-            ->when(isset($from) && isset($to) && $from != null && $to != null && $filter == 'custom', function ($query) use ($from, $to) {
-                return $query->whereBetween('created_at', [$from . " 00:00:00", $to . " 23:59:59"]);
-            })
-            ->when(isset($filter) && $filter == 'this_year', function ($query) {
-                return $query->whereYear('created_at', now()->format('Y'));
-            })
-            ->when(isset($filter) && $filter == 'this_month', function ($query) {
-                return $query->whereMonth('created_at', now()->format('m'))->whereYear('created_at', now()->format('Y'));
-            })
-            ->when(isset($filter) && $filter == 'this_month', function ($query) {
-                return $query->whereMonth('created_at', now()->format('m'))->whereYear('created_at', now()->format('Y'));
-            })
-            ->when(isset($filter) && $filter == 'previous_year', function ($query) {
-                return $query->whereYear('created_at', date('Y') - 1);
-            })
-            ->when(isset($filter) && $filter == 'this_week', function ($query) {
-                return $query->whereBetween('created_at', [now()->startOfWeek()->format('Y-m-d H:i:s'), now()->endOfWeek()->format('Y-m-d H:i:s')]);
-            })
-            ->where(function ($q) use ($key) {
-                foreach ($key as $value) {
-                    $q->orWhere('order_id', 'like', "%{$value}%");
-                }
-            })
-            ->orderBy('created_at', 'desc')
-            ->paginate(config('default_pagination'))->withQueryString();
-
-        return response()->json([
-            'count' => count($order_transactions),
-            'view' => view('admin-views.report.partials._day_table', compact('order_transactions'))->render()
-        ]);
-    }
 
     public function store_summary_report(Request $request)
     {
@@ -1279,7 +1464,7 @@ class ReportController extends Controller
             '"'.translate('Sat').'"'
         );
         $key = isset($request['search']) ? explode(' ', $request['search']) : [];
-        $zone_id = $request->query('zone_id', isset(auth('admin')->user()->zone_id) ? auth('admin')->user()->zone_id : 'all');
+        $zone_id = $request->query('zone_id', auth('admin')?->user()?->zone_id ?: 'all');
         $store_id = $request->query('store_id', 'all');
         $filter = $request->query('filter', 'all_time');
         $zone = is_numeric($zone_id) ? Zone::findOrFail($zone_id) : null;
@@ -1484,7 +1669,7 @@ class ReportController extends Controller
         $to = session('to_date');
         $filter = $request->query('filter', 'all_time');
 
-        $zone_id = $request->query('zone_id', isset(auth('admin')->user()->zone_id) ? auth('admin')->user()->zone_id : 'all');
+        $zone_id = $request->query('zone_id', auth('admin')?->user()?->zone_id ?: 'all');
         $store_id = $request->query('store_id', 'all');
 
 
@@ -1519,7 +1704,7 @@ class ReportController extends Controller
         $from = session('from_date');
         $to = session('to_date');
         $key = isset($request['search']) ? explode(' ', $request['search']) : [];
-        $zone_id = $request->query('zone_id', isset(auth('admin')->user()->zone_id) ? auth('admin')->user()->zone_id : 'all');
+        $zone_id = $request->query('zone_id', auth('admin')?->user()?->zone_id ?: 'all');
         $store_id = $request->query('store_id', 'all');
         $filter = $request->query('filter', 'all_time');
         $zone = is_numeric($zone_id) ? Zone::findOrFail($zone_id) : null;
@@ -1638,14 +1823,14 @@ class ReportController extends Controller
 
         $key = isset($request['search']) ? explode(' ', $request['search']) : [];
 
-        $zone_id = $request->query('zone_id', isset(auth('admin')->user()->zone_id) ? auth('admin')->user()->zone_id : 'all');
+        $zone_id = $request->query('zone_id', auth('admin')?->user()?->zone_id ?: 'all');
         $store_id = $request->query('store_id', 'all');
         $filter = $request->query('filter', 'all_time');
         $zone = is_numeric($zone_id) ? Zone::findOrFail($zone_id) : null;
         $store = is_numeric($store_id) ? Store::findOrFail($store_id) : null;
 
         // order list with pagination
-        $orders = Order::with(['customer', 'store'])
+        $orders = Order::with(['customer', 'store', 'orderProDiscount'])
             ->when(isset($key), function ($query) use ($key) {
                 return $query->where(function ($q) use ($key) {
                     foreach ($key as $value) {
@@ -1962,12 +2147,12 @@ class ReportController extends Controller
         $from = session('from_date');
         $to = session('to_date');
 
-        $zone_id = $request->query('zone_id', isset(auth('admin')->user()->zone_id) ? auth('admin')->user()->zone_id : 'all');
+        $zone_id = $request->query('zone_id', auth('admin')?->user()?->zone_id ?: 'all');
         $store_id = $request->query('store_id', 'all');
         $zone = is_numeric($zone_id) ? Zone::findOrFail($zone_id) : null;
         $store = is_numeric($store_id) ? Store::findOrFail($store_id) : null;
 
-        $orders = Order::with(['customer', 'store'])
+        $orders = Order::with(['customer', 'store', 'orderProDiscount'])
             ->when(isset($zone), function ($query) use ($zone) {
                 return $query->whereIn('store_id', $zone->stores->pluck('id'));
             })
@@ -2002,13 +2187,13 @@ class ReportController extends Controller
         $from = session('from_date');
         $to = session('to_date');
 
-        $zone_id = $request->query('zone_id', isset(auth('admin')->user()->zone_id) ? auth('admin')->user()->zone_id : 'all');
+        $zone_id = $request->query('zone_id', auth('admin')?->user()?->zone_id ?: 'all');
         $store_id = $request->query('store_id', 'all');
         $zone = is_numeric($zone_id) ? Zone::findOrFail($zone_id) : null;
         $store = is_numeric($store_id) ? Store::findOrFail($store_id) : null;
         $filter = $request->query('filter', 'all_time');
 
-        $orders = Order::with(['customer', 'store'])
+        $orders = Order::with(['customer', 'store', 'orderProDiscount'])
         ->when(isset($key), function ($query) use ($key) {
             return $query->where(function ($q) use ($key) {
                 foreach ($key as $value) {
@@ -2046,7 +2231,7 @@ class ReportController extends Controller
             ->withSum('transaction', 'delivery_fee_comission')
             ->orderBy('schedule_at', 'desc')->get();
 
-            $orders_list = Order::with(['customer', 'store'])
+            $orders_list = Order::with(['customer', 'store', 'orderProDiscount'])
             ->when(isset($zone), function ($query) use ($zone) {
                 return $query->whereIn('store_id', $zone->stores->pluck('id'));
             })
@@ -2244,7 +2429,7 @@ class ReportController extends Controller
         }
         $from = session('from_date');
         $to = session('to_date');
-        $zone_id = $request->query('zone_id', isset(auth('admin')->user()->zone_id) ? auth('admin')->user()->zone_id : 'all');
+        $zone_id = $request->query('zone_id', auth('admin')?->user()?->zone_id ?: 'all');
         $zone = is_numeric($zone_id) ? Zone::findOrFail($zone_id) : null;
         $store_id = $request->query('store_id', 'all');
         $store = is_numeric($store_id) ? Store::findOrFail($store_id) : null;
@@ -2255,6 +2440,9 @@ class ReportController extends Controller
              $type = $request->query('type', 'all');
 
         $expense = Expense::with('order', 'order.customer:id,f_name,l_name')->where('created_by', 'admin')->where('amount', '>' ,0)
+            ->whereHas('order', function ($query) {
+                $query->where('order_type', '!=', 'parcel');
+            })
             ->when($zone || $module || $customer || $store, function ($query) use ($zone, $module, $customer, $store) {
                 $query->whereHas('order', function ($query) use ($zone, $store, $customer, $module) {
                     $query->when($module, function ($query) use ($module) {
@@ -2274,31 +2462,10 @@ class ReportController extends Controller
                    ->when(isset($type) &&  $type != 'all', function ($query) use ($type) {
                 return $query->where('type',$type);
             })
-            ->when(isset($from) && isset($to) && $from != null && $to != null && $filter == 'custom', function ($query) use ($from, $to) {
-                return $query->whereBetween('created_at', [$from . " 00:00:00", $to . " 23:59:59"]);
+            ->when(isset($filter) , function ($query) use ($filter,$from, $to) {
+                return $query->applyDateFilter($filter, $from, $to);
             })
-            ->when(isset($filter) && $filter == 'this_year', function ($query) {
-                return $query->whereYear('created_at', now()->format('Y'));
-            })
-            ->when(isset($filter) && $filter == 'this_month', function ($query) {
-                return $query->whereMonth('created_at', now()->format('m'))->whereYear('created_at', now()->format('Y'));
-            })
-            ->when(isset($filter) && $filter == 'this_month', function ($query) {
-                return $query->whereMonth('created_at', now()->format('m'))->whereYear('created_at', now()->format('Y'));
-            })
-            ->when(isset($filter) && $filter == 'previous_year', function ($query) {
-                return $query->whereYear('created_at', date('Y') - 1);
-            })
-            ->when(isset($filter) && $filter == 'this_week', function ($query) {
-                return $query->whereBetween('created_at', [now()->startOfWeek()->format('Y-m-d H:i:s'), now()->endOfWeek()->format('Y-m-d H:i:s')]);
-            })
-            ->when(isset($key), function ($query) use ($key){
-                return $query->where(function ($q) use ($key) {
-                    foreach ($key as $value) {
-                        $q->orWhere('type', 'like', "%{$value}%")->orWhere('order_id', 'like', "%{$value}%");
-                    }
-                });
-            })
+            ->search(keywords:$request['search'], mainCol: ['type', 'order_id'])
             ->orderBy('id')->get();
 
         $data = [
@@ -2330,7 +2497,7 @@ class ReportController extends Controller
         }
         $from = session('from_date');
         $to = session('to_date');
-        $zone_id = $request->query('zone_id', isset(auth('admin')->user()->zone_id) ? auth('admin')->user()->zone_id : 'all');
+        $zone_id = $request->query('zone_id', auth('admin')?->user()?->zone_id ?: 'all');
         $zone = is_numeric($zone_id) ? Zone::findOrFail($zone_id) : null;
         $store_id = $request->query('store_id', 'all');
         $store = is_numeric($store_id) ? Store::findOrFail($store_id) : null;
@@ -2375,10 +2542,21 @@ class ReportController extends Controller
             ->when(isset($filter) && $filter == 'this_week', function ($query) {
                 return $query->whereBetween('created_at', [now()->startOfWeek()->format('Y-m-d H:i:s'), now()->endOfWeek()->format('Y-m-d H:i:s')]);
             })
-            ->where(function ($q) use ($key) {
-                foreach ($key as $value) {
-                    $q->orWhere('type', 'like', "%{$value}%")->orWhere('order_id', 'like', "%{$value}%");
-                }
+            ->when(isset($key), function ($query) use ($key){
+                return $query->where(function ($q) use ($key) {
+                    foreach ($key as $value) {
+                        $q->orWhere('type', 'like', "%{$value}%")
+                            ->orWhere('order_id', 'like', "%{$value}%")
+                            ->orWhere('trip_id', 'like', "%{$value}%");
+
+                        if (addon_published_status('RideShare')) {
+                            $q->orWhereHas('ride', function ($query) use ($value) {
+                                $query->where('id', 'like', "%{$value}%")
+                                    ->orWhere('ref_id', 'like', "%{$value}%");
+                            });
+                        }
+                    }
+                });
             })
             ->limit(25)->get();
 
@@ -2398,7 +2576,7 @@ class ReportController extends Controller
         }
         $from = session('from_date');
         $to = session('to_date');
-        $zone_id = $request->query('zone_id', isset(auth('admin')->user()->zone_id) ? auth('admin')->user()->zone_id : 'all');
+        $zone_id = $request->query('zone_id', auth('admin')?->user()?->zone_id ?: 'all');
         $zone = is_numeric($zone_id) ? Zone::findOrFail($zone_id) : null;
         $store_id = $request->query('store_id', 'all');
         $store = is_numeric($store_id) ? Store::findOrFail($store_id) : null;
@@ -2406,7 +2584,7 @@ class ReportController extends Controller
         $customer = is_numeric($customer_id) ? User::findOrFail($customer_id) : null;
         $filter = $request->query('filter', 'all_time');
 
-        $orders = Order::with(['customer', 'store', 'details', 'transaction'])
+        $orders = Order::with(['customer', 'store', 'details', 'transaction', 'orderProDiscount'])
             ->when(request('module_id'), function ($query) {
                 return $query->module(request('module_id'));
             })
@@ -2450,8 +2628,11 @@ class ReportController extends Controller
             ->withSum('transaction', 'delivery_fee_comission')
             ->orderBy('schedule_at', 'desc')->paginate(config('default_pagination'))->withQueryString();
 
-        // order card values calculation
-        $orders_list = Order::when(request('module_id'), function ($query) {
+        // order card values calculation — single aggregate query with
+        // conditional COUNTs instead of loading every matching order into
+        // memory and counting the collection in PHP (the old ->get() blew
+        // up on large date ranges).
+        $order_stats = Order::when(request('module_id'), function ($query) {
             return $query->module(request('module_id'));
         })
             ->when(isset($zone), function ($query) use ($zone) {
@@ -2472,9 +2653,6 @@ class ReportController extends Controller
             ->when(isset($filter) && $filter == 'this_month', function ($query) {
                 return $query->whereMonth('schedule_at', now()->format('m'))->whereYear('schedule_at', now()->format('Y'));
             })
-            ->when(isset($filter) && $filter == 'this_month', function ($query) {
-                return $query->whereMonth('schedule_at', now()->format('m'))->whereYear('schedule_at', now()->format('Y'));
-            })
             ->when(isset($filter) && $filter == 'previous_year', function ($query) {
                 return $query->whereYear('schedule_at', date('Y') - 1);
             })
@@ -2489,86 +2667,26 @@ class ReportController extends Controller
                 });
             })
             ->StoreOrder()
-            ->orderBy('schedule_at', 'desc')->get();
+            ->selectRaw("
+                COUNT(CASE WHEN order_status = 'canceled' THEN 1 END) as canceled_count,
+                COUNT(CASE WHEN order_status = 'delivered' THEN 1 END) as delivered_count,
+                COUNT(CASE WHEN order_status IN ('accepted', 'confirmed', 'processing', 'handover') THEN 1 END) as progress_count,
+                COUNT(CASE WHEN order_status = 'failed' THEN 1 END) as failed_count,
+                COUNT(CASE WHEN order_status = 'refunded' THEN 1 END) as refunded_count,
+                COUNT(CASE WHEN order_status = 'picked_up' THEN 1 END) as on_the_way_count
+            ")
+            ->first();
 
-        $total_order_amount = $orders_list->sum('order_amount');
-        $total_coupon_discount = $orders_list->sum('coupon_discount_amount');
-        $total_product_discount = $orders_list->sum('store_discount_amount');
-
-        $total_canceled_count = $orders_list->where('order_status', 'canceled')->count();
-        $total_delivered_count = $orders_list->where('order_status', 'delivered')->count();
-        $total_progress_count = $orders_list->whereIn('order_status', ['accepted', 'confirmed', 'processing', 'handover'])->count();
-        $total_failed_count = $orders_list->where('order_status', 'failed')->count();
-        $total_refunded_count = $orders_list->where('order_status', 'refunded')->count();
-        $total_on_the_way_count = $orders_list->whereIn('order_status', ['picked_up'])->count();
-        return view('admin-views.report.order-report', compact('orders', 'orders_list', 'zone', 'store', 'filter', 'customer', 'total_on_the_way_count', 'total_refunded_count', 'total_failed_count', 'total_progress_count', 'total_canceled_count', 'total_delivered_count'));
+        $total_canceled_count = (int) ($order_stats->canceled_count ?? 0);
+        $total_delivered_count = (int) ($order_stats->delivered_count ?? 0);
+        $total_progress_count = (int) ($order_stats->progress_count ?? 0);
+        $total_failed_count = (int) ($order_stats->failed_count ?? 0);
+        $total_refunded_count = (int) ($order_stats->refunded_count ?? 0);
+        $total_on_the_way_count = (int) ($order_stats->on_the_way_count ?? 0);
+        return view('admin-views.report.order-report', compact('orders', 'zone', 'store', 'filter', 'customer', 'total_on_the_way_count', 'total_refunded_count', 'total_failed_count', 'total_progress_count', 'total_canceled_count', 'total_delivered_count'));
     }
 
-    public function search_order_report(Request $request)
-    {
-        $key = explode(' ', $request['search']);
 
-        if (session()->has('from_date') == false) {
-            session()->put('from_date', date('Y-m-01'));
-            session()->put('to_date', date('Y-m-30'));
-        }
-        $from = session('from_date');
-        $to = session('to_date');
-        $zone_id = $request->query('zone_id', isset(auth('admin')->user()->zone_id) ? auth('admin')->user()->zone_id : 'all');
-        $zone = is_numeric($zone_id) ? Zone::findOrFail($zone_id) : null;
-        $store_id = $request->query('store_id', 'all');
-        $store = is_numeric($store_id) ? Store::findOrFail($store_id) : null;
-        $customer_id = $request->query('customer_id', 'all');
-        $customer = is_numeric($customer_id) ? User::findOrFail($customer_id) : null;
-        $filter = $request->query('filter', 'all_time');
-
-        $orders = Order::with(['customer', 'store'])
-            ->when(request('module_id'), function ($query) {
-                return $query->module(request('module_id'));
-            })
-            ->when(isset($zone), function ($query) use ($zone) {
-                return $query->where('zone_id', $zone->id);
-            })
-            ->when(isset($store), function ($query) use ($store) {
-                return $query->where('store_id', $store->id);
-            })
-            ->when(isset($customer), function ($query) use ($customer) {
-                return $query->where('user_id', $customer->id);
-            })
-            ->when(isset($from) && isset($to) && $from != null && $to != null && $filter == 'custom', function ($query) use ($from, $to) {
-                return $query->whereBetween('schedule_at', [$from . " 00:00:00", $to . " 23:59:59"]);
-            })
-            ->when(isset($filter) && $filter == 'this_year', function ($query) {
-                return $query->whereYear('schedule_at', now()->format('Y'));
-            })
-            ->when(isset($filter) && $filter == 'this_month', function ($query) {
-                return $query->whereMonth('schedule_at', now()->format('m'))->whereYear('schedule_at', now()->format('Y'));
-            })
-            ->when(isset($filter) && $filter == 'this_month', function ($query) {
-                return $query->whereMonth('schedule_at', now()->format('m'))->whereYear('schedule_at', now()->format('Y'));
-            })
-            ->when(isset($filter) && $filter == 'previous_year', function ($query) {
-                return $query->whereYear('schedule_at', date('Y') - 1);
-            })
-            ->when(isset($filter) && $filter == 'this_week', function ($query) {
-                return $query->whereBetween('schedule_at', [now()->startOfWeek()->format('Y-m-d H:i:s'), now()->endOfWeek()->format('Y-m-d H:i:s')]);
-            })
-            ->where(function ($q) use ($key) {
-                foreach ($key as $value) {
-                    $q->orWhere('id', 'like', "%{$value}%");
-                }
-            })
-            ->StoreOrder()
-            ->withSum('transaction', 'admin_commission')
-            ->withSum('transaction', 'admin_expense')
-            ->withSum('transaction', 'delivery_fee_comission')
-            ->orderBy('schedule_at', 'desc')->paginate(config('default_pagination'));
-
-        return response()->json([
-            'count' => count($orders),
-            'view' => view('admin-views.report.partials._order_table', compact('orders'))->render()
-        ]);
-    }
 
     public function order_report_export(Request $request)
     {
@@ -2580,7 +2698,7 @@ class ReportController extends Controller
         }
         $from = session('from_date');
         $to = session('to_date');
-        $zone_id = $request->query('zone_id', isset(auth('admin')->user()->zone_id) ? auth('admin')->user()->zone_id : 'all');
+        $zone_id = $request->query('zone_id', auth('admin')?->user()?->zone_id ?: 'all');
         $zone = is_numeric($zone_id) ? Zone::findOrFail($zone_id) : null;
         $store_id = $request->query('store_id', 'all');
         $store = is_numeric($store_id) ? Store::findOrFail($store_id) : null;
@@ -2588,7 +2706,7 @@ class ReportController extends Controller
         $customer = is_numeric($customer_id) ? User::findOrFail($customer_id) : null;
         $filter = $request->query('filter', 'all_time');
 
-        $orders = Order::with(['customer', 'store'])
+        $orders = Order::with(['customer', 'store', 'orderProDiscount'])
             ->when(request('module_id'), function ($query) {
                 return $query->module(request('module_id'));
             })
@@ -2660,7 +2778,7 @@ class ReportController extends Controller
         }
         $from = session('from_date');
         $to = session('to_date');
-        $zone_id = $request->query('zone_id', isset(auth('admin')->user()->zone_id) ? auth('admin')->user()->zone_id : 'all');
+        $zone_id = $request->query('zone_id', auth('admin')?->user()?->zone_id ?: 'all');
         $zone = is_numeric($zone_id) ? Zone::findOrFail($zone_id) : null;
         $store_id = $request->query('store_id', 'all');
         $store = is_numeric($store_id) ? Store::findOrFail($store_id) : null;
@@ -2671,6 +2789,9 @@ class ReportController extends Controller
         $type = $request->query('type', 'all');
 
         $expense = Expense::with('user','order', 'order.customer:id,f_name,l_name')->where('amount', '>' ,0)
+            ->whereHas('order', function ($query) {
+                $query->where('order_type', '!=', 'parcel');
+            })
             ->when(isset($zone) || isset($store) || isset($customer), function ($query) use ($zone, $store, $customer) {
                 return $query->whereHas('order', function ($query) use ($zone, $store, $customer) {
                     $query->when($zone, function ($query) use ($zone) {
@@ -2694,37 +2815,488 @@ class ReportController extends Controller
                     });
                 });
             })
-            ->when(isset($from) && isset($to) && $from != null && $to != null && $filter == 'custom', function ($query) use ($from, $to) {
-                return $query->whereBetween('created_at', [$from . " 00:00:00", $to . " 23:59:59"]);
+            ->when(isset($filter) , function ($query) use ($filter,$from, $to) {
+                return $query->applyDateFilter($filter, $from, $to);
             })
-            ->when(isset($filter) && $filter == 'this_year', function ($query) {
-                return $query->whereYear('created_at', now()->format('Y'));
-            })
-            ->when(isset($filter) && $filter == 'this_month', function ($query) {
-                return $query->whereMonth('created_at', now()->format('m'))->whereYear('created_at', now()->format('Y'));
-            })
-            ->when(isset($filter) && $filter == 'this_month', function ($query) {
-                return $query->whereMonth('created_at', now()->format('m'))->whereYear('created_at', now()->format('Y'));
-            })
-            ->when(isset($filter) && $filter == 'previous_year', function ($query) {
-                return $query->whereYear('created_at', date('Y') - 1);
-            })
-            ->when(isset($filter) && $filter == 'this_week', function ($query) {
-                return $query->whereBetween('created_at', [now()->startOfWeek()->format('Y-m-d H:i:s'), now()->endOfWeek()->format('Y-m-d H:i:s')]);
-            })
-            ->when(isset($key), function ($query) use ($key){
-                return $query->where(function ($q) use ($key) {
-                    foreach ($key as $value) {
-                        $q->orWhere('type', 'like', "%{$value}%")->orWhere('order_id', 'like', "%{$value}%");
-                    }
-                });
-            })
+            ->search(keywords:$request['search'], mainCol: ['type', 'order_id'])
             ->where('created_by', 'admin')
             ->orderBy('created_at', 'desc')
             ->paginate(config('default_pagination'))->withQueryString();
 
-
         return view('admin-views.report.expense-report', compact('expense', 'zone', 'store', 'filter', 'customer','type'));
+    }
+
+    public function parcel_expense_report(Request $request)
+    {
+        if (session()->has('from_date') == false) {
+            session()->put('from_date', now()->firstOfMonth()->format('Y-m-d'));
+            session()->put('to_date', now()->lastOfMonth()->format('Y-m-d'));
+        }
+        $from = session('from_date');
+        $to = session('to_date');
+        $zone_id = $request->query('zone_id', auth('admin')?->user()?->zone_id ?: 'all');
+        $zone = is_numeric($zone_id) ? Zone::findOrFail($zone_id) : null;
+        $customer_id = $request->query('customer_id', 'all');
+        $customer = is_numeric($customer_id) ? User::findOrFail($customer_id) : null;
+        $filter = $request->query('filter', 'all_time');
+        $type = $request->query('type', 'all');
+
+        $parcelModuleIds = \App\Models\Module::where('module_type', 'parcel')->pluck('id')->all();
+        $module_id = $request->query('module_id');
+        if ($module_id && ! in_array((int) $module_id, $parcelModuleIds, true)) {
+            $module_id = null;
+        }
+
+        $expense = Expense::with('user', 'order', 'order.customer:id,f_name,l_name')->where('amount', '>', 0)
+            ->whereHas('order', function ($query) use ($parcelModuleIds) {
+                $query->where('order_type', 'parcel');
+                if (! empty($parcelModuleIds)) {
+                    $query->whereIn('module_id', $parcelModuleIds);
+                }
+            })
+            ->when(isset($zone) || isset($customer), function ($query) use ($zone, $customer) {
+                return $query->whereHas('order', function ($query) use ($zone, $customer) {
+                    $query->when($zone, fn ($q) => $q->where('zone_id', $zone->id));
+                    $query->when($customer, fn ($q) => $q->where('user_id', $customer->id));
+                });
+            })
+            ->when($module_id, function ($query) use ($module_id) {
+                return $query->whereHas('order', fn ($q) => $q->where('module_id', $module_id));
+            })
+            ->when(isset($type) && $type != 'all', fn ($q) => $q->where('type', $type))
+            ->when(isset($filter), fn ($q) => $q->applyDateFilter($filter, $from, $to))
+            ->search(keywords: $request['search'], mainCol: ['type', 'order_id'])
+            ->where('created_by', 'admin')
+            ->orderBy('created_at', 'desc')
+            ->paginate(config('default_pagination'))->withQueryString();
+
+        return view('admin-views.report.parcel-expense-report', compact('expense', 'zone', 'filter', 'customer', 'type', 'module_id'));
+    }
+
+    public function parcel_expense_export(Request $request)
+    {
+        if (session()->has('from_date') == false) {
+            session()->put('from_date', now()->firstOfMonth()->format('Y-m-d'));
+            session()->put('to_date', now()->lastOfMonth()->format('Y-m-d'));
+        }
+        $from = session('from_date');
+        $to = session('to_date');
+        $zone_id = $request->query('zone_id', auth('admin')?->user()?->zone_id ?: 'all');
+        $zone = is_numeric($zone_id) ? Zone::findOrFail($zone_id) : null;
+        $customer_id = $request->query('customer_id', 'all');
+        $customer = is_numeric($customer_id) ? User::findOrFail($customer_id) : null;
+        $filter = $request->query('filter', 'all_time');
+        $type = $request->query('type', 'all');
+
+        $parcelModuleIds = \App\Models\Module::where('module_type', 'parcel')->pluck('id')->all();
+        $module_id = $request->query('module_id');
+        if ($module_id && ! in_array((int) $module_id, $parcelModuleIds, true)) {
+            $module_id = null;
+        }
+
+        $expenses = Expense::with('order', 'order.customer:id,f_name,l_name')->where('created_by', 'admin')->where('amount', '>', 0)
+            ->whereHas('order', function ($query) use ($parcelModuleIds) {
+                $query->where('order_type', 'parcel');
+                if (! empty($parcelModuleIds)) {
+                    $query->whereIn('module_id', $parcelModuleIds);
+                }
+            })
+            ->when(isset($zone) || isset($customer), function ($query) use ($zone, $customer) {
+                return $query->whereHas('order', function ($query) use ($zone, $customer) {
+                    $query->when($zone, fn ($q) => $q->where('zone_id', $zone->id));
+                    $query->when($customer, fn ($q) => $q->where('user_id', $customer->id));
+                });
+            })
+            ->when($module_id, function ($query) use ($module_id) {
+                return $query->whereHas('order', fn ($q) => $q->where('module_id', $module_id));
+            })
+            ->when(isset($type) && $type != 'all', fn ($q) => $q->where('type', $type))
+            ->when(isset($filter), fn ($q) => $q->applyDateFilter($filter, $from, $to))
+            ->search(keywords: $request['search'], mainCol: ['type', 'order_id'])
+            ->orderBy('id')->get();
+
+        $data = [
+            'expenses' => $expenses,
+            'search' => $request->search ?? null,
+            'from' => (($filter == 'custom') && $from) ? $from : null,
+            'to' => (($filter == 'custom') && $to) ? $to : null,
+            'zone' => is_numeric($zone_id) ? Helpers::get_zones_name($zone_id) : null,
+            'customer' => is_numeric($customer_id) ? Helpers::get_customer_name($customer_id) : null,
+            'module' => $module_id ? Helpers::get_module_name($module_id) : null,
+            'filter' => $filter,
+        ];
+
+        if ($request->export_type == 'excel') {
+            return Excel::download(new ParcelExpenseReportExport($data), 'ParcelExpenseReport.xlsx');
+        } elseif ($request->export_type == 'csv') {
+            return Excel::download(new ParcelExpenseReportExport($data), 'ParcelExpenseReport.csv');
+        }
+    }
+
+    public function rental_expense_report(Request $request)
+    {
+        if (session()->has('from_date') == false) {
+            session()->put('from_date', now()->firstOfMonth()->format('Y-m-d'));
+            session()->put('to_date', now()->lastOfMonth()->format('Y-m-d'));
+        }
+        $from = session('from_date');
+        $to = session('to_date');
+        $zone_id = $request->query('zone_id', auth('admin')?->user()?->zone_id ?: 'all');
+        $zone = is_numeric($zone_id) ? Zone::findOrFail($zone_id) : null;
+        $customer_id = $request->query('customer_id', 'all');
+        $customer = is_numeric($customer_id) ? User::findOrFail($customer_id) : null;
+        $filter = $request->query('filter', 'all_time');
+        $type = $request->query('type', 'all');
+
+        $expense = Expense::with('trip', 'trip.customer')->where('amount', '>', 0)
+            ->whereNotNull('trip_id')
+            ->when(isset($zone) || isset($customer), function ($query) use ($zone, $customer) {
+                return $query->whereHas('trip', function ($q) use ($zone, $customer) {
+                    $q->when($zone, fn ($qq) => $qq->where('zone_id', $zone->id));
+                    $q->when($customer, fn ($qq) => $qq->where('user_id', $customer->id));
+                });
+            })
+            ->when(isset($type) && $type != 'all', fn ($q) => $q->where('type', $type))
+            ->when(isset($filter), fn ($q) => $q->applyDateFilter($filter, $from, $to))
+            ->search(keywords: $request['search'], mainCol: ['type', 'trip_id'])
+            ->where('created_by', 'admin')
+            ->orderBy('created_at', 'desc')
+            ->paginate(config('default_pagination'))->withQueryString();
+
+        return view('admin-views.report.rental-expense-report', compact('expense', 'zone', 'filter', 'customer', 'type'));
+    }
+
+    public function rental_expense_export(Request $request)
+    {
+        if (session()->has('from_date') == false) {
+            session()->put('from_date', now()->firstOfMonth()->format('Y-m-d'));
+            session()->put('to_date', now()->lastOfMonth()->format('Y-m-d'));
+        }
+        $from = session('from_date');
+        $to = session('to_date');
+        $zone_id = $request->query('zone_id', auth('admin')?->user()?->zone_id ?: 'all');
+        $zone = is_numeric($zone_id) ? Zone::findOrFail($zone_id) : null;
+        $customer_id = $request->query('customer_id', 'all');
+        $customer = is_numeric($customer_id) ? User::findOrFail($customer_id) : null;
+        $filter = $request->query('filter', 'all_time');
+        $type = $request->query('type', 'all');
+
+        $expenses = Expense::with('trip', 'trip.customer')->where('created_by', 'admin')->where('amount', '>', 0)
+            ->whereNotNull('trip_id')
+            ->when(isset($zone) || isset($customer), function ($query) use ($zone, $customer) {
+                return $query->whereHas('trip', function ($q) use ($zone, $customer) {
+                    $q->when($zone, fn ($qq) => $qq->where('zone_id', $zone->id));
+                    $q->when($customer, fn ($qq) => $qq->where('user_id', $customer->id));
+                });
+            })
+            ->when(isset($type) && $type != 'all', fn ($q) => $q->where('type', $type))
+            ->when(isset($filter), fn ($q) => $q->applyDateFilter($filter, $from, $to))
+            ->search(keywords: $request['search'], mainCol: ['type', 'trip_id'])
+            ->orderBy('id')->get();
+
+        $data = [
+            'expenses' => $expenses,
+            'search' => $request->search ?? null,
+            'from' => (($filter == 'custom') && $from) ? $from : null,
+            'to' => (($filter == 'custom') && $to) ? $to : null,
+            'zone' => is_numeric($zone_id) ? Helpers::get_zones_name($zone_id) : null,
+            'customer' => is_numeric($customer_id) ? Helpers::get_customer_name($customer_id) : null,
+            'filter' => $filter,
+        ];
+
+        if ($request->export_type == 'excel') {
+            return Excel::download(new RentalExpenseReportExport($data), 'RentalExpenseReport.xlsx');
+        } elseif ($request->export_type == 'csv') {
+            return Excel::download(new RentalExpenseReportExport($data), 'RentalExpenseReport.csv');
+        }
+    }
+
+    public function rideshare_expense_report(Request $request)
+    {
+        if (session()->has('from_date') == false) {
+            session()->put('from_date', now()->firstOfMonth()->format('Y-m-d'));
+            session()->put('to_date', now()->lastOfMonth()->format('Y-m-d'));
+        }
+        $from = session('from_date');
+        $to = session('to_date');
+        $zone_id = $request->query('zone_id', auth('admin')?->user()?->zone_id ?: 'all');
+        $zone = is_numeric($zone_id) ? Zone::findOrFail($zone_id) : null;
+        $customer_id = $request->query('customer_id', 'all');
+        $customer = is_numeric($customer_id) ? User::findOrFail($customer_id) : null;
+        $filter = $request->query('filter', 'all_time');
+        $type = $request->query('type', 'all');
+
+        $expense = Expense::with('ride', 'ride.customer')->where('amount', '>', 0)
+            ->whereNotNull('ride_id')
+            ->when(isset($zone) || isset($customer), function ($query) use ($zone, $customer) {
+                return $query->whereHas('ride', function ($q) use ($zone, $customer) {
+                    $q->when($zone, fn ($qq) => $qq->where('zone_id', $zone->id));
+                    $q->when($customer, fn ($qq) => $qq->where('customer_id', $customer->id));
+                });
+            })
+            ->when(isset($type) && $type != 'all', fn ($q) => $q->where('type', $type))
+            ->when(isset($filter), fn ($q) => $q->applyDateFilter($filter, $from, $to))
+            ->search(keywords: $request['search'], mainCol: ['type', 'ride_id'])
+            ->where('created_by', 'admin')
+            ->orderBy('created_at', 'desc')
+            ->paginate(config('default_pagination'))->withQueryString();
+
+        return view('admin-views.report.rideshare-expense-report', compact('expense', 'zone', 'filter', 'customer', 'type'));
+    }
+
+    public function rideshare_expense_export(Request $request)
+    {
+        if (session()->has('from_date') == false) {
+            session()->put('from_date', now()->firstOfMonth()->format('Y-m-d'));
+            session()->put('to_date', now()->lastOfMonth()->format('Y-m-d'));
+        }
+        $from = session('from_date');
+        $to = session('to_date');
+        $zone_id = $request->query('zone_id', auth('admin')?->user()?->zone_id ?: 'all');
+        $zone = is_numeric($zone_id) ? Zone::findOrFail($zone_id) : null;
+        $customer_id = $request->query('customer_id', 'all');
+        $customer = is_numeric($customer_id) ? User::findOrFail($customer_id) : null;
+        $filter = $request->query('filter', 'all_time');
+        $type = $request->query('type', 'all');
+
+        $expenses = Expense::with('ride', 'ride.customer')->where('created_by', 'admin')->where('amount', '>', 0)
+            ->whereNotNull('ride_id')
+            ->when(isset($zone) || isset($customer), function ($query) use ($zone, $customer) {
+                return $query->whereHas('ride', function ($q) use ($zone, $customer) {
+                    $q->when($zone, fn ($qq) => $qq->where('zone_id', $zone->id));
+                    $q->when($customer, fn ($qq) => $qq->where('customer_id', $customer->id));
+                });
+            })
+            ->when(isset($type) && $type != 'all', fn ($q) => $q->where('type', $type))
+            ->when(isset($filter), fn ($q) => $q->applyDateFilter($filter, $from, $to))
+            ->search(keywords: $request['search'], mainCol: ['type', 'ride_id'])
+            ->orderBy('id')->get();
+
+        $data = [
+            'expenses' => $expenses,
+            'search' => $request->search ?? null,
+            'from' => (($filter == 'custom') && $from) ? $from : null,
+            'to' => (($filter == 'custom') && $to) ? $to : null,
+            'zone' => is_numeric($zone_id) ? Helpers::get_zones_name($zone_id) : null,
+            'customer' => is_numeric($customer_id) ? Helpers::get_customer_name($customer_id) : null,
+            'filter' => $filter,
+        ];
+
+        if ($request->export_type == 'excel') {
+            return Excel::download(new RideshareExpenseReportExport($data), 'RideshareExpenseReport.xlsx');
+        } elseif ($request->export_type == 'csv') {
+            return Excel::download(new RideshareExpenseReportExport($data), 'RideshareExpenseReport.csv');
+        }
+    }
+
+    public function parcel_report(Request $request)
+    {
+        $key = explode(' ', $request['search']);
+
+        if (session()->has('from_date') == false) {
+            session()->put('from_date', date('Y-m-01'));
+            session()->put('to_date', date('Y-m-30'));
+        }
+        $from = session('from_date');
+        $to = session('to_date');
+        $zone_id = $request->query('zone_id', auth('admin')?->user()?->zone_id ?: 'all');
+        $zone = is_numeric($zone_id) ? Zone::findOrFail($zone_id) : null;
+        $customer_id = $request->query('customer_id', 'all');
+        $customer = is_numeric($customer_id) ? User::findOrFail($customer_id) : null;
+        $filter = $request->query('filter', 'all_time');
+
+        $parcelModuleIds = \App\Models\Module::where('module_type', 'parcel')->pluck('id')->all();
+        $module_id = $request->query('module_id');
+        if ($module_id && ! in_array((int) $module_id, $parcelModuleIds, true)) {
+            $module_id = null;
+        }
+
+        $base = function () use ($key, $zone, $customer, $module_id, $parcelModuleIds, $from, $to, $filter) {
+            return Order::query()
+                ->ParcelOrder()
+                ->when(! empty($parcelModuleIds), function ($q) use ($module_id, $parcelModuleIds) {
+                    if ($module_id) {
+                        $q->where('module_id', $module_id);
+                    } else {
+                        $q->whereIn('module_id', $parcelModuleIds);
+                    }
+                })
+                ->when(isset($zone), fn ($q) => $q->where('zone_id', $zone->id))
+                ->when(isset($customer), fn ($q) => $q->where('user_id', $customer->id))
+                ->when($filter == 'custom' && $from && $to, function ($q) use ($from, $to) {
+                    return $q->whereBetween('schedule_at', [$from . ' 00:00:00', $to . ' 23:59:59']);
+                })
+                ->when($filter == 'this_year', fn ($q) => $q->whereYear('schedule_at', now()->format('Y')))
+                ->when($filter == 'this_month', fn ($q) => $q->whereMonth('schedule_at', now()->format('m'))->whereYear('schedule_at', now()->format('Y')))
+                ->when($filter == 'previous_year', fn ($q) => $q->whereYear('schedule_at', date('Y') - 1))
+                ->when($filter == 'this_week', fn ($q) => $q->whereBetween('schedule_at', [now()->startOfWeek()->format('Y-m-d H:i:s'), now()->endOfWeek()->format('Y-m-d H:i:s')]))
+                ->when(! empty($key), function ($q) use ($key) {
+                    return $q->where(function ($qq) use ($key) {
+                        foreach ($key as $value) {
+                            $qq->orWhere('id', 'like', "%{$value}%");
+                        }
+                    });
+                });
+        };
+
+        $orders = (clone $base())
+            ->with(['customer', 'transaction', 'orderProDiscount'])
+            ->withSum('transaction', 'admin_commission')
+            ->withSum('transaction', 'admin_expense')
+            ->withSum('transaction', 'delivery_fee_comission')
+            ->orderBy('schedule_at', 'desc')
+            ->paginate(config('default_pagination'))->withQueryString();
+
+        $orders_list = (clone $base())->orderBy('schedule_at', 'desc')->get();
+
+        $total_canceled_count   = $orders_list->where('order_status', 'canceled')->count();
+        $total_delivered_count  = $orders_list->where('order_status', 'delivered')->count();
+        $total_progress_count   = $orders_list->whereIn('order_status', ['accepted', 'confirmed', 'processing', 'handover'])->count();
+        $total_failed_count     = $orders_list->where('order_status', 'failed')->count();
+        $total_refunded_count   = $orders_list->where('order_status', 'refunded')->count();
+        $total_on_the_way_count = $orders_list->whereIn('order_status', ['picked_up'])->count();
+
+        return view('admin-views.report.parcel-report', compact(
+            'orders', 'orders_list', 'zone', 'filter', 'customer', 'module_id',
+            'total_on_the_way_count', 'total_refunded_count', 'total_failed_count',
+            'total_progress_count', 'total_canceled_count', 'total_delivered_count'
+        ));
+    }
+
+    public function parcel_report_export(Request $request)
+    {
+        $key = isset($request['search']) ? explode(' ', $request['search']) : [];
+
+        if (session()->has('from_date') == false) {
+            session()->put('from_date', date('Y-m-01'));
+            session()->put('to_date', date('Y-m-30'));
+        }
+        $from = session('from_date');
+        $to = session('to_date');
+        $zone_id = $request->query('zone_id', auth('admin')?->user()?->zone_id ?: 'all');
+        $zone = is_numeric($zone_id) ? Zone::findOrFail($zone_id) : null;
+        $customer_id = $request->query('customer_id', 'all');
+        $customer = is_numeric($customer_id) ? User::findOrFail($customer_id) : null;
+        $filter = $request->query('filter', 'all_time');
+
+        $parcelModuleIds = \App\Models\Module::where('module_type', 'parcel')->pluck('id')->all();
+        $module_id = $request->query('module_id');
+        if ($module_id && ! in_array((int) $module_id, $parcelModuleIds, true)) {
+            $module_id = null;
+        }
+
+        $orders = Order::with(['customer', 'transaction', 'orderProDiscount'])
+            ->ParcelOrder()
+            ->when(! empty($parcelModuleIds), function ($q) use ($module_id, $parcelModuleIds) {
+                if ($module_id) {
+                    $q->where('module_id', $module_id);
+                } else {
+                    $q->whereIn('module_id', $parcelModuleIds);
+                }
+            })
+            ->when(isset($zone), fn ($q) => $q->where('zone_id', $zone->id))
+            ->when(isset($customer), fn ($q) => $q->where('user_id', $customer->id))
+            ->when($filter == 'custom' && $from && $to, function ($q) use ($from, $to) {
+                return $q->whereBetween('schedule_at', [$from . ' 00:00:00', $to . ' 23:59:59']);
+            })
+            ->when($filter == 'this_year', fn ($q) => $q->whereYear('schedule_at', now()->format('Y')))
+            ->when($filter == 'this_month', fn ($q) => $q->whereMonth('schedule_at', now()->format('m'))->whereYear('schedule_at', now()->format('Y')))
+            ->when($filter == 'previous_year', fn ($q) => $q->whereYear('schedule_at', date('Y') - 1))
+            ->when($filter == 'this_week', fn ($q) => $q->whereBetween('schedule_at', [now()->startOfWeek()->format('Y-m-d H:i:s'), now()->endOfWeek()->format('Y-m-d H:i:s')]))
+            ->when(! empty($key), function ($q) use ($key) {
+                return $q->where(function ($qq) use ($key) {
+                    foreach ($key as $value) {
+                        $qq->orWhere('id', 'like', "%{$value}%");
+                    }
+                });
+            })
+            ->withSum('transaction', 'admin_commission')
+            ->withSum('transaction', 'admin_expense')
+            ->withSum('transaction', 'delivery_fee_comission')
+            ->orderBy('schedule_at', 'desc')->get();
+
+        $data = [
+            'orders'   => $orders,
+            'search'   => $request->search ?? null,
+            'from'     => (($filter == 'custom') && $from) ? $from : null,
+            'to'       => (($filter == 'custom') && $to) ? $to : null,
+            'zone'     => is_numeric($zone_id) ? Helpers::get_zones_name($zone_id) : null,
+            'customer' => is_numeric($customer_id) ? Helpers::get_customer_name($customer_id) : null,
+            'module'   => $module_id ? Helpers::get_module_name($module_id) : null,
+            'filter'   => $filter,
+        ];
+
+        if ($request->type == 'excel') {
+            return Excel::download(new ParcelReportExport($data), 'ParcelReport.xlsx');
+        } elseif ($request->type == 'csv') {
+            return Excel::download(new ParcelReportExport($data), 'ParcelReport.csv');
+        }
+
+        return redirect()->route('admin.transactions.report.parcel-report');
+    }
+
+    public function other_expense_report(Request $request)
+    {
+        if (session()->has('from_date') == false) {
+            session()->put('from_date', now()->firstOfMonth()->format('Y-m-d'));
+            session()->put('to_date', now()->lastOfMonth()->format('Y-m-d'));
+        }
+        $from = session('from_date');
+        $to = session('to_date');
+        $customer_id = $request->query('customer_id', 'all');
+        $customer = is_numeric($customer_id) ? User::findOrFail($customer_id) : null;
+        $filter = $request->query('filter', 'all_time');
+        $type = $request->query('type', 'all');
+
+        $expense = Expense::with('user:id,f_name,l_name')->where('amount', '>', 0)
+            ->whereNull('order_id')->whereNull('trip_id')->whereNull('ride_id')
+            ->when($customer, fn ($q) => $q->where('user_id', $customer->id))
+            ->when(isset($type) && $type != 'all', fn ($q) => $q->where('type', $type))
+            ->when(isset($filter), fn ($q) => $q->applyDateFilter($filter, $from, $to))
+            ->search(keywords: $request['search'], mainCol: ['type'])
+            ->where('created_by', 'admin')
+            ->orderBy('created_at', 'desc')
+            ->paginate(config('default_pagination'))->withQueryString();
+
+        return view('admin-views.report.other-expense-report', compact('expense', 'filter', 'customer', 'type'));
+    }
+
+    public function other_expense_export(Request $request)
+    {
+        if (session()->has('from_date') == false) {
+            session()->put('from_date', now()->firstOfMonth()->format('Y-m-d'));
+            session()->put('to_date', now()->lastOfMonth()->format('Y-m-d'));
+        }
+        $from = session('from_date');
+        $to = session('to_date');
+        $customer_id = $request->query('customer_id', 'all');
+        $customer = is_numeric($customer_id) ? User::findOrFail($customer_id) : null;
+        $filter = $request->query('filter', 'all_time');
+        $type = $request->query('type', 'all');
+
+        $expenses = Expense::with('user:id,f_name,l_name')->where('created_by', 'admin')->where('amount', '>', 0)
+            ->whereNull('order_id')->whereNull('trip_id')->whereNull('ride_id')
+            ->when($customer, fn ($q) => $q->where('user_id', $customer->id))
+            ->when(isset($type) && $type != 'all', fn ($q) => $q->where('type', $type))
+            ->when(isset($filter), fn ($q) => $q->applyDateFilter($filter, $from, $to))
+            ->search(keywords: $request['search'], mainCol: ['type'])
+            ->orderBy('id')->get();
+
+        $data = [
+            'expenses' => $expenses,
+            'search' => $request->search ?? null,
+            'from' => (($filter == 'custom') && $from) ? $from : null,
+            'to' => (($filter == 'custom') && $to) ? $to : null,
+            'customer' => is_numeric($customer_id) ? Helpers::get_customer_name($customer_id) : null,
+            'type' => $type,
+            'filter' => $filter,
+        ];
+
+        if ($request->export_type == 'excel') {
+            return Excel::download(new OtherExpenseReportExport($data), 'OtherExpenseReport.xlsx');
+        } elseif ($request->export_type == 'csv') {
+            return Excel::download(new OtherExpenseReportExport($data), 'OtherExpenseReport.csv');
+        }
     }
 
     public function generate_statement($id)
@@ -2749,7 +3321,7 @@ class ReportController extends Controller
     public function low_stock_report(Request $request)
     {
         $key = explode(' ', $request['search']);
-        $zone_id = $request->query('zone_id', isset(auth('admin')->user()->zone_id) ? auth('admin')->user()->zone_id : 'all');
+        $zone_id = $request->query('zone_id', auth('admin')?->user()?->zone_id ?: 'all');
         $store_id = $request->query('store_id', 'all');
         $zone = is_numeric($zone_id) ? Zone::findOrFail($zone_id) : null;
         $store = is_numeric($store_id) ? Store::findOrFail($store_id) : null;
@@ -2789,7 +3361,7 @@ class ReportController extends Controller
 
     public function stock_report(Request $request)
     {
-        $zone_id = $request->query('zone_id', isset(auth('admin')->user()->zone_id) ? auth('admin')->user()->zone_id : 'all');
+        $zone_id = $request->query('zone_id', auth('admin')?->user()?->zone_id ?: 'all');
         $store_id = $request->query('store_id', 'all');
         $zone = is_numeric($zone_id) ? Zone::findOrFail($zone_id) : null;
         $store = is_numeric($store_id) ? Store::findOrFail($store_id) : null;
@@ -2828,11 +3400,62 @@ class ReportController extends Controller
     }
 
 
+    public function stock_wise_export(Request $request)
+    {
+        $zone_id = $request->query('zone_id', auth('admin')?->user()?->zone_id ?: 'all');
+        $store_id = $request->query('store_id', 'all');
+        $zone = is_numeric($zone_id) ? Zone::findOrFail($zone_id) : null;
+        $store = is_numeric($store_id) ? Store::findOrFail($store_id) : null;
+        $module_id = $request->query('module_id', session()->get('current_module'));
+        $key = isset($request['search']) ? explode(' ', $request['search']) : [];
+
+        $items = Item::withoutGlobalScope(StoreScope::class)
+            ->with(['store', 'store.zone'])
+            ->when($module_id, function ($query) use ($module_id) {
+                return $query->module($module_id);
+            }, function ($query) {
+                return $query->whereHas('store.module', function ($q) {
+                    $q->where('module_type', '!=', 'food');
+                });
+            })
+            ->when(isset($zone), function ($query) use ($zone) {
+                return $query->whereIn('store_id', $zone->stores->pluck('id'));
+            })
+            ->when(isset($store), function ($query) use ($store) {
+                return $query->where('store_id', $store->id);
+            })
+            ->when(count($key), function ($query) use ($key) {
+                return $query->where(function ($q) use ($key) {
+                    foreach ($key as $value) {
+                        $q->orWhere('name', 'like', "%{$value}%");
+                    }
+                });
+            })
+            ->whereHas('store.StoreConfig', function ($query) {
+                $query->whereColumn('items.stock', '<=', 'store_configs.minimum_stock_for_warning')->orwhere('items.stock', 0);
+            })
+            ->orderBy('stock')
+            ->get();
+
+        $data = [
+            'items'=>$items,
+            'search'=>$request->search??null,
+            'zone'=>is_numeric($zone_id)?Helpers::get_zones_name($zone_id):null,
+            'store'=>is_numeric($store_id)?Helpers::get_stores_name($store_id):null,
+        ];
+
+        if ($request->type == 'excel') {
+            return Excel::download(new LimitedStockReportExport($data), 'StockReport.xlsx');
+        } else if ($request->type == 'csv') {
+            return Excel::download(new LimitedStockReportExport($data), 'StockReport.csv');
+        }
+    }
+
 
     public function low_stock_wise_export(Request $request)
     {
         $key = explode(' ', $request['search']);
-        $zone_id = $request->query('zone_id', isset(auth('admin')->user()->zone_id) ? auth('admin')->user()->zone_id : 'all');
+        $zone_id = $request->query('zone_id', auth('admin')?->user()?->zone_id ?: 'all');
         $store_id = $request->query('store_id', 'all');
         $zone = is_numeric($zone_id) ? Zone::findOrFail($zone_id) : null;
         $store = is_numeric($store_id) ? Store::findOrFail($store_id) : null;
@@ -2884,7 +3507,7 @@ class ReportController extends Controller
     {
         $key = explode(' ', $request['search']);
 
-        $zone_id = $request->query('zone_id', isset(auth('admin')->user()->zone_id) ? auth('admin')->user()->zone_id : 'all');
+        $zone_id = $request->query('zone_id', auth('admin')?->user()?->zone_id ?: 'all');
         $store_id = $request->query('store_id', 'all');
         $zone = is_numeric($zone_id) ? Zone::findOrFail($zone_id) : null;
         $store = is_numeric($store_id) ? Store::findOrFail($store_id) : null;
@@ -2931,7 +3554,7 @@ class ReportController extends Controller
             $to = $request->to ?? null;
         }
         $key = explode(' ', $request['search']);
-        $zone_id = $request->query('zone_id', isset(auth('admin')?->user()?->zone_id) ? auth('admin')?->user()?->zone_id : 'all');
+        $zone_id = $request->query('zone_id', auth('admin')?->user()?->zone_id ?: 'all');
         $zone = is_numeric($zone_id) ? Zone::findOrFail($zone_id) : null;
         $store_id = $request->query('store_id', 'all');
         $store = is_numeric($store_id) ? Store::findOrFail($store_id) : null;
@@ -3032,7 +3655,7 @@ class ReportController extends Controller
             $to = $request->to ?? null;
         }
         $key = explode(' ', $request['search']);
-        $zone_id = $request->query('zone_id', isset(auth('admin')?->user()?->zone_id) ? auth('admin')?->user()?->zone_id : 'all');
+        $zone_id = $request->query('zone_id', auth('admin')?->user()?->zone_id ?: 'all');
         $zone = is_numeric($zone_id) ? Zone::findOrFail($zone_id) : null;
         $store_id = $request->query('store_id', 'all');
         $store = is_numeric($store_id) ? Store::findOrFail($store_id) : null;
@@ -3133,5 +3756,132 @@ class ReportController extends Controller
         }
         return Excel::download(new DisbursementReportExport($data), 'DisbursementReport.xlsx');
 
+    }
+
+
+    public function day_search(Request $request)
+    {
+        $key = explode(' ', $request['search']);
+
+        if (session()->has('from_date') == false) {
+            session()->put('from_date', date('Y-m-01'));
+            session()->put('to_date', date('Y-m-30'));
+        }
+        $from = session('from_date');
+        $to = session('to_date');
+
+        $zone_id = $request->query('zone_id', isset(auth('admin')->user()->zone_id) ? auth('admin')->user()->zone_id : 'all');
+        $zone = is_numeric($zone_id) ? Zone::findOrFail($zone_id) : null;
+        $store_id = $request->query('store_id', 'all');
+        $store = is_numeric($store_id) ? Store::findOrFail($store_id) : null;
+        $filter = $request->query('filter', 'all_time');
+
+        $order_transactions = OrderTransaction::when(isset($zone), function ($query) use ($zone) {
+            return $query->where('zone_id', $zone->id);
+        })
+            ->when(isset($store), function ($query) use ($store) {
+                return $query->whereHas('order', function ($q) use ($store) {
+                    $q->where('store_id', $store->id);
+                });
+            })
+            ->when(request('module_id'), function ($query) {
+                return $query->module(request('module_id'));
+            })
+            ->when(isset($from) && isset($to) && $from != null && $to != null && $filter == 'custom', function ($query) use ($from, $to) {
+                return $query->whereBetween('created_at', [$from . " 00:00:00", $to . " 23:59:59"]);
+            })
+            ->when(isset($filter) && $filter == 'this_year', function ($query) {
+                return $query->whereYear('created_at', now()->format('Y'));
+            })
+            ->when(isset($filter) && $filter == 'this_month', function ($query) {
+                return $query->whereMonth('created_at', now()->format('m'))->whereYear('created_at', now()->format('Y'));
+            })
+            ->when(isset($filter) && $filter == 'this_month', function ($query) {
+                return $query->whereMonth('created_at', now()->format('m'))->whereYear('created_at', now()->format('Y'));
+            })
+            ->when(isset($filter) && $filter == 'previous_year', function ($query) {
+                return $query->whereYear('created_at', date('Y') - 1);
+            })
+            ->when(isset($filter) && $filter == 'this_week', function ($query) {
+                return $query->whereBetween('created_at', [now()->startOfWeek()->format('Y-m-d H:i:s'), now()->endOfWeek()->format('Y-m-d H:i:s')]);
+            })
+            ->where(function ($q) use ($key) {
+                foreach ($key as $value) {
+                    $q->orWhere('order_id', 'like', "%{$value}%");
+                }
+            })
+            ->orderBy('created_at', 'desc')
+            ->paginate(config('default_pagination'))->withQueryString();
+
+        return response()->json([
+            'count' => count($order_transactions),
+            'view' => view('admin-views.report.partials._day_table', compact('order_transactions'))->render()
+        ]);
+    }
+
+    public function search_order_report(Request $request)
+    {
+        $key = explode(' ', $request['search']);
+
+        if (session()->has('from_date') == false) {
+            session()->put('from_date', date('Y-m-01'));
+            session()->put('to_date', date('Y-m-30'));
+        }
+        $from = session('from_date');
+        $to = session('to_date');
+        $zone_id = $request->query('zone_id', isset(auth('admin')->user()->zone_id) ? auth('admin')->user()->zone_id : 'all');
+        $zone = is_numeric($zone_id) ? Zone::findOrFail($zone_id) : null;
+        $store_id = $request->query('store_id', 'all');
+        $store = is_numeric($store_id) ? Store::findOrFail($store_id) : null;
+        $customer_id = $request->query('customer_id', 'all');
+        $customer = is_numeric($customer_id) ? User::findOrFail($customer_id) : null;
+        $filter = $request->query('filter', 'all_time');
+
+        $orders = Order::with(['customer', 'store'])
+            ->when(request('module_id'), function ($query) {
+                return $query->module(request('module_id'));
+            })
+            ->when(isset($zone), function ($query) use ($zone) {
+                return $query->where('zone_id', $zone->id);
+            })
+            ->when(isset($store), function ($query) use ($store) {
+                return $query->where('store_id', $store->id);
+            })
+            ->when(isset($customer), function ($query) use ($customer) {
+                return $query->where('user_id', $customer->id);
+            })
+            ->when(isset($from) && isset($to) && $from != null && $to != null && $filter == 'custom', function ($query) use ($from, $to) {
+                return $query->whereBetween('schedule_at', [$from . " 00:00:00", $to . " 23:59:59"]);
+            })
+            ->when(isset($filter) && $filter == 'this_year', function ($query) {
+                return $query->whereYear('schedule_at', now()->format('Y'));
+            })
+            ->when(isset($filter) && $filter == 'this_month', function ($query) {
+                return $query->whereMonth('schedule_at', now()->format('m'))->whereYear('schedule_at', now()->format('Y'));
+            })
+            ->when(isset($filter) && $filter == 'this_month', function ($query) {
+                return $query->whereMonth('schedule_at', now()->format('m'))->whereYear('schedule_at', now()->format('Y'));
+            })
+            ->when(isset($filter) && $filter == 'previous_year', function ($query) {
+                return $query->whereYear('schedule_at', date('Y') - 1);
+            })
+            ->when(isset($filter) && $filter == 'this_week', function ($query) {
+                return $query->whereBetween('schedule_at', [now()->startOfWeek()->format('Y-m-d H:i:s'), now()->endOfWeek()->format('Y-m-d H:i:s')]);
+            })
+            ->where(function ($q) use ($key) {
+                foreach ($key as $value) {
+                    $q->orWhere('id', 'like', "%{$value}%");
+                }
+            })
+            ->StoreOrder()
+            ->withSum('transaction', 'admin_commission')
+            ->withSum('transaction', 'admin_expense')
+            ->withSum('transaction', 'delivery_fee_comission')
+            ->orderBy('schedule_at', 'desc')->paginate(config('default_pagination'));
+
+        return response()->json([
+            'count' => count($orders),
+            'view' => view('admin-views.report.partials._order_table', compact('orders'))->render()
+        ]);
     }
 }

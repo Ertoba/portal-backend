@@ -1,4 +1,4 @@
-@if($conversations->count() > 0)
+@if(count($conversations) > 0)
 @foreach($conversations as $conv)
 @php($user= $conv->sender_type == 'vendor' ? $conv->receiver :  $conv->sender)
 @if (isset($user ) && $conv->last_message)
@@ -8,10 +8,11 @@
         onclick="viewConvs('{{route('vendor.message.view',['conversation_id'=>$conv->id,'user_id'=>$user->id])}}','customer-{{$user->id}}','{{ $conv->id }}','{{ $user->id }}')"
         id="customer-{{$user->id}}">
         <div class="chat-user-info-img d-none d-md-block">
-            <img class="avatar-img onerror-image"
-                 data-onerror-image="{{asset('public/assets/admin/img/160x160/img1.jpg')}}"
-                 src="{{ $user['image_full_url'] }}"
-                    alt="Image Description">
+            @include('partials._user-avatar', [
+                'imageUrl'  => $user['image_full_url'],
+                'proStatus' => $user['pro_status'] ?? false,
+                'size'      => 55,
+            ])
         </div>
 
         <div class="chat-user-info-content">
@@ -36,4 +37,3 @@
         <p class="text-muted mb-0">{{translate('start chat when customer message')}}</p>
     </div>
 @endif
-<script src="{{asset('public/assets/admin')}}/js/view-pages/common.js"></script>

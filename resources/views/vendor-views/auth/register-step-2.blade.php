@@ -4,31 +4,39 @@
     <link rel="stylesheet" href="{{ asset('public/assets/admin/css/toastr.css') }}">
     <link rel="stylesheet" href="{{ asset('public/assets/admin/css/view-pages/vendor-registration.css') }}">
     <link rel="stylesheet" href="{{ asset('public/assets/landing/css/select2.min.css') }}" />
+    <link rel="stylesheet" href="{{ asset('public/assets/landing/css/owl.min.css') }}"/>
 @endpush
 @section('content')
-    <section class="m-0 py-5">
+    <!-- Page Hero Banner -->
+    <section class="page-hero">
         <div class="container">
-            <!-- Page Header -->
-            <div class="section-header">
-                <h2 class="title mb-2">{{ translate('messages.vendor') }} <span
-                        class="text--base">{{ translate('application') }}</span></h2>
+            <h1>{{ translate('messages.vendor') }} {{ translate('messages.registration') }}</h1>
+            <div class="breadcrumb">
+                <a href="{{ route('home') }}">{{ translate('messages.home') }}</a> / {{ translate('messages.vendor') }} {{ translate('messages.registration') }}
             </div>
+        </div>
+    </section>
 
-            <!-- End Page Header -->
+    <section class="reg-section">
+        <div class="reg-container" style="max-width:1060px">
 
             <!-- Stepper -->
-            <div class="stepper">
-                <div class="stepper-item active">
-                    <div class="step-name">{{ translate('General Info') }}</div>
+            <div class="stepper" style="display:flex;align-items:center;justify-content:center;gap:20px;margin-bottom:32px;flex-wrap:wrap">
+                <div class="stepper-step completed">
+                    <div class="stepper-circle">1</div>
+                    <div class="stepper-label">{{ translate('General Info') }}</div>
                 </div>
-                <div class="stepper-item active">
-                    <div class="step-name">{{ translate('Business Plan') }}</div>
+                <div class="stepper-connector"></div>
+                <div class="stepper-step active">
+                    <div class="stepper-circle">2</div>
+                    <div class="stepper-label">{{ translate('Business Plan') }}</div>
                 </div>
-                <div class="stepper-item">
-                    <div class="step-name">{{ translate('Complete') }}</div>
+                <div class="stepper-connector"></div>
+                <div class="stepper-step">
+                    <div class="stepper-circle">3</div>
+                    <div class="stepper-label">{{ translate('Complete') }}</div>
                 </div>
             </div>
-            <!-- Stepper -->
 
 
             <form action="{{ route('restaurant.business_plan') }}" class="reg-form js-validate" method="post">
@@ -88,13 +96,10 @@
                                 </label>
                             </div>
                         </div>
-                        <div id="subscription-plan">
-                            <br>
-                            <div class="card-header px-0 m-0 border-0">
-                                <h5 class="card-title text-center">
-                                    {{ translate('Choose Subscription Package') }}
-                                </h5>
-                            </div>
+                        <div id="subscription-plan" style="display:none">
+                            <hr class="my-4">
+                            <h5 class="card-title text-center mb-4">{{ translate('Choose Subscription Package') }}</h5>
+                            <div class="plan-slider-wrap">
                             <div class="plan-slider owl-theme owl-carousel owl-refresh">
 
                                 @forelse ($packages as $key=> $package)
@@ -201,12 +206,17 @@
                                 @endforelse
 
                             </div>
+                            </div>{{-- /plan-slider-wrap --}}
                         </div>
-                        <div class="text-end pt-5 d-flex flex-wrap justify-content-end gap-3">
-                            {{-- <button type="button" class="cmn--btn btn--secondary shadow-none rounded-md border-0 outline-0">{{ translate('Back')
-                                }}</button> --}}
-                            <button type="submit"
-                                class="cmn--btn rounded-md border-0 outline-0">{{ translate('Next') }}</button>
+                        <div class="terms-check mt-4">
+                            <input type="checkbox" id="businessTerms" required />
+                            <label for="businessTerms">{{ translate('messages.i_agree_to_the') }} <a href="{{ route('terms-and-conditions') }}" target="_blank">{{ translate('messages.terms_and_condition') }}</a> {{ translate('messages.and') }} <a href="{{ route('privacy-policy') }}" target="_blank">{{ translate('messages.privacy_policy') }}</a></label>
+                        </div>
+                        <div class="text-end pt-4 d-flex flex-wrap justify-content-end gap-3">
+                            <button type="submit" class="btn-next" id="businessNextBtn" disabled>
+                                <span class="btn-text">{{ translate('Next') }}</span>
+                                <span class="btn-loader d-none"><span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span></span>
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -216,77 +226,88 @@
 
 @endsection
 @push('script_2')
+    <script src="{{ asset('public/assets/landing/js/owl.min.js') }}"></script>
     <script>
-        $('.plan-slider').owlCarousel({
+        var planSliderReady = false;
+
+        var owlConfig = {
             loop: false,
-            margin: 30,
+            margin: 20,
             responsiveClass: true,
-            nav: false,
-            dots: false,
-            items: 3,
-            // center: true,
-            // autoplay:true,
-            // autoplayTimeout:2500,
-            // autoplayHoverPause:true,
+            nav: true,
+            navText: [
+                '<span class="owl-nav-btn"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg></span>',
+                '<span class="owl-nav-btn"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></span>'
+            ],
+            dots: true,
+            autoHeight: false,
             startPosition: 1,
-
             responsive: {
-                0: {
-                    items: 1.1,
-                    margin: 10,
-                },
-                375: {
-                    items: 1.3,
-                    margin: 30,
-                },
-                576: {
-                    items: 1.7,
-                },
-                768: {
-                    items: 2.2,
-                    margin: 40,
-                },
-                992: {
-                    items: 3,
-                    margin: 40,
-                },
-                1200: {
-                    items: 4,
-                    margin: 40,
-                }
+                0:    { items: 1,   margin: 12, nav: false },
+                480:  { items: 1.5, margin: 14, nav: false },
+                640:  { items: 2,   margin: 16 },
+                992:  { items: 3,   margin: 20 },
+                1200: { items: 4,   margin: 20 }
             }
-        })
-    </script>
+        };
 
-    <script>
-        $(window).on('load', function() {
-            $('input[name="business_plan"]').each(function() {
-                if ($(this).is(':checked')) {
-                    if ($(this).val() == 'subscription-base') {
-                        $('#subscription-plan').show()
-                    } else {
-                        $('#subscription-plan').hide()
-                    }
+        function initPlanSlider() {
+            if (planSliderReady) return;
+            planSliderReady = true;
+            $('.plan-slider').owlCarousel(owlConfig);
+        }
+
+        function showSubscriptionPlan() {
+            $('#subscription-plan').slideDown(300, function() {
+                initPlanSlider();
+                // refresh after slide to fix width calculations
+                if (planSliderReady) {
+                    $('.plan-slider').trigger('refresh.owl.carousel');
                 }
-            })
-            $('input[name="package_id"]').each(function() {
-                if ($(this).is(':checked')) {
-                    $(this).closest('.__plan-item').addClass('active')
-                }
-            })
-        })
-        $('input[name="business_plan"]').on('change', function() {
-            if ($(this).val() == 'subscription-base') {
-                $('#subscription-plan').slideDown()
+            });
+        }
+
+        function hideSubscriptionPlan() {
+            $('#subscription-plan').slideUp(200);
+        }
+
+        $(document).ready(function() {
+            // Set initial state based on checked radio
+            var checkedPlan = $('input[name="business_plan"]:checked').val();
+            if (checkedPlan === 'subscription-base') {
+                $('#subscription-plan').show();
+                initPlanSlider();
             } else {
-                $('#subscription-plan').slideUp()
+                $('#subscription-plan').hide();
             }
-        })
-        $('input[name="package_id"]').on('change', function() {
-            $('input[name="package_id"]').each(function() {
-                $(this).closest('.__plan-item').removeClass('active')
-            })
-            $(this).closest('.__plan-item').addClass('active')
-        })
+
+            // Business plan radio change
+            $('input[name="business_plan"]').on('change', function() {
+                if ($(this).val() === 'subscription-base') {
+                    showSubscriptionPlan();
+                } else {
+                    hideSubscriptionPlan();
+                }
+            });
+
+            // Package selection
+            $('input[name="package_id"]').on('change', function() {
+                $('.__plan-item').removeClass('active');
+                $(this).closest('.__plan-item').addClass('active');
+            });
+
+            // Terms checkbox — enable/disable submit
+            $('#businessTerms').on('change', function() {
+                $('#businessNextBtn').prop('disabled', !this.checked);
+            });
+
+            // Form submit — show loader, prevent double-submit
+            $('form.js-validate').on('submit', function() {
+                var btn = $('#businessNextBtn');
+                btn.prop('disabled', true);
+                btn.find('.btn-text').addClass('d-none');
+                btn.find('.btn-loader').removeClass('d-none');
+            });
+        });
     </script>
 @endpush

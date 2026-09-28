@@ -17,6 +17,7 @@ class ModuleService
             'module_type' => $request->module_type,
             'theme_id' => 1,
             'description' => $request->description[array_search('default', $request->lang)],
+            'short_description' => $request->short_description[array_search('default', $request->lang)],
         ];
     }
     public function getUpdateData(Object $request, object $module): array
@@ -27,6 +28,7 @@ class ModuleService
             'thumbnail' => $request->has('thumbnail') ? $this->updateAndUpload('module/', $module->thumbnail, 'png', $request->file('thumbnail')) : $module->thumbnail,
             'theme_id' => 1,
             'description' => $request->description[array_search('default', $request->lang)],
+            'short_description' => $request->short_description[array_search('default', $request->lang)],
             'all_zone_service' => false,
         ];
     }

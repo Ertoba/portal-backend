@@ -214,11 +214,37 @@
                         </li>
 
                         <li
-                            class="navbar-vertical-aside-has-menu {{ Request::is('admin/transactions/report/store*') ? 'active' : '' }}">
+                            class="navbar-vertical-aside-has-menu @yield('store_summary_report')">
                             <a class="nav-link " href="{{ route('admin.transactions.report.store-summary-report') }}"
                                 title="{{ translate('messages.store_wise_report') }}">
                                 <span class="tio-home nav-icon"></span>
                                 <span class="text-truncate">{{ translate('messages.store_wise_report') }}</span>
+                            </a>
+                        </li>
+                            <li
+                            class="navbar-vertical-aside-has-menu @yield('admin_earning_report')">
+                            <a class="nav-link " href="{{ route('admin.transactions.report.admin-earning-report') }}"
+                                title="{{ translate('messages.Admin_Earning_Report') }}">
+                                <span class="tio-money nav-icon"></span>
+                                <span class="text-truncate">{{ translate('messages.Admin_Earning_Report') }}</span>
+                            </a>
+                        </li>
+
+                        <li
+                            class="navbar-vertical-aside-has-menu @yield('store_earning_report')">
+                            <a class="nav-link " href="{{ route('admin.transactions.report.store-earning-report') }}"
+                                title="{{ translate('messages.Store_Earning_Report') }}">
+                                <span class="tio-align-to-bottom nav-icon"></span>
+                                <span class="text-truncate">{{ translate('messages.Store_Earning_Report') }}</span>
+                            </a>
+                        </li>
+
+                        <li
+                            class="navbar-vertical-aside-has-menu @yield('deliveryman_earning_report')">
+                            <a class="nav-link " href="{{ route('admin.transactions.report.deliveryman-earning-report') }}"
+                                title="{{ translate('messages.Deliveryman_Earning_Report') }}">
+                                <span class="tio-car nav-icon"></span>
+                                <span class="text-truncate">{{ translate('messages.Deliveryman_Earning_Report') }}</span>
                             </a>
                         </li>
 
@@ -226,7 +252,7 @@
                             class="navbar-vertical-aside-has-menu {{ Request::is('admin/transactions/report/expense-report') ? 'active' : '' }}">
                             <a class="nav-link " href="{{ route('admin.transactions.report.expense-report') }}"
                                 title="{{ translate('messages.expense_report') }}">
-                                <span class="tio-money nav-icon"></span>
+                                <span class="tio-chart-line-down nav-icon"></span>
                                 <span class="text-truncate">{{ translate('messages.expense_report') }}</span>
                             </a>
                         </li>
@@ -346,20 +372,36 @@
                             <li
                                 class="navbar-vertical-aside-has-menu {{ Request::is('admin/transactions/ride-share/transaction*') ? 'active' : '' }}">
                                 <a class="nav-link " href="{{ route('admin.transactions.ride-share.transaction.index') }}"
-                                    title="{{ translate('messages.transactions_&_reports') }}">
+                                    title="{{ translate('Transactions_Report') }}">
                                     <span class="tio-chart-pie-1 nav-icon"></span>
-                                    <span class="text-truncate">{{ translate('messages.transactions_&_reports') }}</span>
+                                    <span class="text-truncate">{{ translate('Transactions_Report') }}</span>
                                 </a>
                             </li>
 
-                            <li
+                            <li class="navbar-vertical-aside-has-menu @yield('ride_report')">
+                                <a class="nav-link " href="{{ route('admin.transactions.ride-share.report.ride-report') }}"
+                                    title="{{ translate('Ride_Report') }}">
+                                    <span class="tio-chart-bar-4 nav-icon"></span>
+                                    <span class="text-truncate text-capitalize">{{ translate('Ride_Report') }}</span>
+                                </a>
+                            </li>
+
+                            <li class="navbar-vertical-aside-has-menu @yield('ride_tax_report')">
+                                <a class="nav-link " href="{{ route('admin.transactions.ride-share.report.ride-wise-taxes') }}"
+                                    title="{{ translate('Ride_Tax_Report') }}">
+                                    <span class="tio-american-express nav-icon"></span>
+                                    <span class="text-truncate text-capitalize">{{ translate('Ride_Tax_Report') }}</span>
+                                </a>
+                            </li>
+
+                            {{-- <li
                                 class="navbar-vertical-aside-has-menu {{ Request::is('admin/transactions/ride-share/report*') ? 'active' : '' }}">
                                 <a class="nav-link " href="{{ route('admin.transactions.ride-share.report.earning') }}"
                                     title="{{ translate('messages.reports') }}">
                                     <span class="tio-chart-bar-1 nav-icon"></span>
                                     <span class="text-truncate">{{ translate('messages.reports') }}</span>
                                 </a>
-                            </li>
+                            </li> --}}
                         @endif
                     @endif
                     <li class="nav-item py-5">

@@ -50,7 +50,7 @@
     @endif
     <div class="tab-content">
         <div class="tab-pane fade show active">
-            <form action="{{ route('admin.business-settings.admin-landing-page-settings', 'testimonial-title') }}" method="POST" enctype="multipart/form-data">
+            <form action="{{ route('admin.business-settings.admin-landing-page-settings-update', 'testimonial-title') }}" method="POST" enctype="multipart/form-data">
                 @csrf
                 <div class="card mb-3">
                     <div class="card-body">
@@ -60,7 +60,7 @@
                                     <label for="testimonial_title" class="form-label">{{translate('Title')}} ({{ translate('messages.default') }})<span
                                         class="form-label-secondary" data-toggle="tooltip"
                                         data-placement="right"
-                                        data-original-title="{{ translate('Write_the_title_within_40_characters') }}">
+                                        data-original-title="{{ translate('Write_the_title_within_30_characters') }}">
                                         <img src="{{ asset('public/assets/admin/img/info-circle.svg') }}"
                                             alt="">
                                     </span>
@@ -68,7 +68,7 @@
                                               data-toggle="tooltip" data-placement="right"
                                               data-original-title="{{ translate('messages.Required.')}}"> *
                                                 </span></label>
-                                <input required id="testimonial_title" type="text" maxlength="40" name="testimonial_title[]" class="form-control" value="{{$testimonial_title?->getRawOriginal('value')}}" placeholder="{{translate('messages.title_here...')}}">
+                                <input required id="testimonial_title" type="text" maxlength="30" name="testimonial_title[]" class="form-control" value="{{$testimonial_title?->getRawOriginal('value')}}" placeholder="{{translate('messages.title_here...')}}">
                                 </div>
                             </div>
                             <input type="hidden" name="lang[]" value="default">
@@ -94,7 +94,7 @@
                                                 <img src="{{ asset('public/assets/admin/img/info-circle.svg') }}"
                                                     alt="">
                                             </span></label>
-                                        <input id="testimonial_title{{$lang}}" type="text" maxlength="40" name="testimonial_title[]" class="form-control" value="{{ $testimonial_title_translate[$lang]['value']?? '' }}" placeholder="{{translate('messages.title_here...')}}">
+                                        <input id="testimonial_title{{$lang}}" type="text" maxlength="30" name="testimonial_title[]" class="form-control" value="{{ $testimonial_title_translate[$lang]['value']?? '' }}" placeholder="{{translate('messages.title_here...')}}">
                                         </div>
                                     </div>
                                     <input type="hidden" name="lang[]" value="{{$lang}}">
@@ -109,7 +109,7 @@
                                             <img src="{{ asset('public/assets/admin/img/info-circle.svg') }}"
                                                 alt="">
                                         </span></label>
-                                    <input type="text" id="testimonial_title" maxlength="40" name="testimonial_title[]" class="form-control" placeholder="{{translate('messages.title_here...')}}">
+                                    <input type="text" id="testimonial_title" maxlength="30" name="testimonial_title[]" class="form-control" placeholder="{{translate('messages.title_here...')}}">
                                     </div>
                                 </div>
                                 <input type="hidden" name="lang[]" value="default">
@@ -121,7 +121,7 @@
                     </div>
                 </div>
             </form>
-            <form action="{{ route('admin.business-settings.admin-landing-page-settings', 'testimonial-list') }}" method="POST" enctype="multipart/form-data">
+            <form action="{{ route('admin.business-settings.admin-landing-page-settings-update', 'testimonial-list') }}" method="POST" enctype="multipart/form-data">
                 @csrf
                 <h5 class="card-title mb-3 mt-3">
                     <span class="card-header-icon mr-2"><i class="tio-settings-outlined"></i></span> <span>{{translate('Testimonial List Section')}}</span>
@@ -133,22 +133,26 @@
                             <div class="col-md-6">
                                 <div class="row g-3">
                                     <div class="col-md-6">
-                                        <label for="name" class="form-label">{{translate('Reviewer Name')}}
+                                        <label for="name" class="form-label">{{translate('Reviewer Name')}}<span class="form-label-secondary" data-toggle="tooltip" data-placement="right" data-original-title="{{ translate('Write_the_name_within_30_characters') }}">
+                                                <img src="{{ asset('public/assets/admin/img/info-circle.svg') }}" alt="">
+                                            </span>
                                             <span class="form-label-secondary text-danger"
                                                   data-toggle="tooltip" data-placement="right"
                                                   data-original-title="{{ translate('messages.Required.')}}"> *
                                                 </span>
                                         </label>
-                                        <input required id="name" type="text" name="name" class="form-control" placeholder="{{translate('Ex:  John Doe')}}">
+                                        <input required id="name" type="text" maxlength="30" name="name" class="form-control" placeholder="{{translate('Ex:  John Doe')}}">
                                     </div>
                                     <div class="col-md-6">
-                                        <label for="designation" class="form-label">{{translate('Designation')}}
+                                        <label for="designation" class="form-label">{{translate('Designation')}}<span class="form-label-secondary" data-toggle="tooltip" data-placement="right" data-original-title="{{ translate('Write_the_designation_within_30_characters') }}">
+                                                <img src="{{ asset('public/assets/admin/img/info-circle.svg') }}" alt="">
+                                            </span>
                                             <span class="form-label-secondary text-danger"
                                                   data-toggle="tooltip" data-placement="right"
                                                   data-original-title="{{ translate('messages.Required.')}}"> *
                                                 </span>
                                         </label>
-                                        <input required id="designation" type="text" name="designation" class="form-control" placeholder="{{translate('Ex:  CTO')}}">
+                                        <input required id="designation" type="text" maxlength="30" name="designation" class="form-control" placeholder="{{translate('Ex:  CTO')}}">
                                     </div>
                                     <div class="col-md-12">
                                         <label for="review" class="form-label">{{translate('messages.review')}}<span
@@ -249,8 +253,8 @@
                                             </div>
                                         </td>
                                         <td>
-                                            <div class="word-break">
-                                                {{ $review->review }}
+                                            <div class="word-break max-w-200px text-truncate min-w-220" data-toggle="tooltip" data-placement="top" title="{{ $review->review }}">
+                                                {{ Str::limit($review->review, 50) }}
                                             </div>
                                         </td>
                                         <td>
@@ -326,3 +330,4 @@
     <!-- How it Works -->
     @include('admin-views.business-settings.landing-page-settings.partial.how-it-work')
 @endsection
+

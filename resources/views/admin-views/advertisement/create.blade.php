@@ -170,7 +170,7 @@ active
                                     </div>
 
                                     <p class="opacity-75 max-w220 mx-auto text-center fs-12">
-                                        {{ translate('Maximum 10 MB') }}
+                                        {{ translate('Maximum 5 MB') }}
                                         <br>
                                         {{ translate('Supports: MP4, WEBM, MKV') }}
                                     </p>
@@ -214,7 +214,7 @@ active
                                     <p class="opacity-75 max-w220 mx-auto text-center fs-12">
                                         {{ translate('Supports: PNG, JPG, JPEG, WEBP') }}
                                         <br>
-                                        {{ translate('Maximum 10 MB') }}
+                                        {{ translate('Maximum 2 MB') }}
                                     </p>
                                 </div>
                                 <div class="d-flex flex-column align-items-center gap-3">
@@ -234,7 +234,7 @@ active
                                     <p class="opacity-75 max-w220 mx-auto text-center fs-12">
                                         {{ translate('Supports: PNG, JPG, JPEG, WEBP') }}
                                         <br>
-                                        {{ translate('Maximum 10 MB') }}
+                                        {{ translate('Maximum 2 MB') }}
                                     </p>
                                 </div>
                             </div>
@@ -546,7 +546,7 @@ active
             $(document).on('ready', function() {
                     $('.js-data-example-ajax').select2({
                         ajax: {
-                            url: '{{ url('/') }}/admin/store/get-stores',
+                            url: '{{ route('admin.store.get-stores') }}',
                             data: function(params) {
                                 return {
                                     q: params.term, // search term

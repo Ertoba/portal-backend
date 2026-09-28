@@ -749,7 +749,7 @@ trait NotificationDataSetUpTrait
             'key' => 'customer_delivery_verification_otp',
             'type' => 'customer',
             'mail_status' => 'disable',
-            'sms_status' => 'active',
+            'sms_status' => 'inactive',
             'push_notification_status' => 'disable',
             'sub_title' => 'Sent_customer_delivery_verification_otp',
         ];

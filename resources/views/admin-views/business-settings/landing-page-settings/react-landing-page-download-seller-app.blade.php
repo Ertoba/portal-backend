@@ -82,7 +82,7 @@
         </div>
 
         <div class="card mb-20">
-            <form class="custom-validation" action="{{ route('admin.business-settings.react-landing-page-settings', 'download-seller-app-section') }}"
+            <form class="custom-validation" action="{{ route('admin.business-settings.react-landing-page-settings-update', 'download-seller-app-section') }}"
                   method="POST" enctype="multipart/form-data">
                 @csrf
                 <div class="card-body">
@@ -364,7 +364,7 @@
                 @php($download_seller_app_main_button_sub_title = \App\Models\DataSetting::withoutGlobalScope('translate')->where('type', 'react_landing_page')->where('key', 'download_seller_app_main_button_sub_title')->first())
                 @php($download_seller_app_links = \App\Models\DataSetting::where(['key'=>'download_seller_app_links','type'=>'react_landing_page'])->first())
                 @php($download_seller_app_links_data = isset($download_seller_app_links->value) ? json_decode($download_seller_app_links->value, true) : [])
-                <form action="{{ route('admin.business-settings.react-landing-page-settings', 'download-seller-app-button-section') }}" method="POST" enctype="multipart/form-data">
+                <form action="{{ route('admin.business-settings.react-landing-page-settings-update', 'download-seller-app-button-section') }}" method="POST" enctype="multipart/form-data">
                     @csrf
                     <div class="card">
                         <div class="card-body">
@@ -520,13 +520,9 @@
                                                         </span>
                                                         </label>
                                                     </div>
-                                                    <input type="url"
-                                                           {{(isset($download_seller_app_links_data['playstore_url_status']) && $download_seller_app_links_data['playstore_url_status'])?'required':''}}
-                                                           id="playstore_url"
-                                                           placeholder="{{translate('Ex: https://play.google.com/store/apps')}}"
-                                                           class="form-control h--45px"
-                                                           name="seller_playstore_url"
-                                                           value="{{ $download_seller_app_links_data['playstore_url'] ?? ''}}">
+                                                            @include('admin-views.business-settings.landing-page-settings.partials._app-download-link-status', [
+                                                                    'isConfigured' => \App\CentralLogics\Helpers::get_business_settings('app_url_android_store'),
+                                                                ])
                                                 </div>
                                             </div>
                                         </div>
@@ -565,13 +561,10 @@
                                                         </span>
                                                         </label>
                                                     </div>
-                                                    <input type="url"
-                                                           id="apple_store_url"
-                                                           {{(isset($download_seller_app_links_data['apple_store_url_status']) && $download_seller_app_links_data['apple_store_url_status'])?'required':''}}
-                                                           placeholder="{{translate('Ex: https://www.apple.com/app-store/')}}"
-                                                           class="form-control h--45px"
-                                                           name="seller_apple_store_url"
-                                                           value="{{ $download_seller_app_links_data['apple_store_url'] ?? ''}}">
+
+                                                            @include('admin-views.business-settings.landing-page-settings.partials._app-download-link-status', [
+                                                                    'isConfigured' => \App\CentralLogics\Helpers::get_business_settings('app_url_ios_store'),
+                                                                ])
                                                 </div>
                                             </div>
                                         </div>

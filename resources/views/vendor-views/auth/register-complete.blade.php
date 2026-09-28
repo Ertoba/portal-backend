@@ -6,73 +6,61 @@
     <link rel="stylesheet" href="{{ asset('public/assets/landing/css/select2.min.css') }}"/>
 @endpush
 @section('content')
-    <section class="m-0 py-5">
+    <!-- Page Hero Banner -->
+    <section class="page-hero">
         <div class="container">
-            <!-- Page Header -->
-            <div class="section-header">
-                <h2 class="title mb-2">{{ translate('messages.vendor') }} <span class="text--base">{{translate('application')}}</span></h2>
+            <h1>{{ translate('messages.vendor') }} {{ translate('messages.registration') }}</h1>
+            <div class="breadcrumb">
+                <a href="{{ route('home') }}">{{ translate('messages.home') }}</a> / {{ translate('messages.vendor') }} {{ translate('messages.registration') }}
             </div>
-            <!-- End Page Header -->
+        </div>
+    </section>
+
+    <section class="reg-section">
+        <div class="reg-container" style="max-width:1060px">
 
             <!-- Stepper -->
-                <div class="stepper">
-                    <div style class="stepper-item active">
-                        <div class="step-name">{{ translate('General Info') }}</div>
-                    </div>
-                    <div class="stepper-item active">
-                        <div class="step-name">{{ translate('Business Plan') }}</div>
-                    </div>
-                    <div  class="stepper-item active">
-                        <div class="step-name  {{  isset($payment_status) && $payment_status == 'fail' ? 'text-danger' : '' }}">{{ translate('Complete') }}</div>
-                    </div>
+            <div class="stepper" style="display:flex;align-items:center;justify-content:center;gap:20px;margin-bottom:32px;flex-wrap:wrap">
+                <div class="stepper-step completed">
+                    <div class="stepper-circle">1</div>
+                    <div class="stepper-label">{{ translate('General Info') }}</div>
                 </div>
-            <!-- Stepper -->
-
-
-            <div class="reg-form js-validate">
-                <div class="card __card mb-3">
-                    <div class="card-header border-0 pb-0 text-center pt-5">
-                            @if ( isset($payment_status) && $payment_status == 'fail')
-                            <img src="{{asset('/public/assets/landing/img/Failed.gif')}}" width="40" alt="" class="mb-4">
-                            <h5 class="card-title text-center">
-                                {{ translate('Transaction Failed!') }}
-                            </h5>
-                            @else
-                            <img src="{{asset('/public/assets/landing/img/Success.gif')}}" width="40" alt="" class="mb-4">
-                            <h5 class="card-title text-center">
-                                {{ translate('Congratulations!') }}
-                            </h5>
-
-                            @endif
-
-
-                    </div>
-                    <div class="card-body p-4 pb-5">
-                        <div class="register-congrats-txt">
-                            @if (isset($type) && $type == 'commission')
-                            {{ translate('You’ve opted for our commission-based plan. Admin will review the details and activate your account shortly. To explore the site.') }}
-                            <a href="{{ route('home',['new_user'=> true]) }}" class="text-base font-bold">{{ translate('visit_here') }}</a>
-
-                            @elseif( isset($payment_status) && $payment_status == 'fail')
-                            {{ translate('Sorry, Your Transaction can’t be completed. Please choose another payment method.') }}
-                            <a href="{{ route('restaurant.back',['store_id' => $store_id ?? null]) }}" class="text-base font-bold">{{ translate('Try_again') }}</a>
-                            @else
-                            {{ translate('Thank you for your subscription purchase! Your payment was successfully processed. Please note that your subscription will be activated once it has been approved by our Admin Team. To explore the site') }}
-                            <a href="{{ route('home',['new_user'=> true]) }}" class="text-base font-bold">{{ translate('visit_here') }}</a>
-                            @endif
-
-                        </div>
-
-                        {{-- @if (! (isset($payment_status) && $payment_status == 'fail'))
-                        <div class="text-center py-2">
-                            {{ translate('or') }}
-                        </div>
-                        <div class="text-center">
-                            <a href="{{ route('home',['new_user'=> true]) }}" class="text-base font-bold">{{ translate('Continue to Home Page') }}</a>
-                        </div>
-                        @endif --}}
-                    </div>
+                <div class="stepper-connector"></div>
+                <div class="stepper-step completed">
+                    <div class="stepper-circle">2</div>
+                    <div class="stepper-label">{{ translate('Business Plan') }}</div>
                 </div>
+                <div class="stepper-connector"></div>
+                <div class="stepper-step active">
+                    <div class="stepper-circle">3</div>
+                    <div class="stepper-label {{  isset($payment_status) && $payment_status == 'fail' ? 'text-danger' : '' }}">{{ translate('Complete') }}</div>
+                </div>
+            </div>
+
+            <div class="success-box">
+                @if ( isset($payment_status) && $payment_status == 'fail')
+                    <div class="check" style="background:#e74c3c">&#x2717;</div>
+                    <h2>{{ translate('Transaction Failed!') }}</h2>
+                @else
+                    <div class="check">&#x2713;</div>
+                    <h2>{{ translate('Congratulations!') }}</h2>
+                @endif
+
+                <p>
+                    @if (isset($type) && $type == 'commission')
+                        {{ translate('You\'ve opted for our commission-based plan. Admin will review the details and activate your account shortly.') }}
+                    @elseif( isset($payment_status) && $payment_status == 'fail')
+                        {{ translate('Sorry, Your Transaction can\'t be completed. Please choose another payment method.') }}
+                    @else
+                        {{ translate('Thank you for your subscription purchase! Your payment was successfully processed. Please note that your subscription will be activated once it has been approved by our Admin Team.') }}
+                    @endif
+                </p>
+
+                @if ( isset($payment_status) && $payment_status == 'fail')
+                    <a href="{{ route('restaurant.back',['store_id' => $store_id ?? null]) }}" class="btn-home" style="background:#e74c3c">{{ translate('Try_again') }}</a>
+                @else
+                    <a href="{{ route('home',['new_user'=> true]) }}" class="btn-home">{{ translate('Back to Home') }}</a>
+                @endif
             </div>
         </div>
     </section>

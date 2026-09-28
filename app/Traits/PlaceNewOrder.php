@@ -11,6 +11,7 @@ use App\Models\Store;
 use App\Models\Coupon;
 use App\Models\DMVehicle;
 use App\Models\OrderDetail;
+use App\Models\OrderEditLog;
 use App\Models\ItemCampaign;
 use Illuminate\Http\Request;
 use App\CentralLogics\Helpers;
@@ -18,27 +19,32 @@ use App\Models\ParcelCategory;
 use App\Models\BusinessSetting;
 use App\CentralLogics\OrderLogic;
 use App\CentralLogics\CouponLogic;
+use App\CentralLogics\DeliveryFeeLogic;
 use Illuminate\Support\Facades\DB;
 use App\CentralLogics\ProductLogic;
 use App\Mail\OrderVerificationMail;
 use App\CentralLogics\CustomerLogic;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rules\Password;
 use MatanYadaev\EloquentSpatial\Objects\Point;
 use App\Mail\CustomerRegistration;
 use App\Mail\PlaceOrder;
 use App\Models\AddOn;
+use App\Models\ModuleZoneDeliveryOption;
 use App\Models\SurgePrice;
+use App\Models\UserFile;
+use App\Traits\ManagesProCustomerSubscription;
 use Carbon\Carbon;
 
 trait PlaceNewOrder
 {
+    use ManagesProCustomerSubscription;
 
     public function new_place_order(Request $request, $is_prescription = false)
     {
         $validator = Validator::make($request->all(), [
-            // 'order_amount' => 'required',
             'payment_method' => 'required|in:cash_on_delivery,digital_payment,wallet,offline_payment',
             'order_type' => 'required|in:take_away,delivery,parcel',
             'store_id' => 'required_unless:order_type,parcel',
@@ -51,11 +57,11 @@ trait PlaceNewOrder
             'charge_payer' => 'required_if:order_type,parcel|in:sender,receiver',
             'dm_tips' => 'nullable|numeric',
             'guest_id' => $request->user ? 'nullable' : 'required',
-            'contact_person_name' => $request->user ? 'nullable' : 'required',
+            'contact_person_name'=> $request->user ? 'nullable' : 'required',
             'contact_person_number' => $request->user ? 'nullable' : 'required',
             'contact_person_email' => $request->user ? 'nullable' : 'required',
             'password' => $request->create_new_user ? ['required', Password::min(8)] : 'nullable',
-            'order_attachment' => $is_prescription ? ['required'] : 'nullable',
+            'monthly_subscribe' => 'nullable',
         ]);
 
         if ($validator->fails()) {
@@ -66,8 +72,10 @@ trait PlaceNewOrder
             $createNewUser =  $this->createNewUser($request);
 
             if (data_get($createNewUser, 'newUser') === true) {
-                $request->is_guest = 0;
-                $request->user = data_get($createNewUser, 'user');
+                $request->merge([
+                    'is_guest' => 0,
+                    'user' => data_get($createNewUser, 'user'),
+                ]);
             } elseif (data_get($createNewUser, 'status_code') === 403) {
                 DB::rollBack();
                 return response()->json([
@@ -87,7 +95,7 @@ trait PlaceNewOrder
                 ], data_get($validationCheck, 'status_code'));
             }
 
-            $schedule_at = $request->schedule_at ? \Carbon\Carbon::parse($request->schedule_at) : now();
+            $schedule_at = $request->schedule_at ? Carbon::parse($request->schedule_at) : now();
             $zoneAndStore = $this->getZoneAndStore($request, $schedule_at);
 
             if (data_get($zoneAndStore, 'status_code') === 403) {
@@ -144,6 +152,8 @@ trait PlaceNewOrder
             $delivery_charge = data_get($deliveryChargeData, 'delivery_charge', 0);
             $original_delivery_charge = data_get($deliveryChargeData, 'original_delivery_charge', 0);
             $vehicle_id = data_get($deliveryChargeData, 'vehicle_id', null);
+            $resolved_delivery_type = data_get($deliveryChargeData, 'delivery_type', 'standard');
+            $resolved_delivery_type_charge = (float) data_get($deliveryChargeData, 'delivery_type_charge', 0);
 
             $address = [
                 'contact_person_name' => $request->contact_person_name ? $request->contact_person_name : ($request->user ? $request->user->f_name . ' ' . $request->user->l_name : ''),
@@ -198,6 +208,8 @@ trait PlaceNewOrder
             $order->store_id = $request['store_id'];
             $order->delivery_charge = round($delivery_charge, config('round_up_to_digit')) ?? 0;
             $order->original_delivery_charge = round($original_delivery_charge, config('round_up_to_digit'));
+            $order->delivery_type = $resolved_delivery_type;
+            $order->delivery_type_charge = round($resolved_delivery_type_charge, config('round_up_to_digit'));
             $order->delivery_address = json_encode($address);
             $order->schedule_at = $schedule_at;
             $order->scheduled = $request->schedule_at ? 1 : 0;
@@ -234,6 +246,45 @@ trait PlaceNewOrder
                     $images = $img_names;
                 }
             }
+            if ($request->saved_images && is_array($request->saved_images) && count($request->saved_images) > 0) {
+                $saved_image_names = [];
+                foreach ($request->saved_images as $saved_image) {
+                    if (!is_string($saved_image) || $saved_image === '') {
+                        continue;
+                    }
+
+                    $savedFile = UserFile::where('user_id', $request->user?->id)
+                        ->where('file_name', $saved_image)
+                        ->first();
+
+                    if ($savedFile) {
+                        $disk = $savedFile->storage ?? Helpers::getDisk();
+                        $sourcePath = 'order/saved_files/' . $savedFile->file_name;
+                        $extension = pathinfo($savedFile->file_name, PATHINFO_EXTENSION);
+                        $newFileName = Carbon::now()->toDateString() . '-' . uniqid() . '.' . $extension;
+                        $destinationPath = 'order/' . $newFileName;
+
+                        if (Storage::disk($disk)->exists($sourcePath)) {
+                            if (!Storage::disk($disk)->exists('order')) {
+                                Storage::disk($disk)->makeDirectory('order');
+                            }
+
+                            Storage::disk($disk)->copy($sourcePath, $destinationPath);
+                            $saved_image_names[] = ['img' => $newFileName, 'storage' => $disk];
+                        }
+                    }
+                }
+
+                if (!empty($saved_image_names)) {
+                    if (!isset($images)) {
+                        $images = [];
+                    }
+
+                    foreach ($saved_image_names as $saved_image_name) {
+                        $images[] = $saved_image_name;
+                    }
+                }
+            }
             if (isset($images)) {
                 $order->order_attachment = json_encode($images);
             }
@@ -262,21 +313,17 @@ trait PlaceNewOrder
 
 
 
-            //Added DM TIPS
             $order->dm_tips = 0;
             if ($dm_tips_manage_status == 1) {
                 $order->dm_tips = $request->dm_tips ?? 0;
             }
 
-            //Added service charge
             $order->additional_charge = 0;
 
             if ($additional_charge_status == 1) {
                 $order->additional_charge = $additional_charge ?? 0;
-                // $additionalCharges['tax_on_additional_charge'] = $order->additional_charge;
             }
 
-            // extra packaging charge
 
             $order->extra_packaging_amount =  (!empty($extra_packaging_data) && $request?->extra_packaging_amount > 0 && $store && ($extra_packaging_data[$store->module->module_type] == '1') && ($store?->storeConfig?->extra_packaging_status == '1')) ? $store?->storeConfig?->extra_packaging_amount : 0;
 
@@ -287,7 +334,9 @@ trait PlaceNewOrder
             if ($request->order_type !== 'parcel') {
                 if ($is_prescription === false) {
 
-                    $carts = Cart::where('user_id', $order->user_id)->where('is_guest', $order->is_guest)->where('module_id', getModuleId($request->header('moduleId')))
+                    $carts = Cart::where('user_id', $order->user_id)->where('is_guest', $order->is_guest)
+                    ->where('store_id', $request->store_id)
+                    ->where('module_id', getModuleId($request->header('moduleId')))
                         ->when(isset($request->is_buy_now) && $request->is_buy_now == 1 && $request->cart_id, function ($query) use ($request) {
                             return $query->where('id', $request->cart_id);
                         })
@@ -299,7 +348,7 @@ trait PlaceNewOrder
                         });
 
                     if (isset($request->is_buy_now) && $request->is_buy_now == 1) {
-                        $carts = json_decode($request['cart'], true);
+                        $carts = is_array($request['cart']) ? $request['cart'] : (json_decode($request['cart'], true) ?? []);
                     }
 
                     if (count($carts) == 0 && !$is_prescription) {
@@ -349,9 +398,19 @@ trait PlaceNewOrder
 
                 $total_price = max($total_price, 0);
 
+                $proApply    = $this->applyProCustomerDiscount(
+                    $order->user_id,
+                    $product_price + $total_addon_price,
+                    $total_price,
+                    $store?->module?->module_type ?? 'parcel',
+                );
+                $pro_offer   = $proApply['offer'];
+                $proDiscount = $proApply['discount'];
+                $total_price = $proApply['total_price'];
+
                 $order->tax_status = 'excluded';
 
-                $totalDiscount = $store_discount_amount + $flash_sale_admin_discount_amount + $flash_sale_vendor_discount_amount  + $coupon_discount_amount +  $order->ref_bonus_amount;
+                $totalDiscount = $store_discount_amount + $flash_sale_admin_discount_amount + $flash_sale_vendor_discount_amount  + $coupon_discount_amount +  $order->ref_bonus_amount + $proDiscount;
 
 
 
@@ -381,34 +440,41 @@ trait PlaceNewOrder
                     ], 406);
                 }
 
-                $businessSettings = BusinessSetting::whereIn('key', ['free_delivery_over', 'admin_free_delivery_status', 'admin_free_delivery_option'])->pluck('value', 'key');
-
-                $free_delivery_over = (float) ($businessSettings['free_delivery_over'] ?? 0);
-                $admin_free_delivery_status = (int) ($businessSettings['admin_free_delivery_status'] ?? 0);
-                $admin_free_delivery_option = $businessSettings['admin_free_delivery_option'] ?? null;
 
 
-                if ($admin_free_delivery_status === 1) {
-                    $eligibleAmount = $product_price + $total_addon_price - $coupon_discount_amount - $store_discount_amount - $flash_sale_admin_discount_amount - $flash_sale_vendor_discount_amount;
+                $eligibleAmount = max(0, $product_price + $total_addon_price - $coupon_discount_amount - $store_discount_amount - $flash_sale_admin_discount_amount - $flash_sale_vendor_discount_amount);
 
-                    if ($admin_free_delivery_option === 'free_delivery_to_all_store' || ($admin_free_delivery_option === 'free_delivery_by_order_amount' && $free_delivery_over > 0  && $eligibleAmount >= $free_delivery_over)) {
-                        $order->delivery_charge = 0;
-                        $free_delivery_by = 'admin';
+                $couponCodeForFree = ($coupon && $coupon->coupon_type === 'free_delivery') ? $coupon->code : null;
+                $effective = \App\CentralLogics\DeliveryFeeLogic::effectiveFee(
+                    (float) $order->delivery_charge,
+                    $store,
+                    (float) $eligibleAmount,
+                    $couponCodeForFree,
+                );
+                if ($effective['is_free']) {
+                    $order->delivery_charge = 0;
+                    if ($effective['free_by'] === \App\CentralLogics\DeliveryFeeLogic::FREE_BY_COUPON && $coupon) {
+                        $free_delivery_by = $coupon->created_by;
+                    } else {
+                        $free_delivery_by = $effective['free_by'];
                     }
                 }
 
-                if ($store->free_delivery) {
-                    $order->delivery_charge = 0;
-                    $free_delivery_by = 'vendor';
+                if(!$free_delivery_by){
+                    $proDelivery            = $this->applyProCustomerDeliveryFee(
+                        $pro_offer,
+                        (float) $order->delivery_charge,
+                        (float) $total_price,
+                        $free_delivery_by,
+                        $store?->module?->module_type ?? 'parcel',
+                    );
+                    $order->delivery_charge = $proDelivery['delivery_charge'];
+                    $free_delivery_by       = $proDelivery['free_delivery_by'];
+                    $proDeliverySavings     = $proDelivery['savings'];
+
                 }
 
                 if ($coupon) {
-                    if ($coupon->coupon_type == 'free_delivery') {
-                        if ($coupon->min_purchase <= $product_price + $total_addon_price - $store_discount_amount - $flash_sale_admin_discount_amount - $flash_sale_vendor_discount_amount) {
-                            $order->delivery_charge = 0;
-                            $free_delivery_by = $coupon->created_by;
-                        }
-                    }
                     $coupon->increment('total_uses');
                 }
                 $order->coupon_created_by = $coupon_created_by;
@@ -419,10 +485,26 @@ trait PlaceNewOrder
                 $order->tax_percentage = 0;
                 $order->total_tax_amount = round($tax_amount, config('round_up_to_digit'));
                 $order->order_amount = round($total_price + $tax_amount + $order->delivery_charge, config('round_up_to_digit'));
+                $order->order_amount = DeliveryFeeLogic::applyDeliveryTypeToAmount($order, (float) $order->order_amount);
+
                 $order->free_delivery_by = $free_delivery_by;
             } else {
 
                 $order->delivery_charge = round($original_delivery_charge, config('round_up_to_digit')) ?? 0;
+                $pro_offer   = $this->getProCustomerOffer($order->user_id, false, true, 'parcel');
+                $proDiscount = 0;
+                $proDelivery = $this->applyProCustomerDeliveryFee(
+                    $pro_offer,
+                    (float) $order->delivery_charge,
+                    (float) $order->delivery_charge,
+                    $free_delivery_by,
+                    'parcel',
+                );
+                $proDeliverySavings = $proDelivery['savings'];
+                $free_delivery_by   = $proDelivery['free_delivery_by'];
+
+                $order->delivery_charge  = round($proDelivery['delivery_charge'], config('round_up_to_digit')) ?? 0;
+                $order->free_delivery_by = $free_delivery_by;
                 $order->original_delivery_charge = round($original_delivery_charge, config('round_up_to_digit'));
                 $order->order_amount = round($order->delivery_charge, config('round_up_to_digit'));
 
@@ -461,7 +543,6 @@ trait PlaceNewOrder
             $order->flash_admin_discount_amount = round($flash_sale_admin_discount_amount, config('round_up_to_digit'));
             $order->flash_store_discount_amount = round($flash_sale_vendor_discount_amount, config('round_up_to_digit'));
 
-            //DM TIPS
             $order->order_amount = $order->order_amount + $order->dm_tips + $order->additional_charge + $order->extra_packaging_amount;
             if ($request->payment_method == 'wallet' && $request->user->wallet_balance < $order->order_amount) {
                 DB::rollBack();
@@ -485,11 +566,31 @@ trait PlaceNewOrder
                     'errors' => [
                         ['code' => 'order_amount', 'message' => translate('messages.amount_crossed_maximum_cod_order_amount')]
                     ]
-                ], 203);
+                ], 406);
             }
 
 
             $order->save();
+
+            if ($order->user_id && ($pro_offer['status'] ?? false)) {
+                $amountSaved = match ($pro_offer['benefit']['type']) {
+                    'discount'     => (float) ($proDiscount ?? 0),
+                    'delivery_fee' => (float) ($proDeliverySavings ?? 0),
+                    default        => 0.0,
+                };
+
+                $this->recordOrderProDiscount(
+                    orderId: $order->id,
+                    userId: (int) $order->user_id,
+                    proOffer: $pro_offer,
+                    amountSaved: $amountSaved,
+                    originalDeliveryCharge: (float) $order->original_delivery_charge,
+                    moduleType: $store?->module?->module_type ?? 'parcel',
+                );
+
+                $this->getProCustomerOffer(userId: $order->user_id, incrementCount: true);
+            }
+
             if ($request->order_type !== 'parcel') {
                 $taxMapCollection = collect($taxMap);
                 foreach ($order_details as $key => $item) {
@@ -520,6 +621,10 @@ trait PlaceNewOrder
                     }
                 }
                 $store->increment('total_order');
+
+                if (isset($carts)) {
+                    $this->recordReelSales($carts, $order);
+                }
             }
             if (count($orderTaxIds)) {
                 \Modules\TaxModule\Services\CalculateTaxService::updateOrderTaxData(
@@ -564,6 +669,15 @@ trait PlaceNewOrder
 
             $this->sentOrderPlaceNotification($request, $order, $store);
 
+            try {
+                app(\App\Services\MonthlyOrderReminderService::class)->scheduleForOrder(
+                    $order,
+                    $request->boolean('monthly_subscribe', false)
+                );
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::error('Monthly reminder schedule failed (place_order)', ['order_id' => $order->id, 'error' => $e->getMessage()]);
+            }
+
             return response()->json([
                 'message' => translate('messages.order_placed_successfully'),
                 'order_id' => $order->id,
@@ -588,11 +702,59 @@ trait PlaceNewOrder
 
 
 
+    private function recordReelSales($carts, $order): void
+    {
+        try {
+            $reelService = $this->getReelsApiService();
+
+            if (!$reelService) {
+                return;
+            }
+
+            foreach ($carts ?? [] as $cart) {
+                $reelId = (int) data_get($cart, 'reel_id');
+
+                if ($reelId <= 0) {
+                    continue;
+                }
+
+                $reelService->recordOrderSale(
+                    reelId: $reelId,
+                    amount: (float) (data_get($cart, 'price', 0) * data_get($cart, 'quantity', 0)),
+                    userId: $order->is_guest ? null : (int) $order->user_id,
+                    guestId: $order->is_guest ? (string) $order->user_id : null,
+                );
+            }
+        } catch (\Throwable $exception) {
+            \Illuminate\Support\Facades\Log::error('Reel sale tracking failed', [
+                'order_id' => $order->id ?? null,
+                'error' => $exception->getMessage(),
+            ]);
+        }
+    }
+
+    private function getReelsApiService(): ?object
+    {
+        if (!function_exists('addon_published_status') || !addon_published_status('ReelsModule')) {
+            return null;
+        }
+
+        $serviceClass = 'Modules\\ReelsModule\\Services\\ReelApiService';
+
+        if (!class_exists($serviceClass)) {
+            return null;
+        }
+
+        return app($serviceClass);
+    }
+
     private function createNewUser($request)
     {
         if (!$request->create_new_user) {
             return false;
         }
+
+        $createsAt = ['tenant_id' => 0, 'sub_tenant_id' => 0];
 
         $validationError = match (true) {
             !$request->password => [
@@ -600,12 +762,18 @@ trait PlaceNewOrder
                 'message'     => translate('messages.password_is_required'),
                 'code'        => 'password',
             ],
-            User::where('phone', $request->contact_person_number)->exists() => [
+            User::withoutGlobalScope(\App\Scopes\HostScope::class)
+                ->where('phone', $request->contact_person_number)
+                ->where($createsAt)
+                ->exists() => [
                 'status_code' => 403,
                 'message'     => translate('messages.phone_already_taken'),
                 'code'        => 'phone_person_email',
             ],
-            User::where('email', $request->contact_person_email)->exists() => [
+            User::withoutGlobalScope(\App\Scopes\HostScope::class)
+                ->where('email', $request->contact_person_email)
+                ->where($createsAt)
+                ->exists() => [
                 'status_code' => 403,
                 'message'     => translate('messages.email_already_taken'),
                 'code'        => 'contact_person_email',
@@ -624,6 +792,8 @@ trait PlaceNewOrder
         $user->password = bcrypt($request->password);
         $user->ref_code = Helpers::generate_referer_code($user);
         $user->login_medium = 'manual';
+        $user->tenant_id     = $createsAt['tenant_id'];
+        $user->sub_tenant_id = $createsAt['sub_tenant_id'];
         $user->save();
 
         try {
@@ -634,17 +804,6 @@ trait PlaceNewOrder
             info('createNewUser' ,[$exception->getFile(), $exception->getLine(), $exception->getMessage()]);
         }
         if ($request->guest_id  && isset($user->id)) {
-
-            $userStoreIds = Cart::where('user_id', $request->guest_id)
-                ->join('items', 'carts.item_id', '=', 'items.id')
-                ->pluck('items.store_id')
-                ->toArray();
-
-            Cart::where('user_id', $user->id)
-                ->whereHas('item', function ($query) use ($userStoreIds) {
-                    $query->whereNotIn('store_id', $userStoreIds);
-                })
-                ->delete();
 
             Cart::where('user_id', $request->guest_id)->update(['user_id' => $user->id, 'is_guest' => 0]);
         }
@@ -723,14 +882,16 @@ trait PlaceNewOrder
         if ($request->latitude && $request->longitude) {
             if ($request->order_type == 'parcel') {
                 $zone_ids = $request->header('zoneId') ? json_decode($request->header('zoneId'), true) : [];
-                $zone = Zone::whereIn('id', $zone_ids)->whereContains('coordinates', new Point($request->latitude, $request->longitude, POINT_SRID))->wherehas('modules', function ($q) {
-                    $q->where('module_type', 'parcel');
-                })->first();
+                $zone = Zone::whereIn('id', $zone_ids)->whereContains('coordinates', new Point($request->latitude, $request->longitude, POINT_SRID))
+                        ->selectRaw('zones.*, ABS(ST_Area(coordinates)) as area')->orderBy('area', 'asc')
+                        ->wherehas('modules', function ($q) {
+                            $q->where('module_type', 'parcel');
+                        })->first();
 
 
                 $receiver_zone_id =  json_decode($request->receiver_details, true)['zone_id'];
                 $receiverZone = Zone::where('id', $receiver_zone_id)->whereContains('coordinates', new Point(json_decode($request->receiver_details, true)['latitude'], json_decode($request->receiver_details, true)['longitude'], POINT_SRID))->first();
-                if (!$receiverZone) {
+                if (!$receiverZone || !$zone) {
                     return [
                         'status_code' => 403,
                         'code' => 'receiverZone',
@@ -832,6 +993,11 @@ trait PlaceNewOrder
                     'code' => 'coupon',
                     'message' => translate('messages.You_are_not_eligible_for_this_coupon'),
                 ],
+                409 => [
+                    'status_code' => 403,
+                    'code' => 'coupon',
+                    'message' => translate('messages.coupon_not_valid_for_this_zone'),
+                ],
                 406 => [
                     'status_code' => 403,
                     'code' => 'coupon',
@@ -841,6 +1007,11 @@ trait PlaceNewOrder
                     'status_code' => 403,
                     'code' => 'coupon',
                     'message' => translate('messages.not_found'),
+                ],
+                410 => [
+                    'status_code' => 403,
+                    'code' => 'coupon',
+                    'message' => translate('messages.free_delivery_already_covered_by_pro'),
                 ],
                 default => null,
             };
@@ -869,7 +1040,7 @@ trait PlaceNewOrder
     private function getDeliveryCharge($request, $zone, $store, $module_wise_delivery_charge, $delivery_charge, $moduleId)
     {
         $increased = 0;
-        $schedule_at = $request->schedule_at ? \Carbon\Carbon::parse($request->schedule_at) : now();
+        $schedule_at = $request->schedule_at ? Carbon::parse($request->schedule_at) : now();
         $surge = $this->getSurgePriceValue($zone->id, $moduleId, $schedule_at);
         if ($surge['price'] > 0) {
             $increased = $surge['price'];
@@ -900,9 +1071,6 @@ trait PlaceNewOrder
                 $minimum_shipping_charge = $module_wise_delivery_charge->pivot->delivery_charge_type == 'distance' ? $module_wise_delivery_charge->pivot->minimum_shipping_charge : $module_wise_delivery_charge->pivot->fixed_shipping_charge;
                 $maximum_shipping_charge = $module_wise_delivery_charge->pivot->delivery_charge_type == 'distance' ? $module_wise_delivery_charge->pivot->maximum_shipping_charge : $module_wise_delivery_charge->pivot->fixed_shipping_charge;
             } else {
-                // $per_km_shipping_charge = 0;
-                // $minimum_shipping_charge = 0;
-                // $maximum_shipping_charge = 0;
                 return [
                     'vehicle_id' => null,
                     'original_delivery_charge' => 0,
@@ -913,16 +1081,12 @@ trait PlaceNewOrder
             $original_delivery_charge = (($request->distance * $per_km_shipping_charge) > $minimum_shipping_charge) ? $request->distance * $per_km_shipping_charge  : $minimum_shipping_charge;
             if ($maximum_shipping_charge  >= $minimum_shipping_charge  && $original_delivery_charge >  $maximum_shipping_charge) {
                 $original_delivery_charge = $maximum_shipping_charge;
-            } else {
-                $original_delivery_charge = $original_delivery_charge;
             }
 
             if (!isset($delivery_charge)) {
                 $delivery_charge = ($request->distance * $per_km_shipping_charge > $minimum_shipping_charge) ? $request->distance * $per_km_shipping_charge : $minimum_shipping_charge;
                 if ($maximum_shipping_charge  >= $minimum_shipping_charge  && $delivery_charge >  $maximum_shipping_charge) {
                     $delivery_charge = $maximum_shipping_charge;
-                } else {
-                    $delivery_charge = $delivery_charge;
                 }
             }
             $original_delivery_charge = $original_delivery_charge + $extra_charges;
@@ -962,11 +1126,59 @@ trait PlaceNewOrder
                 $original_delivery_charge += $extra;
             }
         }
+        $saver = $this->resolveSaverDeliveryType($request, $zone, $module_wise_delivery_charge, $moduleId, (float) ($delivery_charge ?? 0));
+
         return [
             'delivery_charge' => $delivery_charge,
             'original_delivery_charge' => $original_delivery_charge ?? 0,
             'vehicle_id' => $vehicle_id ?? null,
+            'delivery_type' => $saver['delivery_type'],
+            'delivery_type_charge' => $saver['delivery_type_charge'],
         ];
+    }
+
+    private function resolveSaverDeliveryType($request, $zone, $module_wise_delivery_charge, $moduleId, float $delivery_charge): array
+    {
+        $default = ['delivery_type' => 'standard', 'delivery_type_charge' => 0.0];
+
+        if (!$zone || !$module_wise_delivery_charge) {
+            return $default;
+        }
+        if (($request->order_type ?? null) !== 'delivery') {
+            return $default;
+        }
+        if ($delivery_charge <= 0) {
+            return $default;
+        }
+
+        $pivot = $module_wise_delivery_charge->pivot ?? null;
+        if (!$pivot || !((bool) ($pivot->additional_delivery_option_status ?? false))) {
+            return $default;
+        }
+
+        $requested = $request->delivery_type ?? null;
+        if (!in_array($requested, [ModuleZoneDeliveryOption::TYPE_EXPRESS, ModuleZoneDeliveryOption::TYPE_SLIGHTLY_DELAY], true)) {
+            return $default;
+        }
+
+        $option = ModuleZoneDeliveryOption::for((int) $moduleId, (int) $zone->id)
+            ->where('delivery_type', $requested)
+            ->first();
+        if (!$option) {
+            return $default;
+        }
+
+        if ($requested === ModuleZoneDeliveryOption::TYPE_EXPRESS) {
+            $charge = (float) ($option->extra_charge ?? 0);
+            return ['delivery_type' => ModuleZoneDeliveryOption::TYPE_EXPRESS, 'delivery_type_charge' => max(0, $charge)];
+        }
+
+        $reduce = (float) ($option->reduce_charge ?? 0);
+        $floor = (float) ($pivot->minimum_delivery_charge ?? 0);
+        $maxReducible = max(0, $delivery_charge - $floor);
+        $applied = min($reduce, $maxReducible);
+
+        return ['delivery_type' => ModuleZoneDeliveryOption::TYPE_SLIGHTLY_DELAY, 'delivery_type_charge' => $applied];
     }
 
     private function sentOrderPlaceNotification($request, $order, $store)
@@ -1007,7 +1219,7 @@ trait PlaceNewOrder
         $order_details = [];
         $discount_type = '';
         $discount_on_product_by = 'vendor';
-        foreach ($carts as $c) {
+        foreach (($carts ?? []) as $c) {
             $variations = [];
             $isCampaign = false;
             if ($c['item_type'] === 'App\Models\ItemCampaign' || $c['item_type'] === 'AppModelsItemCampaign') {
@@ -1097,7 +1309,6 @@ trait PlaceNewOrder
                     'price' => round($price, config('round_up_to_digit')),
 
                     'category_id' => collect(is_string($product->category_ids) ? json_decode($product->category_ids, true) : $product->category_ids)->firstWhere('position', 1)['id'] ?? null,
-                    // 'tax_amount' => round(Helpers::tax_calculate($product, $price), config('round_up_to_digit')),
                     'tax_amount' => 0,
                     'tax_status' => null,
 
@@ -1129,7 +1340,7 @@ trait PlaceNewOrder
                 return [
                     'status_code' => 403,
                     'code' => 'not_found',
-                    'message' => translate('messages.product_not_found'),
+                    'message' => translate('messages.item_currently_unavailable'),
                 ];
             }
         }
@@ -1150,7 +1361,6 @@ trait PlaceNewOrder
                     $order_details[$key]['discount_type'] = 'precentage';
                     $order_details[$key]['discount_percentage'] = $storeDiscount['discount'];
                     $order_details[$key]['discount_on_item'] =  Helpers::checkAdminDiscount(price: $product_price, discount: $storeDiscount['discount'], max_discount: $storeDiscount['max_discount'], min_purchase: $storeDiscount['min_purchase'], item_wise_price: $detail_data['price'] * $detail_data['quantity']);
-                    // $order_details[$key]['addon_discount'] = 0 ?? Helpers::checkAdminDiscount(price: $product_price , discount: $storeDiscount['discount'], max_discount: $storeDiscount['max_discount'], min_purchase: $storeDiscount['min_purchase'], item_wise_price: $detail_data['total_add_on_price']);
                 }
             }
         }
@@ -1180,10 +1390,10 @@ trait PlaceNewOrder
         $order_details = [];
         $discount_on_product_by = 'vendor';
         $discount_type = '';
+        $carts = is_iterable($carts) ? $carts : [];
         foreach ($carts as $c) {
             $variations = [];
             if (is_array($c)) {
-                //                dd($c);
                 $isCampaign = false;
                 if (isset($c['item_type']) && ($c['item_type'] === 'App\Models\ItemCampaign' || $c['item_type'] === 'AppModelsItemCampaign')) {
                     $product = ItemCampaign::with('module')->active()->find($c['item_id']);
@@ -1272,7 +1482,6 @@ trait PlaceNewOrder
                         'price' => round($price, config('round_up_to_digit')),
 
                         'category_id' => collect(is_string($product->category_ids) ? json_decode($product->category_ids, true) : $product->category_ids)->firstWhere('position', 1)['id'] ?? null,
-                        // 'tax_amount' => round(Helpers::tax_calculate($product, $price), config('round_up_to_digit')),
                         'tax_amount' => 0,
                         'tax_status' => null,
 
@@ -1327,7 +1536,6 @@ trait PlaceNewOrder
                     $order_details[$key]['discount_percentage'] = $storeDiscount['discount'];
                     $order_details[$key]['discount_on_item'] =  Helpers::checkAdminDiscount(price: $product_price, discount: $storeDiscount['discount'], max_discount: $storeDiscount['max_discount'], min_purchase: $storeDiscount['min_purchase'], item_wise_price: $detail_data['price'] * $detail_data['quantity']);
 
-                    // $order_details[$key]['addon_discount'] =  Helpers::checkAdminDiscount(price: $product_price + $total_addon_price, discount: $storeDiscount['discount'], max_discount: $storeDiscount['max_discount'], min_purchase: $storeDiscount['min_purchase'], item_wise_price: $total_addon_price);
                 }
             }
         }
@@ -1345,7 +1553,7 @@ trait PlaceNewOrder
 
         ];
     }
-    private function makeEditOrderDetails($carts, $request, $store)
+    private function makeEditOrderDetails($carts, $request, $store, $originalDetailQtys = [])
     {
         $total_addon_price = 0;
         $product_price = 0;
@@ -1366,12 +1574,29 @@ trait PlaceNewOrder
             $variations = [];
 
             if (!isset($c['status']) || $c['status'] !== false) {
-                $isCampaign = false;
-                if (isset($c['item_type']) && ($c['item_type'] === 'App\Models\ItemCampaign' || $c['item_type'] === 'AppModelsItemCampaign')) {
-                    $product = ItemCampaign::with('module')->active()->find($c['item_id']);
-                    $isCampaign = true;
+                if (isset($c['variation']) && is_string($c['variation'])) {
+                    $c['variation'] = json_decode($c['variation'], true) ?? [];
+                }
+                if (isset($c['variant']) && is_string($c['variant'])) {
+                    $c['variant'] = json_decode($c['variant'], true) ?? [];
+                }
+
+                $cartId        = $c['id'] ?? null;
+                $isPreexisting = $cartId && isset($originalDetailQtys[$cartId]);
+
+                $isCampaign = (isset($c['item_type']) && ($c['item_type'] === 'App\Models\ItemCampaign' || $c['item_type'] === 'AppModelsItemCampaign'))
+                    || !empty($c['item_campaign_id']);
+
+                if ($isCampaign) {
+                    $campaignId = $c['item_campaign_id'] ?? $c['item_id'];
+                    $product = $isPreexisting
+                        ? ItemCampaign::with('module')->find($campaignId)
+                        : ItemCampaign::with('module')->active()->find($campaignId);
                 } else {
-                    $product = Item::with('module')->active()->find($c['item_id'] ?? $c['id']);
+                    $itemId = $c['item_id'] ?? $c['id'];
+                    $product = $isPreexisting
+                        ? Item::with('module')->find($itemId)
+                        : Item::with('module')->active()->find($itemId);
                 }
 
                 if ($product) {
@@ -1400,13 +1625,21 @@ trait PlaceNewOrder
                     }
 
 
+                    if (!$isPreexisting && !$isCampaign && $product?->module?->module_type == 'food' && !$product->is_available_now) {
+                        return [
+                            'status_code' => 403,
+                            'code' => 'not_available',
+                            'message' => $product?->name . ' ' . translate('messages.is_not_available_right_now'),
+                        ];
+                    }
+
                     $foodVariation = false;
                     if ($product?->module?->module_type == 'food') {
                         $foodVariation = true;
                         $product_variations = json_decode($product->food_variations, true);
 
                         if ($product_variations && count($product_variations)) {
-                            $variation_data = Helpers::get_edit_varient($product_variations, json_decode($c['variation'], true));
+                            $variation_data = Helpers::get_edit_varient($product_variations, $c['variation'] ?? []);
                             $price = $product['price'] + $variation_data['price'];
                             $variations = $variation_data['variations'];
                         } else {
@@ -1426,7 +1659,9 @@ trait PlaceNewOrder
                         }
 
                         if (config('module.' . $product->module->module_type)['stock']) {
-                            if ($c['quantity'] > $stock) {
+                            $cartId = $c['id'] ?? null;
+                            $alreadyReserved = ($cartId && isset($originalDetailQtys[$cartId])) ? (int) $originalDetailQtys[$cartId] : 0;
+                            if ($c['quantity'] > ($stock + $alreadyReserved)) {
 
                                 return [
                                     'status_code' => 403,
@@ -1496,7 +1731,6 @@ trait PlaceNewOrder
                         'price' => round($price, config('round_up_to_digit')),
 
                         'category_id' => collect(is_string($product->category_ids) ? json_decode($product->category_ids, true) : $product->category_ids)->firstWhere('position', 1)['id'] ?? null,
-                        // 'tax_amount' => round(Helpers::tax_calculate($product, $price), config('round_up_to_digit')),
                         'tax_amount' => 0,
                         'tax_status' => null,
 
@@ -1532,6 +1766,7 @@ trait PlaceNewOrder
                     ];
                 }
             }
+
         }
         $discount = $store_discount_amount;
         $storeDiscount = Helpers::get_store_discount($store);
@@ -1549,7 +1784,6 @@ trait PlaceNewOrder
                     $order_details[$key]['discount_percentage'] = $storeDiscount['discount'];
                     $order_details[$key]['discount_on_item'] =  Helpers::checkAdminDiscount(price: $product_price, discount: $storeDiscount['discount'], max_discount: $storeDiscount['max_discount'], min_purchase: $storeDiscount['min_purchase'], item_wise_price: $detail_data['price'] * $detail_data['quantity']);
 
-                    // $order_details[$key]['addon_discount'] =  Helpers::checkAdminDiscount(price: $product_price + $total_addon_price, discount: $storeDiscount['discount'], max_discount: $storeDiscount['max_discount'], min_purchase: $storeDiscount['min_purchase'], item_wise_price: $total_addon_price);
                 }
             }
         }
@@ -1608,7 +1842,6 @@ trait PlaceNewOrder
         $extra_packaging_data      = json_decode($extra_packaging_data_raw, true) ?? [];
 
         if ($additional_charge_status == 1) {
-            // $additionalCharges['tax_on_additional_charge'] = $additional_charge ?? 0;
         }
 
 
@@ -1637,7 +1870,9 @@ trait PlaceNewOrder
                     $additionalCharges['tax_on_packaging_charge'] =  $extra_packaging_amount;
                 }
 
-                $carts = Cart::where('user_id', $order->user_id)->where('is_guest', $order->is_guest)->where('module_id', getModuleId($request->header('moduleId')))
+                $carts = Cart::where('user_id', $order->user_id)->where('is_guest', $order->is_guest)
+                    ->where('store_id', $request->store_id)
+                    ->where('module_id', getModuleId($request->header('moduleId')))
                     ->when(isset($request->is_buy_now) && $request->is_buy_now == 1 && $request->cart_id, function ($query) use ($request) {
                         return $query->where('id', $request->cart_id);
                     })
@@ -1649,7 +1884,7 @@ trait PlaceNewOrder
                     });
 
                 if (isset($request->is_buy_now) && $request->is_buy_now == 1) {
-                    $carts = json_decode($request['cart'], true);
+                    $carts = is_array($request['cart']) ? $request['cart'] : (json_decode($request['cart'], true) ?? []);
                 }
 
                 $order_details = $this->makeOrderDetails($carts, $request, $order, $store);
@@ -1685,7 +1920,33 @@ trait PlaceNewOrder
             }
         }
 
-        $totalDiscount = $store_discount_amount + $flash_sale_admin_discount_amount + $flash_sale_vendor_discount_amount  + $coupon_discount_amount +  $ref_bonus_amount;
+        $pro_discount_preview = 0.0;
+
+        if ($request->order_type == 'parcel') {
+            $pro_offer   = $this->getProCustomerOffer($order->user_id, false, true, 'parcel');
+            $proDelivery = $this->applyProCustomerDeliveryFee(
+                $pro_offer,
+                (float) $total_price,
+                (float) $total_price,
+                null,
+                'parcel',
+            );
+            $total_price = $proDelivery['delivery_charge'];
+        } else {
+            $proApply = $this->applyProCustomerDiscount(
+                $order->user_id,
+                $request->is_prescription == false ? $product_price + $total_addon_price : $product_price,
+                $request->is_prescription == false ? $total_price : $product_price,
+                $store?->module?->module_type ?? 'parcel',
+            );
+            $pro_discount_preview = $proApply['discount'];
+            $total_price          = $proApply['total_price'];
+        }
+
+
+        $totalDiscount = $store_discount_amount + $flash_sale_admin_discount_amount + $flash_sale_vendor_discount_amount  + $coupon_discount_amount +  $ref_bonus_amount + $pro_discount_preview;
+
+
 
         if ($request->order_type != 'parcel' && $request->is_prescription == false) {
 
@@ -1702,18 +1963,18 @@ trait PlaceNewOrder
             if ($request->order_type == 'parcel') {
                 $productIds[] = [
                     'id' => 1,
-                    'original_price' => $product_price,
+                    'original_price' => $total_price,
                     'quantity' => 1,
                     'category_id' =>  $request->parcel_category_id,
                     'discount' => 0,
                     'discount_type' => '',
-                    'after_discount_final_price' => $product_price,
+                    'after_discount_final_price' => $total_price,
                     'is_campaign_item' => false,
                 ];
             }
 
             $finalCalculatedTax =  \Modules\TaxModule\Services\CalculateTaxService::getCalculatedTax(
-                amount: $product_price,
+                amount: $total_price,
                 productIds: $productIds ?? [],
                 taxPayer: $request->is_prescription == true ? 'prescription' : 'parcel',
                 storeData: true,
@@ -1745,9 +2006,6 @@ trait PlaceNewOrder
         $additional_charge_status  = $settings['additional_charge_status'] ?? null;
         $additional_charge         = $settings['additional_charge'] ?? null;
 
-        // if ($additional_charge_status == 1) {
-        //     $additionalCharges['tax_on_additional_charge'] = $additional_charge ?? 0;
-        // }
 
         $carts = session()->get('cart');
         $order_details = $this->makePosOrderDetails($carts, null, $store);
@@ -1768,6 +2026,31 @@ trait PlaceNewOrder
         $totalDiscount = $store_discount_amount + $flash_sale_admin_discount_amount + $flash_sale_vendor_discount_amount + $extra_discount_amount;
 
         $price = $product_price + $total_addon_price - $totalDiscount ?? 0;
+
+        $pos_customer_id = session()->get('customer_id');
+        $pos_customer    = $pos_customer_id ? User::find($pos_customer_id) : null;
+        $isPosProCustomer = $pos_customer && (int) $pos_customer->pro_status === 1;
+        if ($isPosProCustomer) {
+            $proApply = $this->applyProCustomerDiscount(
+                (int) $pos_customer->id,
+                $product_price + $total_addon_price,
+                $price,
+                $store?->module?->module_type,
+            );
+            if ($proApply['discount'] > 0) {
+                $totalDiscount += $proApply['discount'];
+                $price          = $proApply['total_price'];
+            }
+            session()->put('pos_pro_discount', (float) $proApply['discount']);
+            session()->put('pos_pro_benefit_type', $proApply['offer']['benefit']['type'] ?? null);
+            session()->put('pos_pro_delivery_offer_type', $proApply['offer']['benefit']['offer_type'] ?? null);
+            session()->put('pos_pro_delivery_percentage', $proApply['offer']['benefit']['charge_discount_percentage'] ?? null);
+            session()->put('pos_pro_min_order_amount', $proApply['offer']['benefit']['min_order_amount'] ?? null);
+            session()->put('pos_pro_min_order_status', $proApply['offer']['benefit']['min_order_status'] ?? 0);
+        } else {
+            session()->forget(['pos_pro_discount', 'pos_pro_benefit_type', 'pos_pro_delivery_offer_type', 'pos_pro_delivery_percentage', 'pos_pro_min_order_amount', 'pos_pro_min_order_status']);
+        }
+
         $finalCalculatedTax =  Helpers::getFinalCalculatedTax(
             $order_details,
             $additionalCharges,
@@ -1789,8 +2072,12 @@ trait PlaceNewOrder
     }
     public function setOrderEditCalculatedTax($store, $storeData = false, $order_id = null)
     {
+        $originalDetailQtys = [];
         if ($order_id) {
-            $order = Order::find($order_id);
+            $order = Order::with('details')->find($order_id);
+            if ($order) {
+                $originalDetailQtys = $order->details->pluck('quantity', 'id')->all();
+            }
         }
         $coupon = null;
         $additionalCharges = [];
@@ -1804,12 +2091,11 @@ trait PlaceNewOrder
         $additional_charge         = $settings['additional_charge'] ?? null;
 
         if ($additional_charge_status == 1) {
-            // $additionalCharges['tax_on_additional_charge'] = $additional_charge ?? 0;
         }
 
         $carts = session()->get('order_cart');
 
-        $order_details = $this->makeEditOrderDetails($carts, null, $store);
+        $order_details = $this->makeEditOrderDetails($carts, null, $store, $originalDetailQtys);
 
         if (data_get($order_details, 'status_code') === 403) {
 
@@ -1838,6 +2124,23 @@ trait PlaceNewOrder
         $totalDiscount = $store_discount_amount + $flash_sale_admin_discount_amount + $flash_sale_vendor_discount_amount + $coupon_discount_amount;
 
         $price = $product_price + $total_addon_price - $totalDiscount;
+
+        $editCustomerId = ($order ?? null) ? $order->user_id : null;
+        $isProCustomerPreview = $editCustomerId
+            && User::where('id', $editCustomerId)->where('pro_status', 1)->exists();
+        if ($isProCustomerPreview) {
+            $proApply = $this->applyProCustomerDiscount(
+                (int) $editCustomerId,
+                $product_price + $total_addon_price,
+                $price,
+                $store?->module?->module_type,
+            );
+            if ($proApply['discount'] > 0) {
+                $totalDiscount += $proApply['discount'];
+                $price          = $proApply['total_price'];
+            }
+        }
+
         $finalCalculatedTax =  Helpers::getFinalCalculatedTax(
             $order_details,
             $additionalCharges,
@@ -1874,7 +2177,6 @@ trait PlaceNewOrder
         $timeStr = $carbon->format('H:i:s');
         $weekday = $carbon->format('l');
 
-        // Check exact date in surge_price_dates table
         $surgeDate = DB::table('surge_price_dates')
             ->where('zone_id', $zoneId)
             ->where('module_id', $moduleId)
@@ -1904,7 +2206,6 @@ trait PlaceNewOrder
             }
         }
 
-        //Check permanent weekly surge_prices
         $permanentSurge = SurgePrice::
             where('status', 1)
             ->where('zone_id', $zoneId)
@@ -1940,22 +2241,53 @@ trait PlaceNewOrder
         ];
     }
 
-    private function calculatePosDeliveryFee($storeId,$distance=1){
+    protected function refreshPosAddressDeliveryFee($store, ?int $userId): void
+    {
+        if (!$store) {
+            return;
+        }
+        $address = session()->get('address');
+        if (!is_array($address)) {
+            return;
+        }
+        $distance = (float) ($address['distance'] ?? 0);
+        if ($distance <= 0) {
+            return;
+        }
 
+        $delivery_calc = $this->calculatePosDeliveryFee(
+            $store->id,
+            $distance,
+            $userId,
+            Helpers::posCartSubtotal(),
+        );
+        $address['delivery_fee'] = (float) $delivery_calc['delivery_fee'];
+        session()->put('address', $address);
+    }
 
-            $store = Store::with(['zone'])->find($storeId);
-            if(!$store){
-                return 0;
-            }
-            $extra_charges = 0;
-              $module_wise_delivery_charge = $store->zone->modules()->where('modules.id', $store->module_id)->first();
-            if ($store->sub_self_delivery) {
-                $per_km_shipping_charge = $store?->per_km_shipping_charge ?? 0;
-                $minimum_shipping_charge = $store?->minimum_shipping_charge ?? 0;
-                $maximum_shipping_charge = $store?->maximum_shipping_charge ?? 0;
-            } else {
-                    $data=  DMVehicle::where(function($query)use($distance) {
-                    $query->where('starting_coverage_area','<=' , $distance )->where('maximum_coverage_area','>=', $distance);
+    private function calculatePosDeliveryFee($storeId, $distance = 1, $userId = null, $totalPrice = 0)
+    {
+        $emptyResult = [
+            'original_delivery_charge' => 0.0,
+            'delivery_fee'             => 0.0,
+            'free_delivery_by'         => null,
+        ];
+
+        $store = Store::with(['zone', 'module'])->find($storeId);
+        if (!$store) {
+            return $emptyResult;
+        }
+
+        $extra_charges = 0;
+        $module_wise_delivery_charge = $store->zone->modules()->where('modules.id', $store->module_id)->first();
+        if ($store->sub_self_delivery) {
+            $per_km_shipping_charge  = $store?->per_km_shipping_charge ?? 0;
+            $minimum_shipping_charge = $store?->minimum_shipping_charge ?? 0;
+            $maximum_shipping_charge = $store?->maximum_shipping_charge ?? 0;
+        } else {
+            $data = DMVehicle::where(function ($query) use ($distance) {
+                    $query->where('starting_coverage_area', '<=', $distance)
+                          ->where('maximum_coverage_area', '>=', $distance);
                 })
                 ->orWhere(function ($query) use ($distance) {
                     $query->where('starting_coverage_area', '>=', $distance);
@@ -1963,33 +2295,52 @@ trait PlaceNewOrder
                 ->active()
                 ->orderBy('starting_coverage_area')->first();
 
-                $extra_charges = (float) (isset($data) ? $data->extra_charges  : 0);
+            $extra_charges = (float) (isset($data) ? $data->extra_charges : 0);
 
+            if ($module_wise_delivery_charge) {
+                $per_km_shipping_charge  = $module_wise_delivery_charge->pivot->delivery_charge_type == 'distance' ? $module_wise_delivery_charge->pivot->per_km_shipping_charge ?? 0 : $module_wise_delivery_charge->pivot->fixed_shipping_charge ?? 0;
+                $minimum_shipping_charge = $module_wise_delivery_charge->pivot->delivery_charge_type == 'distance' ? $module_wise_delivery_charge->pivot->minimum_shipping_charge ?? 0 : $module_wise_delivery_charge->pivot->fixed_shipping_charge ?? 0;
+                $maximum_shipping_charge = $module_wise_delivery_charge->pivot->delivery_charge_type == 'distance' ? $module_wise_delivery_charge->pivot->maximum_shipping_charge ?? 0 : $module_wise_delivery_charge->pivot->fixed_shipping_charge ?? 0;
+            } else {
+                $per_km_shipping_charge  = 0;
+                $minimum_shipping_charge = 0;
+                $maximum_shipping_charge = 0;
+            }
+        }
 
-                if ($module_wise_delivery_charge) {
-                    $per_km_shipping_charge = $module_wise_delivery_charge->pivot->delivery_charge_type == 'distance' ? $module_wise_delivery_charge->pivot->per_km_shipping_charge ?? 0 : $module_wise_delivery_charge->pivot->fixed_shipping_charge ?? 0;
-                    $minimum_shipping_charge = $module_wise_delivery_charge->pivot->delivery_charge_type == 'distance' ? $module_wise_delivery_charge->pivot->minimum_shipping_charge ?? 0 : $module_wise_delivery_charge->pivot->fixed_shipping_charge ?? 0;
-                    $maximum_shipping_charge = $module_wise_delivery_charge->pivot->delivery_charge_type == 'distance' ? $module_wise_delivery_charge->pivot->maximum_shipping_charge ?? 0 : $module_wise_delivery_charge->pivot->fixed_shipping_charge ?? 0;
+        $original_delivery_charge = (($distance * $per_km_shipping_charge) > $minimum_shipping_charge) ? $distance * $per_km_shipping_charge : $minimum_shipping_charge;
+        if ($maximum_shipping_charge >= $minimum_shipping_charge && $original_delivery_charge > $maximum_shipping_charge) {
+            $original_delivery_charge = $maximum_shipping_charge;
+        }
+        $original_delivery_charge = round($original_delivery_charge + $extra_charges, config('round_up_to_digit'));
 
-                } else {
-                    $per_km_shipping_charge = 0;
-                    $minimum_shipping_charge = 0;
-                    $maximum_shipping_charge = 0;
+        $delivery_fee     = $original_delivery_charge;
+        $free_delivery_by = null;
+        if ($userId && $original_delivery_charge > 0) {
+            $proUser = User::find($userId);
+            if ($proUser && (int) $proUser->pro_status === 1) {
+                $proOffer = $this->getProCustomerOffer((int) $proUser->id, false, true, $store?->module?->module_type);
+                if (($proOffer['status'] ?? false) && ($proOffer['benefit']['type'] ?? null) === 'delivery_fee') {
+                    $proDelivery = $this->applyProCustomerDeliveryFee(
+                        $proOffer,
+                        (float) $original_delivery_charge,
+                        (float) $totalPrice,
+                        null,
+                        $store?->module?->module_type,
+                    );
+                    if (($proDelivery['savings'] ?? 0) > 0) {
+                        $delivery_fee     = (float) $proDelivery['delivery_charge'];
+                        $free_delivery_by = $proDelivery['free_delivery_by'];
+                    }
                 }
             }
+        }
 
-            $original_delivery_charge = (($distance * $per_km_shipping_charge) > $minimum_shipping_charge) ? $distance * $per_km_shipping_charge  : $minimum_shipping_charge;
-            if ($maximum_shipping_charge  >= $minimum_shipping_charge  && $original_delivery_charge >  $maximum_shipping_charge) {
-                $original_delivery_charge = $maximum_shipping_charge;
-            } else {
-                $original_delivery_charge = $original_delivery_charge;
-            }
-
-            $original_delivery_charge = $original_delivery_charge + $extra_charges;
-
-        return  round($original_delivery_charge, config('round_up_to_digit'));
-
-
+        return [
+            'original_delivery_charge' => (float) $original_delivery_charge,
+            'delivery_fee'             => (float) $delivery_fee,
+            'free_delivery_by'         => $free_delivery_by,
+        ];
     }
 
     private function updateExtraDiscount($type,$discount){
@@ -2027,5 +2378,28 @@ trait PlaceNewOrder
         return true;
     }
 
+    public function makeEditOrderLogs(int $orderId, string $log, string $editedBy): void
+    {
+        OrderEditLog::create([
+            'order_id'  => $orderId,
+            'log'       => $log,
+            'edited_by' => $editedBy,
+        ]);
+    }
+
+    public function collectEditLogs($cart, array $originalDetailQtys = []): array
+    {
+        $logs = [];
+        foreach ($cart as $c) {
+            if (isset($c['status']) && $c['status'] === false) {
+                $logs[] = 'delete_item';
+            } elseif (!isset($c->id)) {
+                $logs[] = 'add_new_item';
+            } elseif (isset($originalDetailQtys[$c->id]) && (int) $originalDetailQtys[$c->id] !== (int) $c->quantity) {
+                $logs[] = 'edited_item_quantity';
+            }
+        }
+        return $logs;
+    }
 
 }

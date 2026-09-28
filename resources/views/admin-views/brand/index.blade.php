@@ -403,6 +403,41 @@
             $(this).find('button[type="submit"]').attr('disabled', true);
 });
 
+        $(document).on('submit', '.withdraw-info-sidebar2 form', function (e) {
+            let nameInput = $(this).find('#default-form input[name="name[]"]');
+            if (nameInput.length === 0) {
+                nameInput = $(this).find('input[name="name"]');
+            }
+            let name = $.trim(nameInput.val() || '');
+            let image = $('#customFileEg1').val();
+            if (name === '') {
+                e.preventDefault();
+                toastr.error('{{ translate('messages.Name is required!') }}');
+                $('.withdraw-info-sidebar2, .withdraw-info-sidebar-overlay').addClass('show');
+                return false;
+            }
+            if (image === '') {
+                e.preventDefault();
+                toastr.error('{{ translate('messages.Brand logo is required!') }}');
+                $('.withdraw-info-sidebar2, .withdraw-info-sidebar-overlay').addClass('show');
+                return false;
+            }
+        });
+
+        $(document).on('submit', '.withdraw-info-sidebar3 form', function (e) {
+            let nameInput = $(this).find('#default-form1 input[name="name[]"]');
+            if (nameInput.length === 0) {
+                nameInput = $(this).find('input[name="name"]');
+            }
+            let name = $.trim(nameInput.val() || '');
+            if (name === '') {
+                e.preventDefault();
+                toastr.error('{{ translate('messages.Name is required!') }}');
+                $('.withdraw-info-sidebar3, .withdraw-info-sidebar-overlay').addClass('show');
+                return false;
+            }
+        });
+
         $('#reset_btn').click(function(){
             $('#viewer').attr('src', "{{asset('public/assets/admin/img/upload-img.png')}}");
         })

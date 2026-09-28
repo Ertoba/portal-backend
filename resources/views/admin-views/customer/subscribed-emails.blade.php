@@ -26,20 +26,20 @@
                             <label class="form-label">{{translate('Subscription Date')}}</label>
                             <div class="position-relative">
                                 <span class="tio-calendar icon-absolute-on-right"></span>
-                                <input type="text" readonly data-title="{{ translate('Select_Subscription_Date_Range') }}" name="join_date" value="{{ request()->get('join_date')  ?? null }}" class="date-range-picker form-control">
+                                <input type="text" readonly data-title="{{ translate('Select_Subscription_Date_Range') }}" name="join_date" value="{{ request()->input('join_date')  ?? null }}" class="date-range-picker form-control">
                             </div>
                         </div>
                         <div class="col-md-4">
                             <label class="form-label">{{translate('Sort By')}}</label>
                             <select name="filter" data-placeholder="{{ translate('messages.Select Mail Sorting Order') }}" class="form-control js-select2-custom">
                                 <option  value="" selected disabled > {{ translate('messages.Select Mail Sorting Order') }} </option>
-                                <option  {{ request()->get('filter')  == 'oldest'?'selected':''}} value="oldest">{{ translate('messages.Sort by oldest') }}</option>
-                                <option  {{ request()->get('filter')  == 'latest'?'selected':''}} value="latest">{{ translate('messages.Sort by newest') }}</option>
+                                <option  {{ request()->input('filter')  == 'oldest'?'selected':''}} value="oldest">{{ translate('messages.Sort by oldest') }}</option>
+                                <option  {{ request()->input('filter')  == 'latest'?'selected':''}} value="latest">{{ translate('messages.Sort by newest') }}</option>
                             </select>
                         </div>
                         <div class="col-md-4">
                             <label class="form-label">{{translate('Choose First')}}</label>
-                            <input type="number" min="1" name="show_limit" class="form-control" value="{{ request()->get('show_limit')}}" class="form-control" placeholder="{{translate('Ex : 100')}}">
+                            <input type="number" min="1" name="show_limit" class="form-control" value="{{ request()->input('show_limit')}}" class="form-control" placeholder="{{translate('Ex : 100')}}">
                         </div>
                     </div>
                     <div class="btn--container justify-content-end mt-20">
@@ -67,7 +67,7 @@
                             <button type="submit" class="btn btn--secondary"><i class="tio-search"></i></button>
                         </div>
                     </form>
-                    @if(request()->get('search'))
+                    @if(request()->input('search'))
                         <button type="reset" class="btn btn--primary ml-2 location-reload-to-base"
                                 data-url="{{url()->full()}}">{{translate('messages.reset')}}</button>
                     @endif
@@ -145,7 +145,7 @@
                             @foreach ($subscribedCustomers as $key => $customer)
                                 <tr>
                                     <td>
-                                        {{ (request()->get('show_limit') ?  $count++ : $key  )+ $subscribedCustomers->firstItem() }}
+                                        {{ (request()->input('show_limit') ?  $count++ : $key  )+ $subscribedCustomers->firstItem() }}
                                     </td>
 
                                     <td>

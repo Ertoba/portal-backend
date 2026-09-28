@@ -49,7 +49,7 @@ Route::group(['namespace' => 'Admin', 'as' => 'admin.'], function () {
 
     Route::get(Zone::GET_ALL_ZONE_COORDINATES[URI] . '/{id?}', [ZoneController::class, 'getAllZoneCoordinates'])->name('zone.zoneCoordinates');
 
-    Route::group(['middleware' => ['admin', 'current-module', 'actch:admin_panel']], function () {
+    Route::group(['middleware' => ['admin', 'current-module', 'mili.feature:admin_panel']], function () {
 
         Route::post('search-routing', 'SearchRoutingController@index')->name('search.routing');
         Route::get('recent-search', 'SearchRoutingController@recentSearch')->name('recent.search');
@@ -204,7 +204,7 @@ Route::group(['namespace' => 'Admin', 'as' => 'admin.'], function () {
 
             Route::group(['prefix' => 'subscription', 'middleware' => ['module:subscription']], function () {
 
-                Route::resource('subscriptionackage', SubscriptionController::class);
+                Route::resource('subscriptionackage', SubscriptionController::class)->except(['destroy']);
                 Route::get('/status/{subscriptionackage}', [SubscriptionController::class, 'statusChange'])->name('subscriptionackage.status');
                 Route::get('/overView/{subscriptionackage}', [SubscriptionController::class, 'overView'])->name('subscriptionackage.overView');
                 Route::get('/transaction/{subscriptionackage}', [SubscriptionController::class, 'transaction'])->name('subscriptionackage.transaction');

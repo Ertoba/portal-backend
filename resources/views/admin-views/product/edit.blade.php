@@ -61,45 +61,25 @@
             <div class="row g-2">
 
                 @includeif('admin-views.product.partials._title_and_discription')
-                <div class="col-lg-6">
+                <div class="col-md-6">
                     <div class="card h-100">
                         <div class="card-body d-flex flex-wrap align-items-center">
-                            <div class="w-100 d-flex gap-3 flex-wrap flex-lg-nowrap">
-                                {{-- <div class="flex-grow-1 mx-auto overflow-x-auto scrollbar-primary">
-                                    <label class="text-dark d-block">
-                                        {{ translate('messages.item_image') }}
-                                        <small>( {{ translate('messages.ratio') }} 1:1 )</small>
-                                    </label>
-                                    <div class="d-flex __gap-12px __new-coba overflow-x-auto pb-2" id="coba">
-                                        @foreach ($product->images as $key => $photo)
-                                            @php($photo = is_array($photo) ? $photo : ['img' => $photo, 'storage' => 'public'])
-                                            <div id="product_images_{{ $key }}"
-                                                class="spartan_item_wrapper min-w-176px max-w-176px">
-                                                <img class="img--square onerror-image"
-                                                    src="{{ \App\CentralLogics\Helpers::get_full_url('product', $photo['img'] ?? '', $photo['storage']) }}"
-                                                    data-onerror-image="{{ asset('public/assets/admin/img/upload-img.png') }}"
-                                                    alt="Product image">
-                                                <a href="#" data-key={{ $key }}
-                                                    data-photo="{{ $photo['img'] }}"
-                                                    class="spartan_remove_row function_remove_img"><i
-                                                        class="tio-add-to-trash"></i></a>
+                            <div class="mb-20">
+                                <h3 class="mb-0">{{ translate('Item_Thumbnail') }}
+                                    @if (Config::get('module.current_module_type') != 'food')
+                                    <span class="text-danger">*</span>
+                                    @endif
+                                </h3>
+                                <p class="fs-12 mb-0">
+                                    {{ translate('Upload additional images.') . translate(IMAGE_FORMAT) .' '. translate('Image size : Max') .' ' .MAX_FILE_SIZE. translate('MB (1:1)')  }}
+                                </p>
+                            </div>
+                            <div class="__bg-F8F9FC-card d-center w-100 p-3">
 
-                                            </div>
-                                        @endforeach
-                                    </div>
-                                </div> --}}
                                 <input type="hidden" id="removedImageKeysInput" name="removedImageKeys" value="">
-                            <div class="w-100 d-flex gap-3 flex-wrap flex-lg-nowrap">
-                                <div class="flex-grow-1 mx-auto pb-2 flex-shrink-0">
-                                    <div class="text-center">
-                                        <div class="mb-1">
-                                            <h4 class="mb-1">{{ translate('Item_Thumbnail') }}
-                                                @if (Config::get('module.current_module_type') != 'food')
-                                                <span class="text-danger">*</span>
-                                                @endif
-                                                </h4>
-                                        </div>
-                                        <div class="mx-auto text-center">
+                                <div class="w-100 py-5">
+                                    <div class="">
+                                        <div class="text-center py-2">
                                             @include('admin-views.partials._image-uploader', [
                                                     'id' => 'image-input',
                                                     'name' => 'image',
@@ -115,21 +95,25 @@
                                 </div>
                             </div>
                         </div>
+                    </div>
+                </div>
+                @include('admin-views.product.partials._product-video', ['product' => $product])
 
-                        <div class="flex-grow-1 mx-auto overflow-x-auto scrollbar-primary">
-                                            <div class="mb-0">
-                                                <h4 class="mb-1">
-                                                    {{ translate('messages.item_image') }}
-                                                </h4>
-                                                <p class="mb-2 fs-12 gray-dark">
-                                                        {{ translate((IMAGE_FORMAT) . '. Less Than ' . MAX_FILE_SIZE . 'MB')}} <span
-                                                            class="font-medium text-title">{{ translate('(1:1)')}}</span>
-                                                    </p>
-                                            </div>
-
-
+                <div class="col-md-12">
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="mb-20">
+                                <h3 class="text-dark mb-1">
+                                    {{ translate('messages.Product Additional Images') }}
+                                </h3>
+                                <p class="fs-12 mb-0">
+                                    {{ translate('messages.update additional images. JPG, JPEG, PNG Image size : Max 2 MB (1:1)') }}
+                                </p>
+                            </div>
+                            <div class="__bg-F8F9FC-card p-3">
+                                <div class="flex-grow-1 mx-auto overflow-x-auto scrollbar-primary">
                                     <div class="identity_documnet_body multiple_coba-img tabs-slide-wrap position-relative">
-                                        <div class="tabs-inner pt-3 d-flex gap-3 identity_documnet_wrap" id="coba">
+                                        <div class="tabs-inner pt-1 d-flex gap-3 identity_documnet_wrap" id="coba">
 
                                             @foreach($product->images as $key => $img)
                                             @php($photo = is_array($img) ? $img : ['img' => $img, 'storage' => 'public'])
@@ -162,7 +146,8 @@
                                             </div>
                                         </div>
                                     </div>
-                        </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -255,11 +240,15 @@
                         <div class="variation_wrapper">
                             <div class="outline-wrapper">
                                 <div class="card shadow--card-2 border-0 bg-animate">
-                                    <div class="card-header">
-                                        <h5 class="card-title">
-                                            <span class="card-header-icon"><i class="tio-canvas-text"></i></span>
-                                            <span>{{ translate('attribute') }}</span>
-                                        </h5>
+                                    <div class="card-header border-0 pb-0">
+                                        <div class="mb-0">
+                                            <h3 class="text-dark mb-1">
+                                                {{ translate('messages.Attributes') }}
+                                            </h3>
+                                            <p class="fs-12 mb-0">
+                                                {{ translate('messages.Enable and manage different attributs of a product.') }}
+                                            </p>
+                                        </div>
                                         @if (isset($openai_config) && data_get($openai_config, 'status') == 1)
                                             <button type="button"
                                                 class="btn bg-white text-primary opacity-1 generate_btn_wrapper p-0 mb-2 other_variation_setup_auto_fill"
@@ -279,49 +268,51 @@
                                             </button>
                                         @endif
                                     </div>
-                                    <div class="card-body pb-0">
-                                        <div class="row g-2">
-                                            <div class="col-12">
-                                                <div class="form-group mb-0">
-                                                    <label class="input-label"
-                                                        for="exampleFormControlSelect1">{{ translate('messages.attribute') }}<span
-                                                            class="input-label-secondary"></span></label>
-                                                    <select name="attribute_id[]" id="choice_attributes"
-                                                        class="form-control js-select2-custom" multiple="multiple">
-                                                        @foreach (\App\Models\Attribute::orderBy('name')->get() as $attribute)
-                                                            <option value="{{ $attribute['id'] }}"
-                                                                {{ in_array($attribute->id, json_decode($product['attributes'], true)) ? 'selected' : '' }}>
-                                                                {{ $attribute['name'] }}</option>
-                                                        @endforeach
-                                                    </select>
-                                                </div>
-                                            </div>
-
-                                            <div class="col-md-12">
-                                                <div class="table-responsive">
-                                                    <div class="customer_choice_options d-flex __gap-24px"
-                                                        id="customer_choice_options">
-                                                        @include('admin-views.product.partials._choices', [
-                                                            'choice_no' => json_decode($product['attributes']),
-                                                            'choice_options' => json_decode(
-                                                                $product['choice_options'],
-                                                                true),
-                                                        ])
+                                    <div class="card-body">
+                                        <div class="__bg-F8F9FC-card p-xxl-20 p-3">
+                                            <div class="row g-2">
+                                                <div class="col-12">
+                                                    <div class="form-group mb-0">
+                                                        <label class="input-label"
+                                                            for="exampleFormControlSelect1">{{ translate('messages.attribute') }}<span
+                                                                class="input-label-secondary"></span></label>
+                                                        <select name="attribute_id[]" id="choice_attributes"
+                                                            class="form-control js-select2-custom" multiple="multiple">
+                                                            @foreach (\App\Models\Attribute::orderBy('name')->get() as $attribute)
+                                                                <option value="{{ $attribute['id'] }}"
+                                                                    {{ in_array($attribute->id, json_decode($product['attributes'], true)) ? 'selected' : '' }}>
+                                                                    {{ $attribute['name'] }}</option>
+                                                            @endforeach
+                                                        </select>
                                                     </div>
                                                 </div>
-                                            </div>
-                                            <div class="col-md-12">
-                                                <div class="variant_combination" id="variant_combination">
-                                                    @include(
-                                                        'admin-views.product.partials._edit-combinations',
-                                                        [
-                                                            'combinations' => json_decode(
-                                                                $product['variations'],
-                                                                true),
-                                                            'stock' => config(
-                                                                'module.' . $product->module->module_type)['stock'],
-                                                        ]
-                                                    )
+
+                                                <div class="col-md-12">
+                                                    <div class="table-responsive">
+                                                        <div class="customer_choice_options d-flex __gap-24px"
+                                                            id="customer_choice_options">
+                                                            @include('admin-views.product.partials._choices', [
+                                                                'choice_no' => json_decode($product['attributes']),
+                                                                'choice_options' => json_decode(
+                                                                    $product['choice_options'],
+                                                                    true),
+                                                            ])
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-12">
+                                                    <div class="variant_combination" id="variant_combination">
+                                                        @include(
+                                                            'admin-views.product.partials._edit-combinations',
+                                                            [
+                                                                'combinations' => json_decode(
+                                                                    $product['variations'],
+                                                                    true),
+                                                                'stock' => config(
+                                                                    'module.' . $product->module->module_type)['stock'],
+                                                            ]
+                                                        )
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
@@ -391,27 +382,12 @@
 @push('script_2')
     <script>
         let count = $('.count_div').length;
+        let countRow = 0;
     </script>
 
-    <script src="{{ asset('public/assets/admin') }}/js/tags-input.min.js"></script>
-    <script src="{{ asset('public/assets/admin/js/spartan-multi-image-picker.js') }}"></script>
-
-
-    <script src="{{ asset('public/assets/admin/js/AI/products/product-title-autofill.js') }}"></script>
-    <script src="{{ asset('public/assets/admin/js/AI/products/product-description-autofill.js') }}"></script>
-    <script src="{{ asset('public/assets/admin/js/AI/products/general-setup-autofill.js') }}"></script>
-    <script src="{{ asset('public/assets/admin/js/AI/products/product-others-autofill.js') }}"></script>
-    <script src="{{ asset('public/assets/admin/js/AI/products/seo-section-autofill.js') }}"></script>
-    @if (Config::get('module.current_module_type') == 'food')
-        <script src="{{ asset('public/assets/admin/js/AI/products/variation-setup-auto-fill.js') }}"></script>
-    @else
-        <script src="{{ asset('public/assets/admin/js/AI/products/other-variation-setup-auto-fill.js') }}"></script>
-    @endif
-
-    <script src="{{ asset('public/assets/admin/js/AI/products/ai-sidebar.js') }}"></script>
-
-    <script src="{{ asset('/public/assets/admin/js/AI/products/compressor/image-compressor.js') }}"></script>
-    <script src="{{ asset('/public/assets/admin/js/AI/products/compressor/compressor.min.js') }}"></script>
+    @include('admin-views.product.partials._shared-script-assets', [
+        'moduleType' => Config::get('module.current_module_type'),
+    ])
 
 
     <script>
@@ -459,117 +435,7 @@
 
 
 
-        $(document).ready(function() {
-            $("#add_new_option_button").click(function(e) {
-                add_new_option_button();
-            });
-        });
-
-
-        function add_new_option_button() {
-            $('#empty-variation').hide();
-            count++;
-            let add_option_view = `
-                                <div class="__bg-F8F9FC-card view_new_option mb-2">
-                                    <div>
-                                        <div class="d-flex align-items-center justify-content-between mb-3">
-                                            <label class="form-check form--check">
-                                                <input id="options[` + count + `][required]" name="options[` + count + `][required]" class="form-check-input" type="checkbox">
-                                                <span class="form-check-label">{{ translate('Required') }}</span>
-                                            </label>
-                                            <div>
-                                                <button type="button" class="btn btn-danger btn-sm delete_input_button"
-                                                    title="{{ translate('Delete') }}">
-                                                    <i class="tio-add-to-trash"></i>
-                                                </button>
-                                            </div>
-                                        </div>
-                                        <div class="row g-2">
-                                            <div class="col-xl-4 col-lg-6">
-                                                <label for="">{{ translate('name') }}</label>
-                                                <input required name=options[` + count +
-                `][name] class="form-control new_option_name" type="text" data-count="` +
-                count +
-                `">
-                                            </div>
-
-                                            <div class="col-xl-4 col-lg-6">
-                                                <div>
-                                                    <label class="input-label text-capitalize d-flex align-items-center"><span class="line--limit-1">{{ translate('messages.selcetion_type') }} </span>
-                                                    </label>
-                                                    <div class="resturant-type-group px-0">
-                                                        <label class="form-check form--check mr-2 mr-md-4">
-                                                            <input class="form-check-input show_min_max" data-count="` +
-                count + `" type="radio" value="multi"
-                                                            name="options[` + count + `][type]" id="type` + count +
-                `" checked
-                                                            >
-                                                            <span class="form-check-label">
-                                                                {{ translate('Multiple Selection') }}
-                                </span>
-                            </label>
-
-                            <label class="form-check form--check mr-2 mr-md-4">
-                                <input class="form-check-input hide_min_max" data-count="` + count + `" type="radio" value="single"
-                                name="options[` + count + `][type]" id="type` + count +
-                `"
-                                                            >
-                                                            <span class="form-check-label">
-                                                                {{ translate('Single Selection') }}
-                                </span>
-                            </label>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-xl-4 col-lg-6">
-                    <div class="row g-2">
-                        <div class="col-6">
-                            <label for="">{{ translate('Min') }}</label>
-                                                        <input id="min_max1_` + count + `" required  name="options[` +
-                count + `][min]" class="form-control" type="number" min="1">
-                                                    </div>
-                                                    <div class="col-6">
-                                                        <label for="">{{ translate('Max') }}</label>
-                                                        <input id="min_max2_` + count + `"   required name="options[` +
-                count + `][max]" class="form-control" type="number" min="1">
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <div id="option_price_` + count + `" >
-                                            <div class="bg-white border rounded p-3 pb-0 mt-3">
-                                                <div  id="option_price_view_` + count +
-                `">
-                                                    <div class="row g-3 add_new_view_row_class mb-3">
-                                                        <div class="col-md-4 col-sm-6">
-                                                            <label for="">{{ translate('Option_name') }}</label>
-                                                            <input class="form-control" required type="text" name="options[` +
-                count +
-                `][values][0][label]" id="">
-                                                        </div>
-                                                        <div class="col-md-4 col-sm-6">
-                                                            <label for="">{{ translate('Additional_price') }}</label>
-                                                            <input class="form-control" required type="number" min="0" step="0.01" name="options[` +
-                count + `][values][0][optionPrice]" id="">
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                <div class="row mt-3 p-3 mr-1 d-flex "  id="add_new_button_` + count +
-                `">
-                                                    <button type="button" class="btn btn--primary btn-outline-primary add_new_row_button" data-count="` +
-                count + `">{{ translate('Add_New_Option') }}</button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>`;
-
-            $("#add_new_option").append(add_option_view);
-
-
-
-        }
+        @include('admin-views.product.partials._shared-variation-builder-script')
 
 
         function new_option_name(value, data) {
@@ -599,38 +465,6 @@
             let e = $(this);
             deleteRow(e);
         });
-        let countRow = 0;
-
-        function add_new_row_button(data) {
-            // count = data;
-            countRow = 1 + $('#option_price_view_' + data).children('.add_new_view_row_class').length;
-            let add_new_row_view = `
-            <div class="row add_new_view_row_class mb-3 position-relative pt-3 pt-sm-0">
-                <div class="col-md-4 col-sm-5">
-                        <label for="">{{ translate('Option_name') }}</label>
-                        <input class="form-control" required type="text" name="options[` + data + `][values][` +
-                countRow + `][label]" id="">
-                    </div>
-                    <div class="col-md-4 col-sm-5">
-                        <label for="">{{ translate('Additional_price') }}</label>
-                        <input class="form-control"  required type="number" min="0" step="0.01" name="options[` +
-                data +
-                `][values][` + countRow + `][optionPrice]" id="">
-                    </div>
-                    <div class="col-sm-2 max-sm-absolute">
-                        <label class="d-none d-sm-block">&nbsp;</label>
-                        <div class="mt-1">
-                            <button type="button" class="btn btn-danger btn-sm deleteRow"
-                                title="{{ translate('Delete') }}">
-                                <i class="tio-add-to-trash"></i>
-                            </button>
-                        </div>
-                </div>
-            </div>`;
-            $('#option_price_view_' + data).append(add_new_row_view);
-
-        }
-
         $(document).on('click', '.add_new_row_button', function() {
             let data = $(this).data('count');
             add_new_row_button(data);
@@ -647,7 +481,45 @@
             let store_id = $(this).val();
             let id = 'add_on';
             getStoreData(route, store_id, id);
+
+            loadStoreCategories(store_id);
         });
+
+        function loadStoreCategories(storeId) {
+            let $select = $('#store_category_id');
+            if (!$select.length) return;
+            let $col = $('#store_category_col');
+            let currentVal = $select.val();
+            $select.empty().append(
+                '<option value="">{{ translate('messages.Select_Store_Category') }}</option>'
+            );
+            if (!storeId) {
+                // No store selected → no asterisk, not required.
+                $select.prop('required', false);
+                $('.store-category-required-mark').hide();
+                $col.hide();
+                return;
+            }
+            let url = $select.data('url');
+            if (!url) return;
+            $.get(url, { store_id: storeId }, function(data) {
+                const categories = (data && data.categories) ? data.categories : (Array.isArray(data) ? data : []);
+                categories.forEach(function(cat) {
+                    $select.append($('<option>', {
+                        value: cat.id,
+                        text: cat.name,
+                        selected: String(cat.id) === String(currentVal)
+                    }));
+                });
+                $select.trigger('change');
+                // Toggle the "*" mark + required attribute based on whether
+                // the selected store has any of its own categories.
+                const required = !!(data && data.has_categories);
+                $select.prop('required', required);
+                $('.store-category-required-mark').toggle(required);
+                $col.toggle(required);
+            });
+        }
 
         function getStoreData(route, store_id, id) {
             $.get({
@@ -945,15 +817,6 @@
             });
         });
 
-        function add_more_customer_choice_option(i, name) {
-            let n = name;
-
-            $('#customer_choice_options').append(
-                `<div class="__choos-item"><div><input type="hidden" name="choice_no[]" value="${i}"><input type="text" class="form-control d-none" name="choice[]" value="${n}" placeholder="{{ translate('messages.choice_title') }}" readonly> <label class="form-label">${n}</label> </div><div><input type="text" class="form-control combination_update" name="choice_options_${i}[]" placeholder="{{ translate('messages.enter_choice_values') }}" data-role="tagsinput"></div></div>`
-            );
-            $("input[data-role=tagsinput], select[multiple][data-role=tagsinput]").tagsinput();
-        }
-
         setTimeout(function() {
             $('.call-update-sku').on('change', function() {
                 combination_update();
@@ -1090,7 +953,7 @@
 
              let existingImages = $("#coba .existing_image").detach();
 
-            let newCoba = $('<div class="tabs-inner pt-3 d-flex gap-3 identity_documnet_wrap" id="coba"></div>');
+            let newCoba = $('<div class="tabs-inner pt-1 d-flex gap-3 identity_documnet_wrap" id="coba"></div>');
 
             $("#coba").replaceWith(newCoba);
 

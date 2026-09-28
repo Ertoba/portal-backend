@@ -191,7 +191,7 @@
             @foreach($data_values->sortByDesc('is_active') as $payment_key => $payment)
                 <div class="col-md-6 mb-4">
                     <div class="card">
-                        <form action="{{env('APP_MODE')!='demo'?route('admin.business-settings.third-party.payment-method-update'):'javascript:'}}" method="POST"
+                        <form action="{{getEnvMode()!='demo'?route('admin.business-settings.third-party.payment-method-update'):'javascript:'}}" method="POST"
                               id="{{$payment->key_name}}-form" enctype="multipart/form-data">
                             @csrf
                             <div class="card-header d-flex flex-wrap align-content-around">

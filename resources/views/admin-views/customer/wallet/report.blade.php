@@ -35,7 +35,7 @@
                             <label class="text-dark text-capitalize"
                                    for="add-fund-type">{{translate('messages.add_fund_type')}}</label>
                             @php
-                                $transaction_status=request()->get('transaction_type');
+                                $transaction_status=request()->input('transaction_type');
                             @endphp
                             <select name="transaction_type" id="add-fund-type" data-url="{{ url()->full() }}"
                                     data-filter="transaction_type" class="form-control set-filter js-select2-custom"
@@ -65,7 +65,7 @@
                                     data-placeholder="{{translate('messages.select_customer')}}"
                                     class="js-data-example-ajax form-control set-filter"
                                     title="{{translate('messages.select_customer')}}">
-                                @if (request()->get('customer_id') && $customer_info = \App\Models\User::find(request()->get('customer_id')))
+                                @if (request()->input('customer_id') && $customer_info = \App\Models\User::find(request()->input('customer_id')))
                                     <option value="{{$customer_info->id}}"
                                             selected>{{$customer_info->f_name.' '.$customer_info->l_name}}
                                         ({{$customer_info->phone}})
@@ -284,7 +284,7 @@
                         </form>
 
                     </div>
-                    @if(request()->get('search'))
+                    @if(request()->input('search'))
                         <button type="reset" class="btn btn--primary ml-2 location-reload-to-base"
                                 data-url="{{url()->full()}}">{{translate('messages.reset')}}</button>
                     @endif

@@ -4,6 +4,7 @@
         '2:1' => 'ratio-2-1',
         '3:1' => 'ratio-3-1',
         '4:1' => 'ratio-4-1',
+        '7:1' => 'ratio-7-1',
         default => 'ratio-1',
     };
     $imageExtension = $imageExtension ?? IMAGE_EXTENSION;
@@ -17,6 +18,7 @@
     $pixel = isset($pixel) && $pixel !== '' ? $pixel . ' px' : null;
     $size = $pixel ?? $ratio;
     $textPosition = $textPosition ?? 'top';
+    $show_clear_button ??= !$isRequired;
 @endphp
 <div class="mx-auto text-center">
     @if ($textPosition == 'top')
@@ -30,7 +32,7 @@
         <input class="upload-file__input single_file_input" type="file" id="{{ $id }}" name="{{ $name }}"
             accept="{{ $imageExtension }}" {{ !$existingImage && $isRequired ? 'required' : '' }}
             data-max-size="{{ $maxSize }}">
-        @if (!$isRequired)
+        @if ($show_clear_button)
             <button type="button" class="remove_btn remove_btn_outside btn icon-btn btn-circle btn-danger fs-14 lh-1"
                 style="--size: 20px;">
                 <i class="tio-clear"></i>

@@ -69,7 +69,8 @@
                                                                  data-toggle="tooltip" data-placement="right"
                                                                  data-original-title="{{ translate('messages.Required.')}}"> *
                                                 </span></label>
-                                                <input required id="title" type="text" maxlength="40" name="title[]" value="{{ $criteria['title']??'' }}" class="form-control" placeholder="{{translate('messages.title_here...')}}">
+                                                <input required id="title" type="text" maxlength="40" name="title[]" value="{{ $criteria?->getRawOriginal('title') }}" class="form-control char-count-input" placeholder="{{translate('messages.title_here...')}}">
+                                                <small class="char-count text-muted d-block text-right mt-1"><span class="current">0</span>/40</small>
                                 </div>
                                 <input type="hidden" name="lang[]" value="default">
                                     @foreach(json_decode($language) as $lang)
@@ -86,7 +87,8 @@
                                 ?>
                                     <div class="col-sm-6 d-none lang_form" id="{{$lang}}-form1">
                                         <label for="title{{$lang}}" class="form-label">{{translate('Title')}} ({{strtoupper($lang)}})</label>
-                                        <input id="title{{$lang}}" type="text" name="title[]" value="{{ $translate[$lang]['title']??'' }}" class="form-control" placeholder="{{translate('messages.title_here...')}}">
+                                        <input id="title{{$lang}}" type="text" maxlength="40" name="title[]" value="{{ $translate[$lang]['title']??'' }}" class="form-control char-count-input" placeholder="{{translate('messages.title_here...')}}">
+                                        <small class="char-count text-muted d-block text-right mt-1"><span class="current">0</span>/40</small>
                                     </div>
                                         <input type="hidden" name="lang[]" value="{{$lang}}">
                                     @endforeach
@@ -99,7 +101,8 @@
                                                         <img src="{{ asset('public/assets/admin/img/info-circle.svg') }}"
                                                             alt="">
                                                     </span></label>
-                                                <input id="title" type="text" maxlength="40" name="title[]" class="form-control" placeholder="{{translate('messages.title_here...')}}">
+                                                <input id="title" type="text" maxlength="40" name="title[]" class="form-control char-count-input" placeholder="{{translate('messages.title_here...')}}">
+                                                <small class="char-count text-muted d-block text-right mt-1"><span class="current">0</span>/40</small>
                                 </div>
                                     <input type="hidden" name="lang[]" value="default">
                                 @endif
@@ -159,4 +162,18 @@
     <!-- How it Works -->
     @include('admin-views.business-settings.landing-page-settings.partial.how-it-work')
 @endsection
+
+@push('script_2')
+<script>
+    "use strict";
+    $(document).ready(function() {
+        $('.char-count-input').each(function() {
+            $(this).siblings('.char-count').find('.current').text($(this).val().length);
+        });
+        $(document).on('input', '.char-count-input', function() {
+            $(this).siblings('.char-count').find('.current').text($(this).val().length);
+        });
+    });
+</script>
+@endpush
 

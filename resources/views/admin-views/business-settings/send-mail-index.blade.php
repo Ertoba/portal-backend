@@ -186,7 +186,7 @@
         }
 
         $(document).on('click', '.send-mail', function () {
-            @if(env('APP_MODE') =='demo')
+            @if(getEnvMode() =='demo')
             toastr.info('{{ translate('Update option is disabled for demo!') }}', {
                 CloseButton: true,
                 ProgressBar: true

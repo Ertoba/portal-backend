@@ -18,11 +18,14 @@
         </div>
     </td>
     <td>
+        @php($delivery_address = is_array($order->delivery_address) ? $order->delivery_address : json_decode($order->delivery_address, true))
         @if($order->customer)
             <a class="text-body text-capitalize" href="{{route('admin.users.customer.view',[$order['user_id']])}}">
                 <strong>{{$order->customer['f_name'].' '.$order->customer['l_name']}}</strong>
                 <div>{{$order->customer['phone']}}</div>
             </a>
+        @elseif (!empty($delivery_address['contact_person_name']))
+            <strong>{{$delivery_address['contact_person_name']}}</strong>
         @else
             <label class="badge badge-danger">{{translate('messages.invalid_customer_data')}}</label>
         @endif
@@ -98,6 +101,9 @@
               {{translate('messages.home Delivery')}}
             </div>
         @endif
+        <div class="mt-1">
+            @include('partials.delivery-type-badge', ['order' => $order])
+        </div>
     </td>
     <td>
         <div class="btn--container justify-content-center">

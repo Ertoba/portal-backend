@@ -67,7 +67,7 @@
     @endif -->
     <div class="tab-content">
         <div class="tab-pane fade show active">
-            <!-- <form action="{{ route('admin.business-settings.react-landing-page-settings', 'fixed-banner') }}" method="POST" enctype="multipart/form-data">
+            <!-- <form action="{{ route('admin.business-settings.react-landing-page-settings-update', 'fixed-banner') }}" method="POST" enctype="multipart/form-data">
                 @csrf
                 <h5 class="card-title mt-3 mb-3">
                     <span class="card-header-icon mr-2"><i class="tio-settings-outlined"></i></span> <span>{{translate('promotional_Banner')}}</span>
@@ -116,7 +116,7 @@
                 <input type="hidden" name="image_path" value="promotional_banner" >
                 <input type="hidden" name="field_name" value="value" >
             </form> -->
-            <form action="{{ route('admin.business-settings.react-landing-page-settings', 'fixed-newsletter') }}" method="POST" enctype="multipart/form-data">
+            <form action="{{ route('admin.business-settings.react-landing-page-settings-update', 'fixed-newsletter') }}" method="POST" enctype="multipart/form-data">
                 @csrf
                 <div class="card mb-3">
                     <div class="card-body">

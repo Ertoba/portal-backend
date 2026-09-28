@@ -34,7 +34,7 @@
                                 data-search-placeholder="{{ translate('messages.search_store') }}"
                                 class="js-data-example-ajax form-control set-filter">
                                 @if (isset($store))
-                                    <option value="{{ $store->id }}" selected>{{ $store->name }}</option>
+                                    <option value="{{ $store->id }}" data-verified="{{ (int) $store->verified_seller }}" selected>{{ $store->name }}</option>
                                 @else
                                     <option value="all" selected>{{ translate('messages.all_stores') }}</option>
                                 @endif

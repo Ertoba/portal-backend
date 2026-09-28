@@ -22,7 +22,7 @@ class ProductAutoFillController extends Controller
     ) {
 
 
-        if (env('APP_MODE') == 'demo') {
+        if (getEnvMode() == 'demo') {
             $ip = request()->header('x-forwarded-for');
             $cacheKey = "restricted_ip_" . $ip;
 

@@ -16,8 +16,8 @@ class BusinessSettingsController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'contact_number' => 'required|string|max:20',
-            'logo' => 'nullable|image|max:10240',
-            'cover_photo' => 'nullable|image|max:10240',
+            'logo' => 'nullable|image|max:2048',
+            'cover_photo' => 'nullable|image|max:2048',
             'meta_title' => 'max:100',
         ]);
 
@@ -144,7 +144,8 @@ class BusinessSettingsController extends Controller
         $conf->halal_tag_status = $request->halal_tag_status ?? 0;
         $conf->extra_packaging_status = $request->extra_packaging_status ?? 0;
         $conf->extra_packaging_amount = $request->extra_packaging_amount;
-        $conf->minimum_stock_for_warning = $request->minimum_stock_for_warning ?? 0;
+        $conf->minimum_stock_for_warning = $request->minimum_stock_for_warning ?? ($conf->minimum_stock_for_warning ?? 0);
+        $conf->show_low_stock_count = $request->show_low_stock_count ?? ($conf->show_low_stock_count ?? 1);
         $conf->save();
 
         return response()->json(['message'=>translate('messages.store_settings_updated')], 200);

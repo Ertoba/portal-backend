@@ -97,6 +97,11 @@
                                             <option value="first_order"
                                                 {{ old('coupon_type') == 'first_order' ? 'selected' : '' }}>
                                                 {{ translate('messages.first_order') }}</option>
+                                            @if (\App\CentralLogics\Helpers::get_business_settings('pro_member_status') == 1)
+                                                <option value="pro_customer"
+                                                    {{ old('coupon_type') == 'pro_customer' ? 'selected' : '' }}>
+                                                    {{ translate('messages.pro_customer') }}</option>
+                                            @endif
                                             <option value="default"
                                                 {{ old('coupon_type') == 'default' ? 'selected' : '' }}>
                                                 {{ translate('messages.default') }}</option>
@@ -115,7 +120,7 @@
                                             </option>
                                             @if (old('store_ids'))
                                                 @foreach (\App\Models\Store::whereIn('id', old('store_ids'))->get(['id', 'name']) as $store)
-                                                    <option value="{{ $store->id }}" selected>{{ $store->name }}
+                                                    <option value="{{ $store->id }}" data-verified="{{ (int) $store->verified_seller }}" selected>{{ $store->name }}
                                                     </option>
                                                 @endforeach
                                             @endif
@@ -281,7 +286,7 @@
                                 </div>
                                 <!-- End Search -->
                             </form>
-                            @if (request()->get('search'))
+                            @if (request()->input('search'))
                                 <button type="reset" class="btn btn--primary ml-2 location-reload-to-base"
                                     data-url="{{ url()->full() }}">{{ translate('messages.reset') }}</button>
                             @endif

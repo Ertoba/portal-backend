@@ -2,6 +2,8 @@
 
 namespace App\CentralLogics;
 
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
+
 use App\Library\Payer;
 use App\Library\Payment as PaymentInfo;
 use App\Library\Receiver;
@@ -74,6 +76,8 @@ use App\Models\ParcelReturnFees;
 use Illuminate\Http\UploadedFile;
 use Modules\RideShare\Entities\ReviewModule\RideReview;
 
+use App\Models\StoreConfig;
+use App\Models\VisitorLog;
 class Helpers
 {
     use PaymentGatewayTrait, NotificationDataSetUpTrait;
@@ -5150,6 +5154,636 @@ class Helpers
             return true;
      }
 
+
+    public static function pro_discount_data($order): array
+    {
+        $pro = method_exists($order, 'orderProDiscount') ? $order->orderProDiscount : $order->proDiscount;
+
+        return [
+            'pro_discount' => (float) ($pro?->amount_saved ?? 0),
+            'benefit_type' => $pro?->benefit_type,
+            'delivery_fee_reduction_amount' => (float) ($pro?->delivery_fee_reduction_amount ?? 0),
+            'delivery_offer_type' => $pro?->delivery_offer_type,
+        ];
+    }
+
+
+    public static function decodeJsonToArray($value, $default = [])
+    {
+        if (is_array($value)) {
+            return $value;
+        }
+
+        if (is_object($value)) {
+            return json_decode(json_encode($value), true) ?? $default;
+        }
+
+        if (!is_string($value) || $value === '') {
+            return $default;
+        }
+
+        $decoded = json_decode($value, true);
+
+        return is_array($decoded) ? $decoded : $default;
+    }
+
+
+    public static function highlight($text)
+    {
+        if (!$text) return '';
+
+        return preg_replace(
+            '/\$(.+?)\$/',
+            '<span class="hl">$1</span>',
+            e($text)
+        );
+    }
+
+
+    public static function is_vendor_panel_maintenance_active(): bool
+    {
+        if (!Cache::has('maintenance')) {
+            return false;
+        }
+
+        $maintenance = Cache::get('maintenance');
+
+        if (empty($maintenance['vendor_panel'])) {
+            return false;
+        }
+
+        if (($maintenance['maintenance_duration'] ?? null) === 'until_change') {
+            return true;
+        }
+
+        if (!empty($maintenance['start_date']) && !empty($maintenance['end_date'])) {
+            return Carbon::now()->between(
+                Carbon::parse($maintenance['start_date']),
+                Carbon::parse($maintenance['end_date'])
+            );
+        }
+
+        return true;
+    }
+
+
+
+
+    public static function check_website_builder_status()
+    {
+        // The vendor website builder targets storefront vendors only. Rental
+        // providers don't have a product storefront, so they never get the
+        // builder — regardless of the per-store flag.
+        $store = self::get_store_data();
+        if (($store?->module_type ?? null) === 'rental') {
+            return false;
+        }
+
+        $admin_website_builder_status = self::get_business_settings('admin_website_builder_status');
+        $vendor_website_builder_status = StoreConfig::where('store_id', self::get_store_id())->value('website_builder_status');
+
+        return $vendor_website_builder_status == 1 && $admin_website_builder_status == 1;
+    }
+
+    public static function copyStorageFile(string $dir, ?string $fileName, string $sourceDisk = 'public'): ?string
+    {
+        if (! $fileName) {
+            return null;
+        }
+
+        $extension = pathinfo($fileName, PATHINFO_EXTENSION) ?: 'tmp';
+        $newFileName = \Carbon\Carbon::now()->toDateString().'-'.uniqid().'.'.$extension;
+        $sourcePath = $dir.$fileName;
+        $targetDisk = self::getDisk();
+
+        try {
+            if (! Storage::disk($sourceDisk)->exists($sourcePath)) {
+                return null;
+            }
+
+            if (! Storage::disk($targetDisk)->exists($dir)) {
+                Storage::disk($targetDisk)->makeDirectory($dir);
+            }
+
+            Storage::disk($targetDisk)->put($dir.$newFileName, Storage::disk($sourceDisk)->get($sourcePath));
+
+            return $newFileName;
+        } catch (\Throwable $e) {
+            return null;
+        }
+    }
+
+    public static function copyright_placeholder()
+    {
+        return translate('Ex:') . ' ' . self::copyright_text();
+    }
+
+    public static function copyright_text()
+    {
+        return translate('Copyright') . ' ' . date('Y') . ' ' . self::get_business_settings('business_name', false) . '. ' . translate('All right reserved');
+    }
+
+    public static function duplicateProductVideoData($product): array
+    {
+        if (! $product) {
+            return [
+                'video' => null,
+                'video_link' => null,
+            ];
+        }
+
+        if ($product?->video) {
+            return [
+                'video' => self::copyStorageFile('product/', $product->video, self::getStorageDiskByKey($product, 'video', 'public')),
+                'video_link' => null,
+            ];
+        }
+
+        return [
+            'video' => null,
+            'video_link' => $product?->video_link ?: null,
+        ];
+    }
+
+    public static function employee_landing_url()
+    {
+        if (!auth('vendor_employee')->check()) {
+            return null;
+        }
+        if (self::employee_module_permission_check('dashboard')) {
+            return null;
+        }
+        $candidates = [
+            ['pos', 'vendor.pos.index', []],
+            ['order', 'vendor.order.list', ['all']],
+            ['item', 'vendor.item.list', []],
+            ['campaign', 'vendor.campaign.list', []],
+            ['coupon', 'vendor.coupon.add-new', []],
+            ['banner', 'vendor.banner.list', []],
+            ['advertisement', 'vendor.advertisement.index', []],
+            ['wallet', 'vendor.wallet.index', []],
+            ['employee', 'vendor.employee.list', []],
+            ['role', 'vendor.custom-role.create', []],
+            ['reviews', 'vendor.reviews', []],
+            ['my_shop', 'vendor.shop.view', []],
+            ['store_setup', 'vendor.store-category.list', []],
+            ['chat', 'vendor.message.list', []],
+        ];
+        foreach ($candidates as $candidate) {
+            [$module, $routeName, $params] = $candidate;
+            if (!self::employee_module_permission_check($module)) {
+                continue;
+            }
+            if (!\Illuminate\Support\Facades\Route::has($routeName)) {
+                continue;
+            }
+            if (!self::vendor_route_subscription_ok($routeName, $module)) {
+                continue;
+            }
+            return route($routeName, $params);
+        }
+        return null;
+    }
+
+    public static function getStorageDiskByKey($model, string $key, string $default = 'public'): string
+    {
+        if (! $model || ! isset($model->storage) || count($model->storage) < 1) {
+            return $default;
+        }
+
+        foreach ($model->storage as $storage) {
+            if (($storage['key'] ?? null) === $key) {
+                return $storage['value'] ?? $default;
+            }
+        }
+
+        return $default;
+    }
+
+    public static function getStoreLabelByModuleType(?string $moduleType = null, bool $lowercase = false): string
+    {
+        $resolvedModuleType = $moduleType
+            ?? config('module.current_module_type')
+            ?? self::get_store_data()?->module_type
+            ?? self::get_store_data()?->module?->module_type;
+
+        $label = match ($resolvedModuleType) {
+            'food' => translate('messages.restaurant'),
+            'rental' => translate('messages.provider'),
+            default => translate('messages.store'),
+        };
+
+        return $lowercase ? strtolower($label) : ucfirst($label);
+    }
+
+    public static function getStoredFileSize(string $dir, ?string $fileName, string $disk = 'public'): int
+    {
+        if (! $fileName) {
+            return 0;
+        }
+
+        try {
+            $path = $dir.$fileName;
+            if (Storage::disk($disk)->exists($path)) {
+                return (int) Storage::disk($disk)->size($path);
+            }
+        } catch (\Throwable $e) {
+        }
+
+        return 0;
+    }
+
+    public static function get_verified_seller_eligible_stores(bool $countOnly = false, ?string $moduleId = null): mixed
+    {
+        $config = config('verified_seller.stores', []);
+        $minimumOrders = (int) ($config['minimum_total_orders'] ?? 10);
+        $minimumRating = (float) ($config['minimum_avg_rating'] ?? 2);
+        $minimumSuccessRate = (float) ($config['minimum_success_rate'] ?? 40);
+        $minimumAccountAgeMonths = (int) ($config['minimum_account_age_months'] ?? 3);
+        $cacheKey = 'verified_seller_eligible_stores_' . md5(json_encode([
+            $countOnly,
+            $moduleId ?? 'all',
+            $minimumOrders,
+            $minimumRating,
+            $minimumSuccessRate,
+            $minimumAccountAgeMonths,
+        ]));
+
+        return Cache::remember($cacheKey, 3600, function () use ($countOnly, $moduleId) {
+            $config = config('verified_seller.stores', []);
+            $minimumOrders = (int) ($config['minimum_total_orders'] ?? 10);
+            $minimumRating = (float) ($config['minimum_avg_rating'] ?? 2);
+            $minimumSuccessRate = (float) ($config['minimum_success_rate'] ?? 40);
+            $minimumAccountAgeMonths = (int) ($config['minimum_account_age_months'] ?? 3);
+
+            $orderStats = DB::table('orders')
+                ->selectRaw('store_id, COUNT(*) as total_orders, SUM(CASE WHEN order_status = "delivered" THEN 1 ELSE 0 END) as delivered_orders, SUM(CASE WHEN order_status = "canceled" THEN 1 ELSE 0 END) as canceled_orders')
+                ->groupBy('store_id');
+
+            $reviewStats = DB::table('reviews')
+                ->join('items', 'items.id', '=', 'reviews.item_id')
+                ->where('reviews.status', 1)
+                ->selectRaw('items.store_id, COALESCE(AVG(reviews.rating), 0) as avg_rating')
+                ->groupBy('items.store_id');
+
+            $stores = Store::withoutGlobalScopes()
+                ->select('stores.id', 'stores.name', 'stores.logo', 'stores.created_at')
+                ->when(! $countOnly, function ($query) {
+                    $query->with(['storage' => function ($storageQuery) {
+                        $storageQuery->where('key', 'logo')->select('id', 'data_type', 'data_id', 'key', 'value');
+                    }]);
+                })
+                ->addSelect(DB::raw('COALESCE(order_stats.total_orders, 0) as total_orders'))
+                ->addSelect(DB::raw('COALESCE(review_stats.avg_rating, 0) as avg_rating'))
+                ->leftJoin('store_configs', 'store_configs.store_id', '=', 'stores.id')
+                ->leftJoin('modules', 'modules.id', '=', 'stores.module_id')
+                ->joinSub($orderStats, 'order_stats', function ($join) {
+                    $join->on('order_stats.store_id', '=', 'stores.id');
+                })
+                ->joinSub($reviewStats, 'review_stats', function ($join) {
+                    $join->on('review_stats.store_id', '=', 'stores.id');
+                })
+                ->when($moduleId, function ($query) use ($moduleId) {
+                    $query->where('modules.id', $moduleId);
+                })
+                ->where(function ($query) {
+                    $query->whereNull('store_configs.id')
+                        ->orWhere('store_configs.verified_seller', '!=', 1);
+                })
+                ->where('stores.created_at', '<=', now()->subMonths($minimumAccountAgeMonths))
+                ->whereRaw('COALESCE(order_stats.total_orders, 0) >= ?', [$minimumOrders])
+                ->whereRaw('COALESCE(review_stats.avg_rating, 0) >= ?', [$minimumRating])
+                ->whereRaw('COALESCE((order_stats.delivered_orders / NULLIF(order_stats.delivered_orders + order_stats.canceled_orders, 0)) * 100, 0) >= ?', [$minimumSuccessRate]);
+
+            if ($countOnly) {
+                return $stores->count('stores.id');
+            }
+
+            return $stores->get()->map(function ($store) {
+                return [
+                    'id' => $store->id,
+                    'name' => $store->name,
+                    'logo_full_url' => self::get_full_url('store', $store->logo, $store->storage->pluck('value')->first() ?? 'public'),
+                    'total_orders' => (int) $store->total_orders,
+                    'avg_rating' => (float) $store->avg_rating,
+                ];
+            });
+        });
+    }
+
+    public static function mark_verified_badge_popup_seen(Store $store): int
+    {
+        $storeConfig = StoreConfig::firstOrNew(['store_id' => $store->id]);
+        $storeConfig->has_seen_verified_badge_popup = 1;
+        $storeConfig->save();
+
+        return (int) $storeConfig->has_seen_verified_badge_popup;
+    }
+
+    public static function posCartSubtotal(): float
+    {
+        $subtotal = 0.0;
+        foreach ((array) session()->get('cart', []) as $cartItem) {
+            if (!is_array($cartItem)) {
+                continue;
+            }
+            $unit     = (float) ($cartItem['price'] ?? 0);
+            $quantity = (int)   ($cartItem['quantity'] ?? 0);
+            $addon    = (float) ($cartItem['addon_price'] ?? 0);
+            $discount = (float) ($cartItem['discount'] ?? 0);
+            $subtotal += ($unit * $quantity) + $addon - ($discount * $quantity);
+        }
+        return (float) max($subtotal, 0);
+    }
+
+    public static function productVideoMaxUploadSizeMb(): int
+    {
+        return self::maxUploadSizeMb(PRODUCT_VIDEO_MAX_FILE_SIZE);
+    }
+
+    public static function reel_matches_product(?int $reelId, ?string $productType, ?int $productId): bool
+    {
+        if (!$reelId || !$productType || !$productId || !Schema::hasTable('reels') || !Schema::hasColumn('reels', 'productable_id')) {
+            return false;
+        }
+
+        return DB::table('reels')
+            ->where('id', $reelId)
+            ->where('productable_type', $productType)
+            ->where('productable_id', $productId)
+            ->exists();
+    }
+
+    public static function resolve_reel_id(?int $reelId, ?int $itemId): ?int
+    {
+        return self::resolve_reel_id_for_product($reelId, \App\Models\Item::class, $itemId);
+    }
+
+    public static function resolve_reel_id_for_product(?int $reelId, ?string $productType, ?int $productId): ?int
+    {
+        return self::reel_matches_product($reelId, $productType, $productId) ? $reelId : null;
+    }
+
+    public static function send_push_notif_for_maintenance_mode($data, $topic, $type)
+    {
+        $postData = [
+            'message' => [
+                'topic' => $topic,
+                'data' => [
+                    'title' => (string) ($data['title'] ?? ''),
+                    'body' => (string) ($data['description'] ?? ''),
+                    'type' => (string) $type,
+                    'image' => (string) ($data['image'] ?? ''),
+                    'body_loc_key' => (string) $type,
+                ],
+            ],
+        ];
+        return self::sendNotificationToHttp($postData);
+    }
+
+    public static function toggle_verified_seller(Store $store, ?int $status = null): int
+    {
+        $storeConfig = StoreConfig::firstOrNew(['store_id' => $store->id]);
+        $storeConfig->verified_seller = is_null($status) ? (int) !($storeConfig->verified_seller ?? 0) : (int) $status;
+        if ((int) $storeConfig->verified_seller === 1) {
+            $storeConfig->has_seen_verified_badge_popup = 0;
+        }
+        $storeConfig->save();
+
+        Helpers::deleteCacheData('verified_seller_eligible_providers_');
+        Helpers::deleteCacheData('verified_seller_eligible_stores_');
+
+        try {
+                $vendor = $store->vendor;
+                if (isset($vendor->firebase_token) &&  $vendor->firebase_token != '@') {
+                    if ($storeConfig->verified_seller == 1)
+                    {
+                        $data = [
+                            'title' => translate('Verified'),
+                            'description' => translate('Congratulations! Your seller account is now verified.'),
+                            'order_id' => '',
+                            'image' => '',
+                            'type' => 'verified_badge',
+                        ];
+                        Helpers::send_push_notif_to_device($vendor->firebase_token, $data);
+                        DB::table('user_notifications')->insert([
+                            'data' => json_encode($data),
+                            'vendor_id' => $vendor->id,
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                        ]);
+                    } else {
+                        $data = [
+                            'title' => translate('Removed'),
+                            'description' => translate('Your seller account is no longer verified.'),
+                            'order_id' => '',
+                            'image' => '',
+                            'type' => 'verified_badge',
+                        ];
+                        Helpers::send_push_notif_to_device($vendor->firebase_token, $data);
+                        DB::table('user_notifications')->insert([
+                            'data' => json_encode($data),
+                            'vendor_id' => $vendor->id,
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                        ]);
+                    }
+
+                }
+            } catch (\Throwable $th) {
+
+            }
+        return (int) $storeConfig->verified_seller;
+    }
+
+    public static function vendor_route_subscription_ok($routeName, $module)
+    {
+        $route = \Illuminate\Support\Facades\Route::getRoutes()->getByName($routeName);
+        $subscription_gated = false;
+        if ($route) {
+            foreach ($route->gatherMiddleware() as $mw) {
+                if (is_string($mw) && str_starts_with($mw, 'subscription')) {
+                    $subscription_gated = true;
+                    break;
+                }
+            }
+        }
+        if (!$subscription_gated) {
+            return true;
+        }
+        $store = self::get_store_data();
+        if (!$store || $store->store_business_model == 'commission') {
+            return true;
+        }
+        if ($store->store_business_model == 'subscription') {
+            $store_sub = $store->store_sub;
+            if ($store_sub == null) {
+                return false;
+            }
+            $package = [
+                'reviews' => $store_sub->review,
+                'pos' => $store_sub->pos,
+                'deliveryman' => $store_sub->self_delivery,
+                'deliveryman_list' => $store_sub->self_delivery,
+                'chat' => $store_sub->chat,
+            ];
+            if (array_key_exists($module, $package)) {
+                return $package[$module] == 1;
+            }
+            return true;
+        }
+        return false;
+    }
+
+    public static function visitor_log($model, $user_id, $visitor_log_id, $order_count = false)
+    {
+        switch ($model) {
+            case 'item':
+                $visitor_log_type = 'App\Models\Item';
+                break;
+
+            case 'store':
+                $visitor_log_type = 'App\Models\Store';
+                break;
+
+            default:
+                $visitor_log_type = 'App\Models\Item';
+                break;
+        }
+        VisitorLog::updateOrInsert(
+            ['visitor_log_type' => $visitor_log_type,
+                'user_id' => $user_id,
+                'visitor_log_id' => $visitor_log_id,
+            ],
+            [
+                'visit_count' => $order_count == false ? DB::raw('visit_count + 1') : DB::raw('visit_count'),
+                'order_count' => $order_count == true ? DB::raw('order_count + 1') : DB::raw('order_count'),
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]
+        );
+
+    }
+
+
+    public static function vehicle_data_formatting($data, $multi_data = false)
+    {
+        if ($multi_data == true) {
+            $vehicles = $data instanceof EloquentCollection ? $data : new EloquentCollection($data);
+            $vehicles->loadMissing('provider.storeConfig');
+
+            return $vehicles->map(function ($vehicle) {
+                $vehicle['verified_seller'] = self::get_verified_seller_status($vehicle->provider, $vehicle->provider?->storeConfig);
+                return $vehicle;
+            })->toArray();
+        }
+
+        if ($data) {
+            $data->loadMissing('provider.storeConfig');
+            $data['verified_seller'] = self::get_verified_seller_status($data->provider, $data->provider?->storeConfig);
+        }
+
+        return $data;
+    }
+
+
+    public static function get_verified_seller_eligible_providers(bool $countOnly = false, ?string $moduleId = null): mixed
+    {
+        $config = config('verified_seller.providers', []);
+        $minimumTrips = (int) ($config['minimum_total_trips'] ?? 10);
+        $minimumRating = (float) ($config['minimum_avg_rating'] ?? 2);
+        $minimumSuccessRate = (float) ($config['minimum_success_rate'] ?? 40);
+        $minimumAccountAgeMonths = (int) ($config['minimum_account_age_months'] ?? 3);
+        $cacheKey = 'verified_seller_eligible_providers_' . md5(json_encode([
+            $countOnly,
+            $moduleId ?? 'all',
+            $minimumTrips,
+            $minimumRating,
+            $minimumSuccessRate,
+            $minimumAccountAgeMonths,
+        ]));
+
+        return Cache::remember($cacheKey, 3600, function () use ($countOnly, $moduleId) {
+            $config = config('verified_seller.providers', []);
+            $minimumTrips = (int) ($config['minimum_total_trips'] ?? 10);
+            $minimumRating = (float) ($config['minimum_avg_rating'] ?? 2);
+            $minimumSuccessRate = (float) ($config['minimum_success_rate'] ?? 40);
+            $minimumAccountAgeMonths = (int) ($config['minimum_account_age_months'] ?? 3);
+
+            $tripStats = DB::table('trips')
+                ->selectRaw('provider_id, COUNT(*) as total_trips, SUM(CASE WHEN trip_status = "completed" THEN 1 ELSE 0 END) as completed_trips, SUM(CASE WHEN trip_status = "canceled" THEN 1 ELSE 0 END) as canceled_trips')
+                ->when($moduleId, function ($query) use ($moduleId) {
+                    $query->where('module_id', $moduleId);
+                })
+                ->groupBy('provider_id');
+
+            $reviewStats = DB::table('vehicle_reviews')
+                ->where('status', 1)
+                ->selectRaw('provider_id, COALESCE(AVG(rating), 0) as avg_rating')
+                ->when($moduleId, function ($query) use ($moduleId) {
+                    $query->where('module_id', $moduleId);
+                })
+                ->groupBy('provider_id');
+
+            $stores = Store::withoutGlobalScopes()
+                ->where('stores.status', 1)
+                ->select('stores.id', 'stores.name', 'stores.logo', 'stores.created_at')
+                ->when(! $countOnly, function ($query) {
+                    $query->with(['storage' => function ($storageQuery) {
+                        $storageQuery->where('key', 'logo')->select('id', 'data_type', 'data_id', 'key', 'value');
+                    }]);
+                })
+                ->addSelect(DB::raw('COALESCE(trip_stats.total_trips, 0) as total_trips'))
+                ->addSelect(DB::raw('COALESCE(review_stats.avg_rating, 0) as avg_rating'))
+                ->leftJoin('store_configs', 'store_configs.store_id', '=', 'stores.id')
+                ->leftJoin('modules', 'modules.id', '=', 'stores.module_id')
+                ->joinSub($tripStats, 'trip_stats', function ($join) {
+                    $join->on('trip_stats.provider_id', '=', 'stores.id');
+                })
+                ->joinSub($reviewStats, 'review_stats', function ($join) {
+                    $join->on('review_stats.provider_id', '=', 'stores.id');
+                })
+                ->when($moduleId, function ($query) use ($moduleId) {
+                    $query->where('modules.id', $moduleId);
+                })
+                ->where(function ($query) {
+                    $query->whereNull('store_configs.id')
+                        ->orWhere('store_configs.verified_seller', '!=', 1);
+                })
+                ->where('stores.created_at', '<=', now()->subMonths($minimumAccountAgeMonths))
+                ->whereRaw('COALESCE(trip_stats.total_trips, 0) >= ?', [$minimumTrips])
+                ->whereRaw('COALESCE(review_stats.avg_rating, 0) >= ?', [$minimumRating])
+                ->whereRaw('COALESCE((trip_stats.completed_trips / NULLIF(trip_stats.completed_trips + trip_stats.canceled_trips, 0)) * 100, 0) >= ?', [$minimumSuccessRate]);
+
+            if ($countOnly) {
+                return $stores->count('stores.id');
+            }
+
+            return $stores->get()->map(function ($store) {
+                return [
+                    'id' => $store->id,
+                    'name' => $store->name,
+                    'logo_full_url' => self::get_full_url(
+                        'store',
+                        $store->logo,
+                        $store->storage->pluck('value')->first() ?? 'public'
+                    ),
+                    'total_trips' => (int) $store->total_trips,
+                    'avg_rating' => (float) $store->avg_rating,
+                ];
+            });
+        });
+    }
+
+
+    public static function resolve_reel_vehicle_id(?int $reelId, ?int $vehicleId): ?int
+    {
+        return self::resolve_reel_id_for_product(
+            $reelId,
+            'Modules\\Rental\\Entities\\Vehicle',
+            $vehicleId
+        );
+    }
 }
 
 

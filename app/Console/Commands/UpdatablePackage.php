@@ -38,6 +38,7 @@ class UpdatablePackage extends Command
      */
     public function handle()
     {
+        Artisan::call('debugbar:clear');
         $routes = base_path('app/Providers/RouteServiceProvider.php');
         $new_routes = base_path('installation/activate_update_routes.txt');
         copy($new_routes, $routes);

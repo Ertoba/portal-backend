@@ -333,7 +333,7 @@
         $(document).ready(function() {
             $('.landing-page').on('click', function(event) {
                 event.preventDefault();
-                @if (env('APP_MODE') == 'demo')
+                @if (getEnvMode() == 'demo')
                 toastr.warning('Sorry! You can not change landing page in demo!');
                 @else
                 Swal.fire({

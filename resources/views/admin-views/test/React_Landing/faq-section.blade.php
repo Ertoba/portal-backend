@@ -204,12 +204,12 @@
                                     <td>1</td>
                                     <td>
                                         <div class="text-wrap line-limit-2  max-w--220px min-w-160 text-title">
-                                            Lorem ipsum dolor sit amet, Lorem ipsum dolor sit amet, Lorem ipsum dolor sit amet, Lorem ipsum dolor sit amet, Lorem ipsum dolor sit amet, 
+                                            How do I place an order on the platform?
                                         </div>
                                     </td>
                                     <td>
                                         <div class="text-wrap line-limit-3  max-w-400px min-w-176px text-title">
-                                            Lorem ipsum dolor sit amet, Lorem ipsum dolor sit amet, Lorem ipsum dolor sit amet, Lorem ipsum dolor sit amet, Lorem ipsum dolor sit amet, 
+                                            Browse stores, add items to your cart, choose a delivery address, and confirm payment to place your order.
                                         </div>
                                     </td>
                                     <td>
@@ -240,12 +240,12 @@
                                     <td>2</td>
                                     <td>
                                         <div class="text-wrap line-limit-2  max-w--220px min-w-160 text-title">
-                                            Lorem ipsum dolor sit amet, Lorem ipsum dolor sit amet, Lorem ipsum dolor sit amet, Lorem ipsum dolor sit amet, Lorem ipsum dolor sit amet, 
+                                            What payment methods are supported?
                                         </div>
                                     </td>
                                     <td>
                                         <div class="text-wrap line-limit-3  max-w-400px min-w-176px text-title">
-                                            Lorem ipsum dolor sit amet, Lorem ipsum dolor sit amet, Lorem ipsum dolor sit amet, Lorem ipsum dolor sit amet, Lorem ipsum dolor sit amet, 
+                                            We support cash on delivery and major online payment gateways depending on your region.
                                         </div>
                                     </td>
                                     <td>
@@ -276,12 +276,12 @@
                                     <td>3</td>
                                     <td>
                                         <div class="text-wrap line-limit-2  max-w--220px min-w-160 text-title">
-                                            Lorem ipsum dolor sit amet, Lorem ipsum dolor sit amet, Lorem ipsum dolor sit amet, Lorem ipsum dolor sit amet, Lorem ipsum dolor sit amet, 
+                                            How can I track my delivery in real time?
                                         </div>
                                     </td>
                                     <td>
                                         <div class="text-wrap line-limit-3  max-w-400px min-w-176px text-title">
-                                            Lorem ipsum dolor sit amet, Lorem ipsum dolor sit amet, Lorem ipsum dolor sit amet, Lorem ipsum dolor sit amet, Lorem ipsum dolor sit amet, 
+                                            Open the order details from your account and watch the live delivery status update on the map.
                                         </div>
                                     </td>
                                     <td>
@@ -312,12 +312,12 @@
                                     <td>4</td>
                                     <td>
                                         <div class="text-wrap line-limit-2  max-w--220px min-w-160 text-title">
-                                            Lorem ipsum dolor sit amet, Lorem ipsum dolor sit amet, Lorem ipsum dolor sit amet, Lorem ipsum dolor sit amet, Lorem ipsum dolor sit amet, 
+                                            What is the policy for cancellations and refunds?
                                         </div>
                                     </td>
                                     <td>
                                         <div class="text-wrap line-limit-3  max-w-400px min-w-176px text-title">
-                                            Lorem ipsum dolor sit amet, Lorem ipsum dolor sit amet, Lorem ipsum dolor sit amet, Lorem ipsum dolor sit amet, Lorem ipsum dolor sit amet, 
+                                            Orders can be cancelled before preparation begins. Refunds are processed to the original payment method.
                                         </div>
                                     </td>
                                     <td>

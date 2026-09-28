@@ -38,7 +38,7 @@
                     <div class="row justify-content-end align-items-end g-3">
                         <div class="col-lg-4">
                             @php
-                                $transaction_status=request()->get('transaction_type');
+                                $transaction_status=request()->input('transaction_type');
                             @endphp
                             <label class="text-dark text-capitalize"
                                    for="add-fund-type">{{translate('messages.add_fund_type')}}</label>
@@ -61,7 +61,7 @@
                                     data-placeholder="{{translate('messages.select_customer')}}"
                                     class="js-data-example-ajax form-control set-filter"
                                     title="{{translate('messages.select_customer')}}">
-                                @if (request()->get('customer_id') && $customer_info = \App\Models\User::find(request()->get('customer_id')))
+                                @if (request()->input('customer_id') && $customer_info = \App\Models\User::find(request()->input('customer_id')))
                                     <option value="{{$customer_info->id}}"
                                             selected>{{$customer_info->f_name.' '.$customer_info->l_name}}
                                         ({{$customer_info->phone}})

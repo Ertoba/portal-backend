@@ -62,7 +62,7 @@
         @endif
         <div class="tab-content">
             <div class="tab-pane fade show active">
-                <form action="{{ route('admin.business-settings.react-landing-page-settings', 'earning-title') }}"
+                <form action="{{ route('admin.business-settings.react-landing-page-settings-update', 'earning-title') }}"
                       method="POST" enctype="multipart/form-data">
                     @csrf
                     <h5 class="card-title mt-3 mb-3">
@@ -182,13 +182,13 @@
                     </div>
                 </form>
 
-                <form action="{{ route('admin.business-settings.react-landing-page-settings', 'earning-seller-link') }}"
+                <form action="{{ route('admin.business-settings.react-landing-page-settings-update', 'earning-seller-link') }}"
                       method="post" id="join_seller_react_status_form">
                     @csrf
                     <input type="hidden" name="join_seller_react_status" value="{{ $join_seller_react_status ?? 0 }}">
                 </form>
 
-                <form action="{{ route('admin.business-settings.react-landing-page-settings', 'earning-seller-link') }}"
+                <form action="{{ route('admin.business-settings.react-landing-page-settings-update', 'earning-seller-link') }}"
                       method="POST" enctype="multipart/form-data">
                     @csrf
 
@@ -404,14 +404,14 @@
                 </form>
 
 
-                <form action="{{ route('admin.business-settings.react-landing-page-settings', 'earning-dm-link') }}"
+                <form action="{{ route('admin.business-settings.react-landing-page-settings-update', 'earning-dm-link') }}"
                       method="post" id="join_DM_react_status_form">
                     @csrf
                     <input type="hidden" name="join_DM_react_status" value="{{ $join_DM_react_status ?? 0 }}">
                 </form>
 
 
-                <form action="{{ route('admin.business-settings.react-landing-page-settings', 'earning-dm-link') }}"
+                <form action="{{ route('admin.business-settings.react-landing-page-settings-update', 'earning-dm-link') }}"
                       method="POST" enctype="multipart/form-data">
                     @csrf
 

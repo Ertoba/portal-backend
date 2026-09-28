@@ -124,18 +124,33 @@ class RazorPayController extends Controller
     public function createOrder(Request $request): JsonResponse|Redirector|RedirectResponse|Application
     {
         $request->validate([
+            'payment_request_id' => 'required|uuid',
             'payment_amount' => 'required|numeric',
             'currency_code' => 'required|string'
         ]);
 
         try {
+            $paymentRequest = $this->payment::where(['id' => $request['payment_request_id']])
+                ->where(['is_paid' => 0])
+                ->first();
+
+            if (!$paymentRequest) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Payment request not found or already paid.'
+                ], 404);
+            }
+
             $api = new Api(config('razor_config.api_key'), config('razor_config.api_secret'));
 
             $razorpayOrder = $api->order->create([
-                'receipt' => 'order_' . uniqid(),
+                'receipt' => 'payment_' . str_replace('-', '', $request['payment_request_id']),
                 'amount' => (int)(round($request['payment_amount'], 2) * 100),
                 'currency' => $request['currency_code'],
-                'payment_capture' => 1
+                'payment_capture' => 1,
+                'notes' => [
+                    'payment_request_id' => $request['payment_request_id']
+                ]
             ]);
 
             return response()->json([

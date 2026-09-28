@@ -7,6 +7,7 @@ use App\Models\Campaign;
 use App\Models\ItemCampaign;
 use Illuminate\Http\Request;
 use App\CentralLogics\Helpers;
+use App\CentralLogics\PersonalizationService;
 use Illuminate\Support\Facades\Validator;
 
 class CampaignController extends Controller
@@ -77,8 +78,8 @@ class CampaignController extends Controller
     public function get_item_campaigns(Request $request){
         Helpers::setZoneIds($request);
         $zone_id= $request->header('zoneId');
-        $item_campaign_default_status = \App\Models\BusinessSetting::where('key', 'item_campaign_default_status')->first()?->value ??  1;
-        $item_campaign_sort_by_general = \App\Models\PriorityList::where('name', 'item_campaign_sort_by_general')->where('type','general')->first()?->value ?? '';
+        $item_campaign_default_status = Helpers::get_business_settings('item_campaign_default_status') ??  1;
+        $item_campaign_sort_by_general = Helpers::getPriorityList(name: 'item_campaign_sort_by_general', type: 'general');
         try {
             $query = ItemCampaign::active()
             ->whereHas('module.zones', function($query)use($zone_id){
@@ -94,8 +95,8 @@ class CampaignController extends Controller
             ->running();
 
             if($item_campaign_default_status == 1){
+                $query = PersonalizationService::applyCampaignPersonalization($query, auth('api')->id());
                 $query = $query->latest();
-
             } else{
                 if ($item_campaign_sort_by_general == 'order_count') {
                     $query = $query->withCount([

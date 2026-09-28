@@ -171,7 +171,7 @@
                                 <div class="col-md-3 col-sm-6" id="stock_input">
                                     <div class="form-group mb-0 error-wrapper">
                                         <label class="input-label" for="total_stock">{{translate('messages.total_stock')}}</label>
-                                        <input type="number" class="form-control" name="current_stock" value="{{$campaign->stock}}" id="quantity">
+                                        <input type="number" class="form-control" name="current_stock" value="{{ max((int) $campaign->stock, 0) }}" id="quantity">
                                     </div>
                                 </div>
                                 <div class="col-sm-6 col-lg-3" id="maximum_cart_quantity">

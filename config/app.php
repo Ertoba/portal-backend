@@ -58,6 +58,49 @@ return [
 
     'asset_url' => env('ASSET_URL', null),
 
+    'app_mode' => env('APP_MODE', 'live'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Host / Storefront domain split
+    |--------------------------------------------------------------------------
+    |
+    | `host_domain` is the single hostname where the admin/vendor panel and
+    | all `routes/*.php` host endpoints answer — e.g. `admin.6ammart.com`
+    | or just `6ammart.com` if the host runs on the apex.
+    |
+    | Every host route group in `App\Providers\RouteServiceProvider` is
+    | wrapped in `Route::domain(config('app.host_domain'))->group(...)`,
+    | so a request on any other host (vendor sub-domain, custom domain)
+    | falls through to the Builder module's storefront routes — which
+    | resolve the active store from `tenant_domain_configs` and 404 if
+    | nothing matches.
+    |
+    | `host_base_domain` is the parent zone where vendor sub-domain entries
+    | live (typically the bare apex, e.g. `6ammart.com`). Used only to
+    | compute reserved sub-domain labels in the vendor's domain-setup UI —
+    | when the host runs on a sub-domain of the base, that label is
+    | reserved against vendor input.
+    |
+    | When `APP_HOST_DOMAIN` is unset, host routes match any host (legacy
+    | behavior). Leave both unset on a single-tenant install.
+    |
+    */
+
+    'host_domain'      => env('APP_HOST_DOMAIN'),
+
+    'host_base_domain' => env('APP_HOST_BASE_DOMAIN'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Public IP — surfaced to vendors in the Domain Settings instructions
+    | so they know which A-record IP to point their custom domain at.
+    | Leave unset on a dev / single-tenant install; the UI will fall back
+    | to a "contact your administrator" hint.
+    */
+
+    'public_ip' => env('APP_PUBLIC_IP'),
+
     /*
     |--------------------------------------------------------------------------
     | Application Timezone
@@ -69,7 +112,7 @@ return [
     |
     */
 
-    'timezone' => env('APP_TIMEZONE', 'Asia/Tbilisi'),
+    'timezone' => 'UTC',
 
     /*
     |--------------------------------------------------------------------------

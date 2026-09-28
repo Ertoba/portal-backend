@@ -104,7 +104,7 @@
                     </button>
 
                 </div>
-                <form action="{{ route('vendor.wallet.make_payment') }}" method="POST" class="needs-validation">
+                <form action="{{ route('vendor.wallet.wallet_make_payment') }}" method="POST" class="needs-validation">
                     <div class="modal-body">
                         @csrf
                         <input type="hidden" value="{{ \App\CentralLogics\Helpers::get_store_id() }}" name="store_id"/>

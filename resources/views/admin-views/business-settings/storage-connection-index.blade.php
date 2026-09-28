@@ -102,7 +102,7 @@
             <div class="card-body">
                 <div class="mt-2 px-3">
                     <form
-                        action="{{env('APP_MODE')!='demo'?route('admin.business-settings.third-party.storage_connection_update',['storage_connection']):'javascript:'}}"
+                        action="{{getEnvMode()!='demo'?route('admin.business-settings.third-party.storage_connection_update',['storage_connection']):'javascript:'}}"
                         method="post">
                         @csrf
                                 <div class="border pt-5 radius-10 row mb-3">
@@ -112,7 +112,7 @@
                                     <div class="col-lg-8 col-sm-6">
                                         <div class="form-group">
                                             <input required id="key" type="text" class="form-control mb-2" name="key"
-                                                   value="{{env('APP_MODE')!='demo'?$config['key']??"":''}}">
+                                                   value="{{getEnvMode()!='demo'?$config['key']??"":''}}">
 
                                         </div>
                                     </div>
@@ -124,7 +124,7 @@
                                     <div class="col-lg-8 col-sm-6">
                                         <div class="form-group">
                                             <input required id="secret" type="text" class="form-control mb-2" name="secret"
-                                                   value="{{env('APP_MODE')!='demo'?$config['secret']??"":''}}">
+                                                   value="{{getEnvMode()!='demo'?$config['secret']??"":''}}">
 
                                         </div>
                                     </div>
@@ -136,7 +136,7 @@
                                     <div class="col-lg-8 col-sm-6">
                                         <div class="form-group">
                                             <input required id="region" type="text" class="form-control mb-2" name="region"
-                                                   value="{{env('APP_MODE')!='demo'?$config['region']??"":''}}">
+                                                   value="{{getEnvMode()!='demo'?$config['region']??"":''}}">
 
                                         </div>
                                     </div>
@@ -148,7 +148,7 @@
                                     <div class="col-lg-8 col-sm-6">
                                         <div class="form-group">
                                             <input required id="bucket" type="text" class="form-control mb-2" name="bucket"
-                                                   value="{{env('APP_MODE')!='demo'?$config['bucket']??"":''}}">
+                                                   value="{{getEnvMode()!='demo'?$config['bucket']??"":''}}">
 
                                         </div>
                                     </div>
@@ -160,7 +160,7 @@
                                     <div class="col-lg-8 col-sm-6">
                                         <div class="form-group">
                                             <input required id="url" type="text" class="form-control mb-2" name="url"
-                                                   value="{{env('APP_MODE')!='demo'?$config['url']??"":''}}">
+                                                   value="{{getEnvMode()!='demo'?$config['url']??"":''}}">
 
                                         </div>
                                     </div>
@@ -172,14 +172,14 @@
                                     <div class="col-lg-8 col-sm-6">
                                         <div class="form-group">
                                             <input required id="end_point" type="text" class="form-control mb-2" name="end_point"
-                                                   value="{{env('APP_MODE')!='demo'?$config['end_point']??"":''}}">
+                                                   value="{{getEnvMode()!='demo'?$config['end_point']??"":''}}">
 
                                         </div>
                                     </div>
                                 </div>
                         <div class="btn--container justify-content-end">
                             <button type="reset" class="btn btn--reset">{{translate('messages.reset')}}</button>
-                            <button type="{{env('APP_MODE')!='demo'?'submit':'button'}}" class="btn btn--primary call-demo">{{translate('messages.save')}}</button>
+                            <button type="{{getEnvMode()!='demo'?'submit':'button'}}" class="btn btn--primary call-demo">{{translate('messages.save')}}</button>
                         </div>
                     </form>
                 </div>

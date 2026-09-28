@@ -37,7 +37,7 @@
     </div>
 
 
-     <form id="zone-setup-form" action="{{ route('admin.business-settings.admin-landing-page-settings', 'meta-data') }}" method="POST" enctype="multipart/form-data">
+     <form id="zone-setup-form" action="{{ route('admin.business-settings.admin-landing-page-settings-update', 'meta-data') }}" method="POST" enctype="multipart/form-data">
         @csrf
         @include('admin-views.business-settings.landing-page-settings.partial._meta_data', ['submit' => true])
 

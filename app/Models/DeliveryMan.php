@@ -243,7 +243,7 @@ class DeliveryMan extends Authenticatable
 
     public function wallet()
     {
-        return $this->hasOne(DeliveryManWallet::class);
+        return $this->hasOne(DeliveryManWallet::class, 'delivery_man_id');
     }
 
     public function orders()

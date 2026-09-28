@@ -33,11 +33,6 @@ class SMS_module
             return self::alphanet_sms($receiver, $otp);
         }
 
-        $config = self::get_settings('ubill_ge');
-        if (isset($config) && $config['status'] == 1) {
-            return self::ubill_ge($receiver, $otp);
-        }
-
         return 'not_found';
     }
 
@@ -249,55 +244,6 @@ class SMS_module
 
 
 
-
-
-    public static function ubill_ge($receiver, $otp): string
-    {
-        $config = self::get_settings('ubill_ge');
-        $response = 'error';
-        if (isset($config) && $config['status'] == 1) {
-            $receiver = self::normalize_ubill_numbers($receiver);
-            $message = str_replace('#OTP#', $otp, $config['otp_template']);
-            $curl = curl_init();
-            curl_setopt_array($curl, [
-                CURLOPT_URL            => 'https://api.ubill.dev/v1/sms/send?' . http_build_query([
-                    'key'     => $config['api_key'],
-                    'brandID' => $config['brand_id'],
-                    'numbers' => $receiver,
-                    'text'    => $message,
-                    'otp'     => 'true',
-                ]),
-                CURLOPT_RETURNTRANSFER => true,
-                CURLOPT_TIMEOUT        => 30,
-                CURLOPT_CUSTOMREQUEST  => 'GET',
-            ]);
-            $result = curl_exec($curl);
-            $httpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
-            $err = curl_error($curl);
-            curl_close($curl);
-            if (!$err && $httpCode === 200 && strpos($result, 'no access') === false && strpos($result, '"status":"error"') === false) {
-                $response = 'success';
-            }
-        }
-        return $response;
-    }
-
-    private static function normalize_ubill_numbers($receiver): string
-    {
-        $numbers = array_filter(array_map('trim', explode(',', (string) $receiver)));
-        $numbers = array_map(function ($number) {
-            $number = preg_replace('/\D+/', '', $number);
-            if (substr($number, 0, 2) === '00') {
-                $number = substr($number, 2);
-            }
-            if (strlen($number) === 9 && substr($number, 0, 1) === '5') {
-                $number = '995' . $number;
-            }
-            return $number;
-        }, $numbers);
-
-        return implode(',', array_filter($numbers));
-    }
 
     public static function get_settings($name)
     {

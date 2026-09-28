@@ -11,9 +11,11 @@ $site_direction = \App\CentralLogics\Helpers::system_default_direction();
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{translate('Delivery Man Earning Report Invoice')}}</title>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,400;0,500;0,700;1,400&display=swap');
+
         body {
             margin: 0;
-            font-family: notosansgeorgian, sans-serif;
+            font-family: 'Roboto', sans-serif;
             font-size: 13px;
             line-height: 21px;
             color: #303030;
@@ -340,7 +342,7 @@ $site_direction = \App\CentralLogics\Helpers::system_default_direction();
                                 </td>
                                 <td>:</td>
                                 <td>
-                                    <span class="datas">{{ \App\CentralLogics\Helpers::date_format(now()) }}</span>
+                                    <span class="datas">{{ \Carbon\Carbon::parse(now())->format('d-M-Y') }}</span>
                                 </td>
                             </tr>
                             <tr>
@@ -351,7 +353,7 @@ $site_direction = \App\CentralLogics\Helpers::system_default_direction();
                                 <td>
                                     <span class="datas">
                                         @if ($startDate && $endDate)
-                                            {{ $startDate }} {{ translate('Statement To') }} {{ $endDate }}
+                                            {{ $startDate }} {{ translate('to') }} {{ $endDate }}
                                         @elseif ($startDate)
                                             {{ $startDate }}
                                         @elseif ($endDate)
@@ -418,7 +420,7 @@ $site_direction = \App\CentralLogics\Helpers::system_default_direction();
                     @foreach($earnings as $earning)
                         <tr>
                             <td class="text-left">
-                                <span>{{ \App\CentralLogics\Helpers::date_format($earning->delivered) }}</span>
+                                <span>{{ \Carbon\Carbon::parse($earning->delivered)->format('d-M-Y') }}</span>
                             </td>
                             <td class="text-left">
                                 <span>{{ translate($earning?->order?->payment_method) }}</span>

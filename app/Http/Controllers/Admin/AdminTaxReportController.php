@@ -822,13 +822,15 @@ class AdminTaxReportController extends Controller
         $orders = Order::where('order_type', 'parcel')
             ->whereIn('order_status', ['delivered', 'refund_requested', 'refund_request_canceled'])
             ->whereBetween('created_at', [$startDate, $endDate])
-            ->paginate(config('default_pagination'));
+            ->paginate(config('default_pagination'))
+            ->withQueryString();
         $totalOrders = $orders->count();
         $totalOrderAmount = $orders->sum('order_amount');
         $totalTax = $orders->sum('total_tax_amount');
 
-        $startDate = Carbon::parse($startDate)->toIso8601String();
-        $endDate = Carbon::parse($endDate)->toIso8601String();
+        $dateRange = $startDate->format('m/d/Y') . ' - ' . $endDate->format('m/d/Y');
+        $startDate = $startDate->toIso8601String();
+        $endDate = $endDate->toIso8601String();
 
         return view('admin-views.report.tax-report.parcel-tax-report', compact('totalOrders', 'totalOrderAmount', 'totalTax', 'dateRange', 'startDate', 'endDate','orders'));
     }

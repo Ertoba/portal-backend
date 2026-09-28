@@ -2,10 +2,14 @@
 
 namespace App\Providers;
 
+use App\CentralLogics\Helpers;
 use App\Models\BusinessSetting;
+use App\Models\DataSetting;
 use App\Models\Setting;
+use Carbon\Carbon;
 use Carbon\CarbonImmutable;
 use Carbon\Translator;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\ServiceProvider;
 
@@ -28,7 +32,7 @@ class ConfigServiceProvider extends ServiceProvider
      */
     public function boot()
     {
-        $mode = env('APP_MODE');
+        $mode = getEnvMode();
         try {
             Translator::get(config('app.locale'))->setTranslations([
                 'first_day_of_week' => CarbonImmutable::MONDAY,
@@ -232,24 +236,15 @@ class ConfigServiceProvider extends ServiceProvider
             if ($data?->value) {
                 $credentials = json_decode($data['value'], true);
             }
-            $storageConfig = BusinessSetting::where(['key' => 'local_storage'])->first()?->value;
-            $useS3 = is_array($credentials)
-                && isset($storageConfig)
-                && (string) $storageConfig === '0'
-                && ! empty($credentials['key'])
-                && ! empty($credentials['secret'])
-                && ! empty($credentials['region'])
-                && ! empty($credentials['bucket']);
-            if ($useS3) {
-                Config::set('filesystems.default', 's3');
+            $config = (bool) BusinessSetting::where(['key' => 'local_storage'])->first()?->value;
+            if ($credentials) {
+                Config::set('filesystems.default', $config ? ($config == 0 ? 's3' : 'local') : 'local');
                 Config::set('filesystems.disks.s3.key', $credentials['key']);
                 Config::set('filesystems.disks.s3.secret', $credentials['secret']);
                 Config::set('filesystems.disks.s3.region', $credentials['region']);
                 Config::set('filesystems.disks.s3.bucket', $credentials['bucket']);
-                Config::set('filesystems.disks.s3.url', $credentials['url'] ?? null);
-                Config::set('filesystems.disks.s3.endpoint', $credentials['end_point'] ?? null);
-            } else {
-                Config::set('filesystems.default', 'local');
+                Config::set('filesystems.disks.s3.url', $credentials['url']);
+                Config::set('filesystems.disks.s3.endpoint', $credentials['end_point']);
             }
 
             $openAi = BusinessSetting::where(['key' => 'openai_config'])->first();
@@ -257,8 +252,60 @@ class ConfigServiceProvider extends ServiceProvider
             if ($openAi) {
                 Config::set('openai.api_key', $openAi['OPENAI_API_KEY']);
                 Config::set('openai.organization', $openAi['OPENAI_ORGANIZATION']);
+                // Feed laravel/ai package with the same key at runtime
+                Config::set('ai.providers.openai.key', $openAi['OPENAI_API_KEY']);
             }
-            
+
+            if(Cache::has('maintenance')){
+                $maintenance = Cache::get('maintenance');
+                    if (isset($maintenance['maintenance_duration']) && $maintenance['maintenance_duration'] != 'until_change' && isset($maintenance['start_date']) && isset($maintenance['end_date'])) {
+                        $start = Carbon::parse($maintenance['start_date']);
+                        $end = Carbon::parse($maintenance['end_date']);
+                        $today = Carbon::now();
+                            if ($today->gt($end)) {
+                                Cache::forget('maintenance');
+                                $maintenance_mode = BusinessSetting::firstOrNew(['key' => 'maintenance_mode']);
+                                $maintenance_mode->value= 0;
+                                $maintenance_mode->save();
+
+
+                                $maintenance_mode_data=  DataSetting::where('type','maintenance_mode')->whereIn('key' ,['maintenance_system_setup'])->pluck('value','key')
+                                ->map(function ($value) {
+                                    return json_decode($value, true);
+                                })
+                                ->toArray();
+
+
+                                $systemTopicMap = [
+                                    'user_mobile_app' => 'maintenance_mode_user_app',
+                                    'deliveryman_app' => 'maintenance_mode_deliveryman_app',
+                                    'vendor_app' => 'maintenance_mode_vendor_app',
+                                    'rider_app' => 'maintenance_mode_rider_app',
+                                ];
+                                $notification=[
+                                    'title' => translate('We_are_back'),
+                                    'description' => translate('Maintenance mode is removed'),
+                                    'image' => '',
+                                    'order_id' => '',
+                                ];
+
+                                foreach ($systemTopicMap as $system => $topic) {
+                                    if (in_array($system, data_get($maintenance_mode_data,'maintenance_system_setup',[]))) {
+                                        Helpers::send_push_notif_for_maintenance_mode($notification, $topic, 'maintenance');
+                                    }
+                                }
+
+                                DataSetting::where('type', 'maintenance_mode')
+                                    ->whereIn('key', ['maintenance_system_setup', 'maintenance_duration_setup', 'maintenance_message_setup'])
+                                    ->delete();
+
+                                Cache::forget('data_settings_maintenance_mode');
+
+                                }
+                        }
+            }
+
+
         } catch (\Exception $exception) {
             info([$exception->getFile(), $exception->getLine(), $exception->getMessage()]);
         }

@@ -81,10 +81,81 @@
     $tax_included = session()->get('tax_included');
 //    $tax_included = ($tax_included && $tax_amount > 0) ? 1 : 0;
 
-    $delivery_fee = session()->get('address.delivery_fee', 0);
-    $total += $delivery_fee;
+    $base_delivery_fee = (float) session()->get('address.delivery_fee', 0);
+    $pos_order_type    = (string) (session('order_type') ?? 'delivery');
+
+    $pos_eligible_amount = max(0, $subtotal + $addon_price - $discount_on_product - ($discount_amount ?? 0));
+    $pos_free_delivery   = \App\CentralLogics\DeliveryFeeLogic::effectiveFee(
+        $base_delivery_fee,
+        $store ?? null,
+        $pos_eligible_amount,
+        \App\CentralLogics\DeliveryFeeLogic::resolveCouponCodeFromSession(),
+    );
+    $delivery_fee              = (float) $pos_free_delivery['fee'];
+    $pos_free_delivery_by      = $pos_free_delivery['free_by'];
+    $pos_is_free_delivery      = (bool) $pos_free_delivery['is_free'];
+    $delivery_fee_for_selector = $delivery_fee;
+
+    $pos_module_zone_pivot = ($store && $store->zone_id)
+        ? \App\Models\ModuleZone::query()
+            ->where('module_id', $store->module_id)
+            ->where('zone_id', $store->zone_id)
+            ->first()
+        : null;
+    $pos_saver_enabled = (bool) ($pos_module_zone_pivot->additional_delivery_option_status ?? false);
+    $pos_min_charge    = (float) ($pos_module_zone_pivot->minimum_delivery_charge ?? 0);
+
+    $is_charge_eligible = $pos_saver_enabled
+        && $pos_order_type === 'delivery'
+        && $delivery_fee > 0
+        && ($pos_min_charge <= 0 || $delivery_fee >= $pos_min_charge);
+
+    $deliveryType       = session()->get('delivery_type', '');
+    $deliveryTypeCharge = $is_charge_eligible ? (float) session()->get('delivery_type_charge', 0) : 0;
+    $isExpressDelivery  = $is_charge_eligible && $deliveryType === 'express'        && $deliveryTypeCharge > 0;
+    $isSlightlyDelay    = $is_charge_eligible && $deliveryType === 'slightly_delay' && $deliveryTypeCharge > 0;
+
+    $pos_pro_discount             = (float) session()->get('pos_pro_discount', 0);
+    $pos_pro_benefit_type         = session()->get('pos_pro_benefit_type');
+    $pos_pro_delivery_offer_type  = session()->get('pos_pro_delivery_offer_type');
+    $pos_pro_delivery_percentage  = (float) session()->get('pos_pro_delivery_percentage', 0);
+
+    $pos_pro_delivery_savings = 0.0;
+    if ($pos_pro_benefit_type === 'delivery_fee' && !$pos_is_free_delivery && $delivery_fee > 0) {
+        if ($pos_pro_delivery_offer_type === 'full_free') {
+            $pos_pro_delivery_savings = 0;
+        } elseif ($pos_pro_delivery_offer_type === 'partial_free' && $pos_pro_delivery_percentage > 0 && $pos_pro_delivery_percentage < 100) {
+            $pre_pro = $delivery_fee / (1 - ($pos_pro_delivery_percentage / 100));
+            $pos_pro_delivery_savings = max(0, $pre_pro - $delivery_fee);
+        }
+    }
+
+    $adjustedDeliveryFee = $delivery_fee;
+    if ($isExpressDelivery) {
+        $adjustedDeliveryFee = $delivery_fee + $deliveryTypeCharge;
+    } elseif ($isSlightlyDelay) {
+        $adjustedDeliveryFee = max(0, $delivery_fee - $deliveryTypeCharge);
+    }
+
+    $total -= $pos_pro_discount;
+    $total += $adjustedDeliveryFee;
+
+    $deliveryTypeLabels = [
+        'standard'       => translate('messages.standard'),
+        'express'        => translate('messages.express'),
+        'slightly_delay' => translate('messages.slightly_delay'),
+    ];
+    $deliveryTypeSuffix = ($isExpressDelivery || $isSlightlyDelay)
+        ? ' (' . ($deliveryTypeLabels[$deliveryType] ?? '') . ')'
+        : ($pos_is_free_delivery && $pos_order_type === 'delivery' ? ' (' . translate('messages.Free Delivery') . ')' : '');
 ?>
 
+@php
+    $cart_has_address = session()->has('address') && is_array(session('address')) && isset(session('address')['delivery_fee']);
+@endphp
+<input type="hidden" id="cart_delivery_fee" data-value="{{ $delivery_fee_for_selector }}" value="{{ $delivery_fee_for_selector }}">
+<input type="hidden" id="cart_order_type" data-value="{{ $pos_order_type }}" value="{{ $pos_order_type }}">
+<input type="hidden" id="cart_has_address" data-value="{{ $cart_has_address ? 1 : 0 }}" value="{{ $cart_has_address ? 1 : 0 }}">
 <div class="box p-3">
     <dl class="row text-dark">
         @if (Config::get('module.current_module_type') == 'food')
@@ -100,23 +171,33 @@
             @endif
             :</dd>
         <dd class="col-6 text-right">{{\App\CentralLogics\Helpers::format_currency($subtotal+$addon_price)}}</dd>
-
-
-        {{-- Coupon Discount --}}
-        {{-- @if(true)
-            <dd  class="col-6">{{translate('coupon_discount')}} :</dd>
-            <dd class="col-6 text-right">
-            <span class="delivery--edit-icon text-primary cursor-pointer" data-toggle="modal" data-target="#couponModal">
-                <i class="tio-edit"></i>
-            </span>
-            - {{\App\CentralLogics\Helpers::format_currency(100)}}</dd>
-        @endif --}}
-
         <dd  class="col-6">{{translate('messages.discount')}} :</dd>
         <dd class="col-6 text-right">- {{\App\CentralLogics\Helpers::format_currency(round($discount_on_product,2))}}</dd>
-        <dd class="col-6">{{ translate('messages.delivery_fee') }} :</dd>
+        @if ($pos_pro_discount > 0)
+            <dd class="col-6">{{ translate('messages.Pro_Discount') }} :</dd>
+            <dd class="col-6 text-right">- {{ \App\CentralLogics\Helpers::format_currency(round($pos_pro_discount, 2)) }}</dd>
+        @endif
+        <dd class="col-6">{{ translate('messages.delivery_fee') }}{{ $deliveryTypeSuffix }}
+            @if ($pos_pro_delivery_savings > 0)
+                @if ($pos_pro_delivery_offer_type === 'full_free')
+                    <i class="tio-info-outined text-info" data-toggle="tooltip"
+                       title="{{ translate('messages.Pro_Customer_free_delivery_applied') }}"></i>
+                @else
+                    <i class="tio-info-outined text-info" data-toggle="tooltip"
+                       title="{{ translate('messages.Pro_Customer_partial_delivery_discount_applied') }} ({{ (float) $pos_pro_delivery_percentage }}%)"></i>
+                @endif
+            @endif
+            :</dd>
         <dd class="col-6 text-right" id="delivery_price">
-            {{ \App\CentralLogics\Helpers::format_currency($delivery_fee) }}</dd>
+            {{ \App\CentralLogics\Helpers::format_currency($adjustedDeliveryFee) }}</dd>
+        {{-- @if(isset($store) && $store?->sub_self_delivery)
+            <dd class="col-12">
+                <small class="text-warning">
+                    <i class="tio-info-outined"></i>
+                    {{ translate('This store delivers on its own — the vendor\'s delivery charge applies.') }}
+                </small>
+            </dd>
+        @endif --}}
         @if ($tax_included !=  1)
             <dd  class="col-6">{{ translate('messages.tax') }}  : </dd>
             <dd class="col-6 text-right">
@@ -170,94 +251,6 @@
             </div>
         </div>
     </form>
-</div>
-
-{{-- Coupon Modal --}}
-<div class="modal fade" id="couponModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content modal-scroll">
-            <div class="modal-header pt-3 pb-0">
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">×</span>
-                </button>
-            </div>
-            <div class="modal-body p-4 pt-0">
-                <div class="text-center">
-                    <h3 class="modal-title flex-grow-1 text-center">{{translate('Coupon Discount')}}</h3>
-                    <p>Select from available coupon or input code</p>
-                </div>
-                <div>
-                    <div class="mb-4">
-                        <label class="form-label">Available Coupons</label>
-                        <div class="coupon-slider owl-carousel owl-theme">
-                            <div class="coupon-slider-item">
-                                <button class="coupon-slider-button active" type="button">
-                                    <div class="left">
-                                        <h6>Code : NewUser</h6>
-                                        <small>Use it in 1st order</small>
-                                    </div>
-                                    <div class="right">
-                                        <h6>10%</h6>
-                                        <small>Discount</small>
-                                    </div>
-                                    <i class="tio-checkmark-circle checkmark"></i>
-                                </button>
-                            </div>
-                            <div class="coupon-slider-item">
-                                <button class="coupon-slider-button" type="button">
-                                    <div class="left">
-                                        <h6>Code : NewUser</h6>
-                                        <small>Use it in 1st order</small>
-                                    </div>
-                                    <div class="right">
-                                        <h6>10%</h6>
-                                        <small>Discount</small>
-                                    </div>
-                                    <i class="tio-checkmark-circle checkmark"></i>
-                                </button>
-                            </div>
-                            <div class="coupon-slider-item">
-                                <button class="coupon-slider-button" type="button">
-                                    <div class="left">
-                                        <h6>Code : NewUser</h6>
-                                        <small>Use it in 1st order</small>
-                                    </div>
-                                    <div class="right">
-                                        <h6>10%</h6>
-                                        <small>Discount</small>
-                                    </div>
-                                    <i class="tio-checkmark-circle checkmark"></i>
-                                </button>
-                            </div>
-                            <div class="coupon-slider-item">
-                                <button class="coupon-slider-button" type="button">
-                                    <div class="left">
-                                        <h6>Code : NewUser</h6>
-                                        <small>Use it in 1st order</small>
-                                    </div>
-                                    <div class="right">
-                                        <h6>10%</h6>
-                                        <small>Discount</small>
-                                    </div>
-                                    <i class="tio-checkmark-circle checkmark"></i>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                    <label class="form-label">Coupon Code</label>
-                    <input type="text" class="form-control">
-                    <div class="btn--container justify-content-end mt-20">
-                        <button class="btn btn--reset" type="button" data-dismiss="modal">
-                            Cancel
-                        </button>
-                        <button class="btn btn-sm btn--primary text-white" type="button">
-                            Apply
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
 </div>
 
 {{-- Delivery Address Modal --}}
@@ -378,7 +371,6 @@
 </div>
 
 @push('script_2')
-    <script src="{{asset('public/assets/admin')}}/js/view-pages/common.js"></script>
     <script>
         $(document).ready(function(){
             $('.coupon-slider').owlCarousel({

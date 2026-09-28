@@ -79,7 +79,7 @@
                                         <select name="zone_id" id="zone" class="form-control js-select2-custom">
                                             <option  disabled selected>---{{translate('messages.select')}}---</option>
                                             @foreach($zones as $zone)
-                                                @if(isset(auth('admin')->user()->zone_id))
+                                                @if(auth('admin')?->user()?->zone_id)
                                                     @if(auth('admin')->user()->zone_id == $zone->id)
                                                         <option value="{{$zone['id']}}" {{$zone->id == $banner->zone_id?'selected':''}}>{{$zone['name']}}</option>
                                                     @endif
@@ -104,7 +104,7 @@
                                         @if($banner->type=='store_wise')
                                         @php($store = \App\Models\Store::where('id', $banner->data)->first())
                                             @if($store)
-                                            <option value="{{$store->id}}" selected>{{$store->name}}</option>
+                                            <option value="{{$store->id}}" data-verified="{{ (int) $store->verified_seller }}" selected>{{$store->name}}</option>
                                             @endif
                                         @endif
                                         </select>

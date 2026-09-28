@@ -110,7 +110,7 @@
             @for ($i = 1; $i <= $numCards; $i++)
                 <div class="col-md-6">
                     <form class="custom-validation"
-                          action="{{ route('admin.business-settings.react-landing-page-settings', 'trust-section-card-' . $i) }}"
+                          action="{{ route('admin.business-settings.react-landing-page-settings-update', 'trust-section-card-' . $i) }}"
                           method="POST" enctype="multipart/form-data">
                         @csrf
                         @php($language = App\CentralLogics\Helpers::get_business_settings('language'))

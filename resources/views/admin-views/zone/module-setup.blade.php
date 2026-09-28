@@ -244,11 +244,11 @@
                                     <i class="tio-chevron-down fs-24 text-title"></i>
                                 </a>
                                 <div class="card-body view-details border-top">
-                                    <div class="row gy-1">
+                                    <div class="row gy-2">
                                         <div class="col-md-6 col-lg-4">
                                             <div class="form-group mb-0">
                                                 <label
-                                                    class="input-label text-capitalize fs-14 d-flex alig-items-center line--limit-1">
+                                                    class="input-label text-capitalize fs-14 d-flex align-items-center gap-1 line--limit-1">
                                                     {{ translate('messages.Choose_Delivery_Charge_Type') }} <span
                                                         class="text-danger">*</span>
                                                 </label>
@@ -276,7 +276,7 @@
                                         <div class="col-md-6 col-lg-4 fixed-charge-field">
                                             <div class="form-group mb-0">
                                                 <label
-                                                    class="input-label text-capitalize fs-14 d-flex alig-items-center line--limit-1">
+                                                    class="input-label text-capitalize fs-14 d-flex align-items-center gap-1 line--limit-1">
                                                     {{ translate('messages.Amount') }}
                                                     ({{ \App\CentralLogics\Helpers::currency_symbol() }})
                                                     <span class="text-danger">*</span>
@@ -291,7 +291,7 @@
                                         <div class="col-md-6 col-lg-4 distance-charge-field">
                                             <div class="form-group mb-0">
                                                 <label
-                                                    class="input-label text-capitalize fs-14 d-flex alig-items-center line--limit-1">
+                                                    class="input-label text-capitalize fs-14 d-flex align-items-center gap-1 line--limit-1">
                                                     {{ translate('messages.Per_km_delivery_charge') }}
                                                     ({{ \App\CentralLogics\Helpers::currency_symbol() }}) <span
                                                         class="text-danger">*</span>
@@ -306,7 +306,7 @@
                                         <div class="col-md-6 col-lg-4 distance-charge-field">
                                             <div class="form-group mb-0">
                                                 <label
-                                                    class="input-label text-capitalize fs-14 d-flex alig-items-center line--limit-1">
+                                                    class="input-label text-capitalize fs-14 d-flex align-items-center gap-1 line--limit-1">
                                                     {{ translate('messages.Minimum_delivery_charge') }}
                                                     ({{ \App\CentralLogics\Helpers::currency_symbol() }}) <span
                                                         class="text-danger">*</span>
@@ -320,7 +320,7 @@
                                         <div class="col-md-6 col-lg-4 distance-charge-field">
                                             <div class="form-group mb-0">
                                                 <label
-                                                    class="input-label text-capitalize fs-14 d-flex alig-items-center line--limit-1">
+                                                    class="input-label text-capitalize fs-14 d-flex align-items-center gap-1 line--limit-1">
                                                     {{ translate('messages.Maximum_delivery_charge') }}
                                                     ({{ \App\CentralLogics\Helpers::currency_symbol() }})
                                                 </label>
@@ -333,7 +333,7 @@
                                         <div class="col-md-6 col-lg-4 ">
                                             <div class="form-group mb-0">
                                                 <label
-                                                    class="input-label text-capitalize fs-14 d-flex alig-items-center line--limit-1">
+                                                    class="input-label text-capitalize fs-14 d-flex align-items-center gap-1 line--limit-1">
                                                     {{ translate('messages.Maximum_cod_order_amount') }}
                                                     ({{ \App\CentralLogics\Helpers::currency_symbol() }})
                                                 </label>
@@ -344,6 +344,12 @@
                                             </div>
                                         </div>
                                     </div>
+                                    @include('partials.saver-options-form', [
+                                        'module'         => $module,
+                                        'pivot'          => $pivot,
+                                        'express_option' => $saverOptions[$module->id]['express'] ?? null,
+                                        'delayed_option' => $saverOptions[$module->id]['slightly_delay'] ?? null,
+                                    ])
                                 </div>
                             </div>
                         </div>
@@ -368,6 +374,19 @@
         "use strict";
 
         $(document).ready(function () {
+            $('.saver-options-card').each(function () {
+                const $card = $(this);
+                const $toggle = $card.find('.saver-options-toggle');
+                const $body = $card.find('.saver-options-body');
+                const sync = () => {
+                    const on = $toggle.is(':checked');
+                    $body.toggleClass('d-none', !on);
+                    $card.find('.saver-required').prop('disabled', !on);
+                };
+                $toggle.on('change', sync);
+                sync();
+            });
+
             let previousSelectedModules = ($('#choice_modules').val() || []).map(String);
 
             function openModuleSection(moduleContainer) {

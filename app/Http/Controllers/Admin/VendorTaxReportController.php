@@ -51,8 +51,9 @@ class VendorTaxReportController extends Controller
         $stores = $this->getOrderTaxData($startDate, $endDate, $storeIds, $storeQuery);
         // $time = microtime(true) - $start;
         // dd("Query took {$time} seconds", $stores);
-        $startDate = Carbon::parse($startDate)->toIso8601String();
-        $endDate = Carbon::parse($endDate)->toIso8601String();
+        $dateRange = $startDate->format('m/d/Y') . ' - ' . $endDate->format('m/d/Y');
+        $startDate = $startDate->toIso8601String();
+        $endDate = $endDate->toIso8601String();
         return view('admin-views.report.tax-report.vendor-tax-report', compact('totalOrders', 'totalOrderAmount', 'totalTax', 'store', 'stores', 'dateRange', 'startDate', 'endDate'));
     }
 

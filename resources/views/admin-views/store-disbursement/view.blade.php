@@ -45,7 +45,7 @@
                             title="{{ translate('messages.select_modules') }}">
                         <option value="" {{ !request('module_id') ? 'selected' : '' }}>
                             {{ translate('messages.all_modules') }}</option>
-                        @foreach (\App\Models\Module::notParcel()->get() as $module)
+                        @foreach (\App\Models\Module::notParcel()->WithoutAdditionalModules()->get(['id', 'module_name']) as $module)
                             <option value="{{ $module->id }}"
                                 {{ request('module_id') == $module->id ? 'selected' : '' }}>
                                 {{ $module['module_name'] }}
@@ -59,7 +59,7 @@
                             data-placeholder="{{ translate('messages.select_store') }}"
                             class="js-data-example-ajax form-control store-filter" data-url="{{ url()->full() }}">
                         @if (isset($store))
-                            <option value="{{ $store->id }}" selected>{{ $store->name }}</option>
+                            <option value="{{ $store->id }}" data-verified="{{ (int) $store->verified_seller }}" selected>{{ $store->name }}</option>
                         @else
                             <option value="all" selected>{{ translate('messages.all_stores') }}</option>
                         @endif

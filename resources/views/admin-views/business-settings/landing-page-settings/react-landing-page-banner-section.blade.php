@@ -88,7 +88,7 @@
     </div>
     @php($banner = \App\Models\DataSetting::withoutGlobalScope('translate')->where('type', 'react_landing_page')->where('key', 'banner')->first())
     <div class="card">
-    <form class="custom-validation" action="{{ route('admin.business-settings.react-landing-page-settings', 'banner') }}"
+    <form class="custom-validation" action="{{ route('admin.business-settings.react-landing-page-settings-update', 'banner') }}"
           method="POST" enctype="multipart/form-data">
         @csrf
         <div class="card-body">

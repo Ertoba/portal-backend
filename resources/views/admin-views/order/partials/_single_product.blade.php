@@ -17,4 +17,3 @@
         </div>
     </div>
 </div>
-<script src="{{asset('public/assets/admin')}}/js/view-pages/common.js"></script>

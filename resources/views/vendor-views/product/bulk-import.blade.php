@@ -297,7 +297,7 @@
                                         </div>
                                         <div class="col-md-4 col-sm-6">
                                             <label for="">{{ translate('Additional_price') }}</label>
-                                            <input class="form-control" required type="number" min="0" step="0.01" name="options[` +
+                                            <input class="form-control" required type="number" min="0"  step="{{ \App\CentralLogics\Helpers::getDecimalPlaces() }}" max="999999999999.999" name="options[` +
                     count + `][values][0][optionPrice]" id="">
                                         </div>
                                     </div>
@@ -384,7 +384,7 @@
                 </div>
                 <div class="col-md-4 col-sm-5">
                     <label for="">{{ translate('Additional_price') }}</label>
-                    <input class="form-control"  required type="number" min="0" step="0.01" name="options[` +
+                    <input class="form-control"  required type="number" min="0"  step="{{ \App\CentralLogics\Helpers::getDecimalPlaces() }}" max="999999999999.999" name="options[` +
                 count +
                 `][values][` + countRow + `][optionPrice]" id="">
                 </div>

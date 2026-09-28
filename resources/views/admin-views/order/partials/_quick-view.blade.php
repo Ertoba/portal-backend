@@ -1,7 +1,8 @@
+<?php $panel = $panel ?? 'admin'; ?>
 <div class="modal-header p-0">
     <h4 class="modal-title product-title">
     </h4>
-    <button class="close call-when-done" type="button" data-dismiss="modal" aria-label="Close">
+    <button class="close call-when-done bg-modal-btn w-30px h-30 rounded-circle m-2 z-2" type="button" data-dismiss="modal" aria-label="Close">
         <span aria-hidden="true">&times;</span>
     </button>
 </div>
@@ -18,7 +19,7 @@
         </div>
         <!-- Product details-->
         <div class="details pl-2">
-            <a href="{{ route('admin.item.view', $product->id) }}" class="h3 mb-2 product-title">{{ $product->name }}</a>
+            <a href="{{ route($panel . '.item.view', $product->id) }}" class="h3 mb-2 product-title">{{ $product->name }}</a>
             @if (isset($product->module_id) && $product->module->module_type == 'food')
             <div class="mb-3 text-dark">
                 <span class="h3 font-weight-normal text-accent mr-1">
@@ -92,7 +93,28 @@
 
 
 
-            <form id="add-to-cart-form" class="mb-2">
+            <?php
+            $moduleType = $product->module?->module_type;
+            $moduleHasStock = (bool) data_get(config('module.' . $moduleType), 'stock', false);
+            $isFoodWithVariations = $moduleType == 'food' && $product->food_variations;
+            $stockMap = [];
+            if ($moduleHasStock && !$isFoodWithVariations) {
+                $variationsArr = $product->variations ? (json_decode($product->variations, true) ?: []) : [];
+                foreach ($variationsArr as $vr) {
+                    if (isset($vr['type'])) {
+                        $stockMap[$vr['type']] = (int) ($vr['stock'] ?? 0);
+                    }
+                }
+            }
+            $itemStock = $moduleHasStock ? (int) ($product->stock ?? 0) : null;
+            $hasVariationMatrix = $moduleHasStock && !$isFoodWithVariations && count($stockMap) > 0;
+            $initiallyOutOfStock = $moduleHasStock && !$hasVariationMatrix && $itemStock !== null && $itemStock <= 0;
+            ?>
+            <form id="add-to-cart-form" class="mb-2"
+                data-module-has-stock="{{ $moduleHasStock ? 1 : 0 }}"
+                data-item-stock="{{ $itemStock !== null ? $itemStock : '' }}"
+                data-has-variation-matrix="{{ $hasVariationMatrix ? 1 : 0 }}"
+                data-variation-stock='@json($stockMap)'>
                 @csrf
                 <input type="hidden" name="id" value="{{ $product->id }}">
                 <input type="hidden" name="order_id" value="{{ $order_id }}">
@@ -143,7 +165,7 @@
                         @endforeach
                     @endif
                 @else
-                    @foreach (json_decode($product->choice_options) as $key => $choice)
+                    @foreach ((json_decode($product->choice_options) ?: []) as $key => $choice)
                         <div class="h3 p-0 pt-2">{{ $choice->title }}
                         </div>
 
@@ -183,7 +205,7 @@
                         </div>
                     </div>
                 </div>
-                @php($add_ons = json_decode($product->add_ons))
+                <?php $add_ons = $product->add_ons ? (json_decode($product->add_ons) ?: []) : []; ?>
                 @if (count($add_ons) > 0 && $add_ons[0])
                     <div class="h3 p-0 pt-2">{{ translate('messages.addon') }}
                     </div>
@@ -225,8 +247,11 @@
                     </div>
                 </div>
 
+                <div id="stock-warning" class="text-danger small mt-2 {{ $initiallyOutOfStock ? '' : 'd-none' }}">
+                    {{ translate('messages.out_of_stock') }}
+                </div>
                 <div class="d-flex justify-content-center mt-2">
-                <button class="btn btn--primary h--45px update_order_item" type="button">
+                    <button class="btn btn--primary h--45px update_order_item" type="button" id="add-to-cart-btn" {{ $initiallyOutOfStock ? 'disabled' : '' }}>
                         <i class="tio-shopping-cart"></i>
                         {{ translate('messages.add_to_cart') }}
                     </button>
@@ -236,14 +261,57 @@
     </div>
 </div>
 
-<script src="{{asset('public/assets/admin')}}/js/view-pages/common.js"></script>
 <script type="text/javascript">
     cartQuantityInitialize();
     getVariantPrice();
 
+    function checkAddToCartStock() {
+        var $form = $('#add-to-cart-form');
+        var hasStock = parseInt($form.data('module-has-stock')) === 1;
+        var $btn = $('#add-to-cart-btn');
+        var $warn = $('#stock-warning');
+        if (!hasStock) {
+            $btn.prop('disabled', false);
+            $warn.addClass('d-none');
+            return;
+        }
+        var qty = parseInt($form.find('input[name="quantity"]').val()) || 1;
+        var hasMatrix = parseInt($form.data('has-variation-matrix')) === 1;
+        var availableStock = null;
+        if (hasMatrix) {
+            var stockMap = $form.data('variation-stock') || {};
+            var parts = [];
+            $form.find('input[type="radio"]:checked').each(function () {
+                parts.push(($(this).val() || '').replace(/\s+/g, ''));
+            });
+            var key = parts.join('-');
+            if (key in stockMap) {
+                availableStock = parseInt(stockMap[key]);
+            }
+        } else {
+            var raw = $form.data('item-stock');
+            if (raw !== '' && raw !== null && typeof raw !== 'undefined') {
+                availableStock = parseInt(raw);
+            }
+        }
+        if (availableStock !== null && !isNaN(availableStock)) {
+            if (availableStock <= 0 || qty > availableStock) {
+                $btn.prop('disabled', true);
+                $warn.removeClass('d-none').text(availableStock <= 0
+                    ? "{{ translate('messages.out_of_stock') }}"
+                    : "{{ translate('messages.requested_quantity_exceeds_stock') }}");
+                return;
+            }
+        }
+        $btn.prop('disabled', false);
+        $warn.addClass('d-none');
+    }
+    checkAddToCartStock();
+
     // Update price when input changes (like variant selection)
     $('#add-to-cart-form input').on('change', function () {
         getVariantPrice();
+        checkAddToCartStock();
     });
 
     // Handle "plus" (step up)

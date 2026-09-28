@@ -89,7 +89,7 @@
         </div>
         <div class="tab-content">
             <div class="tab-pane fade show active">
-                <form action="{{ route('admin.business-settings.react-landing-page-settings', 'testimonial-title') }}"
+                <form action="{{ route('admin.business-settings.react-landing-page-settings-update', 'testimonial-title') }}"
                       method="POST" enctype="multipart/form-data">
                     @csrf
                     <div class="card mb-20">
@@ -322,7 +322,7 @@
                     </div>
                     <div class="card-body">
                         <form class="custom-validation"
-                              action="{{ route('admin.business-settings.react-landing-page-settings', 'testimonial-list') }}"
+                              action="{{ route('admin.business-settings.react-landing-page-settings-update', 'testimonial-list') }}"
                               method="POST" enctype="multipart/form-data">
                             @csrf
                             <div class="card p-xxl-3 mb-20 border-0">
@@ -777,12 +777,7 @@
                                                                 <img
                                                                     src="{{ asset('/public/assets/admin/img/icons/testimonial-quote.png') }}"
                                                                     alt="" class="mb-20 min-w-40 mx-auto">
-                                                                <p class="fs-14 mb-3">Lorem ipsum dolor sit amet,
-                                                                    consectetur
-                                                                    adipiscing elit. Quisque diam pellentesque bibendum
-                                                                    non
-                                                                    dui
-                                                                    volutpat fringilla </p>
+                                                                <p class="fs-14 mb-3">{{ translate('messages.Ordering through this platform has been a delight — quick delivery, accurate orders, and great support every time.') }}</p>
                                                                 <div class="mx-auto w-60px border-bottom mb-3"></div>
                                                                 <div class="specialist text-center">
                                                                     <img wdith="42" height="42"
@@ -802,12 +797,7 @@
                                                                 <img
                                                                     src="{{ asset('/public/assets/admin/img/icons/testimonial-quote.png') }}"
                                                                     alt="" class="mb-20 min-w-40 mx-auto">
-                                                                <p class="fs-14 mb-3">Lorem ipsum dolor sit amet,
-                                                                    consectetur
-                                                                    adipiscing elit. Quisque diam pellentesque bibendum
-                                                                    non
-                                                                    dui
-                                                                    volutpat fringilla </p>
+                                                                <p class="fs-14 mb-3">{{ translate('messages.A smooth experience from browsing to checkout. The variety of stores and the fast delivery keep me coming back.') }}</p>
                                                                 <div class="mx-auto w-60px border-bottom mb-3"></div>
                                                                 <div class="specialist text-center">
                                                                     <img wdith="42" height="42"
@@ -827,12 +817,7 @@
                                                                 <img
                                                                     src="{{ asset('/public/assets/admin/img/icons/testimonial-quote.png') }}"
                                                                     alt="" class="mb-20 min-w-40 mx-auto">
-                                                                <p class="fs-14 mb-3">Lorem ipsum dolor sit amet,
-                                                                    consectetur
-                                                                    adipiscing elit. Quisque diam pellentesque bibendum
-                                                                    non
-                                                                    dui
-                                                                    volutpat fringilla </p>
+                                                                <p class="fs-14 mb-3">{{ translate('messages.I love how easy it is to find what I need, place an order, and track it in real time. Highly recommended.') }}</p>
                                                                 <div class="mx-auto w-60px border-bottom mb-3"></div>
                                                                 <div class="specialist text-center">
                                                                     <img wdith="42" height="42"

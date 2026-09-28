@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\CentralLogics\Helpers;
+use App\CentralLogics\PersonalizationService;
 use App\Models\FlashSale;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
@@ -31,6 +32,12 @@ class FlashSaleController extends Controller
                 $flash_sales->activeProducts->each(function ($activeProduct) {
                     $activeProduct->item = Helpers::product_data_formatting($activeProduct->item, false, false, app()->getLocale());
                 });
+                // Personalize flash sale product order
+                if(auth('api')->check()){
+                    $flash_sales->activeProducts = PersonalizationService::reorderByPreference(
+                        $flash_sales->activeProducts, auth('api')->id(), 'item.category_id', 'category'
+                    );
+                }
             }
             return response()->json($flash_sales, 200);
         } catch (\Exception $e) {

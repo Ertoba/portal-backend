@@ -22,7 +22,9 @@
                     <th>{{ translate('sl') }}</th>
                     <th>{{ translate('Category_Name') }}</th>
                     <th>{{ translate('Category_ID') }}</th>
-                    {{-- <th>{{ translate('Module') }}</th> --}}
+                    @if (!empty($data['showStore']))
+                        <th>{{ translate('messages.Store') }}</th>
+                    @endif
                     <th>{{ translate('priority') }}</th>
                     @if ($data['categoryWiseTax'])
                         <th class="border-0 w--1">{{ translate('messages.Vat/Tax') }}</th>
@@ -36,7 +38,9 @@
                         <td>{{ $loop->index + 1 }}</td>
                         <td>{{ $category->name }}</td>
                         <td>{{ $category->id }}</td>
-                        {{-- <td>{{ $category?->module?->module_name }}</td> --}}
+                        @if (!empty($data['showStore']))
+                            <td>{{ $category->store?->name ?? translate('messages.N/A') }}</td>
+                        @endif
                         @php
                             $return_value = match ($category->priority) {
                                 0 => translate('messages.normal'),

@@ -3,7 +3,9 @@
 namespace App\Observers;
 
 use App\Models\Order;
+use App\Models\OrderDetail;
 use App\Models\OrderReference;
+use App\CentralLogics\PersonalizationService;
 
 class OrderObserver
 {
@@ -22,7 +24,12 @@ class OrderObserver
      */
     public function updated(Order $order): void
     {
-        //
+        if ($order->isDirty('order_status') && $order->order_status === 'delivered' && $order->user_id) {
+            $details = OrderDetail::where('order_id', $order->id)->whereNotNull('item_id')->get();
+            foreach ($details as $detail) {
+                PersonalizationService::recordItemAction($order->user_id, $detail->item_id, 'order');
+            }
+        }
     }
 
     /**

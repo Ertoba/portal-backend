@@ -49,7 +49,7 @@
     @endif
     <div class="tab-content">
         <div class="tab-pane fade show active">
-                <form action="{{ route('admin.business-settings.flutter-landing-page-settings', 'special-criteria-list') }}" method="POST" enctype="multipart/form-data">
+                <form action="{{ route('admin.business-settings.flutter-landing-page-settings-update', 'special-criteria-list') }}" method="POST" enctype="multipart/form-data">
                     @csrf
                 <h5 class="card-title mb-3 mt-3">
                     <span class="card-header-icon mr-2"><i class="tio-settings-outlined"></i></span> <span>{{translate('Special_Feature_List_Section ')}}</span>

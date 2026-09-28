@@ -28,9 +28,8 @@
         </div>
     </div>
 
-    @php($language=\App\Models\BusinessSetting::where('key','language')->first())
-    @php($language = $language->value ?? null)
-    @php($defaultLang = str_replace('_', '-', app()->getLocale()))
+    @php($language=\App\Models\BusinessSetting::where('key','language')->first()->value ?? [])
+
     @if($language)
         <ul class="nav nav-tabs mb-4 border-0">
             <li class="nav-item">
@@ -51,7 +50,7 @@
     @php($counter = isset($counter->value)?json_decode($counter->value, true):null)
     <div class="tab-content">
         <div class="tab-pane fade show active">
-            <form action="{{ route('admin.business-settings.admin-landing-page-settings', 'download-counter-section') }}" method="POST" enctype="multipart/form-data">
+            <form action="{{ route('admin.business-settings.admin-landing-page-settings-update', 'download-counter-section') }}" method="POST" enctype="multipart/form-data">
                 @csrf
                 <h5 class="card-title mb-3 mt-3">
                     <div class="d-flex justify-content-between align-items-center w-100">
@@ -119,7 +118,7 @@
             @php($download_user_app_image=\App\Models\DataSetting::withoutGlobalScope('translate')->where('type','admin_landing_page')->where('key','download_user_app_image')->first())
             @php($download_user_app_links = \App\Models\DataSetting::where(['key'=>'download_user_app_links','type'=>'admin_landing_page'])->first())
             @php($download_user_app_links = isset($download_user_app_links->value)?json_decode($download_user_app_links->value, true):null)
-            <form action="{{ route('admin.business-settings.admin-landing-page-settings', 'download-app-section') }}" method="POST" enctype="multipart/form-data">
+            <form action="{{ route('admin.business-settings.admin-landing-page-settings-update', 'download-app-section') }}" method="POST" enctype="multipart/form-data">
                 @csrf
                 <h5 class="card-title mb-3 mt-3">
                     <span class="card-header-icon mr-2"><i class="tio-settings-outlined"></i></span> <span>{{translate('Download User App Section Content')}}</span>
@@ -262,18 +261,15 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="row g-3 mt-3">
-                            <div class="col-md-6">
-                                <h5 class="card-title mb-2">
-                                    <img src="{{asset('public/assets/admin/img/playstore.png')}}" class="mr-2" alt="">
-                                    {{translate('Playstore Button')}}
-                                </h5>
-                                <div class="__bg-F8F9FC-card">
-                                    <div class="form-group mb-md-0">
-                                        <div class="d-flex justify-content-between align-items-center mb-2">
-                                            <label for="playstore_url" class="form-label text-capitalize m-0">
-                                                {{translate('Download Link')}}</label>
-
+                        <div class="__bg-F8F9FC-card mt-3">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <div class="bg-white runded p-3">
+                                        <div class="d-flex mb-2 align-items-center gap-2 flex-wrap justify-content-between">
+                                            <h5 class="card-title mb-0">
+                                                <img src="{{asset('public/assets/admin/img/playstore.png')}}" class="mr-2" alt="">
+                                                {{translate('Playstore Button')}}
+                                            </h5>
                                             <label class="toggle-switch toggle-switch-sm m-0">
                                                 <input type="checkbox" name="playstore_url_status"
                                                        id="play-store-dm-status"
@@ -281,33 +277,32 @@
                                                        data-type="toggle"
                                                        data-image-on="{{ asset('/public/assets/admin/img/modal/play-store-on.png') }}"
                                                        data-image-off="{{ asset('/public/assets/admin/img/modal/play-store-off.png') }}"
-                                                       data-title-on="{{ translate('Playstore Button Enabled for Delivery Man') }}"
-                                                       data-title-off="{{ translate('Playstore Button Disabled for Delivery Man') }}"
-                                                       data-text-on="<p>{{ translate('Playstore button is enabled now everyone can use or see the button') }}</p>"
-                                                       data-text-off="<p>{{ translate('Playstore button is disabled now no one can use or see the button') }}</p>"
+                                                       data-title-on="{{ translate('want_to_enable_the_play_store_button_for_user_app') }}"
+                                                       data-title-off="{{ translate('want_to_disable_the_play_store_button_for_user_app') }}"
+                                                       data-text-on="<p>{{ translate('if_enabled,_the_user_app_download_button_will_be_visible_on_admin_landing_page') }}</p>"
+                                                       data-text-off="<p>{{ translate('if_disabled,_this_button_will_be_hidden_from_the_admin_landing_page') }}</p>"
                                                        class="status toggle-switch-input dynamic-checkbox-toggle"
-
                                                        value="1" {{(isset($download_user_app_links) && $download_user_app_links['playstore_url_status'])?'checked':''}}>
                                                 <span class="toggle-switch-label text mb-0">
                                                     <span class="toggle-switch-indicator"></span>
                                                 </span>
                                             </label>
                                         </div>
-                                        <input id="playstore_url" type="text" placeholder="{{translate('Ex: https://play.google.com/store/apps')}}" class="form-control h--45px" name="playstore_url" value="{{$download_user_app_links['playstore_url']??''}}">
+                                        <div class="__bg-F8F9FC-card">
+
+                                            @include('admin-views.business-settings.landing-page-settings.partials._app-download-link-status', [
+                                                'isConfigured' => \App\CentralLogics\Helpers::get_business_settings('app_url_android'),
+                                            ])
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                            <div class="col-md-6">
-                                <h5 class="card-title mb-2">
-                                    <img src="{{asset('public/assets/admin/img/ios.png')}}" class="mr-2" alt="">
-                                    {{translate('App Store Button')}}
-                                </h5>
-                                <div class="__bg-F8F9FC-card">
-                                    <div class="form-group mb-md-0">
-                                        <div class="d-flex justify-content-between align-items-center mb-2">
-                                            <label for="apple_store_url" class="form-label text-capitalize m-0">
-                                                {{translate('Download Link')}} </label>
-
+                                <div class="col-md-6">
+                                    <div class="bg-white runded p-3">
+                                        <div class="d-flex mb-2 align-items-center gap-2 flex-wrap justify-content-between">
+                                            <h5 class="card-title mb-0">
+                                                <img src="{{asset('public/assets/admin/img/ios.png')}}" class="mr-2" alt="">
+                                                {{translate('App Store Button')}}
+                                            </h5>
                                             <label class="toggle-switch toggle-switch-sm m-0">
                                                 <input type="checkbox" name="apple_store_url_status"
                                                        id="apple-dm-status"
@@ -315,10 +310,10 @@
                                                        data-type="toggle"
                                                        data-image-on="{{ asset('/public/assets/admin/img/modal/apple-on.png') }}"
                                                        data-image-off="{{ asset('/public/assets/admin/img/modal/apple-off.png') }}"
-                                                       data-title-on="{{ translate('App Store Button Enabled for Delivery Man') }}"
-                                                       data-title-off="{{ translate('App Store Button Disabled for Delivery Man') }}"
-                                                       data-text-on="<p>{{ translate('App Store button is enabled now everyone can use or see the button') }}</p>"
-                                                       data-text-off="<p>{{ translate('App Store button is disabled now no one can use or see the button') }}</p>"
+                                                       data-title-on="{{ translate('want_to_enable_the_app_store_button_for_user_app') }}"
+                                                       data-title-off="{{ translate('want_to_disable_the_app_store_button_for_user_app') }}"
+                                                       data-text-on="<p>{{ translate('if_enabled,_the_user_app_download_button_will_be_visible_on_admin_landing_page') }}</p>"
+                                                       data-text-off="<p>{{ translate('if_disabled,_this_button_will_be_hidden_from_the_admin_landing_page') }}</p>"
                                                        class="status toggle-switch-input dynamic-checkbox-toggle"
                                                        value="1" {{(isset($download_user_app_links) && $download_user_app_links['apple_store_url_status'])?'checked':''}}>
                                                 <span class="toggle-switch-label text mb-0">
@@ -326,7 +321,11 @@
                                                 </span>
                                             </label>
                                         </div>
-                                        <input id="apple_store_url" type="text" placeholder="{{translate('Ex: https://www.apple.com/app-store/')}}" class="form-control h--45px" name="apple_store_url" value="{{$download_user_app_links['apple_store_url']?? ''}}">
+                                        <div class="__bg-F8F9FC-card">
+                                            @include('admin-views.business-settings.landing-page-settings.partials._app-download-link-status', [
+                                                'isConfigured' => \App\CentralLogics\Helpers::get_business_settings('app_url_ios'),
+                                            ])
+                                        </div>
                                     </div>
                                 </div>
                             </div>

@@ -48,7 +48,7 @@ Route::get('order-invoice/{id}', 'HomeController@order_invoice')->name('order_in
 Route::get('deliveryman-earning-report-invoice/{id}', 'HomeController@earningReportInvoice')->name('delivery_earning_invoice')->middleware('localization');
 
 Route::get('login/{tab}', 'LoginController@login')->name('login');
-Route::post('login_submit', 'LoginController@submit')->name('login_post')->middleware('actch');
+Route::post('login_submit', 'LoginController@submit')->name('login_post')->middleware('mili.feature');
 Route::get('logout', 'LoginController@logout')->name('logout');
 Route::get('/reload-captcha', 'LoginController@reloadCaptcha')->name('reload-captcha');
 Route::get('/reset-password', 'LoginController@reset_password_request')->name('reset-password');
@@ -70,7 +70,7 @@ Route::group(['prefix' => 'payment-mobile'], function () {
     Route::get('/', 'PaymentController@payment')->name('payment-mobile');
     Route::get('flitt-intent', 'PaymentController@flittMobileIntent')->name('payment-mobile.flitt-intent');
     Route::get('keepz-intent', 'PaymentController@keepzMobileIntent')->name('payment-mobile.keepz-intent');
-    Route::get('set-payment-method/{name}', 'PaymentController@set_payment_method')->name('set-payment-method');
+    // Route::get('set-payment-method/{name}', 'PaymentController@set_payment_method')->name('set-payment-method');
 });
 
 Route::get('payment-success', 'PaymentController@success')->name('payment-success');

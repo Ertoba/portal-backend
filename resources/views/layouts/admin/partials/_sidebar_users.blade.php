@@ -325,7 +325,7 @@
                     <small class="tio-more-horizontal nav-subtitle-replacer"></small>
                 </li>
 
-                @if (\App\CentralLogics\Helpers::module_permission_check('custom_role'))
+                @if (\App\CentralLogics\Helpers::module_permission_check('employee_role'))
                 <li class="navbar-vertical-aside-has-menu {{ Request::is('admin/users/custom-role*') ? 'active' : '' }}">
                     <a class="js-navbar-vertical-aside-menu-link nav-link" href="{{ route('admin.users.custom-role.create') }}" title="{{ translate('messages.employee_Role') }}">
                         <i class="tio-incognito nav-icon"></i>

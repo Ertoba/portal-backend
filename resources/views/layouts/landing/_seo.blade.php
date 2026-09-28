@@ -1,6 +1,6 @@
 @php
-    $title = $metaData['meta_title']?->value ?? config('app.name');
-    $description = $metaData['meta_description']?->value ?? config('app.name') . ' - ყველაფერი, რაც ყოველდღიურად გჭირდება, ერთ სივრცეში.';
+    $title = ($metaData['meta_title'] ?? null)?->getRawOriginal('value') ?? config('app.name');
+    $description = ($metaData['meta_description'] ?? null)?->getRawOriginal('value') ?? config('app.name') . ' — best platform for your needs.';
     $image = \App\CentralLogics\Helpers::get_full_url(
         'landing/meta_image',
         $metaData['meta_image']?->value ?? '',

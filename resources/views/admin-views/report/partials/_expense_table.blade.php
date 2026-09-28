@@ -15,8 +15,11 @@
         </td>
         <td><label class="text-uppercase">{{translate("messages.{$exp['type']}")}}</label></td>
         <td class="text-center">
+            @php($delivery_address = $exp->order ? (is_array($exp->order->delivery_address) ? $exp->order->delivery_address : json_decode($exp->order->delivery_address, true)) : null)
             @if (isset($exp->order->customer))
             {{ $exp->order->customer->f_name.' '.$exp->order->customer->l_name }}
+            @elseif (!empty($delivery_address['contact_person_name']))
+            {{ $delivery_address['contact_person_name'] }}
             @else
             <label class="badge badge-danger">{{translate('messages.invalid_customer_data')}}</label>
 

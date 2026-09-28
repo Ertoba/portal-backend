@@ -12,7 +12,7 @@
         <div class="page-header">
             <h1 class="page-header-title"><i class="tio-filter-list"></i> {{translate('new_joining_requests')}}</h1>
             <div class="page-header-select-wrapper">
-                @if(!isset(auth('admin')->user()->zone_id))
+                @if(!auth('admin')?->user()?->zone_id)
                 <div class="col-sm-auto min--240">
                     <select name="zone_id" class="form-control js-select2-custom set-filter" data-filter="zone_id"
                             data-url="{{ url()->full() }}">
@@ -60,7 +60,7 @@
                                 <button type="submit" class="btn btn--secondary"><i class="tio-search"></i></button>
                             </div>
                         </form>
-                        @if(request()->get('search_by'))
+                        @if(request()->input('search_by'))
                         <button type="reset" class="btn btn--primary ml-2 location-reload-to-base" data-url="{{url()->full()}}">{{translate('messages.reset')}}</button>
                         @endif
                 </div>

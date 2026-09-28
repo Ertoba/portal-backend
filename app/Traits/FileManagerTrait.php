@@ -20,6 +20,8 @@ trait FileManagerTrait
 
     public static function getDisk(): string
     {
-        return Helpers::getDisk();
+        $config=Helpers::get_business_settings('local_storage');
+
+        return isset($config)?($config==0?'s3':'public'):'public';
     }
 }

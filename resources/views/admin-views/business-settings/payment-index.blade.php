@@ -245,17 +245,12 @@
                 <!-- Tab Content -->
                 <div class="row digital_payment_methods  {{ $is_published }} g-3">
                     @foreach($data_values->sortByDesc('is_active') as $payment_key => $payment)
-                        @php($gatewaySettings = $data_values->where('key_name',$payment->key_name)->first())
-                        @php($mode = $gatewaySettings->mode ?? 'live')
-                        @php($selectedCredentialValues = $mode === 'test' ? ($gatewaySettings->test_values ?? []) : ($gatewaySettings->live_values ?? []))
-                        @php($fallbackCredentialValues = $mode === 'test' ? ($gatewaySettings->live_values ?? []) : ($gatewaySettings->test_values ?? []))
-                        @php($credentialValues = !empty($selectedCredentialValues) ? $selectedCredentialValues : $fallbackCredentialValues)
-                        @php($credentialValues = is_array($credentialValues) ? $credentialValues : [])
                         <div class="col-md-6 payment-card">
                             <div class="card">
-                                <form action="{{env('APP_MODE')!='demo'?route('admin.business-settings.third-party.payment-method-update',['payment_method_status' => $payment->key_name]):'javascript:'}}" method="POST"
+                                <form action="{{getEnvMode()!='demo'?route('admin.business-settings.third-party.payment-method-update',['payment_method_status' => $payment->key_name]):'javascript:'}}" method="POST"
                                       id="{{$payment->key_name}}_form" enctype="multipart/form-data">
                                     @csrf
+                                    @php($mode=$data_values->where('key_name',$payment->key_name)->first()->live_values['mode'])
                                     <input type="hidden" name="gateway" value="{{$payment->key_name}}">
                                     <input type="hidden" name="mode" value="{{$mode}}">
                                     <div class="d-flex p-20 w-100 flex-wrap align-content-around justify-content-between">
@@ -296,7 +291,7 @@
                                 </form>
 
                                     <div id="payment_setup_{{$payment->key_name}}" class="custom-offcanvas d-flex flex-column justify-content-between">
-                                        <form action="{{env('APP_MODE')!='demo'?route('admin.business-settings.third-party.payment-method-update'):'javascript:'}}" method="POST" enctype="multipart/form-data">
+                                        <form action="{{getEnvMode()!='demo'?route('admin.business-settings.third-party.payment-method-update'):'javascript:'}}" method="POST" enctype="multipart/form-data">
                                             @csrf
                                             <input type="hidden" name="gateway" value="{{$payment->key_name}}">
                                             
@@ -361,6 +356,7 @@
                                                         <input type="text" class="form-control" name="gateway_title" id="payment_gateway_title-{{$payment_key}}" placeholder="{{translate('payment_gateway_title')}}" value="{{$additional_data != null ? $additional_data->gateway_title : ''}}">
                                                     </div>
 
+                                                    @php($mode=$data_values->where('key_name',$payment->key_name)->first()->live_values['mode'])
                                                     <div class="form-floating mb-20">
                                                          <label class="form-label fs-14 d-flex align-items-center gap-1">{{translate('Choose Use Type')}} <span class="text-danger">*</span>
                                                             <span class="" data-toggle="tooltip" data-placement="right" data-html="true" data-original-title="<div class='text-start'>{{ translate('When select live option: during use this from website/app need real required data. other wise this gateway can\'t work.') }} <br><br> {{ translate('When select Test option: during use this from website/app use fake required data to test payment gateway work properly or not.') }}</div>">
@@ -380,17 +376,12 @@
                                                     </div>
 
                                                     @php($skip=['gateway','mode','status','supported_country', 'gateway_image'])
-                                                    @foreach($credentialValues as $key=>$value)
+                                                    @foreach($data_values->where('key_name',$payment->key_name)->first()->live_values as $key=>$value)
                                                         @if(!in_array($key,$skip))
-                                                            @php($isLongCredential = in_array($key, ['keepz_public_key', 'integrator_private_key']))
                                                             <div class="form-floating mb-20">
                                                                 <label for="{{$payment_key}}-{{$key}}" class="form-label fs-14">{{ucwords(str_replace('_',' ',$key))}} <span class="text-danger">*</span></label>
-                                                                <div class="custom-copy-text position-relative {{$isLongCredential ? '' : 'h--45px'}} w-100 rounded overflow-hidden">
-                                                                    @if($isLongCredential)
-                                                                        <textarea id="{{$payment_key}}-{{$key}}" class="text-inside copy-text form-control rounded-1 pe-40" rows="5" placeholder="{{ucwords(str_replace('_',' ',$key))}} *" name="{{$key}}">{{env('APP_ENV')=='demo'?'':$value}}</textarea>
-                                                                    @else
-                                                                        <input type="text" id="{{$payment_key}}-{{$key}}" class="text-inside copy-text form-control rounded-1 pe-40" placeholder="{{ucwords(str_replace('_',' ',$key))}} *" name="{{$key}}" value="{{env('APP_ENV')=='demo'?'':$value}}" />
-                                                                    @endif
+                                                                <div class="custom-copy-text position-relative h--45px w-100 rounded overflow-hidden">
+                                                                    <input type="text" id="{{$payment_key}}-{{$key}}" class="text-inside copy-text form-control rounded-1 pe-40" placeholder="{{ucwords(str_replace('_',' ',$key))}} *" name="{{$key}}" value="{{env('APP_ENV')=='demo'?'':$value}}" />
                                                                     <span class="copy-btn bg-white position-absolute end-cus-0 top-50 cursor-pointer text-primary me-3"><i class="tio-copy"></i></span>
                                                                 </div>
                                                             </div>
@@ -404,7 +395,7 @@
                                                         </div>
                                                     @endif
                                                     
-                                                    @php($supportedCountry = $credentialValues)
+                                                    @php($supportedCountry = $payment->live_values)
                                                     @if ( $payment['key_name'] == 'mercadopago')
                                                         @php($supportedCountry = isset($supportedCountry['supported_country']) ? $supportedCountry['supported_country'] : ['argentina'])
                                                         <label for="{{ $payment->key_name }}-title" class="form-label">{{ translate('supported_Country') }} *</label>

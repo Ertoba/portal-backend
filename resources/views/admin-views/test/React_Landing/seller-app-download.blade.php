@@ -197,7 +197,7 @@
             @php($download_user_app_sub_title=\App\Models\DataSetting::withoutGlobalScope('translate')->where('type','react_landing_page')->where('key','download_user_app_sub_title')->first())
             @php($download_user_app_links = \App\Models\DataSetting::where(['key'=>'download_user_app_links','type'=>'react_landing_page'])->first())
             @php($download_user_app_links = isset($download_user_app_links->value)?json_decode($download_user_app_links->value, true):null)
-            <form action="{{ route('admin.business-settings.react-landing-page-settings', 'download-app-section') }}" method="POST" enctype="multipart/form-data">
+            <form action="{{ route('admin.business-settings.react-landing-page-settings-update', 'download-app-section') }}" method="POST" enctype="multipart/form-data">
                 @csrf
                 <div class="card">
                     <div class="card-body">
@@ -490,4 +490,3 @@
     <!-- How it Works -->
     @include('admin-views.business-settings.landing-page-settings.partial.how-it-work-react')
 @endsection
-

@@ -203,7 +203,12 @@
                                     {{$key+$orders->firstItem()}}
                                 </td>
                                 <td class="table-column-pl-0">
-                                    <a href="{{route('vendor.order.details',['id'=>$order['id']])}}">{{$order['id']}}</a>
+                                    <a href="{{route('vendor.order.details',['id'=>$order['id']])}}">
+                                        {{$order['id']}}
+                                        @if ($order->edited)
+                                            <div class="text-info fs-12 font-weight-medium">{{translate('messages.(Edited)')}}</div>
+                                        @endif
+                                    </a>
                                 </td>
                                 <td>
                                     <div>
@@ -290,6 +295,9 @@
                                         {{translate('messages.home Delivery')}}
                                         </div>
                                     @endif
+                                    <div class="mt-1">
+                                        @include('partials.delivery-type-badge', ['order' => $order])
+                                    </div>
                                 </td>
                                 <td>
                                     <div class="btn--container justify-content-center">

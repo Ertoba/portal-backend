@@ -7,6 +7,7 @@ use App\Models\Campaign;
 use Illuminate\Http\Request;
 use App\CentralLogics\Helpers;
 use App\CentralLogics\BannerLogic;
+use App\CentralLogics\PersonalizationService;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Cache;
 
@@ -43,6 +44,12 @@ class BannerController extends Controller
         }
 
         try {
+            // Personalize banner order for authenticated users
+            if(auth('api')->check() && is_array($banners)){
+                $bannersCollection = collect($banners);
+                $bannersCollection = PersonalizationService::reorderByPreference($bannersCollection, auth('api')->id(), 'store_id', 'store');
+                $banners = $bannersCollection->toArray();
+            }
             return response()->json(['campaigns'=>Helpers::basic_campaign_data_formatting($campaigns, true),'banners'=>$banners], 200);
         } catch (\Exception $e) {
             return response()->json([], 200);

@@ -8,9 +8,6 @@ use Modules\AI\app\Services\Products\Resource\ProductResource;
 
 class ProductPrompts
 {
-    private const FORCED_LANGUAGE_NAME = 'Georgian';
-    private const FORCED_LANGUAGE_SCRIPT = 'Georgian Mkhedruli script';
-
     protected ProductResource $ProductResource;
 
     public function __construct()
@@ -18,51 +15,24 @@ class ProductPrompts
         $this->ProductResource = new ProductResource();
     }
 
-    private function plainGeorgianRules(string $contentType): string
-    {
-        $languageName = self::FORCED_LANGUAGE_NAME;
-        $script = self::FORCED_LANGUAGE_SCRIPT;
-
-        return <<<PROMPT
-      GEORGIAN LANGUAGE REQUIREMENTS:
-      - Generate the {$contentType} in {$languageName} only.
-      - Use natural {$languageName} wording and {$script}.
-      - Translate non-{$languageName} product words and visible image text into {$languageName}.
-      - Keep brand names, SKU/model names, measurements, numbers, and proper nouns unchanged when translating would be inaccurate.
-      - Do not output English, Russian, transliteration, or mixed-language text except preserved brand/model names.
-      PROMPT;
-    }
-
-    private function jsonGeorgianRules(): string
-    {
-        $languageName = self::FORCED_LANGUAGE_NAME;
-        $script = self::FORCED_LANGUAGE_SCRIPT;
-
-        return <<<PROMPT
-                    Georgian text rules:
-                    - Generate every free-text, user-facing value in {$languageName} using {$script}.
-                    - Translate non-{$languageName} input words and visible image text into {$languageName} when they appear in generated names, tags, variation names, option names, SEO titles, or descriptions.
-                    - Keep brand names, SKU/model names, measurements, numbers, and proper nouns unchanged when translating would be inaccurate.
-                    - For constrained values selected from provided system lists, copy the exact option text from the list and do not translate it.
-                    - Keep JSON keys exactly as requested.
-        PROMPT;
-    }
-
 
 
     public function titleAutoFill(string $name, string $langCode = "en", $moduleType = null)
     {
 
-        $languageRules = $this->plainGeorgianRules('product title');
+        $langCode = strtoupper($langCode);
 
         $promptText = <<<PROMPT
         You are a creative and professional copywriter.
         Rewrite the product name "{$name}" into a clean, concise, and professional title for an online {$moduleType} store (food → emphasize taste/cuisine; grocery → highlight freshness/quantity; pharmacy → focus on clarity and dosage/form; shop → make brand-focused and appealing for e-commerce).
 
-      {$languageRules}
-      - Keep it short (35-70 characters), plain, and ready for listings.
+      CRITICAL INSTRUCTION:
+      - The output must be 100% in {$langCode} — this is mandatory.
+      - If the original name is not in {$langCode}, fully translate it into {$langCode} while keeping the meaning.
+      - Do not mix languages; use only {$langCode} characters and words.
+      - Keep it short (35–70 characters), plain, and ready for listings.
       - No extra words, slogans, or punctuation.
-      - Return only the translated title as plain text in Georgian.
+      - Return only the translated title as plain text in {$langCode}.
 
       PROMPT;
 
@@ -74,14 +44,17 @@ class ProductPrompts
 
     public function descriptionAutoFill(string $name, string $langCode = "en", $moduleType = null)
     {
-        $languageRules = $this->plainGeorgianRules('product description');
+        $langCode = strtoupper($langCode);
 
         $promptText = <<<PROMPT
         You are a creative and professional copywriter.
         Generate engaging, and persuasive product description for the product named "{$name}" into a clean, concise, and professional description for an online {$moduleType} store (food → emphasize taste/cuisine; grocery → highlight freshness/quantity; pharmacy → focus on clarity and dosage/form; shop → make brand-focused and appealing for e-commerce).
 
-        {$languageRules}
-        - Adapt the tone, phrasing, and examples to be natural for Georgian readers.
+        CRITICAL LANGUAGE RULES:
+        - The entire description must be written 100% in {$langCode} — this is mandatory.
+        - If the product name is in another language, translate and localize it naturally into {$langCode}.
+        - Do not mix languages; use only {$langCode} characters and words.
+        - Adapt the tone, phrasing, and examples to be natural for {$langCode} readers.
 
         Content & Structure:
         - Include a section with key features as separate paragraphs with its ingredients.
@@ -149,7 +122,6 @@ class ProductPrompts
         $nutrition = implode("', '", array_keys($nutrition));
         $allergy = implode("', '", array_keys($allergy));
         $addon = implode("', '", array_keys($addon));
-        $languageRules = $this->jsonGeorgianRules();
         $promptText = <<<PROMPT
                  Given:
                     - Name: "{$name}"
@@ -185,7 +157,6 @@ class ProductPrompts
                     - Categories/sub-categories must be chosen only from provided lists.
                     - Do not invent new values.
                     - Output must be valid JSON (json_decode in PHP).
-                    {$languageRules}
 
                     Options:
                     [CATEGORIES] {$categories}
@@ -228,7 +199,6 @@ class ProductPrompts
 
         $generic_names = implode("', '", array_keys($generic_names));
         $common_conditions = implode("', '", array_keys($common_conditions));
-        $languageRules = $this->jsonGeorgianRules();
 
         $promptText = <<<PROMPT
                       Given:
@@ -262,7 +232,6 @@ class ProductPrompts
                         - Do not invent new categories, sub-categories, generic names, or conditions.
                         - Output must be valid JSON (parsable with json_decode in PHP).
                         - No extra text outside JSON.
-                        {$languageRules}
 
                         Options:
                         [CATEGORIES] {$categories}
@@ -293,7 +262,6 @@ class ProductPrompts
 
         $brands   = $resource['brands'];
         $brands = implode("', '", array_keys($brands));
-        $languageRules = $this->jsonGeorgianRules();
 
         $promptText = <<<PROMPT
                         Given:
@@ -322,7 +290,6 @@ class ProductPrompts
                         - Brand must be from provided list if relevant.
                         - Do not invent new values.
                         - Output must be valid JSON (json_decode in PHP).
-                        {$languageRules}
 
                         Options:
                         [CATEGORIES] {$categories}
@@ -377,7 +344,6 @@ class ProductPrompts
         $productInfo = $description
             ? "Product name: \"{$name}\". Description: \"" . addslashes($description) . "\"."
             : "Product name: \"{$name}\".";
-        $languageRules = $this->jsonGeorgianRules();
 
         $promptText = <<<PROMPT
                     You are an expert SEO content writer and technical SEO specialist.
@@ -410,7 +376,6 @@ class ProductPrompts
 
                     Instructions:
                     - Use natural, clear language optimized for search engines.
-                    {$languageRules}
                     - Choose values for index/noindex and booleans based on product info.
                     - Keep character limits for title and description.
                     - Return ONLY the pure JSON text without markdown, code fences, or explanations.
@@ -422,8 +387,6 @@ class ProductPrompts
 
     public function variationSetupAutoFill(string $name, string $description)
     {
-        $languageRules = $this->jsonGeorgianRules();
-
         $promptText = <<<PROMPT
                        You are an expert food product specialist with deep knowledge of food variations.
 
@@ -444,7 +407,6 @@ class ProductPrompts
                         "option_price" must be a positive number.
                         Generate at least one variation per food item, more if suggested by the description (e.g., rice, soup, sauces, toppings).
                         Options must be realistic and relevant to the food description.
-                        {$languageRules}
                         JSON Schema Example (structure only, values are samples):
                         [
                         {
@@ -485,7 +447,7 @@ class ProductPrompts
 
     public function imageAnalysisAutoFill(string $langCode = "en")
     {
-        $languageRules = $this->plainGeorgianRules('product title');
+        $langCode = strtoupper($langCode);
 
         $promptText = <<<PROMPT
             You are an advanced food product analyst with strong skills in image recognition.
@@ -493,12 +455,12 @@ class ProductPrompts
             Analyze the uploaded product image provided by the user.
             Your task is to generate a clean, concise, and professional product title for online stores.
 
-            {$languageRules}
+            CRITICAL INSTRUCTION:
+            - The output must be 100% in {$langCode} — this is mandatory.
             - Identify the main product in the image and name it clearly.
-            - If the packaging or photo contains visible text, use it as evidence and translate product words to Georgian instead of copying English labels.
             - Do not add extra descriptions like "high quality" or "best".
-            - Keep it short (35-70 characters), plain, and ready for listings.
-            - Return only the translated product title as plain text in Georgian.
+            - Keep it short (35–70 characters), plain, and ready for listings.
+            - Return only the translated product title as plain text in {$langCode}.
 
             PROMPT;
 
@@ -506,7 +468,7 @@ class ProductPrompts
     }
     public function generateTitleSuggestions(array $keywords, string $langCode = "en")
     {
-        $languageRules = $this->plainGeorgianRules('product titles');
+        $langCode = strtoupper($langCode);
         $keywordsText = implode(' ', $keywords);
 
         $promptText = <<<PROMPT
@@ -514,9 +476,10 @@ class ProductPrompts
 
                Using the keywords "{$keywordsText}", generate 4 professional, clean, and concise product titles for online stores.
 
-               {$languageRules}
+               CRITICAL INSTRUCTIONS:
+               - The output must be 100% in {$langCode}.
                - Titles must use the keywords naturally.
-               - Keep them short (35-70 characters), clear, and ready for listings.
+               - Keep them short (35–70 characters), clear, and ready for listings.
                - Return exactly 4 titles in **plain JSON** format as shown below (do not include ```json``` or any extra markdown):
 
                {
@@ -550,7 +513,6 @@ class ProductPrompts
       $attributesList[] = "{$attr['name']} (ID:{$attr['id']})";
     }
     $attributesString = implode(', ', $attributesList);
-    $languageRules = $this->jsonGeorgianRules();
 
 
     $promptText = <<<PROMPT
@@ -573,8 +535,7 @@ class ProductPrompts
                 1. Use the provided attribute options when generating "choice_attributes".
                 2. Must Select relevant options from the choice_attributes dynamically, based on product name and description.
                 3. Do NOT invent options not present in the provided attributes.
-                4. {$languageRules}
-                5. **Output Format Rule:** Return ONLY the raw JSON object — no code blocks, no markdown, no explanation, no labels, no timestamps, no extra text. The response must start with "{" and end with "}".
+                4. **Output Format Rule:** Return ONLY the raw JSON object — no code blocks, no markdown, no explanation, no labels, no timestamps, no extra text. The response must start with "{" and end with "}".
 
                 PROMPT;
 

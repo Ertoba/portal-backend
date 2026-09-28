@@ -316,7 +316,7 @@
                     <form class="search-form w-340-lg">
                         <div class="input-group input--group">
                             <input name="search" type="search" class="form-control" placeholder="Search by Reason"
-                                value="{{ request()->get('search') ?? '' }}">
+                                value="{{ request()->input('search') ?? '' }}">
                             <button type="submit" class="btn btn--primary"><i class="tio-search"></i></button>
                         </div>
                     </form>

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1;
 use App\CentralLogics\Helpers;
 use App\Http\Controllers\Controller;
 use App\Models\AnalyticScript;
+use App\Models\AutomatedMessage;
 use App\Models\BusinessSetting;
 use App\Models\Category;
 use App\Models\Currency;
@@ -20,6 +21,7 @@ use App\Models\ReactPromotionalBanner;
 use App\Models\ReactTestimonial;
 use App\Models\Setting;
 use App\Models\SocialMedia;
+use App\Models\User;
 use App\Models\Zone;
 use App\Traits\AddonHelper;
 use Illuminate\Http\Request;
@@ -29,6 +31,8 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Validator;
 use MatanYadaev\EloquentSpatial\Objects\Point;
 use Modules\Rental\Entities\Vehicle;
+use Modules\RideShare\Entities\TripManagement\RideRequest;
+use Modules\TaxModule\Services\CalculateTaxService;
 
 class ConfigController extends Controller
 {
@@ -46,119 +50,18 @@ class ConfigController extends Controller
     public function configuration()
     {
         $key = [
-            'currency_code',
-            'cash_on_delivery',
-            'digital_payment',
-            'default_location',
-            'business_name',
-            'website_test_mode_status',
-            'website_test_mode_message',
-            'logo',
-            'address',
-            'phone',
-            'email_address',
-            'country',
-            'currency_symbol_position',
-            'app_minimum_version_android',
-            'app_url_android',
-            'app_minimum_version_ios',
-            'app_url_ios',
-            'app_url_android_store',
-            'app_minimum_version_ios_store',
-            'app_url_ios_store',
-            'app_minimum_version_ios_deliveryman',
-            'app_url_ios_deliveryman',
-            'app_minimum_version_android_deliveryman',
-            'app_minimum_version_android_store',
-            'app_url_android_deliveryman',
-            'schedule_order',
-            'order_delivery_verification',
-            'show_dm_earning',
-            'canceled_by_deliveryman',
-            'canceled_by_store',
-            'timeformat',
-            'toggle_veg_non_veg',
-            'toggle_dm_registration',
-            'toggle_store_registration',
-            'schedule_order_slot_duration',
-            'parcel_per_km_shipping_charge',
-            'parcel_minimum_shipping_charge',
-            'footer_text',
-
-            'loyalty_point_exchange_rate',
-            'loyalty_point_item_purchase_point',
-            'loyalty_point_status',
-            'loyalty_point_minimum_point',
-            'wallet_status',
-            'dm_tips_status',
-            'ref_earning_status',
-            'ref_earning_exchange_rate',
-            'refund_active_status',
-            'refund',
-            'cancelation',
-            'shipping_policy',
-            'prescription_order_status',
-            'icon',
-            'cookies_text',
-            'home_delivery_status',
-            'takeaway_status',
-            'additional_charge',
-            'additional_charge_status',
-            'additional_charge_name',
-            'dm_picture_upload_status',
-            'partial_payment_status',
-            'partial_payment_method',
-            'add_fund_status',
-            'offline_payment_status',
-            'websocket_url',
-            'websocket_port',
-            'websocket_status',
-            'guest_checkout_status',
-            'disbursement_type',
-            'restaurant_disbursement_waiting_time',
-            'dm_disbursement_waiting_time',
-            'min_amount_to_pay_store',
-            'min_amount_to_pay_dm',
-            'admin_commission',
-            'new_customer_discount_status',
-            'new_customer_discount_amount',
-            'new_customer_discount_amount_type',
-            'new_customer_discount_amount_validity',
-            'new_customer_discount_validity_type',
-            'store_review_reply',
-            'subscription_business_model',
-            'commission_business_model',
-            'subscription_deadline_warning_days',
-            'subscription_deadline_warning_message',
-            'subscription_free_trial_days',
-            'subscription_free_trial_type',
-            'subscription_free_trial_status',
-            'country_picker_status',
-            'firebase_otp_verification',
-            'manual_login_status',
-            'otp_login_status',
-            'social_login_status',
-            'google_login_status',
-            'facebook_login_status',
-            'apple_login_status',
-            'email_verification_status',
-            'phone_verification_status',
-            'admin_free_delivery_option',
-            'admin_free_delivery_status',
-            'free_delivery_over',
-
-            'parcel_cancellation_status',
-            'parcel_cancellation_basic_setup',
-            'parcel_return_time_fee',
-            'openai_config',
-
-            'dm_loyality_point_status',
-            'dm_loyality_point_per_order',
-            'dm_loyality_point_conversion_rate',
-            'dm_min_loyality_point_to_convert',
-            'dm_referal_status',
-            'dm_referal_amount',
-            'dm_referal_bonus',
+            'currency_code','cash_on_delivery','digital_payment','default_location','business_name','logo','address','phone','email_address','country','currency_symbol_position','app_minimum_version_android',
+            'app_url_android','app_minimum_version_ios','app_url_ios','app_url_android_store','app_minimum_version_ios_store','app_url_ios_store','app_minimum_version_ios_deliveryman','app_url_ios_deliveryman',
+            'app_minimum_version_android_deliveryman','app_minimum_version_android_store','app_url_android_deliveryman','app_minimum_version_android_rider','app_url_android_rider','app_minimum_version_ios_rider',
+            'app_url_ios_rider','schedule_order','order_delivery_verification','show_dm_earning','canceled_by_deliveryman','canceled_by_store','timeformat','toggle_veg_non_veg','toggle_dm_registration',
+            'toggle_store_registration','schedule_order_slot_duration','parcel_per_km_shipping_charge','parcel_minimum_shipping_charge','footer_text','loyalty_point_exchange_rate','loyalty_point_item_purchase_point',
+            'loyalty_point_status','loyalty_point_minimum_point','wallet_status','dm_tips_status','ref_earning_status','ref_earning_exchange_rate','refund_active_status','refund','cancelation',
+            'shipping_policy','prescription_order_status','icon','cookies_text','home_delivery_status','takeaway_status','additional_charge','additional_charge_status','additional_charge_name',
+            'dm_picture_upload_status','partial_payment_status','partial_payment_method','add_fund_status','offline_payment_status','websocket_url','websocket_port','websocket_status','guest_checkout_status','disbursement_type','restaurant_disbursement_waiting_time','dm_disbursement_waiting_time','min_amount_to_pay_store','min_amount_to_pay_dm','admin_commission','new_customer_discount_status','new_customer_discount_amount','new_customer_discount_amount_type','new_customer_discount_amount_validity','new_customer_discount_validity_type','store_review_reply','subscription_business_model','commission_business_model','subscription_deadline_warning_days','subscription_deadline_warning_message','subscription_free_trial_days','subscription_free_trial_type','subscription_free_trial_status','country_picker_status','firebase_otp_verification','manual_login_status','otp_login_status','social_login_status','google_login_status','facebook_login_status','apple_login_status','email_verification_status','phone_verification_status','send_otp_via','admin_free_delivery_option','admin_free_delivery_status','free_delivery_over',
+            'parcel_cancellation_status','parcel_cancellation_basic_setup','parcel_return_time_fee','openai_config','dm_loyality_point_status','dm_loyality_point_per_order',
+            'dm_loyality_point_conversion_rate','dm_min_loyality_point_to_convert','dm_referal_status','dm_referal_amount','dm_referal_bonus','pro_member_status',
+            'repeat_order_option','monthly_order_reminder','monthly_order_reminder_days_before','monthly_order_reminder_before_unit',
+            'customer_personalization_status','ai_chat_status',
 
         ];
 
@@ -174,12 +77,8 @@ class ConfigController extends Controller
         });
         $image_key = ['logo', 'icon'];
         $data = [];
-        $openAIConfig = isset($settings['openai_config']) ? json_decode($settings['openai_config'], true) : [];
-        $openAIStatus = isset($openAIConfig['status']) && $openAIConfig['status'] == 1 ? 1 : 0;
-        $aiChatStatus = $openAIStatus
-            && isset($openAIConfig['chat_status'])
-            && $openAIConfig['chat_status'] == 1
-            && !empty($openAIConfig['OPENAI_API_KEY']) ? 1 : 0;
+        $openAIStatus = isset($settings['openai_config']) ? json_decode($settings['openai_config'], true) : [];
+        $openAIStatus = isset($openAIStatus['status']) && $openAIStatus['status'] == 1 ? 1 : 0;
         foreach ($image_key as $value) {
             $data[$value . '_storage'] = Cache::rememberForever("business_settings_config_{$value}_storage", function () use ($value) {
                 return BusinessSetting::where('key', $value)->first()?->storage[0]?->value ?? 'public';
@@ -193,6 +92,10 @@ class ConfigController extends Controller
                 ->toArray();
         });
         $DataSetting = isset($DataSetting['download_user_app_links']) ? json_decode($DataSetting['download_user_app_links'], true) : [];
+        $DataSetting['playstore_url_status'] = (int)($DataSetting['playstore_url_status'] ?? 0);
+        $DataSetting['apple_store_url_status'] = (int)($DataSetting['apple_store_url_status'] ?? 0);
+        $DataSetting['playstore_url'] = $settings['app_url_android'] ?? null;
+        $DataSetting['apple_store_url'] = $settings['app_url_ios'] ?? null;
 
 
         $currency_symbol = Cache::rememberForever('business_settings_currency_symbol', function () {
@@ -219,12 +122,6 @@ class ConfigController extends Controller
                 'key' => $language,
                 'value' => Helpers::get_language_name($language),
             ]);
-        }
-        if (!in_array('ka', array_column($lang_array, 'key'), true)) {
-            $lang_array[] = [
-                'key' => 'ka',
-                'value' => 'ქართული',
-            ];
         }
         $system_languages = Helpers::get_business_settings('system_language');
         $sys_lang_array = [];
@@ -275,19 +172,16 @@ class ConfigController extends Controller
             'default_payment_gateways' => (bool)($published_status ? false : true),
         ];
             $dm_loyality_point_data = [
-            'dm_loyality_point_status' => (bool) (data_get($settings, 'dm_loyality_point_status') == 1 ? true : false),
-            'dm_loyality_point_per_order' => (float) data_get($settings, 'dm_loyality_point_per_order') ?? 0,
-            'dm_loyality_point_conversion_rate' => (float) data_get($settings, 'dm_loyality_point_conversion_rate') ?? 0,
-            'dm_min_loyality_point_to_convert' => (float) data_get($settings, 'dm_min_loyality_point_to_convert') ?? 0,
+            'loyality_point_status' => (bool) (data_get($settings, 'dm_loyality_point_status') == 1 ? true : false),
+            'loyality_point_per_order' => (float) data_get($settings, 'dm_loyality_point_per_order') ?? 0,
+            'loyality_point_conversion_rate' => (float) data_get($settings, 'dm_loyality_point_conversion_rate') ?? 0,
+            'min_loyality_point_to_convert' => (float) data_get($settings, 'dm_min_loyality_point_to_convert') ?? 0,
         ];
 
         $dm_referral_data = [
-            'dm_referal_status' => (bool) (data_get($settings,'dm_referal_status') == 1 ? true : false),
-            'dm_referal_amount' => (float) data_get($settings, 'dm_referal_amount') ?? 0,
-            'dm_referal_bonus' => (float) data_get($settings, 'dm_referal_bonus') ?? 0,
-            // Backward-compatible aliases expected by the delivery app model.
             'referal_status' => (bool) (data_get($settings,'dm_referal_status') == 1 ? true : false),
             'referal_amount' => (float) data_get($settings, 'dm_referal_amount') ?? 0,
+            'referal_bonus' => (float) data_get($settings, 'dm_referal_bonus') ?? 0,
         ];
 
         if (data_get($settings, 'subscription_free_trial_type') == 'year') {
@@ -317,11 +211,15 @@ class ConfigController extends Controller
         if (addon_published_status('TaxModule')) {
             $systemTax = \Modules\TaxModule\Entities\SystemTaxSetup::where('is_active', 1)->where('is_default', 1)->first();
         }
-
-        return response()->json([
+        $maintenance_mode_data =  Cache::rememberForever("data_settings_maintenance_mode", function () {
+            return DataSetting::where('type', 'maintenance_mode')->whereIn('key', ['maintenance_system_setup', 'maintenance_duration_setup', 'maintenance_message_setup'])->pluck('value', 'key')
+                ->map(function ($value) {
+                    return json_decode($value, true);
+                })
+                ->toArray();
+        });
+        $data = [
             'business_name' => $settings['business_name'],
-            'website_test_mode_status' => (bool)($settings['website_test_mode_status'] ?? false),
-            'website_test_mode_message' => (string)($settings['website_test_mode_message'] ?? 'ვებგვერდი სატესტო რეჟიმშია!'),
             'logo' => $settings['logo'],
             'logo_full_url' => Helpers::get_full_url('business', $settings['logo'], $data['logo_storage'] ?? 'public'),
             'address' => $settings['address'],
@@ -332,25 +230,29 @@ class ConfigController extends Controller
             'default_location' => ['lat' => $default_location ? $default_location['lat'] : '23.757989', 'lng' => $default_location ? $default_location['lng'] : '90.360587'],
             'currency_symbol' => $currency_symbol,
             'currency_symbol_direction' => $settings['currency_symbol_position'],
+
             'app_minimum_version_android' => (float)$settings['app_minimum_version_android'],
             'app_url_android' => $settings['app_url_android'],
             'app_url_ios' => $settings['app_url_ios'],
             'app_minimum_version_ios' => (float)$settings['app_minimum_version_ios'],
+
             'app_minimum_version_android_store' => (float)(isset($settings['app_minimum_version_android_store']) ? $settings['app_minimum_version_android_store'] : 0),
             'app_url_android_store' => (isset($settings['app_url_android_store']) ? $settings['app_url_android_store'] : null),
             'app_minimum_version_ios_store' => (float)(isset($settings['app_minimum_version_ios_store']) ? $settings['app_minimum_version_ios_store'] : 0),
             'app_url_ios_store' => (isset($settings['app_url_ios_store']) ? $settings['app_url_ios_store'] : null),
+
             'app_minimum_version_android_deliveryman' => (float)(isset($settings['app_minimum_version_android_deliveryman']) ? $settings['app_minimum_version_android_deliveryman'] : 0),
             'app_url_android_deliveryman' => (isset($settings['app_url_android_deliveryman']) ? $settings['app_url_android_deliveryman'] : null),
             'app_minimum_version_ios_deliveryman' => (float)(isset($settings['app_minimum_version_ios_deliveryman']) ? $settings['app_minimum_version_ios_deliveryman'] : 0),
             'app_url_ios_deliveryman' => (isset($settings['app_url_ios_deliveryman']) ? $settings['app_url_ios_deliveryman'] : null),
+
             'prescription_order_status' => isset($settings['prescription_order_status']) ? (bool)$settings['prescription_order_status'] : false,
             'schedule_order' => (bool)$settings['schedule_order'],
             'order_delivery_verification' => (bool)$settings['order_delivery_verification'],
             'cash_on_delivery' => (bool)($cod['status'] == 1 ? true : false),
             'digital_payment' => (bool)($digital_payment['status'] == 1 ? true : false),
             'digital_payment_info' => $digital_payment_infos,
-            'demo' => (bool)(env('APP_MODE') == 'demo' ? true : false),
+            'demo' => (bool)(getEnvMode() == 'demo' ? true : false),
             'maintenance_mode' => (bool)Helpers::get_business_settings('maintenance_mode') ?? 0,
             'order_confirmation_model' => config('order_confirmation_model'),
             'show_dm_earning' => (bool)$settings['show_dm_earning'],
@@ -403,7 +305,8 @@ class ConfigController extends Controller
             'websocket_status' => (int)(isset($settings['websocket_status']) ? $settings['websocket_status'] : 0),
             'websocket_url' => (isset($settings['websocket_url']) ? $settings['websocket_url'] : ''),
             'websocket_port' => (int)(isset($settings['websocket_port']) ? $settings['websocket_port'] : 6001),
-            'websocket_key' => env('PUSHER_APP_KEY'),
+            'websocket_key' => config('broadcasting.connections.reverb.key') ?: config('broadcasting.connections.pusher.key'),
+            'websocket_scheme' => config('broadcasting.connections.reverb.options.scheme') ?: config('broadcasting.connections.pusher.options.scheme', 'https'),
             'guest_checkout_status' => (int)(isset($settings['guest_checkout_status']) ? $settings['guest_checkout_status'] : 0),
             'disbursement_type' => (string)(isset($settings['disbursement_type']) ? $settings['disbursement_type'] : 'manual'),
             'restaurant_disbursement_waiting_time' => (int)(isset($settings['restaurant_disbursement_waiting_time']) ? $settings['restaurant_disbursement_waiting_time'] : 0),
@@ -425,9 +328,6 @@ class ConfigController extends Controller
             'subscription_free_trial_type' => (isset($settings['subscription_free_trial_type']) ? $settings['subscription_free_trial_type'] : 'day'),
             'subscription_free_trial_status' => (int)(isset($settings['subscription_free_trial_status']) ? $settings['subscription_free_trial_status'] : 0),
             'country_picker_status' => (int)(isset($settings['country_picker_status']) ? $settings['country_picker_status'] : 1),
-            // 'external_system' => $drivemondExternalSetting,
-            // 'drivemond_app_url_android' => $drivemondExternalSetting ? Helpers::get_external_data('drivemond_app_url_android') : '',
-            // 'drivemond_app_url_ios' => $drivemondExternalSetting ? Helpers::get_external_data('drivemond_app_url_ios') : '',
             'firebase_otp_verification' => (int)(isset($settings['firebase_otp_verification']) ? $settings['firebase_otp_verification'] : 0),
             'centralize_login' => [
                 'manual_login_status' => (int)(isset($settings['manual_login_status']) ? $settings['manual_login_status'] : 0),
@@ -438,6 +338,7 @@ class ConfigController extends Controller
                 'apple_login_status' => (int)(isset($settings['apple_login_status']) ? $settings['apple_login_status'] : 0),
                 'email_verification_status' => (int)(isset($settings['email_verification_status']) ? $settings['email_verification_status'] : 0),
                 'phone_verification_status' => (int)(isset($settings['phone_verification_status']) ? $settings['phone_verification_status'] : 0),
+                'send_otp_via' => (string)(isset($settings['send_otp_via']) ? $settings['send_otp_via'] : null),
             ],
 
             'vehicle_distance_min' => (float)$vehicle_distance_min ?? 0,
@@ -454,13 +355,208 @@ class ConfigController extends Controller
             'parcel_return_time_fee' => isset($settings['parcel_return_time_fee']) ? json_decode($settings['parcel_return_time_fee']) : null,
 
             'open_ai_status' => (int)$openAIStatus,
-            'ai_chat_status' => (int)$aiChatStatus,
 
             'dm_loyality_point_data' => $dm_loyality_point_data,
             'dm_referral_data' => $dm_referral_data,
             'seo_page_list' => Helpers::seoPageList(),
-            'download_user_app_links' => $DataSetting
-        ]);
+            'download_user_app_links' => $DataSetting,
+            'validation_config' => [
+                'image_format' => IMAGE_FORMAT,
+                'image_extension' => IMAGE_EXTENSION,
+                'image_format_for_validation' => IMAGE_FORMAT_FOR_VALIDATION,
+                'video_format' => VIDEO_FORMAT,
+                'video_extension' => VIDEO_EXTENSION,
+                'product_video_max_file_size' => PRODUCT_VIDEO_MAX_FILE_SIZE,
+                'document_format' => DOCUMENT_FORMAT,
+                'document_extension' => DOCUMENT_EXTENSION,
+                'audio_format' => AUDIO_FORMAT,
+                'audio_extension' => AUDIO_EXTENSION,
+                'file_format' => FILE_FORMAT,
+                'file_format_for_image_picker' => FILE_FORMAT_FOR_IMAGE_PICKER,
+                'file_extension' => FILE_EXTENSION,
+                'max_file_size' => MAX_FILE_SIZE,
+            ],
+            'repeat_order_option' => (int)($settings['repeat_order_option'] ?? false),
+            'monthly_order_reminder' => (int)($settings['monthly_order_reminder'] ?? false),
+            'monthly_order_reminder_days_before' => (int)($settings['monthly_order_reminder_days_before'] ?? 3),
+            'monthly_order_reminder_before_unit' => $settings['monthly_order_reminder_before_unit'] ?? 'day',
+            'maintenance_mode_data' => count($maintenance_mode_data) > 0 ? $maintenance_mode_data : null,
+            'store_category_status' => Helpers::storeCategoryStatus(),
+            'pro_member_status' => (int)(isset($settings['pro_member_status']) ? $settings['pro_member_status'] : 0),
+            'customer_personalization_status' => (int)(isset($settings['customer_personalization_status']) ? $settings['customer_personalization_status'] : 0),
+            'ai_chat_status' => (int)(($openAIStatus == 1 && (isset($settings['ai_chat_status']) ? $settings['ai_chat_status'] : 0)) ? 1 : 0),
+
+        ];
+
+        if(addon_published_status('RideShare')){
+            // Ride Share Configurations
+            $rideConfigs = $this->rideConfigs();
+
+            $rider_referral_data = [
+                'referal_status' => (bool) (data_get($rideConfigs,'rider_referal_status') == 1 ? true : false),
+                'referal_amount' => (float) data_get($rideConfigs, 'rider_referal_amount') ?? 0,
+                'referal_bonus' => (float) data_get($rideConfigs, 'rider_referal_bonus') ?? 0,
+            ];
+            $rider_loyality_point_data = [
+                'loyality_point_status' => (bool) (data_get($rideConfigs, 'rider_loyality_point_status') == 1 ? true : false),
+                // 'rider_loyality_point_per_order' => (float) data_get($rideConfigs, 'rider_loyality_point_per_order') ?? 0,
+                'loyality_point_conversion_rate' => (float) data_get($rideConfigs, 'rider_loyality_point_conversion_rate') ?? 0,
+                'min_loyality_point_to_convert' => (float) data_get($rideConfigs, 'rider_min_loyality_point_to_convert') ?? 0,
+            ];
+            $rideData = [
+                'vehicle_fuel_types' => $this->vehicleFuelTypes(),
+                'vehicle_transmission_types' => $this->vehicleTransmissionTypes(),
+                'ride_vat' => $this->getRideVat()['totalTaxPercent'] ?? 0,
+
+                'rider_can_review_customer' => isset($rideConfigs['rider_can_review_customer']) ? (int)($rideConfigs['rider_can_review_customer'] ?? 0) : 0,
+                'safety_feature_status' => isset($rideConfigs['safety_feature_status']) ? (int)($rideConfigs['safety_feature_status'] ?? 0) : 0,
+                'ride_safety_delay_time' => isset($rideConfigs['ride_safety_delay_time']) ? (int)($rideConfigs['ride_safety_delay_time']) : null,
+                'ride_safety_delay_time_format' => isset($rideConfigs['ride_safety_delay_time_format']) ? $rideConfigs['ride_safety_delay_time_format'] : 'minute',
+                'safety_feature_after_ride_complete_status' => isset($rideConfigs['safety_feature_after_ride_complete_status']) ? (int)($rideConfigs['safety_feature_after_ride_complete_status'] ?? 0) : '',
+                'safety_feature_after_ride_complete_time' => isset($rideConfigs['safety_feature_after_ride_complete_time']) ? (int)($rideConfigs['safety_feature_after_ride_complete_time'] ?? 0) : '',
+                'safety_feature_after_ride_complete_time_format' => isset($rideConfigs['safety_feature_after_ride_complete_time_format']) ? $rideConfigs['safety_feature_after_ride_complete_time_format'] : 'minute',
+                'emergency_govt_number' => isset($rideConfigs['emergency_govt_number']) ? (is_string($rideConfigs['emergency_govt_number'] ?? '') ? $rideConfigs['emergency_govt_number'] : '') : '',
+                'ride_commission' => isset($rideConfigs['ride_commission']) ? (float)($rideConfigs['ride_commission'] ?? 0) : 0,
+                'ride_search_radius' => isset($rideConfigs['search_radius']) ? (int)($rideConfigs['search_radius'] ?? 0) : 0,
+                'rider_completion_radius' => isset($rideConfigs['rider_completion_radius']) ? (int)($rideConfigs['rider_completion_radius'] ?? 0) : 0,
+                'bid_on_fare' => isset($rideConfigs['bid_on_fare']) ? (int)($rideConfigs['bid_on_fare'] ?? 0) : 0,
+                'ride_otp_confirmation' => (int)($rideConfigs['ride_otp_confirmation'] ?? 0),
+                'ride_request_active_time' => isset($rideConfigs['ride_request_active_time']) ? (int)($rideConfigs['ride_request_active_time'] ?? 0) : 0,
+                'toggle_rider_registration' => (isset($rideConfigs['toggle_rider_registration']) && $rideConfigs['toggle_rider_registration'] == 1) ? true : false,
+                'show_rider_earning' => (isset($rideConfigs['show_rider_earning']) && $rideConfigs['show_rider_earning'] == 1) ? true : false,
+                'rider_level_status' => isset($rideConfigs['rider_level_status']) ? (int)($rideConfigs['rider_level_status'] ?? 0) : 0,
+                'rider_tips_status' => isset($rideConfigs['rider_tips_status']) ? (int)($rideConfigs['rider_tips_status'] ?? 0) : 0,
+                'cash_in_hand_overflow_rider' => isset($rideConfigs['cash_in_hand_overflow_rider']) ? (int)($rideConfigs['cash_in_hand_overflow_rider'] ?? 0) : 0,
+                'rider_max_cash_in_hand' => isset($rideConfigs['rider_max_cash_in_hand']) ? (float)($rideConfigs['rider_max_cash_in_hand'] ?? 0) : 0,
+                'min_amount_to_pay_rider' => isset($rideConfigs['min_amount_to_pay_rider']) ? (float)($rideConfigs['min_amount_to_pay_rider'] ?? 0) : 0,
+                'rider_loyality_point_data' => $rider_loyality_point_data,
+                'rider_referral_data' => $rider_referral_data,
+                'customer_route_preference' => isset($rideConfigs['customer_route_preference']) ? (int)($rideConfigs['customer_route_preference'] ?? 0) : 0,
+                'rider_faqs' => AutomatedMessage::rider()->get(),
+                'app_minimum_version_android_rider' => (float)(isset($settings['app_minimum_version_android_rider']) ? $settings['app_minimum_version_android_rider'] : 0),
+                'app_url_android_rider' => (isset($settings['app_url_android_rider']) ? $settings['app_url_android_rider'] : null),
+                'app_minimum_version_ios_rider' => (float)(isset($settings['app_minimum_version_ios_rider']) ? $settings['app_minimum_version_ios_rider'] : 0),
+                'app_url_ios_rider' => (isset($settings['app_url_ios_rider']) ? $settings['app_url_ios_rider'] : null),
+
+            ];
+
+            $rideShareRows = DataSetting::where('type', 'react_ride_share_page')->get()->keyBy('key');
+
+            $buildHeroBlock = function (string $prefix) use ($rideShareRows) {
+                $heroIntroImage = $rideShareRows->get($prefix.'hero_intro_image');
+                $points = [];
+                for ($i = 1; $i <= 3; $i++) {
+                    $pointImage = $rideShareRows->get($prefix."hero_point_image_card_$i");
+                    $points[] = [
+                        'status' => (int) ($rideShareRows->get($prefix."hero_point_status_card_$i")?->value ?? 0),
+                        'title' => $rideShareRows->get($prefix."hero_point_title_card_$i")?->value,
+                        'image_full_url' => Helpers::get_full_url(
+                            'ride_share_hero_section',
+                            $pointImage?->value,
+                            $pointImage?->storage[0]?->value ?? 'public',
+                            'aspect_1'
+                        ),
+                    ];
+                }
+                return [
+                    'status' => (int) ($rideShareRows->get($prefix.'hero_section_status')?->value ?? 0),
+                    'intro' => [
+                        'title' => $rideShareRows->get($prefix.'hero_intro_title')?->value,
+                        'sub_title' => $rideShareRows->get($prefix.'hero_intro_sub_title')?->value,
+                        'image_full_url' => Helpers::get_full_url(
+                            'ride_share_hero_section',
+                            $heroIntroImage?->value,
+                            $heroIntroImage?->storage[0]?->value ?? 'public',
+                            'aspect_1'
+                        ),
+                    ],
+                    'points' => $points,
+                ];
+            };
+
+            $topCustomerIds = RideRequest::where('current_status', COMPLETED)
+                ->selectRaw('customer_id, COUNT(*) as total_rides')
+                ->whereNotNull('customer_id')
+                ->groupBy('customer_id')
+                ->orderByDesc('total_rides')
+                ->limit(5)
+                ->pluck('total_rides', 'customer_id');
+
+            $topCustomers = User::whereIn('id', $topCustomerIds->keys())
+                ->get()
+                ->map(fn ($user) => [
+                    'name' => trim($user->f_name . ' ' . $user->l_name),
+                    'image_full_url' => $user->image_full_url,
+                    'total_rides' => (int) ($topCustomerIds[$user->id] ?? 0),
+                ])
+                ->sortByDesc('total_rides')
+                ->values();
+
+            $rideData['react_ride_share_page'] = [
+                'customer' => [
+                    'hero_section' => $buildHeroBlock(''),
+                ],
+                'rider' => [
+                    'hero_section' => $buildHeroBlock('rider_'),
+                ],
+                'top_customers' => $topCustomers,
+                'total_customers' => User::count(),
+            ];
+
+            $data = array_merge($data, $rideData);
+        }
+
+        if (addon_published_status('ReelsModule')) {
+            $data['reels_module'] = [
+                'vendor_can_upload_reels' => (int) (Helpers::get_business_settings('vendor_can_upload_reels') ?? 0),
+                'reels_max_upload_size_mb' => (int) (Helpers::get_business_settings('reels_max_upload_size_mb') ?? 15),
+                'reels_max_duration' => (int) (Helpers::get_business_settings('reels_max_duration') ?? 30),
+                'reels_max_duration_unit' => (string) (Helpers::get_business_settings('reels_max_duration_unit') ?? 'min'),
+                'reels_upload_limit_unlimited' => (int) (Helpers::get_business_settings('reels_upload_limit_unlimited') ?? 1),
+                'reels_upload_limit' => (int) (Helpers::get_business_settings('reels_upload_limit') ?? 0),
+                'reels_upload_limit_type' => (string) (Helpers::get_business_settings('reels_upload_limit_type') ?? 'week'),
+            ];
+        }
+
+        return response()->json($data, 200);
+    }
+
+    public function rideConfigs() {
+        $keys = [
+            'rider_can_review_customer','safety_feature_status','ride_safety_delay_time','ride_safety_delay_time_format',
+            'safety_feature_after_ride_complete_status','safety_feature_after_ride_complete_time','safety_feature_after_ride_complete_time_format',
+            'emergency_govt_number','ride_commission','search_radius','rider_completion_radius','bid_on_fare','rider_referal_status',
+            'ride_otp_confirmation','ride_request_active_time','toggle_rider_registration','show_rider_earning','rider_level_status',
+            'rider_tips_status','cash_in_hand_overflow_rider','rider_max_cash_in_hand','min_amount_to_pay_rider','rider_loyality_point_status',
+            'rider_loyality_point_conversion_rate','rider_min_loyality_point_to_convert','rider_referal_amount','rider_referal_bonus',
+            'customer_route_preference'
+        ];
+
+        return DataSetting::whereIn('key', $keys)
+            ->where('type', RIDE_SHARE_BUSINESS_SETTINGS)
+            ->pluck('value', 'key');
+    }
+
+    public function getRideVat() {
+        return CalculateTaxService::getTaxPercentage('ride_module');
+    }
+
+    public function vehicleFuelTypes() {
+        return [
+            'octan',
+            'diesel',
+            'cng',
+            'petrol',
+        ];
+    }
+    public function vehicleTransmissionTypes() {
+        return [
+            'automatic',
+            'manual',
+            'continuously_variable',
+            'dual_clutch',
+            'semi_automatic',
+        ];
     }
 
     public static function get_settings_status($name)
@@ -482,7 +578,7 @@ class ConfigController extends Controller
         if ($validator->errors()->count() > 0) {
             return response()->json(['errors' => Helpers::error_processor($validator)], 403);
         }
-        $zones = Zone::with('modules')->whereContains('coordinates', new Point($request->lat, $request->lng, POINT_SRID))
+        $zones = Zone::with(['modules', 'moduleDeliveryOptions'])->whereContains('coordinates', new Point($request->lat, $request->lng, POINT_SRID))
             ->selectRaw('zones.*, ABS(ST_Area(coordinates)) as area')->orderBy('area', 'asc')->latest()->get(['id', 'status', 'cash_on_delivery', 'digital_payment', 'offline_payment']);
         if (count($zones) < 1) {
             return response()->json([
@@ -491,6 +587,36 @@ class ConfigController extends Controller
                 ],
             ], 404);
         }
+
+        $zones->each(function ($zone) {
+            $options_by_module = $zone->moduleDeliveryOptions->groupBy('module_id');
+            foreach ($zone->modules as $module) {
+                $module->setAttribute('additional_delivery_option_status', (bool) ($module->pivot->additional_delivery_option_status ?? false));
+                if ($module->pivot) {
+                    $module->pivot->makeHidden('additional_delivery_option_status');
+                }
+
+                $module_options = ($options_by_module[$module->id] ?? collect())->map(function ($option) {
+                    $add = $option->getAttribute('add_delivery_time');
+                    $reduce = $option->getAttribute('reduce_delivery_time');
+                    return [
+                        'id'                   => (int) $option->id,
+                        'module_id'            => (int) $option->module_id,
+                        'zone_id'              => (int) $option->zone_id,
+                        'delivery_type'        => (string) $option->delivery_type,
+                        'extra_charge'         => $option->getRawOriginal('extra_charge') !== null ? (float) $option->extra_charge : null,
+                        'reduce_charge'        => $option->getRawOriginal('reduce_charge') !== null ? (float) $option->reduce_charge : null,
+                        'add_delivery_time'    => ['value' => (int) ($add['value'] ?? 0), 'unit' => (string) ($add['unit'] ?? 'min')],
+                        'reduce_delivery_time' => ['value' => (int) ($reduce['value'] ?? 0), 'unit' => (string) ($reduce['unit'] ?? 'min')],
+                        'created_at'           => $option->created_at,
+                        'updated_at'           => $option->updated_at,
+                    ];
+                })->values()->all();
+                $module->setAttribute('delivery_options', $module_options);
+            }
+            $zone->unsetRelation('moduleDeliveryOptions');
+        });
+
         $data = array_filter($zones->toArray(), function ($zone) {
             if ($zone['status'] == 1) {
                 return $zone;
@@ -518,11 +644,23 @@ class ConfigController extends Controller
             return response()->json(['errors' => Helpers::error_processor($validator)], 403);
         }
 
+        $locale = app()->getLocale();
+        $cacheKey = 'place_autocomplete_' . md5($request['search_text'] . '_' . $locale);
+
+        try {
+            $cached = Cache::get($cacheKey);
+            if ($cached !== null) {
+                return $cached;
+            }
+        } catch (\Exception $e) {
+            // Cache read failed, proceed with API call
+        }
+
         $apiKey = $this->map_api_key;
         $url = 'https://places.googleapis.com/v1/places:autocomplete';
         $data = [
             'input' => $request['search_text'],
-            'languageCode' => app()->getLocale(),
+            'languageCode' => $locale,
         ];
 
         $headers = [
@@ -539,7 +677,17 @@ class ConfigController extends Controller
         $response = curl_exec($ch);
         curl_close($ch);
 
-        return json_decode($response, true);
+        $result = json_decode($response, true);
+
+        if ($response !== false && $result !== null && !isset($result['error'])) {
+            try {
+                Cache::put($cacheKey, $result, now()->addMinutes(30));
+            } catch (\Exception $e) {
+                // Cache write failed, still return the result
+            }
+        }
+
+        return $result;
     }
 
     public function distance_api(Request $request)
@@ -556,6 +704,21 @@ class ConfigController extends Controller
             return response()->json(['errors' => Helpers::error_processor($validator)], 403);
         }
 
+        $mode = $request['mode'] ?? 'WALK';
+        $cacheKey = 'distance_api_' . md5(
+            round($request['origin_lat'], 5) . '_' . round($request['origin_lng'], 5) . '_' .
+            round($request['destination_lat'], 5) . '_' . round($request['destination_lng'], 5) . '_' . $mode
+        );
+
+        try {
+            $cached = Cache::get($cacheKey);
+            if ($cached !== null) {
+                return $cached;
+            }
+        } catch (\Exception $e) {
+            //
+        }
+
         $apiKey = $this->map_api_key;
         $url = 'https://routes.googleapis.com/distanceMatrix/v2:computeRouteMatrix';
 
@@ -566,7 +729,7 @@ class ConfigController extends Controller
             'destinations' => [
                 ['waypoint' => ['location' => ['latLng' => ['latitude' => $request['destination_lat'], 'longitude' => $request['destination_lng']]]]],
             ],
-            'travelMode' => $request['mode'] ?? 'WALK',
+            'travelMode' => $mode,
             // "routingPreference" => "TRAFFIC_AWARE"
         ];
 
@@ -586,7 +749,18 @@ class ConfigController extends Controller
         $response = curl_exec($ch);
         curl_close($ch);
 
-        return json_decode($response, true)[0];
+        $decoded = json_decode($response, true);
+        $result = is_array($decoded) ? ($decoded[0] ?? null) : null;
+
+        if ($response !== false && $result !== null && !isset($result['error'])) {
+            try {
+                Cache::put($cacheKey, $result, now()->addHours(24));
+            } catch (\Exception $e) {
+                //
+            }
+        }
+
+        return $result;
     }
 
     public function place_api_details(Request $request)
@@ -597,6 +771,17 @@ class ConfigController extends Controller
 
         if ($validator->errors()->count() > 0) {
             return response()->json(['errors' => Helpers::error_processor($validator)], 403);
+        }
+
+        $cacheKey = 'place_details_' . md5($request['placeid']);
+
+        try {
+            $cached = Cache::get($cacheKey);
+            if ($cached !== null) {
+                return $cached;
+            }
+        } catch (\Exception $e) {
+            //
         }
 
         $apiKey = $this->map_api_key;
@@ -614,7 +799,17 @@ class ConfigController extends Controller
         $response = curl_exec($ch);
         curl_close($ch);
 
-        return json_decode($response, true);
+        $result = json_decode($response, true);
+
+        if ($response !== false && $result !== null && !isset($result['error'])) {
+            try {
+                Cache::put($cacheKey, $result, now()->addDays(7));
+            } catch (\Exception $e) {
+                //
+            }
+        }
+
+        return $result;
     }
 
     public function geocode_api(Request $request)
@@ -627,9 +822,117 @@ class ConfigController extends Controller
         if ($validator->errors()->count() > 0) {
             return response()->json(['errors' => Helpers::error_processor($validator)], 403);
         }
-        $response = Http::get('https://maps.googleapis.com/maps/api/geocode/json?latlng=' . $request->lat . ',' . $request->lng . '&key=' . $this->map_api_key);
 
-        return $response->json();
+        $cacheKey = 'geocode_api_' . md5(round($request->lat, 5) . '_' . round($request->lng, 5));
+
+        try {
+            $cached = Cache::get($cacheKey);
+            if ($cached !== null) {
+                return $cached;
+            }
+        } catch (\Exception $e) {
+            //
+        }
+
+        $response = Http::get('https://maps.googleapis.com/maps/api/geocode/json?latlng=' . $request->lat . ',' . $request->lng . '&key=' . $this->map_api_key);
+        $result = $response->json();
+
+        if ($response->successful() && $result !== null && ($result['status'] ?? null) === 'OK') {
+            try {
+                Cache::put($cacheKey, $result, now()->addDays(7));
+            } catch (\Exception $e) {
+                //
+            }
+        }
+
+        return $result;
+    }
+
+    public function direction_api(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'origin_lat' => 'required',
+            'origin_lng' => 'required',
+            'destination_lat' => 'required',
+            'destination_lng' => 'required',
+        ]);
+
+        if ($validator->errors()->count() > 0) {
+            return response()->json(['errors' => Helpers::error_processor($validator)], 403);
+        }
+
+        $mode = strtoupper($request['mode'] ?? 'DRIVE');
+        $cacheKey = 'direction_api_' . md5(
+            round($request['origin_lat'], 5) . '_' . round($request['origin_lng'], 5) . '_' .
+            round($request['destination_lat'], 5) . '_' . round($request['destination_lng'], 5) . '_' . $mode
+        );
+
+        try {
+            $cached = Cache::get($cacheKey);
+            if ($cached !== null) {
+                return $cached;
+            }
+        } catch (\Exception $e) {
+            //
+        }
+
+        $apiKey = $this->map_api_key;
+        $url = 'https://routes.googleapis.com/directions/v2:computeRoutes';
+
+        $data = [
+            'origin' => [
+                'location' => [
+                    'latLng' => [
+                        'latitude' => $request['origin_lat'],
+                        'longitude' => $request['origin_lng'],
+                    ],
+                ],
+            ],
+            'destination' => [
+                'location' => [
+                    'latLng' => [
+                        'latitude' => $request['destination_lat'],
+                        'longitude' => $request['destination_lng'],
+                    ],
+                ],
+            ],
+            'travelMode' => $mode,
+            'routingPreference' => 'TRAFFIC_AWARE',
+        ];
+
+        $headers = [
+            'Content-Type: application/json',
+            "X-Goog-Api-Key: $apiKey",
+            'X-Goog-FieldMask: routes.duration,routes.distanceMeters,routes.polyline.encodedPolyline',
+        ];
+
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
+        curl_setopt($ch, CURLOPT_FAILONERROR, true);
+
+        $response = curl_exec($ch);
+        $error = curl_error($ch);
+        curl_close($ch);
+
+        if ($error) {
+            return ['error' => $error];
+        }
+
+        $result = json_decode($response, true);
+
+        if ($result !== null && !isset($result['error'])) {
+            try {
+                Cache::put($cacheKey, $result, now()->addHour());
+            } catch (\Exception $e) {
+                //
+            }
+        }
+
+        return $result;
     }
 
 
@@ -738,6 +1041,14 @@ class ConfigController extends Controller
             'promotion_banners_full_url' => $promotional_banners ?? [],
         ];
 
+        $reactAppUrlAndroid = BusinessSetting::where('key', 'app_url_android')->value('value');
+        $reactAppUrlIos = BusinessSetting::where('key', 'app_url_ios')->value('value');
+        $reactDownloadUserAppLinks = isset($settings['download_user_app_links']) ? (json_decode($settings['download_user_app_links'], true) ?? []) : [];
+        $reactDownloadUserAppLinks['playstore_url_status'] = (int)($reactDownloadUserAppLinks['playstore_url_status'] ?? 0);
+        $reactDownloadUserAppLinks['apple_store_url_status'] = (int)($reactDownloadUserAppLinks['apple_store_url_status'] ?? 0);
+        $reactDownloadUserAppLinks['playstore_url'] = $reactAppUrlAndroid;
+        $reactDownloadUserAppLinks['apple_store_url'] = $reactAppUrlIos;
+
         $userAppDownloadSection = [
             'download_user_app_section_status' => (int)((isset($settings['download_user_app_section_status'])) ? $settings['download_user_app_section_status'] : 0),
             'download_user_app_title' => (isset($settings['download_user_app_title'])) ? $settings['download_user_app_title'] : null,
@@ -745,7 +1056,7 @@ class ConfigController extends Controller
             'download_user_app_image_full_url' => Helpers::get_full_url('download_user_app_image', (isset($settings['download_user_app_image'])) ? $settings['download_user_app_image'] : null, isset($settings['download_user_app_image_storage']) ? $settings['download_user_app_image_storage'] : 'public'),
             'download_user_app_button_title' => (isset($settings['download_user_app_button_title'])) ? $settings['download_user_app_button_title'] : null,
             'download_user_app_button_sub_title' => (isset($settings['download_user_app_button_sub_title'])) ? $settings['download_user_app_button_sub_title'] : null,
-            'download_user_app_links' => (isset($settings['download_user_app_links'])) ? json_decode($settings['download_user_app_links'], true) : null,
+            'download_user_app_links' => $reactDownloadUserAppLinks,
             'download_business_app_links' => (isset($settings['download_business_app_links'])) ? json_decode($settings['download_business_app_links'], true) : null,
         ];
 
@@ -789,6 +1100,32 @@ class ConfigController extends Controller
             'download_dm_app_links' => (isset($settings['download_dm_app_links'])) ? json_decode($settings['download_dm_app_links'], true) : null,
             'download_business_app_links' => (isset($settings['download_business_app_links'])) ? json_decode($settings['download_business_app_links'], true) : null,
         ];
+
+        if(addon_published_status('RideShare')){
+            $riderAppDownloadSection = [
+                'download_rider_app_section_status' => (int)((isset($settings['download_rider_app_section_status'])) ? $settings['download_rider_app_section_status'] : 0),
+                'download_rider_app_title' => (isset($settings['download_rider_app_title'])) ? $settings['download_rider_app_title'] : null,
+                'download_rider_app_sub_title' => (isset($settings['download_rider_app_sub_title'])) ? $settings['download_rider_app_sub_title'] : null,
+                'download_rider_app_content_button_title' => (isset($settings['download_rider_app_button_title'])) ? $settings['download_rider_app_button_title'] : null,
+                'download_rider_app_image_full_url' => Helpers::get_full_url('download_rider_app_section', (isset($settings['download_rider_app_image'])) ? $settings['download_rider_app_image'] : null, isset($settings['download_rider_app_image_storage']) ? $settings['download_rider_app_image_storage'] : 'public'),
+                'download_rider_app_button_title' => (isset($settings['download_rider_app_main_button_title'])) ? $settings['download_rider_app_main_button_title'] : null,
+                'download_rider_app_button_sub_title' => (isset($settings['download_rider_app_main_button_sub_title'])) ? $settings['download_rider_app_main_button_sub_title'] : null,
+                'download_rider_app_links' => (isset($settings['download_rider_app_links'])) ? json_decode($settings['download_rider_app_links'], true) : null,
+                'download_business_app_links' => (isset($settings['download_business_app_links'])) ? json_decode($settings['download_business_app_links'], true) : null,
+            ];
+        }else{
+            $riderAppDownloadSection = [
+                'download_rider_app_section_status' => 0,
+                'download_rider_app_title' => null,
+                'download_rider_app_sub_title' => null,
+                'download_rider_app_content_button_title' => null,
+                'download_rider_app_image_full_url' => null,
+                'download_rider_app_button_title' => null,
+                'download_rider_app_button_sub_title' => null,
+                'download_rider_app_links' => null,
+                'download_business_app_links' => null,
+            ];
+        }
 
         $bannerSection = [
             'banner_section_status' => (int)((isset($settings['banner_section_status'])) ? $settings['banner_section_status'] : 0),
@@ -862,6 +1199,7 @@ class ConfigController extends Controller
                 'popular_client_section' => $popularClientSection,
                 'seller_app_download_section' => $sellerAppDownloadSection,
                 'deliveryman_app_download_section' => $deliverymanAppDownloadSection,
+                'rider_app_download_section' => $riderAppDownloadSection,
                 'banner_section' => $bannerSection,
                 'testimonial_section' => $testimonialSection,
                 'gallery_section' => $gallerySection,
@@ -927,6 +1265,14 @@ class ConfigController extends Controller
 
         $criterias = FlutterSpecialCriteria::where('status', 1)->get();
 
+        $flutterAppUrlAndroid = BusinessSetting::where('key', 'app_url_android')->value('value');
+        $flutterAppUrlIos = BusinessSetting::where('key', 'app_url_ios')->value('value');
+        $flutterDownloadUserAppLinks = isset($settings['download_user_app_links']) ? (json_decode($settings['download_user_app_links'], true) ?? []) : [];
+        $flutterDownloadUserAppLinks['playstore_url_status'] = (int)($flutterDownloadUserAppLinks['playstore_url_status'] ?? 0);
+        $flutterDownloadUserAppLinks['apple_store_url_status'] = (int)($flutterDownloadUserAppLinks['apple_store_url_status'] ?? 0);
+        $flutterDownloadUserAppLinks['playstore_url'] = $flutterAppUrlAndroid;
+        $flutterDownloadUserAppLinks['apple_store_url'] = $flutterAppUrlIos;
+
         $awsUrl = config('filesystems.disks.s3.url');
         $awsBucket = config('filesystems.disks.s3.bucket');
         $awsBaseURL = rtrim($awsUrl, '/') . '/' . ltrim($awsBucket . '/');
@@ -968,7 +1314,7 @@ class ConfigController extends Controller
 
                 'special_criterias' => (isset($criterias)) ? $criterias : null,
 
-                'download_user_app_links' => (isset($settings['download_user_app_links'])) ? json_decode($settings['download_user_app_links'], true) : null,
+                'download_user_app_links' => $flutterDownloadUserAppLinks,
                 'available_zone_status' => (int)((isset($settings['available_zone_status'])) ? $settings['available_zone_status'] : 0),
                 'available_zone_title' => (isset($settings['available_zone_title'])) ? $settings['available_zone_title'] : null,
                 'available_zone_short_description' => (isset($settings['available_zone_short_description'])) ? $settings['available_zone_short_description'] : null,
@@ -979,6 +1325,35 @@ class ConfigController extends Controller
         );
     }
 
+
+    public function app_settings_download_section()
+    {
+        $datas = DataSetting::with('translations')
+            ->where('type', 'app_settings')
+            ->whereIn('key', ['download_user_app_section_status', 'download_user_app_title'])
+            ->get();
+
+        $settings = [];
+        foreach ($datas as $value) {
+            if (count($value->translations) > 0) {
+                $settings[$value->key] = $value->translations[0]['value'];
+            } else {
+                $settings[$value->key] = $value->value;
+            }
+        }
+
+        $appUrlAndroid = BusinessSetting::where('key', 'app_url_android')->value('value');
+        $appUrlIos = BusinessSetting::where('key', 'app_url_ios')->value('value');
+
+        return response()->json([
+            'download_user_app_section_status' => (int)($settings['download_user_app_section_status'] ?? 0),
+            'download_user_app_title'           => $settings['download_user_app_title'] ?? null,
+            'download_user_app_links'           => [
+                'playstore_url'   => $appUrlAndroid,
+                'apple_store_url' => $appUrlIos,
+            ],
+        ]);
+    }
 
     public function offline_payment_method_list(Request $request)
     {
@@ -1002,68 +1377,6 @@ class ConfigController extends Controller
         $data = $storage;
 
         return $data;
-    }
-
-    public function direction_api(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            'origin_lat' => 'required',
-            'origin_lng' => 'required',
-            'destination_lat' => 'required',
-            'destination_lng' => 'required',
-        ]);
-
-        if ($validator->errors()->count() > 0) {
-            return response()->json(['errors' => Helpers::error_processor($validator)], 403);
-        }
-
-        $apiKey = $this->map_api_key;
-        $url = 'https://routes.googleapis.com/directions/v2:computeRoutes';
-
-        $data = [
-            'origin' => [
-                'location' => [
-                    'latLng' => [
-                        'latitude' => $request['origin_lat'],
-                        'longitude' => $request['origin_lng'],
-                    ],
-                ],
-            ],
-            'destination' => [
-                'location' => [
-                    'latLng' => [
-                        'latitude' => $request['destination_lat'],
-                        'longitude' => $request['destination_lng'],
-                    ],
-                ],
-            ],
-            'travelMode' => strtoupper($request['mode'] ?? 'DRIVE'),
-            'routingPreference' => 'TRAFFIC_AWARE',
-        ];
-
-        $headers = [
-            'Content-Type: application/json',
-            "X-Goog-Api-Key: $apiKey",
-            'X-Goog-FieldMask: routes.duration,routes.distanceMeters,routes.polyline.encodedPolyline',
-        ];
-
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $url);
-        curl_setopt($ch, CURLOPT_POST, true);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
-        curl_setopt($ch, CURLOPT_FAILONERROR, true);
-
-        $response = curl_exec($ch);
-        $error = curl_error($ch);
-        curl_close($ch);
-
-        if ($error) {
-            return ['error' => $error];
-        }
-
-        return json_decode($response, true);
     }
 
     public function parcel_cancellation_reason(Request $request)

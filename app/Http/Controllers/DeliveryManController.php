@@ -48,7 +48,7 @@ class DeliveryManController extends Controller
             $referal_user = DeliveryMan::where('ref_code',$request->referral_code)->first();
             if (!$referal_user || !$referal_user->status) {
                     Toastr::error(translate('referer_code_not_found'));
-                    return back();
+                    return back()->withInput();
             }
             Helpers::deliverymanReferralNotification($referal_user);
         }
@@ -75,7 +75,7 @@ class DeliveryManController extends Controller
         } else if(session('six_captcha') != $request->custome_recaptcha)
         {
             Toastr::error(translate('messages.ReCAPTCHA Failed'));
-            return back();
+            return back()->withInput();
         }
 
         $request->validate([
@@ -144,6 +144,6 @@ class DeliveryManController extends Controller
             info($ex->getMessage());
         }
         Toastr::success(translate('messages.application_placed_successfully'));
-        return back();
+        return redirect()->route('home');
     }
 }

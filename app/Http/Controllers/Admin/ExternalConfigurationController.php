@@ -20,7 +20,7 @@ class ExternalConfigurationController extends Controller
     }
     public function updateDrivemondConfiguration(Request $request)
     {
-        if (env('APP_MODE') == 'demo') {
+        if (getEnvMode() == 'demo') {
             Toastr::info(translate('messages.update_option_is_disable_for_demo'));
             return back();
         }

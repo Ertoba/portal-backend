@@ -25,7 +25,15 @@
         </div>
         <!-- End Page Header -->
 
+        @php
+            $use_v2_chrome = match (config('layout.version', 'auto')) {
+                'v1'    => false,
+                'v2'    => true,
+                default => in_array(\Config::get('module.current_module_type'), config('layout.v2_modules', []), true),
+            };
+        @endphp
         <div class="row">
+            @if(!$use_v2_chrome)
             <div class="col-lg-3">
                 <!-- Navbar -->
                 <div class="navbar-vertical navbar-expand-lg mb-3 mb-lg-5">
@@ -69,9 +77,10 @@
                 </div>
                 <!-- End Navbar -->
             </div>
+            @endif
 
-            <div class="col-lg-9">
-                <form action="{{ env('APP_MODE') != 'demo' ? route('admin.settings') : 'javascript:' }}" method="post"
+            <div class="{{ $use_v2_chrome ? 'col-lg-12' : 'col-lg-9' }}">
+                <form action="{{ getEnvMode() != 'demo' ? route('admin.settings') : 'javascript:' }}" method="post"
                     enctype="multipart/form-data" id="admin-settings-form">
                     @csrf
                     <!-- Card -->
@@ -169,7 +178,7 @@
                             <div class="d-flex justify-content-end">
                                 <button type="button" data-id="admin-settings-form"
                                     data-message="{{ translate('Want to update admin info ?') }}"
-                                    class="btn btn-primary {{ env('APP_MODE') != 'demo' ? 'form-alert' : 'call-demo' }}">{{ translate('messages.save') }}</button>
+                                    class="btn btn-primary {{ getEnvMode() != 'demo' ? 'form-alert' : 'call-demo' }}">{{ translate('messages.save') }}</button>
                             </div>
 
                             <!-- End Form -->
@@ -189,7 +198,7 @@
                     <div class="card-body">
                         <!-- Form -->
                         <form id="changePasswordForm"
-                            action="{{ env('APP_MODE') != 'demo' ? route('admin.settings-password') : 'javascript:' }}"
+                            action="{{ getEnvMode() != 'demo' ? route('admin.settings-password') : 'javascript:' }}"
                             method="post" enctype="multipart/form-data">
                             @csrf
 
@@ -279,7 +288,7 @@
                             <div class="d-flex justify-content-end">
                                 <button type="button" data-id="changePasswordForm"
                                     data-message="{{ translate('messages.want_to_update_admin_password') }}"
-                                    class="btn btn-primary {{ env('APP_MODE') != 'demo' ? 'form-alert' : 'call-demo' }}">{{ translate('messages.save') }}</button>
+                                    class="btn btn-primary {{ getEnvMode() != 'demo' ? 'form-alert' : 'call-demo' }}">{{ translate('messages.save') }}</button>
                             </div>
                         </form>
                         <!-- End Form -->

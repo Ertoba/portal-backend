@@ -1,3 +1,19 @@
+@php
+    foreach (['food_variations', 'choice_options', 'add_ons', 'variations'] as $jsonField) {
+        if (isset($product->{$jsonField}) && !is_string($product->{$jsonField})) {
+            $product->{$jsonField} = json_encode($product->{$jsonField});
+        }
+    }
+    foreach (['variation', 'add_ons'] as $cartJsonField) {
+        if (is_array($cart_item) || $cart_item instanceof \ArrayAccess) {
+            if (isset($cart_item[$cartJsonField]) && !is_string($cart_item[$cartJsonField])) {
+                $cart_item[$cartJsonField] = json_encode($cart_item[$cartJsonField]);
+            }
+        } elseif (isset($cart_item->{$cartJsonField}) && !is_string($cart_item->{$cartJsonField})) {
+            $cart_item->{$cartJsonField} = json_encode($cart_item->{$cartJsonField});
+        }
+    }
+@endphp
 <div class="modal-header p-0">
     <h4 class="modal-title product-title">
     </h4>
@@ -317,7 +333,6 @@
         </div>
     </div>
 </div>
-<script src="{{asset('public/assets/admin')}}/js/view-pages/common.js"></script>
 <script type="text/javascript">
 
 

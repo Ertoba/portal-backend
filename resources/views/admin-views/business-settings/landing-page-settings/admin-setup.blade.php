@@ -364,6 +364,8 @@
             </div>
         </div>
     </div>
+    <!-- How it Works -->
+    @include('admin-views.business-settings.landing-page-settings.partial.how-it-work')
 @endsection
 
 @push('script_2')

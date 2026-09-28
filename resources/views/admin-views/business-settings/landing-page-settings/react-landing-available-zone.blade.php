@@ -101,7 +101,7 @@
                 </div>
             </div>
         <form id="zone-setup-form"
-              action="{{ route('admin.business-settings.react-landing-page-settings', 'available-zone-section') }}"
+              action="{{ route('admin.business-settings.react-landing-page-settings-update', 'available-zone-section') }}"
               method="POST" enctype="multipart/form-data">
             @csrf
             <div class="row g-3">

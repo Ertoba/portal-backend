@@ -116,7 +116,9 @@
                         <th class="border-0">
                             {{translate('messages.sl')}}
                         </th>
-                        <th class="table-column-pl-0 border-0">{{translate('messages.order_id')}}</th>
+                        <th class="table-column-pl-0 border-0">
+                            {{translate('messages.order_id')}}                            
+                        </th>
                         <th class="border-0">{{translate('messages.order_date')}}</th>
                         @if ($status == 'scheduled')
                         <th class="border-0">{{translate('messages.scheduled_at')}}</th>
@@ -147,7 +149,12 @@
                                 {{$key+$orders->firstItem()}}
                             </td>
                             <td class="table-column-pl-0">
-                                <a href="{{route($parcel_order?'admin.parcel.order.details':'admin.order.details',['id'=>$order['id']])}}">{{$order['id']}}</a>
+                                <a href="{{route($parcel_order?'admin.parcel.order.details':'admin.order.details',['id'=>$order['id']])}}">
+                                    {{$order['id']}}
+                                    @if ($order->edited)
+                                        <div class="text-info fs-12 font-weight-medium">{{translate('messages.(Edited)')}}</div>
+                                    @endif
+                                </a>
                             </td>
                             <td>
                                 <div>
@@ -285,13 +292,16 @@
                                       {{translate('messages.home Delivery')}}
                                     </div>
                                 @endif
+                                <div class="mt-1">
+                                    @include('partials.delivery-type-badge', ['order' => $order])
+                                </div>
                             </td>
                             <td>
-                                <div class="btn--container justify-content-center">
-                                    <a class="ml-2 btn btn-sm btn--warning btn-outline-warning action-btn" href="{{route($parcel_order?'admin.parcel.order.details':'admin.order.details',['id'=>$order['id']])}}">
+                                <div class="btn--container gap-2 justify-content-center">
+                                    <a class="ml-1 btn btn-sm  btn--primary btn-outline-primary action-btn" href="{{route($parcel_order?'admin.parcel.order.details':'admin.order.details',['id'=>$order['id']])}}">
                                         <i class="tio-invisible"></i>
                                     </a>
-                                    <a class="ml-2 btn btn-sm btn--primary btn-outline-primary action-btn" href="{{route($parcel_order?'admin.order.generate-invoice':'admin.order.generate-invoice',['id'=>$order['id']])}}">
+                                    <a class="ml-1 btn btn-sm btn-outline-success action-btn" href="{{route($parcel_order?'admin.order.generate-invoice':'admin.order.generate-invoice',['id'=>$order['id']])}}">
                                         <i class="tio-print"></i>
                                     </a>
                                 </div>
@@ -366,7 +376,7 @@
                             <select name="vendor[]" id="vendor_ids" class="form-control js-select2-custom" multiple="multiple">
                                 @foreach(\App\Models\Store::WithoutModule('rental')->get(['id','name']) as $store)
 
-                                    <option value="{{$store->id}}"
+                                    <option value="{{$store->id}}" data-verified="{{ (int) $store->verified_seller }}"
                                             @if(isset($vendor_ids) && in_array($store->id, $vendor_ids))
                                                 selected
                                         @endif>

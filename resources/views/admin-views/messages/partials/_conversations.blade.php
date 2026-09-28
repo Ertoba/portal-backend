@@ -3,10 +3,11 @@
     <div class="card-header justify-content-between">
         <div class="chat-user-info w-100 d-flex align-items-center">
             <div class="chat-user-info-img">
-                <img class="avatar-img onerror-image"
-                src="{{ $user['image_full_url'] }}"
-                    data-onerror-image="{{asset('public/assets/admin')}}/img/160x160/img1.jpg"
-                    alt="Image Description">
+                @include('partials._user-avatar', [
+                    'imageUrl'  => $user['image_full_url'],
+                    'proStatus' => $user['pro_status'] ?? false,
+                    'size'      => 55,
+                ])
             </div>
             <div class="chat-user-info-content">
                 <h5 class="mb-0 text-capitalize">
@@ -177,7 +178,6 @@
     </div>
 </div>
 
-<script src="{{asset('public/assets/admin')}}/js/view-pages/common.js"></script>
 <!-- Emoji Conv -->
 <script>
     "use strict";

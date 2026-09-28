@@ -2,9 +2,13 @@
 
 @section('title',translate('Store Report'))
 
+@section('store_summary_report')
+    active
+@endsection
 @push('css_or_js')
     <meta name="csrf-token" content="{{ csrf_token() }}">
 @endpush
+
 
 @section('content')
 

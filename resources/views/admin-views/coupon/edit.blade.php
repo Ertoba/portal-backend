@@ -96,6 +96,10 @@
                                         {{ translate('messages.free_delivery') }}</option>
                                     <option value="first_order" {{ $coupon['coupon_type'] == 'first_order' ? 'selected' : '' }}>
                                         {{ translate('messages.first_order') }}</option>
+                                    @if (\App\CentralLogics\Helpers::get_business_settings('pro_member_status') == 1 || $coupon['coupon_type'] == 'pro_customer')
+                                        <option value="pro_customer" {{ $coupon['coupon_type'] == 'pro_customer' ? 'selected' : '' }}>
+                                            {{ translate('messages.pro_customer') }}</option>
+                                    @endif
                                     <option value="default" {{ $coupon['coupon_type'] == 'default' ? 'selected' : '' }}>
                                         {{ translate('messages.default') }}</option>
                                 </select>
@@ -111,7 +115,7 @@
                                     @if ($coupon->coupon_type == 'store_wise')
                                         @php($store = \App\Models\Store::find(json_decode($coupon->data)[0]))
                                         @if ($store)
-                                            <option value="{{ $store->id }}">{{ $store->name }}</option>
+                                            <option value="{{ $store->id }}" data-verified="{{ (int) $store->verified_seller }}">{{ $store->name }}</option>
                                         @endif
                                     @else
                                         <option selected>{{ translate('Select Store') }}</option>
@@ -134,7 +138,7 @@
                             </div>
                         </div>
                         <div class="form-group col-md-4 col-lg-3 col-sm-6 error-wrapper" id="customer_wise"
-                            style="display: {{ $coupon['coupon_type'] == 'zone_wise' || $coupon['coupon_type'] == 'first_order' ? 'none' : 'block' }}">
+                            style="display: {{ in_array($coupon['coupon_type'], ['zone_wise', 'first_order', 'pro_customer']) ? 'none' : 'block' }}">
                             <label class="input-label"
                                 for="select_customer">{{ translate('messages.select_customer') }}</label>
                             <select name="customer_ids[]" id="select_customer" class="form-control multiple-select2"

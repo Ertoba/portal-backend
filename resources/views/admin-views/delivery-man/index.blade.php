@@ -121,7 +121,7 @@
                                                 <option value="" readonly="true" hidden="true">
                                                     {{ translate('messages.select_zone') }}</option>
                                                 @foreach (\App\Models\Zone::all() as $zone)
-                                                    @if (isset(auth('admin')->user()->zone_id))
+                                                    @if (auth('admin')?->user()?->zone_id)
                                                         @if (auth('admin')->user()->zone_id == $zone->id)
                                                             <option value="{{ $zone->id }}" selected>{{ $zone->name }}
                                                             </option>

@@ -1822,10 +1822,10 @@
         "isModified": false
     },
     {
-        "routeName": "Addon Activation List",
-        "URI": "admin/business-settings/addon-activation",
+        "routeName": "Mili Features",
+        "URI": "admin/business-settings/mili-features",
         "keywords": "Add On Activation Vendor App With This App Your Vendor Will Mange Their Business Through Mobile App View Want To Turn ON The Deliveryman App Addon Want To Turn OFF The Deliveryman App Addon Codcanyon User Name Ex Codcanyon Purchase Code Reset Submit Deliveryman App With This App Your All Your Deliveryman Will Mange Their Orders Through Mobile App React User Website With This React Website Your Customers Will Experience Your System In A More Attractive And Seamless Way",
-        "bladePath": "admin-views/addon-activation/index",
+        "bladePath": "admin-views/mili-features/index",
         "moduleType": [],
         "isModified": false
     },

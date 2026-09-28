@@ -30,9 +30,9 @@ class AdvertisementStoreRequest extends FormRequest
             'description.*' => 'nullable|max:65000',
             'dates' => 'required',
             'advertisement_type' => 'required|in:video_promotion,store_promotion',
-            'cover_image' => 'required_if:advertisement_type,store_promotion|image|mimes:jpg,png,jpeg,webp|max:' . (MAX_FILE_SIZE * 1024),
-            'profile_image' => 'required_if:advertisement_type,store_promotion|image|mimes:jpg,png,jpeg,webp|max:' . (MAX_FILE_SIZE * 1024),
-            'video_attachment' => 'required_if:advertisement_type,video_promotion|file|mimes:mp4,mkv,webm|max:' . (MAX_FILE_SIZE * 1024),
+            'cover_image' => 'required_if:advertisement_type,store_promotion|image|mimes:jpg,png,jpeg,webp|max:2048',
+            'profile_image' => 'required_if:advertisement_type,store_promotion|image|mimes:jpg,png,jpeg,webp|max:2048',
+            'video_attachment' => 'required_if:advertisement_type,video_promotion|file|mimes:mp4,mkv,webm|max:5120',
             'title.0' => 'required',
         ];
     }
@@ -44,9 +44,6 @@ class AdvertisementStoreRequest extends FormRequest
             'video_attachment.required_if' => translate('Your_video_attachment_is_missing'),
             'cover_image.required_if' => translate('Your_cover_image_is_missing'),
             'profile_image.required_if' => translate('Your_profile_image_is_missing'),
-            'cover_image.max' => translate('messages.file_size_exceeds_limit', ['size' => MAX_FILE_SIZE]),
-            'profile_image.max' => translate('messages.file_size_exceeds_limit', ['size' => MAX_FILE_SIZE]),
-            'video_attachment.max' => translate('messages.file_size_exceeds_limit', ['size' => MAX_FILE_SIZE]),
             'title.0.required'=>translate('default_title_is_required'),
         ];
     }

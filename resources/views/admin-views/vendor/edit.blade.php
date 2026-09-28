@@ -4,6 +4,9 @@
 @push('css_or_js')
 @endpush
 
+@section('store_update')
+active
+@endsection
 @section('content')
     <div class="content container-fluid">
         <!-- Page Header -->
@@ -154,7 +157,7 @@
                                         data-placeholder="{{ translate('messages.select_zone') }}"
                                         class="form-control js-select2-custom get_zone_data">
                                         @foreach (\App\Models\Zone::active()->get(['id', 'name']) as $zone)
-                                            @if (isset(auth('admin')->user()->zone_id))
+                                            @if (auth('admin')?->user()?->zone_id)
                                                 @if (auth('admin')->user()->zone_id == $zone->id)
                                                     <option value="{{ $zone->id }}"
                                                         {{ $store->zone_id == $zone->id ? 'selected' : '' }}>
@@ -476,7 +479,7 @@
                                                 aria-label="8+ characters required"
                                                 data-msg="Your password is invalid. Please try again."
                                                 data-hs-toggle-password-options='{
-                                            "target": [".js-toggle-password-target-1", ".js-toggle-password-target-2"],
+                                            "target": ".js-toggle-password-target-1",
                                             "defaultClass": "tio-hidden-outlined",
                                             "showClass": "tio-visible-outlined",
                                             "classChangeTarget": ".js-toggle-passowrd-show-icon-1"
@@ -504,7 +507,7 @@
                                                 aria-label="8+ characters required"
                                                 data-msg="Password does not match the confirm password."
                                                 data-hs-toggle-password-options='{
-                                                    "target": [".js-toggle-password-target-1", ".js-toggle-password-target-2"],
+                                                    "target": ".js-toggle-password-target-2",
                                                     "defaultClass": "tio-hidden-outlined",
                                                     "showClass": "tio-visible-outlined",
                                                     "classChangeTarget": ".js-toggle-passowrd-show-icon-2"
@@ -683,7 +686,7 @@
     <script>
         "use strict";
         $(document).on('ready', function() {
-            @if (isset(auth('admin')->user()->zone_id))
+            @if (auth('admin')?->user()?->zone_id)
                 $('#choice_zones').trigger('change');
             @endif
         });

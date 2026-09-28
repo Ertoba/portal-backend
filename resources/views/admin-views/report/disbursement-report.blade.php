@@ -83,7 +83,7 @@
                                     title="{{ translate('messages.select_modules') }}">
                                 <option value="" {{ !request('module_id') ? 'selected' : '' }}>
                                     {{ translate('messages.all_modules') }}</option>
-                                @foreach (\App\Models\Module::notParcel()->get() as $module)
+                                @foreach (\App\Models\Module::notParcel()->WithoutAdditionalModules()->get(['id', 'module_name']) as $module)
                                     <option value="{{ $module->id }}"
                                         {{ request('module_id') == $module->id ? 'selected' : '' }}>
                                         {{ $module['module_name'] }}
@@ -96,7 +96,7 @@
                                     data-placeholder="{{ translate('messages.select_store') }}"
                                     class="js-data-example-ajax form-control set-filter">
                                 @if (isset($store))
-                                    <option value="{{ $store->id }}" selected>{{ $store->name }}</option>
+                                    <option value="{{ $store->id }}" data-verified="{{ (int) $store->verified_seller }}" selected>{{ $store->name }}</option>
                                 @else
                                     <option value="all" selected>{{ translate('messages.all_stores') }}</option>
                                 @endif
@@ -258,14 +258,18 @@
                             </td>
                             @if($tab=='store')
                             <td>
-                                <a href="{{route('admin.store.view', [$disbursement->store->id, 'module_id'=>$disbursement->store->module_id])}}" alt="view store"
-                                   class="table-rest-info">
-                                    <div class="info">
-                                            <span class="d-block text-body">
-                                                {{ Str::limit($disbursement->store->name, 20, '...') }}<br>
-                                            </span>
-                                    </div>
-                                </a>
+                                @if($disbursement?->store)
+                                    <a href="{{ route('admin.store.view', [$disbursement->store->id, 'module_id' => $disbursement->store->module_id]) }}" alt="view store"
+                                       class="table-rest-info">
+                                        <div class="info">
+                                                <span class="d-block text-body">
+                                                    {{ Str::limit($disbursement->store->name, 20, '...') }}<br>
+                                                </span>
+                                        </div>
+                                    </a>
+                                @else
+                                    <span class="text-muted">{{ translate('messages.N/A') }}</span>
+                                @endif
                             </td>
                             @elseif($tab=='delivery_man')
                                 <td>
@@ -368,12 +372,12 @@
                                                                 <li class="d-flex flex-wrap">
                                                                     <span class="name">{{ translate('name') }}</span>
                                                                     <span>:</span>
-                                                                    <strong>{{$disbursement->store->vendor->f_name}} {{$disbursement->store->vendor->l_name}}</strong>
+                                                                    <strong>{{ trim(($disbursement?->store?->vendor?->f_name ?? '') . ' ' . ($disbursement?->store?->vendor?->l_name ?? '')) ?: translate('messages.N/A') }}</strong>
                                                                 </li>
                                                                 <li class="d-flex flex-wrap">
                                                                     <span class="name">{{ translate('email') }}</span>
                                                                     <span>:</span>
-                                                                    <strong>{{$disbursement->store->vendor->email}}</strong>
+                                                                    <strong>{{ $disbursement?->store?->vendor?->email ?? translate('messages.N/A') }}</strong>
                                                                 </li>
                                                             </ul>
                                                         </div>
@@ -381,13 +385,13 @@
                                                             <h5>{{ translate('Account_Information') }}</h5>
                                                             <ul class="item-list">
                                                                 <li class="d-flex flex-wrap">
-                                                                    <span class="name">{{ translate('payment_method') }}</span><strong>{{$disbursement->withdraw_method->method_name}}</strong>
+                                                                    <span class="name">{{ translate('payment_method') }}</span><strong>{{ $disbursement?->withdraw_method?->method_name ?? translate('messages.N/A') }}</strong>
                                                                 </li>
                                                                 <li class="d-flex flex-wrap">
                                                                     <span class="name">{{ translate('amount') }}</span>
                                                                     <strong>{{\App\CentralLogics\Helpers::format_currency($disbursement['disbursement_amount'])}}</strong>
                                                                 </li>
-                                                                @forelse(json_decode($disbursement->withdraw_method->method_fields, true) as $key=> $item)
+                                                                @forelse(json_decode($disbursement?->withdraw_method?->method_fields, true) ?? [] as $key=> $item)
                                                                     <li class="d-flex flex-wrap">
                                                                         <span class="name">{{  translate($key) }}</span>
                                                                         <strong>{{$item}}</strong>
@@ -676,4 +680,3 @@
         });
     </script>
 @endpush
-

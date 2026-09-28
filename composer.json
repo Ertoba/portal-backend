@@ -18,9 +18,11 @@
         "firebase/php-jwt": "^6.4",
         "gregwar/captcha": "^1.3",
         "guzzlehttp/guzzle": "^7.10",
+        "inertiajs/inertia-laravel": "^3.0",
         "intervention/image": "^3.11",
         "iyzico/iyzipay-php": "^2.0",
         "kreait/firebase-php": "^7.12",
+        "laravel/ai": "^0.6.2",
         "laravel/framework": "^12.0",
         "laravel/passport": "^12.0",
         "laravel/reverb": "^1.0",
@@ -38,9 +40,10 @@
         "rap2hpoutre/fast-excel": "dev-master",
         "razorpay/razorpay": "^2.8",
         "stripe/stripe-php": "^10.10",
+        "symfony/http-foundation": "^5.4.50 || ^6.4.29 || ^7.3.7",
+        "tightenco/ziggy": "^2.6",
         "twilio/sdk": "^6.39",
-        "xendit/xendit-php": "^2.19",
-        "symfony/http-foundation": "^5.4.50 || ^6.4.29 || ^7.3.7"
+        "xendit/xendit-php": "^2.19"
     },
     "require-dev": {
         "barryvdh/laravel-debugbar": "^3.5",
@@ -80,10 +83,13 @@
             "App\\": "app/",
             "Database\\Factories\\": "database/factories/",
             "Database\\Seeders\\": "database/seeders/",
+            "Modules\\Builder\\": "Modules/Builder/app/",
             "Modules\\": "Modules/"
         },
         "exclude-from-classmap": [
-            "Modules/*/Database/Migrations"
+            "Modules/*/Database/Migrations",
+            "Modules/*/database/migrations",
+            "Modules/*/vendor/"
         ]
     },
     "autoload-dev": {
@@ -110,8 +116,9 @@
     },
     "config": {
         "platform": {
-            "php": "8.2.0"
+            "php": "8.3.0"
         },
+        "platform-check": false,
         "optimize-autoloader": true,
         "preferred-install": "dist",
         "sort-packages": true,
@@ -119,6 +126,11 @@
             "composer/package-versions-deprecated": true,
             "php-http/discovery": true,
             "wikimedia/composer-merge-plugin": true
+        },
+        "audit": {
+            "ignore": {
+                "PKSA-y2cr-5h3j-g3ys": "firebase/php-jwt has no patched release in our constraint range; tracking upstream"
+            }
         }
     },
     "minimum-stability": "stable",

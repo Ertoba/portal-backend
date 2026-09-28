@@ -2,8 +2,9 @@
 
 use Illuminate\Support\Facades\Route;
 
-use Modules\AI\app\Http\Controllers\Api\V1\CustomerChatController;
 use Modules\AI\app\Http\Controllers\Api\ProductAutoFillController;
+use Modules\AI\app\Http\Controllers\Api\V1\AiChatController;
+use Modules\AI\app\Http\Middleware\AiChatEnabled;
 
 /*
 |--------------------------------------------------------------------------
@@ -16,7 +17,7 @@ use Modules\AI\app\Http\Controllers\Api\ProductAutoFillController;
 |
 */
 
-Route::group(['prefix' => 'ai', 'as' => 'ai.','middleware'=>['vendor.api','actch:vendor_app']], function () {
+Route::group(['prefix' => 'ai', 'as' => 'ai.','middleware'=>['vendor.api','mili.feature:vendor_app']], function () {
     // Route::get('generate-food-data', [ProductAutoFillController::class, 'getData']);
     Route::get('generate-title-and-description', [ProductAutoFillController::class, 'getTitleAndDescription']);
     Route::get('generate-other-data', [ProductAutoFillController::class, 'getOtherData']);
@@ -25,5 +26,21 @@ Route::group(['prefix' => 'ai', 'as' => 'ai.','middleware'=>['vendor.api','actch
     Route::post('generate-form-image', [ProductAutoFillController::class, 'analyzeImageAutoFill']);
 });
 
-Route::post('ai-chat/send', [CustomerChatController::class, 'send'])
-    ->middleware(['localization', 'auth:api', 'throttle:6,1']);
+// AI Chatbot — supports BOTH authenticated customers AND guests
+// Authenticated: uses auth('api')->user() — chat is scoped to user_id
+// Guest: must pass guest_id header or body param — chat is scoped to guest_id
+Route::group(['prefix' => 'customer'], function () {
+    Route::group([
+        'prefix'     => 'ai-chat',
+        // These endpoints are PUBLIC (guests allowed) and `send` triggers a paid
+        // LLM call, so they must be rate-limited to prevent cost abuse / DoS.
+        // throttle keys by auth user, else by IP. The group cap covers the cheap
+        // read endpoints; `send` gets a tighter per-minute cap below.
+        'middleware' => [AiChatEnabled::class, 'throttle:30,1'],
+    ], function () {
+        Route::post('send', [AiChatController::class, 'send'])->middleware('throttle:12,1');
+        Route::get('conversations', [AiChatController::class, 'conversations']);
+        Route::get('messages', [AiChatController::class, 'messages']);
+        Route::delete('conversations/{id}', [AiChatController::class, 'deleteConversation']);
+    });
+});

@@ -42,6 +42,7 @@ class ModuleUpdateRequest extends FormRequest
             'module_name' => 'required|max:100|unique:modules,module_name,'.$this->id,
             'module_name.0' => 'required',
             'description.0' => 'required',
+            'short_description.*' => 'nullable|string|max:100',
         ];
     }
 

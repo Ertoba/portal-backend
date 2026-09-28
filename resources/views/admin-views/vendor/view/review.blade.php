@@ -14,7 +14,7 @@
     <!-- Page Heading -->
     <div class="tab-content">
         <div class="tab-pane fade show active" id="product">
-            <div class="resturant-review-top" id="store_details">
+            <div class="resturant-review-top my-4" id="store_details">
                 <div class="resturant-review-left mb-3">
                     @php($user_rating = null)
                     @php($total_rating = 0)
@@ -205,11 +205,15 @@
                 </div>
             </div>
             <div class="card">
-
+ @php($reviews = $store->reviews()->with('item',function($query){
+                                $query->withoutGlobalScope(\App\Scopes\StoreScope::class);
+                            })->with('customer')
+                            ->latest()->paginate(25))
                     <!-- Header -->
             <div class="card-header py-2">
                 <div class="search--button-wrapper">
-                    <h5 class="card-title">{{translate('messages.Review_list')}}</h5>
+                    <h5 class="card-title">{{translate('messages.Review_list')}} <span
+                                    class="badge badge-soft-dark ml-2" id="itemCount">{{ $reviews->total() }}</span></h5>
                     {{-- <form  class="search-form">
                                     <!-- Search -->
                         @csrf
@@ -245,7 +249,7 @@
                                 <img class="avatar avatar-xss avatar-4by3 mr-2"
                                     src="{{ asset('public/assets/admin') }}/svg/components/placeholder-csv-format.svg"
                                     alt="Image Description">
-                                .{{ translate('messages.csv') }}
+                                {{ translate('messages.csv') }}
                             </a>
 
                         </div>
@@ -253,12 +257,9 @@
                     <!-- End Unfold -->
                 </div>
             </div>
-           
 
-                            @php($reviews = $store->reviews()->with('item',function($query){
-                                $query->withoutGlobalScope(\App\Scopes\StoreScope::class);
-                            })->with('customer')
-                            ->latest()->paginate(25))
+
+
                 <div class="card-body p-0 verticle-align-middle-table">
                     <div class="table-responsive datatable-custom">
                         <table id="columnSearchDatatable"
@@ -289,20 +290,22 @@
                                     <td>{{$review->review_id}}</td>
                                     <td>
                                         @if ($review->item)
-                                            <a class="media align-items-center" href="{{route('admin.item.view',[$review->item['id']])}}">
-                                                <img class="avatar avatar-lg mr-3 onerror-image"
+                                            <div class="media align-items-center">
+                                                <img class="avatar avatar-lg mr-2 onerror-image"
 
                                                      src="{{ $review?->item['image_full_url'] ?? asset('public/assets/admin/img/160x160/img1.jpg') }}"
 
 
                                                      data-onerror-image="{{asset('public/assets/admin/img/160x160/img1.jpg')}}" alt="{{$review->item->name}} image">
                                                 <div class="media-body">
-                                                    <h5 class="text-hover-primary mb-0">{{Str::limit($review->item['name'],10)}}</h5>
+                                                    <a href="{{route('admin.item.view',[$review->item['id']])}}">
+                                                        <h5 class="text-hover-primary mb-0">{{Str::limit($review->item['name'],10)}}</h5>
+                                                    </a>
                                                     <!-- Static Order ID -->
                                                     <a class="text-body" href="{{route('admin.order.details',['id'=>$review->order_id])}}">Order ID: {{$review->order_id}}</a>
                                                     <!-- Static Order ID -->
                                                 </div>
-                                            </a>
+                                            </div>
                                         @else
                                             {{translate('messages.Food_deleted!')}}
                                         @endif
@@ -312,9 +315,7 @@
                                             <a
                                                 href="{{route('admin.customer.view',[$review['user_id']])}}">
                                                 <div>
-                                    <span class="d-block h5 text-hover-primary mb-0">{{Str::limit($review->customer['f_name']." ".$review->customer['l_name'], 15)}} <i
-                                            class="tio-verified text-primary" data-toggle="tooltip" data-placement="top"
-                                            title="Verified Customer"></i></span>
+                                    <span class="d-block h5 text-hover-primary mb-0">{{Str::limit($review->customer['f_name']." ".$review->customer['l_name'], 15)}} </span>
                                                     <span class="d-block font-size-sm text-body">{{Str::limit($review->customer->phone)}}</span>
                                                 </div>
                                             </a>
@@ -353,7 +354,7 @@
                                     </td>
                                 </tr>
                             @endforeach
-                            </tbody>
+                        </tbody>
                         </table>
                         @if(count($reviews) !== 0)
                             <hr>
@@ -385,48 +386,6 @@
     <!-- Page level plugins -->
     <script>
         "use strict";
-        // Call the dataTables jQuery plugin
-        $(document).ready(function () {
-            $('#dataTable').DataTable();
-            // INITIALIZATION OF DATATABLES
-            // =======================================================
-            let datatable = $.HSCore.components.HSDatatables.init($('#columnSearchDatatable'));
-
-            $('#column1_search').on('keyup', function () {
-                datatable
-                    .columns(1)
-                    .search(this.value)
-                    .draw();
-            });
-
-            $('#column2_search').on('keyup', function () {
-                datatable
-                    .columns(2)
-                    .search(this.value)
-                    .draw();
-            });
-
-            $('#column3_search').on('change', function () {
-                datatable
-                    .columns(3)
-                    .search(this.value)
-                    .draw();
-            });
-
-            $('#column4_search').on('keyup', function () {
-                datatable
-                    .columns(4)
-                    .search(this.value)
-                    .draw();
-            });
-
-
-            // INITIALIZATION OF SELECT2
-            // =======================================================
-            $('.js-select2-custom').each(function () {
-                let select2 = $.HSCore.components.HSSelect2.init($(this));
-            });
-        });
 
         $('#search-form').on('submit', function () {
             let formData = new FormData(this);

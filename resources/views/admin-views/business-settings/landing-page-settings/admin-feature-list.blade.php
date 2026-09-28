@@ -49,7 +49,7 @@
         @endif
         <div class="tab-content">
             <div class="tab-pane fade show active">
-                <form action="{{ route('admin.business-settings.admin-landing-page-settings', 'feature-title') }}"
+                <form action="{{ route('admin.business-settings.admin-landing-page-settings-update', 'feature-title') }}"
                     method="POST" enctype="multipart/form-data">
                     @csrf
                     <h5 class="card-title mb-3">
@@ -172,7 +172,7 @@
                         </div>
                     </div>
                 </form>
-                <form action="{{ route('admin.business-settings.admin-landing-page-settings', 'feature-list') }}"
+                <form action="{{ route('admin.business-settings.admin-landing-page-settings-update', 'feature-list') }}"
                     method="POST" enctype="multipart/form-data">
                     @csrf
                     <div class="card mb-3">

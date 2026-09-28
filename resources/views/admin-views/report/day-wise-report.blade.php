@@ -35,7 +35,7 @@
                                 title="{{ translate('messages.select_modules') }}">
                                 <option value="" {{ !request('module_id') ? 'selected' : '' }}>
                                     {{ translate('messages.all_modules') }}</option>
-                                @foreach (\App\Models\Module::notRental()->get(['id', 'module_name']) as $module)
+                                @foreach (\App\Models\Module::WithoutAdditionalModules()->where('module_type', '!=', 'parcel')->get(['id', 'module_name']) as $module)
                                     <option value="{{ $module->id }}"
                                         {{ request('module_id') == $module->id ? 'selected' : '' }}>
                                         {{ $module['module_name'] }}
@@ -59,7 +59,7 @@
                                 data-placeholder="{{ translate('messages.select_store') }}"
                                 class="js-data-example-ajax form-control set-filter">
                                 @if (isset($store))
-                                    <option value="{{ $store->id }}" selected>{{ $store->name }}</option>
+                                    <option value="{{ $store->id }}" data-verified="{{ (int) $store->verified_seller }}" selected>{{ $store->name }}</option>
                                 @else
                                     <option value="all" selected>{{ translate('messages.all_stores') }}</option>
                                 @endif
@@ -110,7 +110,7 @@
         @php
             $from = $from . ' 00:00:00';
             $to = $to  . ' 23:59:59';
-            $total = \App\Models\Order::when(isset($zone), function ($query) use ($zone) {
+            $total = \App\Models\Order::where('order_type', '!=', 'parcel')->when(isset($zone), function ($query) use ($zone) {
                 return $query->where('zone_id', $zone->id);
             })
             ->when(isset($key), function ($query) use ($key) {
@@ -163,7 +163,7 @@
                     <div class="row g-2">
                         <div class="col-sm-6">
                             @php
-                                $delivered = \App\Models\Order::when(isset($zone), function ($query) use ($zone) {
+                                $delivered = \App\Models\Order::where('order_type', '!=', 'parcel')->when(isset($zone), function ($query) use ($zone) {
                                     return $query->where('zone_id', $zone->id);
                                 })
                                 ->when(isset($key), function ($query) use ($key) {
@@ -223,7 +223,7 @@
                         </div>
                         <div class="col-sm-6">
                             @php
-                                $canceled = \App\Models\Order::when(isset($zone), function ($query) use ($zone) {
+                                $canceled = \App\Models\Order::where('order_type', '!=', 'parcel')->when(isset($zone), function ($query) use ($zone) {
                                     return $query->where('zone_id', $zone->id);
                                 })
                                 ->when(isset($key), function ($query) use ($key) {
@@ -412,6 +412,7 @@
                                 <th class="border-0">{{ translate('messages.item_discount') }}</th>
                                 <th class="border-0">{{ translate('messages.coupon_discount') }}</th>
                                 <th class="border-0">{{ translate('messages.referral_discount') }}</th>
+                                <th class="border-0">{{ translate('messages.Pro_Discount') }}</th>
                                 <th class="border-0">{{ translate('messages.discounted_amount') }}</th>
                                 <th class="border-0">{{ translate('messages.vat/tax') }}</th>
                                 <th class="border-0">{{ translate('messages.delivery_charge') }}</th>
@@ -434,34 +435,32 @@
                             @foreach ($order_transactions as $k => $ot)
                                 <tr scope="row">
                                     <td>{{ $k + $order_transactions->firstItem() }}</td>
-                                    @if ($ot->order->order_type == 'parcel')
-                                        <td><a
-                                                href="{{ route('admin.transactions.parcel.order.details', $ot->order_id) }}">{{ $ot->order_id }}</a>
-                                        </td>
-                                    @else
-                                        <td><a
-                                                href="{{ route('admin.transactions.order.details', $ot->order_id) }}">{{ $ot->order_id }}</a>
-                                        </td>
-                                    @endif
+                                    <td><a
+                                            href="{{ route('admin.transactions.order.details', $ot->order_id) }}">{{ $ot->order_id }}</a>
+                                    </td>
                                     <td  class="text-capitalize">
                                         @if($ot->order->store)
                                             {{Str::limit($ot->order->store->name,25,'...')}}
-                                        @else
-                                            <label class="badge badge-soft-success white-space-nowrap">{{ translate('messages.parcel_order') }}
                                         @endif
                                     </td>
                                     <td class="white-space-nowrap">
-                                        @if ($ot->order->customer)
+                                        @php($delivery_address = $ot->order ? (is_array($ot->order->delivery_address) ? $ot->order->delivery_address : json_decode($ot->order->delivery_address, true)) : null)
+                                        @if ($ot->order && $ot->order->customer)
                                             <a class="text-body text-capitalize"
                                                 href="{{ route('admin.users.customer.view', [$ot->order['user_id']]) }}">
                                                 <strong>{{ $ot->order->customer['f_name'] . ' ' . $ot->order->customer['l_name'] }}</strong>
+                                                @if (!empty($delivery_address['contact_person_name']))
+                                                    <div>{{ $delivery_address['contact_person_name'] }}</div>
+                                                @endif
                                             </a>
+                                        @elseif (!empty($delivery_address['contact_person_name']))
+                                            <strong>{{ $delivery_address['contact_person_name'] }}</strong>
                                         @else
                                             <label class="badge badge-danger">{{ translate('messages.invalid_customer_data') }}</label>
                                         @endif
                                     </td>
                                     {{-- total_item_amount --}}
-                                    <td class="white-space-nowrap">{{ \App\CentralLogics\Helpers::format_currency($ot->order['order_amount'] - $ot->additional_charge - $ot->order['dm_tips']-$ot->order['delivery_charge']  - $ot['tax'] - $ot->order['extra_packaging_amount'] + $ot->order['coupon_discount_amount'] + $ot->order['store_discount_amount'] + $ot->order['ref_bonus_amount']  +$ot->order['flash_admin_discount_amount'] +$ot->order['flash_store_discount_amount'] + $ot->order['extra_discount_amount']) }}</td>
+                                    <td class="white-space-nowrap">{{ \App\CentralLogics\Helpers::format_currency($ot->order['order_amount'] - $ot->additional_charge - $ot->order['dm_tips']-\App\CentralLogics\DeliveryFeeLogic::adjustedFeeForOrder($ot->order)['adjusted']  - $ot['tax'] - $ot->order['extra_packaging_amount'] + $ot->order['coupon_discount_amount'] + $ot->order['store_discount_amount'] + $ot->order['ref_bonus_amount']  +$ot->order['flash_admin_discount_amount'] +$ot->order['flash_store_discount_amount'] + $ot->order['extra_discount_amount'] + ($ot->pro_discount ?? 0)) }}</td>
 
                                     {{-- item_discount --}}
                                     @if ($ot->discount_type == 'flash_sale')
@@ -474,8 +473,10 @@
                                     <td class="white-space-nowrap">{{ \App\CentralLogics\Helpers::format_currency($ot->order['coupon_discount_amount']) }}</td>
                                     {{-- referral_discount --}}
                                     <td class="white-space-nowrap">{{ \App\CentralLogics\Helpers::format_currency($ot->order['ref_bonus_amount']) }}</td>
+                                    {{-- pro_discount --}}
+                                    <td class="white-space-nowrap">{{ \App\CentralLogics\Helpers::format_currency($ot->pro_discount ?? 0) }}</td>
                                     {{-- discounted_amount --}}
-                                    <td class="white-space-nowrap">  {{ \App\CentralLogics\Helpers::format_currency($ot->order['coupon_discount_amount'] + $ot->order['store_discount_amount']+$ot->order['flash_store_discount_amount']+$ot->order['flash_admin_discount_amount'] + $ot->order['ref_bonus_amount'] + $ot->order['extra_discount_amount']) }}</td>
+                                    <td class="white-space-nowrap">  {{ \App\CentralLogics\Helpers::format_currency($ot->order['coupon_discount_amount'] + $ot->order['store_discount_amount']+$ot->order['flash_store_discount_amount']+$ot->order['flash_admin_discount_amount'] + $ot->order['ref_bonus_amount'] + $ot->order['extra_discount_amount'] + ($ot->pro_discount ?? 0)) }}</td>
 
                                     <td class="white-space-nowrap">{{ \App\CentralLogics\Helpers::format_currency($ot->tax) }}</td>
                                     <td class="white-space-nowrap">{{ \App\CentralLogics\Helpers::format_currency($ot->delivery_charge) }}</td>
@@ -554,7 +555,7 @@
             @if (count($order_transactions) !== 0)
                 <hr>
             @endif
-            <div class="page-area">
+            <div class="page-area px-3">
                 {!! $order_transactions->links() !!}
             </div>
             @if (count($order_transactions) === 0)
@@ -616,32 +617,5 @@
             });
         });
 
-        $('#search-form').on('submit', function(e) {
-            e.preventDefault();
-            let formData = new FormData(this);
-            $.ajaxSetup({
-                headers: {
-                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-                }
-            });
-            $.post({
-                url: '{{ route('admin.transactions.report.day-wise-report-search') }}',
-                data: formData,
-                cache: false,
-                contentType: false,
-                processData: false,
-                beforeSend: function() {
-                    $('#loading').show();
-                },
-                success: function(data) {
-                    $('#set-rows').html(data.view);
-                    $('#countItems').html(data.count);
-                    $('.page-area').hide();
-                },
-                complete: function() {
-                    $('#loading').hide();
-                },
-            });
-        });
     </script>
 @endpush

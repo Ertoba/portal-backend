@@ -6,6 +6,11 @@ use Illuminate\Database\Eloquent\Model;
 
 class Wishlist extends Model
 {
+    protected $fillable = [
+        'user_id',
+        'item_id',
+        'store_id',
+    ];
     protected $casts = [
         'item_id' => 'integer',
         'user_id' => 'integer',

@@ -55,7 +55,7 @@
     @endif
     <div class="tab-content">
         <div class="tab-pane fade show active">
-            <form action="{{ route('admin.business-settings.flutter-landing-page-settings', 'fixed-header') }}" method="POST" enctype="multipart/form-data">
+            <form action="{{ route('admin.business-settings.flutter-landing-page-settings-update', 'fixed-header') }}" method="POST" enctype="multipart/form-data">
                 @csrf
                 <h5 class="card-title mb-3">
                     <span class="card-header-icon mr-2"><i class="tio-settings-outlined"></i></span> <span>{{translate('messages.header_section')}}</span>
@@ -181,7 +181,7 @@
                 <input type="hidden" name="image_path" value="fixed_header_image" >
                 <input type="hidden" name="field_name" value="value" >
             </form>
-            <form action="{{ route('admin.business-settings.flutter-landing-page-settings', 'fixed-location') }}" method="POST" enctype="multipart/form-data">
+            <form action="{{ route('admin.business-settings.flutter-landing-page-settings-update', 'fixed-location') }}" method="POST" enctype="multipart/form-data">
                 @csrf
                 <h5 class="card-title mb-3 mt-3">
                     <span class="card-header-icon mr-2"><i class="tio-settings-outlined"></i></span> <span>{{translate('messages.location_setup')}}</span>
@@ -239,7 +239,7 @@
                     </div>
                 </div>
             </form>
-            <form action="{{ route('admin.business-settings.flutter-landing-page-settings', 'fixed-module') }}" method="POST" enctype="multipart/form-data">
+            <form action="{{ route('admin.business-settings.flutter-landing-page-settings-update', 'fixed-module') }}" method="POST" enctype="multipart/form-data">
                 @csrf
                 <h5 class="card-title mb-3 mt-3">
                     <span class="card-header-icon mr-2"><i class="tio-settings-outlined"></i></span> <span>{{translate('messages.module_setup')}}</span>

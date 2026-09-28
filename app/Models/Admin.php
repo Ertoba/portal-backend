@@ -115,7 +115,7 @@ class Admin extends Authenticatable
      */
     public function scopeZone($query): mixed
     {
-        if(isset(auth('admin')->user()->zone_id))
+        if(auth('admin')?->user() && auth('admin')->user()->zone_id)
         {
             return $query->where('zone_id', auth('admin')->user()->zone_id);
         }

@@ -12,7 +12,7 @@
     $admin_user = auth('admin')->user();
 
     $rental_on = addon_published_status('Rental');
-    $ride_on   = addon_published_status('RideShare');
+    $ride_on   = addon_published_status('RideShare') && Route::has('admin.ride-share.dashboard');
     $parcel_on = \App\Models\Module::where('module_type', 'parcel')->where('status', 1)->exists();
 
     // Match patterns include every inner-tab URL so sidebar stays active on sub-tabs.
@@ -118,7 +118,7 @@
                             <button type="button" class="v2-pin" data-pin="tr-rental" title="{{ translate('Pin') }}">@include('layouts.admin.partials._v2_pin_icon')</button>
                         </a>
                         @endif
-                        @if($ride_on)
+                        @if($ride_on && Route::has('admin.transactions.ride-share.transaction.index'))
                         <a class="v2-nav-item {{ $is('admin/transactions/ride-share/transaction*') ? 'is-active' : '' }}" href="{{ route('admin.transactions.ride-share.transaction.index') }}" data-id="tr-ride">
                             <span class="v2-dot v2-dot--blue"></span><span class="v2-label">{{ translate('Ride Transaction Report') }}</span>
                             <button type="button" class="v2-pin" data-pin="tr-ride" title="{{ translate('Pin') }}">@include('layouts.admin.partials._v2_pin_icon')</button>

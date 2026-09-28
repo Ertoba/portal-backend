@@ -85,7 +85,7 @@
                                         <select name="zone_id" id="zone" class="form-control js-select2-custom" required>
                                             <option disabled selected>---{{translate('messages.select')}}---</option>
                                             @foreach($zones as $zone)
-                                                @if(isset(auth('admin')->user()->zone_id))
+                                                @if(auth('admin')?->user()?->zone_id)
                                                     @if(auth('admin')->user()->zone_id == $zone->id)
                                                         <option value="{{$zone->id}}" selected>{{$zone->name}}</option>
                                                     @endif
@@ -160,12 +160,12 @@
                             <form  class="search-form">
                                 <!-- Search -->
                                 <div class="input-group input--group">
-                                    <input id="datatableSearch" type="search" value="{{ request()->get('search')?? '' }}" name="search" class="form-control" placeholder="{{translate('messages.search_by_title')}}" aria-label="{{translate('messages.search_here')}}">
+                                    <input id="datatableSearch" type="search" value="{{ request()->input('search')?? '' }}" name="search" class="form-control" placeholder="{{translate('messages.search_by_title')}}" aria-label="{{translate('messages.search_here')}}">
                                     <button type="submit" class="btn btn--secondary"><i class="tio-search"></i></button>
                                 </div>
                                 <!-- End Search -->
                             </form>
-                            @if(request()->get('search'))
+                            @if(request()->input('search'))
                             <button type="reset" class="btn btn--primary ml-2 location-reload-to-base" data-url="{{url()->full()}}">{{translate('messages.reset')}}</button>
                             @endif
 

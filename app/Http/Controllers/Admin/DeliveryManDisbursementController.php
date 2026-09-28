@@ -107,166 +107,149 @@ class DeliveryManDisbursementController extends Controller
 
     public function status(Request $request)
     {
-        $disbursements=DisbursementDetails::where(['disbursement_id'=>$request->disbursement_id])->whereIn('delivery_man_id',$request->delivery_man_ids)->get();
+        try {
+            DB::transaction(function () use ($request) {
+                $disbursements = DisbursementDetails::with(['delivery_man.wallet', 'withdraw_method'])
+                    ->where(['disbursement_id' => $request->disbursement_id])
+                    ->whereIn('delivery_man_id', $request->delivery_man_ids)
+                    ->lockForUpdate()
+                    ->get();
 
-        foreach ($disbursements as $disbursement){
-
-            if ( (string)  $disbursement->delivery_man?->wallet?->total_earning <  (string) ($disbursement->delivery_man?->wallet?->total_withdrawn + $disbursement->delivery_man?->wallet?->pending_withdraw) ) {
-                return response()->json([
-                    'status' => 'error',
-                    'message'=> translate('messages.Balance_mismatched_total_earning_is_too_low_for').' '.$disbursement->delivery_man?->name,
-                ]);
-            }
-
-
-            if($request->status == 'completed') {
-                if ($disbursement->status != 'completed') {
-                    $provide_dm_earning = new ProvideDMEarning();
-                    $provide_dm_earning->delivery_man_id = $disbursement->delivery_man_id;
-                    $provide_dm_earning->method = $disbursement?->withdraw_method?->method_name;
-                    $provide_dm_earning->ref = $disbursement->id;
-                    $provide_dm_earning->amount = $disbursement['disbursement_amount'];
-
-
-                    // if((string)  $disbursement->delivery_man?->wallet?->pending_withdraw  >=   (string) $disbursement['disbursement_amount']){
-                    //     $disbursement->delivery_man?->wallet?->decrement('pending_withdraw', $disbursement['disbursement_amount']);
-                    //     $disbursement->delivery_man?->wallet?->increment('total_withdrawn', $disbursement['disbursement_amount']);
-                    // } else{
-                    //     return response()->json([
-                    //         'status' => 'error',
-                    //         'message'=> translate('messages.Balance_mismatched_for').' '.$disbursement->delivery_man?->f_name,
-                    //     ]);
-                    // }
-
-
-                    if($disbursement->status== 'canceled'){
-                        $disbursement->delivery_man?->wallet?->increment('total_withdrawn', $disbursement['disbursement_amount']);
-                        } else{
-                            $disbursement->delivery_man?->wallet?->decrement('pending_withdraw', $disbursement['disbursement_amount']);
-                            $disbursement->delivery_man?->wallet?->increment('total_withdrawn', $disbursement['disbursement_amount']);
-                        }
-
-
-                    $provide_dm_earning->save();
-
-                }
-            }elseif ($request->status == 'canceled'){
-                if($disbursement->status == 'completed'){
-                    return response()->json([
-                        'status' => 'error',
-                        'message'=> translate('messages.can_not_cancel_completed_disbursement_,_uncheck_completed_disbursements')
-                    ]);
+                foreach ($disbursements as $disbursement) {
+                    $this->syncDeliveryManDisbursementStatus($disbursement, $request->status);
                 }
 
-
-                $disbursement->delivery_man?->wallet?->decrement('pending_withdraw', $disbursement['disbursement_amount']);
-                // if((string)  $disbursement->delivery_man?->wallet?->pending_withdraw  >=  (string)  $disbursement['disbursement_amount']){
-                //   $disbursement->delivery_man?->wallet?->decrement('pending_withdraw', $disbursement['disbursement_amount']);
-                //     } else{
-                //         return response()->json([
-                //             'status' => 'error',
-                //             'message'=> translate('messages.Balance_mismatched_for').' '.$disbursement->delivery_man?->f_name,
-                //         ]);
-                //     }
-            }
-            $disbursement->status = $request->status;
-            $disbursement->save();
+                self::check_status($request->disbursement_id);
+            });
+        } catch (\Throwable $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => $e->getMessage(),
+            ]);
         }
-
-        self::check_status($request->disbursement_id);
 
         return response()->json([
             'status' => 'success',
-            'message'=> translate('messages.status_updated')
+            'message' => translate('messages.status_updated')
         ]);
     }
 
-    public function statusById($id,$status)
+    public function statusById($id, $status)
     {
+        try {
+            DB::transaction(function () use ($id, $status) {
+                $disbursement = DisbursementDetails::with(['delivery_man.wallet', 'withdraw_method'])
+                    ->lockForUpdate()
+                    ->findOrFail($id);
 
-        $disbursement=DisbursementDetails::find($id);
+                $this->syncDeliveryManDisbursementStatus($disbursement, $status);
+                self::check_status($disbursement->disbursement_id);
+            });
+            Toastr::success(translate('messages.status_updated'));
+            return back();
+        } catch (\Throwable $e) {
+            Toastr::error($e->getMessage());
+            return back();
+        }
+    }
 
-            if ((string) $disbursement->delivery_man?->wallet?->total_earning <  (string)($disbursement->delivery_man?->wallet?->total_withdrawn + $disbursement->delivery_man?->wallet?->pending_withdraw) ) {
-                Toastr::error(translate('messages.Balance_mismatched_total_earning_is_too_low_for').' '.$disbursement->delivery_man?->f_name);
-                return back();
-            }
+    private function syncDeliveryManDisbursementStatus(DisbursementDetails $disbursement, string $status): void
+    {
+        $deliveryMan = $disbursement->delivery_man;
+        $wallet = $deliveryMan?->wallet;
 
-
-        if($status == 'completed'){
-            $provide_dm_earning = new ProvideDMEarning();
-            $provide_dm_earning->delivery_man_id = $disbursement->delivery_man_id;
-            $provide_dm_earning->method = $disbursement?->withdraw_method?->method_name;
-            $provide_dm_earning->ref = $id;
-            $provide_dm_earning->amount = $disbursement['disbursement_amount'];
-
-            // if((string)  $disbursement->delivery_man?->wallet?->pending_withdraw  >=  (string) $disbursement['disbursement_amount']){
-            //     $disbursement->delivery_man?->wallet?->decrement('pending_withdraw', $disbursement['disbursement_amount']);
-            //     $disbursement->delivery_man?->wallet?->increment('total_withdrawn', $disbursement['disbursement_amount']);
-            // } else{
-            //     Toastr::error(translate('messages.Balance_mismatched_for').' '.$disbursement->delivery_man?->f_name);
-            //     return back();
-            // }
-
-
-
-            if($disbursement->status== 'canceled'){
-                $disbursement->delivery_man?->wallet?->increment('total_withdrawn', $disbursement['disbursement_amount']);
-                } else{
-                    $disbursement->delivery_man?->wallet?->decrement('pending_withdraw', $disbursement['disbursement_amount']);
-                    $disbursement->delivery_man?->wallet?->increment('total_withdrawn', $disbursement['disbursement_amount']);
-                }
-
-
-
-            $provide_dm_earning->save();
-
-        }elseif ($status == 'canceled'){
-            if($disbursement->status == 'completed'){
-                Toastr::error(translate('messages.can_not_cancel_completed_disbursement_,_uncheck_completed_disbursements'));
-                return back();
-            }
-
-            $disbursement->delivery_man?->wallet?->decrement('pending_withdraw', $disbursement['disbursement_amount']);
-            // if((string) $disbursement->delivery_man?->wallet?->pending_withdraw  >=   (string) $disbursement['disbursement_amount']){
-
-            //     $disbursement->delivery_man?->wallet?->decrement('pending_withdraw', $disbursement['disbursement_amount']);
-            //     } else{
-            //         Toastr::error(translate('messages.Balance_mismatched_for').' '.$disbursement->delivery_man?->f_name);
-            //         return back();
-            //     }
-
-
-
-        }elseif ($status == 'pending'){
-            if($disbursement->status == 'completed'){
-                $withdraw = ProvideDMEarning::where('ref',$id)->where('delivery_man_id', $disbursement->delivery_man_id)->first();
-                if ($withdraw){
-                    $withdraw->delete();
-                }
-            }
-            $disbursement->delivery_man?->wallet?->decrement('total_withdrawn', $disbursement['disbursement_amount']);
-            $disbursement->delivery_man?->wallet?->increment('pending_withdraw', $disbursement['disbursement_amount']);
+        if (!$deliveryMan || !$wallet) {
+            throw new \RuntimeException(translate('messages.wallet_not_found'));
         }
 
+        $amount = (float) $disbursement->disbursement_amount;
+        $currentStatus = $disbursement->status;
+        $totalEarning = (float) $wallet->total_earning;
+        $totalWithdrawn = (float) $wallet->total_withdrawn;
+        $pendingWithdraw = (float) $wallet->pending_withdraw;
+        $cashInHand = (float) ($wallet->collected_cash ?? 0);
+
+        if (($totalEarning - ($totalWithdrawn + $pendingWithdraw + $cashInHand)) < 0) {
+            throw new \RuntimeException(translate('messages.balance_mismatched_total_earning_is_too_low'));
+        }
+
+        if ($currentStatus === $status) {
+            return;
+        }
+
+        if ($status === 'completed') {
+            if ($currentStatus === 'pending') {
+                if ($pendingWithdraw < $amount) {
+                    throw new \RuntimeException(translate('messages.pending_withdraw_is_lower_than_disbursement_amount'));
+                }
+
+                $wallet->pending_withdraw = $pendingWithdraw - $amount;
+                $wallet->total_withdrawn = $totalWithdrawn + $amount;
+            } elseif ($currentStatus === 'canceled') {
+                $wallet->total_withdrawn = $totalWithdrawn + $amount;
+            }
+
+            $provideDmEarning = ProvideDMEarning::firstOrNew([
+                'ref' => $disbursement->id,
+                'delivery_man_id' => $disbursement->delivery_man_id,
+            ]);
+
+            $provideDmEarning->method = $disbursement?->withdraw_method?->method_name;
+            $provideDmEarning->amount = $amount;
+            $provideDmEarning->save();
+        } elseif ($status === 'canceled') {
+            if ($currentStatus === 'completed') {
+                throw new \RuntimeException(translate('messages.can_not_cancel_completed_disbursement_,_uncheck_completed_disbursements'));
+            }
+
+            if ($currentStatus === 'pending') {
+                if ($pendingWithdraw < $amount) {
+                    throw new \RuntimeException(translate('messages.pending_withdraw_is_lower_than_disbursement_amount'));
+                }
+
+                $wallet->pending_withdraw = $pendingWithdraw - $amount;
+            }
+        } elseif ($status === 'pending') {
+            if ($currentStatus === 'completed') {
+                if ($totalWithdrawn < $amount) {
+                    throw new \RuntimeException(translate('messages.total_withdrawn_is_lower_than_disbursement_amount'));
+                }
+
+                ProvideDMEarning::where('ref', $disbursement->id)
+                    ->where('delivery_man_id', $disbursement->delivery_man_id)
+                    ->delete();
+
+                $wallet->total_withdrawn = $totalWithdrawn - $amount;
+                $wallet->pending_withdraw = $pendingWithdraw + $amount;
+            } elseif ($currentStatus === 'canceled') {
+                $wallet->pending_withdraw = $pendingWithdraw + $amount;
+            }
+        }
+
+        $newBalance = (float) $wallet->total_earning
+            - (
+                (float) $wallet->total_withdrawn
+                + (float) $wallet->pending_withdraw
+                + (float) ($wallet->collected_cash ?? 0)
+            );
+
+        if ($newBalance < 0) {
+            throw new \RuntimeException(translate('messages.balance_would_become_negative_after_this_status_change'));
+        }
+
+        $wallet->save();
         $disbursement->status = $status;
         $disbursement->save();
-
-        self::check_status($disbursement->disbursement_id);
-
-        Toastr::success(translate('messages.status_updated'));
-        return back();
     }
     public function generate_disbursement()
     {
-        $delivery_mans = DeliveryMan::where('type' ,'zone_wise')->where('earning',1)->get();
+        $delivery_mans = DeliveryMan::has('disbursement_method')->with('wallet', 'disbursement_method')->where('type' ,'zone_wise')->where('earning',1)->select(['id'])->get();
         $disbursement_details = [];
         $total_amount = 0;
 
+        $lastId = Disbursement::max('id') ?? 999;
         $disbursement = new Disbursement();
-        $disbursement->id = 1000 + Disbursement::count() + 1;
-        if (Disbursement::find($disbursement->id)) {
-            $disbursement->id = Disbursement::orderBy('id', 'desc')->first()->id + 1;
-        }
+        $disbursement->id = $lastId + 1;
         $disbursement->title = 'Disbursement # '.$disbursement->id;
         $minimum_amount = BusinessSetting::where(['key' => 'dm_disbursement_min_amount'])->first()?->value;
         foreach ($delivery_mans as $delivery_man){

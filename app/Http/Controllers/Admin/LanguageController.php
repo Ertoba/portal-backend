@@ -267,8 +267,6 @@ class LanguageController extends Controller
 
     public function auto_translate(Request $request, $lang): \Illuminate\Http\JsonResponse
     {
-        $lang_code = Helpers::getLanguageCode($lang);
-
         $full_data = include(base_path('resources/lang/' . $lang . '/messages.php'));
         $data_filtered = [];
         foreach ($full_data as $key => $data) {
@@ -288,7 +286,6 @@ class LanguageController extends Controller
     {
         try {
             $translating_count= $request?->translating_count <= 0 ? 1: $request->translating_count ;
-            $lang_code = Helpers::getLanguageCode($lang);
 
             if($lang === 'en'){
                 return response()->json([

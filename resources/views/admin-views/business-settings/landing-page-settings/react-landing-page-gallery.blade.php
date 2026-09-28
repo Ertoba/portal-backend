@@ -91,7 +91,7 @@
         </div>
 
         <div class="card mb-20">
-            <form action="{{ route('admin.business-settings.react-landing-page-settings', 'gallery-section') }}"
+            <form action="{{ route('admin.business-settings.react-landing-page-settings-update', 'gallery-section') }}"
                   method="POST" enctype="multipart/form-data">
                 @csrf
                 <div class="card-body">
@@ -327,7 +327,7 @@
                         @php($status = \App\Models\DataSetting::withoutGlobalScope('translate')->where('type', 'react_landing_page')->where('key', "gallery_image_{$i}_status")->first())
                         <div class="col-md-6">
                             <form class="custom-validation"
-                                  action="{{ route('admin.business-settings.react-landing-page-settings', 'gallery-section-images') }}"
+                                  action="{{ route('admin.business-settings.react-landing-page-settings-update', 'gallery-section-images') }}"
                                   method="POST" enctype="multipart/form-data">
                                 @csrf
                                 <input type="hidden" value="{{$i}}" name="gallery_tab">

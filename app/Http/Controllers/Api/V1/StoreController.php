@@ -4,10 +4,12 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\CentralLogics\Helpers;
 use App\CentralLogics\StoreLogic;
+use App\CentralLogics\PersonalizationService;
 use App\CentralLogics\CategoryLogic;
 use App\Http\Controllers\Controller;
 use App\Models\Category;
 use App\Models\Item;
+use App\Traits\ItemFilter;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use App\Models\Review;
@@ -15,6 +17,8 @@ use Illuminate\Support\Facades\DB;
 
 class StoreController extends Controller
 {
+    use ItemFilter;
+
     public function get_stores(Request $request, $filter_data="all")
     {
         Helpers::setZoneIds($request);
@@ -24,7 +28,12 @@ class StoreController extends Controller
         $zone_id= $request->header('zoneId');
         $longitude= $request->header('longitude');
         $latitude= $request->header('latitude');
-        $stores = StoreLogic::get_stores( $zone_id, $filter_data, $type, $store_type, $request['limit'], $request['offset'], $request->query('featured'),$longitude,$latitude);
+        $filter = $request->query('filter', '');
+        $filter = $filter ? (is_array($filter) ? $filter : str_getcsv(trim($filter, "[]"), ',')) : '';
+        $rating_count = $request->query('rating_count');
+        $moduleHeader = $request->header('moduleId');
+        $moduleId = $moduleHeader ? getModuleId($moduleHeader) : null;
+        $stores = StoreLogic::get_stores($zone_id, $filter_data, $type, $store_type, $request['limit'], $request['offset'], $request->query('featured'), $longitude, $latitude, $filter, $rating_count, $this->storeFilterInputs($request), auth('api')->id(), is_numeric($moduleId) ? (int) $moduleId : null);
         $stores['stores'] = Helpers::store_data_formatting($stores['stores'], true);
 
         return response()->json($stores, 200);
@@ -39,7 +48,44 @@ class StoreController extends Controller
         $zone_id= $request->header('zoneId');
         $longitude= $request->header('longitude');
         $latitude= $request->header('latitude');
-        $stores = StoreLogic::get_latest_stores($zone_id, $request['limit'], $request['offset'], $type,$longitude,$latitude);
+        $stores = StoreLogic::get_latest_stores($zone_id, $request['limit'], $request['offset'], $type,$longitude,$latitude,auth('api')->id());
+        $stores['stores'] = Helpers::store_data_formatting($stores['stores'], true);
+        $stores['stores'] = StoreLogic::add_store_main_categories($stores['stores']);
+
+        return response()->json($stores, 200);
+    }
+
+    public function get_verified_stores(Request $request)
+    {
+        Helpers::setZoneIds($request);
+
+        $type = $request->query('type', 'all');
+        $zone_id = $request->header('zoneId');
+        $longitude = $request->header('longitude');
+        $latitude = $request->header('latitude');
+        $stores = StoreLogic::get_verified_stores(
+            zone_id: $zone_id,
+            limit: $request['limit'],
+            offset: $request['offset'],
+            type: $type,
+            longitude: $longitude,
+            latitude: $latitude,
+        );
+        $stores['stores'] = Helpers::store_data_formatting($stores['stores'], true);
+
+        return response()->json($stores, 200);
+    }
+
+    public function get_distance_wise_stores(Request $request, $filter_data="all")
+    {
+        Helpers::setZoneIds($request);
+
+        $type = $request->query('type', 'all');
+
+        $zone_id= $request->header('zoneId');
+        $longitude= $request->header('longitude');
+        $latitude= $request->header('latitude');
+        $stores = StoreLogic::get_distance_wise_stores($zone_id, $request['limit'], $request['offset'], $type, $longitude, $latitude, $request['name'], auth('api')->id());
         $stores['stores'] = Helpers::store_data_formatting($stores['stores'], true);
 
         return response()->json($stores, 200);
@@ -52,7 +98,7 @@ class StoreController extends Controller
         $zone_id= $request->header('zoneId');
         $longitude= $request->header('longitude');
         $latitude= $request->header('latitude');
-        $stores = StoreLogic::get_popular_stores($zone_id, $request['limit'], $request['offset'], $type,$longitude,$latitude);
+        $stores = StoreLogic::get_popular_stores($zone_id, $request['limit'], $request['offset'], $type,$longitude,$latitude,auth('api')->id());
         $stores['stores'] = Helpers::store_data_formatting($stores['stores'], true);
 
         return response()->json($stores, 200);
@@ -65,7 +111,7 @@ class StoreController extends Controller
         $zone_id= $request->header('zoneId');
         $longitude= $request->header('longitude');
         $latitude= $request->header('latitude');
-        $stores = StoreLogic::get_discounted_stores($zone_id, $request['limit'], $request['offset'], $type,$longitude,$latitude);
+        $stores = StoreLogic::get_discounted_stores($zone_id, $request['limit'], $request['offset'], $type,$longitude,$latitude, null, null, null, auth('api')->id());
         $stores['stores'] = Helpers::store_data_formatting($stores['stores'], true);
 
         return response()->json($stores, 200);
@@ -78,7 +124,7 @@ class StoreController extends Controller
         $zone_id= $request->header('zoneId');
         $longitude= $request->header('longitude');
         $latitude= $request->header('latitude');
-        $stores = StoreLogic::get_top_rated_stores($zone_id, $request['limit'], $request['offset'], $type,$longitude,$latitude);
+        $stores = StoreLogic::get_top_rated_stores($zone_id, $request['limit'], $request['offset'], $type,$longitude,$latitude,auth('api')->id());
         $stores['stores'] = Helpers::store_data_formatting($stores['stores'], true);
 
         usort($stores['stores'], function ($a, $b) {
@@ -113,6 +159,10 @@ class StoreController extends Controller
         $store = StoreLogic::get_store_details($id,$longitude,$latitude);
         if($store)
         {
+            if(auth('api')->check()){
+                Helpers::visitor_log(model: 'store', user_id: auth('api')->id(), visitor_log_id: $store->id, order_count: false);
+                PersonalizationService::recordStoreAction(auth('api')->id(), $store->id, 'store_view');
+            }
             $category_ids = DB::table('items')
             ->join('categories', 'items.category_id', '=', 'categories.id')
             ->selectRaw('categories.position as positions, IF((categories.position = "0"), categories.id, categories.parent_id) as categories')
@@ -121,12 +171,16 @@ class StoreController extends Controller
             ->groupBy('categories','positions')
             ->get();
 
+            $storeId = $store->id;
             $store = Helpers::store_data_formatting($store);
             $store['category_ids'] = array_map('intval', $category_ids->pluck('categories')->toArray());
             $store['category_details'] = Category::whereIn('id',$store['category_ids'])->get();
-            $store['price_range']  = Item::withoutGlobalScopes()->where('store_id', $store->id)
+            $store['price_range']  = Item::withoutGlobalScopes()->where('store_id', $storeId)
             ->select(DB::raw('MIN(price) AS min_price, MAX(price) AS max_price'))
             ->get(['min_price','max_price'])->toArray();
+            $store['store_categories'] = Helpers::storeCategoryStatus()
+                ? \App\Models\StoreCategory::active()->where('store_id', $storeId)->orderBy('priority', 'desc')->get()
+                : [];
         }
         return response()->json($store, 200);
     }
@@ -147,7 +201,14 @@ class StoreController extends Controller
         $zone_id= $request->header('zoneId');
         $longitude= $request->header('longitude');
         $latitude= $request->header('latitude');
-        $stores = StoreLogic::search_stores($request['name'], $zone_id, $request->category_id,$request['limit'], $request['offset'], $type,$longitude,$latitude);
+        if(auth('api')->check()){
+            PersonalizationService::recordSearchAction(auth('api')->id(), $request['name'], config('module.current_module_data') ? (int)config('module.current_module_data')['id'] : null);
+        }
+
+        $filters = $this->resolveSearchFilters($request);
+        $additional_data = ['sort_by' => $filters['sort_by'], 'filter_by' => $filters['filter_by']];
+
+        $stores = StoreLogic::search_stores($request['name'], $zone_id, $request->category_id,$request['limit'], $request['offset'], $type,$longitude,$latitude,null,null,null,null,auth('api')->id(), $request, $additional_data);
         $stores['stores'] = Helpers::store_data_formatting($stores['stores'], true);
         return response()->json($stores, 200);
     }
@@ -211,8 +272,9 @@ class StoreController extends Controller
         $zone_id= $request->header('zoneId');
         $longitude= $request->header('longitude') ?? 0;
         $latitude= $request->header('latitude') ?? 0;
-        $stores = StoreLogic::get_recommended_stores($zone_id, $request['limit'], $request['offset'], $type,$longitude,$latitude);
+        $stores = StoreLogic::get_recommended_stores($zone_id, $request['limit'], $request['offset'], $type,$longitude,$latitude,auth('api')->id());
         $stores['stores'] = Helpers::store_data_formatting($stores['stores'], true);
+        $stores['stores'] = StoreLogic::add_store_main_categories($stores['stores']);
 
         return response()->json($stores, 200);
     }
@@ -239,7 +301,11 @@ class StoreController extends Controller
                 }
                 $name = $request->input('name');
 
-                $paginator = StoreLogic::search_stores($name, $zone_id, $request->category_id, $limit, $offset, $type, $longitude, $latitude, $filter, $rating_count);
+                if(auth('api')->check()){
+                    PersonalizationService::recordSearchAction(auth('api')->id(), $name, config('module.current_module_data') ? (int)config('module.current_module_data')['id'] : null);
+                }
+
+                $paginator = StoreLogic::search_stores($name, $zone_id, $request->category_id, $limit, $offset, $type, $longitude, $latitude, $filter, $rating_count, null, null, auth('api')->id());
                 break;
 
             case 'discounted':
@@ -259,14 +325,14 @@ class StoreController extends Controller
 
                 $category_ids = $request->input('category_ids');
 
-                $paginator = CategoryLogic::category_stores($category_ids, $zone_id, $limit, $offset, $type, $longitude, $latitude, $filter, $rating_count);
+                $paginator = CategoryLogic::category_stores($category_ids, $zone_id, $limit, $offset, $type, $longitude, $latitude, $filter, $rating_count, null, auth('api')->id());
                 break;
 
             default:
                 $filter_data = $request->query('filter_data', 'all');
                 $store_type = $request->query('store_type', 'all');
                 $featured = $request->query('featured');
-                $paginator = StoreLogic::get_stores($zone_id, $filter_data, $type, $store_type, $limit, $offset, $featured, $longitude, $latitude, $filter, $rating_count);
+                $paginator = StoreLogic::get_stores($zone_id, $filter_data, $type, $store_type, $limit, $offset, $featured, $longitude, $latitude, $filter, $rating_count, null, auth('api')->id());
                 break;
         }
 
@@ -283,11 +349,56 @@ class StoreController extends Controller
         $latitude= $request->header('latitude');
 
         $stores = StoreLogic::get_top_offer_near_me(zone_id:$zone_id, limit:$request['limit'], offset: $request['offset'], type: $type, longitude:$longitude,latitude: $latitude,
-                    name:$request->name, sort: $request->sort_by ,halal: $request->halal);
+                    name:$request->name, sort: $request->sort_by ,halal: $request->halal, user_id: auth('api')->id());
         $stores['stores'] = Helpers::store_data_formatting($stores['stores'], true);
 
 
         return response()->json($stores, 200);
+    }
+
+    public function get_quick_delivery_stores(Request $request){
+        Helpers::setZoneIds($request);
+        $type = $request->query('type', 'all');
+        $zone_id = $request->header('zoneId');
+        $longitude = $request->header('longitude');
+        $latitude = $request->header('latitude');
+        $limit = $request->query('limit', 25);
+        $offset = $request->query('offset', 1);
+        $isAd = filter_var($request->query('ad', false), FILTER_VALIDATE_BOOLEAN);
+        $withItems = isset($request->with_items)?$request->with_items:false;
+
+        $filter = $this->storeFilterInputs($request);
+
+        $stores = StoreLogic::get_quick_delivery_stores($zone_id, $limit, $offset, $type, $longitude, $latitude, $isAd, $filter,$withItems, auth('api')->id());
+
+        return response()->json($stores, 200);
+    }
+
+    public function get_exclusive_deals(Request $request)
+    {
+        Helpers::setZoneIds($request);
+        $zone_id = $request->header('zoneId');
+        $longitude = $request->header('longitude');
+        $latitude = $request->header('latitude');
+        $moduleHeader = $request->header('moduleId');
+        $moduleId = $moduleHeader ? getModuleId($moduleHeader) : null;
+        $limit = $request->query('limit', 25);
+        $offset = $request->query('offset', 1);
+
+        $filter = $this->storeFilterInputs($request);
+
+        $data = StoreLogic::get_exclusive_deals(
+            $zone_id,
+            is_numeric($moduleId) ? (int) $moduleId : null,
+            $longitude,
+            $latitude,
+            $limit,
+            $offset,
+            $filter,
+            auth('api')->id(),
+        );
+
+        return response()->json($data, 200);
     }
 
 }

@@ -28,6 +28,12 @@ class ModulePermissionMiddleware
         }
 
         Toastr::error(translate('messages.access_denied'));
+
+        if (url()->previous() == $request->fullUrl() || url()->previous() == url()->current()) {
+            $fallback = auth('admin')->check() ? 'admin.dashboard' : 'vendor.dashboard';
+            return redirect()->route($fallback);
+        }
+
         return back();
     }
 }

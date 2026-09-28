@@ -20,8 +20,6 @@
         </div>
 
         @php($disbursement_type = Helpers::get_business_settings('disbursement_type') ?? 'manual')
-        @php($store_disbursement_command = Helpers::get_business_settings('store_disbursement_command'))
-        @php($dm_disbursement_command = Helpers::get_business_settings('dm_disbursement_command') ?? '')
         <!-- Page Header -->
 
         <!-- End Page Header -->
@@ -83,47 +81,25 @@
 
 
                     <div class="card mb-20 automated_disbursement_section {{ $disbursement_type == 'manual' ? 'd-none' : '' }}"
-                        id="system_php_path_section">
+                        id="scheduler_dependency_section">
                         <div class="card-body">
                             <div class="row g-1 align-items-center">
                                 <div class="col-xxl-9 col-xl-8 col-md-6">
                                     <div class="mb-0">
                                         <h4 class="mb-1">
-                                            {{ translate('System PHP Path') }}
-                                            <span class="text-danger">*</span>
+                                            {{ translate('Scheduler Dependency') }}
                                         </h4>
                                         <p class="mb-0 fs-12">
-                                            {{ translate('Select the default location of the PHP file that will execute the automated disbursement process.') }}
+                                            {{ translate('Automated disbursement runs through Laravel\'s scheduler. Configure one cron entry on your server and every scheduled task — including disbursement — runs from it.') }}
                                         </p>
                                     </div>
                                 </div>
                                 <div class="col-xxl-3 col-xl-4 col-md-6">
-                                    <div class="fs-12 text-dark px-3 py-2 bg-opacity-10 rounded bg-info mb-20">
-                                        <div class="d-flex align-items-center gap-2 mb-0">
-                                            <span class="text-info fs-16">
-                                                <i class="tio-light-on"></i>
-                                            </span>
-                                            <span class="color-656565">
-                                                {{ translate('To learn more click') }}
-                                                <a href="javascript:" data-toggle="offcanvas"
-                                                    data-target="#global_guideline_offcanvas"
-                                                    class="font-semibold text-primary text-underline offcanvas-trigger">{{ translate('messages.How to get it?') }}
-                                                </a>
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-12">
-                                    <div class="bg-light p-3 rounded">
-                                        <div>
-                                            @php($system_php_path = Helpers::get_business_settings('system_php_path') ?? '')
-                                            <div class="form-group m-0 lang_form default-form">
-                                                <input id="system_php_path" type="text"
-                                                    placeholder="{{ translate('Ex:_/usr/bin/php') }}"
-                                                    class="form-control h--45px" min="1" name="system_php_path"
-                                                    value="{{ $system_php_path }}" required>
-                                            </div>
-                                        </div>
+                                    <div class="d-flex justify-content-md-end">
+                                        <button type="button" class="btn btn--primary" data-toggle="modal"
+                                            data-target="#disbursementSchedulerModal">
+                                            {{ translate('messages.Check_Dependencies') }}
+                                        </button>
                                     </div>
                                 </div>
                             </div>
@@ -496,39 +472,57 @@
                 </div>
             </div>
         </form>
-        <div class="modal" id="myModal" tabindex="-1" role="dialog">
+
+        <?php
+            $disbursementCronLine = '* * * * * cd ' . base_path() . ' && php artisan schedule:run >> /dev/null 2>&1';
+            $disbursementSchedulerSupervisor = "[program:6ammart-scheduler]\n"
+                . "process_name=%(program_name)s\n"
+                . "command=php " . base_path('artisan') . " schedule:work\n"
+                . "autostart=true\n"
+                . "autorestart=true\n"
+                . "user=www-data\n"
+                . "numprocs=1\n"
+                . "redirect_stderr=true\n"
+                . "stdout_logfile=" . storage_path('logs/scheduler.log') . "\n"
+                . "stopwaitsecs=60";
+        ?>
+
+        <div class="modal" id="disbursementSchedulerModal" tabindex="-1" role="dialog" aria-labelledby="disbursementSchedulerModalLabel" aria-hidden="true">
             <div class="modal-dialog modal-lg" role="document">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h5 class="modal-title text-center">{{ translate('Cron_Command_for_Disbursement') }}</h5>
+                        <h5 class="modal-title" id="disbursementSchedulerModalLabel">{{ translate('Disbursement Scheduler Dependency') }}</h5>
                         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                             <span aria-hidden="true">&times;</span>
                         </button>
                     </div>
                     <div class="modal-body">
-                        <div class="mb-3">
-                            <span class="text--base">
-                                {{ translate('In_some_server_configurations,_the_exec_function_in_PHP_may_not_be_enabled,_limiting_your_ability_to_create_cron_jobs_programmatically._A_cron_job_is_a_scheduled_task_that_automates_repetitive_processes_on_your_server._However,_if_the_exec_function_is_disabled,_you_can_manually_set_up_cron_jobs_using_the_following_commands') }}:
-                            </span>
+                        <p class="fs-13 mb-3">
+                            {{ translate('When Automated Request is selected, Laravel\'s scheduler runs dm:disbursement and store:disbursement based on the time period (daily / weekly / monthly) and create-time configured above. Pick ONE launcher for the scheduler.') }}
+                        </p>
+
+                        <div class="bg-light rounded p-3 mb-3">
+                            <h6 class="mb-2">{{ translate('Option 1 — Cron drives the scheduler') }}</h6>
+                            <p class="fs-12 mb-2">
+                                {{ translate('Add this single line to your server crontab. Cron will trigger schedule:run every minute and Laravel decides which scheduled commands fire.') }}
+                            </p>
+                            <div class="input--group input-group">
+                                <input type="text" value="{{ $disbursementCronLine }}" class="form-control" id="disbursementCronCommand" readonly>
+                                <button type="button" class="btn btn-primary disbursementCronCopy">{{ translate('Copy') }}</button>
+                            </div>
                         </div>
-                        <label for="storeDisbursementCommand" class="form-label text-capitalize">
-                            {{ translate('Store_Cron_Command') }}
-                        </label>
-                        <div class="input--group input-group mb-3">
-                            <input type="text" value="{{ $store_disbursement_command }}" class="form-control"
-                                id="storeDisbursementCommand" readonly>
-                            <button class="btn btn-primary copy-btn copy-to-clipboard"
-                                data-id="storeDisbursementCommand">{{ translate('Copy') }}</button>
+
+                        <div class="bg-light rounded p-3 mb-0">
+                            <h6 class="mb-2">{{ translate('Option 2 — Supervisor drives the scheduler (no cron)') }}</h6>
+                            <p class="fs-12 mb-2">
+                                {{ translate('Use this if you can\'t install a cron entry (Docker, some shared hosts). Supervisor keeps schedule:work alive; it internally invokes schedule:run every 60 seconds.') }}
+                            </p>
+                            <textarea class="form-control mb-2" id="disbursementSchedulerSupervisorBlock" rows="10" readonly>{{ $disbursementSchedulerSupervisor }}</textarea>
+                            <button type="button" class="btn btn-primary disbursementSchedulerSupervisorCopy">{{ translate('Copy') }}</button>
                         </div>
-                        <label for="dmDisbursementCommand" class="form-label text-capitalize">
-                            {{ translate('Delivery_Man_Cron_Command') }}
-                        </label>
-                        <div class="input--group input-group">
-                            <input type="text" value="{{ $dm_disbursement_command }}" class="form-control"
-                                id="dmDisbursementCommand" readonly>
-                            <button class="btn btn-primary copy-btn copy-to-clipboard"
-                                data-id="dmDisbursementCommand">{{ translate('Copy') }}</button>
-                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">{{ translate('Close') }}</button>
                     </div>
                 </div>
             </div>
@@ -620,32 +614,6 @@
                 <div class="py-3 px-3 bg-light rounded mb-3 mb-sm-20">
                     <div class="d-flex gap-2 align-items-center justify-content-between overflow-hidden">
                         <button class="btn-collapse d-flex gap-2 align-items-center bg-transparent border-0 p-0 collapsed"
-                            type="button" data-toggle="collapse" data-target="#system_php_path" aria-expanded="true">
-                            <div
-                                class="btn-collapse-icon w-35px h-35px bg-white d-flex align-items-center justify-content-center border icon-btn rounded-circle fs-12 lh-1">
-                                <i class="tio-down-ui"></i>
-                            </div>
-                            <span
-                                class="font-semibold text-left fs-14 text-title">{{ translate('messages.System PHP Path') }}</span>
-                        </button>
-                        <a href="#system_php_path_section"
-                            class="text-info text-underline fs-12 text-nowrap offcanvas-close-btn">{{ translate('messages.Let’s Setup') }}</a>
-                    </div>
-                    <div class="collapse mt-3" id="system_php_path">
-                        <div class="card card-body">
-                            <div class="">
-                                <h5 class="mb-3">{{ translate('System PHP Path') }}</h5>
-                                <p class="fs-12 mb-0">
-                                    {{ translate('messages.The System PHP Path specifies the location of the PHP executable file that will be used to run automated disbursement scripts. Setting the correct PHP path ensures that the system can execute scheduled or automated disbursement processes without errors.') }}
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="py-3 px-3 bg-light rounded mb-3 mb-sm-20">
-                    <div class="d-flex gap-2 align-items-center justify-content-between overflow-hidden">
-                        <button class="btn-collapse d-flex gap-2 align-items-center bg-transparent border-0 p-0 collapsed"
                             type="button" data-toggle="collapse" data-target="#disbursement_request_setup"
                             aria-expanded="true">
                             <div
@@ -670,55 +638,6 @@
                     </div>
                 </div>
 
-                @if ($store_disbursement_command)
-                    <div class="py-3 px-3 bg-light rounded mb-3 mb-sm-20">
-                        <div class="d-flex gap-2 align-items-center justify-content-between overflow-hidden">
-                            <button
-                                class="btn-collapse d-flex gap-2 align-items-center bg-transparent border-0 p-0 collapsed"
-                                type="button" data-toggle="collapse" data-target="#Cron_Command_for_Disbursement"
-                                aria-expanded="true">
-                                <div
-                                    class="btn-collapse-icon w-35px h-35px bg-white d-flex align-items-center justify-content-center border icon-btn rounded-circle fs-12 lh-1">
-                                    <i class="tio-down-ui"></i>
-                                </div>
-                                <span
-                                    class="font-semibold text-left fs-14 text-title">{{ translate('Cron_Command_for_Disbursement') }}</span>
-                            </button>
-
-                        </div>
-                        <div class="collapse mt-3" id="Cron_Command_for_Disbursement">
-                            <div class="card card-body">
-                                <div class="">
-                                    <h5 class="mb-3">{{ translate('Cron Command for Disbursement') }}</h5>
-                                    <p class="fs-12 mb-0">
-                                        {{ translate('In_some_server_configurations,_the_exec_function_in_PHP_may_not_be_enabled,_limiting_your_ability_to_create_cron_jobs_programmatically._A_cron_job_is_a_scheduled_task_that_automates_repetitive_processes_on_your_server._However,_if_the_exec_function_is_disabled,_you_can_manually_set_up_cron_jobs_using_the_following_commands') }}
-                                    </p>
-
-                                    <label for="storeDisbursementCommand" class="form-label text-capitalize">
-                                        {{ translate('Store_Cron_Command') }}
-                                    </label>
-                                    <div class="input--group input-group mb-3">
-                                        <input type="text" value="{{ $store_disbursement_command }}"
-                                            class="form-control" id="storeDisbursementCommand" readonly>
-                                        <button class="btn btn-primary copy-btn copy-to-clipboard"
-                                            data-id="storeDisbursementCommand">{{ translate('Copy') }}</button>
-                                    </div>
-                                    <label for="dmDisbursementCommand" class="form-label text-capitalize">
-                                        {{ translate('Delivery_Man_Cron_Command') }}
-                                    </label>
-                                    <div class="input--group input-group">
-                                        <input type="text" value="{{ $dm_disbursement_command }}"
-                                            class="form-control" id="dmDisbursementCommand" readonly>
-                                        <button class="btn btn-primary copy-btn copy-to-clipboard"
-                                            data-id="dmDisbursementCommand">{{ translate('Copy') }}</button>
-                                    </div>
-
-
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                @endif
             </div>
         </div>
     </div>
@@ -728,16 +647,11 @@
 @endsection
 @push('script_2')
     <script src="{{ asset('public/assets/admin/js/view-pages/disbursement.js') }}"></script>
-    @php($flag = session('disbursement_exec'))
     <script>
         "use strict";
         $(document).on('ready', function() {
             @if ($disbursement_type == 'manual')
                 $('.automated_disbursement_section').hide();
-            @endif
-
-            @if (isset($flag) && $flag)
-                $('#myModal').modal('show');
             @endif
 
             $('.offcanvas-close-btn').on('click', function(e) {
@@ -749,6 +663,29 @@
                 }, 500);
             });
 
+            function copyFromElement(id) {
+                var el = document.getElementById(id);
+                el.select();
+                el.setSelectionRange(0, 99999);
+                try {
+                    document.execCommand("copy");
+                    toastr.success('{{ translate('Copied to clipboard!') }}');
+                } catch (err) {
+                    if (navigator.clipboard) {
+                        navigator.clipboard.writeText(el.value).then(function () {
+                            toastr.success('{{ translate('Copied to clipboard!') }}');
+                        });
+                    }
+                }
+            }
+            $(document).on('click', '.disbursementCronCopy', function (e) {
+                e.preventDefault();
+                copyFromElement('disbursementCronCommand');
+            });
+            $(document).on('click', '.disbursementSchedulerSupervisorCopy', function (e) {
+                e.preventDefault();
+                copyFromElement('disbursementSchedulerSupervisorBlock');
+            });
         });
     </script>
 @endpush

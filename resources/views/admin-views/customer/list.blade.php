@@ -20,31 +20,64 @@
             </h1>
         </div>
         <!-- End Page Header -->
+
+        @if($builder_published)
+        <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 __gap-12px">
+            <div class="js-nav-scroller hs-nav-scroller-horizontal mt-2">
+                <ul class="nav nav-tabs border-0 nav--tabs nav--pills">
+                    <li class="nav-item">
+                        <a class="nav-link {{ $tab === 'main' ? 'active' : '' }}"
+                           href="{{ route('admin.users.customer.list', ['tab' => 'main']) }}">
+                            {{ translate('messages.main_system_customers') }}
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {{ $tab === 'storefront' ? 'active' : '' }}"
+                           href="{{ route('admin.users.customer.list', ['tab' => 'storefront']) }}">
+                            {{ translate('messages.vendor_storefront_customers') }}
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        @endif
         <div class="card mb-3">
             <div class="card-body">
                 <form>
+                    <input type="hidden" name="tab" value="{{ $tab }}">
                     <div class="row g-3">
+                        @if($tab === 'storefront')
+                        <div class="col-md-4">
+                            <label class="form-label">{{translate('messages.storefront')}}</label>
+                            <select name="storefront_id" data-placeholder="{{ translate('messages.all_storefronts') }}" class="form-control js-select2-custom">
+                                <option value="" {{ !$storefront_id ? 'selected' : '' }}>{{ translate('messages.all_storefronts') }}</option>
+                                @foreach($storefronts as $sf)
+                                    <option value="{{ $sf->id }}" {{ (int) $storefront_id === (int) $sf->id ? 'selected' : '' }}>{{ $sf->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        @endif
                         <div class="col-md-4">
                             <label class="form-label">{{translate('Order Date')}}</label>
                             <div class="position-relative">
                                 <span class="tio-calendar icon-absolute-on-right"></span>
-                                <input type="text" data-title="{{ translate('Select_Order_Date_Range') }}" data-startDate="09/04/2024"  data-endDate="09/24/2024" readonly name="order_date" value="{{ request()->get('order_date')  ?? null }}" class="date-range-picker form-control">
+                                <input type="text" data-title="{{ translate('Select_Order_Date_Range') }}" data-startDate="09/04/2024"  data-endDate="09/24/2024" readonly name="order_date" value="{{ request()->input('order_date')  ?? null }}" class="date-range-picker form-control">
                             </div>
                         </div>
                         <div class="col-md-4">
                             <label class="form-label">{{translate('Customer Joining Date')}}</label>
                             <div class="position-relative">
                                 <span class="tio-calendar icon-absolute-on-right"></span>
-                                <input type="text" data-title="{{ translate('Select_Customer_Joining_Date_Range') }}" readonly name="join_date" value="{{ request()->get('join_date') ?? null }}" class="date-range-picker form-control">
+                                <input type="text" data-title="{{ translate('Select_Customer_Joining_Date_Range') }}" readonly name="join_date" value="{{ request()->input('join_date') ?? null }}" class="date-range-picker form-control">
                             </div>
                         </div>
                         <div class="col-md-4">
                             <label class="form-label">{{translate('Customer status')}}</label>
                             <select name="filter" data-placeholder="{{ translate('messages.Select_Status') }}" class="form-control js-select2-custom ">
                                 <option  value="" selected disabled > {{ translate('messages.Select_Status') }} </option>
-                                <option  {{ request()->get('filter')  == 'all'?'selected':''}} value="all">{{ translate('messages.All_Customers') }}</option>
-                                <option  {{ request()->get('filter')  == 'active'?'selected':''}} value="active">{{ translate('messages.Active_Customers') }}</option>
-                                <option  {{ request()->get('filter')  == 'blocked'?'selected':''}} value="blocked">{{ translate('messages.Inactive_Customers') }}</option>
+                                <option  {{ request()->input('filter')  == 'all'?'selected':''}} value="all">{{ translate('messages.All_Customers') }}</option>
+                                <option  {{ request()->input('filter')  == 'active'?'selected':''}} value="active">{{ translate('messages.Active_Customers') }}</option>
+                                <option  {{ request()->input('filter')  == 'blocked'?'selected':''}} value="blocked">{{ translate('messages.Inactive_Customers') }}</option>
                             </select>
                         </div>
                         <div class="col-md-4">
@@ -53,18 +86,17 @@
 
                             class="form-control js-select2-custom">
                                 <option value="" selected disabled > {{ translate('messages.Select Customer Sorting Order') }} </option>
-                                <option  {{ request()->get('order_wise')  == 'top'?'selected':''}}  value="top">{{ translate('messages.Sort by order count') }}</option>
-                                <option {{ request()->get('order_wise')  == 'order_amount'?'selected':''}}  value="order_amount">{{ translate('messages.Sort by order amount') }}</option>
-                                <option {{ request()->get('order_wise')  == 'oldest'?'selected':''}}  value="oldest">{{ translate('messages.Sort by oldest') }}</option>
-                                <option {{ request()->get('order_wise')  == 'latest'?'selected':''}}  value="latest">{{ translate('messages.Sort by newest') }}</option>
+                                <option  {{ request()->input('order_wise')  == 'top'?'selected':''}}  value="top">{{ translate('messages.Sort by order count') }}</option>
+                                <option {{ request()->input('order_wise')  == 'order_amount'?'selected':''}}  value="order_amount">{{ translate('messages.Sort by order amount') }}</option>
+                                <option {{ request()->input('order_wise')  == 'oldest'?'selected':''}}  value="oldest">{{ translate('messages.Sort by oldest') }}</option>
+                                <option {{ request()->input('order_wise')  == 'latest'?'selected':''}}  value="latest">{{ translate('messages.Sort by newest') }}</option>
                             </select>
                         </div>
                         <div class="col-md-4">
                             <label class="form-label">{{translate('Choose First')}}</label>
-                            <input type="number" min="1" name="show_limit" class="form-control" value="{{ request()->get('show_limit')}}" placeholder="{{translate('Ex : 100')}}">
+                            <input type="number" min="1" name="show_limit" class="form-control" value="{{ request()->input('show_limit')}}" placeholder="{{translate('Ex : 100')}}">
                         </div>
-                        <div class="col-md-4">
-                            <label class="d-md-block">&nbsp;</label>
+                        <div class="col-12">
                             <div class="btn--container justify-content-end">
                                 <button type="submit" class="btn btn--primary">{{translate('Filter')}}</button>
                             </div>
@@ -84,17 +116,21 @@
 
 
                     <form class="search-form">
+                        <input type="hidden" name="tab" value="{{ $tab }}">
+                        @if($tab === 'storefront' && $storefront_id)
+                            <input type="hidden" name="storefront_id" value="{{ $storefront_id }}">
+                        @endif
                         <!-- Search -->
                         <div class="input-group input--group">
                             <input id="datatableSearch_" type="search" name="search" class="form-control min-height-40"
-                                value="{{ request()->get('search') }}" placeholder="{{ translate('ex:_name_email_or_phone') }}"
+                                value="{{ request()->input('search') }}" placeholder="{{ translate('ex:_name_email_or_phone') }}"
                                 aria-label="Search" >
                             <button type="submit" class="btn btn--secondary min-height-40"><i class="tio-search"></i></button>
 
                         </div>
                         <!-- End Search -->
                     </form>
-                    @if(request()->get('search'))
+                    @if(request()->input('search'))
                     <button type="reset" class="btn btn--primary ml-2 location-reload-to-base" data-url="{{url()->full()}}">{{translate('messages.reset')}}</button>
                     @endif
 
@@ -158,6 +194,9 @@
                                 </th>
                                 <th class="table-column-pl-0 border-0">{{ translate('messages.name') }}</th>
                                 <th class="border-0">{{ translate('messages.contact_information') }}</th>
+                                @if($tab === 'storefront')
+                                    <th class="border-0">{{ translate('messages.storefront') }}</th>
+                                @endif
                                 <th class="border-0">{{ translate('messages.total_order') }}</th>
                                 <th class="border-0">{{ translate('messages.total_order_amount') }}</th>
                                 <th class="border-0">{{ translate('messages.Joining_date') }}</th>
@@ -173,16 +212,34 @@
 
                                 <tr class="">
                                     <td class="">
-                                        {{ (request()->get('show_limit') ?  $count++ : $key  )+ $customers->firstItem() }}
+                                        {{ (request()->input('show_limit') ?  $count++ : $key  )+ $customers->firstItem() }}
                                     </td>
-                                    <td class="table-column-pl-0">
-                                        <div class="d-flex align-items-center gap-2">
-                                            <img class="rounded aspect-1-1 object-cover" width="40" data-onerror-image="{{asset('public/assets/admin/img/160x160/img1.jpg')}}" src="{{ $customer->image_full_url }}" alt="Image Description">
-                                            <a href="{{ route('admin.users.customer.view', [$customer['id']]) }}" class="text--hover max-w-400px min-w-220">
-                                                {{ $customer['f_name'] ?  $customer['f_name'] . ' ' . $customer['l_name'] : translate('messages.Incomplete_Profile') }}
-                                            </a>
-                                        </div>
-                                    </td>
+
+
+
+                                        <td class="table-column-pl-0">
+                                            <div class="d-flex align-items-center gap-2 min-w-280">
+                                                @include('partials._user-avatar', [
+                                                    'imageUrl'  => $customer->image_full_url,
+                                                    'proStatus' => $customer->pro_status,
+                                                    'size'      => 40,
+                                                ])
+
+                                                <div>
+                                                    <a href="{{ route('admin.users.customer.view', [$customer['id']]) }}"
+                                                        class="text-dark fw-500 text-hover-primary max-w-215px min-w-135px text-wrap line--limit-1">
+                                                        {{ $customer['f_name'] ? $customer['f_name'] . ' ' . $customer['l_name'] : translate('Incomplete_profile') }}
+                                                    </a>
+                                                    <div>
+
+
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </td>
+
+
+
                                     <td>
                                         <div>
                                             <a href="mailto:{{ $customer['email'] }}">
@@ -195,6 +252,13 @@
                                             </a>
                                         </div>
                                     </td>
+                                    @if($tab === 'storefront')
+                                    <td>
+                                        <label class="badge badge-soft-info">
+                                            {{ $publishedStoreLookup[$customer->sub_tenant_id] ?? '—' }}
+                                        </label>
+                                    </td>
+                                    @endif
                                     <td>
                                         <label class="badge">
                                             {{ $customer->orders_count }}

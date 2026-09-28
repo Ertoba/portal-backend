@@ -200,6 +200,65 @@
                         </li>
                     @endif
 
+                    @if (\App\CentralLogics\Helpers::get_business_settings('pro_member_status') == 1 && (\App\CentralLogics\Helpers::module_permission_check('pro_customer_subscription') || \App\CentralLogics\Helpers::module_permission_check('customer_management')))
+                    <li class="navbar-vertical-aside-has-menu @yield('pro_customer_management')">
+                        <a class="js-navbar-vertical-aside-menu-link nav-link nav-link-toggle" href="javascript:"
+                            title="{{ translate('messages.Pro_Customer_Management') }}">
+                            <i class="tio-user-add nav-icon"></i>
+                            <span class="text-truncate">{{ translate('messages.Pro_Customer_Management') }}</span>
+                        </a>
+                        <ul class="js-navbar-vertical-aside-submenu nav nav-sub"
+                            style="display:{{ Request::is('admin/pro-customer*') ? 'block' : 'none' }}">
+                            @if (\App\CentralLogics\Helpers::module_permission_check('pro_customer_subscription'))
+                            <li class="navbar-vertical-aside-has-menu @yield('pro_customer_benefits_setup')">
+                                <a class="js-navbar-vertical-aside-menu-link nav-link"
+                                    href="{{ route('admin.pro-customer.benefits-setup') }}"
+                                    title="{{ translate('messages.Pro_Customer_Benefits_Setup') }}">
+                                    <span class="tio-circle nav-indicator-icon"></span>
+                                    <span class="text-truncate">{{ translate('messages.Pro_Customer_Benefits_Setup') }}</span>
+                                </a>
+                            </li>
+                            <li class="navbar-vertical-aside-has-menu @yield('pro_customer_price_setup')">
+                                <a class="js-navbar-vertical-aside-menu-link nav-link"
+                                    href="{{ route('admin.pro-customer.price-setup') }}"
+                                    title="{{ translate('messages.Pro_Customer_Price_Setup') }}">
+                                    <span class="tio-circle nav-indicator-icon"></span>
+                                    <span class="text-truncate">{{ translate('messages.Price_Setup') }}</span>
+                                </a>
+                            </li>
+                            @endif
+                            @if (\App\CentralLogics\Helpers::module_permission_check('customer_management'))
+                            <li class="navbar-vertical-aside-has-menu @yield('pro_customer_list')">
+                                <a class="js-navbar-vertical-aside-menu-link nav-link"
+                                    href="{{ route('admin.pro-customer.list') }}"
+                                    title="{{ translate('messages.Pro_Customer_List') }}">
+                                    <span class="tio-circle nav-indicator-icon"></span>
+                                    <span class="text-truncate">{{ translate('messages.Pro_Customer_List') }}</span>
+                                </a>
+                            </li>
+                            @endif
+                            @if (\App\CentralLogics\Helpers::module_permission_check('pro_customer_subscription'))
+                            <li class="navbar-vertical-aside-has-menu @yield('pro_customer_additional_setup')">
+                                <a class="js-navbar-vertical-aside-menu-link nav-link"
+                                    href="{{ route('admin.pro-customer.additional-setup') }}"
+                                    title="{{ translate('messages.Pro_Customer_Additional_Setup') }}">
+                                    <span class="tio-circle nav-indicator-icon"></span>
+                                    <span class="text-truncate">{{ translate('messages.Additional_Setup') }}</span>
+                                </a>
+                            </li>
+                            <li class="navbar-vertical-aside-has-menu @yield('pro_customer_transactions')">
+                                <a class="js-navbar-vertical-aside-menu-link nav-link"
+                                    href="{{ route('admin.pro-customer.transactions') }}"
+                                    title="{{ translate('messages.Pro_Customer_Transactions') }}">
+                                    <span class="tio-circle nav-indicator-icon"></span>
+                                    <span class="text-truncate">{{ translate('messages.Transactions') }}</span>
+                                </a>
+                            </li>
+                            @endif
+                        </ul>
+                    </li>
+                    @endif
+
                     @if (\App\CentralLogics\Helpers::module_permission_check('settings'))
 
                         <li
@@ -243,6 +302,18 @@
                                             class="text-truncate">{{ translate('messages.react_landing_page') }}</span>
                                     </a>
                                 </li>
+                                @if(addon_published_status('RideShare') == 1)
+                                <li
+                                    class="navbar-vertical-aside-has-menu {{ Request::is('admin/business-settings/pages/react-ride-share-page-settings*') ? 'active' : '' }}">
+                                    <a class="nav-link "
+                                        href="{{ route('admin.business-settings.react-ride-share-page-settings', 'hero') }}"
+                                        title="{{ translate('messages.react_ride_share_page') }}">
+                                        <span class="tio-circle nav-indicator-icon"></span>
+                                        <span
+                                            class="text-truncate">{{ translate('messages.react_ride_share_page') }}</span>
+                                    </a>
+                                </li>
+                                @endif
                                 <li
                                     class="navbar-vertical-aside-has-menu {{ Request::is('admin/business-settings/pages/flutter-landing-page-settings*') ? 'active' : '' }}">
                                     <a class="nav-link "
@@ -492,7 +563,7 @@
                         @endif
 
                         <li
-                            class="navbar-vertical-aside-has-menu {{ Request::is('admin/business-settings/page-meta-data*') || Request::is('admin/business-settings/login-url-setup*') ? 'active' : '' }}">
+                            class="navbar-vertical-aside-has-menu {{ Request::is('admin/business-settings/seo-settings/page-meta-data*') ? 'active' : '' }}">
                             <a class="nav-link " href="{{ route('admin.business-settings.seo-settings.pageMetaData') }}"
                                 title="{{ translate('messages.page_meta_data') }}">
                                 <span class="tio-share-message nav-icon"></span>
@@ -520,12 +591,12 @@
                         </li>
 
                         <li
-                            class="navbar-vertical-aside-has-menu {{ Request::is('admin/business-settings/addon-activation*') ? 'active' : '' }}">
+                            class="navbar-vertical-aside-has-menu {{ Request::is('admin/business-settings/mili-features*') ? 'active' : '' }}">
                             <a class="nav-link "
-                                href="{{ route('admin.business-settings.addon-activation.index') }}"
-                                title="{{ translate('messages.Addon_Activation') }}">
+                                href="{{ route('admin.business-settings.mili-features.index') }}"
+                                title="Mili Features">
                                 <span class="tio-appointment nav-icon"></span>
-                                <span class="text-truncate">{{ translate('messages.Addon_Activation') }}</span>
+                                <span class="text-truncate">Mili Features</span>
                             </a>
                         </li>
 

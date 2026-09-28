@@ -1,7 +1,7 @@
 <div class="modal-header p-0">
     <h4 class="modal-title product-title">
     </h4>
-    <button class="close call-when-done" type="button" data-dismiss="modal" aria-label="Close">
+    <button class="close call-when-done bg-modal-btn w-30px h-30 rounded-circle m-2 z-2" type="button" data-dismiss="modal" aria-label="Close">
         <span aria-hidden="true">&times;</span>
     </button>
 </div>
@@ -278,7 +278,6 @@
         </div>
     </div>
 </div>
-<script src="{{asset('public/assets/admin')}}/js/view-pages/common.js"></script>
 <script type="text/javascript">
     // "use strict";
     getVariantPrice();

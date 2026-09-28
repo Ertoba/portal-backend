@@ -11,11 +11,20 @@ class OrderTransaction extends Model
 {
     use HasFactory,ReportFilter;
 
+    protected $casts = [
+        'pro_discount' => 'float',
+        'pro_delivery_discount' => 'float',
+    ];
+
     protected $fillable = array('delivery_man_id');
 
     public function order()
     {
         return $this->belongsTo(Order::class);
+    }
+    public function store()
+    {
+        return $this->belongsTo(Store::class,'vendor_id','vendor_id');
     }
 
     public function delivery_man()

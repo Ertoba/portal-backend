@@ -21,7 +21,7 @@
 
             <div class="">
                 <div class="">
-                    <form action="{{route('admin.users.custom-role.create')}}" method="post">
+                    <form action="{{route('admin.users.custom-role.store')}}" method="post">
                         @csrf
                         <div class="card mb-20">
                             <div class="card-body">
@@ -596,7 +596,7 @@
                                                                 <div class="form-group m-0 form-check form--check">
                                                                     <input type="checkbox" name="modules[]" value="addon" class="form-check-input"
                                                                         id="addon">
-                                                                    <label class="form-check-label ps--3 qcont text-dark opacity-70" for="addon">{{translate('messages.Addon Activation')}}</label>
+                                                                    <label class="form-check-label ps--3 qcont text-dark opacity-70" for="addon">System Addons</label>
                                                                 </div>
                                                             </div>
                                                             <div class="check-item p-0 m-0">
@@ -1208,6 +1208,15 @@
                                             <label class="form-check-label ps--3 qcont text-dark opacity-70" for="subscription">{{translate('messages.subscription')}}</label>
                                         </div>
                                     </div>
+                                    @if (\App\CentralLogics\Helpers::get_business_settings('pro_member_status') == 1)
+                                    <div class="check-item">
+                                        <div class="form-group form-check form--check">
+                                            <input type="checkbox" name="modules[]" value="pro_customer_subscription" class="form-check-input"
+                                                   id="pro_customer_subscription">
+                                            <label class="form-check-label ps--3 qcont text-dark opacity-70" for="pro_customer_subscription">{{translate('messages.Pro_Customer_Subscription')}}</label>
+                                        </div>
+                                    </div>
+                                    @endif
                                     <div class="check-item">
                                         <div class="form-group form-check form--check">
                                             <input type="checkbox" name="modules[]" value="brand" class="form-check-input"
@@ -1222,6 +1231,17 @@
                                             <label class="form-check-label ps--3 qcont text-dark opacity-70" for="common_condition">{{translate('messages.common_condition')}}</label>
                                         </div>
                                     </div>
+
+                                @if (  addon_published_status('ReelsModule')  )
+                                  <div class="check-item">
+                                      <div class="form-group form-check form--check">
+                                          <input type="checkbox" name="modules[]" value="reels" class="form-check-input"
+                                                 id="reels">
+                                          <label class="form-check-label ps--3 qcont text-dark opacity-70" for="reels">{{translate('messages.reels')}}</label>
+                                      </div>
+                                  </div>
+
+                                @endif
                                 </div>
                                 @if (addon_published_status('Rental'))
                                     <div class="pt-5">
@@ -1576,4 +1596,3 @@
 
 </script>
 @endpush
-

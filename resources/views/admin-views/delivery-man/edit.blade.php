@@ -96,7 +96,7 @@
                                                             </label>
                                             <select name="zone_id" class="form-control  js-select2-custom">
                                             @foreach(\App\Models\Zone::all() as $zone)
-                                                @if(isset(auth('admin')->user()->zone_id))
+                                                @if(auth('admin')?->user()?->zone_id)
                                                     @if(auth('admin')->user()->zone_id == $zone->id)
                                                         <option value="{{$zone->id}}" {{$zone->id == $deliveryMan->zone_id?'selected':''}}>{{$zone->name}}</option>
                                                     @endif

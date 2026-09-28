@@ -422,7 +422,7 @@ $site_direction = \App\CentralLogics\Helpers::system_default_direction();
                                                                                 <td class="text-right p-1 px-3">
                                                                                     <?php
                                                                                     if ($order->prescription_order == 1) {
-                                                                                        $sub_total = $order->order_amount + $order->store_discount_amount + $order->coupon_discount_amount + $order->ref_bonus_amount - $order->extra_packaging_amount - $order->total_tax_amount - $order->delivery_charge - $order->additional_charge - $order->dm_tips;
+                                                                                        $sub_total = $order->order_amount + $order->store_discount_amount + $order->coupon_discount_amount + $order->ref_bonus_amount - $order->extra_packaging_amount - $order->total_tax_amount - \App\CentralLogics\DeliveryFeeLogic::adjustedFeeForOrder($order)['adjusted'] - $order->additional_charge - $order->dm_tips;
                                                                                         $sub_total = max($sub_total, 0);
                                                                                     }
                                                                                     ?>
@@ -493,6 +493,17 @@ $site_direction = \App\CentralLogics\Helpers::system_default_direction();
                                                                                     </td>
                                                                                 </tr>
                                                                             @endif
+                                                                            @if (($order->orderProDiscount?->amount_saved ?? 0) > 0)
+                                                                                <tr>
+                                                                                    <td style="width: 40%"></td>
+                                                                                    <td class="p-1 px-3">
+                                                                                        {{ translate('messages.Pro_Discount') }}
+                                                                                    </td>
+                                                                                    <td class="text-right p-1 px-3">
+                                                                                        {{ \App\CentralLogics\Helpers::format_currency($order->orderProDiscount->amount_saved) }}
+                                                                                    </td>
+                                                                                </tr>
+                                                                            @endif
 
                                                                             @if ($order?->extra_packaging_amount > 0)
                                                                                 <tr>
@@ -539,6 +550,7 @@ $site_direction = \App\CentralLogics\Helpers::system_default_direction();
                                                                                     {{ \App\CentralLogics\Helpers::format_currency($order->delivery_charge) }}
                                                                                 </td>
                                                                             </tr>
+                                                                            @include('partials.delivery-type-row', ['order' => $order, 'layout' => 'tr3'])
                                                                         @endif
 
 
@@ -593,7 +605,7 @@ $site_direction = \App\CentralLogics\Helpers::system_default_direction();
                         {{ translate('for any queries, we’re always happy to help.') }}
                     </div>
                     <div class="copyright" style="text-align:center" id="mail-copyright">
-                        {{ $BusinessData['footer_text'] ?? translate('Copyright 2023 6ammart. All right reserved') }}
+                        {{ $BusinessData['footer_text'] ?? \App\CentralLogics\Helpers::copyright_text() }}
                     </div>
                 </td>
             </tr>

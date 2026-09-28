@@ -31,9 +31,9 @@ class AdvertisementUpdateRequest extends FormRequest
             'store_id' => 'required',
             'dates' => 'required',
             'advertisement_type' => 'required|in:video_promotion,store_promotion',
-            'cover_image' => 'nullable|image|mimes:jpg,png,jpeg,webp|max:' . (MAX_FILE_SIZE * 1024),
-            'profile_image' => 'nullable|image|mimes:jpg,png,jpeg,webp|max:' . (MAX_FILE_SIZE * 1024),
-            'video_attachment' => 'nullable|file|mimes:mp4,mkv,webm|max:' . (MAX_FILE_SIZE * 1024),
+            'cover_image' => 'nullable|image|mimes:jpg,png,jpeg,webp|max:2048',
+            'profile_image' => 'nullable|image|mimes:jpg,png,jpeg,webp|max:2048',
+            'video_attachment' => 'nullable|file|mimes:mp4,mkv,webm|max:5120',
 
 
         ];
@@ -44,9 +44,6 @@ class AdvertisementUpdateRequest extends FormRequest
         return [
             'store_id.required' => translate('messages.Please_select_a_store'),
             'title.0.required'=>translate('default_title_is_required'),
-            'cover_image.max' => translate('messages.file_size_exceeds_limit', ['size' => MAX_FILE_SIZE]),
-            'profile_image.max' => translate('messages.file_size_exceeds_limit', ['size' => MAX_FILE_SIZE]),
-            'video_attachment.max' => translate('messages.file_size_exceeds_limit', ['size' => MAX_FILE_SIZE]),
         ];
     }
 

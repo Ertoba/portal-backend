@@ -41,14 +41,7 @@
                                     <div class="border-bottom"></div>
                                     @include('admin-views.vendor.view.partials._conversation_list')
 
-                                    <div class="h-98p d-center">
-                                        <div class="empty--data">
-                                            <img width="64" class="mb-2" src="{{asset('/public/assets/admin/img/no-vendor-list.svg')}}" alt="public">
-                                            <p class="fs-16 mb-20">
-                                                {{translate('No Conversation List')}}
-                                            </p>
-                                        </div>
-                                    </div>
+
                                 </div>
                                 <!-- End Body -->
                             </div>
@@ -56,11 +49,7 @@
                         </div>
                         <div class="col-lg-8 col-nd-6" id="vendor-view-conversation">
                             <div class="card h-100">
-                                <!-- <div class="text-center mt-2">
-                                    <h4 class="initial-29">{{ translate('messages.view_conversation') }}
-                                    </h4>
-                                </div>
-                                {{-- view here --}} -->
+
                                 <div class="h-98p d-center">
                                     <div class="empty--data">
                                         <img width="64" class="mb-3" src="{{asset('/public/assets/admin/img/conversation-no-data.svg')}}" alt="public">
@@ -85,13 +74,15 @@
 @push('script_2')
 <script>
     "use strict";
-    $('.view-dm-conv').on('click', function (){
+
+    $(document).on('click', '.view-dm-conv', function () {
         let url = $(this).data('url');
         let id_to_active = $(this).data('active-id');
         let conv_id = $(this).data('conv-id');
         let sender_id = $(this).data('sender-id');
+
         viewConvs(url, id_to_active, conv_id, sender_id);
-    })
+    });
     function viewConvs(url, id_to_active, conv_id, sender_id) {
         $('.customer-list').removeClass('conv-active');
         $('#' + id_to_active).addClass('conv-active');

@@ -1,6 +1,6 @@
 @extends('layouts.vendor.app')
 
-@section('title',translate('messages.sub_category'))
+@section('title',translate('messages.Main_Sub_Category'))
 
 @push('css_or_js')
     <meta name="csrf-token" content="{{ csrf_token() }}">
@@ -15,7 +15,7 @@
                     <img src="{{asset('public/assets/admin/img/categories.png')}}" class="w--20" alt="">
                 </span>
                 <span>
-                    {{translate('messages.sub_category')}} <span class="badge badge-soft-dark ml-2" id="itemCount">{{$categories->total()}}</span>
+                    {{translate('messages.Main_Sub_Category')}} <span class="badge badge-soft-dark ml-2" id="itemCount">{{$categories->total()}}</span>
                 </span>
             </h1>
         </div>
@@ -29,7 +29,7 @@
                                 @csrf
                                 <!-- Search -->
                                 <div class="input-group input--group">
-                                    <input   value="{{ request()?->search ?? null }}" type="search" name="search" class="form-control" placeholder="{{translate('messages.ex_:_search_sub_category')}}" aria-label="{{translate('messages.search_here')}}">
+                                    <input   value="{{ request()?->search ?? null }}" type="search" name="search" class="form-control" placeholder="{{translate('messages.ex_:_search_main_sub_category')}}" aria-label="{{translate('messages.search_here')}}">
                                     <button type="submit" class="btn btn--secondary"><i class="tio-search"></i></button>
                                 </div>
                                 <!-- End Search -->
@@ -87,8 +87,8 @@
                                     <tr>
                                         <th class="border-0">{{translate('messages.#')}}</th>
                                         <th class="border-0">{{translate('messages.category_id')}}</th>
-                                        <th class="border-0">{{translate('messages.main_category')}}</th>
-                                        <th class="border-0">{{translate('messages.sub_category')}}</th>
+                                        <th class="border-0">{{translate('messages.Main_Category')}}</th>
+                                        <th class="border-0">{{translate('messages.Main_Sub_Category')}}</th>
                                     </tr>
                                 </thead>
 

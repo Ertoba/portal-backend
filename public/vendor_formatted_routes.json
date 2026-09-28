@@ -42,10 +42,10 @@
     {
         "routeName": "Category Add",
         "URI": "vendor-panel/category/list",
-        "keywords": "Category Category List Search Categories Ex Categories Export Download Options Excel Csv # Category Id Category Name No Data Found",
+        "keywords": "Category Category List Search Categories Ex Categories Export Download Options Excel Csv # Category Id Category Name Priority Normal Medium High No Data Found",
         "bladePath": "vendor-views/category/index",
         "moduleType": null,
-        "isModified": false
+        "isModified": true
     },
     {
         "routeName": "Add Sub Category",
@@ -526,5 +526,117 @@
         "bladePath": "vendor-views.order.list",
         "moduleType": null,
         "isModified": false
+    },
+    {
+        "routeName": "Reels List",
+        "URI": "vendor-panel/reels",
+        "keywords": "Reels List Information Deleted Reels List Manage Your Stores Video Content Filter Data All Time This Year Previous Year This Month This Week Custom Start Date End Date Filter Reels Overview Total Reels Total Views Total Likes Store Visits Search Here Sl Reel Id Reel Information Total Store Visit Reel Duration Reels Status Status Action Always Visible Want To Turn On The Reel Want To Turn Off The Reel If You Turn On The Reel It Will Be Visible To Customers If You Turn Off The Reel It Will No Longer Be Visible To Customers View Edit Delete Want To Delete This Reel This Reel Will No Longer Be Visible After Deletion Yes Delete Cancel No Data Found Reels Details Your Browser Does Not Support The Video Tag Short Description Reel Validity Upload Date Expired Date Vendor Information Views Likes",
+        "bladePath": "reelsmodule::vendor/reels/index",
+        "moduleType": null,
+        "isModified": false
+    },
+    {
+        "routeName": "Reels Create",
+        "URI": "vendor-panel/reels/create",
+        "keywords": "Create Reels Something Went Wrong",
+        "bladePath": "reelsmodule::vendor/reels/create",
+        "moduleType": null,
+        "isModified": false
+    },
+    {
+        "routeName": "Earning Report",
+        "URI": "vendor-panel/report/earning-report",
+        "keywords": "Earning Report Comprehensive Financial Overview And Analytics",
+        "bladePath": "rental::provider/report/earning-report/index",
+        "moduleType": "rental",
+        "isModified": false
+    },
+    {
+        "routeName": "Store Earning Report",
+        "URI": "vendor-panel/report/store-earning-report",
+        "keywords": "Store Earning Report Comprehensive Financial Overview And Analytics",
+        "bladePath": "vendor-views/report/store-earning-report",
+        "moduleType": null,
+        "isModified": false
+    },
+    {
+        "routeName": "Store Category List",
+        "URI": "vendor-panel/store-category/list",
+        "keywords": "My Category Search Categories Export Download Options Excel Csv Add My Category Once You Create Store Categories You Must Add Your Items To Those Categories Without Assigning Items They Will Not Appear On Your Store Details Page If You Want To Proceed With The Main Category You Can Skip Adding Any Store Categories SL Category Info Priority Level Status Action ID Normal Medium High Assign Items Edit My Category Want To Delete This Category Delete My Category No My Category Add My Store Category Organize Your Items With Custom Categories To Make Your Menu Easier For Customers To Browse Default Name Is Required Searching Items Assigned Successfully Something Went Wrong",
+        "bladePath": "vendor-views/store-category/index",
+        "moduleType": null,
+        "isModified": false
+    },
+    {
+        "routeName": "Website Builder Global Setting",
+        "URI": "vendor-panel/builder/global-settings",
+        "keywords": "Builder Website Builder Page Builder Global Setting Storefront Website Design Customize Theme Colors Logo Favicon Footer Social Links",
+        "bladePath": null,
+        "moduleType": null,
+        "isModified": true
+    },
+    {
+        "routeName": "Website Builder Domain Settings",
+        "URI": "vendor-panel/builder/domain-settings",
+        "keywords": "Builder Website Builder Page Builder Domain Settings Custom Domain Subdomain Storefront Website Connect Domain",
+        "bladePath": null,
+        "moduleType": null,
+        "isModified": true
+    },
+    {
+        "routeName": "Website Builder Home Page",
+        "URI": "vendor-panel/builder/home-page-setup",
+        "keywords": "Builder Website Builder Page Builder Home Page Setup Banner Section Storefront Website Design Customize Layout Sections",
+        "bladePath": null,
+        "moduleType": null,
+        "isModified": true
+    },
+    {
+        "routeName": "Website Builder About Us Page",
+        "URI": "vendor-panel/builder/about-us-page-setup",
+        "keywords": "Builder Website Builder Page Builder About Us Page Setup Storefront Website Design Customize Content",
+        "bladePath": null,
+        "moduleType": null,
+        "isModified": true
+    },
+    {
+        "routeName": "Website Builder Privacy Policy Page",
+        "URI": "vendor-panel/builder/privacy-page-setup",
+        "keywords": "Builder Website Builder Page Builder Privacy Policy Page Setup Storefront Website Content",
+        "bladePath": null,
+        "moduleType": null,
+        "isModified": true
+    },
+    {
+        "routeName": "Website Builder Refund Policy Page",
+        "URI": "vendor-panel/builder/refund-page-setup",
+        "keywords": "Builder Website Builder Page Builder Refund Policy Page Setup Storefront Website Content",
+        "bladePath": null,
+        "moduleType": null,
+        "isModified": true
+    },
+    {
+        "routeName": "Website Builder Cancellation Policy Page",
+        "URI": "vendor-panel/builder/cancellation-page-setup",
+        "keywords": "Builder Website Builder Page Builder Cancellation Policy Page Setup Storefront Website Content",
+        "bladePath": null,
+        "moduleType": null,
+        "isModified": true
+    },
+    {
+        "routeName": "Website Builder Terms And Condition Page",
+        "URI": "vendor-panel/builder/terms-page-setup",
+        "keywords": "Builder Website Builder Page Builder Terms And Condition Page Setup Storefront Website Content",
+        "bladePath": null,
+        "moduleType": null,
+        "isModified": true
+    },
+    {
+        "routeName": "Website Builder Help And Support Page",
+        "URI": "vendor-panel/builder/support-page-setup",
+        "keywords": "Builder Website Builder Page Builder Help And Support Page Setup Storefront Website Content Contact",
+        "bladePath": null,
+        "moduleType": null,
+        "isModified": true
     }
 ]

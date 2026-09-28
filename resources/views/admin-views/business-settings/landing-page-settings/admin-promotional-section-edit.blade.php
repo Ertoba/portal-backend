@@ -121,7 +121,7 @@
                                 </div>
                                 <input type="hidden" name="lang[]" value="default">
                             @endif
-                        <div class="row g-3">
+                        {{-- <div class="row g-3">
                             <div class="col-sm-6">
                                 <label class="form-label d-block mb-3">
                                     {{translate('Banner')}}  <span class="text--primary">{{translate('(size: 3:1)')}}</span>
@@ -152,7 +152,7 @@
                                     @endif
                                 </div>
                             </div>
-                        </div>
+                        </div> --}}
                         <div class="btn--container justify-content-end mt-20">
                             <button type="reset" class="btn btn--reset mb-2">{{translate('Reset')}}</button>
                             <button type="submit" class="btn btn--primary mb-2">{{translate('messages.Update')}}</button>

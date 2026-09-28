@@ -19,7 +19,7 @@ Route::group(['middleware' => ['localization', 'module-check']], function () {
     });
 });
 
-Route::group(['prefix' => 'vendor', 'namespace' => 'Vendor', 'middleware' => ['vendor.api', 'actch:vendor_app']], function () {
+Route::group(['prefix' => 'vendor', 'namespace' => 'Vendor', 'middleware' => ['vendor.api', 'mili.feature:vendor_app']], function () {
     Route::group(['prefix' => 'reel'], function () {
         Route::get('list', [VendorReelController::class, 'index']);
         Route::post('store', [VendorReelController::class, 'store']);

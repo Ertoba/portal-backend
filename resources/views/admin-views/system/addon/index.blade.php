@@ -224,7 +224,6 @@
             </div>
             @endforeach
             <!-- Activated Theme Modal -->
-            @include('admin-views.system.addon.partials.activation-modal')
         </div>
     </div>
 

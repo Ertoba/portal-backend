@@ -136,10 +136,10 @@
                             </td>
                             <td class="text-center">
                                 <div class="d-flex gap-3 justify-content-center">
-                                    <a class="btn btn-sm btn--primary btn-outline-primary d-flex gap-2 align-items-center px-3 py-2 {{( ($key == 0 ||  $key == 1 ) && env('APP_MODE') == 'demo') ? 'call-demo-lang' : ''}}"
+                                    <a class="btn btn-sm btn--primary btn-outline-primary d-flex gap-2 align-items-center px-3 py-2 {{( ($key == 0 ||  $key == 1 ) && getEnvMode() == 'demo') ? 'call-demo-lang' : ''}}"
                                         data-key="{{ $key }}"
-                                        data-env-mode="{{ env('APP_MODE') }}"
-                                        href="{{( ($key == 0 ||  $key == 1 ) && env('APP_MODE') == 'demo') ? 'javascript:' :route('admin.business-settings.language.translate',[$data['code']]) }}">
+                                        data-env-mode="{{ getEnvMode() }}"
+                                        href="{{( ($key == 0 ||  $key == 1 ) && getEnvMode() == 'demo') ? 'javascript:' :route('admin.business-settings.language.translate',[$data['code']]) }}">
                                         <img width="14" height="14" class="svg" src="{{asset('public/assets/admin/img/svg/language-exchange.svg')}}" alt="public">
                                         <span class="fs-12">{{ translate('messages.View') }}</span>
 
@@ -162,18 +162,18 @@
                                                 @else
                                                 <a class="dropdown-item d-flex gap-2 align-items-center cursor-pointer call-demo-lang offcanvas-trigger"
                                                     data-key="{{ $key }}"
-                                                    data-env-mode="{{ env('APP_MODE') }}"
-                                                    data-target="{{ ( ($key == 0 ||  $key == 1 ) && env('APP_MODE') == 'demo') ? '' :'#lang-offcanvas-update-'.$data['code'] }}">
+                                                    data-env-mode="{{ getEnvMode() }}"
+                                                    data-target="{{ ( ($key == 0 ||  $key == 1 ) && getEnvMode() == 'demo') ? '' :'#lang-offcanvas-update-'.$data['code'] }}">
                                                     <i class="tio-edit"></i>
                                                     {{ translate('messages.Edit') }}
                                                 </a>
                                                 @endif
                                                 @if ($data['code']=='en')
                                                 @else
-                                                    <a class="dropdown-item d-flex gap-2 align-items-center cursor-pointer call-demo-lang {{( ($key == 0 ||  $key == 1 ) && env('APP_MODE') == 'demo') ? '' : 'delete'}}"
+                                                    <a class="dropdown-item d-flex gap-2 align-items-center cursor-pointer call-demo-lang {{( ($key == 0 ||  $key == 1 ) && getEnvMode() == 'demo') ? '' : 'delete'}}"
                                                         data-key="{{ $key }}"
-                                                        data-env-mode="{{ env('APP_MODE') }}"
-                                                        id="{{( ($key == 0 ||  $key == 1 ) && env('APP_MODE') == 'demo')  ? 'javascript:' :route('admin.business-settings.language.delete',[$data['code']])}}">
+                                                        data-env-mode="{{ getEnvMode() }}"
+                                                        id="{{( ($key == 0 ||  $key == 1 ) && getEnvMode() == 'demo')  ? 'javascript:' :route('admin.business-settings.language.delete',[$data['code']])}}">
                                                         <i class="tio-delete-outlined"></i>
                                                         {{ translate('messages.Delete') }}
                                                     </a>

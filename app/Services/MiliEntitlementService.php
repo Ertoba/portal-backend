@@ -6,7 +6,7 @@ class MiliEntitlementService
 {
     public function enabled(?string $feature = null): bool
     {
-        // Routes using plain "actch" are allowed.
+        // Routes without a feature name are allowed.
         if ($feature === null || $feature === '') {
             return true;
         }

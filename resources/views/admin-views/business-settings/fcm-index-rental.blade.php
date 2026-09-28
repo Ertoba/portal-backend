@@ -86,6 +86,9 @@
                                     data-url="{{ url()->full() }}" data-filter="module_type"
                                     title="{{ translate('messages.select_modules') }}">
                                     @foreach (config('module.module_type') as $module)
+                                        {{-- Hide addon-based module types whose addon isn't published --}}
+                                        @continue($module === 'rental' && !addon_published_status('Rental'))
+                                        @continue($module === 'ride-share' && !addon_published_status('RideShare'))
                                         <option value="{{ $module }}" {{ $mod_type == $module ? 'selected' : '' }}>
                                             {{ ucfirst(translate($module)) }}
                                         </option>

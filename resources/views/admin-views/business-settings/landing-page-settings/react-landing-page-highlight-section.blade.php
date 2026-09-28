@@ -85,7 +85,7 @@
 
         <div class="card mb-20">
             <form class="custom-validation"
-                  action="{{ route('admin.business-settings.react-landing-page-settings', 'highlight-section') }}"
+                  action="{{ route('admin.business-settings.react-landing-page-settings-update', 'highlight-section') }}"
                   method="POST" enctype="multipart/form-data">
                 @csrf
                 <div class="card-body">

@@ -129,7 +129,7 @@
                                 @php($sub_total = 0)
                                 <?php
                                 if ($order->prescription_order == 1) {
-                                    $sub_total = $order['order_amount'] - $order['delivery_charge'] - $order['total_tax_amount'] - $order['dm_tips'] + $order['store_discount_amount'];
+                                    $sub_total = $order['order_amount'] - $order['delivery_charge'] - $order['total_tax_amount'] - $order['dm_tips'] - $order['additional_charge'] + $order['store_discount_amount'];
                                 }
                                 ?>
                                 @php($total_tax = 0)
@@ -265,6 +265,13 @@
                                         {{ \App\CentralLogics\Helpers::format_currency($order['ref_bonus_amount']) }}
                                     </dd>
                                 @endif
+                                @if (($order->orderProDiscount?->amount_saved ?? 0) > 0)
+                                    <dt class="col-6">{{ translate('messages.Pro_Discount') }}:</dt>
+                                    <dd class="col-6">
+                                        -
+                                        {{ \App\CentralLogics\Helpers::format_currency($order->orderProDiscount->amount_saved) }}
+                                    </dd>
+                                @endif
                             @endif
                                 @if ($order->tax_status == 'excluded'  && $order['total_tax_amount'] > 0 || $order->tax_status == null)
                                     <dt class="col-6">{{ translate('messages.vat/tax') }}:</dt>
@@ -284,6 +291,7 @@
                                         @php($del_c = $order['delivery_charge'])
                                         {{ \App\CentralLogics\Helpers::format_currency($del_c) }}
                                     </dd>
+                                    @include('partials.delivery-type-row', ['order' => $order, 'layout' => 'dl'])
                                 @endif
 
                                 <dt class="col-6">{{ translate('messages.delivery_man_tips') }}:</dt>

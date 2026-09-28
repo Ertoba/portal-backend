@@ -18,7 +18,7 @@
             </h1>
         </div>
         <!-- Content Row -->
-        <form action="{{ route('admin.users.employee.add-new') }}" method="post" enctype="multipart/form-data"
+        <form action="{{ route('admin.users.employee.store') }}" method="post" enctype="multipart/form-data"
             class="js-validate">
             @csrf
             <div class="card mb-4">
@@ -67,7 +67,7 @@
                                             </span>
                                         </label>
                                         <select name="zone_id" id="zone_id" class="form-control js-select2-custom">
-                                            @if (!isset(auth('admin')->user()->zone_id))
+                                            @if (!auth('admin')?->user()?->zone_id)
                                                 <option value="" {{ !isset($e->zone_id) ? 'selected' : '' }}>
                                                     {{ translate('messages.all') }}</option>
                                             @endif

@@ -432,6 +432,18 @@ $site_direction = \App\CentralLogics\Helpers::system_default_direction();
                                                                         </tr>
                                                                     @endif
 
+                                                                    @if (($trip->proDiscount?->amount_saved ?? 0) > 0)
+                                                                        <tr>
+                                                                            <td style="width: 40%"></td>
+                                                                            <td class="p-1 px-3">
+                                                                                {{ translate('messages.Pro_discount') }}
+                                                                            </td>
+                                                                            <td class="text-right p-1 px-3">
+                                                                                {{ \App\CentralLogics\Helpers::format_currency($trip->proDiscount?->amount_saved) }}
+                                                                            </td>
+                                                                        </tr>
+                                                                    @endif
+
                                                                     @if ($trip->tax_status == 'excluded' || $trip->tax_status == null)
                                                                         <tr>
                                                                             <td style="width: 40%"></td>

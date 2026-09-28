@@ -105,71 +105,27 @@
     @endforelse
 </div>
 <script>
-    $('.plan-slider').owlCarousel({
-        loop: false,
-        margin: 30,
-        responsiveClass: true,
-        nav: false,
-        dots: false,
-        items: 3,
-        startPosition: 1,
-        responsive: {
-            0: {
-                items: 1.1,
-                margin: 10,
-            },
-            375: {
-                items: 1.3,
-                margin: 30,
-            },
-            576: {
-                items: 1.7,
-            },
-            768: {
-                items: 2.2,
-                margin: 40,
-            },
-            992: {
-                items: 3,
-                margin: 40,
-            },
-            1200: {
-                items: 4,
-                margin: 40,
-            }
-        }
-    })
+    // Deferred init — owl carousel may not be loaded yet when this partial renders
+    window._initPackageSlider = function() {
+        if (typeof jQuery === 'undefined' || typeof jQuery.fn.owlCarousel === 'undefined') return;
+        if (jQuery('.plan-slider').data('owl.carousel')) return; // already initialized
 
-        $(window).on('load', function() {
-            $('input[name="business_plan"]').each(function() {
-                if ($(this).is(':checked')) {
-                    if ($(this).val() == 'subscription-base') {
-                        $('#subscription-plan').show()
-                    } else {
-                        $('#subscription-plan').hide()
-                    }
-                }
-            })
-            $('input[name="package_id"]').each(function() {
-                if ($(this).is(':checked')) {
-                    $(this).closest('.__plan-item').addClass('active')
-                }
-            })
-        })
-        $('input[name="business_plan"]').on('change', function() {
-            if ($(this).val() == 'subscription-base') {
-                $('#subscription-plan').slideDown()
-            } else {
-                $('#subscription-plan').slideUp()
+        jQuery('.plan-slider').owlCarousel({
+            loop: false,
+            margin: 20,
+            responsiveClass: true,
+            nav: false,
+            dots: true,
+            autoHeight: false,
+            stagePadding: 0,
+            startPosition: 1,
+            responsive: {
+                0:    { items: 1, margin: 12, stagePadding: 30 },
+                480:  { items: 1, margin: 14, stagePadding: 50 },
+                640:  { items: 2, margin: 16 },
+                992:  { items: 3, margin: 20 },
+                1200: { items: 4, margin: 20 }
             }
-        })
-        $('input[name="package_id"]').on('change', function() {
-            $('input[name="package_id"]').each(function() {
-                $(this).closest('.__plan-item').removeClass('active')
-            })
-            $(this).closest('.__plan-item').addClass('active')
-        })
-        $('#reset-btn').on('click', function() {
-            location.reload()
-        })
-    </script>
+        });
+    };
+</script>

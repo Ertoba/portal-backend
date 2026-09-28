@@ -11,11 +11,9 @@ return new class extends Migration
      */
     public function up(): void
     {
-        if (!Schema::hasColumn('expenses', 'ride_id')) {
-            Schema::table('expenses', function (Blueprint $table) {
-                $table->foreignId('ride_id')->nullable();
-            });
-        }
+        Schema::table('expenses', function (Blueprint $table) {
+            $table->foreignId('ride_id')->nullable();
+        });
     }
 
     /**
@@ -23,10 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        if (Schema::hasColumn('expenses', 'ride_id')) {
-            Schema::table('expenses', function (Blueprint $table) {
-                $table->dropColumn('ride_id');
-            });
-        }
+        Schema::table('expenses', function (Blueprint $table) {
+            $table->dropColumn('ride_id');
+        });
     }
 };

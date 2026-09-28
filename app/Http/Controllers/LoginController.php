@@ -29,7 +29,7 @@ use Modules\Gateways\Traits\SmsGateway;
 use Illuminate\Validation\Rules\Password;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
- 
+
 class LoginController extends Controller
 {
     public function __construct()
@@ -76,12 +76,18 @@ class LoginController extends Controller
         $role = array_search($user_type, $loginTypes, true);
 
         abort_if($role == null, 404);
+
+        if (in_array($role, ['vendor', 'vendor_employee']) && Helpers::is_vendor_panel_maintenance_active()) {
+            return to_route('maintenance_mode');
+        }
+
         $site_direction = $siteDirections[$role];
         $locale = $locals[$role];
         App::setLocale($locale);
         $custome_recaptcha = new CaptchaBuilder;
         $custome_recaptcha->build();
         Session::put('six_captcha', $custome_recaptcha->getPhrase());
+        $recaptcha = Helpers::get_business_settings('recaptcha');
 
         $email = null;
         $password = null;
@@ -90,7 +96,7 @@ class LoginController extends Controller
             $password = Crypt::decryptString(Cookie::get('p_token'));
         }
 
-        return view('auth.login', compact('custome_recaptcha', 'email', 'password', 'role', 'site_direction', 'locale'));
+        return view('auth.login', compact('custome_recaptcha', 'recaptcha', 'email', 'password', 'role', 'site_direction', 'locale'));
     }
 
     public function login_attemp($role, $email, $password, $ip, $remember = false)
@@ -252,7 +258,7 @@ class LoginController extends Controller
             $modules = Module::Active()->get();
             if (isset($modules) && ($modules->count() > 0)) {
 
-                return redirect()->route('admin.dashboard')->withCookies($forgetCookies);
+                return redirect(Helpers::admin_landing_url() ?? route('admin.dashboard'))->withCookies($forgetCookies);
             }
             return redirect()->route('admin.business-settings.business-setup')->withCookies($forgetCookies);
         }
@@ -261,6 +267,10 @@ class LoginController extends Controller
                 $employee = VendorEmployee::where('email', $request->email)->first();
                 $employee->is_logged_in = 1;
                 $employee->save();
+            }
+            $employee_landing = Helpers::employee_landing_url();
+            if ($employee_landing) {
+                return redirect($employee_landing)->withCookies($forgetCookies);
             }
             if(Helpers::get_store_data()?->module_type == 'rental' && addon_published_status('Rental')){
                 return redirect()->route('vendor.providerDashboard')->withCookies($forgetCookies);
@@ -285,9 +295,23 @@ class LoginController extends Controller
 
     public function reset_password_request(Request $request)
     {
+        $ip = $request->ip();
+        $key = 'admin-reset-password:' . $ip;
+        $maxAttempts = 2;
+        $decayMinutes = 60;
+
+        if (RateLimiter::tooManyAttempts($key, $maxAttempts)) {
+            $seconds = RateLimiter::availableIn($key);
+            $time = $seconds > 60 ? ceil($seconds / 60) . ' minutes' : $seconds . ' seconds';
+            Toastr::error(translate('Too many reset requests. Try again in ') . $time . '.');
+            return back();
+        }
+        RateLimiter::hit($key, $decayMinutes * 60);
+
         $admin = Admin::where('role_id', 1)->first();
 
         if (isset($admin)) {
+            DB::table('password_resets')->where(['email' => $admin['email'], 'created_by' => 'admin'])->delete();
             $token = Helpers::generate_reset_password_code();
             DB::table('password_resets')->insert([
                 'email' => $admin['email'],
@@ -316,11 +340,26 @@ class LoginController extends Controller
     public function vendor_reset_password_request(Request $request)
     {
         $request->validate([
-            'email' => 'required'
+            'email' => 'required|email'
         ]);
+
+        $ip = $request->ip();
+        $key = 'vendor-reset-password:' . $ip;
+        $maxAttempts = 3;
+        $decayMinutes = 60;
+
+        if (RateLimiter::tooManyAttempts($key, $maxAttempts)) {
+            $seconds = RateLimiter::availableIn($key);
+            $time = $seconds > 60 ? ceil($seconds / 60) . ' minutes' : $seconds . ' seconds';
+            Toastr::error(translate('Too many reset requests. Try again in ') . $time . '.');
+            return back();
+        }
+        RateLimiter::hit($key, $decayMinutes * 60);
+
         $vendor = Vendor::where('email', $request['email'])->first();
 
         if (isset($vendor)) {
+            DB::table('password_resets')->where(['email' => $vendor['email'], 'created_by' => 'vendor'])->delete();
             $token = Helpers::generate_reset_password_code();
             DB::table('password_resets')->insert([
                 'email' => $vendor['email'],

@@ -36,8 +36,13 @@ class CouponController extends BaseController
     {
     }
 
-    public function index(?Request $request): View|Collection|LengthAwarePaginator|null
+    public function index(?Request $request): View|Collection|LengthAwarePaginator|RedirectResponse|null
     {
+        if (Config::get('module.current_module_type') === 'parcel') {
+            Toastr::error(translate('messages.coupon_is_not_available_for_parcel_module'));
+            return back();
+        }
+
         return $this->getAddView($request);
     }
 

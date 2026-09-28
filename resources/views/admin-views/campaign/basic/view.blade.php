@@ -76,7 +76,7 @@
                                             <option disabled selected    value=""> {{ translate('messages.select_store') }}</option>
                                             @forelse($allstores as $store)
                                             @if(!in_array($store->id, $store_ids))
-                                            <option value="{{$store->id}}" >{{$store->name}}</option>
+                                            <option value="{{$store->id}}" data-verified="{{ (int) $store->verified_seller }}" >{{$store->name}}</option>
                                             @endif
                                             @empty
                                             <option value="">{{ translate('messages.no_data_found') }}</option>
