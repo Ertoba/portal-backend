@@ -187,7 +187,7 @@ class InstallController extends Controller
                     MILI_INSTALL=true
                     MILI_ENV=production
 
-                    SOFTWARE_VERSION=3.8
+                    SOFTWARE_VERSION=4.0
                     ';
             $file = fopen(base_path('.env'), 'w');
             fwrite($file, $output);
