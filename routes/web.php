@@ -18,7 +18,6 @@ use App\Http\Controllers\PaypalPaymentController;
 use App\Http\Controllers\BogPaymentController;
 use App\Http\Controllers\StripePaymentController;
 use App\Http\Controllers\SslCommerzPaymentController;
-use Illuminate\Support\Facades\Http;
 
 /*
 |--------------------------------------------------------------------------
@@ -233,13 +232,6 @@ if (!$is_published) {
 }
 
 
-Route::get('/test', function () {
-dd('Hello tester');
-});
-
-Route::get('module-test', function () {
-});
-
 //Restaurant Registration
 Route::group(['prefix' => 'vendor', 'as' => 'restaurant.'], function () {
     Route::get('apply', 'VendorController@create')->name('create');
@@ -262,17 +254,3 @@ Route::group(['prefix' => 'deliveryman', 'as' => 'deliveryman.'], function () {
 
 });
 
-Route::get('/image-proxy', function () {
-    $url = request('url');
-    if (!$url) {
-        abort(400, 'Missing url parameter');
-    }
-
-    $response = Http::withHeaders([
-        'User-Agent' => 'Laravel-Image-Proxy'
-    ])->get($url);
-
-    return response($response->body(), $response->status())
-        ->header('Content-Type', $response->header('Content-Type'))
-        ->header('Access-Control-Allow-Origin', '*');
-});
