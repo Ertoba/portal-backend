@@ -346,7 +346,8 @@ if(in_array(config('module.current_module_type'),config('module.module_type') ))
 <!-- JS Front -->
 
 <script src="{{asset('public/assets/admin')}}/js/vendor.min.js"></script>
-<script src="{{asset('public/assets/admin')}}/js/jquery.validate.min.js"></script>
+        <script src="{{asset('public/assets/admin/vendor/jquery/jquery.js')}}"></script>
+        <script src="{{asset('public/assets/admin')}}/js/jquery.validate.min.js"></script>
 <script src="{{asset('public/assets/admin')}}/js/theme.min.js"></script>
 <script src="{{asset('public/assets/admin')}}/js/sweet_alert.js"></script>
 <script src="{{asset('public/assets/admin')}}/js/bootstrap-tour-standalone.min.js"></script>

@@ -248,6 +248,7 @@
     </div>
   </div>
 <!-- JS Implementing Plugins -->
+<script src="{{asset('public/assets/admin/vendor/jquery/jquery.js')}}"></script>
 <script src="{{asset('public/assets/admin')}}/js/vendor.min.js"></script>
 
 <!-- JS Front -->
