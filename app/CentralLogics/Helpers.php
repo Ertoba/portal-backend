@@ -2194,6 +2194,37 @@ class Helpers
         return auth('vendor')->user()->stores[0];
     }
 
+    public static function storeCategoryStatus(): bool
+    {
+        return (bool) (self::get_business_settings('store_category_status') ?? 0);
+    }
+
+    /**
+     * Return whether the current vendor/store has at least one category.
+     * The feature flag and store context are both required.
+     */
+    public static function hasAnyStoreCategory(?int $storeId = null): bool
+    {
+        if (!self::storeCategoryStatus()) {
+            return false;
+        }
+
+        if ($storeId === null) {
+            if (auth('vendor_employee')->check()) {
+                $storeId = auth('vendor_employee')->user()->store->id ?? null;
+            } elseif (auth('vendor')->check() && auth('vendor')->user()?->stores?->isNotEmpty()) {
+                $storeId = (int) auth('vendor')->user()->stores[0]->id;
+            }
+        }
+
+        if (!$storeId) {
+            return false;
+        }
+
+        static $cache = [];
+        return $cache[$storeId] ??= \App\Models\StoreCategory::where('store_id', $storeId)->exists();
+    }
+
     public static function getDisk()
     {
         $config = self::get_business_settings('local_storage');
