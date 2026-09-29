@@ -237,12 +237,30 @@ if (! function_exists('trip_payment_fail')) {
 if (! function_exists('order_failed')) {
     function order_failed($data) {
         $order = Order::find($data->attribute_id);
-        $order->order_status='failed';
-        if($order->payment_method != 'partial_payment'){
-            $order->payment_method=$data->payment_method;
+
+        if (!$order) {
+            return false;
         }
-        $order->failed=now();
+
+        // A late gateway callback must never downgrade a paid, canceled,
+        // accepted, confirmed, processing or otherwise progressed order.
+        if (
+            $order->payment_status === 'paid'
+            || !in_array($order->order_status, ['pending', 'failed'], true)
+        ) {
+            return true;
+        }
+
+        $order->order_status = 'failed';
+
+        if ($order->payment_method != 'partial_payment') {
+            $order->payment_method = $data->payment_method;
+        }
+
+        $order->failed = now();
         $order->save();
+
+        return true;
     }
 }
 
