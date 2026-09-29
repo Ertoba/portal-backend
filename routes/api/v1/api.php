@@ -471,7 +471,7 @@ Route::group(['namespace' => 'Api\V1', 'middleware'=>'localization'], function (
             Route::get('recommended', 'ItemController@get_recommended');
             Route::get('basic', 'ItemController@get_popular_basic_products');
             Route::get('suggested', 'ItemController@get_cart_suggest_products');
-            Route::get('item-or-store-search', 'ItemController@item_or_store_search');
+            Route::get('item-or-store-search', 'ItemController@item_or_store_search')->withoutMiddleware(['module-check']);
             Route::post('reviews/submit', 'ItemController@submit_product_review')->middleware('auth:api');
             Route::get('common-conditions', 'ItemController@get_store_condition_products');
             Route::get('get-products', 'ItemController@get_products');
@@ -491,6 +491,7 @@ Route::group(['namespace' => 'Api\V1', 'middleware'=>'localization'], function (
             Route::get('top-offer-near-me', 'StoreController@get_top_offer_near_me');
         });
         Route::get('get-combined-data', 'SearchController@get_combined_data');
+        Route::get('trending-searches', 'SearchController@getTrendingSearches')->withoutMiddleware(['module-check']);
 
         Route::group(['prefix' => 'banners'], function () {
             Route::get('/', 'BannerController@get_banners');
@@ -513,6 +514,7 @@ Route::group(['namespace' => 'Api\V1', 'middleware'=>'localization'], function (
             Route::get('stores/{category_id}', 'CategoryController@get_stores');
             Route::get('featured/items', 'CategoryController@get_featured_category_products');
             Route::get('popular', 'CategoryController@get_popular_category_list');
+            Route::get('top', 'CategoryController@get_top_categories')->withoutMiddleware(['module-check']);
         });
 
         Route::group(['prefix' => 'common-condition'], function () {
