@@ -89,7 +89,6 @@ Route::group(['namespace' => 'Api\V1', 'middleware'=>'localization'], function (
     Route::get('customer/order/last-orders', 'OrderController@get_last_orders');
     Route::get('customer/ai-chat/conversations', 'MiliV4CompatibilityController@aiConversations');
     Route::get('customer/ai-chat/messages', 'MiliV4CompatibilityController@aiMessages');
-    Route::get('customer/saved-files', 'MiliV4CompatibilityController@savedFiles');
     Route::get('smart-banners', 'SmartBannerController@get_banners');
     Route::post('newsletter/subscribe','NewsletterController@index');
     Route::get('react-landing-page', 'ConfigController@react_landing_page')->middleware('mili.feature:react_web');
@@ -407,6 +406,10 @@ Route::group(['namespace' => 'Api\V1', 'middleware'=>'localization'], function (
                 Route::post('transfer-mart-to-drivemond', 'WalletController@transferMartToDrivemondWallet');
                 Route::post('transfer-mart-from-drivemond', 'WalletController@transferMartFromDrivemondWallet')->withoutMiddleware('auth:api');
             });
+
+            Route::get('saved-files', 'MiliV4CompatibilityController@savedFiles');
+            Route::post('saved-files/store', 'MiliV4CompatibilityController@storeSavedFiles');
+            Route::delete('saved-files/delete-all', 'MiliV4CompatibilityController@deleteSavedFiles');
 
             Route::get('order/last', 'OrderController@get_last_orders');
             Route::post('order-again/reorder', 'OrderController@reorderFromOrder');
