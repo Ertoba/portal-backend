@@ -4,8 +4,11 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Models\UserFile;
+use App\CentralLogics\Helpers;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Validator;
 
 /**
  * Compatibility responses for optional Customer 4 endpoints while the full
@@ -98,5 +101,66 @@ class MiliV4CompatibilityController extends Controller
             ])->values();
 
         return response()->json(['saved_files' => $files]);
+    }
+
+    public function storeSavedFiles(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        if (!$user) {
+            return response()->json(['errors' => [['code' => 'unauthorized']]], 401);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'saved_images' => 'required|array|min:1|max:5',
+            'saved_images.*' => 'required|file|image|max:2048',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => Helpers::error_processor($validator)], 403);
+        }
+
+        foreach ($request->file('saved_images', []) as $image) {
+            $fileName = Helpers::upload('order/saved_files/', 'png', $image);
+
+            UserFile::create([
+                'user_id' => $user->id,
+                'file_name' => $fileName,
+                'storage' => Helpers::getDisk(),
+                'mime_type' => $image->getClientMimeType(),
+                'type' => 'prescription',
+            ]);
+        }
+
+        return $this->savedFiles($request);
+    }
+
+    public function deleteSavedFiles(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        if (!$user) {
+            return response()->json(['errors' => [['code' => 'unauthorized']]], 401);
+        }
+
+        $files = UserFile::where('user_id', $user->id)
+            ->where('type', 'prescription')
+            ->get();
+
+        foreach ($files as $file) {
+            $disk = $file->storage ?: 'public';
+            $path = 'order/saved_files/' . $file->file_name;
+            try {
+                if (Storage::disk($disk)->exists($path)) {
+                    Storage::disk($disk)->delete($path);
+                }
+            } catch (\Throwable) {
+                // Keep deletion idempotent even if an old storage target is unavailable.
+            }
+        }
+
+        UserFile::where('user_id', $user->id)
+            ->where('type', 'prescription')
+            ->delete();
+
+        return response()->json(['message' => 'Saved prescription files deleted successfully']);
     }
 }
