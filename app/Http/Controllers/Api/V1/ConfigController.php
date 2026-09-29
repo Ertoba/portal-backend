@@ -1307,6 +1307,7 @@ class ConfigController extends Controller
                 'join_delivery_man_button_name' => (isset($settings['join_delivery_man_button_name'])) ? $settings['join_delivery_man_button_name'] : null,
                 'join_delivery_man_status' => (int)((isset($settings['join_DM_flutter_status'])) ? $settings['join_DM_flutter_status'] : 0),
 
+                'download_user_app_section_status' => (int)($settings['download_user_app_section_status'] ?? 0),
                 'download_user_app_title' => (isset($settings['download_user_app_title'])) ? $settings['download_user_app_title'] : null,
                 'download_user_app_sub_title' => (isset($settings['download_user_app_sub_title'])) ? $settings['download_user_app_sub_title'] : null,
                 'download_user_app_image' => (isset($settings['download_user_app_image'])) ? $settings['download_user_app_image'] : null,
