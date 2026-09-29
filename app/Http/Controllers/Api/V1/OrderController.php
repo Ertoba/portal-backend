@@ -19,6 +19,7 @@ use Illuminate\Http\Request;
 use App\CentralLogics\Helpers;
 use App\CentralLogics\OrderLogic;
 use App\CentralLogics\PersonalizationService;
+use App\Services\CheckoutPaymentRecoveryService;
 use App\Models\BusinessSetting;
 use App\Models\CashBackHistory;
 use App\Models\OfflinePayments;
@@ -454,7 +455,41 @@ class OrderController extends Controller
             } else {
                 return response()->json(['message' => data_get($cancel_parcel_order, 'message')], 200);
             }
-        } else if ($order->order_status == 'pending' || $order->order_status == 'failed' || $order->order_status == 'canceled') {
+        } else if ($order->order_status == 'canceled') {
+
+            // Cancellation is idempotent. Never restore stock/refund twice.
+            return response()->json([
+                'message' => translate('messages.order_canceled_successfully')
+            ], 200);
+
+        } else if ($order->order_status == 'pending' || $order->order_status == 'failed') {
+
+            // Before canceling the order, safely terminate any active Keepz
+            // payment attempt. This prevents payment/cancel race conditions.
+            if (
+                in_array($order->payment_method, ['digital_payment', 'keepz'], true)
+                && $order->payment_status !== 'paid'
+            ) {
+                $paymentRecoveryResponse = app(
+                    CheckoutPaymentRecoveryService::class
+                )->prepareRetry($request, (int) $order->id);
+
+                if ($paymentRecoveryResponse->getStatusCode() !== 200) {
+                    return $paymentRecoveryResponse;
+                }
+
+                $order->refresh();
+
+                if ($order->payment_status === 'paid') {
+                    return response()->json([
+                        'errors' => [[
+                            'code' => 'order_already_paid',
+                            'message' => 'This order has already been paid.'
+                        ]]
+                    ], 409);
+                }
+            }
+
                 $hasStock = config('module.' . $order->module->module_type)['stock'];
             $hasFlashDiscount = $order->flash_admin_discount_amount > 0 && $order->flash_store_discount_amount > 0;
 
