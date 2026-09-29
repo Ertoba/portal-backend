@@ -947,6 +947,8 @@ class Helpers
                 $item['min'] = (float) $item->items()->active()->min('price');
                 $item['max'] = (float) $item->items()->active()->max('price');
                 $item['is_recommended'] = false;
+                $item['show_low_stock_count'] = (bool) ($item?->storeConfig?->show_low_stock_count ?? false);
+                $item['minimum_stock_for_warning'] = (int) ($item?->storeConfig?->minimum_stock_for_warning ?? 0);
                 $item['halal_tag_status'] = (bool) $item?->storeConfig?->halal_tag_status;
                 $item['verified_seller'] = self::get_verified_seller_status($item, $item?->storeConfig);
                 $extra_packaging_data = self::get_business_settings('extra_packaging_data');
@@ -969,7 +971,8 @@ class Helpers
         } else {
             $data->load('storeConfig');
             $data['is_recommended'] = false;
-            $data['minimum_stock_for_warning'] = (int) $data?->storeConfig?->minimum_stock_for_warning ?? 0;
+            $data['show_low_stock_count'] = (bool) ($data?->storeConfig?->show_low_stock_count ?? false);
+            $data['minimum_stock_for_warning'] = (int) ($data?->storeConfig?->minimum_stock_for_warning ?? 0);
             $data['halal_tag_status'] = (bool) $data?->storeConfig?->halal_tag_status;
             $data['verified_seller'] = self::get_verified_seller_status($data, $data?->storeConfig);
             $extra_packaging_data = self::get_business_settings('extra_packaging_data');
