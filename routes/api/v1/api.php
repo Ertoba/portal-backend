@@ -86,7 +86,7 @@ Route::group(['namespace' => 'Api\V1', 'middleware'=>'localization'], function (
     Route::get('offers/items', 'MiliV4CompatibilityController@offerItems');
     Route::get('offers/stores', 'MiliV4CompatibilityController@offerStores');
     Route::get('stores/exclusive-deals', 'MiliV4CompatibilityController@exclusiveDeals');
-    Route::get('customer/order/last-orders', 'MiliV4CompatibilityController@lastOrders');
+    Route::get('customer/order/last-orders', 'OrderController@get_last_orders');
     Route::get('customer/ai-chat/conversations', 'MiliV4CompatibilityController@aiConversations');
     Route::get('customer/ai-chat/messages', 'MiliV4CompatibilityController@aiMessages');
     Route::get('customer/saved-files', 'MiliV4CompatibilityController@savedFiles');
@@ -406,6 +406,16 @@ Route::group(['namespace' => 'Api\V1', 'middleware'=>'localization'], function (
                 #handshake
                 Route::post('transfer-mart-to-drivemond', 'WalletController@transferMartToDrivemondWallet');
                 Route::post('transfer-mart-from-drivemond', 'WalletController@transferMartFromDrivemondWallet')->withoutMiddleware('auth:api');
+            });
+
+            Route::get('order/last', 'OrderController@get_last_orders');
+            Route::post('order-again/reorder', 'OrderController@reorderFromOrder');
+
+            Route::group(['prefix' => 'monthly-order'], function () {
+                Route::get('list', 'OrderController@listMonthlySubscriptions');
+                Route::get('details', 'OrderController@monthlySubscriptionDetails');
+                Route::delete('remove', 'OrderController@removeMonthlySubscription');
+                Route::post('reorder', 'OrderController@reorderMonthly');
             });
 
             Route::get('visit-again', 'OrderController@order_again');
