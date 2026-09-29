@@ -361,71 +361,122 @@ class CustomerController extends Controller
 
     public function orderPaymentFailed(Request $request)
     {
-        $user_id = $request->user ? $request->user->id : $request->input('guest_id');
+        $user_id = $request->user
+            ? $request->user->id
+            : $request->input('guest_id');
+
+        $isGuest = $request->user ? 0 : 1;
         $orderId = $request->input('order_id');
 
-        if ($orderId) {
-            $unpaidOrder = Order::where('id', $orderId)->first();
+        if ($user_id === null || $user_id === '') {
+            return response()->json([], 200);
         }
-        else {
-            $unpaidOrder = Order::where('user_id', $user_id)
-                ->where('created_at', '>=', now()->subMonths(1))
-                ->whereIn('order_status', ['pending','failed'])
-                ->whereNotIn('payment_method', ['cash_on_delivery', 'wallet'])
-                ->where(function ($q) {
-                    // CASE 1: partial_payments
-                    $q->where(function ($q2) {
-                        $q2->where('payment_method', 'partial_payment')
-                            ->whereHas('payments', function ($p) {
-                                $p->where('payment_status', 'unpaid')
-                                    ->whereNotIn('payment_method', ['cash_on_delivery', 'wallet']);
-                            });
-                    })
-                    // CASE 2: offline_payment
-                    ->orWhere(function ($q3) {
-                        $q3->where('payment_method', 'offline_payment')
-                            ->whereDoesntHave('offline_payments');
-                    })
-                    // CASE 3: other online methods
-                    ->orWhere(function ($q4) {
-                        $q4->whereNotIn('payment_method', [
-                            'cash_on_delivery', 'wallet', 'partial_payment', 'offline_payment'
-                        ]);
-                    });
+
+        $query = Order::where('user_id', $user_id)
+            ->where('is_guest', $isGuest)
+            ->whereIn('order_status', ['pending', 'failed'])
+            ->where('payment_status', 'unpaid')
+            ->whereNotIn('payment_method', ['cash_on_delivery', 'wallet'])
+            ->where(function ($q) {
+
+                // CASE 1: partial payment
+                $q->where(function ($q2) {
+                    $q2->where('payment_method', 'partial_payment')
+                        ->whereHas('payments', function ($p) {
+                            $p->where('payment_status', 'unpaid')
+                                ->whereNotIn(
+                                    'payment_method',
+                                    ['cash_on_delivery', 'wallet']
+                                );
+                        });
                 })
+
+                // CASE 2: offline payment not yet submitted
+                ->orWhere(function ($q3) {
+                    $q3->where('payment_method', 'offline_payment')
+                        ->whereDoesntHave('offline_payments');
+                })
+
+                // CASE 3: other online methods
+                ->orWhere(function ($q4) {
+                    $q4->whereNotIn('payment_method', [
+                        'cash_on_delivery',
+                        'wallet',
+                        'partial_payment',
+                        'offline_payment'
+                    ]);
+                });
+            });
+
+        if ($orderId) {
+            $unpaidOrder = $query
+                ->where('id', $orderId)
+                ->first();
+        } else {
+            $unpaidOrder = $query
+                ->where('created_at', '>=', now()->subMonths(1))
+                ->latest()
                 ->first();
         }
 
         if (!$unpaidOrder) {
             return response()->json([], 200);
         }
+
         $zone = $unpaidOrder->zone;
         $module = $unpaidOrder->module;
-        $moduleZone = $module?->zones()?->where('zone_id', $zone->id)?->first();
-        $maxCodAmount = $moduleZone?->pivot?->maximum_cod_order_amount ?? 0;
-        $isCashOnDelivery = (Helpers::get_business_settings('cash_on_delivery')['status'] && $zone->cash_on_delivery) ?? false ;
-        $isDigitalPayment = (Helpers::get_business_settings('digital_payment')['status'] && $zone->digital_payment) ?? false ;
-        $isOfflinePayment = (Helpers::get_business_settings('offline_payment_status') == 1 && $zone->offline_payment) ?? false ;
 
+        if (!$zone) {
+            return response()->json([], 200);
+        }
+
+        $moduleZone = $module?->zones()
+            ?->where('zone_id', $zone->id)
+            ?->first();
+
+        $maxCodAmount =
+            $moduleZone?->pivot?->maximum_cod_order_amount ?? 0;
+
+        $isCashOnDelivery = (
+            Helpers::get_business_settings('cash_on_delivery')['status']
+            && $zone->cash_on_delivery
+        ) ?? false;
+
+        $isDigitalPayment = (
+            Helpers::get_business_settings('digital_payment')['status']
+            && $zone->digital_payment
+        ) ?? false;
+
+        $isOfflinePayment = (
+            Helpers::get_business_settings('offline_payment_status') == 1
+            && $zone->offline_payment
+        ) ?? false;
+
+        $deliveryAddress = json_decode(
+            $unpaidOrder->delivery_address
+        );
 
         $data = [
-            'cash_on_delivery'            => (bool) $isCashOnDelivery,
-            'digital_payment'             => (bool) $isDigitalPayment,
-            'offline_payment'             => (bool) $isOfflinePayment,
-            'maximum_cod_order_amount'    => $maxCodAmount,
-            'order_id'                    => $unpaidOrder->id,
-            'order_amount'                => $unpaidOrder->order_amount,
-            'partially_paid_amount'       => $unpaidOrder->partially_paid_amount,
-            'order_type'                  => $unpaidOrder->order_type,
-            'user_id'                     => $unpaidOrder->user_id,
-            'zone_id'                     => $unpaidOrder->zone_id,
-            'payment_status'              => $unpaidOrder->payment_status,
-            'payment_method'              => $unpaidOrder->payment_method,
-            'contact_person_number'       => json_decode($unpaidOrder->delivery_address)->contact_person_number,
+            'cash_on_delivery' => (bool) $isCashOnDelivery,
+            'digital_payment' => (bool) $isDigitalPayment,
+            'offline_payment' => (bool) $isOfflinePayment,
+            'maximum_cod_order_amount' => $maxCodAmount,
+            'order_id' => $unpaidOrder->id,
+            'order_amount' => $unpaidOrder->order_amount,
+            'partially_paid_amount' =>
+                $unpaidOrder->partially_paid_amount,
+            'order_type' => $unpaidOrder->order_type,
+            'user_id' => $unpaidOrder->user_id,
+            'zone_id' => $unpaidOrder->zone_id,
+            'payment_status' => $unpaidOrder->payment_status,
+            'payment_method' => $unpaidOrder->payment_method,
+            'contact_person_number' =>
+                $deliveryAddress?->contact_person_number,
         ];
 
         return response()->json($data, 200);
     }
+
 
     public function update_interest(Request $request)
     {
