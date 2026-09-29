@@ -311,6 +311,16 @@ class CheckoutPaymentRecoveryService
 
     private function prepareOrderForPaymentRetry(Order $order): array
     {
+        if ($order->payment_status === 'paid') {
+            return ['state' => 'paid'];
+        }
+
+        // Only unresolved checkout orders may enter payment recovery.
+        // A canceled or progressed order must never start another payment.
+        if (!in_array($order->order_status, ['pending', 'failed'], true)) {
+            return ['state' => 'blocked'];
+        }
+
         $inspection = $this->inspectOrderPayments($order, true);
 
         if ($inspection['state'] === 'paid') {
