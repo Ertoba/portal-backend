@@ -87,7 +87,6 @@ Route::group(['namespace' => 'Api\V1', 'middleware'=>'localization'], function (
     Route::get('offers/stores', 'MiliV4CompatibilityController@offerStores');
     Route::get('stores/exclusive-deals', 'MiliV4CompatibilityController@exclusiveDeals');
     Route::get('customer/order/last-orders', 'MiliV4CompatibilityController@lastOrders');
-    Route::get('customer/cart/get-all', 'MiliV4CompatibilityController@allCarts');
     Route::get('customer/ai-chat/conversations', 'MiliV4CompatibilityController@aiConversations');
     Route::get('customer/ai-chat/messages', 'MiliV4CompatibilityController@aiMessages');
     Route::get('customer/saved-files', 'MiliV4CompatibilityController@savedFiles');
@@ -446,6 +445,7 @@ Route::group(['namespace' => 'Api\V1', 'middleware'=>'localization'], function (
 
             Route::group(['prefix'=>'cart'], function() {
                 Route::get('list', 'CartController@get_carts');
+                Route::get('get-all', 'CartController@get_all_carts');
                 Route::post('add', 'CartController@add_to_cart');
                 Route::post('update', 'CartController@update_cart');
                 Route::delete('remove-item', 'CartController@remove_cart_item');
