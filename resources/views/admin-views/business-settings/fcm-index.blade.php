@@ -809,13 +809,13 @@
                                                     }
                                                 }
                                             ?>
-                                            <h5 class="mb-3">{{ translate('messages.Monthly Order Notification') }}</h5>
+                                            <h5 class="mb-3">{{ translate('messages.monthly_order_notification') }}</h5>
                                             <div class="row g-3 align-items-end">
                                                 <div class="col-lg-6">
                                                     <div class="form-group mb-0">
                                                         <div class="d-flex flex-wrap justify-content-between mb-2">
                                                             <span class="d-block form-label">
-                                                                {{translate('messages.Monthly Order Reminder Message')}} ({{ strtoupper($lang) }})
+                                                                {{translate('messages.monthly_order_reminder_message')}} ({{ strtoupper($lang) }})
                                                             </span>
                                                             @if ($lang == 'en')
                                                                 <label class="switch--custom-label toggle-switch d-flex align-items-center mb-0"
