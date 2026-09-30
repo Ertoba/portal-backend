@@ -55,12 +55,12 @@
             </button>
             @endif
             @if($can_settings && $tax_on)
-            <button class="v2-rail-btn {{ $active_section==='fin' ? 'is-active' : '' }}" data-section="fin" data-label="{{ translate('Finance & Tax') }}" aria-label="{{ translate('Finance & Tax') }}">
+            <button class="v2-rail-btn {{ $active_section==='fin' ? 'is-active' : '' }}" data-section="fin" data-label="{{ translate('messages.finance_tax') }}" aria-label="{{ translate('messages.finance_tax') }}">
                 <i data-lucide="receipt"></i><span class="v2-pin-dot"></span>
             </button>
             @endif
             @if($can_settings)
-            <button class="v2-rail-btn {{ $active_section==='pages' ? 'is-active' : '' }}" data-section="pages" data-label="{{ translate('Website, Pages & Content') }}" aria-label="{{ translate('Website, Pages & Content') }}">
+            <button class="v2-rail-btn {{ $active_section==='pages' ? 'is-active' : '' }}" data-section="pages" data-label="{{ translate('messages.website_pages_content') }}" aria-label="{{ translate('messages.website_pages_content') }}">
                 <i data-lucide="file-text"></i><span class="v2-pin-dot"></span>
             </button>
             <button class="v2-rail-btn {{ $active_section==='sys' ? 'is-active' : '' }}" data-section="sys" data-label="{{ translate('System Configuration') }}" aria-label="{{ translate('System Configuration') }}">
@@ -214,7 +214,7 @@
         @if($can_settings && $tax_on)
         <div class="v2-panel-content" data-panel="fin" @if($active_section!=='fin') hidden @endif>
             <div class="v2-panel-header">
-                <div class="v2-panel-title"><span class="name">{{ translate('Finance & Tax') }}</span></div>
+                <div class="v2-panel-title"><span class="name">{{ translate('messages.finance_tax') }}</span></div>
                 <div class="v2-panel-subtitle">{{ translate('Charges, penalties, and financial configurations') }}</div>
             </div>
             <div class="v2-panel-body">
@@ -241,7 +241,7 @@
         @if($can_settings)
         <div class="v2-panel-content" data-panel="pages" @if($active_section!=='pages') hidden @endif>
             <div class="v2-panel-header">
-                <div class="v2-panel-title"><span class="name">{{ translate('Website, Pages & Content') }}</span></div>
+                <div class="v2-panel-title"><span class="name">{{ translate('messages.website_pages_content') }}</span></div>
                 <div class="v2-panel-subtitle">{{ translate('Public-facing pages, policies, and branding') }}</div>
             </div>
             <div class="v2-panel-body">
