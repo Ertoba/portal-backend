@@ -401,7 +401,7 @@
                                         <div class="col-xxl-9 col-lg-8 col-md-7 col-sm-6">
                                             <div>
                                                 <h4 class="mb-1">
-                                                    {{ translate('Monthly Order Setup') }}
+                                                    {{ translate('messages.monthly_order_setup') }}
                                                 </h4>
                                                 <p class="mb-0 fs-12">
                                                     {{ translate('Enable this option to display the monthly order feature on the Add to Cart page for the Pharmacy and Grocery modules only.') }}
