@@ -139,19 +139,19 @@
         @if(Helpers::admin_can_access_workspace('finance'))
         <a class="v2-ws-tab {{ $is_finance_path ? 'is-active' : '' }}" href="{{ $url_finance }}">
             <i data-lucide="wallet" class="v2-ws-ico"></i>
-            <span>{{ translate('Finance') }}</span>
+            <span>{{ translate('messages.finance') }}</span>
         </a>
         @endif
         @if(Helpers::admin_can_access_workspace('reports'))
         <a class="v2-ws-tab {{ $is_reports_path ? 'is-active' : '' }}" href="{{ $url_reports }}">
             <i data-lucide="bar-chart-3" class="v2-ws-ico"></i>
-            <span>{{ translate('Reports') }}</span>
+            <span>{{ translate('messages.reports') }}</span>
         </a>
         @endif
         @if(Helpers::module_permission_check('order'))
         <a class="v2-ws-tab {{ $is_dispatch_path ? 'is-active' : '' }}" href="{{ $url_dispatch }}">
             <i data-lucide="route" class="v2-ws-ico"></i>
-            <span>{{ translate('Dispatch') }}</span>
+            <span>{{ translate('messages.dispatch') }}</span>
         </a>
         @endif
         @if(Helpers::admin_can_access_workspace('settings'))
