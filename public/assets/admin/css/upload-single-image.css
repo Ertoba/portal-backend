@@ -109,7 +109,7 @@
 }
 .imageModal {
   background-color: rgba(0, 0, 0, 0.6);
-  z-index: 1040;
+  z-index: 1060;
 }
 .imageModal .modal-dialog,
 .imageModal .modal-content {

@@ -69,6 +69,11 @@ function coupon_type_change(coupon_type) {
             $('#limit_for_same_user').addClass('d-none');
             break;
 
+        case 'pro_customer':
+            $('#customer_wise').hide();
+            $('#select_customer').val(['all']).trigger('change');
+            break;
+
         default:
             $('#customer_wise').show();
             $('#coupon_limit').val($('#coupon_limit').data('value')).attr("readonly", false);
@@ -151,49 +156,49 @@ $(document).on('click', '#generate_code', function () {
     });
 });
 
-        $(document).on('click', '.copy-to-clipboard', function() {
-            copyToClipboardById($(this).data('id'));
-        });
+$(document).on('click', '.copy-to-clipboard', function () {
+    copyToClipboardById($(this).data('id'));
+});
 
-        function copyToClipboardById(elementId) {
-            const element = document.getElementById(elementId);
-            if (element) {
-                navigator.clipboard.writeText(element.value)
-                    .then(() => {
-                        toastr.success('Copied to clipboard!');
-                    })
-                    .catch(() => {
-                        toastr.error('Failed to copy!');
-                    });
-            } else {
-                toastr.warning('Element not found.');
-            }
-        }
-
-
-
-        $(document).on('click', '.data-info-show', function() {
-            let id = $(this).data('id');
-            let url = $(this).data('url');
-            $('#content-disable').addClass('disabled');
-            fetch_data(id, url)
-        })
-
-
-
-        function fetch_data(id, url) {
-            $.ajax({
-                url: url,
-                type: "get",
-                beforeSend: function() {
-                    $('#data-view').empty();
-                    $('#loading').show()
-                },
-                success: function(data) {
-                    $("#data-view").append(data.view);
-                },
-                complete: function() {
-                    $('#loading').hide()
-                }
+function copyToClipboardById(elementId) {
+    const element = document.getElementById(elementId);
+    if (element) {
+        navigator.clipboard.writeText(element.value)
+            .then(() => {
+                toastr.success('Copied to clipboard!');
             })
+            .catch(() => {
+                toastr.error('Failed to copy!');
+            });
+    } else {
+        toastr.warning('Element not found.');
+    }
+}
+
+
+
+$(document).on('click', '.data-info-show', function () {
+    let id = $(this).data('id');
+    let url = $(this).data('url');
+    $('#content-disable').addClass('disabled');
+    fetch_data(id, url)
+})
+
+
+
+function fetch_data(id, url) {
+    $.ajax({
+        url: url,
+        type: "get",
+        beforeSend: function () {
+            $('#data-view').empty();
+            $('#loading').show()
+        },
+        success: function (data) {
+            $("#data-view").append(data.view);
+        },
+        complete: function () {
+            $('#loading').hide()
         }
+    })
+}

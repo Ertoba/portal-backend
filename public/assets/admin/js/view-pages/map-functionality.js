@@ -44,6 +44,56 @@ function initMap() {
     });
     geocoder = new google.maps.Geocoder();
 
+    // "My Location" button — created dynamically as a map control
+    if (navigator.geolocation) {
+        const locDiv = document.createElement("div");
+        locDiv.style.cssText = "margin:0 10px 10px 0";
+        const locBtn = document.createElement("button");
+        locBtn.type = "button";
+        locBtn.title = "My Location";
+        locBtn.style.cssText = "background:#fff;border:none;border-radius:2px;box-shadow:rgba(0,0,0,.3) 0px 1px 4px -1px;cursor:pointer;width:40px;height:40px;display:flex;align-items:center;justify-content:center;padding:0";
+        locBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2"/><circle cx="12" cy="12" r="8"/></svg>';
+        locDiv.appendChild(locBtn);
+        map.controls[google.maps.ControlPosition.RIGHT_BOTTOM].push(locDiv);
+
+        locBtn.addEventListener("click", function () {
+            locBtn.style.opacity = "0.5";
+            locBtn.querySelector("svg").style.stroke = "#4285f4";
+            navigator.geolocation.getCurrentPosition(
+                function (position) {
+                    locBtn.style.opacity = "1";
+                    locBtn.querySelector("svg").style.stroke = "#666";
+                    const pos = { lat: position.coords.latitude, lng: position.coords.longitude };
+                    map.setCenter(pos);
+                    map.setZoom(16);
+                    if (myMarker) myMarker.map = null;
+                    try {
+                        const { AdvancedMarkerElement } = google.maps.marker;
+                        myMarker = new AdvancedMarkerElement({ position: pos, map: map, title: "My Location" });
+                    } catch(e) {
+                        myMarker = new google.maps.Marker({ position: pos, map: map, title: "My Location" });
+                    }
+                    document.getElementById("latitude").value = pos.lat;
+                    document.getElementById("longitude").value = pos.lng;
+                    document.getElementById("outOfZone").style.setProperty("display", "none", "important");
+                    setAddressFromLatLng(new google.maps.LatLng(pos.lat, pos.lng));
+                    if (typeof checkZone === "function") checkZone(pos.lat, pos.lng);
+                },
+                function (err) {
+                    locBtn.style.opacity = "1";
+                    locBtn.querySelector("svg").style.stroke = "#666";
+                    var msg = "Unable to get location.";
+                    if (err.code === 1) msg = "Location access denied. Please allow location permission in your browser.";
+                    else if (err.code === 2) msg = "Location unavailable. Please check your device location settings.";
+                    else if (err.code === 3) msg = "Location request timed out. Please try again.";
+                    if (typeof toastr !== "undefined") toastr.error(msg);
+                    else alert(msg);
+                },
+                { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+            );
+        });
+    }
+
     if (oldAddress) {
         const pac = document.getElementById('pac-input');
         if (pac) pac.value = oldAddress;

@@ -93,6 +93,7 @@ trait Payment
             'openpay' => 'payment/openpay/pay',
             'mollie' => 'payment/mollie/pay',
             'line_pay' => 'payment/line-pay/pay',
+            'keepz' => 'payment/keepz/pay',
         ];
         if (array_key_exists($payment->payment_method, $routes)) {
             return url("{$routes[$payment->payment_method]}/?payment_id={$payment->id}");

@@ -66,6 +66,11 @@ function coupon_type_change(coupon_type) {
             $('#limit_for_same_user').addClass('d-none');
             break;
 
+        case 'pro_customer':
+            $('#customer_wise').hide();
+            $('#select_customer').val(['all']).trigger('change');
+            break;
+
         default:
             $('#customer_wise').show();
             $('#coupon_limit').val($('#coupon_limit').data('value')).attr("readonly", false);

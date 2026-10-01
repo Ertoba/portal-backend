@@ -25,6 +25,7 @@ $(document).ready(function () {
 });
 
 
+
 document.addEventListener("DOMContentLoaded", function () {
     let checkboxes = document.querySelectorAll(".dynamic-checkbox");
     checkboxes.forEach(function (checkbox) {
@@ -302,6 +303,7 @@ $(document).on("click", ".confirm-Toggle", function () {
     } else {
         $("#" + toggle_id).prop("checked", true);
     }
+    $("#" + toggle_id).trigger("change");
     $("#toggle-modal").modal("hide");
 
     // if (toggle_id === "admin_free_delivery_status") {
@@ -323,6 +325,13 @@ $(document).on("click", ".confirm-Toggle", function () {
             $("#hide_show_approval_box").removeClass("d-none");
         } else {
             $("#hide_show_approval_box").addClass("d-none");
+        }
+    }
+    if (toggle_id === "vendor_can_upload_reels") {
+        if ($("#vendor_can_upload_reels").is(":checked")) {
+            $("#reels_settings_box").removeClass("d-none");
+        } else {
+            $("#reels_settings_box").addClass("d-none");
         }
     }
     if (toggle_id === "additional_charge_status") {
@@ -387,7 +396,7 @@ $(document).on("click", ".confirm-Toggle", function () {
             $("#min_amount_to_pay_rider")
                 .attr("readonly", true)
                 .removeAttr("required");
-            
+
         }
     }
     if (toggle_id === "play-store-dm-status") {
@@ -1046,6 +1055,82 @@ $(document).ready(function () {
         });
     });
 
+    $('.js-product-media-gallery').each(function () {
+        const $gallery = $(this);
+        const $main = $gallery.find('.js-product-main-slider');
+        const $thumb = $gallery.find('.js-product-thumb-slider');
+        const $next = $gallery.find('.js-product-gallery-next');
+        const $prev = $gallery.find('.js-product-gallery-prev');
+
+        if (!$main.length || !$thumb.length || $main.hasClass('owl-loaded') || $thumb.hasClass('owl-loaded')) {
+            return;
+        }
+
+        const totalSlides = $main.children().length;
+
+        const syncCurrentSlide = (index) => {
+            const thumbCarousel = $thumb.data('owl.carousel');
+            if (!thumbCarousel) {
+                return;
+            }
+
+            $thumb.find('.owl-item').removeClass('synced').eq(index).addClass('synced');
+
+            const start = thumbCarousel.relative(thumbCarousel.current());
+            const end = start + thumbCarousel.settings.items - 1;
+
+            if (index > end) {
+                $thumb.trigger('to.owl.carousel', [index, 200, true]);
+            }
+
+            if (index < start) {
+                $thumb.trigger('to.owl.carousel', [Math.max(index - thumbCarousel.settings.items + 1, 0), 200, true]);
+            }
+        };
+
+        $main.owlCarousel({
+            items: 1,
+            slideSpeed: 2000,
+            nav: false,
+            autoplay: false,
+            dots: false,
+            loop: totalSlides > 1,
+            responsiveRefreshRate: 200,
+        }).on('changed.owl.carousel', function (event) {
+            const mainCarousel = $main.data('owl.carousel');
+            const activeIndex = mainCarousel ? mainCarousel.relative(event.item.index) : event.item.index;
+            syncCurrentSlide(activeIndex);
+        });
+
+        $thumb.owlCarousel({
+            items: Math.min(totalSlides, 4),
+            dots: false,
+            nav: false,
+            smartSpeed: 200,
+            slideSpeed: 500,
+            slideBy: 4,
+            margin: 6,
+            responsiveRefreshRate: 100,
+        }).on('initialized.owl.carousel', function () {
+            syncCurrentSlide(0);
+        }).on('click', '.owl-item', function () {
+            $main.trigger('to.owl.carousel', [$(this).index(), 200, true]);
+        });
+
+        $next.on('click', function () {
+            $main.trigger('next.owl.carousel');
+        });
+
+        $prev.on('click', function () {
+            $main.trigger('prev.owl.carousel');
+        });
+
+        if (totalSlides <= 1) {
+            $next.addClass('d-none');
+            $prev.addClass('d-none');
+        }
+    });
+
 });
 
 if (typeof FormValidation === 'undefined') {
@@ -1076,23 +1161,25 @@ if (typeof FormValidation === 'undefined') {
                     if (!FormValidation.validateForm(form)) {
                         e.preventDefault();
                         e.stopPropagation();
+                        FormValidation.notifyFirstInvalid(form);
                     }
                 });
 
-                form.querySelectorAll('input, textarea, select').forEach(input => {
-                    input.addEventListener('input', () => {
-                        FormValidation.validateInput(input);
-                    });
-                    input.addEventListener('change', () => {
-                        FormValidation.validateInput(input);
-                    });
-
-                     if ($(input).hasClass('select2-hidden-accessible')) {
-                        $(input).on('select2:select select2:unselect', function () {
-                            FormValidation.validateInput(this);
-                        });
+                // Use event delegation for dynamic inputs
+                form.addEventListener('input', (e) => {
+                    if (e.target.matches('input, textarea, select, checkbox, radio, text')) {
+                        FormValidation.validateInput(e.target);
                     }
+                });
+                form.addEventListener('change', (e) => {
+                    if (e.target.matches('input, textarea, select, checkbox, radio, text')) {
+                        FormValidation.validateInput(e.target);
+                    }
+                });
 
+                // Listen for select2 events using jQuery
+                $(form).on('select2:select select2:unselect', function (e) {
+                    FormValidation.validateInput(e.target);
                 });
 
                 form.dataset.validationInitialized = "true";
@@ -1222,6 +1309,41 @@ if (typeof FormValidation === 'undefined') {
             return isValid;
         }
 
+        static notifyFirstInvalid(form) {
+            form.querySelectorAll('button[type="submit"], input[type="submit"]').forEach(btn => {
+                btn.disabled = false;
+            });
+
+            if (typeof window.showFieldErrorToast !== 'function') return;
+
+            const invalid = form.querySelector('.is-invalid:not([type="hidden"]), input.error, textarea.error, select.error');
+            if (!invalid) return;
+
+            let message = '';
+            const name = invalid.getAttribute('name');
+            if (name) {
+                const errorByName = form.querySelector('.form-validation-error[data-for="' + name.replace(/"/g, '\\"') + '"]');
+                if (errorByName) message = errorByName.textContent.trim();
+            }
+            if (!message) {
+                const container = invalid.closest('.error-wrapper, .form-group, .input-group, .upload-file_custom');
+                const errorEl = container ? container.querySelector('.form-validation-error, label.error') : null;
+                message = errorEl ? errorEl.textContent.trim() : '';
+            }
+            if (!message) {
+                message = FormValidation.requiredMessage(invalid);
+            }
+
+            window.showFieldErrorToast(invalid, message);
+        }
+
+        static requiredMessage(input) {
+            const label = (typeof window.getFieldLabel === 'function') ? window.getFieldLabel(input) : '';
+            return label
+                ? (label.charAt(0).toUpperCase() + label.slice(1) + ' is required.')
+                : 'This field is required.';
+        }
+
         static validateInput(input) {
             if (input.type === 'hidden' || input.disabled) return true;
 
@@ -1230,9 +1352,16 @@ if (typeof FormValidation === 'undefined') {
 
             FormValidation.clearError(input);
 
-            if (input.type !== 'file' && input.hasAttribute('required') && !input.value.trim()) {
+            if (input.type === 'file') {
+                if (input.hasAttribute('required') && (!input.files || input.files.length === 0)) {
+                    isValid = false;
+                    errorMessage = FormValidation.requiredMessage(input);
+                }
+            }
+
+            else if (input.hasAttribute('required') && !input.value.trim()) {
                 isValid = false;
-                errorMessage = 'This field is required.';
+                errorMessage = FormValidation.requiredMessage(input);
             }
 
             else if (input.type === 'email' && input.value.trim()) {
@@ -1268,7 +1397,6 @@ if (typeof FormValidation === 'undefined') {
             const inputGroup = input.closest('.input-group');
             let targetElement = inputGroup ? inputGroup : input;
 
-            // Check for select2
             if (input.tagName === 'SELECT' && $(input).hasClass('select2-hidden-accessible')) {
                 const select2Container = $(input).next('.select2-container');
                 if (select2Container.length) {
@@ -1276,8 +1404,9 @@ if (typeof FormValidation === 'undefined') {
                 }
             }
 
+            const errorWrapper = input.closest('.error-wrapper');
             const formGroup = input.closest('.form-group');
-            let container = formGroup ? formGroup : targetElement.closest('div');
+            let container = errorWrapper ? errorWrapper : (formGroup ? formGroup : targetElement.closest('div'));
 
             if (!container || container === targetElement) {
                 container = targetElement.parentNode;
@@ -1317,8 +1446,9 @@ if (typeof FormValidation === 'undefined') {
         }
 
         static clearError(input) {
+            const errorWrapper = input.closest('.error-wrapper');
             const formGroup = input.closest('.form-group');
-            const container = formGroup ? formGroup : input.parentNode;
+            const container = errorWrapper ? errorWrapper : (formGroup ? formGroup : input.parentNode);
 
             const inputName = input.getAttribute('name');
             const errorDiv = container.querySelector(`.form-validation-error[data-for="${inputName}"]`);
@@ -1339,6 +1469,7 @@ $(document).on('submit', '.global-ajax-form', function (e) {
     const form = this;
 
     if (window.FormValidation && !window.FormValidation.validateForm(form)) {
+        window.FormValidation.notifyFirstInvalid(form);
         return;
     }
 
@@ -1582,6 +1713,11 @@ $(document).on('submit', '.global-ajax-form', function (e) {
             return false;
         }
 
+        isManagedByFormValidation() {
+            const form = this.input.closest('form');
+            return !!(form && (form.classList.contains('validate-form') || form.dataset.validationInitialized === 'true'));
+        }
+
         validate() {
             const parentDiv = this.input.closest('.upload-file_custom');
             if (parentDiv && parentDiv.classList.contains('is-invalid-file-upload') && (!this.input.files || this.input.files.length === 0)) {
@@ -1591,7 +1727,7 @@ $(document).on('submit', '.global-ajax-form', function (e) {
             this.clearError();
 
             if (!this.input.files || this.input.files.length === 0) {
-                if (this.config.required) {
+                if (this.config.required && !this.isManagedByFormValidation()) {
                     return this.showError('Please select a file');
                 }
                 return true;
@@ -1713,7 +1849,7 @@ $(document).on('submit', '.global-ajax-form', function (e) {
     window.FileUploadValidator = FileUploadValidator;
 })();
 
-$('input[name="dates"]').daterangepicker({
+$('input[name="dates"]').not('[data-no-global-daterangepicker]').daterangepicker({
     startDate: moment(),
     endDate: moment(),
     maxDate: moment(),
@@ -1895,4 +2031,661 @@ $(document).ready(function () {
             $('.select2-search__field').attr('placeholder', searchPlaceholder);
         }
     });
+});
+
+class LinkValidator {
+    constructor(selector = '[data-link-validation], .js-link-validator') {
+        this.selector = selector;
+        this.defaultMessage = "Please enter a valid link.";
+        this.allowedProtocols = ["http:", "https:"];
+        this.bindEvents();
+        this.initExistingFields();
+    }
+
+    bindEvents() {
+        $(document).on("change input", this.selector, (event) => {
+            this.validateField(event.currentTarget);
+            this.updateFormSubmitState(event.currentTarget);
+        });
+
+        $(document).on("submit", "form", (event) => {
+            if (!this.validateForm(event.currentTarget)) {
+                event.preventDefault();
+                this.updateFormSubmitState(event.currentTarget);
+            }
+        });
+    }
+
+    initExistingFields() {
+        document.querySelectorAll(this.selector).forEach((field) => {
+            this.prepareFeedback(field);
+            this.validateField(field);
+            this.updateFormSubmitState(field);
+        });
+    }
+
+    validateField(field) {
+        if (field.disabled) {
+            this.clearError(field);
+            return true;
+        }
+
+        const value = field.value.trim();
+        const isRequired = field.hasAttribute("required");
+
+        this.prepareFeedback(field);
+
+        if (!value.length) {
+            if (isRequired) {
+                this.showError(field, this.getMessage(field));
+                return false;
+            }
+
+            this.clearError(field);
+            return true;
+        }
+
+        try {
+            const parsedUrl = new URL(value);
+            const isValidProtocol = this.allowedProtocols.includes(parsedUrl.protocol);
+            const hasHost = parsedUrl.hostname && parsedUrl.hostname.includes(".");
+
+            if (!isValidProtocol || !hasHost) {
+                this.showError(field, this.getMessage(field));
+                return false;
+            }
+        } catch (error) {
+            this.showError(field, this.getMessage(field));
+            return false;
+        }
+
+        this.clearError(field);
+        return true;
+    }
+
+    prepareFeedback(field) {
+        const nextSibling = field.nextElementSibling;
+
+        if (nextSibling && nextSibling.classList.contains("invalid-feedback")) {
+            return nextSibling;
+        }
+
+        const feedback = document.createElement("div");
+        feedback.className = "invalid-feedback";
+        feedback.textContent = this.getMessage(field);
+        field.insertAdjacentElement("afterend", feedback);
+
+        return feedback;
+    }
+
+    showError(field, message) {
+        const feedback = this.prepareFeedback(field);
+        field.classList.add("is-invalid");
+        feedback.textContent = message;
+    }
+
+    clearError(field) {
+        field.classList.remove("is-invalid");
+    }
+
+    getMessage(field) {
+        return field.dataset.linkValidationMessage || this.defaultMessage;
+    }
+
+    validateForm(form) {
+        let isValid = true;
+
+        form.querySelectorAll(this.selector).forEach((field) => {
+            if (field.disabled) {
+                this.clearError(field);
+                return;
+            }
+            if (!this.validateField(field)) {
+                isValid = false;
+            }
+        });
+
+        return isValid;
+    }
+
+    updateFormSubmitState(element) {
+        const form = element instanceof HTMLFormElement ? element : element.closest("form");
+
+        if (!form) {
+            return;
+        }
+
+        const submitButtons = form.querySelectorAll('button[type="submit"], input[type="submit"], .call-demo[type="button"]');
+
+        if (!submitButtons.length) {
+            return;
+        }
+
+        const hasInvalidField = Array.from(form.querySelectorAll(this.selector)).some((field) =>
+            !field.disabled && field.classList.contains("is-invalid")
+        );
+
+        submitButtons.forEach((button) => {
+            button.disabled = hasInvalidField;
+        });
+    }
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+    window.linkValidator = new LinkValidator();
+});
+
+class ProductVideoManager {
+    constructor(selector = ".product-video-section") {
+        this.selector = selector;
+        this.modalElement = document.getElementById("videoPreviewModal");
+        this.modalVideo = document.getElementById("modalVideoPlayer");
+        this.modalEmbed = document.getElementById("modalVideoEmbed");
+        this.modalTitle = document.getElementById("modal-video-title");
+        this.modalWrapper = this.modalElement ? this.modalElement.querySelector(".js-video-modal-player") : null;
+        this.modalEmbedWrapper = this.modalElement ? this.modalElement.querySelector(".js-video-modal-embed") : null;
+        this.modalUnavailableWrapper = this.modalElement ? this.modalElement.querySelector(".js-video-modal-unavailable") : null;
+        this.previewModal = this.modalElement && typeof bootstrap !== "undefined" && bootstrap.Modal
+            ? new bootstrap.Modal(this.modalElement)
+            : null;
+        this.bindEvents();
+        this.initExistingSections();
+        this.initModal();
+    }
+
+    bindEvents() {
+        $(document).on("change", `${this.selector} .js-video-type-switch`, (event) => {
+            this.syncMode($(event.currentTarget).closest(this.selector));
+        });
+
+        $(document).on("change", `${this.selector} .video-input`, (event) => {
+            this.handleFileChange($(event.currentTarget).closest(this.selector), event.currentTarget);
+        });
+
+        $(document).on("click", `${this.selector} .remove-video-btn`, (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            this.removeVideo($(event.currentTarget).closest(this.selector));
+        });
+
+        $(document).on("click", `${this.selector} .open-preview-btn`, (event) => {
+            event.preventDefault();
+            this.openPreview($(event.currentTarget).closest(this.selector));
+        });
+
+        $(document).on("click", ".js-product-video-preview-trigger", (event) => {
+            event.preventDefault();
+            this.openTriggeredPreview(event.currentTarget);
+        });
+
+        $(document).on("loadedmetadata", ".js-product-video-thumb", (event) => {
+            this.prepareVideoPreview(event.currentTarget);
+        });
+
+        $(document).on("seeked", ".js-product-video-thumb", (event) => {
+            this.finalizeVideoPreview(event.currentTarget);
+        });
+
+        $(document).on("loadeddata", ".js-product-video-thumb", (event) => {
+            this.finalizeVideoPreview(event.currentTarget);
+        });
+
+        // Hardening: Handle media load errors for thumbnails and modal players
+        $(document).on("error", ".js-product-video-thumb, .video-thumbnail-element, #modalVideoPlayer", (event) => {
+            this.handleMediaError(event.currentTarget);
+        });
+
+    }
+
+    initExistingSections() {
+        $(this.selector).each((_, element) => {
+            const $section = $(element);
+            this.syncMode($section, false);
+
+            const initialUrl = $section.data("initial-video-url");
+            const currentMode = $section.find(".js-video-type-switch:checked").val() || "file";
+            if (initialUrl && currentMode === "file") {
+                $section.data("video-preview-url", initialUrl);
+                $section.data("video-preview-type", "video");
+            }
+
+            const videoElement = element.querySelector(".video-thumbnail-element");
+            if (videoElement) {
+                videoElement.load();
+            }
+        });
+
+        document.querySelectorAll(".js-product-video-thumb").forEach((videoElement) => {
+            if (videoElement.readyState >= 1) {
+                this.prepareVideoPreview(videoElement);
+                return;
+            }
+
+            videoElement.load();
+        });
+    }
+
+    initModal() {
+        if (!this.modalElement || !this.previewModal) {
+            return;
+        }
+
+        this.modalElement.addEventListener("hidden.bs.modal", () => {
+            this.resetModal();
+        });
+
+        this.modalElement.addEventListener("shown.bs.modal", () => {
+            this.playModalVideo();
+        });
+
+        if (this.modalVideo) {
+            this.modalVideo.addEventListener("error", (e) => this.handleMediaError(e.target));
+        }
+
+        if (this.modalEmbed) {
+            this.modalEmbed.addEventListener("error", () => this.showUnavailableModal());
+        }
+    }
+
+    prepareVideoPreview(videoElement) {
+        const surface = videoElement.closest("[data-video-preview-surface]");
+
+        if (!surface || surface.dataset.previewReady === "true") {
+            return;
+        }
+
+        try {
+            const duration = Number.isFinite(videoElement.duration) ? videoElement.duration : 0;
+            const targetTime = duration > 0 ? Math.min(Math.max(duration * 0.15, 0.1), 1) : 0.1;
+
+            if (Math.abs(videoElement.currentTime - targetTime) < 0.05 || duration === 0) {
+                this.finalizeVideoPreview(videoElement);
+                return;
+            }
+
+            videoElement.currentTime = targetTime;
+        } catch (error) {
+            this.finalizeVideoPreview(videoElement);
+        }
+    }
+
+    finalizeVideoPreview(videoElement) {
+        const surface = videoElement.closest("[data-video-preview-surface]");
+
+        if (!surface) {
+            return;
+        }
+
+        surface.dataset.previewReady = "true";
+        surface.classList.add("is-video-ready");
+        videoElement.pause();
+        this.clearUnavailableSurface(surface);
+    }
+
+    syncMode($section, clearInactive = true) {
+        if (!$section.length) {
+            return;
+        }
+
+        const selectedMode = $section.find(".js-video-type-switch:checked").val() || "file";
+        const isFileMode = selectedMode === "file";
+        const $fileContainer = $section.find(".upload-video-file-container");
+        const $linkContainer = $section.find(".upload-video-link-container");
+        const $linkInput = $section.find(".js-product-video-link");
+
+        $fileContainer.toggle(isFileMode);
+        $linkContainer.toggle(!isFileMode);
+        $linkInput.prop("disabled", isFileMode);
+
+        if (!isFileMode && clearInactive) {
+            $section.find(".video-input").val("");
+            this.restoreInitialPreview($section);
+            this.resetModal();
+        }
+
+        if (window.linkValidator && $linkInput.length) {
+            window.linkValidator.validateField($linkInput[0]);
+            window.linkValidator.updateFormSubmitState($section.closest("form")[0]);
+        }
+    }
+
+    handleFileChange($section, input) {
+        const file = input.files && input.files[0] ? input.files[0] : null;
+        if (!file) {
+            this.restoreInitialPreview($section);
+            return;
+        }
+
+        const maxSize = Number($(input).data("max-size")) || 0;
+        if (maxSize && file.size > maxSize * 1024 * 1024) {
+            toastr.error(`Video size should not exceed ${maxSize}MB`, {
+                CloseButton: true,
+                ProgressBar: true,
+            });
+            input.value = "";
+            this.restoreInitialPreview($section);
+            return;
+        }
+
+        $section.find(".js-remove-video-input").val("0");
+        this.renderPreview($section, URL.createObjectURL(file), file.name, file.size);
+    }
+
+    removeVideo($section) {
+        this.revokeObjectUrl($section);
+        $section.find(".video-input").val("");
+        $section.find(".js-remove-video-input").val("1");
+        $section.find(".video-upload-filled").removeClass("d-flex").addClass("d-none");
+        $section.find(".video-upload-initial").removeClass("d-none");
+
+        const videoElement = $section.find(".video-thumbnail-element")[0];
+        if (videoElement) {
+            $(videoElement).find("source").attr("src", "");
+            videoElement.load();
+        }
+
+        $section.data("video-preview-url", "");
+        $section.data("video-preview-type", "");
+        $section.find(".file-name-display").text("");
+        $section.find(".file-size-display").text("");
+        this.resetModal();
+    }
+
+    restoreInitialPreview($section) {
+        if ($section.find(".js-remove-video-input").val() === "1") {
+            $section.find(".video-upload-filled").removeClass("d-flex").addClass("d-none");
+            $section.find(".video-upload-initial").removeClass("d-none");
+            $section.data("video-preview-url", "");
+            $section.data("video-preview-type", "");
+            return;
+        }
+
+        const initialUrl = $section.data("initial-video-url");
+        const initialName = $section.data("initial-video-name");
+        const initialSize = Number($section.data("initial-video-size")) || 0;
+
+        if (initialUrl) {
+            this.renderPreview($section, initialUrl, initialName, initialSize);
+            return;
+        }
+
+        this.revokeObjectUrl($section);
+        $section.find(".video-upload-filled").removeClass("d-flex").addClass("d-none");
+        $section.find(".video-upload-initial").removeClass("d-none");
+        $section.data("video-preview-url", "");
+        $section.data("video-preview-type", "");
+    }
+
+    renderPreview($section, sourceUrl, fileName, fileSize) {
+        const videoElement = $section.find(".video-thumbnail-element")[0];
+        const extension = (fileName.split(".").pop() || "video").toUpperCase();
+        const isObjectUrl = typeof sourceUrl === "string" && sourceUrl.startsWith("blob:");
+
+        this.revokeObjectUrl($section);
+
+        if (videoElement) {
+            $(videoElement).find("source").attr("src", sourceUrl);
+            videoElement.load();
+        }
+
+        $section.find(".file-name-display").text(fileName || "Video");
+        $section.find(".file-size-display").text(fileSize ? `${extension} ${this.formatFileSize(fileSize)}` : extension);
+        $section.find(".video-upload-initial").addClass("d-none");
+        $section.find(".video-upload-filled").removeClass("d-none").addClass("d-flex");
+        $section.data("video-preview-url", sourceUrl);
+        $section.data("video-preview-type", "video");
+        $section.data("video-object-url", isObjectUrl ? sourceUrl : "");
+    }
+
+    formatFileSize(sizeInBytes) {
+        return `${(sizeInBytes / (1024 * 1024)).toFixed(2)} MB`;
+    }
+
+    openPreview($section) {
+        if (!this.previewModal || !$section.length) {
+            return;
+        }
+
+        const selectedMode = $section.find(".js-video-type-switch:checked").val() || "file";
+        const sourceUrl = $section.data("video-preview-url");
+
+        if (selectedMode !== "file" || !sourceUrl) {
+            return;
+        }
+
+        const title = ($section.find(".file-name-display").text() || "Product video").trim();
+        this.showVideoModal(sourceUrl, title);
+    }
+
+    openTriggeredPreview(trigger) {
+        if (!this.previewModal) {
+            return;
+        }
+
+        const previewType = trigger.dataset.previewType || "";
+        const previewUrl = trigger.dataset.previewUrl || "";
+        const previewTitle = trigger.dataset.previewTitle || "Product video";
+
+        if (!previewType || !previewUrl) {
+            return;
+        }
+
+        if (previewType === "embed") {
+            this.showEmbedModal(previewUrl, previewTitle);
+            return;
+        }
+
+        this.showVideoModal(previewUrl, previewTitle);
+    }
+
+    showVideoModal(sourceUrl, title) {
+        if (!this.previewModal || !this.modalVideo) {
+            return;
+        }
+
+        this.resetModal();
+
+        if (this.modalTitle) {
+            this.modalTitle.textContent = title || "Product video";
+        }
+
+        if (this.modalWrapper) {
+            this.modalWrapper.classList.remove("d-none");
+        }
+        if (this.modalEmbedWrapper) {
+            this.modalEmbedWrapper.classList.add("d-none");
+        }
+        if (this.modalUnavailableWrapper) {
+            this.modalUnavailableWrapper.classList.add("d-none");
+        }
+
+        if (this.isMixedContentSource(sourceUrl)) {
+            this.showUnavailableModal();
+            this.previewModal.show();
+            return;
+        }
+
+        this.modalElement.dataset.previewType = "video";
+        const sourceElement = this.modalVideo.querySelector("source");
+        if (sourceElement) {
+            sourceElement.setAttribute("src", sourceUrl);
+        } else {
+            this.modalVideo.src = sourceUrl;
+        }
+        this.modalVideo.autoplay = true;
+        this.modalVideo.setAttribute("autoplay", "autoplay");
+        this.modalVideo.controls = true;
+        this.modalVideo.muted = false;
+        this.modalVideo.defaultMuted = false;
+        this.modalVideo.load();
+        this.previewModal.show();
+    }
+
+    showEmbedModal(sourceUrl, title) {
+        if (!this.previewModal || !this.modalEmbed) {
+            return;
+        }
+
+        this.resetModal();
+
+        if (this.modalTitle) {
+            this.modalTitle.textContent = title || "Product video";
+        }
+
+        if (this.modalWrapper) {
+            this.modalWrapper.classList.add("d-none");
+        }
+        if (this.modalEmbedWrapper) {
+            this.modalEmbedWrapper.classList.remove("d-none");
+        }
+        if (this.modalUnavailableWrapper) {
+            this.modalUnavailableWrapper.classList.add("d-none");
+        }
+
+        if (this.isMixedContentSource(sourceUrl)) {
+            this.showUnavailableModal();
+            this.previewModal.show();
+            return;
+        }
+
+        this.modalElement.dataset.previewType = "embed";
+        this.modalEmbed.setAttribute("src", sourceUrl);
+        this.previewModal.show();
+    }
+
+    resetModal() {
+        if (!this.modalElement) {
+            return;
+        }
+
+        if (this.modalVideo) {
+            this.modalVideo.pause();
+            this.modalVideo.autoplay = false;
+            this.modalVideo.removeAttribute("autoplay");
+            this.modalVideo.controls = true;
+            this.modalVideo.muted = false;
+            this.modalVideo.defaultMuted = false;
+            this.modalVideo.currentTime = 0;
+            const sourceElement = this.modalVideo.querySelector("source");
+            if (sourceElement) {
+                sourceElement.setAttribute("src", "");
+            }
+            this.modalVideo.removeAttribute("src");
+            this.modalVideo.load();
+        }
+
+        if (this.modalEmbed) {
+            this.modalEmbed.setAttribute("src", "");
+        }
+
+        if (this.modalTitle) {
+            this.modalTitle.textContent = "";
+        }
+
+        delete this.modalElement.dataset.previewType;
+
+        if (this.modalWrapper) {
+            this.modalWrapper.classList.remove("d-none");
+        }
+        if (this.modalEmbedWrapper) {
+            this.modalEmbedWrapper.classList.add("d-none");
+        }
+        if (this.modalUnavailableWrapper) {
+            this.modalUnavailableWrapper.classList.add("d-none");
+        }
+    }
+
+    playModalVideo() {
+        if (!this.modalVideo || this.modalElement?.dataset.previewType !== "video" || !this.getModalVideoSource()) {
+            return;
+        }
+
+        const playPromise = this.modalVideo.play();
+        if (playPromise && typeof playPromise.catch === "function") {
+            playPromise.catch(() => { });
+        }
+    }
+
+    getModalVideoSource() {
+        if (!this.modalVideo) {
+            return "";
+        }
+
+        const sourceElement = this.modalVideo.querySelector("source");
+        return sourceElement ? sourceElement.getAttribute("src") || "" : this.modalVideo.getAttribute("src") || "";
+    }
+
+    revokeObjectUrl($section) {
+        const objectUrl = $section.data("video-object-url");
+        if (objectUrl) {
+            URL.revokeObjectURL(objectUrl);
+            $section.data("video-object-url", "");
+        }
+    }
+
+    clearUnavailableSurface(surface) {
+        surface.classList.remove("is-video-unavailable");
+
+        // Hide fallback, show original preview elements
+        Array.from(surface.children).forEach(child => {
+            if (child.hasAttribute('data-video-fallback')) {
+                child.classList.add('d-none');
+            } else {
+                child.classList.remove('d-none');
+            }
+        });
+
+        // Trigger load/replay for elements if needed
+        surface.querySelectorAll("video").forEach(v => {
+            if (v.src || v.querySelector('source')?.src) v.load();
+        });
+    }
+
+    isMixedContentSource(sourceUrl) {
+        if (!sourceUrl || !window.location || window.location.protocol !== "https:") {
+            return false;
+        }
+
+        return /^http:\/\//i.test(sourceUrl);
+    }
+
+    handleMediaError(element) {
+        if (!element) return;
+
+        // Modal video error
+        if (element.id === "modalVideoPlayer" || element.closest(".modal")) {
+            this.showUnavailableModal();
+            return;
+        }
+
+        // Thumb/Surface video error
+        const surface = element.closest("[data-video-preview-surface]");
+        if (surface) {
+            this.showUnavailableSurface(surface);
+        }
+    }
+
+    showUnavailableModal() {
+        if (this.modalWrapper) this.modalWrapper.classList.add("d-none");
+        if (this.modalEmbedWrapper) this.modalEmbedWrapper.classList.add("d-none");
+        if (this.modalUnavailableWrapper) this.modalUnavailableWrapper.classList.remove("d-none");
+    }
+
+    showUnavailableSurface(surface) {
+        surface.classList.add("is-video-unavailable");
+        surface.dataset.previewReady = "true";
+
+        // Hide all children except the fallback container
+        Array.from(surface.children).forEach(child => {
+            if (!child.hasAttribute('data-video-fallback')) {
+                child.classList.add('d-none');
+            } else {
+                child.classList.remove('d-none');
+            }
+        });
+    }
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+    window.productVideoManager = new ProductVideoManager();
 });

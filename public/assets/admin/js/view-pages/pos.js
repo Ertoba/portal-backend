@@ -195,12 +195,380 @@ $(document).on("change", "#discount_input_type", function () {
     discountInput.attr("max", maxLimit);
 });
 
-function handleLocationError(browserHasGeolocation, infoWindow, pos) {
+function handleLocationError(browserHasGeolocation, infoWindow, pos, mapInstance, messages) {
+    messages = messages || {};
+    let content = browserHasGeolocation
+        ? messages.geolocationFailed || "The Geolocation service failed"
+        : messages.noGeolocationSupport || "Your browser doesn`t support geolocation";
     infoWindow.setPosition(pos);
-    infoWindow.setContent(
-        browserHasGeolocation
-            ? "Error: {{ translate('The Geolocation service failed') }}."
-            : "Error: {{ translate('Your browser doesn`t support geolocation') }}."
+    infoWindow.setContent("Error: " + content + ".");
+    if (mapInstance) {
+        infoWindow.open(mapInstance);
+    }
+}
+
+function posCalculateDeliveryDistance(options) {
+    const origins = options.origins;
+    const destinations = options.destinations;
+    const geocodedAddress = options.geocodedAddress;
+    const extraChargeUrl = options.extraChargeUrl;
+    const storeId = options.storeId;
+    const currencySymbol = options.currencySymbol || "";
+    const warningMessage = options.warningMessage || "";
+    const toggleLoading =
+        typeof options.toggleLoading === "function"
+            ? options.toggleLoading
+            : function () {};
+
+    function applyDeliveryDistance(distanceMeters, resolvedAddress) {
+        let distanceKm = distanceMeters / 1000;
+        let distancMileResult =
+            Math.round((distanceKm + Number.EPSILON) * 100) / 100;
+        document.getElementById("distance").value = distancMileResult;
+        document.getElementById("address").value = resolvedAddress;
+
+        let requestData = {
+            distancMileResult: distancMileResult,
+            customer_id: document.getElementById("customer")?.value || "",
+        };
+        if (storeId !== undefined && storeId !== null && storeId !== "") {
+            requestData.store_id = storeId;
+        }
+
+        $.get({
+            url: extraChargeUrl,
+            dataType: "json",
+            data: requestData,
+            success: function (data) {
+                let deliveryCharge =
+                    Math.round((data + Number.EPSILON) * 100) / 100;
+                document.getElementById("delivery_fee").value = deliveryCharge;
+                $("#delivery_fee")
+                    .siblings("strong")
+                    .html(deliveryCharge + currencySymbol);
+            },
+            error: function () {
+                let deliveryCharge = 0;
+                document.getElementById("delivery_fee").value = deliveryCharge;
+                $("#delivery_fee")
+                    .siblings("strong")
+                    .html(deliveryCharge + currencySymbol);
+            },
+            complete: function () {
+                toggleLoading(false);
+            },
+        });
+    }
+
+    function deliveryDistanceFailed() {
+        toggleLoading(false);
+        document.getElementById("distance").value = "";
+        toastr.warning(warningMessage, {
+            CloseButton: true,
+            ProgressBar: true,
+        });
+    }
+
+    function legacyDistanceMatrix() {
+        const service = new google.maps.DistanceMatrixService();
+        service
+            .getDistanceMatrix({
+                origins: origins,
+                destinations: destinations,
+                travelMode: google.maps.TravelMode.DRIVING,
+                unitSystem: google.maps.UnitSystem.METRIC,
+                avoidHighways: false,
+                avoidTolls: false,
+            })
+            .then(function (response) {
+                let element = response.rows[0].elements[0];
+                if (element.status !== "OK" || !element.distance) {
+                    deliveryDistanceFailed();
+                    return;
+                }
+                applyDeliveryDistance(
+                    element.distance["value"],
+                    response.destinationAddresses[1]
+                );
+            })
+            .catch(function () {
+                deliveryDistanceFailed();
+            });
+    }
+
+    if (window.posUseRouteMatrix === false) {
+        legacyDistanceMatrix();
+        return;
+    }
+
+    google.maps
+        .importLibrary("routes")
+        .then(function (lib) {
+            return lib.RouteMatrix.computeRouteMatrix({
+                origins: origins,
+                destinations: destinations,
+                travelMode: "DRIVING",
+            });
+        })
+        .then(function (result) {
+            let element = result.matrix.rows[0].items[0];
+            if (
+                !element ||
+                element.condition !== "ROUTE_EXISTS" ||
+                element.distanceMeters == null
+            ) {
+                deliveryDistanceFailed();
+                return;
+            }
+            applyDeliveryDistance(element.distanceMeters, geocodedAddress);
+        })
+        .catch(function () {
+            window.posUseRouteMatrix = false;
+            legacyDistanceMatrix();
+        });
+}
+
+function posInjectPlaceSearchStyles() {
+    if (document.getElementById("pos-place-autocomplete-styles")) {
+        return;
+    }
+    const style = document.createElement("style");
+    style.id = "pos-place-autocomplete-styles";
+    style.textContent =
+        ".pos-place-autocomplete-card{margin:9px 8px 0;}" +
+        ".pos-place-autocomplete-card gmp-place-autocomplete{color-scheme:light;width:180px;max-width:calc(100vw - 32px);height:32px;font-size:11px;line-height:1;color:#4b566b;background-color:#fff;border:1px solid #fbc1c1;border-radius:8px;box-shadow:none;}";
+    document.head.appendChild(style);
+}
+
+function posInitPlaceSearch(options) {
+    const map = options.map;
+    const inputId = options.inputId || "pac-input";
+    const outOfCoverageMessage = options.outOfCoverageMessage || "";
+    const onLocationSelected =
+        typeof options.onLocationSelected === "function"
+            ? options.onLocationSelected
+            : function () {};
+    const getZonePolygon =
+        typeof options.getZonePolygon === "function"
+            ? options.getZonePolygon
+            : function () {
+                  return null;
+              };
+
+    let markers = [];
+    let geocoder = null;
+
+    function clearMarkers() {
+        markers.forEach(function (marker) {
+            marker.map = null;
+        });
+        markers = [];
+    }
+
+    function notifyLocationSelected(location, displayName) {
+        if (!geocoder) {
+            geocoder = new google.maps.Geocoder();
+        }
+        geocoder.geocode({ location: location }, function (results, status) {
+            let address = displayName || "";
+            if (
+                status === google.maps.GeocoderStatus.OK &&
+                results &&
+                results[1]
+            ) {
+                address = results[1].formatted_address;
+            }
+            onLocationSelected(location, address);
+        });
+    }
+
+    function handleSelectedLocation(location, displayName, viewport) {
+        const zonePolygon = getZonePolygon();
+        if (
+            zonePolygon &&
+            !google.maps.geometry.poly.containsLocation(location, zonePolygon)
+        ) {
+            toastr.error(outOfCoverageMessage, {
+                CloseButton: true,
+                ProgressBar: true,
+            });
+            return;
+        }
+
+        document.getElementById("latitude").value = location.lat();
+        document.getElementById("longitude").value = location.lng();
+
+        clearMarkers();
+        const { AdvancedMarkerElement } = google.maps.marker;
+        markers.push(
+            new AdvancedMarkerElement({
+                map: map,
+                title: displayName,
+                position: location,
+            })
+        );
+
+        if (viewport) {
+            map.fitBounds(viewport);
+        } else {
+            map.setCenter(location);
+            map.setZoom(17);
+        }
+
+        notifyLocationSelected(location, displayName);
+    }
+
+    function initLegacySearchBox() {
+        const input = document.getElementById(inputId);
+        if (!input) {
+            return;
+        }
+        input.addEventListener("keydown", function (event) {
+            if (event.key === "Enter") {
+                event.preventDefault();
+            }
+        });
+        input.style.display = "";
+        const searchBox = new google.maps.places.SearchBox(input);
+        map.controls[google.maps.ControlPosition.TOP_CENTER].push(input);
+        searchBox.addListener("places_changed", function () {
+            const places = searchBox.getPlaces();
+            if (!places || places.length === 0) {
+                return;
+            }
+            places.forEach(function (place) {
+                if (!place.geometry || !place.geometry.location) {
+                    return;
+                }
+                handleSelectedLocation(
+                    place.geometry.location,
+                    place.name,
+                    place.geometry.viewport
+                );
+            });
+        });
+    }
+
+    if (window.posUsePlaceAutocomplete === false) {
+        initLegacySearchBox();
+        return;
+    }
+
+    let placeAutocomplete;
+    try {
+        placeAutocomplete = new google.maps.places.PlaceAutocompleteElement();
+    } catch (e) {
+        placeAutocomplete = null;
+    }
+
+    if (!placeAutocomplete) {
+        window.posUsePlaceAutocomplete = false;
+        initLegacySearchBox();
+        return;
+    }
+
+    const oldInput = document.getElementById(inputId);
+    if (oldInput) {
+        oldInput.style.display = "none";
+        if (oldInput.placeholder) {
+            placeAutocomplete.placeholder = oldInput.placeholder;
+        }
+    }
+
+    posInjectPlaceSearchStyles();
+
+    if (!window.posSearchEnterGuard) {
+        window.posSearchEnterGuard = true;
+        let lastSearchEnter = 0;
+        const isSearchNode = function (node) {
+            if (!node || !node.closest) {
+                return false;
+            }
+            return (
+                node.id === inputId ||
+                !!node.closest(".pos-place-autocomplete-card")
+            );
+        };
+        document.addEventListener(
+            "keydown",
+            function (event) {
+                if (
+                    event.key === "Enter" &&
+                    (isSearchNode(event.target) ||
+                        isSearchNode(document.activeElement))
+                ) {
+                    event.preventDefault();
+                    lastSearchEnter = Date.now();
+                }
+            },
+            true
+        );
+        document.addEventListener(
+            "submit",
+            function (event) {
+                if (
+                    isSearchNode(document.activeElement) ||
+                    Date.now() - lastSearchEnter < 700
+                ) {
+                    event.preventDefault();
+                }
+            },
+            true
+        );
+    }
+
+    const cardId = inputId + "-autocomplete-card";
+    const existingCard = document.getElementById(cardId);
+    if (existingCard && existingCard.remove) {
+        existingCard.remove();
+    }
+
+    const card = document.createElement("div");
+    card.id = cardId;
+    card.className = "pos-place-autocomplete-card";
+    card.appendChild(placeAutocomplete);
+
+    map.controls[google.maps.ControlPosition.TOP_CENTER].push(card);
+
+    card.addEventListener(
+        "keydown",
+        function (event) {
+            if (event.key === "Enter") {
+                event.preventDefault();
+            }
+        },
+        true
     );
-    infoWindow.open(map);
+
+    let fallenBack = false;
+    placeAutocomplete.addEventListener("gmp-error", function () {
+        if (fallenBack) {
+            return;
+        }
+        fallenBack = true;
+        window.posUsePlaceAutocomplete = false;
+        if (card.remove) {
+            card.remove();
+        }
+        initLegacySearchBox();
+    });
+
+    placeAutocomplete.addEventListener("gmp-select", function (event) {
+        const place = event.placePrediction.toPlace();
+        place
+            .fetchFields({
+                fields: ["displayName", "location", "viewport"],
+            })
+            .then(function () {
+                if (!place.location) {
+                    return;
+                }
+                handleSelectedLocation(
+                    place.location,
+                    place.displayName,
+                    place.viewport
+                );
+            })
+            .catch(function () {});
+    });
 }

@@ -149,39 +149,16 @@ function validateFile(file) {
     $("#doc_edit_btn").on("click", function () {
         const input = $(".document_input")[0];
 
-        // Reset UI
-        $(".pdf-single").remove();
-        uploadedFiles.clear();
-        documentUploadWrapper.show();
+        // Clear only the native input value so a new file can be selected
+        // (even if it's the same filename), but keep the preview intact
         input.value = "";
 
-        let hasChanged = false;
-
         const changeHandler = function () {
-            hasChanged = true;
-            // Let main handler do the work
+            // New file selected — the main change handler will replace the preview
             $(".document_input").off("change", changeHandler);
-            $(".document_input").off("focusout", focusoutHandler);
         };
 
-        const focusoutHandler = function () {
-            setTimeout(() => {
-                if (!hasChanged && (!input.files || input.files.length === 0)) {
-                    // Cancelled → reset UI
-                    $(".pdf-single").remove();
-                    uploadedFiles.clear();
-                    documentUploadWrapper.show();
-                }
-                // Cleanup
-                $(".document_input").off("change", changeHandler);
-                $(".document_input").off("focusout", focusoutHandler);
-            }, 100);
-        };
-
-        $(".document_input")
-            .on("change", changeHandler)
-            .on("focusout", focusoutHandler);
-
+        $(".document_input").on("change", changeHandler);
         input.click();
     });
 

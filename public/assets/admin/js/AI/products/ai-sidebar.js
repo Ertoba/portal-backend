@@ -137,7 +137,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         if ($productNameInput.closest('form').length) {
                             $productNameInput.closest('form').validate().element($productNameInput);
                         }
-                        
+
                         $titleActionButton.find('.btn-text').text('Re-generate');
                     }
                 });
@@ -223,8 +223,8 @@ $(document).on('click', '#analyzeImageBtn', function () {
             if (aiFile) {
                 const dt1 = new DataTransfer();
                 dt1.items.add(aiFile);
-                document.getElementById('customFileEg1').files = dt1.files;
-                $("#customFileEg1").trigger("change");
+                document.getElementById('image-input').files = dt1.files;
+                $("#image-input").trigger("change");
 
                 const dt2 = new DataTransfer();
                 dt2.items.add(aiFile);

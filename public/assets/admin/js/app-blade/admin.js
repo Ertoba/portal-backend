@@ -85,6 +85,7 @@ $(document).ready(function () {
     $('.offcanvas-close, #offcanvasOverlay').on('click', function () {
         $('.custom-offcanvas').removeClass('open');
         $('#offcanvasOverlay').removeClass('show');
+        $('body').removeClass('modal-open');
     });
 });
 
@@ -303,7 +304,10 @@ $(document).on("ready", function () {
     // INITIALIZATION OF SELECT2
     // =======================================================
     $(".js-select2-custom").each(function () {
-        let select2 = $.HSCore.components.HSSelect2.init($(this));
+        let verifiedConfig = window.hsSelect2VerifiedTemplate
+            ? { templateResult: window.hsSelect2VerifiedTemplate, templateSelection: window.hsSelect2VerifiedTemplate }
+            : {};
+        let select2 = $.HSCore.components.HSSelect2.init($(this), verifiedConfig);
     });
 
     // INITIALIZATION OF DATERANGEPICKER
@@ -572,7 +576,7 @@ $.fn.select2DynamicDisplay = function () {
         }
 
         // Attach event listener with debouncing
-        $(".select2-search input").on(
+        $rendered.find(".select2-search input").off("input").on(
             "input",
             debounce(function () {
                 const inputValue = $(this).val().toLowerCase();
@@ -586,7 +590,7 @@ $.fn.select2DynamicDisplay = function () {
             }, 100)
         );
 
-        $(".select2-search input").on("keydown", function (e) {
+        $rendered.find(".select2-search input").off("keydown").on("keydown", function (e) {
             if (e.which === 13) {
                 e.preventDefault();
 
@@ -687,6 +691,7 @@ $(function () {
         endDate: $(this).data("endDate"),
         autoUpdateInput: false,
         locale: {
+            format: "MM/DD/YYYY",
             cancelLabel: "Clear",
         },
         alwaysShowCalendars: true,

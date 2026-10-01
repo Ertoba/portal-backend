@@ -56,5 +56,6 @@ function initSelect2Dropdowns() {
     $('.offcanvas-close, #offcanvasOverlay').on('click', function () {
         $('.custom-offcanvas').removeClass('open');
         $('#offcanvasOverlay').removeClass('show');
+        $('body').removeClass('modal-open');
     });
 }

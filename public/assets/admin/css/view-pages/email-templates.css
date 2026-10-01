@@ -63,3 +63,20 @@
 .email-template-09-max-width {
     max-width:130px;
 }
+#see-how-it-works {
+    cursor: pointer;
+    overflow: hidden;
+}
+#see-how-it-works .see-how-it-works__text {
+    max-width: 0;
+    opacity: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    transition: max-width .35s ease, opacity .3s ease, margin-left .35s ease;
+}
+#see-how-it-works:hover .see-how-it-works__text,
+#see-how-it-works:focus .see-how-it-works__text {
+    max-width: 220px;
+    opacity: 1;
+    margin-left: .35rem;
+}

@@ -1,8 +1,12 @@
 /node_modules
 /public/hot
 /public/storage
+/public/build
 /storage/*.key
 /vendor
+
+# Builder addon release zips produced by `npm run package:addon`
+/releases
 .env
 .env.backup
 .phpunit.result.cache
@@ -19,3 +23,18 @@ docker-local/
 .idea/
 .vscode/
 .ddev/
+
+# Claude Code
+CLAUDE.md
+.claude/
+PROJECT_CONTEXT.md
+
+# Local IDE agent instructions
+AGENTS.md
+Modules/Builder/AGENTS.md
+Modules/Builder/resources/dist/build.zip
+
+# Feature documentation (local)
+/Documentation/last-orders-store-wise.md
+/Documentation/offer-page-flutter-api.md
+/Documentation/

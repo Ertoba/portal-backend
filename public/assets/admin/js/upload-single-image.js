@@ -18,8 +18,6 @@ function initFileUpload() {
     $(document).on("click", ".edit_btn", function (e) {
         e.stopImmediatePropagation();
         let $card = $(this).closest(".upload-file_custom");
-
-        $card.removeClass("input-disabled");
         let $input = $card.find(".single_file_input");
         $input.trigger("click");
     });

@@ -87,8 +87,6 @@ Route::group(['namespace' => 'Api\V1', 'middleware'=>'localization'], function (
     Route::get('offers/stores', 'MiliV4CompatibilityController@offerStores');
     Route::get('stores/exclusive-deals', 'MiliV4CompatibilityController@exclusiveDeals');
     Route::get('customer/order/last-orders', 'OrderController@get_last_orders');
-    Route::get('customer/ai-chat/conversations', 'MiliV4CompatibilityController@aiConversations');
-    Route::get('customer/ai-chat/messages', 'MiliV4CompatibilityController@aiMessages');
     Route::get('smart-banners', 'SmartBannerController@get_banners');
     Route::post('newsletter/subscribe','NewsletterController@index');
     Route::get('react-landing-page', 'ConfigController@react_landing_page')->middleware('mili.feature:react_web');
