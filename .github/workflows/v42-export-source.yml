@@ -1,0 +1,25 @@
+name: V42 Export Source
+
+on:
+  push:
+    branches: [upgrade-v42-20261002]
+    paths: ['.github/workflows/v42-export-source.yml']
+
+permissions:
+  contents: read
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: upgrade-v42-20261002
+      - name: Pack source
+        run: |
+          tar --exclude=.git --exclude=vendor --exclude=storage/logs --exclude=node_modules -czf /tmp/portal-backend-upgrade-v42-current.tar.gz .
+      - uses: actions/upload-artifact@v4
+        with:
+          name: portal-backend-upgrade-v42-current
+          path: /tmp/portal-backend-upgrade-v42-current.tar.gz
+          retention-days: 1
