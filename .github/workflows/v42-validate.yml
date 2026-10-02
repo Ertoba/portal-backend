@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   validate:
@@ -27,3 +27,10 @@ jobs:
           php -l app/Services/MiliEntitlementService.php
       - name: Composer metadata validation
         run: composer validate --no-check-publish
+      - name: Promote validated V4.2 source to main
+        if: ${{ hashFiles('.mili-v42-source-merged') != '' }}
+        run: |
+          grep -Fxq 'MILI-V42-SOURCE-MERGED-20261002' .mili-v42-source-merged
+          git fetch origin main
+          git merge-base --is-ancestor origin/main HEAD
+          git push origin HEAD:main
