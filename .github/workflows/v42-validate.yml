@@ -1,0 +1,29 @@
+name: V42 Backend Validation
+
+on:
+  push:
+    branches: [upgrade-v42-20261002]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: curl, json, simplexml
+          coverage: none
+      - name: Validate entitlement protection
+        run: bash tools/verify-mili-entitlement-protection.sh
+      - name: Lint critical MILI files
+        run: |
+          php -l app/helpers.php
+          php -l app/Http/Middleware/MiliFeatureAccessMiddleware.php
+          php -l app/Services/MiliEntitlementService.php
+      - name: Composer metadata validation
+        run: composer validate --no-check-publish
