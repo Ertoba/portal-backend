@@ -1,7 +1,3 @@
-{{--
-  Renders the currently-enabled pro-customer benefits inside the plan modal.
-  Required: $benefitItems — array of ['title' => string, 'subtitle' => string] built by the controller.
---}}
 @if (!empty($benefitItems))
     <div class="d-flex flex-column gap-20px p-20">
         @foreach ($benefitItems as $item)

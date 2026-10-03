@@ -1,22 +1,25 @@
 @extends('layouts.admin.app')
 
-@section('title',translate('messages.react_landing_page'))
+@section('title',translate('React landing page'))
 
 @section('content')
     <div class="content container-fluid">
         <div class="page-header pb-0">
             <div class="d-flex flex-wrap justify-content-between">
-                <h1 class="page-header-title">
-                <span class="page-header-icon">
-                    <img src="{{asset('public/assets/admin/img/landing.png')}}" class="w--20" alt="">
-                </span>
-                    <span>
-                    {{ translate('messages.react_landing_page') }}
-                </span>
-                </h1>
+                <div>
+                    <h1 class="page-header-title">
+                    <span class="page-header-icon">
+                        <img src="{{asset('public/assets/admin/img/outline/landing.svg')}}" class="w--26" alt="">
+                    </span>
+                        <span>
+                        {{ translate('React landing page') }}
+                    </span>
+                    </h1>
+                    <p class="page-header-desc">{{ translate('Change this customer quote on the react landing page.') }}</p>
+                </div>
                 <div class="text--primary-2 py-1 d-flex flex-wrap align-items-center" type="button" data-toggle="modal"
                      data-target="#how-it-works">
-                    <strong class="mr-2">{{translate('See_how_it_works!')}}</strong>
+                    <strong class="mr-2">{{translate('See how it works')}}</strong>
                     <div>
                         <i class="tio-info-outined"></i>
                     </div>
@@ -28,8 +31,7 @@
                 @include('admin-views.business-settings.landing-page-settings.top-menu-links.react-landing-page-links')
             </div>
         </div>
-        @php($language = \App\Models\BusinessSetting::where('key', 'language')->first())
-        @php($language = $language->value ?? null)
+        @php($language = \App\CentralLogics\Helpers::get_business_settings('language', false) ?? null)
         <div class="tab-content">
             <div class="tab-pane fade show active">
                 <form class="custom-validation"
@@ -44,7 +46,7 @@
                                         <ul class="nav nav-tabs mb-4 border-bottom">
                                             <li class="nav-item">
                                                 <a class="nav-link lang_link active" href="#"
-                                                   id="testimonial-default-link">{{translate('messages.default')}}</a>
+                                                   id="testimonial-default-link">{{translate('Default')}}</a>
                                             </li>
                                             @foreach (json_decode($language) as $lang)
                                                 <li class="nav-item">
@@ -59,10 +61,10 @@
                                             <div class="col-md-6">
                                                 <label for="name"
                                                        class="form-label">{{translate('Reviewer Name')}}
-                                                    ({{ translate('messages.default') }})
+                                                    ({{ translate('Default') }})
                                                     <span class="form-label-secondary" data-toggle="tooltip"
                                                           data-placement="right"
-                                                          data-original-title="{{ translate('Content...') }}">
+                                                          data-original-title="{{ translate('Enter content') }}">
                                                 <i class="tio-info color-A7A7A7"></i>
                                             </span>
                                                     <span class="form-label-secondary text-danger"
@@ -72,15 +74,15 @@
                                                 </label>
                                                 <input id="name" type="text" name="name[]" value="{{$review?->name}}"
                                                        class="form-control"
-                                                       placeholder="{{translate('Ex:  John Doe')}}" required>
+                                                       placeholder="{{ translate('Ex') }}: John Doe" required>
                                             </div>
                                             <div class="col-md-6">
                                                 <label for="designation"
                                                        class="form-label">{{translate('Designation')}}
-                                                    ({{ translate('messages.default') }})
+                                                    ({{ translate('Default') }})
                                                     <span class="form-label-secondary" data-toggle="tooltip"
                                                           data-placement="right"
-                                                          data-original-title="{{ translate('Content...') }}">
+                                                          data-original-title="{{ translate('Enter content') }}">
                                                 <i class="tio-info color-A7A7A7"></i>
                                             </span>
 
@@ -88,16 +90,16 @@
                                                 <input id="designation" value="{{$review?->designation}}" type="text"
                                                        name="designation[]"
                                                        class="form-control"
-                                                       placeholder="{{translate('Ex:  CTO')}}">
+                                                       placeholder="{{translate('Ex') . ':  CTO'}}">
                                             </div>
                                             <div class="col-md-12">
                                                 <label for="review"
                                                        class="form-label">{{translate('messages.review')}}
-                                                    ({{ translate('messages.default') }})
+                                                    ({{ translate('Default') }})
                                                     <span
                                                         class="form-label-secondary" data-toggle="tooltip"
                                                         data-placement="right"
-                                                        data-original-title="{{ translate('Write_the_title_within_140_characters') }}">
+                                                        data-original-title="{{ translate('Character limit') }}: 140">
                                                 <i class="tio-info color-A7A7A7"></i>
                                             </span>
                                                     <span class="form-label-secondary text-danger"
@@ -149,14 +151,14 @@
                                                         ({{strtoupper($lang)}})
                                                         <span class="form-label-secondary" data-toggle="tooltip"
                                                               data-placement="right"
-                                                              data-original-title="{{ translate('Content...') }}">
+                                                              data-original-title="{{ translate('Enter content') }}">
                                                     <i class="tio-info color-A7A7A7"></i>
                                                 </span>
                                                     </label>
                                                     <input id="name{{$lang}}" type="text" name="name[]"
                                                            value="{{$name_translate[$lang]['value']??''}}"
                                                            class="form-control"
-                                                           placeholder="{{translate('Ex:  John Doe')}}">
+                                                           placeholder="{{ translate('Ex') }}: John Doe">
                                                 </div>
                                                 <div class="col-md-6">
                                                     <label for="designation{{$lang}}"
@@ -164,7 +166,7 @@
                                                         ({{strtoupper($lang)}})
                                                         <span class="form-label-secondary" data-toggle="tooltip"
                                                               data-placement="right"
-                                                              data-original-title="{{ translate('Content...') }}">
+                                                              data-original-title="{{ translate('Enter content') }}">
                                                     <i class="tio-info color-A7A7A7"></i>
                                                 </span>
                                                     </label>
@@ -172,7 +174,7 @@
                                                            value="{{$designation_translate[$lang]['value'] ?? ''}}"
                                                            name="designation[]"
                                                            class="form-control"
-                                                           placeholder="{{translate('Ex:  CTO')}}">
+                                                           placeholder="{{translate('Ex') . ':  CTO'}}">
                                                 </div>
                                                 <div class="col-md-12">
                                                     <label for="review{{$lang}}"
@@ -181,7 +183,7 @@
                                                         <span
                                                             class="form-label-secondary" data-toggle="tooltip"
                                                             data-placement="right"
-                                                            data-original-title="{{ translate('Write_the_title_within_140_characters') }}">
+                                                            data-original-title="{{ translate('Character limit') }}: 140">
                                                     <i class="tio-info color-A7A7A7"></i>
                                                 </span></label>
                                                     <textarea id="review{{$lang}}" name="review[]"
@@ -201,32 +203,32 @@
                                                        class="form-label">{{translate('Reviewer Name')}}
                                                     <span class="form-label-secondary" data-toggle="tooltip"
                                                           data-placement="right"
-                                                          data-original-title="{{ translate('Content...') }}">
+                                                          data-original-title="{{ translate('Enter content') }}">
                                                 <i class="tio-info color-A7A7A7"></i>
                                             </span>
                                                 </label>
                                                 <input id="name" type="text" name="name[]" class="form-control"
-                                                       placeholder="{{translate('Ex:  John Doe')}}">
+                                                       placeholder="{{ translate('Ex') }}: John Doe">
                                             </div>
                                             <div class="col-md-6">
                                                 <label for="designation"
                                                        class="form-label">{{translate('Designation')}}
                                                     <span class="form-label-secondary" data-toggle="tooltip"
                                                           data-placement="right"
-                                                          data-original-title="{{ translate('Content...') }}">
+                                                          data-original-title="{{ translate('Enter content') }}">
                                                 <i class="tio-info color-A7A7A7"></i>
                                             </span>
                                                 </label>
                                                 <input id="designation" type="text" name="designation[]"
                                                        class="form-control"
-                                                       placeholder="{{translate('Ex:  CTO')}}">
+                                                       placeholder="{{translate('Ex') . ':  CTO'}}">
                                             </div>
                                             <div class="col-md-12">
                                                 <label for="review"
                                                        class="form-label">{{translate('messages.review')}}<span
                                                         class="form-label-secondary" data-toggle="tooltip"
                                                         data-placement="right"
-                                                        data-original-title="{{ translate('Write_the_title_within_140_characters') }}">
+                                                        data-original-title="{{ translate('Character limit') }}: 140">
                                                 <i class="tio-info color-A7A7A7"></i>
                                             </span></label>
                                                 <textarea id="review" name="review[]" maxlength="200"
@@ -286,23 +288,22 @@
                                             </div>
                                         </div>
                                         <p class="fs-10 text-center mb-0 mt-lg-4 mt-3">
-                                            {{ translate('JPG, JPEG, PNG size : Max 2 MB')}} <span
-                                                class="font-medium text-title">{{ translate('(2:1)')}}</span>
+                                            {{ 'JPG, JPEG, PNG' . ' image, max ' . 2 . ' MB'}} <span
+                                                class="font-medium text-title">(2:1)</span>
                                         </p>
                                     </div>
                                 </div>
                             </div>
                         </div>
                         <div class="btn--container justify-content-end mt-20">
-                            <button type="reset" class="btn btn--reset mb-2">{{translate('Reset')}}</button>
-                            <button type="submit" class="btn btn--primary mb-2">{{translate('Update')}}</button>
+                            <button type="reset" class="btn btn--reset mb-2"><i class="tio-refresh"></i> {{translate('Reset')}}</button>
+                            <button type="submit" class="btn btn--primary mb-2"><i class="tio-save"></i> {{translate('Update')}}</button>
                         </div>
                     </div>
                 </form>
             </div>
         </div>
     </div>
-    <!-- How it Works -->
     @include('admin-views.business-settings.landing-page-settings.partial.how-it-work-react')
 @endsection
 @push('script_2')

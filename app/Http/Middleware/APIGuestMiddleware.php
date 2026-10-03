@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Support\ApiEnvelope;
 use Closure;
 use Illuminate\Http\Request;
 
@@ -23,6 +24,9 @@ class APIGuestMiddleware
         elseif($request->guest_id) {
             return $next($request);
         }
-        return response()->json(['errors' => 'Unauthorized'], 401);
+        return response()->json(
+            ApiEnvelope::make(config('response.unauthorized_401'), null, ApiEnvelope::singleError('auth-001', 'Unauthorized')),
+            401
+        );
     }
 }

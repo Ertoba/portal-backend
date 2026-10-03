@@ -116,6 +116,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Scheduler Timezone
+    |--------------------------------------------------------------------------
+    |
+    | The timezone cron expressions are evaluated in. This is pinned so that
+    | dailyAt()/hourlyAt() keep firing at the same wall-clock moment even
+    | though the admin-configured business timezone drives app.timezone.
+    |
+    */
+
+    'schedule_timezone' => env('APP_SCHEDULE_TIMEZONE', 'UTC'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Locale Configuration
     |--------------------------------------------------------------------------
     |
@@ -139,6 +152,23 @@ return [
     */
 
     'fallback_locale' => 'en',
+
+    /*
+    |--------------------------------------------------------------------------
+    | Translation Key Collection
+    |--------------------------------------------------------------------------
+    |
+    | When enabled, translate() appends any key it cannot find to the current
+    | locale's messages.php. That is convenient while authoring — a new string
+    | in a view shows up in the language file on the next page load — but each
+    | append rewrites the entire ~850 KB file and evicts it from OPcache, so
+    | every concurrent request then re-parses it from scratch. It is therefore
+    | off in production, where a missing key falls back to its English source
+    | text at no I/O cost.
+    |
+    */
+
+    'collect_translation_keys' => env('COLLECT_TRANSLATION_KEYS', env('APP_ENV', 'production') !== 'production'),
 
     /*
     |--------------------------------------------------------------------------

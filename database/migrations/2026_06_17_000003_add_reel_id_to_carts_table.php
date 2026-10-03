@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::table('carts', function (Blueprint $table) {
             if (!Schema::hasColumn('carts', 'reel_id')) {
-                $table->unsignedBigInteger('reel_id')->nullable()->after('item_id')->index();
+                $table->unsignedBigInteger('reel_id')->nullable()->index();
             }
         });
     }

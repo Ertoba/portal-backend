@@ -9,17 +9,10 @@ use Laravel\Reverb\Events\MessageReceived;
 
 class HandleClientMessage
 {
-    /**
-     * Create the event listener.
-     */
     public function __construct()
     {
-        //
     }
 
-    /**
-     * Handle the event.
-     */
     public function handle(MessageReceived $event): void
     {
         $message = json_decode($event->message, true);

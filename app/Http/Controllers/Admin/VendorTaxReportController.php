@@ -12,19 +12,16 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Brian2694\Toastr\Facades\Toastr;
 use Maatwebsite\Excel\Facades\Excel;
 
 class VendorTaxReportController extends Controller
 {
-    public function __construct()
-    {
-        DB::statement("SET sql_mode=(SELECT REPLACE(@@sql_mode,'ONLY_FULL_GROUP_BY',''));");
-    }
     public function vendorWiseTaxes(Request $request)
     {
 
         $dateRange = $request->dates ?? now()->subDays(6)->format('m/d/Y') . ' - ' . now()->format('m/d/Y');
-        $key = explode(' ', $request['search']);
+        $key = explode(' ', $request['search'] ?? '');
 
         list($startDate, $endDate) = explode(' - ', $dateRange);
         $startDate = Carbon::createFromFormat('m/d/Y', trim($startDate));
@@ -35,7 +32,6 @@ class VendorTaxReportController extends Controller
         $store_id = $request->query('store_id', 'all');
         $store = is_numeric($store_id) ? Store::findOrFail($store_id) : null;
 
-        // $start = microtime(true);
 
         $data = $this->vendorWiseTaxData($store, $startDate, $endDate, $key);
         $result = $data['result'];
@@ -49,8 +45,6 @@ class VendorTaxReportController extends Controller
         $storeIds = $storeQuery->pluck('store_id')->toArray();
 
         $stores = $this->getOrderTaxData($startDate, $endDate, $storeIds, $storeQuery);
-        // $time = microtime(true) - $start;
-        // dd("Query took {$time} seconds", $stores);
         $dateRange = $startDate->format('m/d/Y') . ' - ' . $endDate->format('m/d/Y');
         $startDate = $startDate->toIso8601String();
         $endDate = $endDate->toIso8601String();
@@ -174,7 +168,7 @@ class VendorTaxReportController extends Controller
     public function vendorWiseTaxExport(Request $request)
     {
         $dateRange = $request->dates ?? now()->subDays(6)->format('m/d/Y') . ' - ' . now()->format('m/d/Y');
-        $key = explode(' ', $request['search']);
+        $key = explode(' ', $request['search'] ?? '');
 
         list($startDate, $endDate) = explode(' - ', $dateRange);
         $startDate = Carbon::createFromFormat('m/d/Y', trim($startDate));
@@ -185,7 +179,6 @@ class VendorTaxReportController extends Controller
         $store_id = $request->query('store_id', 'all');
         $store = is_numeric($store_id) ? Store::findOrFail($store_id) : null;
 
-        // $start = microtime(true);
 
         $data = $this->vendorWiseTaxData($store, $startDate, $endDate, $key);
         $summary = $data['result'];
@@ -204,7 +197,6 @@ class VendorTaxReportController extends Controller
             'to' => $endDate,
             'summary' => $summary
         ];
-        // dd($request->export_type);
         if ($request->export_type == 'excel') {
             return Excel::download(new VendorWiseTaxExport($data), 'VendorWiseTaxExport.xlsx');
         } else if ($request->export_type == 'csv') {
@@ -227,7 +219,12 @@ class VendorTaxReportController extends Controller
         $store_id = $request->id;
         $store = is_numeric($store_id) ? Store::select('id', 'name', 'phone')->findOrFail($store_id) : null;
 
-        // $start = microtime(true);
+        if (! $store) {
+            Toastr::warning(translate('No data found'));
+
+            return back();
+        }
+
         $vendortaxData =   $this->getVendortaxData($store->id, $startDate, $endDate);
         $summary =   $vendortaxData['summary'];
         $orders = $vendortaxData['orders'];
@@ -239,8 +236,6 @@ class VendorTaxReportController extends Controller
         $orders = $orders->paginate(config('default_pagination'))
             ->withQueryString();
 
-        // $time = microtime(true) - $start;
-        // dd("Query took {$time} seconds", $stores);
         $startDate = Carbon::parse($startDate)->format('d M, Y');
         $endDate = Carbon::parse($endDate)->format('d M, Y');
         return view('admin-views.report.tax-report.vendor-tax-detail-report', compact('totalOrders', 'totalOrderAmount', 'totalTax', 'store', 'orders', 'startDate', 'endDate'));
@@ -258,15 +253,18 @@ class VendorTaxReportController extends Controller
         $store_id = $request->id;
         $store = is_numeric($store_id) ? Store::select('id', 'name', 'phone')->findOrFail($store_id) : null;
 
-        // $start = microtime(true);
+        if (! $store) {
+            Toastr::warning(translate('No data found'));
+
+            return back();
+        }
+
         $vendortaxData =   $this->getVendortaxData($store->id, $startDate, $endDate);
         $summary =   $vendortaxData['summary'];
         $orders = $vendortaxData['orders'];
 
         $orders = $orders->cursor();
 
-        // $time = microtime(true) - $start;
-        // dd("Query took {$time} seconds", $stores);
         $startDate = Carbon::parse($startDate)->format('d M, Y');
         $endDate = Carbon::parse($endDate)->format('d M, Y');
 
@@ -277,7 +275,6 @@ class VendorTaxReportController extends Controller
             'to' => $endDate,
             'summary' => $summary
         ];
-        // dd($request->export_type);
         if ($request->export_type == 'excel') {
             return Excel::download(new VendorTaxExport($data), $store->name .'s TaxExport.xlsx');
         } else if ($request->export_type == 'csv') {

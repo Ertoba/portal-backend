@@ -2,13 +2,14 @@
 
 namespace App\Models;
 
+use App\Traits\Model\InvalidatesCacheTrait;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Support\Carbon;
-use App\Traits\GeneratesSlug;
+use App\Traits\Model\SlugTrait;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use App\Traits\Model\HasTranslationsTrait;
 
 /**
  * Class CommonCondition
@@ -22,7 +23,9 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
  */
 class CommonCondition extends Model
 {
-    use HasFactory, GeneratesSlug;
+    use HasFactory, SlugTrait, HasTranslationsTrait, InvalidatesCacheTrait;
+
+    protected static array $cacheTags = ['common_condition'];
 
     /**
      * The attributes that are mass assignable.
@@ -45,11 +48,6 @@ class CommonCondition extends Model
     /**
      * @return MorphMany
      */
-    public function translations(): MorphMany
-    {
-        return $this->morphMany(Translation::class, 'translationable');
-    }
-
     /**
      * @return HasMany
      */
@@ -89,27 +87,10 @@ class CommonCondition extends Model
      */
     public function getNameAttribute($value): mixed
     {
-        if (count($this->translations) > 0) {
-            foreach ($this->translations as $translation) {
-                if ($translation['key'] == 'name') {
-                    return $translation['value'];
-                }
-            }
-        }
-
-        return $value;
+        return $this->translatedAttribute('name', $value);
     }
 
     /**
      * @return void
      */
-    protected static function booted(): void
-    {
-        static::addGlobalScope('translate', function (Builder $builder) {
-            $builder->with(['translations' => function ($query) {
-                return $query->where('locale', app()->getLocale());
-            }]);
-        });
-    }
-
 }

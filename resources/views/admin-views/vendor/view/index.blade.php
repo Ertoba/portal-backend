@@ -3,7 +3,6 @@
 @section('title', $store->name)
 
 @push('css_or_js')
-    <!-- Custom styles for this page -->
     <link href="{{ asset('public/assets/admin/css/croppie.css') }}" rel="stylesheet">
 @endpush
 
@@ -34,7 +33,7 @@
             <div class="card mb-4">
                 <div class="card-header">
                     <h5 class="card-title m-0 d-flex align-items-center">
-                        <span class="ml-1">{{ translate('messages.store_info') }}</span>
+                        <span class="ml-1">{{ translate('Store information') }}</span>
                     </h5>
                 </div>
                 <div class="card-body">
@@ -63,7 +62,7 @@
                                                      {{ translate('messages.Zone') }}
                                                 </h5>
                                                 <span class="fs-13 lh--12 color-484848 opacity-70 d-block">
-                                                    {{ $store?->zone?->name ?? translate('zone_deleted') }}
+                                                    {{ $store?->zone?->name ?? translate('Zone deleted') }}
                                                 </span>
                                             </div>
                                         </div>
@@ -134,7 +133,7 @@
                         <div class="col-sm-6 col-lg-3">
                             <div class="resturant-card g-100 card--bg-2 p-3 d-flex align-items-center gap-1 justify-content-between">
                                 <p class="fs-14 mb-0 color-22232466">
-                                    {{ translate('messages.Total Order') }}
+                                    {{ translate('Total order') }}
                                 </p>
                                 <h4 class="fs-16 fw-700 text-warning mb-0">
                                     {{ $total_orders }}
@@ -154,7 +153,7 @@
                         <div class="col-sm-6 col-lg-3">
                             <div class="resturant-card g-100 card--bg-4 p-3 d-flex align-items-center gap-1 justify-content-between">
                                 <p class="fs-14 mb-0 color-22232466">
-                                    {{ translate('messages.cancel') }}
+                                    {{ translate('messages.Cancel') }}
                                 </p>
                                 <h4 class="fs-16 fw-700 text-danger mb-0">
                                     {{ $canceled_orders }}
@@ -170,10 +169,10 @@
                                 {{translate('This store’s performance is rated as')}}
                                 <span class="fz-12px font-semibold {{ $performance_rate >= 80 ? 'text-success' : ($performance_rate >= 50 ? 'text-warning' : 'text-danger') }}">
                                     <a class="{{ $performance_rate >= 80 ? 'text-success' : ($performance_rate >= 50 ? 'text-warning' : 'text-danger') }}" href="#0">
-                                        {{ $performance_rate >= 80 ? translate('GOOD') : ($performance_rate >= 50 ? translate('Average') : translate('Needs Improvement')) }}
+                                        {{ $performance_rate >= 80 ? translate('Good') : ($performance_rate >= 50 ? translate('Average') : translate('Needs improvement')) }}
                                     </a>
                                 </span>
-                                {{translate('based on its overall activity, reliability, and service quality.')}}
+                                {{translate('Based on its overall activity, reliability, and service quality.')}}
                             @else
                                 {{ translate('This store does not have much available data.') }}
                             @endif
@@ -189,7 +188,6 @@
                 </div>
                 <div class="card-body">
                     <div class="row g-3 text-capitalize">
-                        <!-- Earnings (Monthly) Card Example -->
                         <div class="col-md-4">
                             <div class="card h-100 border-0 bg-icon-primary rounded">
                                 <div class="card-body pb-0 text-center d-flex flex-column justify-content-center align-items-center">
@@ -198,26 +196,24 @@
                                             {{ \App\CentralLogics\Helpers::format_currency($wallet->collected_cash) }}</h2>
                                     </div>
                                     <p class="fs-14 text-title mb-20 text-white">
-                                        {{ translate('messages.collected_cash_by_store') }}
+                                        {{ translate('messages.Collected cash by store') }}
                                     </p>
                                     <div class="d-flex text-center justify-content-center pt-0 bg-transparent border-0">
                                         <button class="btn px-4 btn-primary text-white text-capitalize h--45px fs-14" id="collect_cash"
                                             type="button" data-toggle="modal" data-target="#collect-cash"
-                                            title="Collect Cash">{{ translate('messages.collect_cash_from_store') }}
+                                            title="Collect Cash"><i class="tio-money"></i> {{ translate('messages.Collect cash from store') }}
                                         </button>
-                                        {{-- <a class="btn px-4 text-white text-capitalize h--45px" href="{{$store->vendor->status ? route('admin.transactions.account-transaction.index') : '#'}}" title="{{translate('messages.goto_account_transaction')}}">{{translate('messages.collect_cash_from_store')}}</a> --}}
                                     </div>
                                 </div>
                             </div>
                         </div>
                         <div class="col-md-8">
                             <div class="row g-3">
-                                <!-- Panding Withdraw Card Example -->
                                 <div class="col-sm-6">
                                     <div class="resturant-card bg--secondary">
                                         <h4 class="title text-info">
                                             {{ \App\CentralLogics\Helpers::format_currency($wallet->pending_withdraw) }}</h4>
-                                        <div class="subtitle">{{ translate('messages.pending_withdraw') }}</div>
+                                        <div class="subtitle">{{ translate('messages.Pending withdraw') }}</div>
                                         <div class="resturant-icon w-45px max-w-1000 mb-20 h-45px bg-white rounded-circle d-center min-w-45px">
                                             <img class="" width="20" height="20"
                                                 src="{{ asset('public/assets/admin/img/transactions/pending.png') }}" alt="transaction">
@@ -225,12 +221,11 @@
                                     </div>
                                 </div>
 
-                                <!-- Earnings (Monthly) Card Example -->
                                 <div class="col-sm-6">
                                     <div class="resturant-card bg--secondary">
                                         <h4 class="title text-success">
                                             {{ \App\CentralLogics\Helpers::format_currency($wallet->total_withdrawn) }}</h4>
-                                        <div class="subtitle">{{ translate('messages.total_withdrawal_amount') }}</div>
+                                        <div class="subtitle">{{ translate('messages.Total withdrawal amount') }}</div>
                                         <div class="resturant-icon w-45px max-w-1000 mb-20 h-45px bg-white rounded-circle d-center min-w-45px">
                                             <img class="" width="20" height="20"
                                                 src="{{ asset('public/assets/admin/img/transactions/withdraw-amount.png') }}"
@@ -239,13 +234,12 @@
                                     </div>
                                 </div>
 
-                                <!-- Collected Cash Card Example -->
                                 <div class="col-sm-6">
                                     <div class="resturant-card bg--secondary">
                                         <h4 class="title text-danger">
                                             {{ \App\CentralLogics\Helpers::format_currency($wallet->balance > 0 ? $wallet->balance : 0) }}
                                         </h4>
-                                        <div class="subtitle">{{ translate('messages.withdraw_able_balance') }}</div>
+                                        <div class="subtitle">{{ translate('Withdraw able balance') }}</div>
                                         <div class="resturant-icon w-45px max-w-1000 h-45px bg-white rounded-circle d-center min-w-45px">
                                             <img class="" width="20" height="20"
                                                 src="{{ asset('public/assets/admin/img/transactions/withdraw-balance.png') }}"
@@ -254,12 +248,11 @@
                                     </div>
                                 </div>
 
-                                <!-- Pending Requests Card Example -->
                                 <div class="col-sm-6">
                                     <div class="resturant-card bg--secondary">
                                         <h4 class="title text-warning">
                                             {{ \App\CentralLogics\Helpers::format_currency($wallet->total_earning) }}</h4>
-                                        <div class="subtitle">{{ translate('messages.total_earning') }}</div>
+                                        <div class="subtitle">{{ translate('messages.Total earning') }}</div>
                                         <div class="resturant-icon w-45px max-w-1000  h-45px bg-white rounded-circle d-center min-w-45px">
                                             <img class="" width="20" height="20"
                                                 src="{{ asset('public/assets/admin/img/transactions/earning.png') }}"
@@ -279,7 +272,7 @@
                         <span class="card-header-icon mr-2">
                             <i class="tio-shop-outlined"></i>
                         </span>
-                        <span class="ml-1">{{ translate('messages.store_info') }}</span>
+                        <span class="ml-1">{{ translate('Store information') }}</span>
                     </h5>
                 </div>
                 <div class="card-body">
@@ -299,7 +292,7 @@
                                     <li>
 
                                         <i class="tio-city nav-icon"></i>
-                                        <span>{{ translate('messages.address') }}</span> <span>:</span> &nbsp; <span>
+                                        <span>{{ translate('messages.Address') }}</span> <span>:</span> &nbsp; <span>
 
                                             <a href="https://www.google.com/maps/search/?api=1&query={{ data_get($store, 'latitude', 0) }},{{ data_get($store, 'longitude', 0) }}"
                                                 target="_blank">{{ $store->address }}</a></span>
@@ -313,13 +306,13 @@
                                     </li>
                                     <li>
                                         <i class="tio-call-talking  nav-icon"></i>
-                                        <span>{{ translate('messages.phone') }}</span> <span>:</span> &nbsp; <a
+                                        <span>{{ translate('Phone') }}</span> <span>:</span> &nbsp; <a
                                             href="tel:{{ $store->phone }}"><span>{{ $store->phone }}</span></a>
                                     </li>
                                     <li>
                                         <i class="tio-map nav-icon"></i>
                                         <span>{{ translate('messages.Zone') }}</span> <span>:</span> &nbsp;
-                                        <span>{{ $store?->zone?->name ?? translate('zone_deleted') }}</span>
+                                        <span>{{ $store?->zone?->name ?? translate('Zone deleted') }}</span>
                                     </li>
                                 </ul>
                             </div>
@@ -335,10 +328,7 @@
                     <div class="card h-100">
                         <div class="card-header">
                             <h5 class="card-title m-0 d-flex align-items-center">
-                                <!-- <span class="card-header-icon mr-2">
-                                    <i class="tio-user"></i>
-                                </span> -->
-                                <span class="ml-1">{{ translate('messages.owner_info') }}</span>
+                                <span class="ml-1">{{ translate('Owner information') }}</span>
                             </h5>
                         </div>
                         <div class="card-body">
@@ -373,10 +363,7 @@
                     <div class="card h-100">
                         <div class="card-header">
                             <h5 class="card-title m-0 d-flex align-items-center">
-                                <!-- <span class="card-header-icon mr-2">
-                                    <i class="tio-crown"></i>
-                                </span> -->
-                                <span class="ml-1">{{ translate('messages.Business_Plan') }}</span>
+                                <span class="ml-1">{{ translate('Business plan') }}</span>
                             </h5>
                         </div>
                         <div class="card-body">
@@ -385,33 +372,33 @@
 
                                     @if ($store->store_business_model == 'commission')
                                         <li>
-                                            <span> <strong>{{ translate('messages.Business_Plan') }}</span></strong>
+                                            <span> <strong>{{ translate('Business plan') }}</span></strong>
                                             <span>:</span> &nbsp; {{ translate($store->store_business_model) }}
                                         </li>
-                                        @php($admin_commission = \App\Models\BusinessSetting::where(['key' => 'admin_commission'])->first()?->value)
+                                        @php($admin_commission = \App\CentralLogics\Helpers::get_business_settings('admin_commission', false))
                                         <li>
-                                            <span><strong>{{ translate('messages.Commission_percentage') }}</strong></span>
+                                            <span><strong>{{ translate('messages.Commission percentage') }}</strong></span>
                                             <span>:</span> &nbsp;
-                                            {{ $store->comission > 0 ? $store->comission : $admin_commission }} %
+                                            {{ $store->comission ?? $admin_commission }} %
                                         </li>
                                     @elseif ($store->store_business_model == 'subscription')
                                         <li>
-                                            <span> <strong>{{ translate('messages.Business_Plan') }}</span></strong>
+                                            <span> <strong>{{ translate('Business plan') }}</span></strong>
                                             <span>:</span> &nbsp; {{ translate($store->store_business_model) }} &nbsp;
                                             @if ($store?->store_sub_update_application->is_trial == '1')
                                                 <small> <span
-                                                        class="badge badge-info">{{ translate('messages.Free_trial') }}</span>
+                                                        class="badge badge-info">{{ translate('messages.Free trial') }}</span>
                                                 </small>
                                             @endif
                                         </li>
                                         <li>
-                                            <span> <strong>{{ translate('messages.Package_name') }}</strong></span>
+                                            <span> <strong>{{ translate('Package name') }}</strong></span>
                                             <span>:</span> &nbsp;
-                                            {{ $store?->store_sub_update_application?->package?->package_name ?? translate('Pacakge_not_found!!!') }}
+                                            {{ $store?->store_sub_update_application?->package?->package_name ?? translate('No data found') }}
                                         </li>
                                     @elseif ($store->store_business_model == 'unsubscribed')
                                         <li>
-                                            <span> <strong>{{ translate('messages.Business_Plan') }}</span></strong>
+                                            <span> <strong>{{ translate('Business plan') }}</span></strong>
                                             <span>:</span> &nbsp; {{ translate($store->store_business_model) }} &nbsp;
 
                                             <small> <span
@@ -420,28 +407,28 @@
 
                                         </li>
                                         <li>
-                                            <span> <strong>{{ translate('messages.Package_name') }}</strong></span>
+                                            <span> <strong>{{ translate('Package name') }}</strong></span>
                                             <span>:</span> &nbsp;
-                                            {{ $store?->store_sub_update_application?->package?->package_name ?? translate('Pacakge_not_found!!!') }}
+                                            {{ $store?->store_sub_update_application?->package?->package_name ?? translate('No data found') }}
                                         </li>
                                     @elseif($store->store_business_model == 'none' && $store->package_id)
                                         <li>
-                                            <span> <strong>{{ translate('messages.Business_Plan') }}</span></strong>
+                                            <span> <strong>{{ translate('Business plan') }}</span></strong>
                                             <span>:</span> &nbsp; {{ translate('messages.Subscription') }}
                                         </li>
                                         <li>
-                                            <span> <strong>{{ translate('messages.Package_Name') }}</span></strong>
+                                            <span> <strong>{{ translate('Package name') }}</span></strong>
                                             <span>:</span> &nbsp;
-                                            {{ App\Models\SubscriptionPackage::where('id', $store->package_id)->first()?->package_name }}
+                                            {{ $store?->package?->package_name }}
                                         </li>
                                         <li>
-                                            <span> <strong>{{ translate('Payment_status') }}</span></strong> <span>:</span>
-                                            &nbsp; {{ translate('messages.payment_failed') }}
+                                            <span> <strong>{{ translate('Payment status') }}</span></strong> <span>:</span>
+                                            &nbsp; {{ translate('Payment failed') }}
                                         </li>
                                     @else
                                         <li>
-                                            <span> <strong>{{ translate('messages.Business_Plan') }}</span></strong>
-                                            <span>:</span> &nbsp; {{ translate('Have_n’t_Selected_Yet.') }}
+                                            <span> <strong>{{ translate('Business plan') }}</span></strong>
+                                            <span>:</span> &nbsp; {{ translate('Haven\'t selected yet.') }}
                                         </li>
                                     @endif
 
@@ -504,14 +491,14 @@
 
                                         <div class=" d-flex justify-content-start gap-1">
                                             <span class="text-custom-nowrap text-wrap"><strong class=" text-dark">
-                                                    {{ translate('Taxpayer Identification Number(TIN)') }}:
+                                                    {{ translate('Taxpayer identification Number(TIN)') }}:
                                                 </strong></span>
                                             <span class="pl-1">{{ $store->tin }}</span>
                                         </div>
 
                                         <div class=" d-flex justify-content-start gap-1">
                                             <span class="text-custom-nowrap text-wrap"><strong
-                                                    class=" text-dark">{{ translate('Expire Date') }}: </strong></span>
+                                                    class=" text-dark">{{ translate('Expire date') }}: </strong></span>
                                             <span class="pl-1">{{ $store->tin_expire_date }}</span>
                                         </div>
                                     </div>
@@ -551,7 +538,7 @@
                                             alt="banner" class="object-contain">
                                     </div>
                                     <div>
-                                        <h5 class="fs-14 font-semibold color-3C3C3C m-0">{{ translate('Business Zone') }}</h5>
+                                        <h5 class="fs-14 font-semibold color-3C3C3C m-0">{{ translate('Business zone') }}</h5>
                                         <span class="d-block fs-12 color-484848">{{ $store->address }}</span>
                                     </div>
                                 </div>
@@ -564,10 +551,10 @@
                                             alt="banner" class="object-contain">
                                     </div>
                                     <div>
-                                        <h5 class="fs-14 font-semibold color-3C3C3C m-0">{{ translate('Business Plan') }}</h5>
+                                        <h5 class="fs-14 font-semibold color-3C3C3C m-0">{{ translate('Business plan') }}</h5>
                                          @if($store->store_business_model == 'none')
                                     <span class="d-block fs-12 color-484848">{{ translate($store?->package?->package_name ) }}</span><br>
-                                    <span class="d-block fs-12 color-484848">{{ translate('payment_failed') }}</span>
+                                    <span class="d-block fs-12 color-484848">{{ translate('Payment failed') }}</span>
                                 @else
                                 <span class="d-block fs-12 color-484848">{{ translate($store->store_business_model ) }}</span>
                                 @endif
@@ -585,7 +572,7 @@
                                             alt="banner" class="object-contain">
                                     </div>
                                     <div>
-                                        <h5 class="fs-14 font-semibold color-3C3C3C m-0">{{ translate('Approx. Pickup Time') }}</h5>
+                                        <h5 class="fs-14 font-semibold color-3C3C3C m-0">{{ translate('Approximate pickup time') }}</h5>
                                         <span class="d-block fs-12 color-484848">{{  $store->delivery_time  }}</span>
                                     </div>
                                 </div>
@@ -602,9 +589,9 @@
                         <div class="card-header">
                             <div>
                                 <h4 class="text-title m-1">
-                                    {{ translate('Registration Information') }}
+                                    {{ translate('Registration information') }}
                                 </h4>
-                                <p class="fs-12 m-0 color-334257B2">{{ translate('Here you can see all the information that Vendor submit during registration') }}</p>
+                                <p class="fs-12 m-0 color-334257B2">{{ translate('Here you can see all the information that vendor submit during registration') }}</p>
                             </div>
                         </div>
                            <div class="card-body">
@@ -612,11 +599,9 @@
                     <div class="col-lg-6">
                         <div class="card __bg-FAFAFA border-0 h-100">
                             <div class="card-body">
-                                <h5 class="mb-10px font-bold"> {{ translate('messages.General_Information') }}
+                                <h5 class="mb-10px font-bold"> {{ translate('General information') }}
                                 </h5>
-                                @php($language = \App\Models\BusinessSetting::where('key', 'language')->first())
-                                @php($language = $language->value ?? null)
-                                @php($defaultLang = 'en')
+                                @php($language = \App\CentralLogics\Helpers::get_business_settings('language', false) ?? null)
                                 <div class="div">
                                     @if ($language)
                                         <ul class="nav nav-tabs mb-4">
@@ -637,11 +622,11 @@
                                             <div class="resturant--info-address">
                                                 <ul class="address-info address-info-2 p-0 text-dark">
                                                     <li class="d-flex align-items-start">
-                                                        <span class="label min-w-sm-auto">{{ translate('Vendor Name') }}</span>
+                                                        <span class="label min-w-sm-auto">{{ translate('Vendor name') }}</span>
                                                         <span>: {{$store->getRawOriginal('name')}} </span>
                                                     </li>
                                                     <li class="d-flex align-items-start">
-                                                        <span class="label min-w-sm-auto">{{ translate('messages.Business Address') }}</span>
+                                                        <span class="label min-w-sm-auto">{{ translate('messages.Business address') }}</span>
                                                         <span>: {{$store->getRawOriginal('address')}} </span>
                                                     </li>
                                                 </ul>
@@ -667,11 +652,11 @@
                                                 <div class="resturant--info-address">
                                                     <ul class="address-info address-info-2 p-0 text-dark">
                                                         <li class="d-flex align-items-start">
-                                                            <span class="label min-w-sm-auto">{{ translate('Vendor Name') }}</span>
+                                                            <span class="label min-w-sm-auto">{{ translate('Vendor name') }}</span>
                                                             <span>: {{$translate[$lang]['name']??''}}</span>
                                                         </li>
                                                         <li class="d-flex align-items-start">
-                                                            <span class="label min-w-sm-auto">{{ translate('messages.Business Address') }}</span>
+                                                            <span class="label min-w-sm-auto">{{ translate('messages.Business address') }}</span>
                                                             <span>: {{ $translate[$lang]['address']??'' }} </span>
                                                         </li>
                                                     </ul>
@@ -683,11 +668,11 @@
                                             <div class="resturant--info-address">
                                                 <ul class="address-info address-info-2 p-0 text-dark">
                                                     <li class="d-flex align-items-start">
-                                                        <span class="label min-w-sm-auto">{{ translate('messages.Provider Name') }}</span>
+                                                        <span class="label min-w-sm-auto">{{ translate('messages.Provider name') }}</span>
                                                         <span>: {{ $store->name }}</span>
                                                     </li>
                                                     <li class="d-flex align-items-start">
-                                                        <span class="label min-w-sm-auto">{{ translate('messages.Business Address') }}</span>
+                                                        <span class="label min-w-sm-auto">{{ translate('messages.Business address') }}</span>
                                                         <span>: {{ $store->address }}</span>
                                                     </li>
                                                 </ul>
@@ -702,16 +687,16 @@
                     <div class="col-lg-6">
                         <div class="card __bg-FAFAFA border-0 h-100">
                             <div class="card-body">
-                                <h5 class="mb-10px font-bold"> {{ translate('messages.Owner_Information') }}
+                                <h5 class="mb-10px font-bold"> {{ translate('Owner information') }}
                                 </h5>
                                 <div class="resturant--info-address">
                                     <ul class="address-info address-info-2 p-0 text-dark">
                                         <li class="d-flex align-items-start">
-                                            <span class="label min-w-sm-auto">{{ translate('messages.First Name') }}</span>
+                                            <span class="label min-w-sm-auto">{{ translate('First name') }}</span>
                                             <span>: {{$store->vendor->f_name}} </span>
                                         </li>
                                         <li class="d-flex align-items-start">
-                                            <span class="label min-w-sm-auto">{{ translate('messages.Last Name') }}</span>
+                                            <span class="label min-w-sm-auto">{{ translate('Last name') }}</span>
                                             <span>: {{$store->vendor->l_name}}</span>
                                         </li>
                                         <li class="d-flex align-items-start">
@@ -729,7 +714,7 @@
                     <div class="col-lg-6">
                         <div class="card __bg-FAFAFA border-0 h-100">
                             <div class="card-body">
-                                <h5 class="mb-10px font-bold"> {{ translate('messages.Login Information') }}
+                                <h5 class="mb-10px font-bold"> {{ translate('Login information') }}
                                 </h5>
 
 
@@ -741,7 +726,7 @@
                                         </li>
                                         <li class="d-flex align-items-start">
                                             <span class="label min-w-sm-auto">{{ translate('messages.Password') }}</span>
-                                            <span>: {{ translate('*************') }}</span>
+                                            <span>: *************</span>
                                         </li>
                                     </ul>
                                 </div>
@@ -770,7 +755,7 @@
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">{{ translate('messages.collect_cash_from_store') }}</h5>
+                    <h5 class="modal-title">{{ translate('messages.Collect cash from store') }}</h5>
                     <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                         <span aria-hidden="true">&times;</span>
                     </button>
@@ -782,25 +767,25 @@
                         <input type="hidden" name="type" value="store">
                         <input type="hidden" name="store_id" value="{{ $store->id }}">
                         <div class="form-group">
-                            <label class="input-label">{{ translate('messages.payment_method') }} <span
+                            <label class="input-label">{{ translate('Payment method') }} <span
                                     class="input-label-secondary text-danger">*</span></label>
                             <input class="form-control" type="text" name="method" id="method" required
-                                maxlength="191" placeholder="{{ translate('messages.Ex_:_Card') }}">
+                                maxlength="191" placeholder="{{ translate('Ex') . ': ' . translate('Card') }}">
                         </div>
                         <div class="form-group">
                             <label class="input-label">{{ translate('messages.reference') }}</label>
                             <input class="form-control" type="text" name="ref" id="ref" maxlength="191">
                         </div>
                         <div class="form-group">
-                            <label class="input-label">{{ translate('messages.amount') }} <span
+                            <label class="input-label">{{ translate('Amount') }} <span
                                     class="input-label-secondary text-danger">*</span></label>
                             <input class="form-control" type="number" min=".01" step="0.01" name="amount"
                                 id="amount" max="999999999999.99"
-                                placeholder="{{ translate('messages.Ex_:_1000') }}">
+                                placeholder="{{ translate('Ex') . ': 1000' }}">
                         </div>
                         <div class="btn--container justify-content-end">
                             <button type="submit" id="submit_new_customer"
-                                class="btn btn--primary">{{ translate('submit') }}</button>
+                                class="btn btn--primary"><i class="tio-checkmark-circle-outlined"></i> {{ translate('Submit') }}</button>
                         </div>
                     </form>
                 </div>
@@ -810,10 +795,9 @@
 @endsection
 
 @push('script_2')
-    <!-- Page level plugins -->
     <script src="{{ asset('public/assets/admin/js/file-preview/details-multiple-document-upload.js') }}"></script>
     <script
-        src="https://maps.googleapis.com/maps/api/js?key={{ \App\Models\BusinessSetting::where('key', 'map_api_key')->first()->value }}&callback=initMap&libraries=marker&v=3.61">
+        src="https://maps.googleapis.com/maps/api/js?key={{ \App\CentralLogics\Helpers::get_business_settings('map_api_key', false) }}&callback=initMap&libraries=marker&v=3.61">
     </script>
     <script>
         "use strict";
@@ -840,7 +824,7 @@
         initMap();
 
         function initMap() {
-        const mapId = "{{ \App\Models\BusinessSetting::where('key', 'map_api_key')->first()->value }}"
+        const mapId = "{{ \App\CentralLogics\Helpers::get_business_settings('map_api_key', false) }}"
 
             map = new google.maps.Map(document.getElementById("map"), {
                 zoom: 15,
@@ -922,7 +906,7 @@
                             });
                         }
                     } else {
-                        toastr.success('{{ translate('messages.transaction_saved') }}', {
+                        toastr.success('{{ translate('messages.Transaction saved') }}', {
                             CloseButton: true,
                             ProgressBar: true
                         });

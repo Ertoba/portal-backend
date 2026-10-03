@@ -1,6 +1,6 @@
 @extends('layouts.vendor.app')
 
-@section('title',translate('messages.Delivery Man Preview'))
+@section('title',translate('Deliveryman preview'))
 
 @push('css_or_js')
 
@@ -8,86 +8,84 @@
 
 @section('content')
     <div class="content container-fluid">
-        <!-- Page Header -->
         <div class="page-header">
             <h1 class="page-header-title">
                 <span class="page-header-icon">
-                    <img src="{{asset('public/assets/admin/img/deliveryman.png')}}" class="w--30" alt="">
+                    <img src="{{asset('public/assets/admin/img/outline/deliveryman.svg')}}" class="w--26" alt="">
                 </span>
                 <span>
-                    {{translate('messages.delivery_man_details')}}
+                    {{translate('Deliveryman details')}}
                 </span>
             </h1>
+            <p class="page-header-desc">{{ translate('This deliveryman\'s deliveries, earnings and account state in one place.') }}</p>
             <div class="js-nav-scroller hs-nav-scroller-horizontal">
                 <ul class="nav nav-tabs mb-3 border-0 nav--tabs">
                     <li class="nav-item">
-                        <a class="nav-link active" href="{{route('vendor.delivery-man.preview', ['id'=>$dm->id, 'tab'=> 'info'])}}"  aria-disabled="true">{{translate('messages.info')}}</a>
+                        <a class="nav-link active" href="{{route('vendor.delivery-man.preview', ['id'=>$dm->id, 'tab'=> 'info'])}}"  aria-disabled="true">{{translate('messages.Information')}}</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{{route('vendor.delivery-man.preview', ['id'=>$dm->id, 'tab'=> 'transaction'])}}"  aria-disabled="true">{{translate('messages.transaction')}}</a>
+                        <a class="nav-link" href="{{route('vendor.delivery-man.preview', ['id'=>$dm->id, 'tab'=> 'transaction'])}}"  aria-disabled="true">{{translate('messages.Transaction')}}</a>
                     </li>
                 </ul>
             </div>
         </div>
-        <!-- End Page Header -->
 
         <div class="row mb-3 g-3 justify-content-center">
-            <!-- Earnings (Monthly) Card Example -->
             <div class="col-sm-6 col-md-4">
                 <div class="resturant-card card--bg-1">
                     <h2 class="title">
-                        {{$dm->orders->count()}}
+                        {{$dm->orders_count}}
                     </h2>
                     <h5 class="subtitle">
-                        {{translate('messages.total_delivered_orders')}}
+                        {{translate('messages.Total delivered orders')}}
                     </h5>
                     <img class="resturant-icon w--30" src="{{asset('public/assets/admin/img/tick.png')}}" alt="img">
                 </div>
             </div>
 
-            <!-- Collected Cash Card Example -->
             <div class="col-sm-6 col-md-4">
                 <div class="resturant-card card--bg-2">
                     <h2 class="title">
                         {{\App\CentralLogics\Helpers::format_currency($dm->wallet?$dm->wallet->collected_cash:0.0)}}
                     </h2>
                     <h5 class="subtitle">
-                        {{translate('messages.cash_in_hand')}}
+                        {{translate('Cash in hand')}}
                     </h5>
                     <img class="resturant-icon w--30" src="{{asset('public/assets/admin/img/withdraw-amount.png')}}" alt="img">
                 </div>
             </div>
 
-            <!-- Total Earning Card Example -->
             <div class="col-sm-6 col-md-4">
                 <div class="resturant-card card--bg-3">
                     <h2 class="title">
                         {{\App\CentralLogics\Helpers::format_currency($dm->wallet?$dm->wallet->total_earning:0.00)}}
                     </h2>
                     <h5 class="subtitle">
-                        {{translate('messages.total_earning')}}
+                        {{translate('messages.Total earning')}}
                     </h5>
                     <img class="resturant-icon w--30" src="{{asset('public/assets/admin/img/pending.png')}}" alt="img">
                 </div>
             </div>
 
         </div>
-        <!-- Card -->
         <div class="card mb-3 mb-lg-5">
             <div class="card-header py-2">
                 <div class="search--button-wrapper">
-                    <h4 class="card-title mb-md-0">{{$dm['f_name'].' '.$dm['l_name']}}@if($dm['status']) @if($dm['active']) <label class="badge badge-soft-primary m-0 ml-2">{{translate('messages.online')}}</label> @else <label class="badge badge-soft-danger m-0 ml-2">{{translate('messages.offline')}}</label> @endif  @else <span class="badge badge-danger">{{translate('messages.suspended')}}</span> @endif</h4>
+                    @include('partials._table-head', [
+                        'title'    => translate('Review list'),
+                        'subtitle' => translate('Ratings and comments customers left for this deliveryman.'),
+                        'count'    => null,
+                    ])
 
                     <a  href="javascript:"
                         data-url="{{route('vendor.delivery-man.status',[$dm['id'],$dm->status?0:1])}}"
-                        data-title="{{translate('Are_you_sure_?')}}"
+                        data-title="{{translate('Are you sure?')}}"
                         data-message="{{$dm->status?'Want to suspend this deliveryman ?':'Want to unsuspend this deliveryman'}}"
                         class="btn {{$dm->status?'btn-danger':'btn-success'}}  route-alert">
-                            {{$dm->status?translate('messages.suspend_this_delivery_man'):translate('messages.unsuspend_this_delivery_man')}}
+                            <i class="{{ $dm->status ? 'tio-block' : 'tio-checkmark-circle-outlined' }}"></i> {{$dm->status?translate('Suspend this deliveryman'):translate('messages.Unsuspend this delivery man')}}
                     </a>
                 </div>
             </div>
-            <!-- Body -->
             <div class="card-body">
                 <div class="row gy-3 align-items-center">
                     <div class="col-md-6">
@@ -200,7 +198,7 @@
                                     @endif
                                     <div class="info">
 
-                                        <span>{{$dm->reviews->count()}} {{translate('messages.reviews')}}</span>
+                                        <span>{{$review_total}} {{translate('messages.Reviews')}}</span>
                                     </div>
                                     </div>
                                 </div>
@@ -210,97 +208,77 @@
                     <div class="col-md-6">
                         <ul class="list-unstyled list-unstyled-py-2 mb-0 rating--review-right py-3">
 
-                        @php($total=$dm->reviews->count())
-                        <!-- Review Ratings -->
                             <li class="d-flex align-items-center font-size-sm">
-                                @php($five=\App\CentralLogics\Helpers::dm_rating_count($dm['id'],5))
                                 <span
                                     class="progress-name mr-3">{{translate('excellent')}}</span>
                                 <div class="progress flex-grow-1">
                                     <div class="progress-bar" role="progressbar"
-                                         style="width: {{$total==0?0:($five/$total)*100}}%;"
-                                         aria-valuenow="{{$total==0?0:($five/$total)*100}}"
+                                         style="width: {{$review_total==0?0:($rating_breakdown[5]/$review_total)*100}}%;"
+                                         aria-valuenow="{{$review_total==0?0:($rating_breakdown[5]/$review_total)*100}}"
                                          aria-valuemin="0" aria-valuemax="100"></div>
                                 </div>
-                                <span class="ml-3">{{$five}}</span>
+                                <span class="ml-3">{{$rating_breakdown[5]}}</span>
                             </li>
-                            <!-- End Review Ratings -->
 
-                            <!-- Review Ratings -->
                             <li class="d-flex align-items-center font-size-sm">
-                                @php($four=\App\CentralLogics\Helpers::dm_rating_count($dm['id'],4))
-                                <span class="progress-name mr-3">{{translate('good')}}</span>
+                                <span class="progress-name mr-3">{{translate('Good')}}</span>
                                 <div class="progress flex-grow-1">
                                     <div class="progress-bar" role="progressbar"
-                                         style="width: {{$total==0?0:($four/$total)*100}}%;"
-                                         aria-valuenow="{{$total==0?0:($four/$total)*100}}"
+                                         style="width: {{$review_total==0?0:($rating_breakdown[4]/$review_total)*100}}%;"
+                                         aria-valuenow="{{$review_total==0?0:($rating_breakdown[4]/$review_total)*100}}"
                                          aria-valuemin="0" aria-valuemax="100"></div>
                                 </div>
-                                <span class="ml-3">{{$four}}</span>
+                                <span class="ml-3">{{$rating_breakdown[4]}}</span>
                             </li>
-                            <!-- End Review Ratings -->
 
-                            <!-- Review Ratings -->
                             <li class="d-flex align-items-center font-size-sm">
-                                @php($three=\App\CentralLogics\Helpers::dm_rating_count($dm['id'],3))
                                 <span class="progress-name mr-3">{{translate('average')}}</span>
                                 <div class="progress flex-grow-1">
                                     <div class="progress-bar" role="progressbar"
-                                         style="width: {{$total==0?0:($three/$total)*100}}%;"
-                                         aria-valuenow="{{$total==0?0:($three/$total)*100}}"
+                                         style="width: {{$review_total==0?0:($rating_breakdown[3]/$review_total)*100}}%;"
+                                         aria-valuenow="{{$review_total==0?0:($rating_breakdown[3]/$review_total)*100}}"
                                          aria-valuemin="0" aria-valuemax="100"></div>
                                 </div>
-                                <span class="ml-3">{{$three}}</span>
+                                <span class="ml-3">{{$rating_breakdown[3]}}</span>
                             </li>
-                            <!-- End Review Ratings -->
 
-                            <!-- Review Ratings -->
                             <li class="d-flex align-items-center font-size-sm">
-                                @php($two=\App\CentralLogics\Helpers::dm_rating_count($dm['id'],2))
-                                <span class="progress-name mr-3">{{translate('below_average')}}</span>
+                                <span class="progress-name mr-3">{{translate('Below average')}}</span>
                                 <div class="progress flex-grow-1">
                                     <div class="progress-bar" role="progressbar"
-                                         style="width: {{$total==0?0:($two/$total)*100}}%;"
-                                         aria-valuenow="{{$total==0?0:($two/$total)*100}}"
+                                         style="width: {{$review_total==0?0:($rating_breakdown[2]/$review_total)*100}}%;"
+                                         aria-valuenow="{{$review_total==0?0:($rating_breakdown[2]/$review_total)*100}}"
                                          aria-valuemin="0" aria-valuemax="100"></div>
                                 </div>
-                                <span class="ml-3">{{$two}}</span>
+                                <span class="ml-3">{{$rating_breakdown[2]}}</span>
                             </li>
-                            <!-- End Review Ratings -->
 
-                            <!-- Review Ratings -->
                             <li class="d-flex align-items-center font-size-sm">
-                                @php($one=\App\CentralLogics\Helpers::dm_rating_count($dm['id'],1))
                                 <span class="progress-name mr-3">{{translate('poor')}}</span>
                                 <div class="progress flex-grow-1">
                                     <div class="progress-bar" role="progressbar"
-                                         style="width: {{$total==0?0:($one/$total)*100}}%;"
-                                         aria-valuenow="{{$total==0?0:($one/$total)*100}}"
+                                         style="width: {{$review_total==0?0:($rating_breakdown[1]/$review_total)*100}}%;"
+                                         aria-valuenow="{{$review_total==0?0:($rating_breakdown[1]/$review_total)*100}}"
                                          aria-valuemin="0" aria-valuemax="100"></div>
                                 </div>
-                                <span class="ml-3">{{$one}}</span>
+                                <span class="ml-3">{{$rating_breakdown[1]}}</span>
                             </li>
-                            <!-- End Review Ratings -->
                         </ul>
                     </div>
                 </div>
             </div>
-            <!-- End Body -->
         </div>
-        <!-- End Card -->
-        @php($store=\App\CentralLogics\Helpers::get_store_data())
 
 
         @if ($store->review_permission)
 
-        <!-- Card -->
         <div class="card">
 
             <div class="table-responsive datatable-custom">
                 <table id="datatable" class="table table-borderless table-thead-bordered table-nowrap card-table"
                        data-hs-datatables-options='{
                      "columnDefs": [{
-                        "targets": [0, 3, 6],
+                        "targets": [0, 3],
                         "orderable": false
                       }],
                      "order": [],
@@ -316,10 +294,10 @@
                    }'>
                     <thead class="thead-light">
                     <tr>
-                        <th class="border-0">{{translate('messages.reviewer')}}</th>
+                        <th class="border-0">{{translate('messages.Reviewer')}}</th>
                         <th class="border-0">{{translate('messages.review')}}</th>
-                        <th class="border-0">{{translate('messages.attachment')}}</th>
-                        <th class="border-0">{{translate('messages.date')}}</th>
+                        <th class="border-0">{{translate('Attachment')}}</th>
+                        <th class="border-0">{{translate('messages.Date')}}</th>
                     </tr>
                     </thead>
 
@@ -341,7 +319,7 @@
                                         </div>
                                     </div>
                                 @else
-                                    {{translate('messages.customer_not_found')}}
+                                    {{translate('No data found')}}
                                 @endif
                             </td>
                             <td>
@@ -371,7 +349,6 @@
                     </tbody>
                 </table>
             </div>
-            <!-- End Table -->
 
 
 
@@ -379,24 +356,19 @@
                 <div class="empty--data">
                     <img src="{{asset('/public/assets/admin/svg/illustrations/sorry.svg')}}" alt="public">
                     <h5>
-                        {{translate('no_data_found')}}
+                        {{translate('No data found')}}
                     </h5>
                 </div>
             @endif
 
-            <!-- Footer -->
             <div class="card-footer">
-                <!-- Pagination -->
                 <div class="row justify-content-center justify-content-sm-between align-items-sm-center">
                     <div class="col-12">
                         {!! $reviews->links() !!}
                     </div>
                 </div>
-                <!-- End Pagination -->
             </div>
-            <!-- End Footer -->
         </div>
-        <!-- End Card -->
 
         @endif
     </div>

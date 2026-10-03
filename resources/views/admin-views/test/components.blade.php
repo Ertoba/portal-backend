@@ -1,6 +1,6 @@
 @extends('layouts.admin.app')
 
-@section('title',translate('messages.new_page'))
+@section('title',translate('messages.New page'))
 
 @push('css_or_js')
 <meta name="csrf-token" content="{{ csrf_token() }}">
@@ -18,19 +18,19 @@
                 <div class="btn--container">
                     <button type="button" class="btn btn--primary" data-toggle="modal"
                         data-target="#confirmation-modal-btn">
-                        Confirmation Modal
+                        <i class="tio-open-in-new"></i> Confirmation Modal
                     </button>
                     <button type="button" class="btn btn--primary" data-toggle="modal"
                         data-target="#confirmation-modal-feature">
-                        Confirmation Modal Feature
+                        <i class="tio-open-in-new"></i> Confirmation Modal Feature
                     </button>
                     <button type="button" class="btn btn--primary" data-toggle="modal"
                         data-target="#confirmation-reason-btn">
-                        Confirmation Reason Modal Feature
+                        <i class="tio-open-in-new"></i> Confirmation Reason Modal Feature
                     </button>
                     <button type="button" class="btn btn--primary" data-toggle="modal"
                         data-target="#confirmation-deletes">
-                        Deletes confirmation
+                        <i class="tio-delete-outlined"></i> Deletes confirmation
                     </button>
                 </div>
             </div>
@@ -57,8 +57,8 @@
                         </div>
                     </div>
                     <div class="modal-footer justify-content-center border-0 pt-0 mb-1 gap-2">
-                        <button type="button" class="btn min-w-120px btn-danger min-h-45px">Yes</button>
-                        <button type="button" class="btn min-w-120px btn--reset min-h-45px" data-dismiss="modal">No</button>
+                        <button type="button" class="btn min-w-120px btn-danger min-h-45px"><i class="tio-checkmark-circle-outlined"></i> Yes</button>
+                        <button type="button" class="btn min-w-120px btn--reset min-h-45px" data-dismiss="modal"><i class="tio-clear-circle-outlined"></i> No</button>
                     </div>
                 </div>
             </div>
@@ -164,22 +164,22 @@
                                 "target": "#usersExportDropdown",
                                 "type": "css-animation"
                             }'>
-                        <i class="tio-download-to mr-1 text-title"></i> {{ translate('messages.export') }}
+                        <i class="tio-download-to mr-1 text-title"></i> {{ translate('messages.Export') }}
                     </a>
                     <div id="usersExportDropdown"
                         class="hs-unfold-content dropdown-unfold dropdown-menu dropdown-menu-sm-right">
-                        <span class="dropdown-header">{{ translate('messages.download_options') }}</span>
+                        <span class="dropdown-header">{{ translate('messages.Download options') }}</span>
                         <a id="export-excel" class="dropdown-item" href="{{route('admin.business-settings.module.export', ['type'=>'excel',request()->getQueryString()])}}">
                             <img class="avatar avatar-xss avatar-4by3 mr-2"
                                 src="{{ asset('public/assets/admin') }}/svg/components/excel.svg"
                                 alt="Image Description">
-                            {{ translate('messages.excel') }}
+                            Excel
                         </a>
                         <a id="export-csv" class="dropdown-item" href="{{route('admin.business-settings.module.export', ['type'=>'csv',request()->getQueryString()])}}">
                             <img class="avatar avatar-xss avatar-4by3 mr-2"
                                 src="{{ asset('public/assets/admin') }}/svg/components/placeholder-csv-format.svg"
                                 alt="Image Description">
-                            {{ translate('messages.csv') }}
+                            CSV
                         </a>
                     </div>
                 </div>
@@ -192,7 +192,6 @@
 
 
 
-<!-- Confiramtion Modal -->
 <div class="modal shedule-modal fade" id="confirmation-modal-btn" tabindex="-1" aria-labelledby="exampleModalLabel"
     aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
@@ -212,13 +211,12 @@
                 </div>
             </div>
             <div class="modal-footer justify-content-center border-0 pt-0 gap-2">
-                <button type="button" class="btn min-w-120px btn--reset" data-dismiss="modal">No</button>
-                <button type="button" class="btn min-w-120px btn--primary">Yes</button>
+                <button type="button" class="btn min-w-120px btn--reset" data-dismiss="modal"><i class="tio-clear-circle-outlined"></i> No</button>
+                <button type="button" class="btn min-w-120px btn--primary"><i class="tio-checkmark-circle-outlined"></i> Yes</button>
             </div>
         </div>
     </div>
 </div>
-<!-- Confiramtion Feature Modal -->
 <div class="modal shedule-modal fade" id="confirmation-modal-feature" tabindex="-1" aria-labelledby="exampleModalLabel"
     aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
@@ -239,15 +237,14 @@
                 </div>
             </div>
             <div class="modal-footer justify-content-center border-0 pt-0 gap-2">
-                <button type="button" class="btn min-w-120px btn--reset" data-dismiss="modal">No</button>
-                <button type="button" class="btn min-w-120px btn--primary">Yes</button>
+                <button type="button" class="btn min-w-120px btn--reset" data-dismiss="modal"><i class="tio-clear-circle-outlined"></i> No</button>
+                <button type="button" class="btn min-w-120px btn--primary"><i class="tio-checkmark-circle-outlined"></i> Yes</button>
             </div>
         </div>
     </div>
 </div>
 
 
-<!-- Confiramtion Reason Modal -->
 <div class="modal shedule-modal fade" id="confirmation-reason-btn" tabindex="-1" aria-labelledby="exampleModalLabel"
     aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
@@ -271,8 +268,8 @@
                 </div>
             </div>
             <div class="modal-footer justify-content-center border-0 pt-0 gap-2">
-                <button type="button" class="btn min-w-120px btn--reset" data-dismiss="modal">No</button>
-                <button type="button" class="btn min-w-120px btn--primary">Yes</button>
+                <button type="button" class="btn min-w-120px btn--reset" data-dismiss="modal"><i class="tio-clear-circle-outlined"></i> No</button>
+                <button type="button" class="btn min-w-120px btn--primary"><i class="tio-checkmark-circle-outlined"></i> Yes</button>
             </div>
         </div>
     </div>

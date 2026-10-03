@@ -7,12 +7,12 @@ use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Validator;
-use App\Traits\Processor;
+use App\Traits\System\ProcessorTrait;
 use App\Models\PaymentRequest;
 
 class BkashPaymentController extends Controller
 {
-    use Processor;
+    use ProcessorTrait;
 
     private $config_values;
     private $base_url;
@@ -25,7 +25,7 @@ class BkashPaymentController extends Controller
 
     public function __construct(PaymentRequest $payment,User $user)
     {
-        $config = $this->payment_config('bkash', 'payment_config');
+        $config = $this->paymentConfig('bkash', 'payment_config');
         if (!is_null($config) && $config->mode == 'live') {
             $this->config_values = json_decode($config->live_values);
         } elseif (!is_null($config) && $config->mode == 'test') {
@@ -85,12 +85,12 @@ class BkashPaymentController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return response()->json($this->response_formatter(GATEWAYS_DEFAULT_400, null, $this->error_processor($validator)), 400);
+            return response()->json($this->responseFormatter(GATEWAYS_DEFAULT_400, null, $this->errorProcessor($validator)), 400);
         }
 
         $data = $this->payment::where(['id' => $request['payment_id']])->where(['is_paid' => 0])->first();
         if (!isset($data)) {
-            return response()->json($this->response_formatter(GATEWAYS_DEFAULT_204), 200);
+            return response()->json($this->responseFormatter(GATEWAYS_DEFAULT_204), 200);
         }
         $payer = json_decode($data['payer_information']);
 
@@ -172,13 +172,13 @@ class BkashPaymentController extends Controller
                 call_user_func($data->success_hook, $data);
             }
 
-            return $this->payment_response($data,'success');
+            return $this->paymentResponse($data,'success');
         } else {
             $payment_data = $this->payment::where(['id' => $request['payment_id']])->first();
             if (isset($payment_data) && function_exists($payment_data->failure_hook)) {
                 call_user_func($payment_data->failure_hook, $payment_data);
             }
-            return $this->payment_response($payment_data,'fail');
+            return $this->paymentResponse($payment_data,'fail');
         }
     }
 

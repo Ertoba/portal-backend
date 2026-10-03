@@ -25,8 +25,6 @@ use Illuminate\Support\Carbon;
  */
 class CashBackAddRequest extends FormRequest
 {
-    /**
-     * Determine if the user is authorized to make this request.     */
     public function authorize(): bool
     {
         return true;
@@ -52,7 +50,7 @@ class CashBackAddRequest extends FormRequest
                     $cashbackAmount = $this->input('cashback_amount');
 
                     if ($cashbackType === 'amount' && $cashbackAmount >= $value) {
-                        $fail(translate('The_cashback_amount_should_not_be_greater_or_equal_than_the_minimum_purchase_value.'));
+                        $fail(translate('The cashback amount should not be greater or equal than the minimum purchase value.'));
                     }
                 }
             ],
@@ -64,7 +62,7 @@ class CashBackAddRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'title.0.required'=>translate('default_title_is_required'),
+            'title.0.required'=>translate('Default title is required'),
         ];
     }
 }

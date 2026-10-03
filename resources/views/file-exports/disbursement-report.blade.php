@@ -1,12 +1,11 @@
 
 <div class="row">
-    @php($address = \App\Models\BusinessSetting::where(['key' => 'address'])->first()->value)
     <table>
         <thead>
             <tr>
 
                 <th>
-                    {{ translate('Disbursement_report') }}
+                    {{ translate('Disbursement report') }}
                 </th>
                 <th></th>
                 <th></th>
@@ -18,18 +17,18 @@
             </tr>
             <tr>
 
-                <th>{{ translate('filter_criteria') }} -</th>
+                <th>{{ translate('Filter criteria') }} -</th>
                 <th></th>
                 <th>
 
-                    {{ translate('zone' )}} - {{ $data['zone']??translate('all') }}
+                    {{ translate('Zone' )}} - {{ $data['zone']??translate('All') }}
                     <br>
                     @if($data['type'] == 'store')
-                        {{ translate('store' )}} - {{ $data['store']??translate('all') }}
+                        {{ translate('Store' )}} - {{ $data['store']??translate('All') }}
                     @elseif($data['type'] == 'delivery_man')
-                        {{ translate('delivery_man' )}} - {{ $data['delivery_man']??translate('all') }}
+                        {{ translate('Deliveryman')}} - {{ $data['delivery_man']??translate('All') }}
                     @else
-                    {{ translate('rider' )}} - {{ $data['rider']??translate('all') }}
+                    {{ translate('Rider')}} - {{ $data['rider']??translate('All') }}
                     @endif
                     @if ($data['from'])
                         <br>
@@ -40,11 +39,11 @@
                         {{ translate('to' )}} - {{ $data['to']?Carbon\Carbon::parse($data['to'])->format('d M Y'):'' }}
                     @endif
                     <br>
-                    {{ translate('filter')  }}- {{  translate($data['filter']) }}
+                    {{ translate('Filter')  }}- {{  translate($data['filter']) }}
                     <br>
-                    {{ translate('Search_Bar_Content')  }}- {{ $data['search'] ??translate('N/A') }}
+                    {{ translate('Search bar content')  }}- {{ $data['search'] ??translate('N/A') }}
                     <br>
-                    {{ translate('status')  }}: {{ $data['status'] ?? translate('N/A') }}
+                    {{ translate('Status')  }}: {{ $data['status'] ?? translate('N/A') }}
 
                 </th>
                 <th></th>
@@ -56,32 +55,32 @@
             <tr>
 
                 <th>
-                {{ translate('Pending_Disbursements') }} - {{ $data['pending'] ?? translate('N/A') }}
+                {{ translate('Pending disbursements') }} - {{ $data['pending'] ?? translate('N/A') }}
                 </th>
                 <th></th>
-                <th>{{ translate('Completed_Disbursements') }} - {{ $data['completed'] ?? translate('N/A') }}
+                <th>{{ translate('Completed disbursements') }} - {{ $data['completed'] ?? translate('N/A') }}
                 </th>
                 <th></th>
-                <th>{{ translate('Canceled_Transactions') }} - {{ $data['canceled'] ?? translate('N/A') }}
+                <th>{{ translate('Canceled transactions') }} - {{ $data['canceled'] ?? translate('N/A') }}
                 </th>
                 <th>
 
                 </th>
             </tr>
         <tr>
-            <th>{{ translate('sl') }}</th>
+            <th>{{ translate('SL') }}</th>
             @if($data['type'] == 'store')
 
-            <th>{{ translate('Store_Info') }}</th>
+            <th>{{ translate('Store information') }}</th>
             @elseif($data['type'] == 'delivery_man')
-            <th>{{ translate('Delivery_Man_Info') }}</th>
+            <th>{{ translate('Deliveryman information') }}</th>
             @else
-            <th>{{ translate('Rider_Info') }}</th>
+            <th>{{ translate('Rider information') }}</th>
             @endif
-            <th>{{ translate('created_at') }}</th>
-            <th>{{ translate('amount') }}</th>
-            <th>{{ translate('Payment_method') }}</th>
-            <th>{{ translate('status') }}</th>
+            <th>{{ translate('Created at') }}</th>
+            <th>{{ translate('Amount') }}</th>
+            <th>{{ translate('Payment method') }}</th>
+            <th>{{ translate('Status') }}</th>
 
         </thead>
         <tbody>
@@ -101,11 +100,11 @@
             {{\App\CentralLogics\Helpers::format_currency($disb['disbursement_amount'])}}
         </td>
         <td>
-            <div class="name">{{translate('payment_method')}} : {{$disb->withdraw_method->method_name}}</div>
-            @forelse(json_decode($disb->withdraw_method->method_fields, true) as $key=> $item)
+            <div class="name">{{translate('Payment method')}} : {{ $disb->withdraw_method?->method_name ?? translate('messages.Payment method removed') }}</div>
+            @forelse((is_array($disb->withdraw_method?->method_fields) ? $disb->withdraw_method->method_fields : (json_decode($disb->withdraw_method?->method_fields ?? '', true) ?: [])) as $key=> $item)
             <br>
                 <div>
-                    <span>{{  translate($key) }}</span>
+                    <span>{{ ucfirst(str_replace('_', ' ', $key)) }}</span>
                     <span>:</span>
                     <span class="name">{{$item}}</span>
                 </div>

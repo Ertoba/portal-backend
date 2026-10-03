@@ -23,7 +23,7 @@
             <small class="text-muted mb-1">{{ $user['phone'] }}</small>
             <div class="d-flex justify-content-between gap-1" >
 
-                <div class="text-title fs-12">{{ $conv?->last_message?->message ?? ($conv?->last_message?->file ? translate('files_send') : '' )}}</div>
+                <div class="text-title fs-12">{{ $conv?->last_message?->message ?? ($conv?->last_message?->file ? translate('Files send') : '' )}}</div>
                 <span class="{{$unchecked ? 'badge badge-primary' : ''}}">{{$unchecked ? $unchecked : ''}}</span>
             </div>
         </div>
@@ -38,7 +38,7 @@
         </div>
         <div class="chat-user-info-content">
             <h5 class="mb-0 d-flex justify-content-between">
-                <span class=" mr-3">{{ translate('Account not found') }}</span>
+                <span class=" mr-3">{{ translate('No data found') }}</span>
             </h5>
         </div>
     </div>
@@ -49,7 +49,7 @@
     <div class="d-flex flex-column align-items-center gap-2 pt-5 mt-5">
         <img width="70" height="70" src="{{asset('/public/assets/admin/img/icons/empty-conversation.png')}}" alt="public">
         <h5 class="text-muted">
-            {{translate('no_conversation_found')}}
+            {{translate('No conversation found')}}
         </h5>
     </div>
 </div>

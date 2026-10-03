@@ -2,8 +2,8 @@
 
 namespace App\Models;
 
+use App\Traits\Model\InvalidatesCacheTrait;
 use App\CentralLogics\Helpers;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -11,7 +11,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
-use App\Traits\GeneratesSlug;
+use App\Traits\Model\SlugTrait;
+use App\Traits\Model\HasTranslationsTrait;
+use App\Traits\Model\HasStorageTrait;
 
 /**
  * Class Module
@@ -31,8 +33,29 @@ use App\Traits\GeneratesSlug;
  */
 class Module extends Model
 {
-    use HasFactory, GeneratesSlug;
-    protected $with = ['translations','storage'];
+    use HasFactory, SlugTrait, HasTranslationsTrait, HasStorageTrait, InvalidatesCacheTrait;
+
+    protected static array $cacheTags = ['module'];
+
+    protected $hidden = ['translations', 'storage'];
+
+    /**
+     * ModuleService memoises the active-module list for the life of a request. Any write to a
+     * module invalidates it here, so a save-then-render cycle cannot serve the stale list.
+     */
+    protected static function booted(): void
+    {
+        // Both memos derive from the same list: ModuleService caches the rows, Zone caches the
+        // eta-capable subset of their ids. A new or retyped module changes each of them.
+        $forget = function () {
+            app(\App\Services\System\ModuleService::class)->forgetSelectOptions();
+            Zone::forgetEtaCapableModules();
+        };
+
+        static::saved($forget);
+        static::deleted($forget);
+    }
+
     /**
      * The attributes that are mass assignable.
      *
@@ -84,26 +107,13 @@ class Module extends Model
     /**
      * @return MorphMany
      */
-    public function translations(): MorphMany
-    {
-        return $this->morphMany(Translation::class, 'translationable');
-    }
-
     /**
      * @param $value
      * @return mixed
      */
     public function getModuleNameAttribute($value): mixed
     {
-        if (count($this->translations) > 0) {
-            foreach ($this->translations as $translation) {
-                if ($translation['key'] == 'module_name') {
-                    return $translation['value'];
-                }
-            }
-        }
-
-        return $value;
+        return $this->translatedAttribute(key: 'module_name', value: $value);
     }
 
     /**
@@ -112,28 +122,12 @@ class Module extends Model
      */
     public function getDescriptionAttribute($value): mixed
     {
-        if (count($this->translations) > 0) {
-            foreach ($this->translations as $translation) {
-                if ($translation['key'] == 'description') {
-                    return $translation['value'];
-                }
-            }
-        }
-
-        return $value;
+        return $this->translatedAttribute(key: 'description', value: $value);
     }
 
     public function getShortDescriptionAttribute($value): mixed
     {
-        if (count($this->translations) > 0) {
-            foreach ($this->translations as $translation) {
-                if ($translation['key'] == 'short_description') {
-                    return $translation['value'];
-                }
-            }
-        }
-
-        return $value;
+        return $this->translatedAttribute(key: 'short_description', value: $value);
     }
 
 
@@ -168,6 +162,11 @@ class Module extends Model
         return $query->whereNotIn('module_type', ['service', 'ride-share']);
     }
 
+    public function scopeNotRideShare($query): mixed
+    {
+        return $query->where('module_type', '!=', 'ride-share');
+    }
+
     /**
      * @param $query
      * @return mixed
@@ -175,21 +174,6 @@ class Module extends Model
     public function scopeActive($query): mixed
     {
         return $query->where('status', '=', 1);
-    }
-
-    /**
-     * Back-compat shim. Earlier versions attached top_offer_value /
-     * top_offer_type as scalar subqueries via selectSub, but the SQL
-     * lateral-referenced `modules.id` from inside a derived table — a
-     * pattern that only works on MySQL 8.0.14+ with implicit lateral and
-     * fails on MariaDB and older MySQL ("Unknown column 'modules.id' in
-     * WHERE"). The replacement is `Module::attachTopOffers($collection,
-     * $zoneIds)` which is portable. This scope is now a no-op so existing
-     * callers don't break; call attachTopOffers() after ->get().
-     */
-    public function scopeWithTopOffer($query, array $zoneIds = []): mixed
-    {
-        return $query;
     }
 
     /**
@@ -217,55 +201,57 @@ class Module extends Model
             return;
         }
 
-        $zonesCsv   = empty($zoneIds)
-            ? null
-            : implode(',', array_map('intval', $zoneIds));
-        $modulesCsv = implode(',', $moduleIds);
+        $zones = empty($zoneIds) ? null : array_values(array_map('intval', $zoneIds));
 
-        // Build the three legs separately so we can apply zone/module
-        // filters cleanly without lateral correlation. Each leg returns
-        // (module_id, discount, discount_type); the union is the candidate
-        // pool of all live discount offers across the requested modules.
-        $itemLeg = 'SELECT items.module_id AS module_id, items.discount AS discount, items.discount_type AS discount_type '
-            .'FROM items '
-            .'JOIN stores ON stores.id = items.store_id '
-            .'WHERE items.status = 1 AND items.is_approved = 1 AND items.discount > 0 '
-            .'AND stores.status = 1 '
-            .'AND items.module_id IN ('.$modulesCsv.')'
-            .($zonesCsv ? ' AND stores.zone_id IN ('.$zonesCsv.')' : '');
+        $visibleItems = Item::query()
+            ->active(zone_ids: $zones)
+            ->whereIn('items.module_id', $moduleIds);
 
-        $storeDiscountLeg = 'SELECT stores.module_id AS module_id, discounts.discount AS discount, '
-            ."COALESCE(discounts.discount_type, 'percent') AS discount_type "
-            .'FROM discounts '
-            .'JOIN stores ON stores.id = discounts.store_id '
-            .'WHERE stores.status = 1 '
-            .'AND discounts.start_date <= CURDATE() AND discounts.end_date >= CURDATE() '
-            .'AND discounts.start_time <= CURTIME() AND discounts.end_time >= CURTIME() '
-            .'AND stores.module_id IN ('.$modulesCsv.')'
-            .($zonesCsv ? ' AND stores.zone_id IN ('.$zonesCsv.')' : '');
+        $visibleStoreIds = Store::query()
+            ->Active()
+            ->whereIn('stores.module_id', $moduleIds)
+            ->when($zones, fn ($q) => $q->whereIn('stores.zone_id', $zones))
+            ->select('stores.id')
+            ->toBase();
 
-        $flashLeg = 'SELECT items.module_id AS module_id, flash_sale_items.discount AS discount, flash_sale_items.discount_type AS discount_type '
-            .'FROM flash_sale_items '
-            .'JOIN flash_sales ON flash_sales.id = flash_sale_items.flash_sale_id '
-            .'JOIN items ON items.id = flash_sale_items.item_id '
-            .'JOIN stores ON stores.id = items.store_id '
-            .'WHERE flash_sales.is_publish = 1 '
-            .'AND flash_sales.start_date <= CURDATE() AND flash_sales.end_date >= CURDATE() '
-            .'AND items.status = 1 AND items.is_approved = 1 AND stores.status = 1 '
-            .'AND items.module_id IN ('.$modulesCsv.')'
-            .($zonesCsv ? ' AND stores.zone_id IN ('.$zonesCsv.')' : '');
+        $topPriceByStore = (clone $visibleItems)
+            ->selectRaw('items.store_id AS store_id, MAX(items.price) AS max_price')
+            ->groupBy('items.store_id')
+            ->toBase();
 
-        $sql = $itemLeg.' UNION ALL '.$storeDiscountLeg.' UNION ALL '.$flashLeg;
+        $itemLeg = (clone $visibleItems)
+            ->where('items.discount', '>', 0)
+            ->selectRaw(self::offerColumns('items.discount', 'items.discount_type', 'items.price', 'items.module_id'))
+            ->toBase();
 
-        $rows = DB::select($sql);
+        $storeDiscountLeg = Discount::query()
+            ->validate()
+            ->join('stores', 'stores.id', '=', 'discounts.store_id')
+            ->joinSub($topPriceByStore, 'store_top_price', 'store_top_price.store_id', '=', 'stores.id')
+            ->whereIn('discounts.store_id', $visibleStoreIds)
+            ->selectRaw('stores.module_id AS module_id, discounts.discount AS discount, '
+                ."'percent' AS discount_type, "
+                .'CASE WHEN discounts.max_discount > 0 '
+                .'THEN LEAST(store_top_price.max_price * discounts.discount / 100, discounts.max_discount) '
+                .'ELSE store_top_price.max_price * discounts.discount / 100 END AS saving')
+            ->toBase();
 
-        // Pick the max-discount row per module in PHP. Avoids window
-        // functions (MySQL 8.0+ / MariaDB 10.2+) so this works everywhere.
+        $flashLeg = DB::table('flash_sale_items')
+            ->join('flash_sales', 'flash_sales.id', '=', 'flash_sale_items.flash_sale_id')
+            ->join('items', 'items.id', '=', 'flash_sale_items.item_id')
+            ->whereIn('flash_sale_items.item_id', (clone $visibleItems)->select('items.id')->toBase())
+            ->where('flash_sales.is_publish', 1)
+            ->whereDate('flash_sales.start_date', '<=', now()->format('Y-m-d'))
+            ->whereDate('flash_sales.end_date', '>=', now()->format('Y-m-d'))
+            ->selectRaw(self::offerColumns('flash_sale_items.discount', 'flash_sale_items.discount_type', 'items.price', 'items.module_id'));
+
+        $rows = $itemLeg->unionAll($storeDiscountLeg)->unionAll($flashLeg)->get();
+
         $byModule = [];
         foreach ($rows as $r) {
             $mid = (int) $r->module_id;
-            $val = (float) $r->discount;
-            if (! isset($byModule[$mid]) || $val > (float) $byModule[$mid]->discount) {
+            $val = (float) $r->saving;
+            if (! isset($byModule[$mid]) || $val > (float) $byModule[$mid]->saving) {
                 $byModule[$mid] = $r;
             }
         }
@@ -277,46 +263,24 @@ class Module extends Model
         }
     }
 
-    public function getIconFullUrlAttribute(){
-        $value = $this->icon;
-        if (count($this->storage) > 0) {
-            foreach ($this->storage as $storage) {
-                if ($storage['key'] == 'icon') {
-                    return Helpers::get_full_url('module',$value,$storage['value']);
-                }
-            }
-        }
-
-        return Helpers::get_full_url('module',$value,'public');
-    }
-    public function getThumbnailFullUrlAttribute(){
-        $value = $this->thumbnail;
-        if (count($this->storage) > 0) {
-            foreach ($this->storage as $storage) {
-                if ($storage['key'] == 'thumbnail') {
-                    return Helpers::get_full_url('module',$value,$storage['value']);
-                }
-            }
-        }
-
-        return Helpers::get_full_url('module',$value,'public');
-    }
-
-    public function storage()
+    private static function offerColumns(string $discount, string $type, string $price, string $moduleId): string
     {
-        return $this->morphMany(Storage::class, 'data');
+        $capped = "LEAST({$discount}, {$price})";
+
+        return "{$moduleId} AS module_id, "
+            ."CASE WHEN {$type} = 'percent' THEN {$discount} ELSE {$capped} END AS discount, "
+            ."{$type} AS discount_type, "
+            ."CASE WHEN {$type} = 'percent' THEN {$price} * {$discount} / 100 ELSE {$capped} END AS saving";
     }
 
-    protected static function booted()
+    public function getIconFullUrlAttribute()
     {
-        static::addGlobalScope('storage', function ($builder) {
-            $builder->with('storage');
-        });
-        static::addGlobalScope('translate', function (Builder $builder) {
-            $builder->with(['translations' => function($query){
-                return $query->where('locale', app()->getLocale());
-            }]);
-        });
+        return $this->storageFullUrl('module', 'icon', $this->icon);
+    }
+
+    public function getThumbnailFullUrlAttribute()
+    {
+        return $this->storageFullUrl('module', 'thumbnail', $this->thumbnail);
     }
 
     /**
@@ -352,32 +316,8 @@ class Module extends Model
             $item->save();
         });
         static::saved(function ($model) {
-            if($model->isDirty('icon')){
-                $value = Helpers::getDisk();
-
-                DB::table('storages')->updateOrInsert([
-                    'data_type' => get_class($model),
-                    'data_id' => $model->id,
-                    'key' => 'icon',
-                ], [
-                    'value' => $value,
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
-            }
-            if($model->isDirty('thumbnail')){
-                $value = Helpers::getDisk();
-
-                DB::table('storages')->updateOrInsert([
-                    'data_type' => get_class($model),
-                    'data_id' => $model->id,
-                    'key' => 'thumbnail',
-                ], [
-                    'value' => $value,
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
-            }
+            self::recordStorageDisk($model, 'icon', 'icon');
+            self::recordStorageDisk($model, 'thumbnail', 'thumbnail');
         });
 
     }
@@ -386,7 +326,6 @@ class Module extends Model
     {
         static::chunkById(100, function ($modules) use ($force) {
             foreach ($modules as $module) {
-                // Skip if slug already exists (unless forced)
                 if (!$force && !empty($module->slug)) {
                     continue;
                 }

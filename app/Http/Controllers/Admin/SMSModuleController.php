@@ -36,11 +36,11 @@ class SMSModuleController extends Controller
         $is_firebase_active=Helpers::get_business_settings('firebase_otp_verification') ?? 0;
         $phone_verification_status = Helpers::get_business_settings('phone_verification_status')??0;
         if(!$is_firebase_active && $login_setup_status && ($request['status']==0)){
-            Toastr::warning(translate('otp_login_status_is_enabled_in_login_setup._First_disable_from_login_setup.'));
+            Toastr::warning(translate('Otp login status is enabled in login setup. First disable from login setup.'));
             return redirect()->back();
         }
         if(!$is_firebase_active && $phone_verification_status && ($request['status']==0)){
-            Toastr::warning(translate('phone_verification_status_is_enabled_in_login_setup._First_disable_from_login_setup.'));
+            Toastr::warning(translate('Phone verification status is enabled in login setup. First disable from login setup.'));
             return redirect()->back();
         }
         if ($module == 'twilio') {

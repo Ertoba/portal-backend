@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Rules\ImageFile;
 use App\CentralLogics\Helpers;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
@@ -17,7 +18,7 @@ class StoreCategoryAddRequest extends FormRequest
     public function rules(): array
     {
         $rules = [
-            'image' => 'required|image|mimes:' . IMAGE_FORMAT_FOR_VALIDATION . '|max:' . (MAX_FILE_SIZE * 1024),
+            'image' => ImageFile::rules('required'),
             'priority' => 'nullable|integer|in:0,1,2',
         ];
 
@@ -38,14 +39,10 @@ class StoreCategoryAddRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'store_id.required' => translate('messages.Store_is_required'),
-            'store_id.exists' => translate('messages.Store_is_invalid'),
-            'name.0.required' => translate('messages.default_name_is_required'),
-            'translations.required' => translate('messages.default_name_is_required'),
-            'image.required' => translate('messages.image_is_required'),
-            'image.image' => translate('messages.image_must_be_a_valid_image_file'),
-            'image.mimes' => translate('messages.image_must_be_in_format') . ': ' . IMAGE_FORMAT,
-            'image.max' => translate('messages.image_must_be_less_than') . ' ' . MAX_FILE_SIZE . 'mb',
+            'store_id.required' => translate('messages.Store is required'),
+            'store_id.exists' => translate('messages.Store is invalid'),
+            'name.0.required' => translate('messages.Default name is required'),
+            'translations.required' => translate('messages.Default name is required'),
         ];
     }
 

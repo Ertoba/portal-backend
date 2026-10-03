@@ -39,11 +39,21 @@ class OrderExport implements FromView, ShouldAutoSize, WithStyles,WithColumnWidt
         ]);
     }
 
+    /**
+     * Row count used to size the styled ranges.
+     *
+     * The vendor export streams its orders as a LazyCollection, where count() would re-run
+     * every chunk query, so it supplies a precomputed 'orders_count'. Callers that still
+     * pass an eager Collection (Admin\OrderController) fall through to count() unchanged.
+     */
+    private function rowCount(): int
+    {
+        return (int) ($this->data['orders_count'] ?? $this->data['orders']->count());
+    }
+
     public function columnWidths(): array
     {
         return [
-            // 'A' => 55,
-            // 'B' => 45,
             'C' => 45,
         ];
     }
@@ -59,7 +69,7 @@ class OrderExport implements FromView, ShouldAutoSize, WithStyles,WithColumnWidt
             'color' => ['rgb' => '005D5F'],
         ]);
 
-        $sheet->getStyle('K4:N'.$this->data['orders']->count() + 3)->getFill()->applyFromArray([
+        $sheet->getStyle('K4:N'.$this->rowCount() + 3)->getFill()->applyFromArray([
             'fillType' => 'solid',
             'rotation' => 0,
             'color' => ['rgb' => 'FFE599'],
@@ -80,12 +90,11 @@ class OrderExport implements FromView, ShouldAutoSize, WithStyles,WithColumnWidt
         ];
         $sheet->getStyle('A1:C1')->applyFromArray($styleArray);
         return [
-            // Define the style for cells with data
-            'A1:N'.$this->data['orders']->count() + 3 => [
+            'A1:N'.$this->rowCount() + 3 => [
                 'borders' => [
                     'allBorders' => [
                         'borderStyle' => Border::BORDER_THIN,
-                        'color' => ['argb' => '000000'], // Specify the color of the border (optional)
+                        'color' => ['argb' => '000000'],
                     ],
                 ],
             ],
@@ -96,20 +105,20 @@ class OrderExport implements FromView, ShouldAutoSize, WithStyles,WithColumnWidt
     {
         return [
             AfterSheet::class => function(AfterSheet $event) {
-                $event->sheet->getStyle('A1:N1') // Adjust the range as per your needs
+                $event->sheet->getStyle('A1:N1')
                     ->getAlignment()
                     ->setHorizontal(Alignment::HORIZONTAL_CENTER)
                     ->setVertical(Alignment::VERTICAL_CENTER);
-                $event->sheet->getStyle('A2:C2') // Adjust the range as per your needs
+                $event->sheet->getStyle('A2:C2')
                     ->getAlignment()
                     ->setHorizontal(Alignment::HORIZONTAL_CENTER)
                     ->setVertical(Alignment::VERTICAL_CENTER);
 
-                $event->sheet->getStyle('A3:N'.$this->data['orders']->count() + 3) // Adjust the range as per your needs
+                $event->sheet->getStyle('A3:N'.$this->rowCount() + 3)
                     ->getAlignment()
                     ->setHorizontal(Alignment::HORIZONTAL_CENTER)
                     ->setVertical(Alignment::VERTICAL_CENTER);
-                $event->sheet->getStyle('D2:N2') // Adjust the range as per your needs
+                $event->sheet->getStyle('D2:N2')
                     ->getAlignment()
                     ->setHorizontal(Alignment::HORIZONTAL_LEFT)
                     ->setVertical(Alignment::VERTICAL_CENTER);

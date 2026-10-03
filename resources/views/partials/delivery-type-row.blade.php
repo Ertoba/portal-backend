@@ -1,14 +1,14 @@
 @php
     $rowOrder  = $order ?? null;
-    $rowInfo   = $rowOrder ? \App\CentralLogics\DeliveryFeeLogic::adjustedFeeForOrder($rowOrder) : null;
+    $rowInfo   = $rowOrder ? app(\App\Services\Order\OrderService::class)->adjustedFeeForOrder($rowOrder) : null;
     $rowLayout = $layout ?? 'dl';
 @endphp
 
 @if ($rowInfo && ($rowInfo['is_express'] || $rowInfo['is_slightly']))
     @php
         $rowLabel  = $rowInfo['is_express']
-            ? translate('messages.express_delivery')
-            : translate('messages.slightly_delay_delivery');
+            ? translate('Express delivery')
+            : translate('Slightly delay delivery');
         $rowSign   = $rowInfo['is_express'] ? '+' : '-';
         $rowAmount = $rowInfo['type_charge'];
     @endphp
@@ -28,8 +28,8 @@
             </td>
         </tr>
     @else
-        <dt class="col-6">{{ $rowLabel }} :</dt>
-        <dd class="col-6 text-right">
+        <dt class="col-6 {{ $dtClass ?? '' }}">{{ $rowLabel }} :</dt>
+        <dd class="col-6 {{ $ddClass ?? 'text-right' }}">
             {{ $rowSign }} {{ \App\CentralLogics\Helpers::format_currency($rowAmount) }}
         </dd>
     @endif

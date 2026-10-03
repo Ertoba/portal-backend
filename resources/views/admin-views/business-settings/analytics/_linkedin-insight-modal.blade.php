@@ -21,32 +21,32 @@
                                     </div>
                                     <div class="text-dark mb-3">
                                         <h3 class="lh-base">
-                                            {{ translate('how_to_get_the_linkedin_partner_id') }}
+                                            {{ translate('How to get the linkedin partner id') }}
                                         </h3>
                                         <p class="opacity-75">
-                                            {{ translate('to_find_your_linkedin_partner_id,_go_to_your_ad_account_in_campaign_manager.') }}
-                                            {{ translate('in_the_left_menu,_click_data_and_then_sources.') }}
-                                            {{ translate('next_click_on_insight_tag.') }}
-                                            {{ translate('after_that,_select_the_i_will_use_a_tag_manager_dropdown_and_copy_your_partner_id_from_the_box_provided.') }}
+                                            {{ translate('to find your linkedin partner id, go to your ad account in campaign manager.') }}
+                                            {{ translate('in the left menu, click data and then sources.') }}
+                                            {{ translate('Next click on insight tag.') }}
+                                            {{ translate('After that, select the i will use a Tag Manager dropdown and copy your partner id from the box provided.') }}
                                         </p>
                                     </div>
 
                                     <div class="text-dark mb-3">
                                         <h3 class="lh-base">
-                                            {{ translate('where_to_use_the_linkedin_partner_id') }}
+                                            {{ translate('Where to use the linkedin partner id') }}
                                         </h3>
                                         <p class="opacity-75">
-                                            {{ translate('open_the_marketing_tools_feature_in_your_admin_panel_and_follow_the_directions:') }}
+                                            {{ translate('Open the marketing tools feature in your admin panel and follow the directions') }}:
                                         </p>
                                         <ol class="d-flex flex-column gap-2 opacity-75">
                                             <li>
-                                                {{ translate('go_to_the_linkedin_partner_id_section_under_marketing_tools.') }}
+                                                {{ translate('Go to the linkedin partner id section under marketing tools.') }}
                                             </li>
                                             <li>
-                                                {{ translate('turn_on_the_toggle_button.') }}
+                                                {{ translate('Turn on the toggle button.') }}
                                             </li>
                                             <li>
-                                                {{ translate('paste_your_linkedin_partner_id_into_the_input_box_and_click_submit.') }}
+                                                {{ translate('Paste your linkedin partner id into the input box and click submit.') }}
                                             </li>
                                         </ol>
                                     </div>

@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::table('modules', function (Blueprint $table) {
             if (!Schema::hasColumn('modules', 'short_description')) {
-                $table->string('short_description', 1000)->nullable()->after('description');
+                $table->string('short_description', 1000)->nullable();
             }
         });
     }

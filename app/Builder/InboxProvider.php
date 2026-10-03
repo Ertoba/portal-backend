@@ -2,7 +2,6 @@
 
 namespace App\Builder;
 
-use App\CentralLogics\Helpers;
 use App\Models\Conversation;
 use App\Models\DeliveryMan;
 use App\Models\Message;
@@ -15,6 +14,7 @@ use Illuminate\Support\Carbon;
 use Modules\Builder\Contracts\InboxProvider as InboxProviderContract;
 use Modules\Builder\ValueObjects\Storefront\ConversationDTO;
 use Modules\Builder\ValueObjects\Storefront\MessageDTO;
+use App\Support\Storage\FileStorage;
 
 class InboxProvider implements InboxProviderContract
 {
@@ -26,11 +26,6 @@ class InboxProvider implements InboxProviderContract
         }
 
         $allowedOtherIds = $this->reachableUserInfoIds($customerId, $storeId);
-        // NOTE: do NOT bail when this is empty. A fresh store whose vendor has
-        // no chat UserInfo yet yields no reachable ids, but the synthetic
-        // store row below ("always include the seller, even with no prior
-        // conversation") must still surface. The conversation query is safe
-        // with an empty allow-list — an empty whereIn matches nothing.
 
         $query = Conversation::query()
             ->with(['sender', 'receiver', 'last_message'])
@@ -67,23 +62,12 @@ class InboxProvider implements InboxProviderContract
         $paginator = $query->paginate(perPage: $limit, page: $offset);
         $rawItems  = $paginator->items();
 
-        // The inbox surface is strictly vendor + delivery_man. The query
-        // above already restricts the OTHER side to reachableUserInfoIds
-        // (which only includes those two kinds), but if a row somehow
-        // slips through with another type — admin chat, system message
-        // legacy — drop it on the wire so the frontend never has to
-        // render it. Belt-and-braces.
         $conversations = collect($rawItems)
             ->map(fn (Conversation $c) => $this->mapConversationSummary($c, $me))
             ->filter(fn (array $c) => in_array($c['type'], ['vendor', 'delivery'], true))
             ->values()
             ->all();
 
-        // Always include the storefront's vendor in the list — even when
-        // no real conversation exists yet — so the customer can initiate
-        // chat with the seller without finding a "compose" button. The
-        // synthetic row carries id=0 (sentinel); sendMessage() resolves
-        // it back to the real vendor when the first message lands.
         if ($storeId) {
             $vendorInfo = $this->storeVendorUserInfo($storeId);
             if ($vendorInfo) {
@@ -113,13 +97,6 @@ class InboxProvider implements InboxProviderContract
             }
         }
 
-        // Synthetic delivery-man injection — used when the customer
-        // clicks the chat icon on an order details DM card and no real
-        // conversation with that DM exists yet. `openWith` carries the
-        // hint as 'dm:<id>'; we resolve the UserInfo, verify it's in
-        // the storefront's allow-list, and prepend the row with a
-        // negative-id sentinel (-dmId) so sendMessage can route the
-        // first message back to the right DM.
         $dmId = $this->parseOpenWithDmId($openWith);
         if ($dmId !== null && $storeId) {
             $dmInfo = $this->ensureDeliveryManUserInfo($dmId);
@@ -157,12 +134,6 @@ class InboxProvider implements InboxProviderContract
         $me = $this->ensureUserInfo($customerId);
         if (!$me) return null;
 
-        // Synthetic store row — id=0 sentinel produced by conversations()
-        // when the customer has no real thread with the vendor yet.
-        // Return the empty state hydrated with the vendor's profile so
-        // the right pane shows the seller's name/avatar and an empty
-        // message list. sendMessage() with conversationId=0 will create
-        // the real Conversation row on the first send.
         if ($conversationId === 0) {
             if (!$storeId) return null;
             $vendorInfo = $this->storeVendorUserInfo($storeId);
@@ -189,17 +160,11 @@ class InboxProvider implements InboxProviderContract
             ];
         }
 
-        // Synthetic delivery-man row — negative id encodes the DM
-        // (conversationId = -dmId). Same empty-state shape as the
-        // synthetic vendor; sendMessage with a negative conversationId
-        // resolves the DM and creates the real Conversation on first send.
         if ($conversationId < 0) {
             if (!$storeId) return null;
             $dmId = -$conversationId;
             $dmInfo = $this->ensureDeliveryManUserInfo($dmId);
             if (!$dmInfo) return null;
-            // Scope guard — only DMs assigned to this customer's orders
-            // at this store are reachable.
             $allowed = $this->reachableUserInfoIds($customerId, $storeId);
             if (!in_array((int) $dmInfo->id, $allowed, true)) return null;
             $name = $this->fullName($dmInfo);
@@ -317,17 +282,6 @@ class InboxProvider implements InboxProviderContract
             $type = $input['receiverType'] ?? null;
             $rid  = (int) ($input['receiverId'] ?? 0);
 
-            // Synthetic-store path — conversationId==0 from the frontend's
-            // pristine vendor row + no explicit recipient → resolve to the
-            // current storefront's vendor. First send creates the real
-            // Conversation row.
-            //
-            // Critical: set $type='vendor' so the Conversation row's
-            // receiver_type column gets the right value. Without this
-            // the fallback at the row-create site below uses 'admin',
-            // which lands the conversation under "OTHER" in the list
-            // and shows "Delivery Man" in the header (the frontend's
-            // binary type check defaults non-vendor to delivery).
             if ($cid === 0 && !$type && !$rid && $storeId) {
                 $vendorInfo = $this->storeVendorUserInfo($storeId);
                 if ($vendorInfo) {
@@ -336,11 +290,6 @@ class InboxProvider implements InboxProviderContract
                 }
             }
 
-            // Synthetic-DM path — cid<0 encodes the DM id (-dmId). Same
-            // pattern as the vendor synthetic but for a delivery man.
-            // Tag the type so the new Conversation row carries the right
-            // receiver_type (the display side prefers UserInfo, but we
-            // want the persisted value to be correct too).
             if ($cid < 0 && !$type && !$rid && $storeId) {
                 $dmId = -$cid;
                 $dmInfo = $this->ensureDeliveryManUserInfo($dmId);
@@ -362,7 +311,6 @@ class InboxProvider implements InboxProviderContract
                 if ($receiverId === null) return ['error' => 'Recipient not found.'];
             }
 
-            // Enforce the storefront allow-list on first-message-to-new-recipient too.
             if (!in_array($receiverId, $allowedOtherIds, true)) {
                 return ['error' => 'You can only chat with this storefront\'s vendor or delivery men assigned to your orders.'];
             }
@@ -375,20 +323,12 @@ class InboxProvider implements InboxProviderContract
             $convo->sender_id           = $me->id;
             $convo->sender_type         = 'customer';
             $convo->receiver_id         = $receiverId;
-            // Use the resolved local $type (set in the synthetic-vendor
-            // path AND the explicit-recipient path) rather than reaching
-            // back into $input — that misses the synthetic case and
-            // would fall through to 'admin'.
             $convo->receiver_type       = $type ?: ($input['receiverType'] ?? 'admin');
             $convo->unread_message_count = 0;
             $convo->last_message_time   = Carbon::now();
             $convo->save();
         }
 
-        // Uploads run per-file. `Helpers::upload` throws InvalidUploadException
-        // on storage / MIME / size failures — without this catch any single
-        // bad file would 500 the whole send and the user's text would be
-        // lost. Skip the failed file, log, and continue with the rest.
         $imagePayload = null;
         $uploadFailures = 0;
         if ($hasFiles) {
@@ -396,8 +336,8 @@ class InboxProvider implements InboxProviderContract
             foreach ($files as $file) {
                 if (!$file) continue;
                 try {
-                    $name = Helpers::upload('conversation/', 'png', $file);
-                    $imagePayload[] = ['img' => $name, 'storage' => Helpers::getDisk()];
+                    $name = FileStorage::upload('conversation/', $file);
+                    $imagePayload[] = ['img' => $name, 'storage' => FileStorage::getDisk()];
                 } catch (\Throwable $e) {
                     $uploadFailures++;
                     \Log::warning('Inbox attachment upload failed', [
@@ -410,9 +350,6 @@ class InboxProvider implements InboxProviderContract
             if (empty($imagePayload)) $imagePayload = null;
         }
 
-        // If the user attached files AND wrote nothing AND every upload
-        // failed, we'd silently create an empty message. Bail with a
-        // clear error instead.
         if ($messageText === '' && $hasFiles && $imagePayload === null) {
             return ['error' => 'Could not upload the attachment(s). Please try again.'];
         }
@@ -446,10 +383,6 @@ class InboxProvider implements InboxProviderContract
         $allowedOtherIds = $this->reachableUserInfoIds($customerId, $storeId);
         if (empty($allowedOtherIds)) return null;
 
-        // Deep-link hint from the order-details chat icon. `openWith=dm:N`
-        // means "land on the conversation with delivery man N" — prefer
-        // an existing real conversation; fall back to the synthetic DM
-        // sentinel (-N) so the right pane still shows a clickable thread.
         $dmId = $this->parseOpenWithDmId($openWith);
         if ($dmId !== null && $storeId) {
             $dmInfo = $this->ensureDeliveryManUserInfo($dmId);
@@ -462,10 +395,6 @@ class InboxProvider implements InboxProviderContract
             }
         }
 
-        // `openWith=vendor` (or no hint at all): prefer the customer's
-        // most recently-active real conversation, regardless of which
-        // participant. Falls through to the synthetic vendor when none
-        // exists yet (handled below).
         $vendorPrefer = $openWith === 'vendor';
         if ($vendorPrefer && $storeId) {
             $vendorInfo = $this->storeVendorUserInfo($storeId);
@@ -474,7 +403,7 @@ class InboxProvider implements InboxProviderContract
                     ->orderByDesc('last_message_time')
                     ->value('id');
                 if ($existing) return (int) $existing;
-                return 0; // synthetic vendor
+                return 0;
             }
         }
 
@@ -491,10 +420,6 @@ class InboxProvider implements InboxProviderContract
 
         if ($row) return (int) $row;
 
-        // No real conversation yet — fall back to the synthetic store
-        // row (id=0) so the right pane defaults to "Compose to seller"
-        // instead of an empty state. Caller's `conversation(0, …)`
-        // returns the pristine vendor entry with messages=[].
         if ($storeId && $this->storeVendorUserInfo($storeId)) {
             return 0;
         }
@@ -536,7 +461,6 @@ class InboxProvider implements InboxProviderContract
         return $cache[$cacheKey] = $rows;
     }
 
-    // ─────────────────────────────────────────────────────────────────────
 
     private function mapConversationSummary(Conversation $convo, UserInfo $me): array
     {
@@ -544,13 +468,6 @@ class InboxProvider implements InboxProviderContract
         $other              = $isMeOriginalSender ? $convo->receiver : $convo->sender;
         $otherType          = $isMeOriginalSender ? $convo->receiver_type : $convo->sender_type;
 
-        // The Conversation row's stored type can drift from reality — e.g.
-        // older rows from the synthetic-vendor flow were created with
-        // receiver_type='admin' because the inference path didn't tag the
-        // type. The UserInfo row IS the canonical polymorphic identity
-        // (vendor_id / deliveryman_id columns), so prefer that. Falls
-        // back to the stored type when neither id is set (rare — admin
-        // chats, system messages, etc.).
         $resolvedType = $otherType;
         if ($other) {
             if (!empty($other->vendor_id))            $resolvedType = 'vendor';
@@ -591,7 +508,6 @@ class InboxProvider implements InboxProviderContract
                 }
             }
         } catch (\Throwable) {
-            // file column malformed — skip attachments rather than crash the panel
         }
 
         return MessageDTO::fromArray([
@@ -628,14 +544,6 @@ class InboxProvider implements InboxProviderContract
         return $info;
     }
 
-    /**
-     * Parse an `openWith=dm:<id>` hint string into a numeric DM id, or
-     * null if the hint is missing/malformed/not a DM target. The hint
-     * format is `dm:<positive_int>`; anything else (including the
-     * vendor sentinel 'vendor') returns null because no special
-     * conversations()-side handling is needed for the vendor case
-     * (synthetic vendor is unconditionally injected).
-     */
     private function parseOpenWithDmId(?string $openWith): ?int
     {
         if (!$openWith) return null;
@@ -644,13 +552,6 @@ class InboxProvider implements InboxProviderContract
         return $id > 0 ? $id : null;
     }
 
-    /**
-     * Resolve (and create if missing) the UserInfo row for a store's
-     * vendor. Used by the synthetic-store flow so the inbox can show
-     * the seller without an existing conversation. Cached per request
-     * via static memoisation — same conversations() call invokes this
-     * up to twice (once for filter, once for projection).
-     */
     private function storeVendorUserInfo(int $storeId): ?UserInfo
     {
         static $cache = [];

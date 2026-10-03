@@ -1,24 +1,23 @@
 @extends('layouts.admin.app')
 
-@section('title',translate('messages.parcel_settings'))
+@section('title',translate('Parcel settings'))
 
  @section('parcel_settings')
  active
  @endsection
 @section('content')
     <div class="content container-fluid">
-        <!-- Page Header -->
         <div class="page-header">
             <h1 class="page-header-title">
                 <span class="page-header-icon">
                     <img src="{{asset('public/assets/admin/img/parcel.png')}}" class="w--26" alt="">
                 </span>
                 <span>
-                    {{translate('messages.parcel_settings')}}
+                    {{translate('Parcel settings')}}
                 </span>
             </h1>
+            <p class="page-header-desc">{{ translate('How parcel delivery is charged and how far a rider will carry one.') }}</p>
         </div>
-        <!-- End Page Header -->
 
         <div class="card">
             <div class="card-body">
@@ -26,31 +25,19 @@
                     enctype="multipart/form-data">
                     @csrf
                     <div class="row">
+                        {{-- Per km / Minimum shipping charge removed 2026-09-03 (A14). A parcel is
+                             priced by its zone's delivery rule plus the category's own additional
+                             charge, so those two inputs collected numbers nothing charged. --}}
                         <div class="col-md-6 col-lg-4">
                             <div class="form-group">
-                                <label  class="input-label text-capitalize">{{translate('messages.per_km_shipping_charge')}}  ({{ \App\CentralLogics\Helpers::currency_symbol() }})</label>
-                                <input type="number" min="0" step=".01" placeholder="{{translate('messages.per_km_shipping_charge')}}" class="form-control" name="parcel_per_km_shipping_charge"
-                                    value="{{$parcelPerKmShippingCharge??''}}">
-                            </div>
-                        </div>
-                        <div class="col-md-6 col-lg-4">
-                            <div class="form-group">
-                                <label class="input-label text-capitalize">{{translate('messages.minimum_shipping_charge')}} ({{ \App\CentralLogics\Helpers::currency_symbol() }})</label>
-                                <input type="number" min="0" step=".01" placeholder="{{translate('messages.minimum_shipping_charge')}}" class="form-control" name="parcel_minimum_shipping_charge"
-                                    value="{{$parcelMinimumShippingCharge??''}}">
-                            </div>
-                        </div>
-
-                        <div class="col-md-6 col-lg-4">
-                            <div class="form-group">
-                                <label class="input-label text-capitalize">{{translate('messages.deliveryman_commission')}} (%)</label>
-                                <input type="number" min="0" step=".01" placeholder="{{translate('messages.deliveryman_commission')}}" class="form-control" name="parcel_commission_dm" max="100" value="{{$parcelCommissionDm??''}}">
+                                <label class="input-label text-capitalize">{{translate('messages.Deliveryman commission')}} (%)</label>
+                                <input type="number" min="0" step=".01" placeholder="{{translate('messages.Deliveryman commission')}}" class="form-control" name="parcel_commission_dm" max="100" value="{{$parcelCommissionDm??''}}">
                             </div>
                         </div>
                     </div>
                     <div class="btn--container justify-content-end">
-                        <button type="reset" class="btn btn--reset">{{translate('messages.reset')}}</button>
-                        <button type="{{getEnvMode()!='demo'?'submit':'button'}}"  class="btn btn--primary call-demo">{{translate('messages.submit')}}</button>
+                        <button type="reset" class="btn btn--reset"><i class="tio-refresh"></i> {{translate('messages.Reset')}}</button>
+                        <button type="{{getEnvMode()!='demo'?'submit':'button'}}"  class="btn btn--primary call-demo"><i class="tio-checkmark-circle-outlined"></i> {{translate('messages.Submit')}}</button>
                     </div>
                 </form>
             </div>
@@ -89,22 +76,22 @@
 
 
                         <div class="col-md-10 lang_form1 default-form1">
-                            <label class="form-label">{{translate('Instruction')}} ({{ translate('Default') }})<span class="form-label-secondary" data-toggle="tooltip" data-placement="right" data-original-title="{{ translate('Write the instruction within 191 characters') }}">
+                            <label class="form-label">{{translate('Instruction')}} ({{ translate('Default') }})<span class="form-label-secondary" data-toggle="tooltip" data-placement="right" data-original-title="{{ translate('Character limit') }}: 191">
                                                     <img src="{{asset('public/assets/admin/img/info-circle.svg')}}" alt="">
                                                 </span></label>
                             <input type="text" class="form-control h--45px" maxlength="191" name="instruction[]"
-                                   placeholder="{{ translate('Ex:_parcel_contains_document') }}">
+                                   placeholder="{{ translate('Ex') . ': ' . translate('parcel contains document') }}">
                             <input type="hidden" name="lang[]" value="default">
                         </div>
 
                         @if ($language)
                             @foreach($language as $lang)
                                 <div class="col-md-10 d-none lang_form1" id="{{$lang}}-form1">
-                                    <label class="form-label">{{translate('Instruction')}} ({{strtoupper($lang)}})<span class="form-label-secondary" data-toggle="tooltip" data-placement="right" data-original-title="{{ translate('Write the instruction within 191 characters') }}">
+                                    <label class="form-label">{{translate('Instruction')}} ({{strtoupper($lang)}})<span class="form-label-secondary" data-toggle="tooltip" data-placement="right" data-original-title="{{ translate('Character limit') }}: 191">
                                                     <img src="{{asset('public/assets/admin/img/info-circle.svg')}}" alt="">
                                                 </span></label>
                                     <input type="text" class="form-control h--45px" maxlength="191" name="instruction[]"
-                                           placeholder="{{ translate('Ex:_parcel_contains_document') }}">
+                                           placeholder="{{ translate('Ex') . ': ' . translate('parcel contains document') }}">
                                     <input type="hidden" name="lang[]" value="{{$lang}}">
                                 </div>
                             @endforeach
@@ -112,7 +99,7 @@
 
 
                         <div class="col-md-auto">
-                            <button type="submit" class="btn btn--primary h--45px btn-block">{{translate('messages.Add Now')}}</button>
+                            <button type="submit" class="btn btn--primary h--45px btn-block"><i class="tio-add-circle"></i> {{translate('messages.Add Now')}}</button>
                         </div>
                     </div>
                 </form>
@@ -131,21 +118,20 @@
 
 
 
-                <!-- Table -->
                 <div class="card-body p-0">
                     <div class="table-responsive datatable-custom">
                         <table id="columnSearchDatatable"
                                class="table table-borderless table-thead-bordered table-align-middle" data-hs-datatables-options='{
                         "isResponsive": false,
                         "isShowPaging": false,
-                        "paging":false,
+                        "paging":false
                     }'>
                             <thead class="thead-light">
                             <tr>
                                 <th class="border-0">{{ translate('messages.SL') }}</th>
                                 <th class="border-0">{{translate('messages.Instruction')}}</th>
-                                <th class="border-0">{{translate('messages.status')}}</th>
-                                <th class="border-0 text-center">{{translate('messages.action')}}</th>
+                                <th class="border-0">{{translate('messages.Status')}}</th>
+                                <th class="border-0 text-center">{{translate('messages.Action')}}</th>
                             </tr>
                             </thead>
 
@@ -170,16 +156,16 @@
 
                                     <td>
                                         <div class="btn--container justify-content-center">
-                                            <a class="btn btn-sm btn--primary btn-outline-primary action-btn edit-instruction"
-                                               title="{{ translate('messages.edit') }}" data-id="{{$instruction['id']}}"
+                                            <a class="btn btn-sm action-btn action-btn--edit edit-instruction"
+                                               title="{{ translate('Edit') }}" data-id="{{$instruction['id']}}"
                                                data-toggle="modal"   data-target="#add_update_instruction_{{$instruction->id}}"
                                             ><i class="tio-edit"></i>
                                             </a>
 
 
-                                            <a class="btn btn-sm btn--danger btn-outline-danger action-btn form-alert" href="javascript:"
-                                               data-id="instruction-{{$instruction['id']}}" data-message="{{ translate('Want to delete this instruction ?') }}"
-                                               title="{{translate('messages.delete')}}">
+                                            <a class="btn btn-sm action-btn action-btn--delete form-alert" href="javascript:"
+                                               data-id="instruction-{{$instruction['id']}}" data-message="{{ translate('Want to delete this instruction?') }}"
+                                               title="{{translate('messages.Delete')}}">
                                                 <i class="tio-delete-outlined"></i>
                                             </a>
                                             <form action="{{route('admin.parcel.instruction_delete',[$instruction['id']])}}"
@@ -189,13 +175,12 @@
                                         </div>
                                     </td>
                                 </tr>
-                                <!-- Modal -->
                                 <div class="modal fade" id="add_update_instruction_{{$instruction->id}}" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
                                      aria-hidden="true">
                                     <div class="modal-dialog" role="document">
                                         <div class="modal-content">
                                             <div class="modal-header">
-                                                <h5 class="modal-title" id="exampleModalLabel">{{ translate('messages.Instruction_Update') }}</label></h5>
+                                                <h5 class="modal-title" id="exampleModalLabel">{{ translate('messages.Instruction Update') }}</label></h5>
                                                 <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                                                     <span aria-hidden="true">&times;</span>
                                                 </button>
@@ -227,7 +212,7 @@
                                                     <input type="hidden" name="instruction_id"  value="{{$instruction->id}}" />
 
                                                     <div class="form-group mb-3 add_active_2  update-lang_form" id="default-form_{{$instruction->id}}">
-                                                        <label class="form-label">{{translate('Instruction')}} ({{translate('messages.default')}}) </label>
+                                                        <label class="form-label">{{translate('Instruction')}} ({{translate('Default')}}) </label>
                                                         <input class="form-control" name='instruction[]' maxlength="191" value="{{$instruction?->getRawOriginal('instruction')}}" type="text">
                                                         <input type="hidden" name="lang1[]" value="default">
                                                     </div>
@@ -255,8 +240,8 @@
 
                                             </div>
                                             <div class="modal-footer">
-                                                <button type="button" class="btn btn-secondary" data-dismiss="modal">{{ translate('Close') }}</button>
-                                                <button type="submit" class="btn btn-primary">{{ translate('Save_changes') }}</button>
+                                                <button type="button" class="btn btn-secondary" data-dismiss="modal"><i class="tio-clear"></i> {{ translate('Close') }}</button>
+                                                <button type="submit" class="btn btn-primary"><i class="tio-save"></i> {{ translate('Save changes') }}</button>
                                                 </form>
                                             </div>
                                         </div>
@@ -269,7 +254,7 @@
                             <div class="empty--data">
                                 <img src="{{asset('/public/assets/admin/svg/illustrations/sorry.svg')}}" alt="public">
                                 <h5>
-                                    {{translate('no_data_found')}}
+                                    {{translate('No data found')}}
                                 </h5>
                             </div>
                         @endif
@@ -285,7 +270,6 @@
                     </div>
                 </div>
             </div>
-            <!-- End Table -->
 
         </div>
 

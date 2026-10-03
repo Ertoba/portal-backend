@@ -17,18 +17,18 @@
                                     loading="lazy" alt="">
                                 <div>
                                     <h3 class="lh-md mb-3 text-capitalize text-start">
-                                        {{ translate('step_by_step_guide') }}
+                                        {{ translate('Step by step guide') }}
                                     </h3>
                                     <ol class="d-flex flex-column px-4 gap-2 mb-4">
-                                        <li> {{ translate('open_the_advertising_manager_or_platform_you_want_to_integrate_(e.g.,_meta_ads,_snapchat_ads,_google_analytics).') }}
+                                        <li> {{ translate('Open the advertising manager or platform you want to integrate (e.g., Meta Ads, Snapchat Ads, Google Analytics).') }}
                                         </li>
-                                        <li> {{ translate('locate_and_copy_the_necessary_tracking_ids_from_their_respective_settings.') }}
+                                        <li> {{ translate('Locate and copy the necessary tracking ids from their respective settings.') }}
                                         </li>
-                                        <li> {{ translate('turn_on_the_toggle_for_the_platform_you_want_to_activate.') }}
+                                        <li> {{ translate('Turn on the toggle for the platform you want to activate.') }}
                                         </li>
-                                        <li> {{ translate('paste_the_code_into_the_input_box_and_click_submit.') }}
+                                        <li> {{ translate('Paste the code into the input box and click submit.') }}
                                         </li>
-                                        <li> {{ translate('if_you_no_longer_want_to_track_a_platforms_analytics_turn_the_toggle_off_anytime.') }}
+                                        <li> {{ translate('If you no longer want to track a platforms analytics turn the toggle off anytime.') }}
                                         </li>
                                     </ol>
                                 </div>

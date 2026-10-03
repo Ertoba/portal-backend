@@ -10,13 +10,13 @@ use Illuminate\Routing\Controller;
 use Illuminate\Routing\Redirector;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Validator;
-use App\Traits\Processor;
+use App\Traits\System\ProcessorTrait;
 use Illuminate\Contracts\Foundation\Application;
 use App\Models\PaymentRequest;
 
 class SslCommerzPaymentController extends Controller
 {
-    use Processor;
+    use ProcessorTrait;
 
     private $store_id;
     private $store_password;
@@ -27,7 +27,7 @@ class SslCommerzPaymentController extends Controller
 
     public function __construct(PaymentRequest $payment, User $user)
     {
-        $config = $this->payment_config('ssl_commerz', 'payment_config');
+        $config = $this->paymentConfig('ssl_commerz', 'payment_config');
         if (!is_null($config) && $config->mode == 'live') {
             $values = json_decode($config->live_values);
         } elseif (!is_null($config) && $config->mode == 'test') {
@@ -38,7 +38,6 @@ class SslCommerzPaymentController extends Controller
             $this->store_id = $values->store_id;
             $this->store_password = $values->store_password;
 
-            # REQUEST SEND TO SSLCOMMERZ
             $this->direct_api_url = "https://sandbox.sslcommerz.com/gwprocess/v4/api.php";
             $this->host = true;
 
@@ -58,12 +57,12 @@ class SslCommerzPaymentController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return response()->json($this->response_formatter(GATEWAYS_DEFAULT_400, null, $this->error_processor($validator)), 400);
+            return response()->json($this->responseFormatter(GATEWAYS_DEFAULT_400, null, $this->errorProcessor($validator)), 400);
         }
 
         $data = $this->payment::where(['id' => $request['payment_id']])->where(['is_paid' => 0])->first();
         if (!isset($data)) {
-            return response()->json($this->response_formatter(GATEWAYS_DEFAULT_204), 200);
+            return response()->json($this->responseFormatter(GATEWAYS_DEFAULT_204), 200);
         }
 
         $payment_amount = $data['payment_amount'];
@@ -81,7 +80,6 @@ class SslCommerzPaymentController extends Controller
         $post_data['fail_url'] = url('/') . '/payment/sslcommerz/failed?payment_id=' . $data['id'];
         $post_data['cancel_url'] = url('/') . '/payment/sslcommerz/canceled?payment_id=' . $data['id'];
 
-        # CUSTOMER INFORMATION
         $post_data['cus_name'] = $payer_information->name;
         $post_data['cus_email'] = $payer_information->email && $payer_information->email != '' ? $payer_information->email : 'example@example.com';
         $post_data['cus_add1'] = 'N/A';
@@ -93,7 +91,6 @@ class SslCommerzPaymentController extends Controller
         $post_data['cus_phone'] = $payer_information->phone ?? '0000000000';
         $post_data['cus_fax'] = "";
 
-        # SHIPMENT INFORMATION
         $post_data['ship_name'] = "N/A";
         $post_data['ship_add1'] = "N/A";
         $post_data['ship_add2'] = "N/A";
@@ -108,7 +105,6 @@ class SslCommerzPaymentController extends Controller
         $post_data['product_category'] = "N/A";
         $post_data['product_profile'] = "service";
 
-        # OPTIONAL PARAMETERS
         $post_data['value_a'] = "ref001";
         $post_data['value_b'] = "ref002";
         $post_data['value_c'] = "ref003";
@@ -121,7 +117,7 @@ class SslCommerzPaymentController extends Controller
         curl_setopt($handle, CURLOPT_POST, 1);
         curl_setopt($handle, CURLOPT_POSTFIELDS, $post_data);
         curl_setopt($handle, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($handle, CURLOPT_SSL_VERIFYPEER,  in_array(getEnvMode(),['demo','test' ,'dev']) ? false : $this->host); # KEEP IT FALSE IF YOU RUN FROM LOCAL PC
+        curl_setopt($handle, CURLOPT_SSL_VERIFYPEER,  in_array(getEnvMode(),['demo','test' ,'dev']) ? false : $this->host);
 
         $content = curl_exec($handle);
         $code = curl_getinfo($handle, CURLINFO_HTTP_CODE);
@@ -139,15 +135,13 @@ class SslCommerzPaymentController extends Controller
             echo "<meta http-equiv='refresh' content='0;url=" . $sslcz['GatewayPageURL'] . "'>";
             exit;
         } else {
-            return response()->json($this->response_formatter(GATEWAYS_DEFAULT_204), 200);
+            return response()->json($this->responseFormatter(GATEWAYS_DEFAULT_204), 200);
         }
     }
 
-    # FUNCTION TO CHECK HASH VALUE
     protected function SSLCOMMERZ_hash_verify($store_passwd, $post_data)
     {
         if (isset($post_data) && isset($post_data['verify_sign']) && isset($post_data['verify_key'])) {
-            # NEW ARRAY DECLARED TO TAKE VALUE OF ALL POST
             $pre_define_key = explode(',', $post_data['verify_key']);
 
             $new_data = array();
@@ -158,10 +152,8 @@ class SslCommerzPaymentController extends Controller
                     }
                 }
             }
-            # ADD MD5 OF STORE PASSWORD
             $new_data['store_passwd'] = md5($store_passwd);
 
-            # SORT THE KEY AS BEFORE
             ksort($new_data);
 
             $hash_string = "";
@@ -198,13 +190,13 @@ class SslCommerzPaymentController extends Controller
             if (isset($data) && function_exists($data->success_hook)) {
                 call_user_func($data->success_hook, $data);
             }
-            return $this->payment_response($data, 'success');
+            return $this->paymentResponse($data, 'success');
         }
         $payment_data = $this->payment::where(['id' => $request['payment_id']])->first();
         if (isset($payment_data) && function_exists($payment_data->failure_hook)) {
             call_user_func($payment_data->failure_hook, $payment_data);
         }
-        return $this->payment_response($payment_data, 'fail');
+        return $this->paymentResponse($payment_data, 'fail');
     }
 
     public function failed(Request $request): JsonResponse|Redirector|RedirectResponse|Application
@@ -213,7 +205,7 @@ class SslCommerzPaymentController extends Controller
         if (isset($payment_data) && function_exists($payment_data->failure_hook)) {
             call_user_func($payment_data->failure_hook, $payment_data);
         }
-        return $this->payment_response($payment_data, 'fail');
+        return $this->paymentResponse($payment_data, 'fail');
     }
 
     public function canceled(Request $request): JsonResponse|Redirector|RedirectResponse|Application
@@ -222,6 +214,6 @@ class SslCommerzPaymentController extends Controller
         if (isset($payment_data) && function_exists($payment_data->failure_hook)) {
             call_user_func($payment_data->failure_hook, $payment_data);
         }
-        return $this->payment_response($payment_data, 'cancel');
+        return $this->paymentResponse($payment_data, 'cancel');
     }
 }

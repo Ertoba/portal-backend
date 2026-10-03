@@ -18,14 +18,14 @@ class AutomatedMessageController extends Controller
             'message>*'=>'max:255',
             'message.0' => 'required',
         ],[
-            'message.0.required'=>translate('default_message_is_required'),
+            'message.0.required'=>translate('Default message is required'),
         ]);
         $automatedMessage = new AutomatedMessage();
         $automatedMessage->message = $request->message[array_search('default', $request->lang)];
         $automatedMessage->save();
 
         Helpers::add_or_update_translations(request: $request, key_data:'message' , name_field:'message' , model_name: 'AutomatedMessage' ,data_id: $automatedMessage->id,data_value: $automatedMessage->message);
-        Toastr::success(translate('messages.Automated_message_added_successfully'));
+        Toastr::success(translate('Added successfully'));
         return back();
     }
     public function destroy($automatedMessage)
@@ -33,7 +33,7 @@ class AutomatedMessageController extends Controller
         $automatedMessage = AutomatedMessage::findOrFail($automatedMessage);
         $automatedMessage?->translations()?->delete();
         $automatedMessage?->delete();
-        Toastr::success(translate('messages.Automated_message_deleted_successfully'));
+        Toastr::success(translate('Deleted successfully'));
         return back();
     }
 
@@ -42,7 +42,7 @@ class AutomatedMessageController extends Controller
         $automatedMessage = AutomatedMessage::findOrFail($request->id);
         $automatedMessage->status = $request->status;
         $automatedMessage->save();
-        Toastr::success(translate('messages.status_updated'));
+        Toastr::success(translate('messages.Status updated'));
         return back();
     }
 
@@ -50,6 +50,11 @@ class AutomatedMessageController extends Controller
       public function edit($id)
     {
         $message =AutomatedMessage::withoutGlobalScope('translate')->with('translations')->find($id);
+
+        if (! $message) {
+            return response()->json(['errors' => [['code' => 'message', 'message' => translate('No data found')]]], 404);
+        }
+
         $language = getWebConfig('language');
         return response()->json([
             'view' => view('admin-views.business-settings.settings.partials._automated_message_edit', compact('message','language'))->render(),
@@ -63,14 +68,14 @@ class AutomatedMessageController extends Controller
             'message.*' => 'max:255',
             'message.0' => 'required',
         ],[
-            'message.0.required'=>translate('default_message_is_required'),
+            'message.0.required'=>translate('Default message is required'),
         ]);
         $automatedMessage = AutomatedMessage::findOrFail($request->message_id);
         $automatedMessage->message = $request->message[array_search('default', $request->lang)];
         $automatedMessage?->save();
         Helpers::add_or_update_translations(request: $request, key_data: 'message', name_field: 'message', model_name: 'AutomatedMessage', data_id: $automatedMessage->id, data_value: $automatedMessage->message);
 
-        Toastr::success(translate('Automated_message_updated_successfully'));
+        Toastr::success(translate('Updated successfully'));
         return back();
     }
 }

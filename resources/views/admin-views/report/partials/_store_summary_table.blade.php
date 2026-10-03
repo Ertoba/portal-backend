@@ -31,8 +31,8 @@
     </td>
     <td>
         <div class="btn--container justify-content-center">
-            <a href="{{route('admin.store.view', [$store->id, 'module_id'=>$store->module_id])}}" class="action-btn btn--primary btn-outline-primary">
-                <i class="tio-invisible"></i>
+            <a href="{{route('admin.store.view', [$store->id, 'module_id'=>$store->module_id])}}" class="btn action-btn action-btn--view">
+                <i class="tio-visible-outlined"></i>
             </a>
         </div>
     </td>

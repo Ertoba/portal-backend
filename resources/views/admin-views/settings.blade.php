@@ -1,345 +1,384 @@
 @extends('layouts.admin.app')
 
-@section('title', translate('messages.profile_settings'))
+@section('title', translate('messages.Profile settings'))
 
 @push('css_or_js')
+    <link rel="stylesheet" href="{{ asset('public/assets/admin/css/view-pages/admin-profile.css') }}">
 @endpush
 
 @section('content')
-    <!-- Content -->
-    <div class="content container-fluid">
-        <!-- Page Header -->
+    @php
+        $admin = auth('admin')->user();
+        $adminImage = $admin->loadMissing('storage')->toArray()['image_full_url'];
+        $fullName = trim(($admin->f_name ?? '') . ' ' . ($admin->l_name ?? ''));
+        $roleName = $admin->role_id == 1 ? translate('messages.Master Admin') : ($admin->role?->name ?? translate('messages.admin'));
+        $isDemo = getEnvMode() == 'demo';
+        $passwordHint = translate('messages.Use at least one uppercase letter, one lowercase letter, one number and one symbol.') . ' ' . translate('messages.Minimum characters') . ': 8';
+        $strengthLabels = [
+            translate('messages.Enter a password'),
+            translate('messages.Very weak'),
+            translate('messages.Weak'),
+            translate('messages.Fair'),
+            translate('messages.Good'),
+            translate('messages.Strong'),
+        ];
+    @endphp
+
+    <div class="content container-fluid admin-profile-page" id="adminProfilePage">
         <div class="page-header">
-            <div class="row align-items-end">
-                <div class="col-sm mb-2 mb-sm-0">
-                    <h1 class="page-header-title">{{ translate('messages.settings') }}</h1>
+            <div class="row align-items-center">
+                <div class="col-sm mb-3 mb-sm-0">
+                    <h1 class="page-header-title">
+                        <i class="tio-user-outlined"></i>
+                        <span>{{ translate('messages.Profile settings') }}</span>
+                    </h1>
+                    <p class="page-header-desc">{{ translate('Your own name, photograph, email and password.') }}</p>
                 </div>
 
                 <div class="col-sm-auto">
-                    <a class="btn btn-primary" href="{{ route('admin.dashboard') }}">
-                        <i class="tio-home mr-1"></i> {{ translate('messages.dashboard') }}
+                    <a class="btn btn-primary ap-btn" href="{{ route('admin.dashboard') }}">
+                        <i class="tio-home"></i> {{ translate('Dashboard') }}
                     </a>
                 </div>
             </div>
-            <!-- End Row -->
         </div>
-        <!-- End Page Header -->
 
-        @php
-            $use_v2_chrome = match (config('layout.version', 'auto')) {
-                'v1'    => false,
-                'v2'    => true,
-                default => in_array(\Config::get('module.current_module_type'), config('layout.v2_modules', []), true),
-            };
-        @endphp
-        <div class="row">
-            @if(!$use_v2_chrome)
-            <div class="col-lg-3">
-                <!-- Navbar -->
-                <div class="navbar-vertical navbar-expand-lg mb-3 mb-lg-5">
-                    <!-- Navbar Toggle -->
-                    <button type="button" class="navbar-toggler btn btn-block btn-white mb-3"
-                        aria-label="Toggle navigation" aria-expanded="false" aria-controls="navbarVerticalNavMenu"
-                        data-toggle="collapse" data-target="#navbarVerticalNavMenu">
-                        <span class="d-flex justify-content-between align-items-center">
-                            <span class="h5 mb-0">{{ translate('messages.nav_menu') }}</span>
+        <div class="ap-tabs" role="tablist">
+            <button type="button" class="ap-tab is-active" data-ap-tab="generalDiv">
+                <i class="tio-user-outlined"></i> {{ translate('Basic information') }}
+            </button>
+            <button type="button" class="ap-tab" data-ap-tab="passwordDiv">
+                <i class="tio-lock-outlined"></i> {{ translate('messages.password') }}
+            </button>
+        </div>
 
-                            <span class="navbar-toggle-default">
-                                <i class="tio-menu-hamburger"></i>
-                            </span>
+        {{-- ------------------------------------------------------------------ --}}
+        {{-- Identity + basic information. Both live in one form so the avatar   --}}
+        {{-- is uploaded together with the name, email and phone.                --}}
+        {{-- ------------------------------------------------------------------ --}}
+        <form action="{{ !$isDemo ? route('admin.settings') : 'javascript:' }}" method="post"
+            enctype="multipart/form-data" id="admin-settings-form">
+            @csrf
 
-                            <span class="navbar-toggle-toggled">
-                                <i class="tio-clear"></i>
-                            </span>
-                        </span>
-                    </button>
-                    <!-- End Navbar Toggle -->
+            <div class="row" id="generalDiv" data-ap-section="generalDiv">
+                <div class="col-xl-4 col-lg-5 mb-3">
+                    <div class="ap-card ap-identity h-100">
+                        <div class="ap-hero__cover"></div>
 
-                    <div id="navbarVerticalNavMenu" class="collapse navbar-collapse">
-                        <!-- Navbar Nav -->
-                        <ul id="navbarSettings"
-                            class="js-sticky-block js-scrollspy navbar-nav navbar-nav-lg nav-tabs card card-navbar-nav">
-                            <li class="nav-item">
-                                <a class="nav-link active text-dark" href="javascript:" id="generalSection">
-                                    <i class="tio-user-outlined nav-icon"></i>
-                                    <span>{{ translate('messages.basic_information') }}</span>
-                                </a>
+                        <div class="ap-hero__body">
+                            <div class="ap-avatar">
+                                <img id="adminAvatarPreview" class="ap-avatar__img onerror-image" src="{{ $adminImage }}"
+                                    data-original-src="{{ $adminImage }}"
+                                    data-onerror-image="{{ asset('public/assets/admin/img/160x160/img1.jpg') }}"
+                                    alt="{{ $fullName ?: translate('messages.admin') }}">
+
+                                <input type="file" name="image" class="ap-avatar__input" id="adminAvatarInput"
+                                    accept=".webp, .jpg, .png, .jpeg, .gif, .bmp, .tif, .tiff|image/*">
+                                <label class="ap-avatar__trigger" for="adminAvatarInput"
+                                    title="{{ translate('messages.Change profile photo') }}">
+                                    <i class="tio-photo-camera"></i>
+                                    <span class="sr-only">{{ translate('messages.Change profile photo') }}</span>
+                                </label>
+                            </div>
+
+                            <h2 class="ap-hero__name">{{ $fullName ?: translate('messages.admin') }}</h2>
+                            <span class="ap-role"><i class="tio-security-on-outlined"></i> {{ $roleName }}</span>
+
+                            <p class="ap-hero__hint">JPG, PNG, WEBP &mdash; 1:1 ratio</p>
+                        </div>
+
+                        <ul class="ap-facts">
+                            <li>
+                                <i class="tio-email-outlined"></i>
+                                <span class="ap-facts__key">{{ translate('messages.email') }}</span>
+                                <span class="ap-facts__value" title="{{ $admin->email }}">{{ $admin->email }}</span>
                             </li>
-                            <li class="nav-item">
-                                <a class="nav-link text-dark" href="javascript:" id="passwordSection">
-                                    <i class="tio-lock-outlined nav-icon"></i>
-                                    <span>{{ translate('messages.password') }}</span>
-                                </a>
+                            <li>
+                                <i class="tio-call"></i>
+                                <span class="ap-facts__key">{{ translate('Phone') }}</span>
+                                <span class="ap-facts__value">{{ $admin->phone ?: '-' }}</span>
+                            </li>
+                            <li>
+                                <i class="tio-calendar-month"></i>
+                                <span class="ap-facts__key">{{ translate('messages.Joined') }}</span>
+                                <span class="ap-facts__value">
+                                    {{ $admin->created_at ? $admin->created_at->format('d M Y') : '-' }}
+                                </span>
+                            </li>
+                            <li>
+                                <i class="tio-history"></i>
+                                <span class="ap-facts__key">{{ translate('messages.Last updated') }}</span>
+                                <span class="ap-facts__value">
+                                    {{ $admin->updated_at ? $admin->updated_at->format('d M Y') : '-' }}
+                                </span>
                             </li>
                         </ul>
-                        <!-- End Navbar Nav -->
                     </div>
                 </div>
-                <!-- End Navbar -->
-            </div>
-            @endif
 
-            <div class="{{ $use_v2_chrome ? 'col-lg-12' : 'col-lg-9' }}">
-                <form action="{{ getEnvMode() != 'demo' ? route('admin.settings') : 'javascript:' }}" method="post"
-                    enctype="multipart/form-data" id="admin-settings-form">
-                    @csrf
-                    <!-- Card -->
-                    <div class="card mb-3 mb-lg-5" id="generalDiv">
-                        <!-- Profile Cover -->
-                        <div class="profile-cover">
-                            <div class="profile-cover-img-wrapper"></div>
-                        </div>
-                        <!-- End Profile Cover -->
-
-                        <!-- Avatar -->
-                        <label class="avatar avatar-xxl avatar-circle avatar-border-lg avatar-uploader profile-cover-avatar"
-                            for="avatarUploader">
-                            <img id="viewer" data-onerror-image="{{ asset('public/assets/admin/img/160x160/img1.jpg') }}"
-                                class="avatar-img onerror-image w-100"
-                                src="{{ auth('admin')->user()->toArray()['image_full_url'] }}" alt="Image">
-
-                            <input type="file" name="image" class="js-file-attach avatar-uploader-input"
-                                id="customFileEg1" accept=".webp, .jpg, .png, .jpeg, .gif, .bmp, .tif, .tiff|image/*">
-                            <label class="avatar-uploader-trigger" for="customFileEg1">
-                                <i class="tio-edit avatar-uploader-icon shadow-soft"></i>
-                            </label>
-                        </label>
-                        <!-- End Avatar -->
-                    </div>
-                    <!-- End Card -->
-
-                    <!-- Card -->
-                    <div class="card mb-3 mb-lg-5">
-                        <div class="card-header">
-                            <h2 class="card-title h4"><i class="tio-info"></i> {{ translate('messages.basic_information') }}
-                            </h2>
+                <div class="col-xl-8 col-lg-7 mb-3">
+                    <div class="ap-card h-100">
+                        <div class="ap-card__head">
+                            <div>
+                                <h3 class="ap-card__title">
+                                    <i class="tio-user-outlined"></i> {{ translate('Basic information') }}
+                                </h3>
+                                <p class="ap-card__subtitle">
+                                    {{ translate('messages.This is how your name and contact details appear across the panel') }}
+                                </p>
+                            </div>
                         </div>
 
-                        <!-- Body -->
-                        <div class="card-body">
-                            <!-- Form -->
-                            <!-- Form Group -->
-                            <div class="row form-group">
-                                <label for="firstNameLabel"
-                                    class="col-sm-3 col-form-label input-label d-flex"><span>{{ translate('messages.full_name') }}
-                                    <i class="tio-help-outlined text-body ml-1" data-toggle="tooltip" data-placement="top"
-                                        title="{{ translate('Display_name') }}"></i></span></label>
+                        <div class="ap-card__body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="ap-field">
+                                        <label class="ap-label" for="firstNameLabel">
+                                            {{ translate('First name') }}
+                                            <i class="tio-help-outlined" data-toggle="tooltip" data-placement="top"
+                                                title="{{ translate('Display name') }}"></i>
+                                        </label>
+                                        <div class="ap-input-group">
+                                            <i class="tio-user-outlined"></i>
+                                            <input type="text" class="form-control" name="f_name" id="firstNameLabel"
+                                                placeholder="{{ translate('messages.Your first name') }}"
+                                                aria-label="{{ translate('messages.Your first name') }}"
+                                                value="{{ $admin->f_name }}">
+                                        </div>
+                                    </div>
+                                </div>
 
-                                <div class="col-sm-9">
-                                    <div class="input-group input-group-sm-down-break">
-                                        <input type="text" class="form-control" name="f_name" id="firstNameLabel"
-                                            placeholder="{{ translate('messages.your_first_name') }}"
-                                            aria-label="{{ translate('messages.your_first_name') }}"
-                                            value="{{ auth('admin')->user()->f_name }}">
-                                        <input type="text" class="form-control" name="l_name" id="lastNameLabel"
-                                            placeholder="{{ translate('messages.your_last_name') }}"
-                                            aria-label="{{ translate('messages.your_last_name') }}"
-                                            value="{{ auth('admin')->user()->l_name }}">
+                                <div class="col-md-6">
+                                    <div class="ap-field">
+                                        <label class="ap-label" for="lastNameLabel">
+                                            {{ translate('Last name') }}
+                                        </label>
+                                        <div class="ap-input-group">
+                                            <i class="tio-user-outlined"></i>
+                                            <input type="text" class="form-control" name="l_name" id="lastNameLabel"
+                                                placeholder="{{ translate('messages.Your last name') }}"
+                                                aria-label="{{ translate('messages.Your last name') }}"
+                                                value="{{ $admin->l_name }}">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <div class="ap-field">
+                                        <label class="ap-label"
+                                            for="newEmailLabel">{{ translate('messages.email') }}</label>
+                                        <div class="ap-input-group">
+                                            <i class="tio-email-outlined"></i>
+                                            <input type="email" class="form-control" name="email" id="newEmailLabel"
+                                                value="{{ $admin->email }}"
+                                                placeholder="{{ translate('messages.Enter new email address') }}"
+                                                aria-label="{{ translate('messages.Enter new email address') }}">
+                                        </div>
+                                        <p class="ap-help">
+                                            {{ translate('messages.Changing the email signs you out of other sessions') }}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <div class="ap-field">
+                                        <label class="ap-label" for="phoneLabel">
+                                            {{ translate('Phone') }}
+                                        </label>
+                                        <div class="ap-input-group">
+                                            <i class="tio-call"></i>
+                                            <input type="text" class="js-masked-input form-control" name="phone"
+                                                id="phoneLabel" placeholder="+x(xxx)xxx-xx-xx"
+                                                aria-label="+(xxx)xx-xxx-xxxxx" value="{{ $admin->phone }}"
+                                                data-hs-mask-options='{
+                                                   "template": "+(880)00-000-00000"
+                                                 }'>
+                                        </div>
+                                        <p class="ap-help">
+                                            {{ translate('messages.Used for account related notifications') }}
+                                        </p>
                                     </div>
                                 </div>
                             </div>
-                            <!-- End Form Group -->
+                        </div>
 
-                            <!-- Form Group -->
-                            <div class="row form-group">
-                                <label for="phoneLabel"
-                                    class="col-sm-3 col-form-label input-label">{{ translate('messages.phone') }} <span
-                                        class="input-label-secondary">({{ translate('messages.optional') }})</span></label>
-
-                                <div class="col-sm-9">
-                                    <input type="text" class="js-masked-input form-control" name="phone"
-                                        id="phoneLabel" placeholder="+x(xxx)xxx-xx-xx" aria-label="+(xxx)xx-xxx-xxxxx"
-                                        value="{{ auth('admin')->user()->phone }}"
-                                        data-hs-mask-options='{
-                                           "template": "+(880)00-000-00000"
-                                         }'>
-
-
-
-
-
-
-                                </div>
-                            </div>
-                            <!-- End Form Group -->
-
-                            <div class="row form-group">
-                                <label for="newEmailLabel"
-                                    class="col-sm-3 col-form-label input-label">{{ translate('messages.email') }}</label>
-
-                                <div class="col-sm-9">
-                                    <input type="email" class="form-control" name="email" id="newEmailLabel"
-                                        value="{{ auth('admin')->user()->email }}"
-                                        placeholder="{{ translate('messages.enter_new_email_address') }}"
-                                        aria-label="{{ translate('messages.enter_new_email_address') }}">
-                                </div>
-                            </div>
-
-                            <div class="d-flex justify-content-end">
+                        <div class="ap-card__foot">
+                            <p class="ap-foot-note">
+                                {{ translate('messages.Fields left unchanged are saved as they are') }}
+                            </p>
+                            <div class="ap-foot-actions d-flex flex-wrap gap-2">
+                                <button type="button" class="btn ap-btn ap-btn-ghost" data-ap-reset>
+                                    <i class="tio-refresh"></i> {{ translate('messages.Reset') }}
+                                </button>
                                 <button type="button" data-id="admin-settings-form"
-                                    data-message="{{ translate('Want to update admin info ?') }}"
-                                    class="btn btn-primary {{ getEnvMode() != 'demo' ? 'form-alert' : 'call-demo' }}">{{ translate('messages.save') }}</button>
+                                    data-message="{{ translate('Want to update admin information?') }}"
+                                    class="btn btn-primary ap-btn {{ !$isDemo ? 'form-alert' : 'call-demo' }}">
+                                    <i class="tio-save"></i> {{ translate('messages.Save') }}
+                                </button>
                             </div>
-
-                            <!-- End Form -->
                         </div>
-                        <!-- End Body -->
                     </div>
-                    <!-- End Card -->
-                </form>
-
-                <!-- Card -->
-                <div id="passwordDiv" class="card mb-3 mb-lg-5">
-                    <div class="card-header">
-                        <h4 class="card-title">{{ translate('messages.change_your_password') }}</h4>
-                    </div>
-
-                    <!-- Body -->
-                    <div class="card-body">
-                        <!-- Form -->
-                        <form id="changePasswordForm"
-                            action="{{ getEnvMode() != 'demo' ? route('admin.settings-password') : 'javascript:' }}"
-                            method="post" enctype="multipart/form-data">
-                            @csrf
-
-                            <!-- Form Group -->
-                            <div class="row form-group">
-                                <label for="newPassword"
-                                    class="col-sm-3 col-form-label input-label">{{ translate('messages.new_password') }}<span
-                                        class="form-label-secondary" data-toggle="tooltip" data-placement="right"
-                                        data-original-title="{{ translate('messages.Must_contain_at_least_one_number_and_one_uppercase_and_lowercase_letter_and_symbol,_and_at_least_8_or_more_characters') }}"><img
-                                            src="{{ asset('/public/assets/admin/img/info-circle.svg') }}"
-                                            alt="{{ translate('messages.Must_contain_at_least_one_number_and_one_uppercase_and_lowercase_letter_and_symbol,_and_at_least_8_or_more_characters') }}"></span></label>
-
-                                <div class="col-sm-9">
-
-
-
-                                    <div class="js-form-message form-group mb-0">
-                                        <label class="input-label"
-                                            for="signupSrPassword">{{ translate('messages.password') }}<span
-                                                class="form-label-secondary" data-toggle="tooltip" data-placement="right"
-                                                data-original-title="{{ translate('messages.Must_contain_at_least_one_number_and_one_uppercase_and_lowercase_letter_and_symbol,_and_at_least_8_or_more_characters') }}"><img
-                                                    src="{{ asset('/public/assets/admin/img/info-circle.svg') }}"
-                                                    alt="{{ translate('messages.Must_contain_at_least_one_number_and_one_uppercase_and_lowercase_letter_and_symbol,_and_at_least_8_or_more_characters') }}"></span></label>
-
-                                        <div class="input-group input-group-merge">
-                                            <input type="password" class="js-toggle-password form-control"
-                                                name="password" id="signupSrPassword"
-                                                pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}"
-                                                title="{{ translate('messages.Must_contain_at_least_one_number_and_one_uppercase_and_lowercase_letter_and_symbol,_and_at_least_8_or_more_characters') }}"
-                                                placeholder="{{ translate('messages.password_length_placeholder', ['length' => '8+']) }}"
-                                                aria-label="8+ characters required" required
-                                                data-msg="Your password is invalid. Please try again."
-                                                data-hs-toggle-password-options='{
-                                            "target": [".js-toggle-password-target-1", ".js-toggle-password-target-2"],
-                                            "defaultClass": "tio-hidden-outlined",
-                                            "showClass": "tio-visible-outlined",
-                                            "classChangeTarget": ".js-toggle-passowrd-show-icon-1"
-                                            }'>
-                                            <div class="js-toggle-password-target-1 input-group-append">
-                                                <a class="input-group-text" href="javascript:">
-                                                    <i class="js-toggle-passowrd-show-icon-1 tio-visible-outlined"></i>
-                                                </a>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <!-- End Form Group -->
-
-                            <!-- Form Group -->
-                            <div class="row form-group">
-                                <label for="confirmNewPasswordLabel"
-                                    class="col-sm-3 col-form-label input-label">{{ translate('messages.confirm_password') }}</label>
-
-                                <div class="col-sm-9">
-                                    <div class="mb-3">
-
-                                        <div class="js-form-message form-group mb-0">
-                                            <label class="input-label"
-                                                for="signupSrConfirmPassword">{{ translate('messages.confirm_password') }}</label>
-                                            <div class="input-group input-group-merge">
-                                                <input type="password" class="js-toggle-password form-control"
-                                                    name="confirm_password" id="signupSrConfirmPassword"
-                                                    pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}"
-                                                    title="{{ translate('messages.Must_contain_at_least_one_number_and_one_uppercase_and_lowercase_letter_and_symbol,_and_at_least_8_or_more_characters') }}"
-                                                    placeholder="{{ translate('messages.password_length_placeholder', ['length' => '8+']) }}"
-                                                    aria-label="8+ characters required" required
-                                                    data-msg="Password does not match the confirm password."
-                                                    data-hs-toggle-password-options='{
-                                                "target": [".js-toggle-password-target-1", ".js-toggle-password-target-2"],
-                                                "defaultClass": "tio-hidden-outlined",
-                                                "showClass": "tio-visible-outlined",
-                                                "classChangeTarget": ".js-toggle-passowrd-show-icon-2"
-                                                }'>
-                                                <div class="js-toggle-password-target-2 input-group-append">
-                                                    <a class="input-group-text" href="javascript:">
-                                                        <i class="js-toggle-passowrd-show-icon-2 tio-visible-outlined"></i>
-                                                    </a>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <!-- End Form Group -->
-
-                            <div class="d-flex justify-content-end">
-                                <button type="button" data-id="changePasswordForm"
-                                    data-message="{{ translate('messages.want_to_update_admin_password') }}"
-                                    class="btn btn-primary {{ getEnvMode() != 'demo' ? 'form-alert' : 'call-demo' }}">{{ translate('messages.save') }}</button>
-                            </div>
-                        </form>
-                        <!-- End Form -->
-                    </div>
-                    <!-- End Body -->
                 </div>
-                <!-- End Card -->
+            </div>
+        </form>
 
-                <!-- Sticky Block End Point -->
-                <div id="stickyBlockEndPoint"></div>
+        {{-- ------------------------------------------------------------------ --}}
+        {{-- Password --}}
+        {{-- ------------------------------------------------------------------ --}}
+        <div class="row" id="passwordDiv" data-ap-section="passwordDiv">
+            <div class="col-xl-4 col-lg-5 mb-3">
+                <div class="ap-card ap-guide h-100">
+                    <div class="ap-card__head">
+                        <div>
+                            <h3 class="ap-card__title">
+                                <i class="tio-security-on-outlined"></i>
+                                {{ translate('messages.Password requirements') }}
+                            </h3>
+                            <p class="ap-card__subtitle">
+                                {{ translate('messages.Every item has to be ticked before the password can be saved') }}
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="ap-card__body">
+                        <ul class="ap-rules">
+                            <li data-ap-rule="length">
+                                <i class="tio-circle-outlined"></i>
+                                At least 8 characters
+                            </li>
+                            <li data-ap-rule="lowercase">
+                                <i class="tio-circle-outlined"></i>
+                                {{ translate('messages.One lowercase letter') }}
+                            </li>
+                            <li data-ap-rule="uppercase">
+                                <i class="tio-circle-outlined"></i>
+                                {{ translate('messages.One uppercase letter') }}
+                            </li>
+                            <li data-ap-rule="number">
+                                <i class="tio-circle-outlined"></i>
+                                {{ translate('messages.One number') }}
+                            </li>
+                            <li data-ap-rule="symbol">
+                                <i class="tio-circle-outlined"></i>
+                                {{ translate('messages.One symbol') }}
+                            </li>
+                        </ul>
+
+                        <div class="ap-note">
+                            <i class="tio-info-outined"></i>
+                            <span>{{ translate('messages.Use a password you do not reuse anywhere else') }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-xl-8 col-lg-7 mb-3">
+                <div class="ap-card h-100">
+                    <div class="ap-card__head">
+                        <div>
+                            <h3 class="ap-card__title">
+                                <i class="tio-lock-outlined"></i> {{ translate('messages.Change your password') }}
+                            </h3>
+                            <p class="ap-card__subtitle">
+                                {{ translate('messages.Saving a new password signs you out of every other device') }}
+                            </p>
+                        </div>
+                    </div>
+
+                    <form id="changePasswordForm"
+                        action="{{ !$isDemo ? route('admin.settings-password') : 'javascript:' }}" method="post"
+                        enctype="multipart/form-data">
+                        @csrf
+
+                        <div class="ap-card__body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="ap-field">
+                                        <label class="ap-label" for="adminNewPassword">
+                                            {{ translate('New password') }}
+                                            <i class="tio-help-outlined" data-toggle="tooltip" data-placement="top"
+                                                title="{{ $passwordHint }}"></i>
+                                        </label>
+                                        <div class="ap-input-group ap-input-group--password">
+                                            <i class="tio-lock-outlined"></i>
+                                            <input type="password" class="form-control" name="password"
+                                                id="adminNewPassword"
+                                                placeholder="{{ translate('Minimum characters') }}: 8+"
+                                                aria-label="{{ translate('New password') }}"
+                                                autocomplete="new-password" required>
+                                            <button type="button" class="ap-eye" data-ap-toggle="adminNewPassword"
+                                                data-show-text="{{ translate('messages.Show password') }}"
+                                                data-hide-text="{{ translate('messages.Hide password') }}"
+                                                aria-label="{{ translate('messages.Show password') }}">
+                                                <i class="tio-visible-outlined"></i>
+                                            </button>
+                                        </div>
+
+                                        <div class="ap-strength" id="adminPasswordStrength" data-level="0"
+                                            data-labels="{{ json_encode($strengthLabels) }}">
+                                            <div class="ap-strength__bar">
+                                                <span></span><span></span><span></span><span></span><span></span>
+                                            </div>
+                                            <div class="ap-strength__label" id="adminPasswordStrengthLabel">
+                                                {{ translate('messages.Enter a password') }}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <div class="ap-field">
+                                        <label class="ap-label"
+                                            for="adminConfirmPassword">{{ translate('Confirm password') }}</label>
+                                        <div class="ap-input-group ap-input-group--password">
+                                            <i class="tio-lock-outlined"></i>
+                                            <input type="password" class="form-control" name="confirm_password"
+                                                id="adminConfirmPassword"
+                                                placeholder="{{ translate('Minimum characters') }}: 8+"
+                                                aria-label="{{ translate('Confirm password') }}"
+                                                autocomplete="new-password" required>
+                                            <button type="button" class="ap-eye" data-ap-toggle="adminConfirmPassword"
+                                                data-show-text="{{ translate('messages.Show password') }}"
+                                                data-hide-text="{{ translate('messages.Hide password') }}"
+                                                aria-label="{{ translate('messages.Show password') }}">
+                                                <i class="tio-visible-outlined"></i>
+                                            </button>
+                                        </div>
+
+                                        <span class="ap-match" id="adminPasswordMatch" aria-live="polite"
+                                            data-ok-text="{{ translate('messages.Passwords match') }}"
+                                            data-error-text="{{ translate('messages.Passwords do not match') }}">
+                                            <i class="tio-clear-circle"></i>
+                                            <span>{{ translate('messages.Passwords do not match') }}</span>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="ap-card__foot">
+                            <p class="ap-foot-note">
+                                {{ translate('messages.You will need to sign in again with the new password') }}
+                            </p>
+                            <div class="ap-foot-actions d-flex flex-wrap gap-2">
+                                {{-- Demo mode never submits, so the button stays clickable there to --}}
+                                {{-- keep showing the "demo" notice; elsewhere it unlocks once every --}}
+                                {{-- requirement is ticked. --}}
+                                <button type="button" data-id="changePasswordForm"
+                                    data-message="{{ translate('Want to update admin password?') }}"
+                                    class="btn btn-primary ap-btn {{ !$isDemo ? 'form-alert disabled' : 'call-demo' }}"
+                                    @if (!$isDemo) data-ap-password-submit disabled @endif>
+                                    <i class="tio-save"></i> {{ translate('messages.Save') }}
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
-        <!-- End Row -->
     </div>
-    <!-- End Content -->
 @endsection
 
 @push('script_2')
-    <script>
-        "use strict";
-
-        function readURL(input) {
-            if (input.files && input.files[0]) {
-                let reader = new FileReader();
-
-                reader.onload = function(e) {
-                    $('#viewer').attr('src', e.target.result);
-                }
-
-                reader.readAsDataURL(input.files[0]);
-            }
-        }
-
-        $("#customFileEg1").change(function() {
-            readURL(this);
-        });
-
-        $("#generalSection").click(function() {
-            $("#passwordSection").removeClass("active");
-            $("#generalSection").addClass("active");
-            $('html, body').animate({
-                scrollTop: $("#generalDiv").offset().top
-            }, 2000);
-        });
-
-        $("#passwordSection").click(function() {
-            $("#generalSection").removeClass("active");
-            $("#passwordSection").addClass("active");
-            $('html, body').animate({
-                scrollTop: $("#passwordDiv").offset().top
-            }, 2000);
-        });
-    </script>
+    <script src="{{ asset('public/assets/admin/js/view-pages/admin-profile.js') }}"></script>
 @endpush

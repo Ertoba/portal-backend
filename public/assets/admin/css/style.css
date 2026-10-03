@@ -24,6 +24,10 @@
     --cus-warning-clr: #CC952C;
     --text-light-gray: #A7A7A7;
     --text-title: #334257;
+    --text-title-rgb: 51, 66, 87;
+
+    --field-radius: 10px;
+    --field-radius-sm: 8px;
 
 
     --bs-primary: #1455ac;
@@ -80,22 +84,31 @@ body{
     overflow-y: auto !important;
 }
 
-::-webkit-scrollbar-track {
+/* `:not(.table-responsive)` is load-bearing, not decoration. An unprefixed
+   `::-webkit-scrollbar` rule matches EVERY scroller in the document, and in
+   Chromium/Safari the moment an author styles that pseudo-element the scroller
+   stops using the OS overlay scrollbar and gets a custom one: it reserves its
+   track and stays painted for as long as the element can scroll, instead of
+   fading out when idle. That is what put a permanent bar under every wide data
+   table. Excluding the table scroll containers hands them back to the platform
+   — overlay on macOS, a normal bar (slimmed by `scrollbar-width: thin` in
+   admin-tables.css) elsewhere. Do not collapse these back to bare selectors. */
+:not(.table-responsive)::-webkit-scrollbar-track {
     box-shadow: inset 0 0 1px #cfcfcf;
     /*border-radius: 5px;*/
 }
 
-::-webkit-scrollbar {
+:not(.table-responsive)::-webkit-scrollbar {
     width: 3px !important;
     height: 3px !important;
 }
 
-::-webkit-scrollbar-thumb {
+:not(.table-responsive)::-webkit-scrollbar-thumb {
     background: #c1c1c1;
     /*border-radius: 5px;*/
 }
 
-::-webkit-scrollbar-thumb:hover {
+:not(.table-responsive)::-webkit-scrollbar-thumb:hover {
     background: #003638;
 }
 
@@ -140,6 +153,14 @@ body{
 }
 .bg-danger {
     background-color: rgba(var(--bs-danger-rgb), var(--bs-bg-opacity, 1)) !important;
+}
+.text-purple {
+    --bs-purple-rgb: 65, 83, 179 !important;
+    color: rgba(var(--bs-purple-rgb), var(--bs-text-opacity, 1)) !important;
+}
+.bg-purple {
+    --bs-purple-rgb: 65, 83, 179 !important;
+    background-color: rgba(var(--bs-purple-rgb), var(--bs-bg-opacity, 1)) !important;
 }
 
 .bg-opacity-10 {
@@ -761,12 +782,12 @@ a[class*="btn--"]:hover {
 
 .input--group .form-control:first-child {
     border-inline-start: 0.530587px solid var(--border-clr);
-    border-radius: 5px 0 0 5px !important;
+    border-radius: var(--field-radius) 0 0 var(--field-radius) !important;
 }
 
 .input--group .form-control:last-child {
     border-inline-end: 0.530587px solid var(--border-clr);
-    border-radius: 0 5px 5px 0 !important;
+    border-radius: 0 var(--field-radius) var(--field-radius) 0 !important;
 }
 
 .input--group .btn--primary,
@@ -775,7 +796,7 @@ a[class*="btn--"]:hover {
     text-align: center;
     color: #fff;
     padding: 0 5px !important;
-    border-radius: 0 5px 5px 0 !important;
+    border-radius: 0 var(--field-radius) var(--field-radius) 0 !important;
     border-top: 1px solid var(--border-clr) !important;
     border-bottom: 1px solid var(--border-clr) !important;
     border-inline-end: 1px solid var(--border-clr) !important;
@@ -812,7 +833,7 @@ a[class*="btn--"]:hover {
 .form--control {
     background: rgba(162, 200, 200, 0.1);
     border: 1px solid #a2c8c8;
-    border-radius: 5px;
+    border-radius: var(--field-radius);
     color: #99a7ba !important;
     box-shadow: inset 0 0 5px rgba(255, 255, 255, 0.1098039216);
 }
@@ -3176,21 +3197,24 @@ a.badge-soft-primary:hover {
     overflow-y: auto !important;
 }
 
-::-webkit-scrollbar-track {
+/* Duplicate of the block near the top of this file — same reason for the
+   `:not(.table-responsive)`; see the comment there. Leaving this one bare would
+   re-apply a custom scrollbar to the tables and undo the fix on its own. */
+:not(.table-responsive)::-webkit-scrollbar-track {
     box-shadow: inset 0 0 1px #cfcfcf;
     /*border-radius: 5px;*/
 }
 
-::-webkit-scrollbar {
+:not(.table-responsive)::-webkit-scrollbar {
     width: 3px;
 }
 
-::-webkit-scrollbar-thumb {
+:not(.table-responsive)::-webkit-scrollbar-thumb {
     background: #c1c1c1;
     /*border-radius: 5px;*/
 }
 
-::-webkit-scrollbar-thumb:hover {
+:not(.table-responsive)::-webkit-scrollbar-thumb:hover {
     background: #fc6a57;
 }
 
@@ -4085,10 +4109,14 @@ td .amount--input {
     -o-object-fit: cover;
     object-fit: cover;
     border-radius: 10px;
+    flex-shrink: 0;
 }
 
 .table-rest-info .info {
     max-width: calc(100% - 50px);
+    min-width: 0;
+    overflow: hidden;
+    overflow-wrap: anywhere;
     padding-inline-start: 10px;
     font-size: 0.875rem;
     font-weight: 600;
@@ -5079,14 +5107,6 @@ div.scroll-down {
     background-color: #005555;
 }
 
-.loading-inner {
-    position: fixed;
-    z-index: 9999;
-    inset-inline-start: 40%;
-    top: 37%;
-    width: 100%;
-}
-
 .btn-info {
     background: #0b1226 !important;
     color: white !important;
@@ -5689,16 +5709,132 @@ div.scroll-down {
     max-width: 15rem;
 }
 
-.loader--inner {
+/* ==========================================================================
+   Global app loader
+   Blocking overlay toggled from every page with $('#loading').show() / .hide().
+   jQuery sets display:block on #loading, so the centring lives on the inner
+   element and .loading-inner is kept as an alias for the older markup.
+   ========================================================================== */
+.loader--inner,
+.loading-inner {
     position: fixed;
-    z-index: 9999;
-    inset-inline-start: 0%;
-    inset-block-start: 0%;
+    z-index: 10500;
+    inset-inline-start: 0;
+    inset-block-start: 0;
     width: 100%;
     height: 100%;
     display: flex;
     justify-content: center;
     align-items: center;
+    background: rgba(255, 255, 255, 0.62);
+    -webkit-backdrop-filter: blur(5px) saturate(120%);
+    backdrop-filter: blur(5px) saturate(120%);
+    animation: app-loader-fade-in 200ms ease-out both;
+}
+
+/* Standalone spinner — also usable inline, on its own, at any size:
+   <span class="app-loader__spinner app-loader__spinner--sm"></span> */
+.app-loader__spinner {
+    --spinner-size: 52px;
+    --spinner-thickness: 3px;
+    position: relative;
+    display: inline-block;
+    width: var(--spinner-size);
+    height: var(--spinner-size);
+    filter: drop-shadow(0 6px 16px rgba(var(--primary-clr-rgb, 16, 121, 128), 0.28));
+    animation: app-loader-zoom-in 260ms cubic-bezier(0.34, 1.4, 0.64, 1) both;
+}
+
+.app-loader__spinner--sm {
+    --spinner-size: 34px;
+    --spinner-thickness: 2.5px;
+}
+
+/* Static track the arc travels along */
+.app-loader__spinner::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    border: var(--spinner-thickness) solid rgba(var(--primary-clr-rgb, 16, 121, 128), 0.14);
+}
+
+/* Rotating arc — solid quarter-circle everywhere, tapered gradient where masks exist */
+.app-loader__spinner::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    border: var(--spinner-thickness) solid transparent;
+    border-top-color: var(--primary-clr, #107980);
+    border-right-color: var(--primary-clr, #107980);
+    animation: app-loader-spin 800ms linear infinite;
+}
+
+@supports ((-webkit-mask: radial-gradient(#000, #000)) or (mask: radial-gradient(#000, #000))) {
+    .app-loader__spinner::after {
+        border: 0;
+        background: conic-gradient(from 90deg,
+                rgba(var(--primary-clr-rgb, 16, 121, 128), 0) 0deg,
+                rgba(var(--primary-clr-rgb, 16, 121, 128), 0.16) 55deg,
+                var(--primary-clr, #107980) 250deg,
+                var(--primary-clr, #107980) 360deg);
+        -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - var(--spinner-thickness)), #000 calc(100% - var(--spinner-thickness)));
+        mask: radial-gradient(farthest-side, transparent calc(100% - var(--spinner-thickness)), #000 calc(100% - var(--spinner-thickness)));
+    }
+}
+
+@keyframes app-loader-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes app-loader-fade-in {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes app-loader-zoom-in {
+    from {
+        opacity: 0;
+        transform: scale(0.82);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+    .loader--inner,
+    .loading-inner,
+    .app-loader__spinner {
+        animation: none;
+    }
+
+    .app-loader__spinner::after {
+        animation: app-loader-pulse 1.4s ease-in-out infinite;
+    }
+}
+
+@keyframes app-loader-pulse {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.3;
+    }
 }
 
 .img--max-200 {
@@ -9178,7 +9314,7 @@ body > #printableArea {
 }
 
 [dir="rtl"] .input-group .btn {
-    border-radius: 5px 0 0 5px !important;
+    border-radius: var(--field-radius) 0 0 var(--field-radius) !important;
 }
 
 [dir="rtl"] .input-group .form-control:not(.js-toggle-password):first-child,
@@ -9186,8 +9322,8 @@ body > #printableArea {
 [dir="rtl"] .input-group .input-group-first-child .input-group-text {
     border-top-left-radius: 0 !important;
     border-bottom-left-radius: 0 !important;
-    border-top-right-radius: 5px !important;
-    border-bottom-right-radius: 5px !important;
+    border-top-right-radius: var(--field-radius) !important;
+    border-bottom-right-radius: var(--field-radius) !important;
 }
 
 [dir="rtl"] .input-group .form-control:last-child,
@@ -9195,8 +9331,8 @@ body > #printableArea {
 [dir="rtl"] .input-group .input-group-append:last-child .input-group-text {
     border-top-right-radius: 0 !important;
     border-bottom-right-radius: 0 !important;
-    border-top-left-radius: 5px !important;
-    border-bottom-left-radius: 5px !important;
+    border-top-left-radius: var(--field-radius) !important;
+    border-bottom-left-radius: var(--field-radius) !important;
 }
 
 /* [dir="rtl"]
@@ -9313,10 +9449,10 @@ body > .initial-38-1 {
 
 .js-toggle-password.form-control,
 .auth-wrapper-form .input-group .form-control.form-control-lg {
-    border-top-right-radius: 5px !important;
-    border-top-left-radius: 5px !important;
-    border-bottom-left-radius: 5px !important;
-    border-bottom-right-radius: 5px !important;
+    border-top-right-radius: var(--field-radius) !important;
+    border-top-left-radius: var(--field-radius) !important;
+    border-bottom-left-radius: var(--field-radius) !important;
+    border-bottom-right-radius: var(--field-radius) !important;
 }
 
 .navbar-nav-wrap-content-right .cmn--media .card-title {
@@ -9324,7 +9460,7 @@ body > .initial-38-1 {
 }
 
 [dir="rtl"] .input---group .input-group-prepend {
-    border-radius: 0 5px 5px 0;
+    border-radius: 0 var(--field-radius) var(--field-radius) 0;
 }
 
 .popover-navigation {
@@ -9578,7 +9714,7 @@ body > .initial-38-1 {
     background: #ffffff;
     border: 1px solid rgba(181, 181, 181, 0.5);
     box-shadow: 0px 3px 10px rgba(31, 39, 29, 0.05);
-    border-radius: 5px;
+    border-radius: var(--field-radius);
     text-align: center;
 }
 
@@ -9834,50 +9970,6 @@ body > .initial-38-1 {
 
 .modal {
     background: rgba(0, 0, 0, 0.4);
-}
-
-.__popover {
-    position: absolute;
-    min-width: 276px;
-    inset-inline-end: calc(100% + 22px) !important;
-    inset-inline-start: unset !important;
-    transform: translateX(15px) translateY(-50%);
-    transition: all ease 0.3s;
-    top: 50%;
-    z-index: 9;
-    visibility: hidden;
-    opacity: 0;
-}
-
-.__popover .arrow {
-    position: absolute;
-    top: 50%;
-    inset-inline-start: 100%;
-    width: 22px;
-    transform: translateY(-50%);
-    height: 22px;
-    margin: 0;
-    background: #ffb1b1;
-    -webkit-clip-path: polygon(0 0, 0% 100%, 100% 50%);
-    clip-path: polygon(0 0, 0% 100%, 100% 50%);
-}
-
-.popover-wrapper {
-    position: relative;
-}
-
-.popover-wrapper:hover .__popover,
-.popover-wrapper.active .__popover {
-    visibility: visible;
-    opacity: 1;
-    transform: translateX(0) translateY(-50%);
-}
-
-.popover-wrapper > a:focus ~ .__popover,
-.popover-wrapper button:focus ~ .__popover {
-    visibility: visible;
-    opacity: 1;
-    transform: translateX(0) translateY(-50%);
 }
 
 .table-responsive {
@@ -11451,6 +11543,10 @@ body > .initial-38-1 {
 
 .fs-16 {
     font-size: 16px !important;
+}
+
+.fs-18 {
+    font-size: 18px !important;
 }
 
 .fs-20 {
@@ -13281,6 +13377,7 @@ div.dataTables_wrapper div.dataTables_length select {
 }
 .dropdown-2 .dropdown-menu {
     padding: 8px;
+    width: max-content;
 }
 .dropdown-2 .dropdown-menu .dropdown-item {
     display: flex;
@@ -13882,7 +13979,7 @@ video#VisaChipCardVideo {
     padding-bottom: 80px;
 }
 .input-group .btn--primary {
-    border-radius: 0 5px 5px 0 !important;
+    border-radius: 0 var(--field-radius) var(--field-radius) 0 !important;
 }
 .input-token-group .form-control {
     padding-right: 40px;
@@ -14023,11 +14120,23 @@ video#VisaChipCardVideo {
     .select2-selection--multiple
     ul.select2-selection__rendered {
     display: flex;
-    height: 38px;
+    flex-wrap: wrap;
+    min-height: 38px;
     align-items: center;
     padding: 0;
     margin: 0;
     gap: 5px;
+    /* select2's own base rule (.select2-container .select2-selection--multiple
+       .select2-selection__rendered in select2.min.css) sets overflow:hidden,
+       text-overflow:ellipsis and white-space:nowrap for its default single-line-ellipsis
+       behavior. This widget replaces that with a custom flex/chip layout driven by JS
+       (select2DynamicDisplay() in admin.js, which measures and fits chips itself, showing
+       a "+N" badge for the rest) — the inherited overflow/ellipsis/nowrap never got
+       cleared when this rule switched `display` to flex, so the container still clipped
+       part of the first chip's text instead of showing it in full. */
+    overflow: visible;
+    text-overflow: clip;
+    white-space: normal;
 }
 .multiple-select2
     + .select2-container--default
@@ -14059,6 +14168,29 @@ video#VisaChipCardVideo {
 
 .pickup-zone-tag .select2-selection__rendered span {
     margin-left: 3px;
+}
+
+/* The chip's own flex row -- .name inherits display:flex from the base .name rule above, but a
+   flex item's default min-width is auto, not 0, which means the text span refused to shrink
+   below its full unbroken content width even when the chip had no room left for it. A long
+   customer name (with its phone number appended) then overflowed the chip's bounds and the
+   close icon, positioned right after it in the same flex row, rendered wherever that left it --
+   on top of the tail of the name instead of clear of it. min-width: 0 lets the span actually
+   shrink to fit, text-overflow turns the cut into an ellipsis instead of a silent clip, and
+   flex-shrink: 0 on the icon keeps it from ever losing its own space to make room. */
+.pickup-zone-tag .select2-selection__rendered li.name {
+    max-width: 100%;
+}
+
+.pickup-zone-tag .select2-selection__rendered li.name > span:first-child {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.pickup-zone-tag .select2-selection__rendered li.name .close-icon {
+    flex-shrink: 0;
 }
 
 .select2-container .more {
@@ -15159,6 +15291,9 @@ ul.address-info .label {
 
 .overflow-x-auto {
     overflow-x: auto !important;
+}
+.overflow-y-auto {
+    overflow-y: auto !important;
 }
 
 @media (max-width: 575px) {
@@ -16585,6 +16720,16 @@ img{
 
 .upload-file__video-not-playable{
     max-inline-size: 320px;
+    inline-size: 100%;
+    block-size: 140px;
+    overflow: hidden;
+}
+
+.upload-file__video-not-playable video{
+    inline-size: 100%;
+    block-size: 100%;
+    object-fit: contain;
+    background-color: #000;
 }
 
 .h-100vh-150px{
@@ -16679,6 +16824,9 @@ img{
 }
 .ratio-5-1 {
     aspect-ratio: 5 / 1 !important;
+}
+.ratio-10-4 {
+    aspect-ratio: 10 / 1 !important;
 }
 .ratio-7-1 {
     aspect-ratio: 7 / 1 !important;
@@ -18121,6 +18269,9 @@ a.order--card:hover {
     height: 15px !important;
 }
 
+.border-dark-light{
+    border-color: rgba(var(--text-title-rgb), 0.7) !important;
+}
 .website-builder-btn{
     display:inline-flex;
     align-items:center;
@@ -18178,3 +18329,55 @@ a.order--card:hover {
     height: calc(1.5em + 1rem + 2px) !important;
     margin-top: 0.25rem;
 }
+
+/* The tinted panel the promotion screens group read-only facts into - an offer's
+   validity and usage limits, a happy hour's discount and schedule, an item's
+   add-ons. It sits on white inside drawers and modals, so it is the page
+   background borrowed as a surface rather than a colour of its own. */
+.bg-global-gray {
+    background-color: var(--bs-body-bg);
+}
+
+/* Inline note bars on the promotion screens.
+
+   Bootstrap's .alert-soft-* pair paints the body text in the accent colour on a
+   10% tint of that same colour - #f5ca99 on cream is about 1.5:1, which is not
+   text anyone can read. .alert--note keeps the tinted background but sets the
+   body dark and leaves only the icon carrying the tone, so the cue survives and
+   the sentence becomes legible. */
+.alert--note {
+    color: var(--title-clr);
+}
+
+.alert--note > i {
+    flex-shrink: 0;
+    font-size: 18px;
+    line-height: 1;
+}
+
+/* Painted from the theme's own warning and info tokens rather than the washed-out
+   pair bootstrap ships, so a note bar matches the amber and blue used elsewhere. */
+.alert-soft-warning.alert--note {
+    background-color: rgba(240, 175, 52, 0.08);
+}
+
+.alert-soft-warning.alert--note > i {
+    color: var(--cus-warning-light);
+}
+
+.alert-soft-info.alert--note {
+    background-color: rgba(92, 143, 252, 0.08);
+}
+
+.alert-soft-info.alert--note > i {
+    color: var(--bs-info);
+}
+
+.alert-soft-danger.alert--note {
+    background-color: rgba(255, 64, 64, 0.07);
+}
+
+.alert-soft-danger.alert--note > i {
+    color: var(--bs-danger);
+}
+

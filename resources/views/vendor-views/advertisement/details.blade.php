@@ -1,6 +1,6 @@
 @extends('layouts.vendor.app')
 
-@section('title','Advertisement Details')
+@section('title',translate('Advertisement details'))
 
 @section('advertisement')
 active
@@ -19,55 +19,35 @@ active
 @section('content')
 <div class="content container-fluid">
 
-    <div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
+    <div class="page-header d-flex flex-wrap justify-content-between align-items-center">
         <div>
-            <h1 class="page-header-title mb-1 d-flex align-items-center gap-2">
-                {{-- <img src="{{asset('public/assets/admin/img/advertisement.png')}}" alt=""> --}}
-                {{ translate('Advertisement ID') }} #{{ $advertisement->id }}
+            <h1 class="page-header-title">
+                <span class="page-header-icon"><img src="{{asset('public/assets/admin/img/outline/advertisement.svg')}}" alt=""></span>
+                <span>{{ translate('Advertisement ID') }} #{{ $advertisement->id }}</span>
             </h1>
+            <p class="page-header-desc">{{ translate('How this advertisement is doing, what it has cost and where it currently stands.') }}</p>
             <p class="d-flex gap-2 align-items-center mb-0">
-                <span>{{ translate('Ad Placed') }}</span>
+                <span>{{ translate('Advertisement placed') }}</span>
                 <span class="mx-1">:</span>
                 <span class="font-medium text-title">{{\App\CentralLogics\Helpers::time_date_format($advertisement->created_at)  }}</span>
             </p>
         </div>
-        {{-- <div class="d-flex gap-1">
-
-            @if ($previousId)
-
-            <a href="{{ route('vendor.advertisement.show', [$previousId]) }}"  data-toggle="tooltip"
-                data-placement="top" title="{{ translate('Previous_advertisement') }}" class="arrow-icon">
-                <i class="tio-chevron-left"></i>
-                </a>
-            @endif
-
-
-
-
-                @if ($nextId)
-                <a href="{{ route('vendor.advertisement.show', [$nextId] ) }}"  data-toggle="tooltip"
-                data-placement="top" title="{{ translate('next_advertisement') }}" class="arrow-icon">
-                    <i class="tio-chevron-right"></i>
-                </a>
-
-                @endif
-        </div> --}}
         <a href="#" class="btn btn--primary new-dynamic-submit-model"
 
             id="data-edit-{{ $advertisement->id }}"
             data-id="data-edit-{{ $advertisement->id }}"
 
-            data-title="{{translate('Do You Want to Edit?')}}"
-            data-text="<p>{{translate('Your ad is running. If you edit this ad, it will be listed for pending and needs to be approved by the Admin. After the approval, it will be running again.')}}</p>"
+            data-title="{{translate('Do you want to edit?')}}"
+            data-text="<p>{{translate('Editing a running ad sends it back for admin approval before it resumes.')}}</p>"
             data-image="{{asset('public/assets/admin/img/modal/package-status-disable.png')}}"
             data-type="resume"
             data-btn_class = "btn-primary"
-            data-success_btn_text = "{{ translate('Yes, Edit') }}"
+            data-success_btn_text = "{{ translate('Yes, edit') }}"
 
 
             >
             <i class="tio-edit"></i>
-            <span>{{ translate('Edit Ads') }}</span>
+            <span>{{ translate('Edit advertisement') }}</span>
         </a>
 
 
@@ -81,7 +61,7 @@ active
                 <div class="card-body p-3 p-sm-4 fs-12">
                     <div class="row g-4">
                         <div class="col-md-6">
-                            <h4>{{ translate('Ad Details') }}</h4>
+                            <h4>{{ translate('Advertisement details') }}</h4>
 
                         </div>
                         <div class="col-md-6">
@@ -97,7 +77,7 @@ active
                         @if ( ($advertisement->status == 'denied' && $advertisement->cancellation_note  != null) || ($advertisement->status == 'paused' && $advertisement->pause_note  != null) )
                             <div class="border rounded d-flex flex-wrap p-2 mb-4 gap-1 bg--3">
                                 <div class="text-danger font-bold">
-                                    {{ $advertisement->status == 'denied' ? translate('#_Cancellation Note') : translate('#_Pause Note')  }} :
+                                    {{ $advertisement->status == 'denied' ? '# ' . translate('Cancellation note') : '# ' . translate('Pause note')  }} :
                                 </div>
                                 <div class="flex-grow">{{  $advertisement->status == 'denied' ? $advertisement->cancellation_note : $advertisement->pause_note }}</div>
                             </div>
@@ -119,13 +99,13 @@ active
                                 <li class="nav-item">
                                     <a class="nav-link text--black lang_link active"
                                     href="#"
-                                    id="default-link">{{translate('messages.default')}}</a>
+                                    id="default-link">{{translate('Default')}}</a>
                                 </li>
                                 @foreach ($language as $lang)
                                     <li class="nav-item">
                                         <a class="nav-link text--black lang_link"
                                             href="#"
-                                            id="{{ $lang }}-link">{{ \App\CentralLogics\Helpers::get_language_name($lang) . '(' . strtoupper($lang) . ')' }}</a>
+                                            id="{{ $lang }}-link">{{ $language_labels[$lang] }}</a>
                                         </li>
                                 @endforeach
                             </ul>
@@ -188,13 +168,13 @@ active
                             @else
                             <div class="d-flex gap-3 flex-wrap flex-sm-nowrap">
                                 <div class="w-100 add-profile-image">
-                                    <h4 class="mb-2">{{ translate('Profile Image') }}</h4>
+                                    <h4 class="mb-2">{{ translate('Profile image') }}</h4>
                                     <div class="cursor-pointer profile_image_view img-wrap max-w-130px">
                                         <img src="{{ $advertisement?->profile_image_full_url }}" class="w-100 rounded object-cover aspect-1-1">
                                     </div>
                                 </div>
                                 <div class="w-100 add-profile-banner">
-                                    <h4 class="mb-2">{{ translate('Cover Image') }}</h4>
+                                    <h4 class="mb-2">{{ translate('Cover image') }}</h4>
                                     <div class="cursor-pointer cover_image_view img-wrap max-w-260px">
                                         <img src="{{ $advertisement?->cover_image_full_url }}" class="w-100 rounded object-cover aspect-2-1">
                                     </div>
@@ -211,15 +191,15 @@ active
             <div class="h-100 d-flex flex-column gap-3">
                 <div class="card flex-grow">
                     <div class="card-body">
-                        <h3 class=" mb-4">{{ translate('Ad Status') }}</h3>
+                        <h3 class=" mb-4">{{ translate('Advertisement status') }}</h3>
 <hr>
                         <div class="d-flex flex-column gap-2 gap-lg-3 ">
                             <p class="d-flex gap-2 justify-content-between align-items-center mb-0 ">
-                                <span>{{ translate('Request_Verify_Status') }}: </span>
+                                <span>{{ translate('Request verify status') }}: </span>
                                 @if ($advertisement->status == 'approved' && $advertisement->active == 1 )
-                                <span class="px-2  badge badge-soft-primary rounded-pill">{{ translate('messages.running') }}</span>
+                                <span class="px-2  badge badge-soft-primary rounded-pill">{{ translate('Running') }}</span>
                                 @elseif ($advertisement->status == 'approved' && $advertisement->active == 2 )
-                                <span class="px-2  badge badge-soft-success rounded-pill">{{ translate('messages.approved') }}</span>
+                                <span class="px-2  badge badge-soft-success rounded-pill">{{ translate('Approved') }}</span>
                                 @elseif ($advertisement->status == 'paused' && $advertisement->active == 1 )
                                 <span class="px-2  badge badge-soft-warning rounded-pill">{{ translate('messages.paused') }}</span>
                                 @elseif (in_array($advertisement->status ,['denied','expired'] ))
@@ -235,17 +215,17 @@ active
 
 
                             <p class="d-flex justify-content-between gap-2 align-items-center mb-0">
-                                <span>{{ translate('Payment Status') }}
+                                <span>{{ translate('Payment status') }}
                                 <span class="mx-1">:</span></span>
                                 @if ($advertisement->is_paid == 1)
-                                <span class="font-semibold text-success">{{ translate('Paid') }}</span>
+                                <span class="font-semibold text-success">{{ translate('paid') }}</span>
                                 @else
-                                <span class="font-semibold text-danger">{{ translate('Unpaid') }}</span>
+                                <span class="font-semibold text-danger">{{ translate('unpaid') }}</span>
 
                                 @endif
                             </p>
                             <p class="d-flex gap-2 justify-content-between align-items-center mb-0">
-                                <span>{{ translate('Ad Type') }}
+                                <span>{{ translate('Advertisement type') }}
                                 <span class="mx-1">:</span> </span>
                                 <span class="font-medium text-title">{{ translate($advertisement->add_type) }}</span>
                             </p>
@@ -267,7 +247,7 @@ active
         <div class="modal-dialog modal-dialog-centered modal-lg">
             <div class="modal-content">
                 <div class="modal-header px-4 pt-4">
-                    <h4 class="modal-title">{{ translate('Video Preview') }}</h4>
+                    <h4 class="modal-title">{{ translate('Video preview') }}</h4>
                     <button type="button" data-dismiss="modal" class="btn p-0">
                         <i class="tio-clear fs-24"></i>
                     </button>
@@ -288,11 +268,11 @@ active
             <div class="modal-header">
                 <h4 class="modal-title"
                     id="order_proof">
-                    {{ translate('Profile Image') }}</h4>
+                    {{ translate('Profile image') }}</h4>
                 <button type="button" class="close"
                     data-dismiss="modal"><span
                         aria-hidden="true">&times;</span><span
-                        class="sr-only">{{ translate('messages.cancel') }}</span></button>
+                        class="sr-only">{{ translate('messages.Cancel') }}</span></button>
             </div>
             <div class="modal-body">
                 <img src="{{ $advertisement?->profile_image_full_url }}"
@@ -302,7 +282,7 @@ active
             <div class="modal-footer">
                 <a class="btn btn-primary" data-dismiss="modal"
                    href="#">
-                    {{ translate('messages.Close') }}
+                    <i class="tio-clear"></i> {{ translate('messages.Close') }}
                 </a>
             </div>
         </div>
@@ -316,11 +296,11 @@ active
             <div class="modal-header">
                 <h4 class="modal-title"
                     id="order_proof">
-                    {{ translate('Cover Image') }}</h4>
+                    {{ translate('Cover image') }}</h4>
                 <button type="button" class="close"
                     data-dismiss="modal"><span
                         aria-hidden="true">&times;</span><span
-                        class="sr-only">{{ translate('messages.cancel') }}</span></button>
+                        class="sr-only">{{ translate('messages.Cancel') }}</span></button>
             </div>
             <div class="modal-body">
                 <img src="{{ $advertisement?->cover_image_full_url }}"
@@ -330,7 +310,7 @@ active
             <div class="modal-footer">
                 <a class="btn btn-primary" data-dismiss="modal"
                    href="#">
-                    {{ translate('messages.Close') }}
+                    <i class="tio-clear"></i> {{ translate('messages.Close') }}
                 </a>
             </div>
         </div>

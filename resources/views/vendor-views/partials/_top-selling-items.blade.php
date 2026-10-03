@@ -1,14 +1,11 @@
-<!-- Header -->
 <div class="card-header">
     <h5 class="card-header-title text-capitalize">
-        <i class="tio-align-to-top"></i> {{translate('messages.top_selling_items')}}
+        <i class="tio-align-to-top"></i> {{translate('messages.Top selling items')}}
     </h5>
-    <a href="{{ route('vendor.item.list') }}" class="fz-12px font-medium text-006AE5">{{ translate('view_all') }}</a>
+    <a href="{{ route('vendor.item.list') }}" class="fz-12px font-medium text-006AE5">{{ translate('View all') }}</a>
 
 </div>
-<!-- End Header -->
 
-<!-- Body -->
 <div class="card-body">
     @if (count($top_sell) > 0)
     <div class="row g-2">
@@ -32,11 +29,10 @@
     <div class="empty--data">
         <img src="{{ asset('/public/assets/admin/svg/illustrations/empty-state.svg') }}" alt="public">
         <h5>
-            {{ translate('no_data_found') }}
+            {{ translate('No data found') }}
         </h5>
     </div>
 
     @endif
 
 </div>
-<!-- End Body -->

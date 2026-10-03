@@ -1,19 +1,18 @@
 @extends('layouts.admin.app')
 
-@section('title',translate('messages.SEO Setup'))
+@section('title',translate('SEO setup'))
 
 @section('content')
 <div class="content container-fluid">
-    <!-- Page Header -->
     <div class="page-header">
         <h1 class="page-header-title text-break">
             <span class="page-header-icon">
-                <img src="{{asset('public/assets/admin/img/seo-setting.png')}}" class="w--26" alt="">
+                <img src="{{asset('public/assets/admin/img/outline/seo-setting.svg')}}" class="w--26" alt="">
             </span>
-            <span>{{ translate('Manage Page SEO') }}</span>
-        </h1> 
+            <span>{{ translate('Manage page SEO') }}</span>
+        </h1>
+        <p class="page-header-desc">{{ translate('The title, description and preview image search engines show for this page.') }}</p> 
     </div>
-    <!-- End Page Header -->
 
     <form action="{{ route('admin.business-settings.seo-settings.pageMetaDataUpdate') }}" method="POST"
                                       enctype="multipart/form-data">

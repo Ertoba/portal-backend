@@ -7,7 +7,7 @@
         @elseif($at->deliveryman)
         <a href="{{route('admin.users.delivery-man.preview',[$at->deliveryman->id])}}">{{ $at->deliveryman->f_name }} {{ $at->deliveryman->l_name }}</a>
         @else
-            {{translate('messages.not_found')}}
+            {{translate('No data found')}}
         @endif
     </td>
     <td><label class="text-uppercase">{{$at['from_type']}}</label></td>
@@ -21,7 +21,7 @@
     <td>
         <div class="btn--container justify-content-center">
             <a href="{{route('admin.transactions.account-transaction.view',[$at['id']])}}"
-            class="btn action-btn btn--warning btn-outline-warning"><i class="tio-visible"></i>
+            class="btn action-btn action-btn--view"><i class="tio-visible-outlined"></i>
             </a>
         </div>
     </td>

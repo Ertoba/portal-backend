@@ -1,17 +1,17 @@
 
 <div class="row">
-    <div class="col-lg-12 text-center "><h1 > {{translate('subscription_package_list')}}
+    <div class="col-lg-12 text-center "><h1 > {{translate('Subscription package list')}}
     </h1></div>
     <div class="col-lg-12">
 
     <table>
         <thead>
             <tr>
-                <th>{{ translate('Filter_Criteria') }}</th>
+                <th>{{ translate('Filter criteria') }}</th>
                 <th></th>
                 <th>
 
-                    {{ translate('Search_Bar_Content')  }}: {{ $data['search'] ?? translate('N/A') }}
+                    {{ translate('Search bar content')  }}: {{ $data['search'] ?? translate('N/A') }}
 
                 </th>
                 <th> </th>
@@ -19,11 +19,11 @@
 
 
         <tr>
-            <th>{{ translate('sl') }}</th>
-            <th>{{ translate('Package_Name') }}</th>
-            <th>{{ translate('Price') }}</th>
+            <th>{{ translate('SL') }}</th>
+            <th>{{ translate('Package name') }}</th>
+            <th>{{ translate('price') }}</th>
             <th>{{ translate('Duration') }}</th>
-            <th>{{ translate('Current_Subscriber') }}</th>
+            <th>{{ translate('Current subscriber') }}</th>
             <th>{{ translate('Status') }}</th>
 
         </thead>

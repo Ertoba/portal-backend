@@ -9,7 +9,7 @@ use App\Http\Controllers\BaseController;
 use App\Http\Requests\Admin\CommonConditionAddRequest;
 use App\Models\CommonCondition;
 use App\Models\Item;
-use App\Services\CommonConditionService;
+use App\Services\Item\CommonConditionService;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -46,9 +46,9 @@ class CommonConditionController extends BaseController
 
     public function add(CommonConditionAddRequest $request): RedirectResponse
     {
-        $condition = $this->conditionRepo->add(data: $this->conditionService->getAddData(request: $request));
+        $condition = $this->conditionRepo->add(data: $this->conditionService->getAddData($request->all()));
         $this->translationRepo->addByModel(request: $request, model: $condition, modelPath: 'App\Models\CommonCondition', attribute: 'name');
-        Toastr::success(translate('messages.condition_added_successfully'));
+        Toastr::success(translate('Added successfully'));
         return back();
     }
 
@@ -63,23 +63,23 @@ class CommonConditionController extends BaseController
     public function update(CommonConditionAddRequest $request, $id): RedirectResponse
     {
         $condition = $this->conditionRepo->getFirstWithoutGlobalScopeWhere(params: ['id' => $id]);
-        $condition = $this->conditionRepo->update(id: $id ,data: $this->conditionService->getUpdateData(request: $request,condition: $condition));
+        $condition = $this->conditionRepo->update(id: $id ,data: $this->conditionService->getUpdateData($request->all(),condition: $condition));
         $this->translationRepo->updateByModel(request: $request, model: $condition, modelPath: 'App\Models\CommonCondition', attribute: 'name');
-        Toastr::success(translate('messages.condition_updated_successfully'));
+        Toastr::success(translate('Updated successfully'));
         return back();
     }
 
     public function updateStatus(Request $request): RedirectResponse
     {
         $this->conditionRepo->update(id: $request['id'] ,data: ['status'=>$request['status']]);
-        Toastr::success(translate('messages.condition_status_updated'));
+        Toastr::success(translate('messages.Condition status updated'));
         return back();
     }
 
     public function delete(Request $request): RedirectResponse
     {
         $this->conditionRepo->delete(id: $request['id']);
-        Toastr::success(translate('messages.condition_deleted_successfully'));
+        Toastr::success(translate('Deleted successfully'));
         return back();
     }
 
@@ -94,10 +94,9 @@ class CommonConditionController extends BaseController
     {
        $condition = CommonCondition::where('id', $request->id)->first();
 
-        $items = Item::wherehas('pharmacy_item_details', function ($query) use ($condition) {
+        $items = Item::withStorage()->wherehas('pharmacy_item_details', function ($query) use ($condition) {
             $query->where('common_condition_id', $condition->id);
         })->select(['id','name','price','image'])
-
         ->get();
 
 

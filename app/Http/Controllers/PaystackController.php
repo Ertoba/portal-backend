@@ -8,7 +8,7 @@ use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Validator;
 use App\Models\PaymentRequest;
-use App\Traits\Processor;
+use App\Traits\System\ProcessorTrait;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Routing\Redirector;
@@ -17,14 +17,14 @@ use Illuminate\Foundation\Application;
 
 class PaystackController extends Controller
 {
-    use Processor;
+    use ProcessorTrait;
 
     private PaymentRequest $payment;
     private $user;
 
     public function __construct(PaymentRequest $payment, User $user)
     {
-        $config = $this->payment_config('paystack', 'payment_config');
+        $config = $this->paymentConfig('paystack', 'payment_config');
         $values = false;
         if (!is_null($config) && $config->mode == 'live') {
             $values = json_decode($config->live_values);
@@ -55,12 +55,12 @@ class PaystackController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return response()->json($this->response_formatter($this->getGatewayResponse(type: 'GATEWAYS_DEFAULT_400'), null, $this->error_processor($validator)), 400);
+            return response()->json($this->responseFormatter($this->getGatewayResponse(type: 'GATEWAYS_DEFAULT_400'), null, $this->errorProcessor($validator)), 400);
         }
 
         $data = $this->payment::where(['id' => $request['payment_id']])->where(['is_paid' => 0])->first();
         if (!isset($data)) {
-            return response()->json($this->response_formatter($this->getGatewayResponse(type: 'GATEWAYS_DEFAULT_204')), 200);
+            return response()->json($this->responseFormatter($this->getGatewayResponse(type: 'GATEWAYS_DEFAULT_204')), 200);
         }
 
         $payer = json_decode($data['payer_information'], true);
@@ -81,7 +81,6 @@ class PaystackController extends Controller
         $fields_string = http_build_query($fields);
         $ch = curl_init();
 
-        //set the url, number of POST vars, POST data
         curl_setopt($ch, CURLOPT_URL, $url);
         curl_setopt($ch, CURLOPT_POST, true);
         curl_setopt($ch, CURLOPT_POSTFIELDS, $fields_string);
@@ -97,7 +96,7 @@ class PaystackController extends Controller
             return redirect($response['data']['authorization_url']);
         }
 
-        return response()->json($this->response_formatter(GATEWAYS_DEFAULT_204), 200);
+        return response()->json($this->responseFormatter(GATEWAYS_DEFAULT_204), 200);
     }
 
     public function handleGatewayCallback(Request $request): Redirector|RedirectResponse
@@ -114,14 +113,14 @@ class PaystackController extends Controller
             if (isset($data) && function_exists($data->success_hook)) {
                 call_user_func($data->success_hook, $data);
             }
-            return $this->payment_response($data, 'success');
+            return $this->paymentResponse($data, 'success');
         }
 
         $payment_data = $this->payment::where(['id' => $paymentDetails['data']['metadata']['payment_id']])->first();
         if (isset($payment_data) && function_exists($payment_data->failure_hook)) {
             call_user_func($payment_data->failure_hook, $payment_data);
         }
-        return $this->payment_response($payment_data, 'fail');
+        return $this->paymentResponse($payment_data, 'fail');
     }
 
     public function cancel(Request $request): Application|JsonResponse|Redirector|RedirectResponse
@@ -130,7 +129,7 @@ class PaystackController extends Controller
         if (isset($payment_data) && function_exists($payment_data->failure_hook)) {
             call_user_func($payment_data->failure_hook, $payment_data);
         }
-        return $this->payment_response($payment_data, 'fail');
+        return $this->paymentResponse($payment_data, 'fail');
     }
 
     protected function getPayStackPaymentData(object|array $request): array

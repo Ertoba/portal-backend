@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Admin;
 
+use App\Rules\ImageFile;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Carbon;
@@ -19,9 +20,6 @@ use Illuminate\Support\Facades\Config;
  */
 class BrandAddRequest extends FormRequest
 {
-    /**
-     * Determine if the user is authorized to make this request.
-     */
     public function authorize(): bool
     {
         return true;
@@ -39,15 +37,15 @@ class BrandAddRequest extends FormRequest
                 $query->where('module_id', Config::get('module.current_module_id'))->orWhereNull('module_id');
             })],
             'name.0' => 'required',
-            'image' => 'required',
+            'image' => ImageFile::rules('required'),
         ];
     }
 
     public function messages(): array
     {
         return [
-            'name.required' => translate('messages.Name is required!'),
-            'name.0.required'=>translate('default_data_is_required'),
+            'name.required' => translate('messages.Name is required'),
+            'name.0.required'=>translate('Default data is required'),
         ];
     }
 }

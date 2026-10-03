@@ -11,7 +11,7 @@ return array(
     | in dompdf_config.inc.php. You can also override the entire config file.
     |
     */
-    'show_warnings' => false,   // Throw an Exception on warnings from dompdf
+    'show_warnings' => false,
     'orientation' => 'portrait',
     'defines' => array(
         /**
@@ -38,7 +38,7 @@ return array(
          * Times-Roman, Times-Bold, Times-BoldItalic, Times-Italic,
          * Symbol, ZapfDingbats.
          */
-        "font_dir" => storage_path('fonts/'), // advised by dompdf (https://github.com/dompdf/dompdf/pull/782)
+        "font_dir" => storage_path('fonts/'),
 
         /**
          * The location of the DOMPDF font cache directory
@@ -120,7 +120,6 @@ return array(
          * If pdflib present in web server and auto or selected explicitely above,
          * a real license code must exist!
          */
-        //"DOMPDF_PDFLIB_LICENSE" => "your license key here",
 
         /**
          * html target media view which should be rendered into pdf.

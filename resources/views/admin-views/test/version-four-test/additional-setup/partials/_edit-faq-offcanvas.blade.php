@@ -40,8 +40,8 @@
                             <div class="lang_form" id="default-form">
                                 <div class="form-group mb-3">
                                     <label class="input-label fw-400" for="default_title">{{ translate('messages.Question') }}
-                                            ({{ translate('messages.Default') }})<span class="form-label-secondary" data-toggle="tooltip" data-placement="right" 
-                                            data-title="{{ translate('Add question within 150 characters') }}">
+                                            ({{ translate('Default') }})<span class="form-label-secondary" data-toggle="tooltip" data-placement="right" 
+                                            data-title="{{ translate('Character limit') }}: 150">
                                                 <i class="tio-info text-muted fs-16"></i>
                                             </span>
                                     </label>
@@ -53,8 +53,8 @@
                                     </div>
                                 </div>                                    
                                 <div class="form-group mb-0">
-                                    <label class="input-label fw-400" for="subtitle">{{ translate('messages.answer') }} ({{ translate('messages.default') }})<span class="form-label-secondary" data-toggle="tooltip" data-placement="right" 
-                                    data-title="{{ translate('Add answer within 500 characters') }}">
+                                    <label class="input-label fw-400" for="subtitle">{{ translate('messages.Answer') }} ({{ translate('Default') }})<span class="form-label-secondary" data-toggle="tooltip" data-placement="right" 
+                                    data-title="{{ translate('Character limit') }}: 500">
                                                 <i class="tio-info text-muted fs-16"></i>
                                             </span>
                                     </label>
@@ -69,9 +69,9 @@
                 </div>
             </div>
             <div  class="align-items-center bg-white bottom-0 d-flex gap-3 justify-content-center offcanvas-footer p-3 position-sticky">
-                <a href="{{ route('admin.customer.list') }}"
-                    class="btn w-100 btn--reset offcanvas-close">{{ translate('Cancel') }}</a>
-                <button type="submit" id="apply_filter" class="btn w-100 btn--primary">{{ translate('Update') }}</button>
+                <a href="{{ route('admin.users.customer.list') }}"
+                    class="btn w-100 btn--reset offcanvas-close"><i class="tio-clear-circle-outlined"></i> {{ translate('Cancel') }}</a>
+                <button type="submit" id="apply_filter" class="btn w-100 btn--primary"><i class="tio-save"></i> {{ translate('Update') }}</button>
             </form>
             </div>
     </div>

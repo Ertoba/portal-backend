@@ -1,6 +1,6 @@
 @extends('layouts.admin.app')
 
-@section('title',translate('messages.new_page'))
+@section('title',translate('messages.New page'))
 
 @push('css_or_js')
 <meta name="csrf-token" content="{{ csrf_token() }}">
@@ -13,14 +13,15 @@
         <div class="d-flex flex-wrap justify-content-between">
             <h1 class="page-header-title">
                 <span class="page-header-icon">
-                    <img src="{{asset('public/assets/admin/img/landing.png')}}" class="w--20" alt="">
+                    <img src="{{asset('public/assets/admin/img/outline/landing.svg')}}" class="w--26" alt="">
                 </span>
                 <span>
-                    {{ translate('messages.react_landing_page') }}
+                    {{ translate('React landing page') }}
                 </span>
             </h1>
+            <p class="page-header-desc">{{ translate('The banners that run across the top of the react landing page.') }}</p>
             <div class="text--primary-2 py-1 d-flex flex-wrap align-items-center" type="button" data-toggle="modal" data-target="#how-it-works">
-                <strong class="mr-2">{{translate('See_how_it_works!')}}</strong>
+                <strong class="mr-2">{{translate('See how it works')}}</strong>
                 <div>
                     <i class="tio-info-outined"></i>
                 </div>
@@ -37,7 +38,7 @@
             <div class="">
                 <h3 class="mb-1">{{ translate('Banner Section') }}</h3>
                 <p class="mb-0 gray-dark fs-12">
-                    {{ translate('See how your Banner Section will look to customers.') }}
+                    {{ translate('See how this section will look to customers.') }}
                 </p>
             </div>
             <div class="max-w-300px ml-sm-auto">
@@ -93,21 +94,20 @@
                                 </div>
                             </div>
                             <p class="fs-10 text-center mb-0 mt-lg-4 mt-3">
-                                {{ translate('JPG, JPEG, PNG, Gif Image size : Max 5 MB')}} <span class="font-medium text-title">{{ translate('(8:1)')}}</span>
+                                {{ 'JPG, JPEG, PNG, GIF' . ' image, max ' . 5 . ' MB'}} <span class="font-medium text-title">(8:1)</span>
                             </p>
                         </div>
                     </div>
                 </div>
             </div>
             <div class="btn--container justify-content-end mt-20">
-                <button type="reset" class="btn btn--reset mb-2">{{translate('Reset')}}</button>
-                <button type="submit"   class="btn btn--primary mb-2">{{translate('Save')}}</button>
+                <button type="reset" class="btn btn--reset mb-2"><i class="tio-refresh"></i> {{translate('Reset')}}</button>
+                <button type="submit"   class="btn btn--primary mb-2"><i class="tio-save"></i> {{translate('Save')}}</button>
             </div>
         </div>
     </div>  
 </div>
 
-<!-- Section View Offcanvas here -->
 <div id="banner_section" class="custom-offcanvas offcanvas-750 d-flex flex-column justify-content-between">
     <form action="{{ route('taxvat.store') }}" method="post">
         <div>
@@ -136,7 +136,6 @@
     </form>
 </div>
 <div id="offcanvasOverlay" class="offcanvas-overlay"></div>
-<!-- Section View Offcanvas end -->
 @endsection
 
 @push('script_2')

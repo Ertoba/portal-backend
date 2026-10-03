@@ -28,11 +28,6 @@ return [
 
     'allow_private_folder'     => false,
 
-    // Flexible way to customize client folders accessibility
-    // If you want to customize client folders, publish tag="lfm_handler"
-    // Then you can rewrite userField function in App\Handler\ConfigHandler class
-    // And set 'user_field' to App\Handler\ConfigHandler::class
-    // Ex: The private folder of user will be named as the user id.
     'private_folder_name'      => UniSharp\LaravelFilemanager\Handlers\ConfigHandler::class,
 
     'allow_shared_folder'      => true,
@@ -49,7 +44,7 @@ return [
         'file'  => [
             'folder_name'  => 'files',
             'startup_view' => 'list',
-            'max_size'     => 50000, // size in KB
+            'max_size'     => 50000,
             'valid_mime'   => [
                 'image/jpeg',
                 'image/pjpeg',
@@ -63,7 +58,7 @@ return [
         'image' => [
             'folder_name'  => 'photos',
             'startup_view' => 'grid',
-            'max_size'     => 50000, // size in KB
+            'max_size'     => 50000,
             'valid_mime'   => [
                 'image/jpeg',
                 'image/pjpeg',
@@ -104,9 +99,6 @@ return [
 
     'should_validate_mime'     => false,
 
-    // behavior on files with identical name
-    // setting it to true cause old file replace with new one
-    // setting it to false show `error-file-exist` error and stop upload
     'over_write_on_duplicate'  => false,
 
     /*
@@ -115,21 +107,19 @@ return [
     |--------------------------------------------------------------------------
      */
 
-    // If true, image thumbnails would be created during upload
     'should_create_thumbnails' => true,
 
     'thumb_folder_name'        => 'thumbs',
 
-    // Create thumbnails automatically only for listed types.
     'raster_mimetypes'         => [
         'image/jpeg',
         'image/pjpeg',
         'image/png',
     ],
 
-    'thumb_img_width'          => 200, // px
+    'thumb_img_width'          => 200,
 
-    'thumb_img_height'         => 200, // px
+    'thumb_img_height'         => 200,
 
     /*
     |--------------------------------------------------------------------------

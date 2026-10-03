@@ -1,17 +1,17 @@
 <div class="row">
-    <div class="col-lg-12 text-center "><h1 >{{ translate($data['status']) }} {{ translate('messages.order_list') }}</h1></div>
+    <div class="col-lg-12 text-center "><h1 >{{ translate($data['status']) }} {{ translate('Order list') }}</h1></div>
     <div class="col-lg-12">
     <table>
         <thead>
             <tr>
-                <th>{{ translate('filter_criteria') }} -</th>
+                <th>{{ translate('Filter criteria') }} -</th>
                 <th></th>
                 <th></th>
                 <th>
-                    {{ translate('order_status' )}} : {{ translate($data['status']) }}
+                    {{ translate('Order status')}} : {{ translate($data['status']) }}
                     @if ($data['search'])
                     <br>
-                    {{ translate('search_bar_content' )}} : {{ $data['search'] }}
+                    {{ translate('Search bar content')}} : {{ $data['search'] }}
                     @endif
                     @if ($data['zones'])
                     <br>
@@ -19,11 +19,11 @@
                     @endif
                     @if ($data['stores'])
                     <br>
-                    {{ translate('stores' )}} : {{ $data['stores'] }}
+                    {{ translate('Stores' )}} : {{ $data['stores'] }}
                     @endif
                     @if ($data['type'])
                     <br>
-                    {{ translate('order_type' )}} : {{ translate($data['type']) }}
+                    {{ translate('Order type')}} : {{ translate($data['type']) }}
                     @endif
                     @if ($data['from'])
                     <br>
@@ -41,24 +41,24 @@
                 <th></th>
             </tr>
             <tr>
-                <th>{{ translate('messages.sl') }}</th>
-                <th>{{ translate('messages.order_id') }}</th>
+                <th>{{ translate('messages.SL') }}</th>
+                <th>{{ translate('messages.Order ID') }}</th>
                 @if ($data['status'] ==  'scheduled')
-                <th>{{ translate('messages.Scheduled_at') }}</th>
+                <th>{{ translate('Scheduled at') }}</th>
                 @else
                 <th>{{ translate('messages.Date') }}</th>
                 @endif
-                <th>{{ translate('messages.customer_name') }}</th>
-                <th>{{ translate('messages.store_name') }}</th>
-                <th>{{ translate('messages.item_price') }}</th>
-                <th>{{ translate('messages.item_discount') }}</th>
-                <th>{{ translate('messages.coupon_discount') }}</th>
-                <th>{{ translate('messages.discounted_amount') }}</th>
+                <th>{{ translate('Customer name') }}</th>
+                <th>{{ translate('Store name') }}</th>
+                <th>{{ translate('Item price') }}</th>
+                <th>{{ translate('Item discount') }}</th>
+                <th>{{ translate('Coupon discount') }}</th>
+                <th>{{ translate('Discounted amount') }}</th>
                 <th>{{ translate('messages.tax') }}</th>
-                <th>{{ translate('messages.total_amount') }}</th>
-                <th>{{ translate('messages.payment_status') }}</th>
-                <th>{{ translate('messages.order_status') }}</th>
-                <th>{{ translate('messages.order_type') }}</th>
+                <th>{{ translate('Total amount') }}</th>
+                <th>{{ translate('Payment status') }}</th>
+                <th>{{ translate('Order status') }}</th>
+                <th>{{ translate('Order type') }}</th>
             </tr>
         </thead>
         <tbody>
@@ -78,17 +78,17 @@
                     @elseif (!empty($delivery_address['contact_person_name']))
                         {{ $delivery_address['contact_person_name'] }}
                     @else
-                        {{ translate('not_found') }}
+                        {{ translate('No data found') }}
                     @endif
                 </td>
                 <td>
                     @if($order->store)
                         {{$order->store->name}}
                     @else
-                        {{ translate('messages.not_found') }}
+                        {{ translate('No data found') }}
                     @endif
                 </td>
-                <td>{{ \App\CentralLogics\Helpers::number_format_short($order['order_amount']-$order['dm_tips']-$order['total_tax_amount']-\App\CentralLogics\DeliveryFeeLogic::adjustedFeeForOrder($order)['adjusted']+$order['coupon_discount_amount'] + $order['store_discount_amount']) }}</td>
+                <td>{{ \App\CentralLogics\Helpers::number_format_short($order['order_amount']-$order['dm_tips']-$order['total_tax_amount']-app(\App\Services\Order\OrderService::class)->adjustedFeeForOrder($order)['adjusted']+$order['coupon_discount_amount'] + $order['store_discount_amount']) }}</td>
                 <td>{{ \App\CentralLogics\Helpers::number_format_short($order->details->sum('discount_on_item')) }}</td>
                 <td>{{ \App\CentralLogics\Helpers::number_format_short($order['coupon_discount_amount']) }}</td>
                 <td>{{ \App\CentralLogics\Helpers::number_format_short($order['coupon_discount_amount'] + $order['store_discount_amount']+ $order['ref_bonus_amount'] + ($order->orderProDiscount?->amount_saved ?? 0) ) }}</td>

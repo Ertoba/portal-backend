@@ -1,12 +1,11 @@
 
 <div class="row">
-    @php($address = \App\Models\BusinessSetting::where(['key' => 'address'])->first()->value)
     <table>
         <thead>
             <tr>
 
                 <th>
-                    {{ translate('Disbursement_report') }}
+                    {{ translate('Disbursement report') }}
                 </th>
                 <th></th>
                 <th></th>
@@ -18,7 +17,7 @@
             </tr>
             <tr>
 
-                <th>{{ translate('filter_criteria') }} -</th>
+                <th>{{ translate('Filter criteria') }} -</th>
                 <th></th>
                 <th>
                     <br>
@@ -31,11 +30,11 @@
                         {{ translate('to' )}} - {{ $data['to']?Carbon\Carbon::parse($data['to'])->format('d M Y'):'' }}
                     @endif
                     <br>
-                    {{ translate('filter')  }}- {{  translate($data['filter']) }}
+                    {{ translate('Filter')  }}- {{ ucfirst(str_replace('_', ' ', $data['filter'])) }}
                     <br>
-                    {{ translate('Search_Bar_Content')  }}- {{ $data['search'] ??translate('N/A') }}
+                    {{ translate('Search bar content')  }}- {{ $data['search'] ??translate('N/A') }}
                     <br>
-                    {{ translate('status')  }}: {{ $data['status'] ?? translate('N/A') }}
+                    {{ translate('Status')  }}: {{ $data['status'] ?? translate('N/A') }}
 
                 </th>
                 <th></th>
@@ -47,25 +46,25 @@
             <tr>
 
                 <th>
-                {{ translate('Pending_Disbursements') }} - {{ $data['pending'] ?? translate('N/A') }}
+                {{ translate('Pending disbursements') }} - {{ $data['pending'] ?? translate('N/A') }}
                 </th>
                 <th></th>
-                <th>{{ translate('Completed_Disbursements') }} - {{ $data['completed'] ?? translate('N/A') }}
+                <th>{{ translate('Completed disbursements') }} - {{ $data['completed'] ?? translate('N/A') }}
                 </th>
                 <th></th>
-                <th>{{ translate('Canceled_Transactions') }} - {{ $data['canceled'] ?? translate('N/A') }}
+                <th>{{ translate('Canceled transactions') }} - {{ $data['canceled'] ?? translate('N/A') }}
                 </th>
                 <th>
 
                 </th>
             </tr>
         <tr>
-            <th>{{ translate('sl') }}</th>
-            <th>{{ translate('id') }}</th>
-            <th>{{ translate('created_at') }}</th>
-            <th>{{ translate('amount') }}</th>
-            <th>{{ translate('Payment_method') }}</th>
-            <th>{{ translate('status') }}</th>
+            <th>{{ translate('SL') }}</th>
+            <th>ID</th>
+            <th>{{ translate('Created at') }}</th>
+            <th>{{ translate('Amount') }}</th>
+            <th>{{ translate('Payment method') }}</th>
+            <th>{{ translate('Status') }}</th>
 
         </thead>
         <tbody>
@@ -78,11 +77,11 @@
             {{\App\CentralLogics\Helpers::format_currency($disb['disbursement_amount'])}}
         </td>
         <td>
-            <div class="name">{{translate('payment_method')}} : {{$disb->withdraw_method->method_name}}</div>
-            @forelse(json_decode($disb->withdraw_method->method_fields, true) as $key=> $item)
+            <div class="name">{{translate('Payment method')}} : {{ $disb->withdraw_method?->method_name ?? translate('messages.Payment method removed') }}</div>
+            @forelse(json_decode($disb->withdraw_method?->method_fields ?? '', true) ?: [] as $key=> $item)
             <br>
                 <div>
-                    <span>{{  translate($key) }}</span>
+                    <span>{{ ucfirst(str_replace('_', ' ', $key)) }}</span>
                     <span>:</span>
                     <span class="name">{{$item}}</span>
                 </div>

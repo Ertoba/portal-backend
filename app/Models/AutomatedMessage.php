@@ -5,26 +5,20 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
+use App\Traits\Model\HasTranslationsTrait;
 
 class AutomatedMessage extends Model
 {
-    use HasFactory;
+    use HasFactory, HasTranslationsTrait;
     protected $guarded = ['id'];
     protected $casts = [
         'id' => 'integer',
         'status' => 'boolean',
     ];
 
-    public function getMessageAttribute($value){
-        if (count($this->translations) > 0) {
-            foreach ($this->translations as $translation) {
-                if ($translation['key'] == 'message') {
-                    return $translation['value'];
-                }
-            }
-        }
-
-        return $value;
+    public function getMessageAttribute($value)
+    {
+        return $this->translatedAttribute('message', $value);
     }
 
     public function scopeActive($query)
@@ -40,19 +34,8 @@ class AutomatedMessage extends Model
         return $query->withoutGlobalScope('customer_only')->where('question_for', 'rider');
     }
 
-    public function translations()
-    {
-        return $this->morphMany(Translation::class, 'translationable');
-    }
-
     protected static function booted()
     {
-        static::addGlobalScope('translate', function (Builder $builder) {
-            $builder->with(['translations' => function ($query) {
-                return $query->where('locale', app()->getLocale());
-            }]);
-        });
-
         static::addGlobalScope('customer_only', function (Builder $builder) {
             $builder->customer();
         });

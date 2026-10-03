@@ -1,5 +1,12 @@
 function HSDemo() {
 
+  var builderAnchors = ["headerMain", "headerFluid", "headerDouble", "sidebarMain", "sidebarCompact"],
+    builderControls = ["js-builder-disabled", "js-builder-preview", "js-builder-reset"];
+
+  if (builderAnchors.concat(builderControls).some(function (id) { return !document.getElementById(id); })) {
+    return;
+  }
+
   var settings = {
     headerMain: document.getElementById("headerMain").innerHTML,
     headerFluid: document.getElementById("headerFluid").innerHTML,
@@ -256,3 +263,20 @@ document.addEventListener('DOMContentLoaded', function () {
 
 
 HSDemo();
+document.addEventListener('keydown', function (e) {
+    var el = e.target;
+    if (el && el.matches && el.matches('input[type="number"][min="0"]')) {
+        if (e.key === '-' || e.key === '+' || e.key === 'e' || e.key === 'E') {
+            e.preventDefault();
+        }
+    }
+});
+
+document.addEventListener('input', function (e) {
+    var el = e.target;
+    if (el && el.matches && el.matches('input[type="number"][min="0"]')) {
+        if (el.value !== '' && parseFloat(el.value) < 0) {
+            el.value = '';
+        }
+    }
+});

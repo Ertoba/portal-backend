@@ -1,15 +1,19 @@
 @extends('layouts.admin.app')
 
-@section('title', translate('messages.Terms_and_Conditions'))
+@section('title', translate('Terms & conditions'))
 @section('pro_customer_additional_setup', 'active')
 
 @section('content')
 <div class="content container-fluid">
     <div class="page-header mb-2">
         <div class="d-flex flex-wrap justify-content-between align-items-start">
-            <h1 class="page-header-title text-capitalize fs-24">
-                <span>{{ translate('messages.Terms_and_Conditions') }}</span>
-            </h1>
+            <div>
+                <h1 class="page-header-title">
+                    <i class="tio-star"></i>
+                    <span>{{ translate('Terms & conditions') }}</span>
+                </h1>
+                <p class="page-header-desc">{{ translate('The terms a customer agrees to when they go Pro.') }}</p>
+            </div>
         </div>
     </div>
 
@@ -19,14 +23,13 @@
         @csrf
         <div class="card card-body">
 
-            {{-- Availability --}}
             <div class="bg-light2 p-xl-20 p-3 rounded mb-20">
                 <div class="row g-3 align-items-center">
                     <div class="col-xxl-9 col-lg-8 col-md-7 col-sm-6">
                         <div>
                             <h3 class="mb-1">{{ translate('messages.Availability') }}</h3>
                             <p class="mb-0 fs-12">
-                                {{ translate('messages.If_you_turn_off_the_availability_status_this_page_will_not_show_in_the_Subscription_Plan') }}
+                                {{ translate('messages.If you turn off the availability status this page will not show in the Subscription Plan') }}
                             </p>
                         </div>
                     </div>
@@ -47,9 +50,8 @@
                 </div>
             </div>
 
-            {{-- Title Background Image --}}
             <div class="mb-20">
-                <h5 class="font-medium mb-3">{{ translate('messages.Title_Background_Image') }}</h5>
+                <h5 class="font-medium mb-3">{{ translate('messages.Title Background Image') }}</h5>
                 <div class="bg-light2 p-xl-4 p-4 rounded">
                     <div class="text-center">
                         @include('admin-views.partials._image-uploader', [
@@ -68,14 +70,13 @@
                 </div>
             </div>
 
-            {{-- Language tabs + fields --}}
             <div class="bg-light2 p-xl-20 p-3 rounded mb-20">
                 <div class="card-body p-0">
                     @if ($language)
                         <div class="js-nav-scroller hs-nav-scroller-horizontal">
                             <ul class="nav nav-tabs mb-4">
                                 <li class="nav-item">
-                                    <a class="nav-link lang_link active" href="#" id="default-link-terms">{{ translate('messages.Default') }}</a>
+                                    <a class="nav-link lang_link active" href="#" id="default-link-terms">{{ translate('Default') }}</a>
                                 </li>
                                 @foreach ($language as $lang)
                                     <li class="nav-item">
@@ -94,10 +95,10 @@
                             <div class="col-md-12">
                                 <div class="form-group mb-3">
                                     <label class="input-label fw-400 text-capitalize" for="default_terms_title">
-                                        {{ translate('messages.Page_Title') }} ({{ translate('messages.Default') }})
+                                        {{ translate('messages.Page Title') }} ({{ translate('Default') }})
                                         <span class="text-danger">*</span>
                                         <span data-toggle="tooltip" data-placement="right"
-                                            data-original-title="{{ translate('messages.Type_page_title_within_100_characters') }}">
+                                            data-original-title="{{ translate('Character limit') }}: 100">
                                             <i class="tio-info text-muted fs-16"></i>
                                         </span>
                                     </label>
@@ -113,7 +114,7 @@
                             <div class="col-md-12">
                                 <div class="form-group mb-0">
                                     <label class="input-label fw-400 text-capitalize">
-                                        {{ translate('messages.Page_Description') }} ({{ translate('messages.Default') }})
+                                        {{ translate('messages.Page Description') }} ({{ translate('Default') }})
                                         <span class="text-danger">*</span>
                                     </label>
                                     <textarea class="pro-terms-editor form-control" id="pro-terms-desc-default" name="page_description[]" required>{{ $termsDescRow?->getRawOriginal('value') }}</textarea>
@@ -123,13 +124,6 @@
                     </div>
 
                     @if ($language)
-                        @php($termsTranslations = collect())
-                        @if ($termsTitleRow)
-                            @php($termsTranslations = $termsTranslations->merge(\App\Models\Translation::where('translationable_type', \App\Models\DataSetting::class)->where('translationable_id', $termsTitleRow->id)->get()))
-                        @endif
-                        @if ($termsDescRow)
-                            @php($termsTranslations = $termsTranslations->merge(\App\Models\Translation::where('translationable_type', \App\Models\DataSetting::class)->where('translationable_id', $termsDescRow->id)->get()))
-                        @endif
 
                         @foreach ($language as $lang)
                             @php($titleTrans = $termsTranslations->first(fn($t) => $t->locale === $lang && $t->key === 'pro_terms_page_title'))
@@ -140,7 +134,7 @@
                                     <div class="col-md-12">
                                         <div class="form-group mb-3">
                                             <label class="input-label fw-400 text-capitalize">
-                                                {{ translate('messages.Page_Title') }} ({{ strtoupper($lang) }})
+                                                {{ translate('messages.Page Title') }} ({{ strtoupper($lang) }})
                                             </label>
                                             <input type="text" name="page_title[]" maxlength="100" class="form-control"
                                                 value="{{ $titleTrans?->value }}">
@@ -149,7 +143,7 @@
                                     <div class="col-md-12">
                                         <div class="form-group mb-0">
                                             <label class="input-label fw-400 text-capitalize">
-                                                {{ translate('messages.Page_Description') }} ({{ strtoupper($lang) }})
+                                                {{ translate('messages.Page Description') }} ({{ strtoupper($lang) }})
                                             </label>
                                             <textarea class="pro-terms-editor form-control" id="pro-terms-desc-{{ $lang }}" name="page_description[]">{{ $descTrans?->value }}</textarea>
                                         </div>
@@ -162,9 +156,9 @@
             </div>
 
             <div class="btn--container justify-content-end">
-                <button type="reset" class="btn min-w-120 btn--reset text-capitalize">{{ translate('messages.Reset') }}</button>
+                <button type="reset" class="btn min-w-120 btn--reset text-capitalize"><i class="tio-refresh"></i> {{ translate('messages.Reset') }}</button>
                 <button type="submit" class="btn min-w-120 btn--primary text-capitalize">
-                    <i class="tio-save"></i> {{ translate('messages.Save_Information') }}
+                    <i class="tio-save"></i> {{ translate('Save information') }}
                 </button>
             </div>
         </div>

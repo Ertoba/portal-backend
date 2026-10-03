@@ -1,27 +1,29 @@
 
 <div class="row">
-    <div class="col-lg-12 text-center "><h1 > {{translate('Module_List')}}
+    <div class="col-lg-12 text-center "><h1 > {{translate('Module list')}}
     </h1></div>
     <div class="col-lg-12">
 
     <table>
         <thead>
             <tr>
-                <th>{{ translate('Filter_Criteria') }}</th>
+                <th>{{ translate('Filter criteria') }}</th>
                 <th></th>
                 <th>
-                    {{ translate('Search_Bar_Content')  }}: {{ $data['search'] ?? translate('N/A') }}
+                    {{ translate('Search bar content')  }}: {{ $data['search'] ?? translate('N/A') }},
+                    {{ translate('Type')  }}: {{ isset($data['module_type']) ? translate($data['module_type']) : translate('All') }},
+                    {{ translate('messages.Status')  }}: {{ isset($data['status']) ? ($data['status'] == 1 ? translate('messages.Active') : translate('messages.Inactive')) : translate('All') }}
                 </th>
                 <th> </th>
                 </tr>
 
 
         <tr>
-            <th>{{ translate('sl') }}</th>
-            <th>{{ translate('name') }}</th>
-            <th>{{ translate('module_id') }}</th>
-            <th>{{ translate('business_Module_type') }}</th>
-            <th>{{ translate('total_stores') }}</th>
+            <th>{{ translate('SL') }}</th>
+            <th>{{ translate('Name') }}</th>
+            <th>{{ translate('Module ID') }}</th>
+            <th>{{ translate('Type') }}</th>
+            <th>{{ translate('Total stores') }}</th>
             <th>{{ translate('Status') }}</th>
 
         </thead>

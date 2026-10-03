@@ -11,8 +11,7 @@ class LanguageController extends Controller
 {
     public function lang($local)
     {
-        $direction = BusinessSetting::where('key', 'site_direction')->first();
-        $direction = $direction->value ?? 'ltr';
+        $direction = Helpers::get_business_settings('site_direction', false) ?? 'ltr';
         $language = BusinessSetting::where('key', 'system_language')->first();
         foreach (json_decode($language['value'], true) as $key => $data) {
             if ($data['code'] == $local) {

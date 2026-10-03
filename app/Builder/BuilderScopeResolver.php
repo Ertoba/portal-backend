@@ -16,9 +16,17 @@ class BuilderScopeResolver implements BuilderScopeResolverContract
             return null;
         }
 
+        // get_store_data() resolves through the auth guard's own cached user model
+        // (loadMissing() on it, not a fresh query), so this is the same store instance
+        // every other vendor-panel call in the request already touched -- ShareBuilderProps
+        // resolves a scope once per request and BuilderController::index() resolves its own
+        // right after; without sharing this, each resolution used to run its own independent
+        // Store::find() (bypassing the guard's cache entirely) and paid for the 'translate'
+        // global scope's translations join on top, multiplying into several duplicate queries
+        // per page load.
         $vendorId = Helpers::get_vendor_id() ?: null;
-        $storeId  = Helpers::get_store_id() ?: null;
-        $store    = $storeId ? $this->loadStore($storeId) : null;
+        $store    = Helpers::get_store_data();
+        $storeId  = $store?->id ?: null;
 
         return new StorefrontScope(
             tenantId: $vendorId,
@@ -28,13 +36,6 @@ class BuilderScopeResolver implements BuilderScopeResolverContract
             logoUrl: $this->safeLogoUrl($store),
             displayName: $store?->slug ?? null,
         );
-    }
-
-    private function loadStore(int $storeId): ?Store
-    {
-        return Store::query()
-            ->select(['id', 'vendor_id', 'slug', 'module_id', 'zone_id', 'logo'])
-            ->find($storeId);
     }
 
     private function safeLogoUrl(?Store $store): ?string

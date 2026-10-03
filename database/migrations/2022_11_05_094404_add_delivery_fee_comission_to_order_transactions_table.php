@@ -26,7 +26,7 @@ class AddDeliveryFeeComissionToOrderTransactionsTable extends Migration
     public function down()
     {
         Schema::table('order_transactions', function (Blueprint $table) {
-            $table->dropColumn('delivery_fee_comission'); //dropcolumn
+            $table->dropColumn('delivery_fee_comission');
         });
     }
 }

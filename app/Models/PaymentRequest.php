@@ -4,11 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use App\Traits\HasUuid;
+use App\Traits\Model\HasUuidTrait;
 
 class PaymentRequest extends Model
 {
-    use HasUuid;
+    use HasUuidTrait;
     use HasFactory;
 
     protected $table = 'payment_requests';

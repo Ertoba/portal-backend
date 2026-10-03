@@ -7,9 +7,6 @@
     <title>Password Reset</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <style type="text/css">
-        /**
-         * Google webfonts. Recommended to include the .woff version for cross-client compatibility.
-         */
         @media screen {
             @font-face {
                 font-family: 'Source Sans Pro';
@@ -26,40 +23,24 @@
             }
         }
 
-        /**
-         * Avoid browser level font resizing.
-         * 1. Windows Mobile
-         * 2. iOS / OSX
-         */
         body,
         table,
         td,
         a {
             -ms-text-size-adjust: 100%;
-            /* 1 */
             -webkit-text-size-adjust: 100%;
-            /* 2 */
         }
 
-        /**
-         * Remove extra space added to tables and cells in Outlook.
-         */
         table,
         td {
             mso-table-rspace: 0pt;
             mso-table-lspace: 0pt;
         }
 
-        /**
-         * Better fluid images in Internet Explorer.
-         */
         img {
             -ms-interpolation-mode: bicubic;
         }
 
-        /**
-         * Remove blue links for iOS devices.
-         */
         a[x-apple-data-detectors] {
             font-family: inherit !important;
             font-size: inherit !important;
@@ -69,9 +50,6 @@
             text-decoration: none !important;
         }
 
-        /**
-         * Fix centering issues in Android 4.4.
-         */
         div[style*="margin: 16px 0;"] {
             margin: 0 !important;
         }
@@ -83,9 +61,6 @@
             margin: 0 !important;
         }
 
-        /**
-         * Collapse table borders to avoid space between cells.
-         */
         table {
             border-collapse: collapse !important;
         }
@@ -106,7 +81,6 @@
 </head>
 
 <body style="background-color: #e9ecef;">
-    <!-- end preheader -->
     <div class="card">
         <div class="card-header">
             Your password reset token

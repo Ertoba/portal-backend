@@ -8,17 +8,16 @@
 
 @section('content')
     <div class="content container-fluid">
-        <!-- Page Header -->
         <div class="page-header">
             <h1 class="page-header-title">
                 <span class="page-header-icon">
-                    <img src="{{asset('public/assets/admin/img/firebase.png')}}" class="w--26" alt="">
+                    <img src="{{asset('public/assets/admin/img/outline/firebase.svg')}}" class="w--26" alt="">
                 </span>
-                <span>{{translate('messages.firebase_push_notification_setup')}}
+                <span>{{translate('messages.Firebase push notification setup')}}
                 </span>
             </h1>
+            <p class="page-header-desc">{{ translate('The wording of every push notification your apps send, per language.') }}</p>
         </div>
-        <!-- End Page Header -->
         <?php
         $mod_type = 'grocery';
         if(request('module_type')){
@@ -32,7 +31,7 @@
                         <li class="nav-item mr-2 mr-md-4">
                             <a href="{{ route('admin.business-settings.fcm-index') }}" class="nav-link pb-2 px-0 pb-sm-3 active" data-slide="1">
                                 <img src="{{asset('/public/assets/admin/img/notify.png')}}" alt="">
-                                <span>{{translate('Push Notification')}}</span>
+                                <span>{{translate('Push notification')}}</span>
                             </a>
                         </li>
                         <li class="nav-item">
@@ -63,8 +62,7 @@
             <div class="card-body">
                 <div class="tab-content">
                     <div class="tab-pane fade show active" id="push-notify">
-                        @php($language=\App\Models\BusinessSetting::where('key','language')->first())
-                        @php($language = $language->value ?? null)
+                        @php($language = \App\CentralLogics\Helpers::get_business_settings('language', false) ?? null)
                         @php($defaultLang = 'en')
                         <div class="row justify-content-between">
                             <div class="col-sm-auto mb-5">
@@ -83,7 +81,7 @@
                                 <select name="module_type" class="form-control js-select2-custom set-filter"
                                 data-url="{{url()->full()}}"
                                 data-filter="module_type"
-                                title="{{translate('messages.select_modules')}}">
+                                title="{{translate('messages.Select modules')}}">
                                     @foreach (config('module.module_type') as $module)
                                         @continue($module === 'rental' && !addon_published_status('Rental'))
                                         @continue($module === 'ride-share' && !addon_published_status('RideShare'))
@@ -93,7 +91,7 @@
                                         </option>
                                     @endforeach
                                 </select>
-                                <small>{{translate('*Select Module Here')}}</small>
+                                <small>*{{ translate('Select Module Here') }}</small>
                             </div>
                         </div>
                         <form action="{{route('admin.business-settings.update-fcm-messages')}}" method="post"
@@ -124,7 +122,7 @@
                                             <div class="form-group">
                                                 <div class="d-flex flex-wrap justify-content-between mb-2">
                                                     <span class="d-block form-label">
-                                                        {{translate('messages.order_pending_message')}} ({{strtoupper($lang)}})
+                                                        {{translate('messages.Order pending message')}} ({{strtoupper($lang)}})
                                                     </span>
                                                 @if ($lang == 'en')
                                                         <label class="switch--custom-label toggle-switch d-flex align-items-center"
@@ -177,7 +175,7 @@
                                             <div class="form-group">
                                                 <div class="d-flex flex-wrap justify-content-between mb-2">
                                                     <span class="d-block form-label">
-                                                        {{translate('messages.order_confirmation_message')}}
+                                                        {{translate('messages.Order confirmation message')}}
                                                     </span>
                                                     @if ($lang == 'en')
                                                         <label class="switch--custom-label toggle-switch d-flex align-items-center mb-0"
@@ -233,7 +231,7 @@
                                             <div class="form-group">
                                                 <div class="d-flex flex-wrap justify-content-between mb-2">
                                                     <span class="d-block form-label">
-                                                        {{translate('messages.order_processing_message')}}
+                                                        {{translate('messages.Order processing message')}}
                                                     </span>
                                                     @if ($lang == 'en')
                                                         <label class="switch--custom-label toggle-switch d-flex align-items-center mb-0" for="processing_status">
@@ -283,7 +281,7 @@
                                             <div class="form-group">
                                                 <div class="d-flex flex-wrap justify-content-between mb-2">
                                                     <span class="d-block form-label">
-                                                        {{translate('messages.order_Handover_message')}}
+                                                        {{translate('messages.Order Handover Message')}}
                                                     </span>
                                                     @if ($lang == 'en')
                                                         <label class="switch--custom-label toggle-switch d-flex align-items-center mb-0"
@@ -339,7 +337,7 @@
                                             <div class="form-group">
                                                 <div class="d-flex flex-wrap justify-content-between mb-2">
                                                     <span class="d-block form-label">
-                                                        {{translate('messages.order_out_for_delivery_message')}}
+                                                        {{translate('messages.Order out for delivery message')}}
                                                     </span>
                                                     @if ($lang == 'en')
                                                         <label class="switch--custom-label toggle-switch d-flex align-items-center mb-0"
@@ -389,7 +387,7 @@
                                             <div class="form-group">
                                                 <div class="d-flex flex-wrap justify-content-between mb-2">
                                                     <span class="d-block form-label">
-                                                        {{translate('messages.order_delivered_message')}}
+                                                        {{translate('messages.Order delivered message')}}
                                                     </span>
                                                     @if ($lang == 'en')
                                                         <label class="switch--custom-label toggle-switch d-flex align-items-center mb-0"
@@ -440,7 +438,7 @@
                                             <div class="form-group">
                                                 <div class="d-flex flex-wrap justify-content-between mb-2">
                                                     <span class="d-block form-label">
-                                                        {{translate('messages.deliveryman_assign_message')}}
+                                                        {{translate('messages.Deliveryman assign message')}}
                                                     </span>
                                                     @if ($lang == 'en')
                                                         <label class="switch--custom-label toggle-switch d-flex align-items-center mb-0"
@@ -493,7 +491,7 @@
                                             <div class="form-group">
                                                 <div class="d-flex flex-wrap justify-content-between mb-2">
                                                     <span class="d-block form-label">
-                                                        {{translate('messages.deliveryman_delivered_message')}}
+                                                        {{translate('messages.Delivery Man Delivered Message')}}
                                                     </span>
                                                     @if ($lang == 'en')
                                                         <label class="switch--custom-label toggle-switch d-flex align-items-center mb-0"
@@ -547,7 +545,7 @@
                                             <div class="form-group">
                                                 <div class="d-flex flex-wrap justify-content-between mb-2">
                                                     <span class="d-block form-label">
-                                                        {{translate('messages.order_canceled_message')}}
+                                                        {{translate('messages.Order canceled message')}}
                                                     </span>
                                                     @if ($lang == 'en')
                                                         <label class="switch--custom-label toggle-switch d-flex align-items-center mb-0"
@@ -600,7 +598,7 @@
                                                 <div class="form-group">
                                                     <div class="d-flex flex-wrap justify-content-between mb-2">
                                                         <span class="d-block form-label">
-                                                            {{translate('messages.order_refunded_message')}}
+                                                            {{translate('messages.Order refunded message')}}
                                                         </span>
                                                         @if ($lang == 'en')
                                                             <label class="switch--custom-label toggle-switch d-flex align-items-center mb-0"
@@ -651,7 +649,7 @@
                                                 <div class="form-group">
                                                     <div class="d-flex flex-wrap justify-content-between mb-2">
                                                         <span class="d-block form-label">
-                                                            {{translate('messages.refund_request_canceled_message')}}
+                                                            {{translate('messages.Refund request canceled message')}}
                                                         </span>
                                                         @if ($lang == 'en')
                                                             <label class="switch--custom-label toggle-switch d-flex align-items-center mb-0"
@@ -705,7 +703,7 @@
                                             <div class="form-group">
                                                 <div class="d-flex flex-wrap justify-content-between mb-2">
                                                     <span class="d-block form-label">
-                                                        {{translate('messages.offline_order_accept_message')}}
+                                                        {{translate('messages.Offline order accept message')}}
                                                     </span>
                                                     @if ($lang == 'en')
                                                         <label class="switch--custom-label toggle-switch d-flex align-items-center mb-0"
@@ -759,7 +757,7 @@
                                             <div class="form-group">
                                                 <div class="d-flex flex-wrap justify-content-between mb-2">
                                                     <span class="d-block form-label">
-                                                        {{translate('messages.offline_order_deny_message')}}
+                                                        {{translate('messages.Offline order deny message')}}
                                                     </span>
                                                     @if ($lang == 'en')
                                                         <label class="switch--custom-label toggle-switch d-flex align-items-center mb-0"
@@ -809,13 +807,13 @@
                                                     }
                                                 }
                                             ?>
-                                            <h5 class="mb-3">{{ translate('messages.monthly_order_notification') }}</h5>
+                                            <h5 class="mb-3">{{ translate('messages.Monthly Order Notification') }}</h5>
                                             <div class="row g-3 align-items-end">
                                                 <div class="col-lg-6">
                                                     <div class="form-group mb-0">
                                                         <div class="d-flex flex-wrap justify-content-between mb-2">
                                                             <span class="d-block form-label">
-                                                                {{translate('messages.monthly_order_reminder_message')}} ({{ strtoupper($lang) }})
+                                                                {{translate('messages.Monthly Order Reminder Message')}} ({{ strtoupper($lang) }})
                                                             </span>
                                                             @if ($lang == 'en')
                                                                 <label class="switch--custom-label toggle-switch d-flex align-items-center mb-0"
@@ -845,12 +843,12 @@
                                                         </label>
                                                         <div class="d-flex border rounded overflow-hidden">
                                                             <input type="number" name="monthly_order_reminder_days_before" class="form-control rounded-0 border-0"
-                                                                value="{{ $monthly_order_reminder_days_before }}" min="1" placeholder="{{ translate('messages.Ex: 3') }}">
+                                                                value="{{ $monthly_order_reminder_days_before }}" min="1" placeholder="{{ translate('messages.Ex') . ': 3' }}">
                                                             <select name="monthly_order_reminder_before_unit"
                                                                 class="custom-select rounded-0 border-0 bg-modal-btn form-control w-90px">
                                                                 <option value="day" {{ $monthly_order_reminder_before_unit == 'day' ? 'selected' : '' }}>{{ translate('messages.Day') }}</option>
-                                                                <option value="week" {{ $monthly_order_reminder_before_unit == 'week' ? 'selected' : '' }}>{{ translate('messages.Week') }}</option>
-                                                                <option value="month" {{ $monthly_order_reminder_before_unit == 'month' ? 'selected' : '' }}>{{ translate('messages.Month') }}</option>
+                                                                <option value="week" {{ $monthly_order_reminder_before_unit == 'week' ? 'selected' : '' }}>{{ translate('messages.week') }}</option>
+                                                                <option value="month" {{ $monthly_order_reminder_before_unit == 'month' ? 'selected' : '' }}>{{ translate('messages.month') }}</option>
                                                             </select>
                                                         </div>
                                                     </div>
@@ -902,18 +900,17 @@
                                             <div class="bg-light rounded p-3 p-xxl-20">
                                                 <h4 class="mb-3">{{ translate('messages.Subscription notification') }} ({{ strtoupper($lang) }})</h4>
                                                 <div class="row g-3">
-                                                    {{-- Subscription Expire Reminder --}}
                                                     <div class="col-12">
                                                         <div class="bg-white rounded p-3 p-xxl-20">
                                                             <div class="d-flex align-items-center justify-content-between gap-2 flex-sm-nowrap flex-wrap mb-3">
                                                                 <div>
-                                                                    <h4 class="mb-1">{{ translate('messages.Subscription Expire Reminder') }}</h4>
-                                                                    <p class="fs-12 m-0">{{ translate('messages.Configure the messages of automatic reminder for customers before expire their subscription') }}</p>
+                                                                    <h4 class="mb-1">{{ translate('Subscription expire reminder') }}</h4>
+                                                                    <p class="fs-12 m-0">{{ translate('messages.Configure the automatic reminder messages sent to customers before their subscription expires') }}</p>
                                                                 </div>
                                                                 @if ($lang == 'en')
                                                                 <div class="d-flex align-items-center gap-2 flex-wrap">
                                                                     @if ($subscription_reminder_enabled)
-                                                                        <button type="button" class="btn btn--primary" data-toggle="modal" data-target="#subscriptionSchedulerModal">{{ translate('messages.Check_Dependencies') }}</button>
+                                                                        <button type="button" class="btn btn--primary" data-toggle="modal" data-target="#subscriptionSchedulerModal"><i class="tio-search"></i> {{ translate('Check dependencies') }}</button>
                                                                     @endif
                                                                     <label class="switch--custom-label toggle-switch d-flex align-items-center mb-0" for="subscription_expire_reminder_status">
                                                                         <input type="checkbox"
@@ -921,8 +918,8 @@
                                                                                data-type="toggle"
                                                                                data-image-on="{{ asset('/public/assets/admin/img/modal/schedule-on.png') }}"
                                                                                data-image-off="{{ asset('/public/assets/admin/img/modal/schedule-off.png') }}"
-                                                                               data-title-on="{{ translate('By Turning ON Notification Message For') }} <strong>{{ translate('messages.Subscription Expire Reminder') }}</strong>"
-                                                                               data-title-off="{{ translate('By Turning OFF Notification Message For') }} <strong>{{ translate('messages.Subscription Expire Reminder') }}</strong>"
+                                                                               data-title-on="{{ translate('By Turning ON Notification Message For') }} <strong>{{ translate('Subscription expire reminder') }}</strong>"
+                                                                               data-title-off="{{ translate('By Turning OFF Notification Message For') }} <strong>{{ translate('Subscription expire reminder') }}</strong>"
                                                                                data-text-on="<p>{{ translate('Customer will receive a proper notification message for this event') }}</p>"
                                                                                data-text-off="<p>{{ translate('Customer will not receive any notification message for this event') }}</p>"
                                                                                class="status toggle-switch-input dynamic-checkbox-toggle"
@@ -944,7 +941,7 @@
                                                                             {{ translate('messages.Expire Reminder Message') }} ({{ strtoupper($lang) }})
                                                                         </label>
                                                                         <textarea name="subscription_expire_reminder[]" class="form-control min-h-45px subscription_expire_reminder" rows="1"
-                                                                            placeholder="{{ translate('messages.Your subscription expires in 2 days. Please renew.') }}">{!! (isset($translate_ser) && isset($translate_ser[$lang])) ? $translate_ser[$lang]['message'] : '' !!}</textarea>
+                                                                            placeholder="{{ translate('messages.Your subscription expires soon. Please renew.') }}">{!! (isset($translate_ser) && isset($translate_ser[$lang])) ? $translate_ser[$lang]['message'] : '' !!}</textarea>
                                                                     </div>
                                                                 </div>
                                                                 @if ($lang == 'en')
@@ -955,11 +952,11 @@
                                                                         </label>
                                                                         <div class="d-flex border rounded overflow-hidden">
                                                                             <input type="number" name="subscription_reminder_before_time" class="form-control rounded-0 border-0"
-                                                                                value="{{ $subscription_reminder_before_time ?? 0 }}" min="0" placeholder="{{ translate('messages.Ex: 3') }}">
+                                                                                value="{{ $subscription_reminder_before_time ?? 0 }}" min="0" placeholder="{{ translate('messages.Ex') . ': 3' }}">
                                                                             <select name="subscription_reminder_before"
                                                                                 class="custom-select rounded-0 border-0 bg-modal-btn form-control w-90px">
                                                                                 <option value="hour" {{ ($subscription_reminder_before ?? 'days') == 'hour' ? 'selected' : '' }}>{{ translate('messages.Hour') }}</option>
-                                                                                <option value="days" {{ ($subscription_reminder_before ?? 'days') == 'days' ? 'selected' : '' }}>{{ translate('messages.Days') }}</option>
+                                                                                <option value="days" {{ ($subscription_reminder_before ?? 'days') == 'days' ? 'selected' : '' }}>{{ translate('messages.days') }}</option>
                                                                             </select>
                                                                         </div>
                                                                     </div>
@@ -969,7 +966,6 @@
                                                         </div>
                                                     </div>
 
-                                                    {{-- Subscription Activated --}}
                                                     <div class="col-lg-6">
                                                         <div class="form-group mb-0">
                                                             <div class="d-flex flex-wrap justify-content-between mb-2">
@@ -998,16 +994,15 @@
                                                                 </label>
                                                                 @endif
                                                             </div>
-                                                            <textarea name="subscription_activated[]" placeholder="{{ translate('messages.Ex : Subscription activated successfully') }}" class="form-control subscription_activated">{!! (isset($translate_sa) && isset($translate_sa[$lang])) ? $translate_sa[$lang]['message'] : '' !!}</textarea>
+                                                            <textarea name="subscription_activated[]" placeholder="{{ translate('messages.Ex') . ' : ' . translate('messages.Subscription activated successfully') }}" class="form-control subscription_activated">{!! (isset($translate_sa) && isset($translate_sa[$lang])) ? $translate_sa[$lang]['message'] : '' !!}</textarea>
                                                         </div>
                                                     </div>
 
-                                                    {{-- Subscription Expired --}}
                                                     <div class="col-lg-6">
                                                         <div class="form-group mb-0">
                                                             <div class="d-flex flex-wrap justify-content-between mb-2">
                                                                 <span class="d-block form-label">
-                                                                    {{ translate('messages.Subscription Expire Message') }} ({{ strtoupper($lang) }})
+                                                                    {{ translate('Subscription expire message') }} ({{ strtoupper($lang) }})
                                                                 </span>
                                                                 @if ($lang == 'en')
                                                                 <label class="switch--custom-label toggle-switch d-flex align-items-center mb-0" for="subscription_expired_status">
@@ -1016,8 +1011,8 @@
                                                                            data-type="toggle"
                                                                            data-image-on="{{ asset('/public/assets/admin/img/modal/status-on.png') }}"
                                                                            data-image-off="{{ asset('/public/assets/admin/img/modal/status-off.png') }}"
-                                                                           data-title-on="{{ translate('By Turning ON Notification Message For') }} <strong>{{ translate('messages.Subscription Expire Message') }}</strong>"
-                                                                           data-title-off="{{ translate('By Turning OFF Notification Message For') }} <strong>{{ translate('messages.Subscription Expire Message') }}</strong>"
+                                                                           data-title-on="{{ translate('By Turning ON Notification Message For') }} <strong>{{ translate('Subscription expire message') }}</strong>"
+                                                                           data-title-off="{{ translate('By Turning OFF Notification Message For') }} <strong>{{ translate('Subscription expire message') }}</strong>"
                                                                            data-text-on="<p>{{ translate('Customer will receive a proper notification message for this event') }}</p>"
                                                                            data-text-off="<p>{{ translate('Customer will not receive any notification message for this event') }}</p>"
                                                                            class="status toggle-switch-input dynamic-checkbox-toggle"
@@ -1031,11 +1026,10 @@
                                                                 </label>
                                                                 @endif
                                                             </div>
-                                                            <textarea name="subscription_expired[]" placeholder="{{ translate('messages.Ex : Your Subscription has been expired ') }}" class="form-control subscription_expired">{!! (isset($translate_se) && isset($translate_se[$lang])) ? $translate_se[$lang]['message'] : '' !!}</textarea>
+                                                            <textarea name="subscription_expired[]" placeholder="{{ translate('messages.Ex') . ' : ' . translate('messages.Your Subscription has been expired') }} " class="form-control subscription_expired">{!! (isset($translate_se) && isset($translate_se[$lang])) ? $translate_se[$lang]['message'] : '' !!}</textarea>
                                                         </div>
                                                     </div>
 
-                                                    {{-- Subscription Canceled --}}
                                                     <div class="col-lg-6">
                                                         <div class="form-group mb-0">
                                                             <div class="d-flex flex-wrap justify-content-between mb-2">
@@ -1064,7 +1058,7 @@
                                                                 </label>
                                                                 @endif
                                                             </div>
-                                                            <textarea name="subscription_canceled[]" placeholder="{{ translate('messages.Ex : Your Subscription has been canceled') }}" class="form-control subscription_canceled">{!! (isset($translate_sc) && isset($translate_sc[$lang])) ? $translate_sc[$lang]['message'] : '' !!}</textarea>
+                                                            <textarea name="subscription_canceled[]" placeholder="{{ translate('messages.Ex') . ' : ' . translate('messages.Your subscription has been canceled') }}" class="form-control subscription_canceled">{!! (isset($translate_sc) && isset($translate_sc[$lang])) ? $translate_sc[$lang]['message'] : '' !!}</textarea>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -1076,8 +1070,8 @@
                                 @endforeach
                             @endif
                             <div class="btn--container justify-content-end mt-4">
-                                <button type="reset" class="btn btn--reset">{{translate('messages.reset')}}</button>
-                                <button type="submit" class="btn btn--primary">{{translate('messages.submit')}}</button>
+                                <button type="reset" class="btn btn--reset"><i class="tio-refresh"></i> {{translate('messages.Reset')}}</button>
+                                <button type="submit" class="btn btn--primary"><i class="tio-checkmark-circle-outlined"></i> {{translate('messages.Submit')}}</button>
                             </div>
                         </form>
                     </div>
@@ -1085,7 +1079,6 @@
             </div>
         </div>
 
-        <!-- Firebase Modal -->
         <div class="modal fade" id="push-notify-modal">
             <div class="modal-dialog status-warning-modal">
                 <div class="modal-content">
@@ -1100,25 +1093,25 @@
                                 <div class="mb-20">
                                     <div class="text-center">
                                         <img src="{{asset('/public/assets/admin/img/email-templates/3.png')}}" alt="" class="mb-20">
-                                        <h5 class="modal-title">{{translate('Write_a_message_in_the_Notification_Body')}}</h5>
+                                        <h5 class="modal-title">{{translate('Write a message in the notification body')}}</h5>
                                     </div>
                                     <p>
-                                        {{ translate('you_can_add_your_message_using_placeholders_to_include_dynamic_content._Here_are_some_examples_of_placeholders_you_can_use:') }}
+                                        {{ translate('You can add your message using placeholders to include dynamic content. Here are some examples of placeholders you can use') }}:
                                     </p>
                                     <ul>
                                         <li>
-                                            {userName}: {{ translate('the_name_of_the_user.') }}
+                                            {userName}: {{ translate('the name of the user.') }}
                                         </li>
                                         <li>
-                                            {storeName}: {{ translate('the_name_of_the_store.') }}
+                                            {storeName}: {{ translate('the name of the store.') }}
                                         </li>
                                         <li>
-                                            {orderId}: {{ translate('the_order_id.') }}
+                                            {orderId}: {{ translate('The order id.') }}
                                         </li>
                                     </ul>
                                 </div>
                             </div>
-                            <div class="item">
+                            <!-- <div class="item">
                                 <div class="mb-20">
                                     <div class="text-center">
                                         <img src="{{asset('/public/assets/admin/img/firebase/slide-4.png')}}" alt="" class="mb-20">
@@ -1126,12 +1119,12 @@
                                     </div>
                                     <div class="text-center">
                                         <p>
-                                            {{translate('Please check the documentation below for detailed instructions on setting up your mobile app to receive Firebase Cloud Messaging (FCM) notifications.')}}
+                                            {{translate('See the documentation below to set up FCM notifications in your mobile app.')}}
                                         </p>
                                         <a href="https://docs.6amtech.com/docs-six-am-mart/mobile-apps/mandatory-setup" target="_blank">{{translate('Click Here')}}</a>
                                     </div>
                                 </div>
-                            </div>
+                            </div> -->
                         </div>
                         <div class="d-flex justify-content-center">
                             <div class="slide-counter"></div>
@@ -1169,7 +1162,7 @@
                     </div>
                     <div class="modal-body">
                         <p class="fs-13 mb-3">
-                            {{ translate('Laravel\'s scheduler runs customer-subscription:reminder based on the unit you selected (minute / hour / day). The command finds Pro customers whose subscription will expire within the configured window and sends them a push notification. Pick ONE launcher for the scheduler.') }}
+                            {{ translate('The scheduler runs customer-subscription:reminder on your chosen unit. It sends a push notification to Pro customers whose subscription expires within the window. Pick ONE launcher.') }}
                         </p>
                         <p class="fs-12 mb-3">
                             <span class="badge badge-soft-primary">
@@ -1177,33 +1170,34 @@
                                 @switch($subscription_reminder_before)
                                     @case('hour') {{ translate('messages.Hour') }} @break
                                     @case('min')  {{ translate('messages.Minute') }} @break
-                                    @default      {{ translate('messages.Days') }}
+                                    @default      {{ translate('messages.days') }}
                                 @endswitch
                             </span>
                         </p>
 
                         <div class="bg-light rounded p-3 mb-3">
-                            <h6 class="mb-2">{{ translate('Option 1 — Cron drives the scheduler') }}</h6>
+                            <h6 class="mb-2">{{ translate('Option') }} 1 — {{ translate('Cron drives the scheduler') }}</h6>
                             <p class="fs-12 mb-2">
-                                {{ translate('Add this single line to your server crontab. Cron will trigger schedule:run every minute and Laravel decides when the subscription reminder fires.') }}
+                                {{ translate('Add this line to your crontab. Laravel decides when the subscription reminder fires.') }}
                             </p>
                             <div class="input--group input-group">
                                 <input type="text" value="{{ $subscriptionCronLine }}" class="form-control" id="subscriptionCronCommand" readonly>
-                                <button type="button" class="btn btn-primary subscriptionCronCopy">{{ translate('Copy') }}</button>
+                                <button type="button" class="btn btn-primary subscriptionCronCopy"><i class="tio-copy"></i> {{ translate('Copy') }}</button>
                             </div>
                         </div>
 
                         <div class="bg-light rounded p-3 mb-0">
-                            <h6 class="mb-2">{{ translate('Option 2 — Supervisor drives the scheduler (no cron)') }}</h6>
+                            <h6 class="mb-2">{{ translate('Option') }} 2 — {{ translate('Supervisor drives the scheduler (no cron)') }}</h6>
                             <p class="fs-12 mb-2">
-                                {{ translate('Use this if you can\'t install a cron entry. Supervisor keeps schedule:work alive; it internally invokes schedule:run every 60 seconds.') }}
+                                {{ translate('Use this if you can\'t install a cron entry. Supervisor keeps the scheduler worker running, and it runs your scheduled tasks every minute.') }}
+                                {{ translate('Command') }}: <code>schedule:work</code>
                             </p>
                             <textarea class="form-control mb-2" id="subscriptionSchedulerSupervisorBlock" rows="10" readonly>{{ $subscriptionSchedulerSupervisor }}</textarea>
-                            <button type="button" class="btn btn-primary subscriptionSchedulerSupervisorCopy">{{ translate('Copy') }}</button>
+                            <button type="button" class="btn btn-primary subscriptionSchedulerSupervisorCopy"><i class="tio-copy"></i> {{ translate('Copy') }}</button>
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-dismiss="modal">{{ translate('Close') }}</button>
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal"><i class="tio-clear"></i> {{ translate('Close') }}</button>
                     </div>
                 </div>
             </div>
@@ -1222,11 +1216,11 @@
                 el.setSelectionRange(0, 99999);
                 try {
                     document.execCommand("copy");
-                    toastr.success('{{ translate('Copied to clipboard!') }}');
+                    toastr.success('{{ translate('Copied to clipboard') }}');
                 } catch (err) {
                     if (navigator.clipboard) {
                         navigator.clipboard.writeText(el.value).then(function () {
-                            toastr.success('{{ translate('Copied to clipboard!') }}');
+                            toastr.success('{{ translate('Copied to clipboard') }}');
                         });
                     }
                 }

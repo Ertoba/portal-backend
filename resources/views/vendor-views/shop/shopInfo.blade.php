@@ -1,13 +1,16 @@
 @php
-    $vendorData = \App\CentralLogics\Helpers::get_store_data();
-    $title = $vendorData?->module_type == 'rental' && addon_published_status('Rental') ? 'Provider' : 'Store';
-    $verified_seller_badge = \App\CentralLogics\Helpers::get_business_settings('verified_seller_badge');
-    $admin_commission = \App\CentralLogics\Helpers::get_business_settings('admin_commission');
+    /* See shop/edit.blade.php — whole phrases, not runtime-concatenated keys. */
+    $L = $title === 'Provider'
+        ? ['view' => translate('messages.Provider view'), 'my_info' => translate('My provider information'),
+           'edit_information' => translate('messages.Edit provider information'),
+           'announce' => translate('This feature is for sharing important information or announcements related to the provider.')]
+        : ['view' => translate('messages.Store view'), 'my_info' => translate('My store information'),
+           'edit_information' => translate('messages.Edit store information'),
+           'announce' => translate('This feature is for sharing important information or announcements related to the store.')];
 @endphp
 @extends('layouts.vendor.app')
-@section('title', translate('messages.store_view'))
+@section('title', $L['view'])
 @push('css_or_js')
-    <!-- Custom styles for this page -->
 @endpush
 
 @section('content')
@@ -16,14 +19,14 @@
         <div class="card mb-3">
             <div class="page-header px-3 pt-3 pb-3 border-bottom">
                 <div class="d-flex gap-2 align-items-center flex-wrap justify-content-between">
-                    <h3 class="text-capitalize mb-0">
+                    <h1 class="page-header-title mb-0">
                         <span>
-                            {{ translate('messages.my_' . $title . '_info') }}
+                            {{ $L['my_info'] }}
                         </span>
-                    </h3>
+                    </h1>
                     <div class="mb-0">
                         <a class="btn btn--primary mb-0 fw-medium" href="{{ route('vendor.shop.edit') }}"><i
-                                class="tio-edit mr-1"></i>{{ translate('messages.edit_' . $title . '_information') }}</a>
+                                class="tio-edit mr-1"></i>{{ $L['edit_information'] }}</a>
                     </div>
                 </div>
             </div>
@@ -59,13 +62,13 @@
                                                 width="36" height="36" class="rounded" alt="">
                                             <div>
                                                 <h5 class="lh--12 mb-2px color-3C3C3C">
-                                                    {{ translate('messages.Business Plan') }}
+                                                    {{ translate('Business plan') }}
                                                 </h5>
                                                 <span class="fs-13 lh--12 color-484848 opacity-70 d-block">
                                                     @if ($shop->store_business_model == 'commission')
-                                                        {{ translate('messages.Commission Base') }}
+                                                        {{ translate('Commission base') }}
                                                     @elseif(in_array($shop->store_business_model, ['subscription', 'unsubscribed']))
-                                                        {{ translate('messages.Subscription Base') }}
+                                                        {{ translate('Subscription base') }}
                                                     @endif
                                                 </span>
 
@@ -79,14 +82,14 @@
                                             <div>
                                                 @if ($shop->store_business_model == 'commission')
                                                     <h5 class="lh--12 mb-2px color-3C3C3C">
-                                                        {{ translate('messages.Admin Commission') }}
+                                                        {{ translate('Admin commission') }}
                                                     </h5>
                                                     <span class="fs-13 lh--12 color-484848 opacity-70 d-block">
                                                         {{ isset($shop->comission) ? $shop->comission : $admin_commission }}%
                                                     </span>
                                                 @elseif(in_array($shop->store_business_model, ['subscription', 'unsubscribed']))
                                                     <h5 class="lh--12 mb-2px color-3C3C3C">
-                                                        {{ translate('messages.Subscription Plan') }}
+                                                        {{ translate('Subscription plan') }}
                                                     </h5>
                                                     <span class="fs-13 lh--12 color-484848 opacity-70 d-block">
                                                         {{ $shop?->store_sub_update_application?->package?->package_name ?? translate('messages.no_subscription_found') }}
@@ -102,7 +105,7 @@
                                                 width="36" height="36" class="rounded" alt="">
                                             <div>
                                                 <h5 class="lh--12 mb-2px color-3C3C3C">
-                                                    {{ translate('messages.Phone') }}
+                                                    {{ translate('Phone') }}
                                                 </h5>
                                                 <span class="fs-13 lh--12 color-484848 opacity-70 d-block">
                                                     <a href="tel:{{ $shop->phone }}">{{ $shop->phone }}</a>
@@ -146,7 +149,7 @@
                 <div class="d-flex align-items-center gap-3">
                     <div
                         class="view-btn order-sm-0 order-3 fz--14px text--primary cursor-pointer text-decoration-underline font-semibold d-flex align-items-center gap-1">
-                        {{ translate('messages.view') }}
+                        {{ translate('messages.View') }}
                         <i class="tio-arrow-downward text--primary"></i>
                     </div>
                     <label class="toggle-switch toggle-switch-sm" for="announcement_status">
@@ -154,10 +157,10 @@
                             data-id="announcement_status" data-type="status"
                             data-image-on='{{ asset('/public/assets/admin/img/modal') }}/digital-payment-on.png'
                             data-image-off="{{ asset('/public/assets/admin/img/modal') }}/digital-payment-off.png"
-                            data-title-on="{{ translate('Do_you_want_to_enable_the_announcement') }}"
-                            data-title-off="{{ translate('Do_you_want_to_disable_the_announcement') }}"
-                            data-text-on="<p>{{ translate('User_will_able_to_see_the_Announcement_on_the_store_page.') }}</p>"
-                            data-text-off="<p>{{ translate('User_will_not_be_able_to_see_the_Announcement_on_the_store_page') }}</p>"
+                            data-title-on="{{ translate('Do you want to enable the announcement?') }}"
+                            data-title-off="{{ translate('Do you want to disable the announcement?') }}"
+                            data-text-on="<p>{{ translate('User will able to see the announcement on the store page.') }}</p>"
+                            data-text-off="<p>{{ translate('User cannot see the announcement on the store page') }}</p>"
                             name="announcement" value="1" {{ $shop->announcement ? 'checked' : '' }}>
                         <span class="toggle-switch-label">
                             <span class="toggle-switch-indicator"></span>
@@ -175,18 +178,18 @@
                         @csrf
                         <div class="rounded __bg-FAFAFA border-0 p-20">
                             <div class="card-title d-flex gap-0 align-items-center mb-1">
-                                <span>{{ translate('Announcement Text') }}</span>
+                                <span>{{ translate('Announcement text') }}</span>
                                 <span class="input-label-secondary" data-toggle="tooltip" data-placement="right"
-                                    data-original-title="{{ translate('This_feature_is_for_sharing_important_information_or_announcements_related_to_the_' . $title . '.') }}">
+                                    data-original-title="{{ $L['announce'] }}">
                                     <i class="tio-info"></i>
                                 </span>
                             </div>
                             <textarea name="announcement_message" id="" class="form-control" rows="4"
-                                placeholder="{{ translate('messages.ex_:_ABC_Company') }}">{{ $shop->announcement_message ?? '' }}</textarea>
+                                placeholder="{{ translate('messages.Ex') . ' : ' . translate('ABC company') }}">{{ $shop->announcement_message ?? '' }}</textarea>
                         </div>
                         <div class="justify-content-end btn--container gap-3 mt-20">
-                            <button type="submit" class="btn btn--reset">{{ translate('reset') }}</button>
-                            <button type="submit" class="btn btn--primary">{{ translate('publish') }}</button>
+                            <button type="submit" class="btn btn--reset"><i class="tio-refresh"></i> {{ translate('Reset') }}</button>
+                            <button type="submit" class="btn btn--primary"><i class="tio-publish"></i> {{ translate('publish') }}</button>
                         </div>
                     </form>
                 </div>

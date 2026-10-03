@@ -47,6 +47,6 @@
     </div>
 </div>
 <p class="fs-10 text-center mb-0 mt-4 text-capitalize">
-    {{ translate($imageFormat . ' Image size : Max ' . $maxSize . ' MB')}} <span
-        class="font-medium text-title">{{ translate('(' . $size . ')')}}</span>
+    {{ $imageFormat . ' image, max ' . $maxSize . ' MB' }} <span
+        class="font-medium text-title">({{ $size }})</span>
 </p>

@@ -7,17 +7,17 @@
     <table>
         <thead>
             <tr>
-                <th>{{ translate('Filter_Criteria') }}</th>
+                <th>{{ translate('Filter criteria') }}</th>
                 <th></th>
                 <th>
-                    {{ translate('Search_Bar_Content')  }}: {{ $data['search'] ?? translate('N/A') }}
+                    {{ translate('Search bar content')  }}: {{ $data['search'] ?? translate('N/A') }}
                 </th>
                 <th> </th>
                 </tr>
         <tr>
-            <th>{{ translate('sl') }}</th>
-            <th>{{ translate('Request_Created_At') }}</th>
-            <th>{{ translate('Requested_Amount') }}</th>
+            <th>{{ translate('SL') }}</th>
+            <th>{{ translate('Request created at') }}</th>
+            <th>{{ translate('Requested amount') }}</th>
             <th>{{ translate('Status') }}</th>
         </thead>
         <tbody>
@@ -28,11 +28,11 @@
                 <td> {{ \App\CentralLogics\Helpers::format_currency($tr->amount) }}</td>
                 <td>
                     @if($tr->approved==0)
-                    {{ translate('messages.pending') }}
+                    {{ translate('Pending') }}
                     @elseif($tr->approved==1)
-                    {{ translate('messages.approved') }}
+                    {{ translate('Approved') }}
                     @else
-                    {{ translate('messages.denied') }}
+                    {{ translate('Denied') }}
                     @endif
                 </td>
             </tr>

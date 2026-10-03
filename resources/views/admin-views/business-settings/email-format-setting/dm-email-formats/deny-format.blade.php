@@ -1,6 +1,6 @@
 @extends('layouts.admin.app')
 
-@section('title', translate('email_template'))
+@section('title', translate('Email template'))
 @push('css_or_js')
 <link rel="stylesheet" href="{{asset('public/assets/admin/css/view-pages/email-templates.css')}}">
 @endpush
@@ -8,7 +8,6 @@
 
 @section('content')
     <div class="content container-fluid">
-        <!-- Page Header -->
         <div class="page-header">
             @include('admin-views.business-settings.email-format-setting.partials.email-template-header')
             @include('admin-views.business-settings.email-format-setting.partials.dm-email-template-setting-links')
@@ -17,13 +16,13 @@
         <div class="tab-content">
             <div class="tab-pane fade show active">
                 <div class="card mb-3">
-                    @php($mail_status=\App\Models\BusinessSetting::where('key','deny_mail_status_dm')->first()?->value ?? '0')
+                    @php($mail_status=\App\CentralLogics\Helpers::get_business_settings('deny_mail_status_dm', false) ?? '0')
 
                     <div class="card-body">
                         <div class="maintenance-mode-toggle-bar d-flex flex-wrap justify-content-between border rounded align-items-center p-2">
                             <h5 class="text-capitalize m-0 text--primary pl-2">
-                                {{ \App\CentralLogics\Helpers::formatDeliverymanText(translate('Send_Mail_on_New_Deliveryman_Rejection?'), null, true) }}
-                        <span class="form-label-secondary text--primary" data-toggle="tooltip" data-placement="right" data-original-title="{{ \App\CentralLogics\Helpers::formatDeliverymanText(translate('If_Admin_rejects_a_Deliveryman’s_self-registration,_the_Deliveryman_will_get_an_automatic_rejection_mail.'), null, true) }}">
+                                {{ \App\CentralLogics\Helpers::formatDeliverymanText(translate('Send Mail on New Deliveryman Rejection?'), null, true) }}
+                        <span class="form-label-secondary text--primary" data-toggle="tooltip" data-placement="right" data-original-title="{{ \App\CentralLogics\Helpers::formatDeliverymanText(translate('If Admin rejects a Deliveryman\'s self-registration, the Deliveryman will get an automatic rejection mail.'), null, true) }}">
                                     <img src="{{asset('public/assets/admin/img/info-circle.svg')}}" alt="">
                                 </span>
                             </h5>
@@ -33,10 +32,10 @@
                                        data-type="status"
                                        data-image-on='{{asset('/public/assets/admin/img/modal')}}/place-order-on.png'
                                        data-image-off="{{asset('/public/assets/admin/img/modal')}}/place-order-off.png"
-                                       data-title-on="{{ \App\CentralLogics\Helpers::formatDeliverymanText(translate('Want_to_enable_Delivery_Man_deny_mail?'), null, true) }}"
-                                       data-title-off="{{ \App\CentralLogics\Helpers::formatDeliverymanText(translate('Want_to_disable_Delivery_Man_deny_mail?'), null, true) }}"
-                                       data-text-on="<p>{{ \App\CentralLogics\Helpers::formatDeliverymanText(translate('If_enabled,_Delivery_Men_will_receive_an_email_when_the_admin_rejects_their_registration_request.'), null, true) }}</p>"
-                                       data-text-off="<p>{{ \App\CentralLogics\Helpers::formatDeliverymanText(translate('If_disabled,_Delivery_Men_will_not_receive_any_email_upon_rejection_for_registration.'), null, true) }}</p>"
+                                       data-title-on="{{ \App\CentralLogics\Helpers::formatDeliverymanText(translate('Want to enable deliveryman deny mail?'), null, true) }}"
+                                       data-title-off="{{ \App\CentralLogics\Helpers::formatDeliverymanText(translate('Want to disable deliveryman deny mail?'), null, true) }}"
+                                       data-text-on="<p>{{ \App\CentralLogics\Helpers::formatDeliverymanText(translate('If enabled, Delivery Men will receive an email when the admin rejects their registration request.'), null, true) }}</p>"
+                                       data-text-off="<p>{{ \App\CentralLogics\Helpers::formatDeliverymanText(translate('If disabled, Delivery Men will not receive any email upon rejection for registration.'), null, true) }}</p>"
                                        id="mail-status" {{$mail_status == '1'?'checked':''}}>
                                 <span class="toggle-switch-label text mb-0">
                                     <span class="toggle-switch-indicator"></span>
@@ -67,15 +66,13 @@
                                 <div class="right-content">
                                     <div class="d-flex flex-wrap justify-content-between __gap-15px mt-2 mb-5">
                                         @php($data=\App\Models\EmailTemplate::withoutGlobalScope('translate')->where('type','dm')->where('email_type', 'deny')->first())
-                                        @php($language=\App\Models\BusinessSetting::where('key','language')->first())
-                                        @php($language = $language->value ?? null)
-                                        @php($defaultLang = str_replace('_', '-', app()->getLocale()))
+                                        @php($language = \App\CentralLogics\Helpers::get_business_settings('language', false) ?? null)
                                         @if($language)
                                             <ul class="nav nav-tabs m-0 border-0">
                                                 <li class="nav-item">
                                                     <a class="nav-link lang_link active"
                                                     href="#"
-                                                    id="default-link">{{translate('messages.default')}}</a>
+                                                    id="default-link">{{translate('Default')}}</a>
                                                 </li>
                                                 @foreach (json_decode($language) as $lang)
                                                     <li class="nav-item">
@@ -101,7 +98,7 @@
                                         </h5>
                                         <label class="custom-file">
                                             <input type="file" name="icon" id="mail-icon" class="custom-file-input" accept=".webp, .jpg, .png, .jpeg, .gif, .bmp, .tif, .tiff|image/*">
-                                            <span class="custom-file-label">{{ translate('messages.Choose File') }}</span>
+                                            <span class="custom-file-label">{{ translate('Choose file') }}</span>
                                         </label>
                                     </div>
                                     <br>
@@ -113,12 +110,12 @@
                                         @if ($language)
                                             <div class="__bg-F8F9FC-card default-form lang_form" id="default-form">
                                                 <div class="form-group">
-                                                    <label class="form-label">{{translate('Main Title')}}({{ translate('messages.default') }})</label>
+                                                    <label class="form-label">{{translate('Main Title')}}({{ translate('Default') }})</label>
                                                     <input type="text" name="title[]" value="{{ $data?->getRawOriginal('title') }}" data-id="mail-title" placeholder="Order has been placed successfully !" class="form-control">
                                                 </div>
                                                 <div class="form-group mb-0">
                                                     <label class="form-label">
-                                                        {{ translate('Mail Body Message') }}({{ translate('messages.default') }})
+                                                        {{ translate('Mail Body Message') }}({{ translate('Default') }})
 
                                                     </label>
                                                     <textarea class="form-control" id="ckeditor" data-id="mail-body" name="body[]">
@@ -171,7 +168,7 @@
 
                                                     </label>
                                                     <textarea class="ckeditor form-control" name="body[]">
-                                                      {{ translate('Hi_Sabrina') }},
+                                                      {{ translate('Hi Sabrina') }},
                                                     </textarea>
                                                 </div>
                                             </div>
@@ -189,9 +186,9 @@
                                                 @if ($language)
                                                         <div class="form-group lang_form default-form">
                                                             <label class="form-label">
-                                                                {{translate('Section Text')}}({{ translate('messages.default') }})
+                                                                {{translate('Section Text')}}({{ translate('Default') }})
                                                             </label>
-                                                            <input type="text" data-id="mail-footer" name="footer_text[]"  placeholder="{{ translate('Please_contact_us_for_any_queries;_we’re_always_happy_to_help.') }}"class="form-control" value="{{ $data?->getRawOriginal('footer_text') }}">
+                                                            <input type="text" data-id="mail-footer" name="footer_text[]"  placeholder="{{ translate('Please contact us for any queries; we\'re always happy to help.') }}"class="form-control" value="{{ $data?->getRawOriginal('footer_text') }}">
                                                         </div>
                                                     @foreach(json_decode($language) as $lang)
                                                     <?php
@@ -209,7 +206,7 @@
                                                             <label class="form-label">
                                                                 {{translate('Section Text')}}({{strtoupper($lang)}})
                                                             </label>
-                                                            <input type="text" name="footer_text[]"  placeholder="{{ translate('Please_contact_us_for_any_queries;_we’re_always_happy_to_help.') }}"class="form-control" value="{{ $translate[$lang]['footer_text']??'' }}">
+                                                            <input type="text" name="footer_text[]"  placeholder="{{ translate('Please contact us for any queries; we\'re always happy to help.') }}"class="form-control" value="{{ $translate[$lang]['footer_text']??'' }}">
                                                         </div>
                                                     @endforeach
                                                 @else
@@ -218,7 +215,7 @@
                                                         {{translate('Section Text')}}
 
                                                     </label>
-                                                    <input type="text" placeholder="{{ translate('Please_contact_us_for_any_queries;_we’re_always_happy_to_help.') }}"class="form-control" name="footer_text[]" value="">
+                                                    <input type="text" placeholder="{{ translate('Please contact us for any queries; we\'re always happy to help.') }}"class="form-control" name="footer_text[]" value="">
                                                 </div>
                                                 @endif
                                                     @include('admin-views.business-settings.email-format-setting.partials.social-media-and-footer-section')
@@ -226,7 +223,7 @@
                                                 @if ($language)
                                                         <div class="form-group lang_form default-form">
                                                             <label class="form-label">
-                                                                {{translate('Copyright Content')}}({{ translate('messages.default') }})
+                                                                {{translate('Copyright Content')}}({{ translate('Default') }})
                                                             </label>
                                                             <input type="text" data-id="mail-copyright" name="copyright_text[]"  placeholder="{{ \App\CentralLogics\Helpers::copyright_placeholder() }}" class="form-control" value="{{ $data?->getRawOriginal('copyright_text') }}">
                                                         </div>
@@ -262,8 +259,8 @@
                                         </div>
                                     </div>
                                     <div class="btn--container justify-content-end mt-20">
-                                        <button type="reset" id="reset_btn" class="btn btn--reset">{{translate('Reset')}}</button>
-                                        <button type="submit" class="btn btn--primary">{{translate('Save')}}</button>
+                                        <button type="reset" id="reset_btn" class="btn btn--reset"><i class="tio-refresh"></i> {{translate('Reset')}}</button>
+                                        <button type="submit" class="btn btn--primary"><i class="tio-save"></i> {{translate('Save')}}</button>
                                     </div>
                                 </div>
                             </div>
@@ -275,7 +272,6 @@
         </div>
 
 
-        <!-- Instructions Modal -->
 @include('admin-views.business-settings.email-format-setting.partials.email-template-instructions')
 
     </div>
@@ -283,8 +279,6 @@
 @endsection
 
 @push('script_2')
-    <!-- Email Template-->
     <script src="{{asset('public/assets/admin/ckeditor/ckeditor.js')}}"></script>
     <script src="{{asset('public/assets/admin/js/view-pages/email-templates.js')}}"></script>
-    <!-- Email Template End-->
 @endpush

@@ -1,77 +1,110 @@
 @extends('layouts.admin.app')
 
-@section('title', translate('mail_config'))
+@section('title', translate('Send Test Mail'))
 
 @push('css_or_js')
+    <link rel="stylesheet" href="{{ asset('public/assets/admin/css/third-party-setup.css') }}">
 @endpush
 
 @section('content')
-    <div class="content container-fluid">
-        <!-- Page Header -->
-        <div class="page-header">
-            <h1 class="page-header-title">
-                <span class="page-header-icon">
-                    <img src="{{asset('public/assets/admin/img/email.png')}}" class="w--26" alt="">
-                </span>
-                <span>{{ translate('messages.smtp_mail_setup') }}
-                </span>
-            </h1>
-            @include('admin-views.business-settings.partials.third-party-links')
-        </div>
-        <!-- End Page Header -->
+    @php
+        $mail_config = \App\CentralLogics\Helpers::get_business_settings('mail_config');
+        $mail_config = is_array($mail_config) ? $mail_config : [];
+        $is_active = (int) ($mail_config['status'] ?? 0) === 1;
+    @endphp
 
-        <div class="card min-h-60vh">
-            <div class="card-header card-header-shadow pb-0">
-                <div class="d-flex flex-wrap justify-content-between w-100 row-gap-1">
-                    <ul class="nav nav-tabs nav--tabs border-0 gap-2">
-                        <li class="nav-item mr-2 mr-md-4">
-                            <a href="{{route('admin.business-settings.third-party.mail-config')}}" class="nav-link pb-2 px-0 pb-sm-3">
-                                <img src="{{asset('/public/assets/admin/img/mail-config.png')}}" alt="">
-                                <span>{{translate('Mail Config')}}</span>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="{{route('admin.business-settings.third-party.test')}}" class="nav-link pb-2 px-0 pb-sm-3 active">
-                                <img src="{{asset('/public/assets/admin/img/test-mail.png')}}" alt="">
-                                <span>{{translate('Send Test Mail')}}</span>
-                            </a>
-                        </li>
-                    </ul>
-                    <div class="py-1">
-                        <div class="text--primary-2 d-flex flex-wrap align-items-center" type="button" data-toggle="modal" data-target="#works-modal">
-                            <strong class="mr-2">{{translate('How it Works')}}</strong>
-                            <div class="blinkings">
-                                <i class="tio-info-outined"></i>
-                            </div>
+    <div class="content container-fluid tps">
+        @include('admin-views.business-settings.partials.third-party-header', [
+            'icon' => 'tio-email',
+            'title' => translate('messages.Smtp mail setup'),
+            'summary' => translate('Send a real message through your SMTP settings to confirm delivery works.'),
+            'helpTarget' => '#works-modal',
+        ])
+
+        @include('admin-views.business-settings.partials.mail-tabs', ['current' => 'test'])
+
+        <div class="py-2"></div>
+
+        <div class="row g-3">
+            <div class="col-lg-7">
+                <div class="tps-card">
+                    <div class="tps-card__head">
+                        <span class="tps-card__brand"><i class="tio-telegram"></i></span>
+                        <div class="tps-card__titles">
+                            <h2 class="tps-card__title">{{ translate('Send Test Mail') }}</h2>
+                            <p class="tps-card__subtitle">
+                                {{ translate('The message is sent using the SMTP credentials saved on the Mail Config tab.') }}
+                            </p>
+                        </div>
+                        <div class="tps-card__aside">
+                            <span class="tps-pill {{ $is_active ? 'tps-pill--on' : 'tps-pill--off' }}">
+                                {{ $is_active ? translate('messages.Active') : translate('messages.Inactive') }}
+                            </span>
                         </div>
                     </div>
-                </div>
-            </div>
-            <div class="card-body">
-                <div class="tab-content">
-                    <div class="tab-pane fade show active" id="test-mail">
-                        <div class="row">
-                            <div class="col-lg-8">
-                                <form class="" action="javascript:">
-                                    <label class="form-label">{{translate('Email')}}</label>
-                                    <div class="row gx-3 gy-1">
-                                        <div class="col-md-8 col-sm-7">
-                                            <div>
-                                                <label for="test-email" class="sr-only">
-                                                    {{ translate('mail') }}</label>
-                                                <input type="email" id="test-email" class="form-control"
-                                                    placeholder="{{ translate('messages.Ex:') }} jhon@email.com">
-                                            </div>
-                                        </div>
-                                        <div class="col-md-4 col-sm-5">
-                                            <button type="button"  class="btn btn--primary h--45px btn-block send-mail" data-toggle="modal" data-target="#sent-mail-modal">
-                                                <i class="tio-telegram"></i>
-                                                {{ translate('send_mail') }}
-                                            </button>
-                                        </div>
+
+                    <div class="tps-card__body">
+                        @unless ($is_active)
+                            <div class="tps-note tps-note--warn mb-4">
+                                <i class="tio-warning"></i>
+                                <div>
+                                    {{ translate('Mail service is switched off, so no test mail will be delivered. Turn it on first from the') }}
+                                    <a href="{{ route('admin.business-settings.third-party.mail-config') }}">{{ translate('Mail Config') }}</a>
+                                    {{ translate('tab.') }}
+                                </div>
+                            </div>
+                        @endunless
+
+                        <form action="javascript:">
+                            <div class="row gx-3 gy-2 align-items-end">
+                                <div class="col-md-8 col-sm-7">
+                                    <div class="tps-field">
+                                        <label for="test-email" class="tps-field__label">{{ translate('email') }}</label>
+                                        <input type="email" id="test-email" class="form-control"
+                                               placeholder="{{ translate('messages.Ex') }}: jhon@email.com">
+                                        <small class="tps-field__hint">
+                                            {{ translate('Use an inbox you can open right now so you can confirm the message arrived.') }}
+                                        </small>
                                     </div>
-                                </form>
+                                </div>
+                                <div class="col-md-4 col-sm-5">
+                                    <button type="button" class="btn btn--primary h--45px btn-block send-mail">
+                                        <i class="tio-telegram"></i> {{ translate('Send mail') }}
+                                    </button>
+                                </div>
                             </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-5">
+                <div class="tps-card">
+                    <div class="tps-card__head">
+                        <span class="tps-card__brand"><i class="tio-info-outined"></i></span>
+                        <div class="tps-card__titles">
+                            <h2 class="tps-card__title">{{ translate('Current Configuration') }}</h2>
+                        </div>
+                    </div>
+                    <div class="tps-card__body">
+                        <ul class="list-unstyled m-0 d-flex flex-column __gap-12px fs-12">
+                            @foreach ([
+                                [translate('messages.Mailer name'), $mail_config['name'] ?? null],
+                                [translate('messages.Email id'), $mail_config['email_id'] ?? null],
+                                [translate('messages.host'), $mail_config['host'] ?? null],
+                                [translate('messages.port'), $mail_config['port'] ?? null],
+                                [translate('messages.encryption'), $mail_config['encryption'] ?? null],
+                            ] as [$label, $value])
+                                <li class="d-flex align-items-center justify-content-between gap-2">
+                                    <span class="text-muted">{{ $label }}</span>
+                                    <span class="font-weight-bold text-right">{{ $value ?: '—' }}</span>
+                                </li>
+                            @endforeach
+                        </ul>
+
+                        <div class="tps-note tps-note--muted mt-3">
+                            <i class="tio-info-outined"></i>
+                            <div>{{ translate('If the test fails, double check the port and encryption pair, then try again.') }}</div>
                         </div>
                     </div>
                 </div>
@@ -79,124 +112,29 @@
         </div>
     </div>
 
-
-    <!-- How it Works Modal -->
-    <div class="modal fade" id="works-modal">
-        <div class="modal-dialog status-warning-modal">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <button type="button" class="close" data-dismiss="modal">
-                        <span aria-hidden="true" class="tio-clear"></span>
-                    </button>
-                </div>
-                <div class="modal-body pb-5 pt-0">
-                    <div class="single-item-slider owl-carousel">
-                        <div class="item">
-                            <div class="mb-20">
-                                <div class="text-center">
-                                    <img src="{{asset('/public/assets/admin/img/mail-config/slide-1.png')}}" alt="" class="mb-20">
-                                    <h5 class="modal-title">{{translate('Find SMTP Server Details')}}</h5>
-                                </div>
-                                <ul>
-                                    <li>
-                                        {{translate('Contact your email service provider or IT administrator to obtain the SMTP server details, such as hostname, port, username, and password.')}}
-                                    </li>
-                                    <li>
-                                        {{translate("Note: If you're not sure where to find these details, check the email provider's documentation or support resources for guidance.")}}
-                                    </li>
-                                </ul>
-                            </div>
-                        </div>
-                        <div class="item">
-                            <div class="mb-20">
-                                <div class="text-center">
-                                    <img src="{{asset('/public/assets/admin/img/mail-config/slide-2.png')}}" alt="" class="mb-20">
-                                    <h5 class="modal-title">{{translate('Configure SMTP Settings')}}</h5>
-                                </div>
-                                <ul>
-                                    <li>
-                                        {{translate('Go to the SMTP mail setup page in the admin panel.')}}
-                                    </li>
-                                    <li>
-                                        {{translate('Enter the obtained SMTP server details, including the hostname, port, username, and password.')}}
-                                    </li>
-                                    <li>
-                                        {{translate('Choose the appropriate encryption method (e.g., SSL, TLS) if required. Save the settings.')}}
-                                    </li>
-                                </ul>
-                            </div>
-                        </div>
-                        <div class="item">
-                            <div class="mb-20">
-                                <div class="text-center">
-                                    <img src="{{asset('/public/assets/admin/img/mail-config/slide-3.png')}}" alt="" class="mb-20">
-                                    <h5 class="modal-title">{{translate('Test SMTP Connection')}}</h5>
-                                </div>
-                                <ul>
-                                    <li>
-                                        {{translate('Click on the "Send Test Mail" button to verify the SMTP connection.')}}
-                                    </li>
-                                    <li>
-                                        {{translate('If successful, you will see a confirmation message indicating that the connection is working fine.')}}
-                                    </li>
-                                    <li>
-                                        {{translate('If not, double-check your SMTP settings and try again.')}}
-                                    </li>
-                                    <li>
-                                        {{translate("Note: If you're unsure about the SMTP settings, contact your email service provider or IT administrator for assistance.")}}
-                                    </li>
-                                </ul>
-                            </div>
-                        </div>
-                        <div class="item">
-                            <div class="mw-353px mb-20 mx-auto">
-                                <div class="text-center">
-                                    <img src="{{asset('/public/assets/admin/img/mail-config/slide-4.png')}}" alt="" class="mb-20">
-                                    <h5 class="modal-title">{{translate('Enable Mail Configuration')}}</h5>
-                                </div>
-                                <ul class="px-3">
-                                    <li>
-                                        {{translate('If the SMTP connection test is successful, you can now enable the mail configuration services by toggling the switch to "ON."')}}
-                                    </li>
-                                    <li>
-                                        {{translate('This will allow the system to send emails using the configured SMTP settings.')}}
-                                    </li>
-                                </ul>
-                                <div class="btn-wrap">
-                                    <button type="submit" class="btn btn--primary w-100" data-dismiss="modal">{{translate('Got It')}}</button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="d-flex justify-content-center">
-                        <div class="slide-counter"></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
+    @include('admin-views.business-settings.partials.mail-works-modal')
 @endsection
+
 @push('script_2')
     <script>
         "use strict";
+
         function ValidateEmail(inputText) {
             let mailformat = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/;
             return !!inputText.match(mailformat);
         }
 
         $(document).on('click', '.send-mail', function () {
-            @if(getEnvMode() =='demo')
-            toastr.info('{{ translate('Update option is disabled for demo!') }}', {
-                CloseButton: true,
-                ProgressBar: true
-            });
+            @if (getEnvMode() == 'demo')
+                toastr.info('{{ translate('Update option is disabled for demo!') }}', {
+                    CloseButton: true,
+                    ProgressBar: true
+                });
             @else
-
             if (ValidateEmail($('#test-email').val())) {
                 Swal.fire({
-                    title: '{{ translate('Are you sure?') }}?',
-                    text: "{{ translate('a_test_mail_will_be_sent_to_your_email') }}!",
+                    title: '{{ translate('Are you sure?') }}',
+                    text: "{{ translate('A test mail will be sent to your email') }}!",
                     showCancelButton: true,
                     confirmButtonColor: '#00868F',
                     cancelButtonColor: 'secondary',
@@ -214,38 +152,28 @@
                             data: {
                                 "email": $('#test-email').val()
                             },
-                            beforeSend: function() {
+                            beforeSend: function () {
                                 $('#loading').show();
                             },
-                            success: function(data) {
+                            success: function (data) {
                                 if (data.success === 2) {
-                                    toastr.error(
-                                        '{{ translate('email_configuration_error') }} !!'
-                                    );
+                                    toastr.error('{{ translate('Email configuration error') }} !!');
                                 } else if (data.success === 1) {
-                                    toastr.success(
-                                        '{{ translate('email_configured_perfectly!') }}!'
-                                    );
+                                    toastr.success('{{ translate('Email configured perfectly!') }}!');
                                 } else {
-                                    toastr.info(
-                                        '{{ translate('email_status_is_not_active') }}!'
-                                    );
+                                    toastr.info('{{ translate('Email status is not active') }}!');
                                 }
                             },
-                            complete: function() {
+                            complete: function () {
                                 $('#loading').hide();
-
                             }
                         });
                     }
                 })
             } else {
-                toastr.error('{{ translate('invalid_email_address') }} !!');
+                toastr.error('{{ translate('Invalid email address') }} !!');
             }
-
             @endif
-
         });
-
     </script>
 @endpush

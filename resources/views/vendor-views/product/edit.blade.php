@@ -1,6 +1,6 @@
 @extends('layouts.vendor.app')
 
-@section('title', request()->product_gellary == 1 ? translate('Add item') : translate('Update_item'))
+@section('title', request()->product_gellary == 1 ? translate('Add item') : translate('Update item'))
 
 @push('css_or_js')
     <meta name="csrf-token" content="{{ csrf_token() }}">
@@ -11,20 +11,17 @@
 @endpush
 
 @section('content')
-    @php($module_type = \App\CentralLogics\Helpers::get_store_data()->module->module_type)
-    @php(Config::set('module.current_module_type', $module_type))
-    @php($openai_config = \App\CentralLogics\Helpers::get_business_settings('openai_config'))
     <div class="content container-fluid">
-        <!-- Page Header -->
         <div class="page-header">
             <h1 class="page-header-title">
                 <span class="page-header-icon">
                     <img src="{{ asset('public/assets/admin/img/edit.png') }}" class="w--22" alt="">
                 </span>
                 <span>
-                    {{ request()->product_gellary == 1 ? translate('Add_item') : translate('item_update') }}
+                    {{ request()->product_gellary == 1 ? translate('Add item') : translate('Item update') }}
                 </span>
             </h1>
+            <p class="page-header-desc">{{ translate('Change this item\'s details, price, images or the variations customers pick from.') }}</p>
         </div>
 
         @if (isset($temp_product) && $temp_product == 1 && $product->note)
@@ -32,7 +29,7 @@
                 <div class="order-invoice-left d-flex d-sm-block justify-content-between">
                     <div class="d-flex align-items-center __gap-5px">
                         <h1 class="page-header-title text-danger ">
-                            {{ translate('messages.Rejection_Note') }} :
+                            {{ translate('Rejection note') }} :
                         </h1>
                         <h3 class="">
                             {{ $product->note }}
@@ -41,7 +38,6 @@
                 </div>
             </div>
         @endif
-        <!-- End Page Header -->
         <form id="product_form" enctype="multipart/form-data" class="validate-form" data-ajax="true">
 
             @if (request()->product_gellary == 1)
@@ -58,7 +54,7 @@
 
 
             <input type="hidden" id="request_type" value="vendor">
-            <input type="hidden" id="store_id" value="{{ \App\CentralLogics\Helpers::get_store_id() }}">
+            <input type="hidden" id="store_id" value="{{ $store_id }}">
             <input type="hidden" id="module_type" value="{{ $module_type }}">
 
 
@@ -71,13 +67,13 @@
                     <div class="card h-100">
                         <div class="card-body d-flex flex-wrap align-items-center">
                             <div class="mb-20">
-                                <h3 class="mb-0">{{ translate('Item_Thumbnail') }}
-                                    @if (Config::get('module.current_module_type') != 'food')
+                                <h3 class="mb-0">{{ translate('Item thumbnail') }}
+                                    @if ($module_type != 'food')
                                     <span class="text-danger">*</span>
                                     @endif
                                 </h3>
                                 <p class="fs-12 mb-0">
-                                    {{ translate('Upload additional images.') . translate(IMAGE_FORMAT) .' '. translate('Image size : Max') .' ' .MAX_FILE_SIZE. translate('MB (1:1)')  }}
+                                    {{ translate('Upload additional images.') . ' ' . IMAGE_FORMAT . ' image, max ' . MAX_FILE_SIZE . ' MB (ratio ' . '1:1' . ')'  }}
                                 </p>
                             </div>
                             <div class="__bg-F8F9FC-card d-center w-100 p-3">
@@ -110,10 +106,10 @@
                         <div class="card-body">
                             <div class="mb-20">
                                 <h3 class="text-dark mb-1">
-                                    {{ translate('messages.Product Additional Images') }}
+                                    {{ translate('Product additional images') }}
                                 </h3>
                                 <p class="fs-12 mb-0">
-                                    {{ translate('messages.update additional images. JPG, JPEG, PNG Image size : Max 2 MB (1:1)') }}
+                                    {{ translate('messages.Update additional images.') }} JPG, JPEG, PNG. {{ translate('messages.Maximum size') }}: 2 MB. {{ translate('messages.Ratio') }}: 1:1
                                 </p>
                             </div>
                             <div class="__bg-F8F9FC-card p-3">
@@ -174,12 +170,12 @@
                                         <span class="card-header-icon mr-2">
                                             <i class="tio-canvas-text"></i>
                                         </span>
-                                        <span>{{ translate('messages.food_variations') }}</span>
+                                        <span>{{ translate('messages.Food variations') }}</span>
                                     </h5>
                                     <div>
 
                                         <a class="btn text--primary-2" id="add_new_option_button">
-                                            {{ translate('add_new_variation') }}
+                                            {{ translate('Add new variation') }}
                                             <i class="tio-add"></i>
                                         </a>
                                         @if (isset($openai_config) && data_get($openai_config, 'status') == 1)
@@ -187,7 +183,7 @@
                                                 class="btn bg-white text-primary opacity-1 generate_btn_wrapper p-0 mb-2 variation_setup_auto_fill"
                                                 id="variation_setup_auto_fill"
                                                 data-route="{{ route('admin.product.variation-setup-auto-fill') }}"
-                                                data-error="{{ translate('Please provide an item name and description so the AI can generate a suitable food variations.') }}"
+                                                data-error="{{ translate('Please provide an item name and description so the AI can generate suitable food variations.') }}"
                                                 data-lang="en">
                                                 <div class="btn-svg-wrapper">
                                                     <img width="18" height="18" class=""
@@ -195,7 +191,7 @@
                                                         alt="">
                                                 </div>
                                                 <span class="ai-text-animation d-none" role="status">
-                                                    {{ translate('Just_a_second') }}
+                                                    {{ translate('Just a second') }}
                                                 </span>
                                                 <span class="btn-text">{{ translate('Generate') }}</span>
                                             </button>
@@ -222,7 +218,6 @@
                                         @endif
                                     </div>
 
-                                    <!-- Empty Variation -->
                                     @if (!isset($product->food_variations) || count(json_decode($product->food_variations, true)) < 1)
                                         <div id="empty-variation">
                                             <div class="text-center">
@@ -246,14 +241,14 @@
                                 <div class="card-header">
                                     <h5 class="card-title">
                                         <span class="card-header-icon"><i class="tio-canvas-text"></i></span>
-                                        <span>{{ translate('attribute') }}</span>
+                                        <span>{{ translate('Attribute') }}</span>
                                     </h5>
                                     @if (isset($openai_config) && data_get($openai_config, 'status') == 1)
                                         <button type="button"
                                             class="btn bg-white text-primary opacity-1 generate_btn_wrapper p-0 mb-2 other_variation_setup_auto_fill"
                                             id="other_variation_setup_auto_fill"
                                             data-route="{{ route('admin.product.generate-other-variation-data') }}"
-                                            data-error="{{ translate('Please provide an item name and description so the AI can generate a suitable variations.') }}"
+                                            data-error="{{ translate('Please provide an item name and description so the AI can generate suitable variations.') }}"
                                             data-lang="en">
                                             <div class="btn-svg-wrapper">
                                                 <img width="18" height="18" class=""
@@ -261,7 +256,7 @@
                                                     alt="">
                                             </div>
                                             <span class="ai-text-animation d-none" role="status">
-                                                {{ translate('Just_a_second') }}
+                                                {{ translate('Just a second') }}
                                             </span>
                                             <span class="btn-text">{{ translate('Generate') }}</span>
                                         </button>
@@ -272,11 +267,11 @@
                                         <div class="col-12">
                                             <div class="form-group mb-0">
                                                 <label class="input-label"
-                                                    for="exampleFormControlSelect1">{{ translate('messages.attribute') }}<span
+                                                    for="exampleFormControlSelect1">{{ translate('Attribute') }}<span
                                                         class="input-label-secondary"></span></label>
                                                 <select name="attribute_id[]" id="choice_attributes"
                                                     class="form-control js-select2-custom" multiple="multiple">
-                                                    @foreach (\App\Models\Attribute::orderBy('name')->get() as $attribute)
+                                                    @foreach ($attributes as $attribute)
                                                         <option value="{{ $attribute['id'] }}"
                                                             {{ in_array($attribute->id, json_decode($product['attributes'], true)) ? 'selected' : '' }}>
                                                             {{ $attribute['name'] }}</option>
@@ -312,7 +307,7 @@
                             </div>
                         </div>
                     </div>
-                    @if (Config::get('module.current_module_type') == 'ecommerce')
+                    @if ($module_type == 'ecommerce')
                     @includeIf('admin-views.business-settings.landing-page-settings.partial._meta_data', ['item' => $product])
                 @endif
                 </div>
@@ -324,14 +319,15 @@
                 <div class="col-12">
                     <div class="btn--container justify-content-end">
                         <button type="reset" id="reset_btn"
-                            class="btn btn--reset">{{ translate('messages.reset') }}</button>
-                        <button type="submit" class="btn btn--primary">{{ translate('messages.update') }}</button>
+                            class="btn btn--reset"><i class="tio-refresh"></i> {{ translate('messages.Reset') }}</button>
+                        <button type="submit" class="btn btn--primary"><i class="tio-save"></i> {{ translate('Update') }}</button>
                     </div>
                 </div>
             </div>
         </form>
     </div>
-    <span id="message-enter-choice-values" data-text="{{ translate('enter_choice_values') }}"></span>
+    <span id="message-enter-choice-values" data-text="{{ translate('Enter choice values') }}"></span>
+    @includeif('admin-views.product.partials._ai_sidebar')
 
 @endsection
 
@@ -527,7 +523,7 @@
 
                     },
                     onExtensionErr: function (index, file) {
-                        toastr.error('Please only input png or jpg type file', {
+                        toastr.error('{{ translate('Please upload a file in a supported format') . ': PNG, JPG' }}', {
                             CloseButton: true,
                             ProgressBar: true
                         });

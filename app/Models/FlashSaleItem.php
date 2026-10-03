@@ -2,12 +2,15 @@
 
 namespace App\Models;
 
+use App\Traits\Model\InvalidatesCacheTrait;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class FlashSaleItem extends Model
 {
-    use HasFactory;
+    use HasFactory, InvalidatesCacheTrait;
+
+    protected static array $cacheTags = ['flash_sale'];
 
     protected $casts = [
         'flash_sale_id' => 'integer',

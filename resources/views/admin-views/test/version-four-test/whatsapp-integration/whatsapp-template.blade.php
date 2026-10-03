@@ -1,11 +1,10 @@
 @extends('layouts.admin.app')
 
-@section('title', translate('messages.3rd Party Integration'))
+@section('title', translate('messages.Third-party integration'))
 
 
 @section('content')
 <div class="content container-fluid">
-    <!-- Page Header -->
     <div class="page-header mb-0 pb-2 position-relative z-2">
         <div class="d-flex flex-wrap justify-content-between align-items-center">
             <h1 class="page-header-title text-capitalize">
@@ -13,6 +12,7 @@
                     {{ translate('WhatsApp Template') }}
                 </span>
             </h1>
+            <p class="page-header-desc">{{ translate('The wording of each WhatsApp message, kept in step with what WhatsApp has approved.') }}</p>
             <div>
                 <div class="dropdown">
                     <button class="dropdown-toggle d-flex align-items-center form-control pe-4" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -30,7 +30,7 @@
         <div class="js-nav-scroller tabs-slide-wrap tabs-slide-language hs-nav-scroller-horizontal mb-0">
             <ul class="nav tabs-inner nav-tabs border-0 nav--tabs nav--pills pt-2 nav--theme-version">
                 <li class="nav-item">
-                    <a class="nav-link active" href="">{{ translate('Order Placed') }}</a>
+                    <a class="nav-link active" href="">{{ translate('Order placed') }}</a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link " href="">{{ translate('Order Confirmation') }}</a>
@@ -45,7 +45,7 @@
                     <a class="nav-link " href="">{{ translate('Order delivered') }}</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link " href="">{{ translate('Order cancelled') }}</a>
+                    <a class="nav-link " href="">{{ translate('Order canceled') }}</a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link " href="">{{ translate('Order update') }}</a>
@@ -154,7 +154,7 @@
                                             <h5 class="mb-1 fs-14">
                                                 {{ translate('Image Banner') }} 
                                             </h5>
-                                            <p class="fs-12 mb-0">{{ translate('Upload Image Banner') }}</p>
+                                            <p class="fs-12 mb-0">{{ translate('Upload Banner Image') }}</p>
                                         </div>                                        
                                         @include('admin-views.partials._image-uploader', [
                                             'id' => 'image-input',
@@ -196,7 +196,7 @@
                                                         <div class="dropdown-item cursor-pointer py-12px px-2 d-flex align-items-start justify-content-between gap-2">
                                                             <div>
                                                                 <h5 class="mb-1 lh-1 fs-13 fw-semibold title-color text-break text-wrap ">
-                                                                    {{ translate('Customer Name') }}
+                                                                    {{ translate('Customer name') }}
                                                                 </h5>
                                                                 <span class="mb-0 lh-1 fs-10 fw-normal title-color line--limit-2 lh-base text-break text-wrap ">
                                                                     {{ translate('By this variable you will add customer name') }}
@@ -226,7 +226,7 @@
                                                         <div class="dropdown-item cursor-pointer py-12px px-2 d-flex align-items-start justify-content-between gap-2">
                                                             <div>
                                                                 <h5 class="mb-1 lh-1 fs-13 fw-semibold title-color text-break text-wrap ">
-                                                                    {{ translate('driver Name') }}
+                                                                    {{ translate('Driver name') }}
                                                                 </h5>
                                                                 <span class="mb-0 lh-1 fs-10 fw-normal title-color line--limit-2 lh-base text-break text-wrap ">
                                                                     {{ translate('To add driver name automatically use this variable') }}
@@ -241,7 +241,7 @@
                                                         <div class="dropdown-item cursor-pointer py-12px px-2 d-flex align-items-start justify-content-between gap-2">
                                                             <div>
                                                                 <h5 class="mb-1 lh-1 fs-13 fw-semibold title-color text-break text-wrap ">
-                                                                    {{ translate('driver Phone') }}
+                                                                    {{ translate('Driver phone') }}
                                                                 </h5>
                                                                 <span class="mb-0 lh-1 fs-10 fw-normal title-color line--limit-2 lh-base text-break text-wrap ">
                                                                     {{ translate('To add driver phone automatically use this variable') }}
@@ -256,7 +256,7 @@
                                                         <div class="dropdown-item cursor-pointer py-12px px-2 d-flex align-items-start justify-content-between gap-2">
                                                             <div>
                                                                 <h5 class="mb-1 lh-1 fs-13 fw-semibold title-color text-break text-wrap ">
-                                                                    {{ translate('vehicle Type') }}
+                                                                    {{ translate('Vehicle type') }}
                                                                 </h5>
                                                                 <span class="mb-0 lh-1 fs-10 fw-normal title-color line--limit-2 lh-base text-break text-wrap ">
                                                                     {{ translate('To add vehicle type automatically use this variable') }}
@@ -286,7 +286,7 @@
                                                         <div class="dropdown-item cursor-pointer py-12px px-2 d-flex align-items-start justify-content-between gap-2">
                                                             <div>
                                                                 <h5 class="mb-1 lh-1 fs-13 fw-semibold title-color text-break text-wrap ">
-                                                                    {{ translate('driver Name') }}
+                                                                    {{ translate('Driver name') }}
                                                                 </h5>
                                                                 <span class="mb-0 lh-1 fs-10 fw-normal title-color line--limit-2 lh-base text-break text-wrap ">
                                                                     {{ translate('To add driver name automatically use this variable') }}
@@ -301,7 +301,7 @@
                                                         <div class="dropdown-item cursor-pointer py-12px px-2 d-flex align-items-start justify-content-between gap-2">
                                                             <div>
                                                                 <h5 class="mb-1 lh-1 fs-13 fw-semibold title-color text-break text-wrap ">
-                                                                    {{ translate('driver Phone') }}
+                                                                    {{ translate('Driver phone') }}
                                                                 </h5>
                                                                 <span class="mb-0 lh-1 fs-10 fw-normal title-color line--limit-2 lh-base text-break text-wrap ">
                                                                     {{ translate('To add driver phone automatically use this variable') }}
@@ -316,7 +316,7 @@
                                                         <div class="dropdown-item cursor-pointer py-12px px-2 d-flex align-items-start justify-content-between gap-2">
                                                             <div>
                                                                 <h5 class="mb-1 lh-1 fs-13 fw-semibold title-color text-break text-wrap ">
-                                                                    {{ translate('vehicle Type') }}
+                                                                    {{ translate('Vehicle type') }}
                                                                 </h5>
                                                                 <span class="mb-0 lh-1 fs-10 fw-normal title-color line--limit-2 lh-base text-break text-wrap ">
                                                                     {{ translate('To add vehicle type automatically use this variable') }}
@@ -350,7 +350,7 @@
                             <div class="callto-action-switcher d-flex align-items-center gap-2 justify-content-between mb-20">
                                 <div class="mb-0">
                                     <h5 class="mb-0 fs-16">
-                                        {{ translate('Call to Action Button') }}
+                                        {{ translate('Call to action button') }}
                                     </h5>
                                 </div>
                                 <div class="position-relative">
@@ -400,7 +400,7 @@
                 <div class="card card-sm shadow-1 h-100">
                     <div class="card-header">
                         <h2 class="mb-0 fs-18 fw-bold">
-                            {{ translate('preview') }}
+                            {{ translate('Preview') }}
                         </h2>
                     </div>
                     <div class="card-body">
@@ -409,7 +409,7 @@
                                 <div class="d-flex align-items-center gap-10px">
                                     <img src="{{  asset('public/assets/admin/img/6m-logo.png') }}" alt="" class="w-40px h-40px rounded-circle object-cover">
                                     <div class="cont">
-                                        <h6 class="mb-0 lh-1 fs-14">{{ translate('6amMart') }}</h6>
+                                        <h6 class="mb-0 lh-1 fs-14">6amMart</h6>
                                         <span class="fs-12">{{ translate('Business Account') }}</span>
                                     </div>
                                 </div>

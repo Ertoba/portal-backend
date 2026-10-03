@@ -9,9 +9,6 @@ use Illuminate\Support\ServiceProvider;
 
 class InterfaceServiceProvider extends ServiceProvider
 {
-    /**
-     * Register services.
-     */
     public function register(): void
     {
         $this->bindInterfaceWithRepository();
@@ -35,11 +32,7 @@ class InterfaceServiceProvider extends ServiceProvider
         }
     }
 
-    /**
-     * Bootstrap services.
-     */
     public function boot(): void
     {
-        //
     }
 }

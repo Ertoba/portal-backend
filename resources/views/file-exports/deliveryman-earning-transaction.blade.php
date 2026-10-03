@@ -6,24 +6,24 @@
         <tr>
             <th colspan="3">
                 @if(isset($data['delivery_man_name']))
-                    {{ translate('messages.Delivery_Man') }} - {{ $data['delivery_man_name'] }}
+                    {{ translate('Deliveryman') }} - {{ $data['delivery_man_name'] }}
                 @endif
             </th>
             <th colspan="5">
                 @if(isset($data['search']))
-                {{ translate('Search_Bar_Content') }} - {{ $data['search'] }}
+                {{ translate('Search bar content') }} - {{ $data['search'] }}
                 @endif
             </th>
         </tr>
         <tr>
-            <th>{{ translate('sl') }}</th>
-            <th>{{ translate('messages.Order_ID') }}</th>
-            <th>{{ translate('messages.Order_Date') }}</th>
-            <th>{{ translate('messages.Delivery_Man') }}</th>
-            <th>{{ translate('messages.Delivery_Charge') }}</th>
+            <th>{{ translate('SL') }}</th>
+            <th>{{ translate('messages.Order ID') }}</th>
+            <th>{{ translate('Order date') }}</th>
+            <th>{{ translate('Deliveryman') }}</th>
+            <th>{{ translate('Delivery charge') }}</th>
             <th>{{ translate('messages.Tips') }}</th>
-            <th>{{ translate('messages.Commission_Paid') }}</th>
-            <th>{{ translate('messages.Net_Profit') }}</th>
+            <th>{{ translate('Commission paid') }}</th>
+            <th>{{ translate('Net profit') }}</th>
         </tr>
     </thead>
     <tbody>

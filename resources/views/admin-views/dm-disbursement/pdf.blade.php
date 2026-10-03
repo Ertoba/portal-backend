@@ -191,7 +191,6 @@
 
 <body>
 
-<!-- Invoice -->
 <div class="invoice-wrapper">
     <div class="invoice-header">
         <table class="table-2">
@@ -199,16 +198,15 @@
             <tr>
                 <td>
                     <div class="left">
-                        <h4 class="title">{{ translate('Disbursement_Invoice') }}</h4>
+                        <h4 class="title">{{ translate('Disbursement invoice') }}</h4>
                         <div class="date">{{ \App\CentralLogics\Helpers::time_date_format(date("Y-m-d h:i:s",time())) }}</div>
                     </div>
                 </td>
-                @php($logo = \App\Models\BusinessSetting::where(['key' => 'logo'])->first()->value)
-                @php($address = \App\Models\BusinessSetting::where(['key' => 'address'])->first()->value)
+                @php($address = \App\CentralLogics\Helpers::get_business_settings('address', false))
                 <td class="text-right">
                     <div class="right text-right">
                         <div class="logo">
-                            <img style="width: 160px;object-fit: contain;object-position: right center" src="{{ asset('storage/app/public/business/' . $logo ?? '') }}" alt="logo">
+                            <img style="width: 160px;object-fit: contain;object-position: right center" src="{{ $logoFullUrl }}" alt="logo">
                         </div>
                         <div>{{ $address }}</div>
                     </div>
@@ -224,19 +222,19 @@
                 <tr>
                     <td>
                         <div>
-                            <div class="subtxt">{{ translate('Disbursement_ID') }}</div>
+                            <div class="subtxt">{{ translate('Disbursement ID') }}</div>
                             <div>{{ $disbursement->id }}</div>
                         </div>
                     </td>
                     <td>
                         <div>
-                            <div class="subtxt">{{ translate('created_at') }}</div>
+                            <div class="subtxt">{{ translate('Created at') }}</div>
                             <div>{{ \App\CentralLogics\Helpers::time_date_format($disbursement->created_at) }}</div>
                         </div>
                     </td>
                     <td class="text-right">
                         <div class="ml-auto text-right">
-                            <div class="subtxt">{{ translate('total_amount') }}</div>
+                            <div class="subtxt">{{ translate('Total amount') }}</div>
                             <div style="font-size: 16px;margin: 0;color: #1455AC;">{{\App\CentralLogics\Helpers::format_currency($disbursement['total_amount'])}}</div>
                         </div>
                     </td>
@@ -249,11 +247,11 @@
             <table class="table">
                 <thead>
                 <tr>
-                    <th>{{ translate('sl') }}</th>
-                    <th>{{ translate('Delivery_Man_Info') }}</th>
-                    <th>{{ translate('Payment_method') }}</th>
+                    <th>{{ translate('SL') }}</th>
+                    <th>{{ translate('Deliveryman information') }}</th>
+                    <th>{{ translate('Payment method') }}</th>
                     <th>
-                        <div class="text-right"> {{ translate('amount') }}</div>
+                        <div class="text-right"> {{ translate('Amount') }}</div>
                     </th>
                 </tr>
                 </thead>
@@ -269,11 +267,11 @@
                         <div class="name mt-10px">{{$disb->delivery_man->f_name.' '.$disb->delivery_man->l_name}}</div>
                     </td>
                     <td>
-                        <div class="name">{{$disb->withdraw_method->method_name}}</div>
+                        <div class="name">{{ $disb->withdraw_method?->method_name ?? translate('messages.Payment method removed') }}</div>
 
-                        @forelse(json_decode($disb->withdraw_method->method_fields, true) as $key=> $item)
+                        @forelse((is_array($disb->withdraw_method?->method_fields) ? $disb->withdraw_method->method_fields : (json_decode($disb->withdraw_method?->method_fields ?? '', true) ?: [])) as $key=> $item)
                             <div>
-                                <span>{{  translate($key) }}</span>
+                                <span>{{ ucfirst(str_replace('_', ' ', $key)) }}</span>
                                 <span>:</span>
                                 <span class="name">{{$item}}</span>
                             </div>
@@ -294,7 +292,7 @@
                     <td class="border-0"></td>
                     <td class="border-0">
                         <div class="text-right text-12 mr-100px">
-                            {{ translate('total') }}
+                            {{ translate('Total') }}
                         </div>
                     </td>
                     <td>
@@ -310,7 +308,6 @@
         </div>
     </div>
 </div>
-<!-- Invoice -->
 
 
 </body>

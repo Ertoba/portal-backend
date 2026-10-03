@@ -1,5 +1,4 @@
 <div class="card h-100">
-    <!-- Header -->
     <div class="card-header">
         <div class="chat-user-info w-100 d-flex align-items-center">
             <div class="chat-user-info-img">
@@ -72,7 +71,7 @@
                 <div class="empty-conversation-content d-flex flex-column align-items-center gap-3">
                     <img width="128" height="128" src="{{asset('/public/assets/admin/img/icons/empty-conversation.png')}}" alt="public">
                     <h5 class="text-muted">
-                        {{translate('no_conversation_found')}}
+                        {{translate('No conversation found')}}
                     </h5>
                 </div>
 
@@ -84,16 +83,16 @@
 
 
     <div class="mt-auto d-flex justify-content-center fs-12 font-medium text-dark p-3">
-        {{ translate('You_can’t_reply_to_this_conversation.') }} &nbsp;
+        {{ translate('You can\'t reply to this conversation.') }} &nbsp;
         <div class="text-danger d-inline-block learn-more-wrap cursor-pointer">
-            {{ translate('Learn_more') }}
+            {{ translate('Learn More') }}
 
             <div class="learn-more-content p-4">
                 <div class="d-flex align-items-center gap-2 mb-3">
                     <img class="rounded-circle" width="20" height="20" src="{{asset('public/assets/admin/img/icons/info-icon.png')}}" alt="">
-                    <h6 class="mb-0"> {{ translate('Learn_more') }}</h6>
+                    <h6 class="mb-0"> {{ translate('Learn More') }}</h6>
                 </div>
-                <p class="mb-0 text-muted text-normal">{{ translate('You can’t chat with deliveryman because it’s delivery man previous chat history, only you can monitor or view their conversation to avoid unexpected situation.')}}</p>
+                <p class="mb-0 text-muted text-normal">{{ translate('This is the deliveryman\'s past chat history. You can only view it to monitor the conversation.')}}</p>
             </div>
         </div>
     </div>

@@ -3,7 +3,7 @@
 <div class="d-flex flex-wrap justify-content-between align-items-center __gap-12px">
     <div class="__gross-amount" id="gross_sale">
         <h6>{{\App\CentralLogics\Helpers::format_currency(array_sum($total_sell))}}</h6>
-        <span>{{ translate('messages.Gross Sale') }}</span>
+        <span>{{ translate('Gross sale') }}</span>
     </div>
     <div class="chart--label __chart-label p-0 move-left-100 ml-auto">
         <span class="indicator chart-bg-2"></span>
@@ -35,13 +35,13 @@
   "use strict";
     options = {
         series: [{
-            name: '{{ translate('Gross Sale') }}',
+            name: '{{ translate('Gross sale') }}',
             data: [{{ implode(",",$total_sell) }}]
         },{
-            name: '{{ translate('Admin Comission') }}',
+            name: '{{ translate('Admin commission') }}',
             data: [{{ implode(",",$commission) }}]
         },{
-            name: '{{ translate('Delivery Comission') }}',
+            name: '{{ translate('Delivery commission') }}',
             data: [{{ implode(",",$delivery_commission) }}]
         }],
         chart: {

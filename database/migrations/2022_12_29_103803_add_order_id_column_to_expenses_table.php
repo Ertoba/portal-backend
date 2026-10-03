@@ -15,7 +15,6 @@ class AddOrderIdColumnToExpensesTable extends Migration
     {
         Schema::table('expenses', function (Blueprint $table) {
             $table->renameColumn('description','order_id');
-            // $table->foreignId('order_id')->nullable()->change();
         });
     }
 

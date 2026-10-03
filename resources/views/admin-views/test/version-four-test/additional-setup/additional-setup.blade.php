@@ -1,6 +1,6 @@
 @extends('layouts.admin.app')
 
-@section('title', translate('messages.Additional Setup'))
+@section('title', translate('Additional setup'))
 
 @section('content')
 
@@ -10,9 +10,10 @@
         <div class="d-flex flex-wrap justify-content-between align-items-start">
             <h1 class="page-header-title text-capitalize fs-24">
                 <span>
-                    {{ translate('Additional Setup') }}
+                    {{ translate('Additional setup') }}
                 </span>
             </h1>
+            <p class="page-header-desc">{{ translate('The smaller rules behind your Pro membership, from trials to renewal reminders.') }}</p>
         </div>
     </div>
     <div class="js-nav-scroller hs-nav-scroller-horizontal mb-3">
@@ -31,7 +32,6 @@
     </div>
 
     @include('admin-views.test.version-four-test.additional-setup.partials._faq-section')
-    <!-- Terms & Conditions -->    
     <h1 class="my-4">Terms & Conditions Section</h1>
     @include('admin-views.test.version-four-test.additional-setup.partials._terms-condition-section')
  

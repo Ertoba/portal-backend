@@ -1,6 +1,6 @@
 @extends('layouts.admin.app')
 
-@section('title',translate('Customer Details'))
+@section('title',translate('Rental customer details'))
 
 @push('css_or_js')
 
@@ -11,32 +11,38 @@ active
 
 @section('content')
     <div class="content container-fluid">
-        <!-- Page Header -->
         <div class="d-print-none pb-3">
             <div class="row align-items-center">
                 <div class="col-sm mb-2 mb-sm-0">
-                    <h1 class="page-header-title mb-1">{{translate('messages.customer_id')}} #{{$customer['id']}}</h1>
-                    <span class="fs-12">
-                        {{translate('messages.joined_at')}} : {{date('d M Y '.config('timeformat'),strtotime($customer['created_at']))}}
-                    </span>
+                    <h1 class="page-header-title mb-1">
+                        <span class="page-header-icon">
+                            <img src="{{ asset('public/assets/admin/img/outline/group.svg') }}" class="w--26" alt="">
+                        </span>
+                        <span>{{translate('Customer ID')}} #{{$customer['id']}}</span>
+                    </h1>
+                    <p class="page-header-desc">
+                        {{ translate('This customer\'s rental history, spending and account state in one place.') }}
+                        <span class="d-block fs-12">
+                            {{translate('messages.Joined at')}} : {{date('d M Y '.config('timeformat'),strtotime($customer['created_at']))}}
+                        </span>
+                    </p>
 
                 </div>
             </div>
         </div>
         @include('admin-views.customer.partials._tab_view')
-        <!-- End Page Header -->
         @if ($customer['f_name'])
         <div class="card mb-3">
             <div class="card-body">
                 <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
                     <div class="d-flex gap-2 align-items-center">
                         <img src="{{asset('public/assets/admin/img/icons/coupon-icon.png')}}" width="16" height="16" alt="">
-                        <p class="mb-0">{{ translate('If you want to make a customized COUPON for this customer, click the Create Coupon button and influence them buy more from your store.') }}</p>
+                        <p class="mb-0">{{ translate('Create a custom coupon for this customer to encourage more orders.') }}</p>
                     </div>
 
                     <a href="{{ route('admin.coupon.add-new',['customer' => $customer['id']]) }}" class="btn btn-warning text-white font-semibold">
                         <i class="tio-add"></i>
-                        {{translate('messages.create_coupon')}}
+                        {{translate('messages.Create coupon')}}
                     </a>
                 </div>
             </div>
@@ -55,7 +61,7 @@ active
                                 <div class="d-flex flex-column align-items-center">
                                     <h2 class="title"> {{ $trips->total() }} </h2>
                                     <div class="subtitle">
-                                        {{ translate('total_trip') }}
+                                        {{ translate('Total trip') }}
                                     </div>
                                 </div>
                             </div>
@@ -66,7 +72,7 @@ active
                                 <div class="d-flex flex-column align-items-center">
                                     <h2 class="title"> {{ \App\CentralLogics\Helpers::format_currency($total_trips_amount[0]->total_trip_amount) }} </h2>
                                     <div class="subtitle">
-                                        {{ translate('total_trip_amount') }}
+                                        {{ translate('Total trip amount') }}
                                     </div>
                                 </div>
                             </div>
@@ -85,7 +91,7 @@ active
                                 <div class="d-flex flex-column align-items-center">
                                     <h2 class="title"> {{$customer->wallet_balance??0}} </h2>
                                     <div class="subtitle">
-                                        {{translate('messages.wallet_balance')}}
+                                        {{translate('Wallet balance')}}
                                     </div>
                                 </div>
                             </div>
@@ -96,7 +102,7 @@ active
                                 <div class="d-flex flex-column align-items-center">
                                     <h2 class="title"> {{$customer->loyalty_point??0}} </h2>
                                     <div class="subtitle">
-                                        {{translate('messages.loyalty_point')}}
+                                        {{translate('Loyalty point')}}
                                     </div>
                                 </div>
                             </div>
@@ -111,56 +117,54 @@ active
                 <div class="card">
                     <div class="card-header border-0 py-2 d-flex flex-wrap gap-2">
                         <div class="search--button-wrapper">
-                            <h5 class="card-title d-flex gap-2 align-items-center">
-                                {{translate('trip_list')}}
-                                <span class="badge badge-soft-secondary">{{ $trips->total() }}</span>
-                            </h5>
+                            @include('partials._table-head', [
+                                'title'    => translate('Trip list'),
+                                'subtitle' => translate('messages.Rental trips booked by this customer.'),
+                                'count'    => $trips->total(),
+                            ])
 
                             <div class="min--260">
                                 <form class="search-form theme-style">
                                     <div class="input-group input--group">
                                         <input  type="search" name="search" class="form-control"
-                                        placeholder="{{translate('ex_: search_by_trip_id')}}" aria-label="{{translate('messages.search')}}" value="{{request()?->search}}" >
+                                        placeholder="{{translate('Ex') . ' : ' . translate('Search by trip ID')}}" aria-label="{{translate('messages.Search')}}" value="{{request()?->search}}" >
                                         <button type="submit" class="btn btn--secondary"><i class="tio-search"></i></button>
                                     </div>
                                 </form>
 
                             </div>
                             @if(request()->input('search'))
-                                 <button type="reset" class="btn btn--primary ml-2 location-reload-to-base" data-url="{{url()->full()}}">{{translate('messages.reset')}}</button>
+                                 <button type="reset" class="btn btn--primary ml-2 location-reload-to-base" data-url="{{url()->full()}}"><i class="tio-refresh"></i> {{translate('messages.Reset')}}</button>
                                  @endif
                         </div>
-                    <!-- Unfold -->
                     <div class="hs-unfold mr-2">
                         <a class="js-hs-unfold-invoker btn btn-sm btn-white dropdown-toggle min-height-40" href="javascript:;"
                             data-hs-unfold-options='{
                                     "target": "#usersExportDropdown",
                                     "type": "css-animation"
                                 }'>
-                            <i class="tio-download-to mr-1"></i> {{ translate('messages.export') }}
+                            <i class="tio-download-to mr-1"></i> {{ translate('messages.Export') }}
                         </a>
 
                         <div id="usersExportDropdown"
                             class="hs-unfold-content dropdown-unfold dropdown-menu dropdown-menu-sm-right">
-                            <span class="dropdown-header">{{ translate('messages.download_options') }}</span>
-                            <a id="export-excel" class="dropdown-item" href="{{route('admin.customer.trip-export', ['type'=>'excel','id'=>$customer->id,request()->getQueryString()])}}">
+                            <span class="dropdown-header">{{ translate('messages.Download options') }}</span>
+                            <a id="export-excel" class="dropdown-item" href="{{route('admin.users.customer.trip-export', ['type'=>'excel','id'=>$customer->id,request()->getQueryString()])}}">
                                 <img class="avatar avatar-xss avatar-4by3 mr-2"
                                     src="{{ asset('public/assets/admin') }}/svg/components/excel.svg"
                                     alt="Image Description">
-                                {{ translate('messages.excel') }}
+                                Excel
                             </a>
-                            <a id="export-csv" class="dropdown-item" href="{{route('admin.customer.trip-export', ['type'=>'csv','id'=>$customer->id,request()->getQueryString()])}}">
+                            <a id="export-csv" class="dropdown-item" href="{{route('admin.users.customer.trip-export', ['type'=>'csv','id'=>$customer->id,request()->getQueryString()])}}">
                                 <img class="avatar avatar-xss avatar-4by3 mr-2"
                                     src="{{ asset('public/assets/admin') }}/svg/components/placeholder-csv-format.svg"
                                     alt="Image Description">
-                                {{ translate('messages.csv') }}
+                                CSV
                             </a>
                         </div>
                     </div>
-                    <!-- End Unfold -->
                     </div>
 
-                    <!-- Table -->
                     <div class="table-responsive datatable-custom">
                         <table id="columnSearchDatatable"
                                class="table table-borderless table-thead-bordered table-nowrap table-align-middle card-table"
@@ -172,13 +176,13 @@ active
                             <thead class="thead-light">
                                 <tr>
                                     <th class="border-0 pl-4">{{translate('SL')}}</th>
-                                    <th class="border-0">{{translate('messages.trip_ID')}}</th>
-                                    <th class="border-0">{{translate('messages.provider')}}</th>
-                                    <th class="border-0 ">{{translate('messages.status')}}</th>
-                                    <th class="border-0 text-center ">{{translate('messages.total_vehicle')}}</th>
-                                    <th class="border-0 ">{{translate('messages.total_amount')}}</th>
-                                    <th class="border-0 ">{{translate('messages.trip_date')}}</th>
-                                    <th class="border-0 text-center">{{translate('messages.action')}}</th>
+                                    <th class="border-0">{{translate('messages.Trip ID')}}</th>
+                                    <th class="border-0">{{translate('messages.Provider')}}</th>
+                                    <th class="border-0 ">{{translate('messages.Status')}}</th>
+                                    <th class="border-0 text-center ">{{translate('Total vehicle')}}</th>
+                                    <th class="border-0 ">{{translate('Total amount')}}</th>
+                                    <th class="border-0 ">{{translate('Trip date')}}</th>
+                                    <th class="border-0 text-center">{{translate('messages.Action')}}</th>
                                 </tr>
                             </thead>
 
@@ -195,15 +199,15 @@ active
                                         </td>
                                         <th>
                                             @if ($trip->provider)
-                                            <div><a  class="text--title" href="{{route('admin.rental.provider.details', $trip->provider_id)}}">{{Str::limit($trip->provider?$trip->provider->name:translate('messages.store deleted!'),20,'...')}}</a></div>
+                                            <div><a  class="text--title" href="{{route('admin.rental.provider.details', $trip->provider_id)}}">{{Str::limit($trip->provider?$trip->provider->name:translate('messages.Store deleted'),20,'...')}}</a></div>
                                             @else
-                                                <div>{{Str::limit(translate('messages.not_found'),20,'...')}}</div>
+                                                <div>{{Str::limit(translate('No data found'),20,'...')}}</div>
                                             @endif
                                         </th>
                                         <td class="text-capitalize ">
                                             @if($trip['trip_status']=='pending')
                                                 <span class="badge badge-soft-info">
-                                                  {{translate('messages.pending')}}
+                                                  {{translate('Pending')}}
                                                 </span>
                                                         @elseif($trip['trip_status']=='confirmed')
                                                             <span class="badge badge-soft-info">
@@ -211,19 +215,19 @@ active
                                                 </span>
                                                         @elseif($trip['trip_status']=='ongoing')
                                                             <span class="badge badge-soft-warning">
-                                                  {{translate('messages.ongoing')}}
+                                                  {{translate('Ongoing')}}
                                                 </span>
                                                         @elseif($trip['trip_status']=='completed')
                                                             <span class="badge badge-soft-success">
-                                                  {{translate('messages.completed')}}
+                                                  {{translate('messages.Completed')}}
                                                 </span>
                                                         @elseif($trip['trip_status']=='payment_failed')
                                                             <span class="badge badge-soft-danger">
-                                                  {{translate('messages.payment_failed')}}
+                                                  {{translate('Payment failed')}}
                                                 </span>
                                                         @elseif($trip['trip_status']=='canceled')
                                                             <span class="badge badge-soft-danger">
-                                                  {{translate('messages.canceled')}}
+                                                  {{translate('Canceled')}}
                                                 </span>
                                                         @else
                                                             <span class="badge badge-soft-danger">
@@ -254,8 +258,8 @@ active
                                         </td>
                                         <td>
                                             <div class="btn--container justify-content-center">
-                                                <a class="btn action-btn btn--warning btn-outline-warning" href="{{route('admin.rental.trip.details', $trip->id)}}" title="{{translate('messages.view')}} "><i class="tio-visible"></i></a>
-                                                <a class="btn action-btn btn--primary btn-outline-primary" target="_blank" href="{{route('admin.rental.trip.generate-invoice',["id" => $trip->id])}}" title="{{translate('messages.download')}}">
+                                                <a class="btn action-btn action-btn--view" href="{{route('admin.rental.trip.details', $trip->id)}}" title="{{translate('messages.View')}} "><i class="tio-visible-outlined"></i></a>
+                                                <a class="btn action-btn btn--primary btn-outline-primary" target="_blank" href="{{route('admin.rental.trip.generate-invoice',["id" => $trip->id])}}" title="{{translate('messages.Download')}}">
                                                     <i class="tio-download-to"></i>
                                                 </a>
                                             </div>
@@ -275,7 +279,7 @@ active
                     <div class="empty--data">
                         <img src="{{asset('/public/assets/admin/svg/illustrations/sorry.svg')}}" alt="public">
                         <h5>
-                            {{translate('no_data_found')}}
+                            {{translate('No data found')}}
                         </h5>
                     </div>
                     @endif
@@ -284,28 +288,22 @@ active
 
             <div class="col-lg-4">
                 <div class="card">
-                    <!-- Header -->
                     <div class="card-header">
                         <h4 class="card-title d-flex flex-wrap align-items-center gap-2">
                             <div class="d-flex align-items-center gap-1">
                                 <span class="card-header-icon">
                                     <i class="tio-user"></i>
                                 </span>
-                                <span class=""> {{ translate('customer_information') }}</span>
+                                <span class=""> {{ translate('Customer information') }}</span>
                             </div>
-                            <span class="badge badge-soft-info">{{ translate('total_trip') }}: {{ $trips->total() }}</span>
+                            <span class="badge badge-soft-info">{{ translate('Total trip') }}: {{ $trips->total() }}</span>
                         </h4>
                     </div>
-                    <!-- End Header -->
 
-                    <!-- Body -->
                     @include('admin-views.customer.partials._customer_view_information')
-                <!-- End Body -->
                 </div>
-                <!-- End Card -->
             </div>
         </div>
-        <!-- End Row -->
     </div>
 @endsection
 
@@ -313,8 +311,6 @@ active
 
     <script>
         $(document).on('ready', function () {
-            // INITIALIZATION OF DATATABLES
-            // =======================================================
             let datatable = $.HSCore.components.HSDatatables.init($('#columnSearchDatatable'));
 
             $('#column1_search').on('keyup', function () {
@@ -333,8 +329,6 @@ active
             });
 
 
-            // INITIALIZATION OF SELECT2
-            // =======================================================
             $('.js-select2-custom').each(function () {
                 let select2 = $.HSCore.components.HSSelect2.init($(this));
             });

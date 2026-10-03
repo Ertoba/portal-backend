@@ -18,11 +18,23 @@ class ItemReviewExport implements  FromView, ShouldAutoSize, WithStyles ,WithHea
 
     use Exportable;
     protected $data;
-    // protected $search;
 
     public function __construct($data) {
         $this->data = $data;
 
+    }
+
+
+    /**
+     * Row count used to size the styled ranges.
+     *
+     * The controller streams its rows as a LazyCollection, where count() would re-run every
+     * chunk query, so it supplies a precomputed count. A caller still passing an eager
+     * Collection falls through to count() unchanged.
+     */
+    private function rowCount(): int
+    {
+        return (int) ($this->data['data_count'] ?? $this->data['data']->count());
     }
 
     public function view(): View
@@ -61,12 +73,11 @@ class ItemReviewExport implements  FromView, ShouldAutoSize, WithStyles ,WithHea
         ];
         $sheet->getStyle('A1:J1')->applyFromArray($styleArray);
         return [
-            // Define the style for cells with data
-            'A1:J'.$this->data['data']->count() +3 => [
+            'A1:J'.$this->rowCount() +3 => [
                 'borders' => [
                     'allBorders' => [
                         'borderStyle' => Border::BORDER_THIN,
-                        'color' => ['argb' => '000000'], // Specify the color of the border (optional)
+                        'color' => ['argb' => '000000'],
                     ],
                 ],
             ],
@@ -78,7 +89,7 @@ class ItemReviewExport implements  FromView, ShouldAutoSize, WithStyles ,WithHea
     {
         return [
             AfterSheet::class => function(AfterSheet $event) {
-                $event->sheet->getStyle('A1:J1') // Adjust the range as per your needs
+                $event->sheet->getStyle('A1:J1')
                     ->getAlignment()
                     ->setHorizontal(Alignment::HORIZONTAL_CENTER)
                     ->setVertical(Alignment::VERTICAL_CENTER);
@@ -91,7 +102,7 @@ class ItemReviewExport implements  FromView, ShouldAutoSize, WithStyles ,WithHea
                     ->setHorizontal(Alignment::HORIZONTAL_CENTER)
                     ->setVertical(Alignment::VERTICAL_CENTER);
 
-                $event->sheet->getStyle('A3:J'.$this->data['data']->count() +3)
+                $event->sheet->getStyle('A3:J'.$this->rowCount() +3)
                     ->getAlignment()
                     ->setHorizontal(Alignment::HORIZONTAL_CENTER)
                     ->setVertical(Alignment::VERTICAL_CENTER);
@@ -106,8 +117,8 @@ class ItemReviewExport implements  FromView, ShouldAutoSize, WithStyles ,WithHea
                     $event->sheet->mergeCells('C2:J2');
 
                     if(isset($this->data['type']) && $this->data['type'] == 'single'){
-                        $event->sheet->mergeCells('B4:B'.$this->data['data']->count() +4);
-                        $event->sheet->mergeCells('E4:E'.$this->data['data']->count() +4);
+                        $event->sheet->mergeCells('B4:B'.$this->rowCount() +4);
+                        $event->sheet->mergeCells('E4:E'.$this->rowCount() +4);
                     }
 
 

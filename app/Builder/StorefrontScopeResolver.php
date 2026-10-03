@@ -25,7 +25,9 @@ class StorefrontScopeResolver implements StorefrontScopeResolverContract
             regionId: $store->zone_id,
             logoUrl: $this->safeLogoUrl($store),
             displayName: $store->slug ?? null,
-            moduleType: $store->module_type, // accessor → $store->module->module_type
+            moduleType: $store->module_type,
+            coverImageUrl: $this->safeCoverImageUrl($store),
+            contactNumber: $store->phone ?? null,
         );
     }
 
@@ -47,7 +49,7 @@ class StorefrontScopeResolver implements StorefrontScopeResolverContract
         }
 
         return Store::query()
-            ->select(['id', 'vendor_id', 'slug', 'module_id', 'zone_id', 'logo'])
+            ->select(['id', 'vendor_id', 'slug', 'module_id', 'zone_id', 'logo', 'cover_photo', 'phone'])
             ->with(['module:id,module_type'])
             ->when(
                 is_numeric($storeIdentifier),
@@ -80,18 +82,12 @@ class StorefrontScopeResolver implements StorefrontScopeResolverContract
             return null;
         }
 
-        // Domain Settings → "Website Visibility" toggle. When the vendor
-        // turns visibility off, the storefront is taken offline: refusing
-        // to resolve the scope here makes `RequireStorefrontScope`
-        // 404 the request. The vendor can still preview / edit in the
-        // BuilderSetup admin (separate route, not gated by scope), per
-        // the toggle's own description.
         if (!$domainConfig->website_visibility) {
             return null;
         }
 
         return Store::query()
-            ->select(['id', 'vendor_id', 'slug', 'module_id', 'zone_id', 'logo'])
+            ->select(['id', 'vendor_id', 'slug', 'module_id', 'zone_id', 'logo', 'cover_photo', 'phone'])
             ->with(['module:id,module_type'])
             ->where('id', $domainConfig->sub_tenant_id)
             ->where('vendor_id', $domainConfig->tenant_id)
@@ -111,6 +107,15 @@ class StorefrontScopeResolver implements StorefrontScopeResolverContract
     {
         try {
             return $store->logo_full_url;
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+
+    private function safeCoverImageUrl(Store $store): ?string
+    {
+        try {
+            return $store->cover_photo_full_url;
         } catch (\Throwable) {
             return null;
         }

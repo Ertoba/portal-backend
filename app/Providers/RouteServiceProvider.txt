@@ -36,7 +36,6 @@ class RouteServiceProvider extends ServiceProvider
      *
      * @var string|null
      */
-    // protected $namespace = 'App\\Http\\Controllers';
 
     /**
      * Define your route model bindings, pattern filters, etc.
@@ -48,37 +47,48 @@ class RouteServiceProvider extends ServiceProvider
         $this->configureRateLimiting();
 
         $this->routes(function () {
+            $namespace = $this->namespace;
 
-            Route::middleware('web')
-                ->namespace($this->namespace)
-                ->group(base_path('routes/web.php'));
+            // Panel routes only. These are the ones the storefront's unconstrained
+            // `/` can shadow, so they are pinned to the canonical host.
+            $registerHostRoutes = function () use ($namespace) {
+                Route::middleware('web')
+                    ->namespace($namespace)
+                    ->group(base_path('routes/web.php'));
 
-            Route::prefix('admin')
-                ->middleware('web')
-                ->namespace($this->namespace)
-                ->group(base_path('routes/admin.php'));
+                Route::prefix('admin')
+                    ->middleware('web')
+                    ->group(base_path('routes/admin.php'));
 
-            Route::prefix('vendor-panel')
-                ->middleware('web')
-                ->namespace($this->namespace)
-                ->group(base_path('routes/vendor.php'));
+                Route::prefix('vendor-panel')
+                    ->middleware('web')
+                    ->namespace($namespace)
+                    ->group(base_path('routes/vendor.php'));
+            };
 
+            // The API is deliberately left unconstrained, the way every module's API
+            // already is. An `api/v1/...` path cannot be shadowed by the storefront,
+            // and the apps may be pointed at either the www or the apex host: pinning
+            // the API to one of them means the other 404s, or gets redirected - and a
+            // client downgrades a redirected POST to GET, which every POST-only
+            // endpoint then rejects with "The GET method is not supported".
             Route::prefix('api/v1')
                 ->middleware('api')
-                ->namespace($this->namespace)
+                ->namespace($namespace)
                 ->group(base_path('routes/api/v1/api.php'));
 
+            // MILI compatibility API retained from the current production tree.
             Route::prefix('api/v2')
                 ->middleware('api')
-                ->namespace($this->namespace)
+                ->namespace($namespace)
                 ->group(base_path('routes/api/v2/api.php'));
 
-
-            //new routes
-            Route::prefix('admin')
-                ->middleware('web')
-                ->namespace($this->namespace)
-                ->group(base_path('routes/admin/routes.php'));
+            $hostDomain = config('app.host_domain');
+            if ($hostDomain) {
+                Route::domain($hostDomain)->group($registerHostRoutes);
+            } else {
+                $registerHostRoutes();
+            }
         });
     }
 

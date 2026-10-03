@@ -12,10 +12,10 @@
              onerror="this.style.display='none'">
     </div>
     <h3 class="text-center mb-2">
-        {{ translate('Server_requirements_not_met') }}
+        {{ translate('Server requirements not met') }}
     </h3>
     <p class="text-center text-muted mb-4">
-        {{ translate('Fix the items below before activating') }} {{ $addon_name ?? 'Builder' }}.
+        {{ translate('Nothing was changed. Fix the items below on your server, then turn the add-on on again.') }} {{ translate('Addon') }}: {{ $addon_name ?? 'Builder' }}
     </p>
 
     <ul class="list-group mb-4">
@@ -36,7 +36,7 @@
 
     <div class="btn--container justify-content-center gap-3 mb-3">
         <button type="button" class="fs-16 btn btn--primary flex-grow-1" data-dismiss="modal">
-            {{ translate('Got_it') }}
+            <i class="tio-checkmark-circle-outlined"></i> {{ translate('Got it') }}
         </button>
     </div>
 </div>

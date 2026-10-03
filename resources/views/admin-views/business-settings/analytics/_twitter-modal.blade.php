@@ -20,33 +20,33 @@
                                     </div>
                                     <div class="text-dark mb-3">
                                         <h3 class="lh-base">
-                                            {{ translate('how_to_get_the_x_(twitter)_pixel_id') }}
+                                            {{ translate('How to get the x (twitter) pixel id') }}
                                         </h3>
                                         <p class="opacity-75">
-                                            {{ translate('to_get_your_x_(twitter)_pixel_id,_log_in_to_your_twitter_ads_account.') }}
-                                            {{ translate('from_the_top_navigation,_click_on_tools_and_select_events_manager.') }}
-                                            {{ translate('once_in_the_events_manager,_create_your_pixel_id_by_clicking_on_add_event_source.') }}
-                                            {{ translate('choose_the_install_with_pixel_code_option_and_press_save.') }}
-                                            {{ translate('your_pixel_id_will_then_be_generated,_and_you_can_copy_it_from_the_interface.') }}
+                                            {{ translate('to get your x (twitter) pixel id, log in to your twitter ads account.') }}
+                                            {{ translate('from the top navigation, click on tools and select Events Manager.') }}
+                                            {{ translate('Once in the Events Manager, create your pixel id by clicking on add event source.') }}
+                                            {{ translate('Choose the install with pixel code option and press save.') }}
+                                            {{ translate('Your pixel id will then be generated, and you can copy it from the interface.') }}
                                         </p>
                                     </div>
 
                                     <div class="text-dark mb-3">
                                         <h3 class="lh-base">
-                                            {{ translate('where_to_use_the_x_(twitter)_pixel_id') }}
+                                            {{ translate('Where to use the x (twitter) pixel id') }}
                                         </h3>
                                         <p class="opacity-75">
-                                            {{ translate('go_to_the_marketing_tools_section_in_your_admin_panel_and_complete_the_steps:') }}
+                                            {{ translate('Go to the marketing tools section in your admin panel and complete the steps') }}:
                                         </p>
                                         <ol class="d-flex flex-column gap-2 opacity-75">
                                             <li>
-                                                {{ translate('navigate_to_the_x_(twitter)_pixel_id_section_under_marketing_tools.') }}
+                                                {{ translate('Navigate to the x (twitter) pixel id section under marketing tools.') }}
                                             </li>
                                             <li>
-                                                {{ translate('turn_on_the_toggle_button.') }}
+                                                {{ translate('Turn on the toggle button.') }}
                                             </li>
                                             <li>
-                                                {{ translate('paste_your_x_(twitter)_pixel_id_into_the_input_box_and_click_submit.') }}
+                                                {{ translate('Paste your x (twitter) pixel id into the input box and click submit.') }}
                                             </li>
                                         </ol>
                                     </div>

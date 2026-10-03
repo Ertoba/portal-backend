@@ -8,18 +8,17 @@
 
 @section('content')
     <div class="content container-fluid">
-        <!-- Page Header -->
         <div class="page-header">
             <h1 class="page-header-title">
                 <span class="page-header-icon">
                     <img src="{{asset('public/assets/admin/img/edit.png')}}" class="w--20" alt="">
                 </span>
                 <span>
-                    {{translate('messages.Common_Condition_Update')}}
+                    {{translate('messages.Update Common Condition')}}
                 </span>
             </h1>
+            <p class="page-header-desc">{{ translate('Rename this condition or change the languages it is shown in.') }}</p>
         </div>
-        <!-- End Page Header -->
         <div class="card">
             <div class="card-body">
                 <form action="{{route('admin.common-condition.update',[$condition['id']])}}" method="post" enctype="multipart/form-data">
@@ -36,7 +35,7 @@
                                         <li class="nav-item">
                                             <a class="nav-link lang_link active"
                                             href="#"
-                                            id="default-link">{{translate('messages.default')}}</a>
+                                            id="default-link">{{translate('Default')}}</a>
                                         </li>
                                         @foreach ($language as $lang)
                                             <li class="nav-item">
@@ -51,8 +50,8 @@
                             <div class="col-12">
                                 @if($language)
                                     <div class="form-group mb-0 lang_form" id="default-form">
-                                        <label class="input-label" for="exampleFormControlInput1">{{translate('messages.name')}} ({{ translate('messages.default') }})</label>
-                                        <input type="text" name="name[]" class="form-control" placeholder="{{translate('messages.new_condition')}}" maxlength="191" value="{{$condition?->getRawOriginal('name')}}">
+                                        <label class="input-label" for="exampleFormControlInput1">{{translate('Name')}} ({{ translate('Default') }})</label>
+                                        <input type="text" name="name[]" class="form-control" placeholder="{{translate('messages.New condition')}}" maxlength="191" value="{{$condition?->getRawOriginal('name')}}">
                                     </div>
                                     <input type="hidden" name="lang[]" value="default">
                                     @foreach($language as $lang)
@@ -68,28 +67,27 @@
                                             }
                                         ?>
                                         <div class="form-group d-none lang_form" id="{{$lang}}-form">
-                                            <label class="input-label" for="exampleFormControlInput1">{{translate('messages.name')}} ({{strtoupper($lang)}})</label>
-                                            <input type="text" name="name[]" class="form-control" placeholder="{{translate('messages.new_condition')}}" maxlength="191" value="{{$translate[$lang]['name']??''}}">
+                                            <label class="input-label" for="exampleFormControlInput1">{{translate('Name')}} ({{strtoupper($lang)}})</label>
+                                            <input type="text" name="name[]" class="form-control" placeholder="{{translate('messages.New condition')}}" maxlength="191" value="{{$translate[$lang]['name']??''}}">
                                         </div>
                                         <input type="hidden" name="lang[]" value="{{$lang}}">
                                     @endforeach
                                 @else
                                     <div class="form-group mb-0">
-                                        <label class="input-label" for="exampleFormControlInput1">{{translate('messages.name')}}</label>
-                                        <input type="text" name="name" class="form-control" placeholder="{{translate('messages.new_condition')}}" value="{{$condition['name']}}" maxlength="191">
+                                        <label class="input-label" for="exampleFormControlInput1">{{translate('Name')}}</label>
+                                        <input type="text" name="name" class="form-control" placeholder="{{translate('messages.New condition')}}" value="{{$condition['name']}}" maxlength="191">
                                     </div>
                                     <input type="hidden" name="lang[]" value="{{$lang}}">
                                 @endif
                             </div>
                         </div>
                         <div class="btn--container justify-content-end mt-20">
-                            <button type="reset" id="reset_btn" class="btn btn--reset">{{translate('messages.reset')}}</button>
-                            <button type="submit" class="btn btn--primary">{{translate('messages.update')}}</button>
+                            <button type="reset" id="reset_btn" class="btn btn--reset"><i class="tio-refresh"></i> {{translate('messages.Reset')}}</button>
+                            <button type="submit" class="btn btn--primary"><i class="tio-save"></i> {{translate('Update')}}</button>
                         </div>
                     </div>
                 </form>
             </div>
-            <!-- End Table -->
         </div>
     </div>
 

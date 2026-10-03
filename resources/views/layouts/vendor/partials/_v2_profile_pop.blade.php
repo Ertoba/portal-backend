@@ -1,4 +1,3 @@
-{{-- Vendor v2 profile popover (rail bottom). --}}
 @php $vendor_user = \App\CentralLogics\Helpers::get_loggedin_user(); @endphp
 <div class="v2-profile-pop" id="v2-profile-pop" role="menu">
     <div class="v2-profile-pop-head">
@@ -9,9 +8,9 @@
         </div>
     </div>
     <a class="v2-profile-pop-item" href="{{ route('vendor.profile.view') }}">
-        <i data-lucide="user-cog"></i><span>{{ translate('messages.settings') }}</span>
+        <i data-lucide="user-cog"></i><span>{{ translate('Settings') }}</span>
     </a>
     <button type="button" class="v2-profile-pop-item v2-profile-pop-item--danger log-out">
-        <i data-lucide="log-out"></i><span>{{ translate('messages.sign_out') }}</span>
+        <i data-lucide="log-out"></i><span>{{ translate('messages.Sign out') }}</span>
     </button>
 </div>

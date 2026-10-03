@@ -2,18 +2,20 @@
 
 namespace App\Models;
 
+use App\Traits\Model\InvalidatesCacheTrait;
 use App\CentralLogics\Helpers;
-use App\Traits\ReportFilter;
+use App\Traits\Report\ReportFilterTrait;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Illuminate\Support\Facades\DB;
-use App\Traits\GeneratesSlug;
+use App\Traits\Model\SlugTrait;
 use Modules\TaxModule\Entities\Taxable;
+use App\Traits\Model\HasTranslationsTrait;
+use App\Traits\Model\HasStorageTrait;
 
 /**
  * Class Category
@@ -32,9 +34,10 @@ use Modules\TaxModule\Entities\Taxable;
  */
 class Category extends Model
 {
-    use HasFactory, ReportFilter, GeneratesSlug;
+    use HasFactory, ReportFilterTrait, SlugTrait, HasTranslationsTrait, HasStorageTrait, InvalidatesCacheTrait;
 
-    protected $with=['translations','storage'];
+    protected static array $cacheTags = ['category', 'reference'];
+
     /**
      * The attributes that are mass assignable.
      *
@@ -62,11 +65,6 @@ class Category extends Model
         'childes_count' => 'integer',
     ];
     protected $appends = ['image_full_url'];
-
-    public function translations(): MorphMany
-    {
-        return $this->morphMany(Translation::class, 'translationable');
-    }
 
     public function module(): BelongsTo
     {
@@ -102,21 +100,29 @@ class Category extends Model
     {
         return $this->belongsTo(Category::class, 'parent_id');
     }
-    public function storage()
+    public static function defaultName($names, $langs): ?string
     {
-        return $this->morphMany(Storage::class, 'data');
-    }
-    public function getImageFullUrlAttribute(){
-        $value = $this->image;
-        if (count($this->storage) > 0) {
-            foreach ($this->storage as $storage) {
-                if ($storage['key'] == 'image') {
-                    return Helpers::get_full_url('category',$value,$storage['value']);
-                }
-            }
+        if (! is_array($names)) {
+            return null;
         }
+        $index = is_array($langs) ? array_search('default', $langs) : false;
+        $name = $index !== false ? ($names[$index] ?? null) : ($names[0] ?? null);
 
-        return Helpers::get_full_url('category',$value,'public');
+        return ($name === null || trim($name) === '') ? null : $name;
+    }
+
+    public static function isDuplicateName(string $name, int $moduleId, int $parentId, ?int $ignoreId = null): bool
+    {
+        return static::withoutGlobalScopes()
+            ->where('module_id', $moduleId)
+            ->where('parent_id', $parentId)
+            ->where('name', trim($name))
+            ->when($ignoreId !== null, fn ($query) => $query->where('id', '!=', $ignoreId))
+            ->exists();
+    }
+    public function getImageFullUrlAttribute()
+    {
+        return $this->storageFullUrl('category', 'image', $this->image);
     }
 
     protected static function boot()
@@ -127,45 +133,18 @@ class Category extends Model
             $category->save();
         });
         static::saved(function ($model) {
-            if($model->isDirty('image')){
-                $value = Helpers::getDisk();
-
-                DB::table('storages')->updateOrInsert([
-                    'data_type' => get_class($model),
-                    'data_id' => $model->id,
-                    'key' => 'image',
-                ], [
-                    'value' => $value,
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
-            }
+            self::recordStorageDisk($model, 'image', 'image');
         });
     }
 
     public function getNameAttribute($value): string
     {
-        if (count($this->translations) > 0) {
-            foreach ($this->translations as $translation) {
-                if ($translation['key'] == 'name') {
-                    return $translation['value'];
-                }
-            }
-        }
-
-        return $value;
+        return $this->translatedAttribute('name', $value);
     }
 
     protected static function booted(): Builder|null
     {
-        static::addGlobalScope('storage', function ($builder) {
-            $builder->with('storage');
-        });
-        static::addGlobalScope('translate', function (Builder $builder) {
-            $builder->with(['translations' => function ($query) {
-                return $query->where('locale', app()->getLocale());
-            }]);
-        });
+
         return null;
     }
     public function taxVats()

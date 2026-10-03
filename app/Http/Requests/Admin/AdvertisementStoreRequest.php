@@ -2,6 +2,8 @@
 
 namespace App\Http\Requests\Admin;
 
+use App\Rules\VideoFile;
+use App\Rules\ImageFile;
 use Carbon\Carbon;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Contracts\Validation\Validator;
@@ -9,9 +11,6 @@ use Illuminate\Validation\ValidationException;
 use App\CentralLogics\Helpers;
 class AdvertisementStoreRequest extends FormRequest
 {
-    /**
-     * Determine if the user is authorized to make this request.
-     */
     public function authorize(): bool
     {
         return true;
@@ -30,9 +29,9 @@ class AdvertisementStoreRequest extends FormRequest
             'description.*' => 'nullable|max:65000',
             'dates' => 'required',
             'advertisement_type' => 'required|in:video_promotion,store_promotion',
-            'cover_image' => 'required_if:advertisement_type,store_promotion|image|mimes:jpg,png,jpeg,webp|max:2048',
-            'profile_image' => 'required_if:advertisement_type,store_promotion|image|mimes:jpg,png,jpeg,webp|max:2048',
-            'video_attachment' => 'required_if:advertisement_type,video_promotion|file|mimes:mp4,mkv,webm|max:5120',
+            'cover_image' => ImageFile::rules('required_if:advertisement_type,store_promotion'),
+            'profile_image' => ImageFile::rules('required_if:advertisement_type,store_promotion'),
+            'video_attachment' => VideoFile::rules('required_if:advertisement_type,video_promotion'),
             'title.0' => 'required',
         ];
     }
@@ -40,11 +39,11 @@ class AdvertisementStoreRequest extends FormRequest
     public function messages()
     {
         return [
-            'store_id.required' => translate('messages.Please_select_a_store'),
-            'video_attachment.required_if' => translate('Your_video_attachment_is_missing'),
-            'cover_image.required_if' => translate('Your_cover_image_is_missing'),
-            'profile_image.required_if' => translate('Your_profile_image_is_missing'),
-            'title.0.required'=>translate('default_title_is_required'),
+            'store_id.required' => translate('messages.Please select a store'),
+            'video_attachment.required_if' => translate('Your video attachment is missing'),
+            'cover_image.required_if' => translate('Your cover image is missing'),
+            'profile_image.required_if' => translate('Your profile image is missing'),
+            'title.0.required'=>translate('Default title is required'),
         ];
     }
 

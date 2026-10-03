@@ -2,10 +2,12 @@
 
 namespace Database\Factories;
 
-use App\Models\OrderDetail;
+use App\Http\Resources\Common\Item\ProductResource;
 use App\Models\Item;
+use App\Models\OrderDetail;
+use App\Services\Item\ItemService;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Database\Eloquent\Factories\Factory;
-use App\CentralLogics\Helpers;
 
 class OrderDetailFactory extends Factory
 {
@@ -26,7 +28,8 @@ class OrderDetailFactory extends Factory
         $food = Item::find($item_id);
         if($food)
         {
-            $product = Helpers::product_data_formatting($food);
+            app(ItemService::class)->hydrateProductPayload(new EloquentCollection([$food]));
+            $product = (new ProductResource($food))->toArray(request());
             return [
                 'item_id' => $product['id'],
                 'order_id'=> $this->faker->numberBetween(100029,298425),

@@ -2,96 +2,188 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Rules\ImageFile;
 ini_set('post_max_size','1024M');
 ini_set('upload_max_filesize','1024M');
 
 use App\CentralLogics\Helpers;
 use App\Http\Controllers\Controller;
 use Carbon\Carbon;
-use Complex\Exception;
 use Illuminate\Http\Request;
-use Illuminate\Http\File;
 use Illuminate\Support\Facades\Storage;
-use App\CentralLogics\FileManagerLogic;
 use Brian2694\Toastr\Facades\Toastr;
 use Madnest\Madzipper\Facades\Madzipper;
 use ZipArchive;
 use Illuminate\Pagination\LengthAwarePaginator;
+use App\Support\Storage\FileStorage;
 
 
 class FileManagerController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
+
+
     public function index($folder_path = "cHVibGlj", $storage = 'local')
-{
-    $perPage = 50;
-    $page = request()->get('page', 1);
-    if ($storage == 's3' && Helpers::getDisk() == 's3') {
-        try {
-            Storage::disk('s3')->exists($folder_path);
-        } catch (\Exception $e) {
-            Toastr::error(translate('messages.something_went_wrong'));
-            return back();
+    {
+        $perPage = 50;
+        $page = request()->integer('page', 1);
+        $search = trim((string) request('search', ''));
+
+        if ($storage == 's3' && Helpers::getDisk() == 's3') {
+            try {
+                Storage::disk('s3')->exists($folder_path);
+            } catch (\Exception $e) {
+                Toastr::error(translate('messages.Something went wrong'));
+                return back();
+            }
+
+            $folder_path = $folder_path == "cHVibGlj" ? "" : $folder_path;
+            $directory = base64_decode($folder_path) . '/';
+
+            $s3 = Storage::disk('s3');
+
+            $files = $directory == '/' ? [] : $s3->allFiles($directory);
+            $directories = $s3->allDirectories($directory);
+        } else {
+            $storage = 'local';
+            $directory = base64_decode($folder_path);
+
+            $files = Storage::files($directory);
+            $directories = Storage::directories($directory);
         }
 
-        $folder_path = $folder_path == "cHVibGlj" ? "" : $folder_path;
-        $directory = base64_decode($folder_path) . '/';
+        $folders = FileStorage::formatFilesAndFolders($directories, 'folder');
+        $files = FileStorage::formatFilesAndFolders($files, 'file');
 
-        $s3 = Storage::disk('s3');
+        $collection = collect(array_merge($folders, $files));
 
-        $files = $directory == '/' ? [] : $s3->allFiles($directory);
-        $directories = $s3->allDirectories($directory);
-    } else {
-        $storage = 'local';
-        $directory = base64_decode($folder_path);
+        if ($search !== '') {
+            $needle = mb_strtolower($search);
+            $collection = $collection
+                ->filter(fn ($row) => str_contains(mb_strtolower($row['name']), $needle))
+                ->values();
+        }
 
-        $files = Storage::files($directory);
-        $directories = Storage::directories($directory);
+        $paginatedData = new LengthAwarePaginator(
+            $this->withFileSizes($collection->slice(($page - 1) * $perPage, $perPage)->values(), $storage),
+            $collection->count(),
+            $perPage,
+            $page,
+            [
+                'path' => request()->url(),
+                'query' => request()->query(),
+            ]
+        );
+
+        $decoded_path = base64_decode($folder_path);
+
+        return view(
+            'admin-views.file-manager.index',
+            [
+                'data' => $paginatedData,
+                'folder_path' => $folder_path,
+                'storage' => $storage,
+                'search' => $search,
+                'crumbs' => $this->pathCrumbs($decoded_path, $storage),
+                'parent_token' => $this->parentFolderToken($decoded_path),
+                'folder_count' => $collection->where('type', 'folder')->count(),
+                'file_count' => $collection->where('type', 'file')->count(),
+            ]
+        );
     }
 
-    $folders = FileManagerLogic::format_file_and_folders($directories, 'folder');
-    $files = FileManagerLogic::format_file_and_folders($files, 'file');
-    $data = array_merge($folders, $files);
+    /**
+     * Sizes come from a local stat, which is cheap. S3 would need a HEAD request
+     * per row, so those rows are left without one rather than paying for 50.
+     */
+    private function withFileSizes($rows, string $storage)
+    {
+        if ($storage !== 'local') {
+            return $rows;
+        }
 
-    $collection = collect($data);
+        $disk = Storage::disk('local');
 
-    $paginatedData = new LengthAwarePaginator(
-        $collection->slice(($page - 1) * $perPage, $perPage)->values(),
-        $collection->count(),
-        $perPage,
-        $page,
-        [
-            'path' => request()->url(),
-            'query' => request()->query(),
-        ]
-    );
+        return $rows->map(function ($row) use ($disk) {
+            if ($row['type'] === 'file') {
+                try {
+                    $row['size'] = $this->readableSize((int) $disk->size($row['path']));
+                } catch (\Throwable $e) {
+                    $row['size'] = null;
+                }
+            }
 
-    return view(
-        'admin-views.file-manager.index',
-        [
-            'data' => $paginatedData,
-            'folder_path' => $folder_path,
-            'storage' => $storage
-        ]
-    );
-}
+            return $row;
+        });
+    }
+
+    private function readableSize(int $bytes): string
+    {
+        $units = ['B', 'KB', 'MB', 'GB'];
+        $unit = 0;
+
+        while ($bytes >= 1024 && $unit < count($units) - 1) {
+            $bytes /= 1024;
+            $unit++;
+        }
+
+        return round($bytes, $unit > 1 ? 1 : 0) . ' ' . $units[$unit];
+    }
+
+    /**
+     * The folder trail shown above the grid. The local disk is browsed from
+     * storage/app/public, so its first segment is the root itself and is dropped
+     * here — the view renders the root chip on its own.
+     */
+    private function pathCrumbs(string $decoded_path, string $storage): array
+    {
+        $segments = array_values(array_filter(explode('/', trim($decoded_path, '/')), fn ($segment) => $segment !== ''));
+
+        if ($storage === 'local' && ($segments[0] ?? null) === 'public') {
+            array_shift($segments);
+        }
+
+        $walked = $storage === 'local' ? ['public'] : [];
+        $crumbs = [];
+
+        foreach ($segments as $segment) {
+            $walked[] = $segment;
+            $crumbs[] = [
+                'label' => $segment,
+                'token' => base64_encode(implode('/', $walked)),
+            ];
+        }
+
+        return $crumbs;
+    }
+
+    /**
+     * base64 token for one level up, or null when already at the root.
+     */
+    private function parentFolderToken(string $decoded_path): ?string
+    {
+        $decoded_path = trim($decoded_path, '/');
+
+        if ($decoded_path === '' || $decoded_path === 'public') {
+            return null;
+        }
+
+        $parent = dirname($decoded_path);
+
+        return in_array($parent, ['.', '/', ''], true) ? 'cHVibGlj' : base64_encode($parent);
+    }
 
 
     public function upload(Request $request)
     {
         $request->validate([
-            'images.*' => 'required_without:file|mimes:'. IMAGE_FORMAT_FOR_VALIDATION,
+            'images.*' => ImageFile::rules('required_without:file'),
             'file' => 'required_without:images|mimetypes:application/zip',
             'path' => 'required_if:disk,local',
         ]);
 
         $disk = $request->disk;
         if($disk == 's3' && !$request->path){
-            Toastr::warning(translate('messages.To_upload_file_on_s3_bucket_go_to_a_specific_folder'));
+            Toastr::warning(translate('messages.Go to a specific folder to upload files to the storage bucket') . ' (S3)');
             return back();
         }
         if ($request->hasfile('images')) {
@@ -110,27 +202,22 @@ class FileManagerController extends Controller
             $file = $request->file('file');
             $name = $file->getClientOriginalName();
             if ($disk === 's3') {
-                // Get the contents of the zip file
                 $zipContents = file_get_contents($file->path());
-                // Extract the zip contents
                 $zip = new ZipArchive;
                 if ($zip->open($file->path()) === true) {
-                    // Loop through each file in the zip
                     for ($i = 0; $i < $zip->numFiles; $i++) {
                         $stat = $zip->statIndex($i);
 
                         if (!$stat['name'] || $this->shouldSkip($stat['name'])) {
-                            continue; // Skip directories and unwanted files
+                            continue;
                         }
 
                         $filename = $stat['name'];
                         $fileContent = $zip->getFromIndex($i);
                         $format = pathinfo($filename, PATHINFO_EXTENSION);
 
-                        // Generate image name
                         $imageName = Carbon::now()->toDateString() . "-" . uniqid() . "." . $format;
 
-                        // Upload each file to S3
                         $s3 = Storage::disk('s3');
                         $s3Path = $request->path . '/' . $imageName;
                         $s3->put($s3Path, $fileContent, 'public');
@@ -143,17 +230,15 @@ class FileManagerController extends Controller
 
 
         }
-        Toastr::success(translate('messages.image_uploaded_successfully'));
-        return back()->with('success', translate('messages.image_uploaded_successfully'));
+        Toastr::success(translate('messages.Image uploaded successfully'));
+        return back()->with('success', translate('messages.Image uploaded successfully'));
     }
 
     private function shouldSkip($filename) {
-        // Add conditions to skip files here
         $skipFiles = [
-            '__MACOSX/', // Skip macOS metadata files
-            '.DS_Store', // Skip .DS_Store files
-            'Thumbs.db', // Skip Thumbs.db files (Windows)
-            // Add more conditions as needed
+            '__MACOSX/',
+            '.DS_Store',
+            'Thumbs.db',
         ];
 
         foreach ($skipFiles as $skipFile) {
@@ -185,7 +270,6 @@ class FileManagerController extends Controller
      */
     public function edit($id)
     {
-        //
     }
 
     /**
@@ -197,7 +281,6 @@ class FileManagerController extends Controller
      */
     public function update(Request $request, $id)
     {
-        //
     }
 
 
@@ -209,7 +292,7 @@ class FileManagerController extends Controller
         } catch (\Exception $e){
 
         }
-        Toastr::success(translate('messages.image_deleted_successfully'));
-        return back()->with('success', translate('messages.image_deleted_successfully'));
+        Toastr::success(translate('Deleted successfully'));
+        return back()->with('success', translate('Deleted successfully'));
     }
 }

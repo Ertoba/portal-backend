@@ -1,6 +1,6 @@
 @extends('layouts.admin.app')
 
-@section('title',translate('login_page_setup'))
+@section('title',translate('Login page setup'))
 
 @push('css_or_js')
     <style>
@@ -18,25 +18,24 @@
         <form action="{{route('admin.business-settings.login-settings.update')}}" method="post" id="login-settings-form">
             @csrf
             <div class="container-fluid">
-                <!-- Page Header -->
-                <div class="page-header d-flex flex-wrap align-items-center justify-content-between">
+                <div class="page-header">
                     <h1 class="page-header-title">
                         <span class="page-header-icon">
-                            <img src="{{asset('public/assets/admin/img/app.png')}}" class="w--26" alt="">
+                            <img src="{{asset('public/assets/admin/img/outline/app.svg')}}" class="w--26" alt="">
                         </span>
                         <span>
-                            {{translate('login_setup')}}
+                            {{translate('Login Setup')}}
                         </span>
                     </h1>
+                    <p class="page-header-desc">{{ translate('The artwork and wording customers meet on the sign-in screen.') }}</p>
                 </div>
-                <!-- End Page Header -->
 
                 <ul class="nav nav-tabs border-0 nav--tabs nav--pills mb-4">
                     <li class="nav-item">
-                        <a class="nav-link active" href="{{ route('admin.business-settings.login-settings.index') }}">{{translate('Customer_Login')}}</a>
+                        <a class="nav-link active" href="{{ route('admin.business-settings.login-settings.index') }}">{{translate('Customer Login')}}</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ route('admin.business-settings.login_url_page') }}">{{translate('panel_login_page_Url')}}</a>
+                        <a class="nav-link" href="{{ route('admin.business-settings.login_url_page') }}">{{translate('panel login page Url')}}</a>
                     </li>
                 </ul>
 
@@ -58,9 +57,7 @@
                                     <i class="tio-info"></i>
                                 </span>
                                 <span>
-                                    {{ translate('messages.At least one login method must remain active for the
-                                    customer. Otherwise they will be unable to log in to the
-                                    system') }}
+                                    {{ translate('messages.At least one login method must stay active, or customers cannot log in.') }}
                                 </span>
                             </div>
                             <div class="bg-light2 rounded p-3">
@@ -75,11 +72,7 @@
                                                             {{ translate('messages.Manual Login') }}
                                                         </h5>
                                                         <p class="fs-12 m-0">
-                                                            {{ translate('messages.By enabling manual login,
-                                                            customers will get the option
-                                                            to create account & login using necessary
-                                                            credentials & password in the
-                                                            app & website') }}
+                                                            {{ translate('messages.Customers can create an account and log in with credentials in the app and website.') }}
                                                         </p>
                                                     </div>
                                                 </label>
@@ -94,10 +87,8 @@
                                                             {{ translate('messages.OTP Login') }}
                                                         </h5>
                                                         <p class="fs-12 m-0">
-                                                            {{ translate('messages.With OTP Login, customers
-                                                            can log in using their phone
-                                                            number without password. To enable this feature') }}
-                                                            <a href="{{ route('admin.business-settings.third-party.sms-module') }}" target="_blank" class="text-primary text-underline font-weight-bold">{{ translate('messages.Configure SMS Setup ') }}</a>
+                                                            {{ translate('messages.With OTP Login, customers can log in using their phone number without password. To enable this feature') }}
+                                                            <a href="{{ route('admin.business-settings.third-party.sms-module') }}" target="_blank" class="text-primary text-underline font-weight-bold">{{ translate('messages.Configure SMS Setup') }} </a>
                                                             {{ translate('messages.Here.') }}
                                                         </p>
                                                     </div>
@@ -113,9 +104,7 @@
                                                             {{ translate('messages.Social Media Login') }}
                                                         </h5>
                                                         <p class="fs-12 m-0">
-                                                            {{ translate('messages.With Social Login, customers
-                                                            can log in using social media
-                                                            accounts. To enable this feature') }}
+                                                            {{ translate('messages.With Social Login, customers can log in using social media accounts. To enable this feature') }}
                                                             <a href="{{ route('admin.business-settings.third-party.social-login.view') }}"  target="_blank" class="text-primary text-underline font-weight-bold">{{ translate('messages.Configure Social Media Setup') }}</a>
                                                             {{ translate('messages.Here.') }}
                                                         </p>
@@ -139,7 +128,7 @@
                                     <i class="tio-info"></i>
                                 </span>
                                 <span>
-                                    {{ translate('messages.At least one social media must remain active for login. Otherwise social media login can’t work.') }}
+                                    {{ translate('messages.At least one social media must remain active for login. Otherwise social media login can\'t work.') }}
                                 </span>
                             </div>
                             <div class="bg-light2 rounded p-3">
@@ -149,14 +138,14 @@
                                             <div class="custom-checkbox custom-control d-flex gap-2 {{ !$google_login_status ? 'cursor-pointer' : '' }}"
                                                 @if (!$google_login_status)
                                                     data-toggle="tooltip"
-                                                    title="{{ translate('messages.Google is currently disabled from configure 3rd party social login options.') }}"
+                                                    title="{{ translate('messages.Google is currently disabled in the third-party social login configuration.') }}"
                                                 @endif>
                                                 <input type="checkbox" name="google_login_status" id="google_login_status" value="1" {{ (isset($data['google_login_status']) && $data['google_login_status'] == '1')? 'checked':'' }}
                                                     class="custom-control-input social-media-status-checkbox" {{ !$google_login_status ? 'disabled' : '' }}>
                                                 <label class="custom-control-label d-flex flex-column justify-content-between mb-0 {{ !$google_login_status ? 'disabled' : '' }}"  for="google_login_status">
                                                     <div>
                                                         <h5 class="mb-1">
-                                                            {{ translate('messages.Google') }}
+                                                            Google
                                                         </h5>
                                                         <p class="fs-12 m-0">
                                                             {{ translate('messages.Enabling Google Login, customers can log in to the site using their existing Gmail credentials.') }}
@@ -169,14 +158,14 @@
                                             <div class="custom-checkbox custom-control d-flex gap-2 {{ !$facebook_login_status ? 'cursor-pointer' : '' }}"
                                                 @if (!$facebook_login_status)
                                                     data-toggle="tooltip"
-                                                    title="{{ translate('messages.Facebook is currently disabled from configure 3rd party social login options.') }}"
+                                                    title="{{ translate('messages.Facebook is currently disabled in the third-party social login configuration.') }}"
                                                 @endif>
                                                 <input type="checkbox" name="facebook_login_status" id="facebook_login_status" value="1" {{ (isset($data['facebook_login_status']) && $data['facebook_login_status'] == '1')? 'checked':'' }}
                                                     class="custom-control-input social-media-status-checkbox" {{ !$facebook_login_status ? 'disabled' : '' }}>
                                                 <label class="custom-control-label d-flex flex-column justify-content-between mb-0 {{ !$facebook_login_status ? 'disabled' : '' }}"  for="facebook_login_status">
                                                     <div>
                                                         <h5 class="mb-1">
-                                                            {{ translate('messages.Facebook') }}
+                                                            Facebook
                                                         </h5>
                                                         <p class="fs-12 m-0">
                                                             {{ translate('messages.Enabling Facebook Login, customers can log in to the site using their existing Facebook credentials') }}
@@ -189,14 +178,14 @@
                                             <div class="custom-checkbox custom-control d-flex gap-2 {{ !$apple_login_status ? 'cursor-pointer' : '' }}"
                                                 @if (!$apple_login_status)
                                                     data-toggle="tooltip"
-                                                    title="{{ translate('messages.Apple is currently disabled from configure 3rd party social login options.') }}"
+                                                    title="{{ translate('messages.Apple is currently disabled in the third-party social login configuration.') }}"
                                                 @endif>
                                                <input type="checkbox" name="apple_login_status" id="apple_login_status" value="1" {{ (isset($data['apple_login_status']) && $data['apple_login_status'] == '1')? 'checked':'' }}
                                                class="custom-control-input social-media-status-checkbox" {{ !$apple_login_status ? 'disabled' : '' }}>
                                                 <label class="custom-control-label d-flex flex-column justify-content-between mb-0 {{ !$apple_login_status ? 'disabled' : '' }}"  for="apple_login_status">
                                                     <div>
                                                         <h5 class="mb-1">
-                                                            {{ translate('messages.Apple') }}
+                                                            Apple
                                                         </h5>
                                                         <p class="fs-12 m-0">
                                                             {{ translate('messages.Enabling Apple Login, customers can log in to the site using their existing Apple login credentials, Only for Apple devicesusing') }}
@@ -222,7 +211,7 @@
                             <i class="tio-info"></i>
                         </span>
                         <span>
-                            {{ translate('messages.At least one login option must remain active for Verification. Otherwise you will be unable to select & Save.') }}
+                            {{ translate('At least one login option must remain active for verification. Otherwise you will be unable to select & save.') }}
                         </span>
                     </div>
 
@@ -240,7 +229,7 @@
                                         <label class="custom-control-label d-flex flex-column justify-content-between mb-0 {{ !$is_mail_active ? 'disabled' : '' }}"  for="email_verification_status">
                                             <div>
                                                 <h5 class="mb-1">
-                                                    {{ translate('messages.Email Verification') }}
+                                                    {{ translate('Email verification') }}
                                                 </h5>
                                                 <p class="fs-12 m-0">
                                                     {{ translate('messages.If Email verification is on, Customers must verify their email with an OTP to complete the signup process.') }}
@@ -280,7 +269,7 @@
                             <i class="tio-info"></i>
                         </span>
                         <span>
-                            {{ translate('messages.At least one login option must remain active for work the OTP system.') }}
+                            {{ translate('messages.At least one login option must remain active for the OTP system to work.') }}
                         </span>
                     </div>
 
@@ -300,8 +289,8 @@
                                                     {{ translate('messages.Firebase OTP') }}
                                                 </h5>
                                                 <p class="fs-12 m-0">
-                                                    {{ translate('messages.With Firebase OTP enabled, verification codes will be sent through Firebase. To setup firebase visit') }}
-                                                    <a href="{{ route('admin.business-settings.third-party.firebase_otp_index') }}" target="_blank" class="text-primary text-underline font-weight-bold form-check-link">{{ translate('messages.firebase OTP Setup ') }}</a>
+                                                    {{ translate('messages.With Firebase OTP enabled, verification codes will be sent through Firebase. To setup Firebase visit') }}
+                                                    <a href="{{ route('admin.business-settings.third-party.firebase_otp_index') }}" target="_blank" class="text-primary text-underline font-weight-bold form-check-link">{{ translate('messages.Firebase OTP Setup') }} </a>
                                                 </p>
                                             </div>
                                         </label>
@@ -320,8 +309,8 @@
                                                     {{ translate('messages.Use SMS Gateway') }}
                                                 </h5>
                                                 <p class="fs-12 m-0">
-                                                    {{ translate('messages.With SMS Gateway you must setup at least one gateway.To setup visit') }}
-                                                    <a href="{{ route('admin.business-settings.third-party.sms-module') }}" target="_blank" class="text-primary text-underline font-weight-bold form-check-link">{{ translate('messages.3rd Party SMS Gateway') }}</a>
+                                                    {{ translate('messages.With SMS Gateway you must setup at least one gateway. To setup visit') }}
+                                                    <a href="{{ route('admin.business-settings.third-party.sms-module') }}" target="_blank" class="text-primary text-underline font-weight-bold form-check-link">{{ translate('messages.Third-party SMS gateway') }}</a>
                                                 </p>
                                             </div>
                                         </label>
@@ -335,10 +324,10 @@
             <div class="footer-sticky mt-2">
                 <div class="container-fluid">
                 <div class="d-flex flex-wrap gap-3 justify-content-center py-3">
-                    <button type="reset" id="reset_btn" class="btn btn--secondary min-w-120 location-reload">{{ translate('messages.Reset') }} </button>
+                    <button type="reset" id="reset_btn" class="btn btn--secondary min-w-120 location-reload"><i class="tio-refresh"></i> {{ translate('messages.Reset') }} </button>
                     <button type="{{ getEnvMode() != 'demo' ? 'submit' : 'button' }}" class="btn btn--primary call-demo">
                         <i class="tio-save"></i>
-                        {{ translate('Save_Information') }}
+                        {{ translate('Save information') }}
                     </button>
                 </div>
                 </div>
@@ -358,12 +347,12 @@
                 <div class="modal-body pb-0"><b></b>
                     <div class="text-center mb-20">
                         <img src="{{asset('public/assets/admin/img/modal/package-status-disable.png')}}" alt="" class="mb-20">
-                        <h5 class="modal-title">{{translate('Important Alert !')}}</h5>
+                        <h5 class="modal-title">{{translate('Important Alert!')}}</h5>
                     </div>
-                    <p>{{ translate('At least one login method must remain active for the customer; otherwise, they will be unable to log in to the system') }}</p>
+                    <p>{{ translate('At least one login method must stay active, or customers cannot log in.') }}</p>
                 </div>
                 <div class="modal-footer justify-content-center border-0">
-                    <a type="button" class="btn btn--primary mw-300px" data-dismiss="modal">{{translate('okay')}}</a>
+                    <a type="button" class="btn btn--primary mw-300px" data-dismiss="modal"><i class="tio-checkmark-circle-outlined"></i> {{translate('Okay')}}</a>
                 </div>
             </div>
         </div>
@@ -382,10 +371,10 @@
                         <img src="{{asset('public/assets/admin/img/sms-configuration.svg')}}" alt="" class="mb-20 img--80">
                         <h5 class="modal-title">{{translate('Set Up SMS Configuration First')}}</h5>
                     </div>
-                    <p>{{ translate('It looks like your SMS configuration is not set up yet. To enable the OTP system, please set up the SMS configuration first.') }}</p>
+                    <p>{{ translate('Set up the SMS configuration first to enable the OTP system.') }}</p>
                 </div>
                 <div class="modal-footer justify-content-center border-0">
-                    <a type="button" class="btn btn--primary w-100 mw-300px" href="{{ route('admin.business-settings.third-party.sms-module') }}" target="_blank">{{translate('Go to SMS Configuration')}}</a>
+                    <a type="button" class="btn btn--primary w-100 mw-300px" href="{{ route('admin.business-settings.third-party.sms-module') }}" target="_blank"><i class="tio-settings-outlined"></i> {{translate('Go to SMS Configuration')}}</a>
                 </div>
             </div>
         </div>
@@ -402,12 +391,12 @@
                 <div class="modal-body pb-0"><b></b>
                     <div class="text-center mb-20">
                         <img src="{{asset('public/assets/admin/img/modal/package-status-disable.png')}}" alt="" class="mb-20">
-                        <h5 class="modal-title">{{translate('Important Alert !')}}</h5>
+                        <h5 class="modal-title">{{translate('Important Alert!')}}</h5>
                     </div>
-                    <p>{{ translate('If you are activating only social login as the login method, you must enable at least one option between Google and Facebook for Android users.') }}</p>
+                    <p>{{ translate('With social login only, enable at least Google or Facebook for Android users.') }}</p>
                 </div>
                 <div class="modal-footer justify-content-center border-0">
-                    <a type="button" class="btn btn--primary mw-300px" data-dismiss="modal">{{translate('okay')}}</a>
+                    <a type="button" class="btn btn--primary mw-300px" data-dismiss="modal"><i class="tio-checkmark-circle-outlined"></i> {{translate('Okay')}}</a>
                 </div>
             </div>
         </div>
@@ -423,12 +412,12 @@
                 <div class="modal-body pb-0"><b></b>
                     <div class="text-center mb-20">
                         <img src="{{asset('public/assets/admin/img/modal/package-status-disable.png')}}" alt="" class="mb-20">
-                        <h5 class="modal-title">{{translate('Important Alert !')}}</h5>
+                        <h5 class="modal-title">{{translate('Important Alert!')}}</h5>
                     </div>
-                    <p>{{ translate('If you are activating social login as the login method, you must enable at least one option between Google, Facebook & Apple.') }}</p>
+                    <p>{{ translate('With social login, enable at least one of Google, Facebook or Apple.') }}</p>
                 </div>
                 <div class="modal-footer justify-content-center border-0">
-                    <a type="button" class="btn btn--primary mw-300px" data-dismiss="modal">{{translate('okay')}}</a>
+                    <a type="button" class="btn btn--primary mw-300px" data-dismiss="modal"><i class="tio-checkmark-circle-outlined"></i> {{translate('Okay')}}</a>
                 </div>
             </div>
         </div>
@@ -447,10 +436,10 @@
                         <img src="{{asset('public/assets/admin/img/modal/google.png')}}" alt="" class="mb-20">
                         <h5 class="modal-title">{{translate('Set Up Google Configuration First')}}</h5>
                     </div>
-                    <p>{{ translate('It looks like your Google Login configuration is not set up yet. To enable the Google Login option, please set up the Google configuration first.') }}</p>
+                    <p>{{ translate('Set up the Google configuration first to enable Google Login.') }}</p>
                 </div>
                 <div class="modal-footer justify-content-center border-0">
-                    <a type="button" class="btn btn--primary mw-300px" href="{{route('admin.business-settings.third-party.social-login.view')}}" target="_blank">{{translate('Go to Google Configuration')}}</a>
+                    <a type="button" class="btn btn--primary mw-300px" href="{{route('admin.business-settings.third-party.social-login.view')}}" target="_blank"><i class="tio-settings-outlined"></i> {{translate('Go to Google Configuration')}}</a>
                 </div>
             </div>
         </div>
@@ -469,10 +458,10 @@
                         <img src="{{asset('public/assets/admin/img/modal/facebook.png')}}" alt="" class="mb-20">
                         <h5 class="modal-title">{{translate('Set Up Facebook Configuration First')}}</h5>
                     </div>
-                    <p>{{ translate('It looks like your Facebook Login configuration is not set up yet. To enable the Facebook Login option, please set up the Facebook configuration first.') }}</p>
+                    <p>{{ translate('Set up the Facebook configuration first to enable Facebook Login.') }}</p>
                 </div>
                 <div class="modal-footer justify-content-center border-0">
-                    <a type="button" class="btn btn--primary mw-300px" href="{{route('admin.business-settings.third-party.social-login.view')}}" target="_blank">{{translate('Go to Facebook Configuration')}}</a>
+                    <a type="button" class="btn btn--primary mw-300px" href="{{route('admin.business-settings.third-party.social-login.view')}}" target="_blank"><i class="tio-settings-outlined"></i> {{translate('Go to Facebook Configuration')}}</a>
                 </div>
             </div>
         </div>
@@ -491,10 +480,10 @@
                         <img src="{{asset('public/assets/admin/img/modal/apple.png')}}" alt="" class="mb-20">
                         <h5 class="modal-title">{{translate('Set Up Apple Configuration First')}}</h5>
                     </div>
-                    <p>{{ translate('It looks like your Apple Login configuration is not set up yet. To enable the Apple Login option, please set up the Apple configuration first.') }}</p>
+                    <p>{{ translate('Set up the Apple configuration first to enable Apple Login.') }}</p>
                 </div>
                 <div class="modal-footer justify-content-center border-0">
-                    <a type="button" class="btn btn--primary mw-300px" href="{{route('admin.business-settings.third-party.social-login.view')}}" target="_blank">{{translate('Go to Apple Configuration')}}</a>
+                    <a type="button" class="btn btn--primary mw-300px" href="{{route('admin.business-settings.third-party.social-login.view')}}" target="_blank"><i class="tio-settings-outlined"></i> {{translate('Go to Apple Configuration')}}</a>
                 </div>
             </div>
         </div>
@@ -513,10 +502,10 @@
                         <img src="{{asset('public/assets/admin/img/sms-configuration.svg')}}" alt="" class="mb-20 img--80">
                         <h5 class="modal-title">{{translate('Set Up SMS Configuration First')}}</h5>
                     </div>
-                    <p>{{ translate('It looks like your SMS configuration is not set up yet. To enable the phone verification, please set up the SMS configuration first.') }}</p>
+                    <p>{{ translate('Set up the SMS configuration first to enable phone verification.') }}</p>
                 </div>
                 <div class="modal-footer justify-content-center border-0">
-                    <a type="button" class="btn btn--primary w-100 mw-300px" href="{{ route('admin.business-settings.third-party.sms-module') }}" target="_blank">{{translate('Go to SMS Configuration')}}</a>
+                    <a type="button" class="btn btn--primary w-100 mw-300px" href="{{ route('admin.business-settings.third-party.sms-module') }}" target="_blank"><i class="tio-settings-outlined"></i> {{translate('Go to SMS Configuration')}}</a>
                 </div>
             </div>
         </div>
@@ -535,10 +524,10 @@
                         <img src="{{asset('public/assets/admin/img/sms-configuration.svg')}}" alt="" class="mb-20 img--80">
                         <h5 class="modal-title">{{translate('Set Up Mail Configuration First')}}</h5>
                     </div>
-                    <p>{{ translate('It looks like your Mail configuration is not set up yet. To enable the email verification, please set up the Mail configuration first.') }}</p>
+                    <p>{{ translate('Set up the mail configuration first to enable email verification.') }}</p>
                 </div>
                 <div class="modal-footer justify-content-center border-0">
-                    <a type="button" class="btn btn--primary w-100 mw-300px" href="{{ route('admin.business-settings.third-party.mail-config') }}" target="_blank">{{translate('Go to Mail Configuration')}}</a>
+                    <a type="button" class="btn btn--primary w-100 mw-300px" href="{{ route('admin.business-settings.third-party.mail-config') }}" target="_blank"><i class="tio-settings-outlined"></i> {{translate('Go to Mail Configuration')}}</a>
                 </div>
             </div>
         </div>

@@ -3,17 +3,20 @@
 namespace App\Models;
 
 use App\CentralLogics\Helpers;
-use App\Traits\HasProductVideoPreview;
+use App\Traits\Model\HasProductVideoPreviewTrait;
 use App\Scopes\ZoneScope;
 use App\Scopes\StoreScope;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Support\Facades\DB;
 use Modules\TaxModule\Entities\Taxable;
+use App\Traits\Model\HasStorageTrait;
+use App\Traits\Model\HasTranslationRelationTrait;
+use App\Traits\System\SidebarCountsTrait;
 
 class TempProduct extends Model
 {
-    use HasFactory, HasProductVideoPreview;
+    use HasFactory, HasProductVideoPreviewTrait, HasStorageTrait, HasTranslationRelationTrait, SidebarCountsTrait;
     protected $with = ['storeCategory'];
     protected $casts = [
         'tax' => 'float',
@@ -40,17 +43,9 @@ class TempProduct extends Model
     ];
     protected $guarded = ['id'];
     protected $appends = ['image_full_url','images_full_url', 'video_full_url', 'video_size', 'video_preview_type', 'video_embed_url', 'video_preview_url', 'video_thumbnail_url', 'video_preview_modal_type', 'video_preview_modal_url', 'has_video_preview', 'has_video_source'];
-    public function getImageFullUrlAttribute(){
-        $value = $this->image;
-        if (count($this->storage) > 0) {
-            foreach ($this->storage as $storage) {
-                if ($storage['key'] == 'image') {
-                    return Helpers::get_full_url('product',$value,$storage['value']);
-                }
-            }
-        }
-
-        return Helpers::get_full_url('product',$value,'public');
+    public function getImageFullUrlAttribute()
+    {
+        return $this->storageFullUrl('product', 'image', $this->image);
     }
     public function getImagesFullUrlAttribute(){
         $images = [];
@@ -83,10 +78,6 @@ class TempProduct extends Model
     public function scopeApproved($query)
     {
         return $query;
-    }
-    public function translations()
-    {
-        return $this->morphMany(Translation::class, 'translationable');
     }
     public function item(){
         return $this->belongsTo(Item::class,'item_id');
@@ -144,11 +135,6 @@ class TempProduct extends Model
         return $this->belongsTo(StoreCategory::class, 'store_category_id');
     }
 
-    public function storage()
-    {
-        return $this->morphMany(Storage::class, 'data');
-    }
-
     protected static function booted()
     {
         if(auth('vendor')->check() || auth('vendor_employee')->check())
@@ -156,53 +142,14 @@ class TempProduct extends Model
             static::addGlobalScope(new StoreScope);
         }
         static::addGlobalScope(new ZoneScope);
-        static::addGlobalScope('storage', function ($builder) {
-            $builder->with('storage');
-        });
     }
     protected static function boot()
     {
         parent::boot();
         static::saved(function ($model) {
-            if($model->isDirty('image')){
-                $value = Helpers::getDisk();
-
-                DB::table('storages')->updateOrInsert([
-                    'data_type' => get_class($model),
-                    'data_id' => $model->id,
-                    'key' => 'image',
-                ], [
-                    'value' => $value,
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
-            }
-            if($model->isDirty('images')){
-                $value = Helpers::getDisk();
-
-                DB::table('storages')->updateOrInsert([
-                    'data_type' => get_class($model),
-                    'data_id' => $model->id,
-                    'key' => 'images',
-                ], [
-                    'value' => $value,
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
-            }
-            if($model->isDirty('video')){
-                $value = Helpers::getDisk();
-
-                DB::table('storages')->updateOrInsert([
-                    'data_type' => get_class($model),
-                    'data_id' => $model->id,
-                    'key' => 'video',
-                ], [
-                    'value' => $value,
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
-            }
+            self::recordStorageDisk($model, 'image', 'image');
+            self::recordStorageDisk($model, 'images', 'images');
+            self::recordStorageDisk($model, 'video', 'video');
         });
 
     }

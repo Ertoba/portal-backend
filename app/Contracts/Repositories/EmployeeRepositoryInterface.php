@@ -44,6 +44,6 @@ interface EmployeeRepositoryInterface extends RepositoryInterface
      * @param int|null $offset
      * @return Collection|LengthAwarePaginator
      */
-    public function getZoneWiseListWhere(string $zoneId = 'all', string $searchValue = null, array $filters = [], array $relations = [], int|string $dataLimit = DEFAULT_DATA_LIMIT, int $offset = null): Collection|LengthAwarePaginator;
+    public function getZoneWiseListWhere(string $zoneId = 'all', ?string $searchValue = null, array $filters = [], array $relations = [], int|string $dataLimit = DEFAULT_DATA_LIMIT, ?int $offset = null): Collection|LengthAwarePaginator;
 
 }

@@ -12,36 +12,39 @@
 
 
     <div class="content container-fluid">
-        <!-- Page Header -->
-        <div class="page-header d-flex flex-wrap __gap-15px justify-content-between align-items-center">
-            <h1 class="page-header-title">
-                <span class="page-header-icon">
-                    <img src="{{ asset('public/assets/admin/img/edit.png') }}" class="w--22" alt="">
-                </span>
-                <span>
-                    {{ request()->product_gellary == 1 ? translate('Add_item') : translate('item_update') }}
-                </span>
-            </h1>
-            <div class="d-flex align-items-end flex-wrap">
-                @if (Config::get('module.current_module_type') == 'food')
-                    <div class="text--primary-2 py-1 d-flex flex-wrap align-items-center foodModalShow" type="button">
-                        <strong class="mr-2">{{ translate('See_how_it_works!') }}</strong>
-                        <div>
-                            <i class="tio-info-outined"></i>
+        <div class="page-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <div>
+                <h1 class="page-header-title">
+                    <span class="page-header-icon">
+                        <img src="{{ asset('public/assets/admin/img/edit.png') }}" class="w--22" alt="">
+                    </span>
+                    <span>
+                        {{ request()->product_gellary == 1 ? translate('Add item') : translate('Item update') }}
+                    </span>
+                </h1>
+                <p class="page-header-desc">{{ translate('Change this item\'s details, price, images or the variations customers pick from.') }}</p>
+            </div>
+            <div class="page-header-actions">
+                <div class="d-flex align-items-end flex-wrap">
+                    @if (Config::get('module.current_module_type') == 'food')
+                        <div class="text--primary-2 py-1 d-flex flex-wrap align-items-center foodModalShow" type="button">
+                            <strong class="mr-2">{{ translate('See how it works') }}</strong>
+                            <div>
+                                <i class="tio-info-outined"></i>
+                            </div>
                         </div>
-                    </div>
-                @else
-                    <div class="text--primary-2 py-1 d-flex flex-wrap align-items-center attributeModalShow" type="button">
-                        <strong class="mr-2">{{ translate('See_how_it_works!') }}</strong>
-                        <div>
-                            <i class="tio-info-outined"></i>
+                    @else
+                        <div class="text--primary-2 py-1 d-flex flex-wrap align-items-center attributeModalShow" type="button">
+                            <strong class="mr-2">{{ translate('See how it works') }}</strong>
+                            <div>
+                                <i class="tio-info-outined"></i>
+                            </div>
                         </div>
-                    </div>
-                @endif
+                    @endif
+                </div>
             </div>
         </div>
         @php($openai_config = \App\CentralLogics\Helpers::get_business_settings('openai_config'))
-        <!-- End Page Header -->
         <form id="product_form" enctype="multipart/form-data" class="validate-form" data-ajax="true">
             <input type="hidden" id="module_type" value="{{ Config::get('module.current_module_type') }}">
             @if (request()->product_gellary == 1)
@@ -65,13 +68,13 @@
                     <div class="card h-100">
                         <div class="card-body d-flex flex-wrap align-items-center">
                             <div class="mb-20">
-                                <h3 class="mb-0">{{ translate('Item_Thumbnail') }}
+                                <h3 class="mb-0">{{ translate('Item thumbnail') }}
                                     @if (Config::get('module.current_module_type') != 'food')
                                     <span class="text-danger">*</span>
                                     @endif
                                 </h3>
                                 <p class="fs-12 mb-0">
-                                    {{ translate('Upload additional images.') . translate(IMAGE_FORMAT) .' '. translate('Image size : Max') .' ' .MAX_FILE_SIZE. translate('MB (1:1)')  }}
+                                    {{ translate('Upload additional images.') . ' ' . IMAGE_FORMAT . ' image, max ' . MAX_FILE_SIZE . ' MB (ratio ' . '1:1' . ')'  }}
                                 </p>
                             </div>
                             <div class="__bg-F8F9FC-card d-center w-100 p-3">
@@ -104,10 +107,10 @@
                         <div class="card-body">
                             <div class="mb-20">
                                 <h3 class="text-dark mb-1">
-                                    {{ translate('messages.Product Additional Images') }}
+                                    {{ translate('Product additional images') }}
                                 </h3>
                                 <p class="fs-12 mb-0">
-                                    {{ translate('messages.update additional images. JPG, JPEG, PNG Image size : Max 2 MB (1:1)') }}
+                                    {{ translate('Update additional images.') . ' ' . 'JPG, JPEG, PNG' . ' image, max ' . 2 . ' MB (ratio ' . '1:1' . ')' }}
                                 </p>
                             </div>
                             <div class="__bg-F8F9FC-card p-3">
@@ -167,12 +170,12 @@
                                             <span class="card-header-icon mr-2">
                                                 <i class="tio-canvas-text"></i>
                                             </span>
-                                            <span>{{ translate('messages.food_variations') }}</span>
+                                            <span>{{ translate('messages.Food variations') }}</span>
                                         </h5>
                                         <div>
 
                                             <a class="btn text--primary-2" id="add_new_option_button">
-                                                {{ translate('add_new_variation') }}
+                                                {{ translate('Add new variation') }}
                                                 <i class="tio-add"></i>
                                             </a>
                                             @if (isset($openai_config) && data_get($openai_config, 'status') == 1)
@@ -180,7 +183,7 @@
                                                     class="btn bg-white text-primary opacity-1 generate_btn_wrapper variation_setup_auto_fill"
                                                     id="variation_setup_auto_fill"
                                                     data-route="{{ route('admin.product.variation-setup-auto-fill') }}"
-                                                    data-error="{{ translate('Please provide an item name and description so the AI can generate a suitable food variations.') }}"
+                                                    data-error="{{ translate('Please provide an item name and description so the AI can generate suitable food variations.') }}"
                                                     data-lang="en">
                                                     <div class="btn-svg-wrapper">
                                                         <img width="18" height="18" class=""
@@ -188,7 +191,7 @@
                                                             alt="">
                                                     </div>
                                                     <span class="ai-text-animation d-none" role="status">
-                                                        {{ translate('Just_a_second') }}
+                                                        {{ translate('Just a second') }}
                                                     </span>
                                                     <span class="btn-text">{{ translate('Generate') }}</span>
                                                 </button>
@@ -216,7 +219,6 @@
                                             @endif
                                         </div>
 
-                                        <!-- Empty Variation -->
                                         @if (!isset($product->food_variations) || count(json_decode($product->food_variations, true)) < 1)
                                             <div id="empty-variation">
                                                 <div class="text-center">
@@ -243,7 +245,7 @@
                                     <div class="card-header border-0 pb-0">
                                         <div class="mb-0">
                                             <h3 class="text-dark mb-1">
-                                                {{ translate('messages.Attributes') }}
+                                                {{ translate('messages.attributes') }}
                                             </h3>
                                             <p class="fs-12 mb-0">
                                                 {{ translate('messages.Enable and manage different attributs of a product.') }}
@@ -254,7 +256,7 @@
                                                 class="btn bg-white text-primary opacity-1 generate_btn_wrapper p-0 mb-2 other_variation_setup_auto_fill"
                                                 id="other_variation_setup_auto_fill"
                                                 data-route="{{ route('admin.product.generate-other-variation-data') }}"
-                                                data-error="{{ translate('Please provide an item name and description so the AI can generate a suitable variations.') }}"
+                                                data-error="{{ translate('Please provide an item name and description so the AI can generate suitable variations.') }}"
                                                 data-lang="en">
                                                 <div class="btn-svg-wrapper">
                                                     <img width="18" height="18" class=""
@@ -262,7 +264,7 @@
                                                         alt="">
                                                 </div>
                                                 <span class="ai-text-animation d-none" role="status">
-                                                    {{ translate('Just_a_second') }}
+                                                    {{ translate('Just a second') }}
                                                 </span>
                                                 <span class="btn-text">{{ translate('Generate') }}</span>
                                             </button>
@@ -274,11 +276,11 @@
                                                 <div class="col-12">
                                                     <div class="form-group mb-0">
                                                         <label class="input-label"
-                                                            for="exampleFormControlSelect1">{{ translate('messages.attribute') }}<span
+                                                            for="exampleFormControlSelect1">{{ translate('Attribute') }}<span
                                                                 class="input-label-secondary"></span></label>
                                                         <select name="attribute_id[]" id="choice_attributes"
                                                             class="form-control js-select2-custom" multiple="multiple">
-                                                            @foreach (\App\Models\Attribute::orderBy('name')->get() as $attribute)
+                                                            @foreach (\App\CentralLogics\Helpers::cached_list(\App\Models\Attribute::class, orderBy: 'name') as $attribute)
                                                                 <option value="{{ $attribute['id'] }}"
                                                                     {{ in_array($attribute->id, json_decode($product['attributes'], true)) ? 'selected' : '' }}>
                                                                     {{ $attribute['name'] }}</option>
@@ -329,9 +331,9 @@
                 <div class="col-md-12">
                     <div class="btn--container justify-content-end">
                         <button type="reset" id="reset_btn"
-                            class="btn btn--reset">{{ translate('messages.reset') }}</button>
+                            class="btn btn--reset"><i class="tio-refresh"></i> {{ translate('messages.Reset') }}</button>
                         <button type="submit"
-                            class="btn btn--primary">{{ isset($temp_product) && $temp_product == 1 ? translate('Edit_&_Approve') : translate('messages.submit') }}</button>
+                            class="btn btn--primary"><i class="{{ isset($temp_product) && $temp_product == 1 ? 'tio-edit' : 'tio-checkmark-circle-outlined' }}"></i> {{ isset($temp_product) && $temp_product == 1 ? translate('Edit & approve') : translate('messages.Submit') }}</button>
                     </div>
                 </div>
             </div>
@@ -373,7 +375,7 @@
             </div>
         </div>
     </div>
-    <span id="message-enter-choice-values" data-text="{{ translate('enter_choice_values') }}"></span>
+    <span id="message-enter-choice-values" data-text="{{ translate('Enter choice values') }}"></span>
     @includeif('admin-views.product.partials._ai_sidebar')
 
 @endsection
@@ -491,7 +493,7 @@
             let $col = $('#store_category_col');
             let currentVal = $select.val();
             $select.empty().append(
-                '<option value="">{{ translate('messages.Select_Store_Category') }}</option>'
+                '<option value="">{{ translate('Select store category') }}</option>'
             );
             if (!storeId) {
                 // No store selected → no asterisk, not required.
@@ -654,7 +656,7 @@
             let subCategoriesSelect = $('#sub-categories');
             subCategoriesSelect.empty();
             subCategoriesSelect.append(
-                '<option value="" selected>{{ translate('messages.select_sub_category') }}</option>');
+                '<option value="" selected>{{ translate('Select subcategory') }}</option>');
         });
 
         $('.foodModalClose').on('click', function() {
@@ -985,7 +987,7 @@
 
                     },
                     onExtensionErr: function (index, file) {
-                        toastr.error('Please only input png or jpg type file', {
+                        toastr.error('{{ translate('Please upload a file in a supported format') . ': PNG, JPG' }}', {
                             CloseButton: true,
                             ProgressBar: true
                         });

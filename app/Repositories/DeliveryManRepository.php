@@ -2,7 +2,6 @@
 
 namespace App\Repositories;
 
-use App\CentralLogics\Helpers;
 use App\Contracts\Repositories\DeliveryManRepositoryInterface;
 use App\Models\DeliveryMan;
 use Illuminate\Database\Eloquent\Collection;
@@ -11,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use App\Support\Storage\FileStorage;
 
 class DeliveryManRepository implements DeliveryManRepositoryInterface
 {
@@ -33,16 +33,16 @@ class DeliveryManRepository implements DeliveryManRepositoryInterface
         return $this->deliveryMan->with($relations)->where($params)->first();
     }
 
-    public function getList(array $orderBy = [], array $relations = [], int|string $dataLimit = DEFAULT_DATA_LIMIT, int $offset = null): Collection|LengthAwarePaginator
+    public function getList(array $orderBy = [], array $relations = [], int|string $dataLimit = DEFAULT_DATA_LIMIT, ?int $offset = null): Collection|LengthAwarePaginator
     {
-        return $this->deliveryMan->paginate($dataLimit);
+        return $this->deliveryMan->with($relations)->paginate($dataLimit);
     }
 
-    public function getListWhere(string $searchValue = null, array $filters = [], array $relations = [], int|string $dataLimit = DEFAULT_DATA_LIMIT, int $offset = null): Collection|LengthAwarePaginator
+    public function getListWhere(?string $searchValue = null, array $filters = [], array $relations = [], int|string $dataLimit = DEFAULT_DATA_LIMIT, ?int $offset = null): Collection|LengthAwarePaginator
     {
-        $key = explode(' ', $searchValue);
+        $key = explode(' ', $searchValue ?? '');
         $data = $this->deliveryMan->with($relations)->where($filters)
-            ->when(isset($key), function($query) use($key){
+            ->when($searchValue, function($query) use($key){
                 $query->where(function ($query) use ($key) {
                     foreach ($key as $value) {
                         $query->orWhere('f_name', 'like', "%{$value}%")
@@ -74,11 +74,11 @@ class DeliveryManRepository implements DeliveryManRepositoryInterface
     public function delete(string $id): bool
     {
         $deliveryMan = $this->deliveryMan->find($id);
-        Helpers::check_and_delete('delivery-man/' , $deliveryMan['image']);
+        FileStorage::delete('delivery-man/' , $deliveryMan['image']);
 
 
         foreach (json_decode($deliveryMan['identity_image'], true) as $img) {
-            Helpers::check_and_delete('delivery-man/' , $img);
+            FileStorage::delete('delivery-man/' , $img);
 
         }
 
@@ -92,17 +92,17 @@ class DeliveryManRepository implements DeliveryManRepositoryInterface
 
     public function getFirstWithoutGlobalScopeWhere(array $params, array $relations = []): ?Model
     {
-        return $this->deliveryMan->withoutGlobalScope('translate')->where($params)->first();
+        return $this->deliveryMan->with($relations)->withoutGlobalScope('translate')->with(['storage'])->where($params)->first();
     }
 
-    public function getZoneWiseListWhere(string $zoneId = 'all',string $searchValue = null, array $filters = [], array $relations = [], int|string $dataLimit = DEFAULT_DATA_LIMIT, int $offset = null): Collection|LengthAwarePaginator
+    public function getZoneWiseListWhere(string $zoneId = 'all',?string $searchValue = null, array $filters = [], array $relations = [], int|string $dataLimit = DEFAULT_DATA_LIMIT, ?int $offset = null): Collection|LengthAwarePaginator
     {
-        $key = explode(' ', $searchValue);
+        $key = explode(' ', $searchValue ?? '');
         $data = $this->deliveryMan->with($relations)->where($filters)
             ->when(is_numeric($zoneId), function($query) use($zoneId){
                 return $query->where('zone_id', $zoneId);
             })
-            ->when(isset($key), function($query) use($key){
+            ->when($searchValue, function($query) use($key){
                 $query->where(function ($query) use ($key) {
                     foreach ($key as $value) {
                         $query->orWhere('f_name', 'like', "%{$value}%")
@@ -139,14 +139,14 @@ class DeliveryManRepository implements DeliveryManRepositoryInterface
                         ->orWhere('phone', 'like', "%{$value}%")
                         ->orWhere('identity_number', 'like', "%{$value}%");
                 }
-            })->active()->limit(8)->get(['id',DB::raw('CONCAT(f_name, " ", l_name) as text')]);
+            })->active()->limit(8)->get(['id',DB::raw('CONCAT(f_name, " ", l_name) as text')])->makeHidden('image_full_url');
     }
 
-    public function getActiveFirstWhere(string $searchValue = null, array $filters = [], array $relations = []): ?Model
+    public function getActiveFirstWhere(?string $searchValue = null, array $filters = [], array $relations = []): ?Model
     {
-        $key = explode(' ', $searchValue);
+        $key = explode(' ', $searchValue ?? '');
         return $this->deliveryMan->with($relations)->where($filters)
-            ->when(isset($key), function($query) use($key){
+            ->when($searchValue, function($query) use($key){
                 $query->where(function ($query) use ($key) {
                     foreach ($key as $value) {
                         $query->orWhere('f_name', 'like', "%{$value}%")
@@ -160,9 +160,9 @@ class DeliveryManRepository implements DeliveryManRepositoryInterface
             ->Active()
             ->first();
     }
-    public function getFilterWiseListWhere(string $zoneId = 'all', string $searchValue = null, array $filters = [],  string $additionalFilter = null ,  string $jobType = null ,array $relations = [], int|string $dataLimit = DEFAULT_DATA_LIMIT, int $offset = null): Collection|LengthAwarePaginator
+    public function getFilterWiseListWhere(string $zoneId = 'all', ?string $searchValue = null, array $filters = [],  ?string $additionalFilter = null ,  ?string $jobType = null ,array $relations = [], int|string $dataLimit = DEFAULT_DATA_LIMIT, ?int $offset = null): Collection|LengthAwarePaginator
     {
-        $key = explode(' ', $searchValue);
+        $key = explode(' ', $searchValue ?? '');
         $data = $this->deliveryMan->with($relations)
             ->where($filters)
             ->when(is_numeric($zoneId), function($query) use($zoneId){
@@ -186,7 +186,7 @@ class DeliveryManRepository implements DeliveryManRepositoryInterface
             ->when(isset($jobType) && $jobType == 'salary_base', function($query){
                 return $query->Zonewise()->where('earning',0)->where('application_status','approved');
             })
-            ->when(isset($key), function($query) use($key){
+            ->when($searchValue, function($query) use($key){
                 $query->where(function ($query) use ($key) {
                     foreach ($key as $value) {
                         $query->orWhere('f_name', 'like', "%{$value}%")
@@ -205,4 +205,12 @@ class DeliveryManRepository implements DeliveryManRepositoryInterface
     }
 
 
+
+    public function getApprovedFilterOptions(): Collection
+    {
+        return $this->deliveryMan->where('application_status', 'approved')
+            ->oldest()
+            ->get(['id', 'f_name', 'l_name'])
+            ->makeHidden(['image_full_url', 'identity_image_full_url']);
+    }
 }

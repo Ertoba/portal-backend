@@ -25,8 +25,8 @@
                 <div class="lang_form" id="default-form">
                     <div class="form-group mb-3">
                         <label class="input-label fw-400" for="default_title">{{ translate('messages.Question') }}
-                                ({{ translate('messages.Default') }})<span class="form-label-secondary" data-toggle="tooltip" data-placement="right" 
-                                data-title="{{ translate('Add question within 150 characters') }}">
+                                ({{ translate('Default') }})<span class="form-label-secondary" data-toggle="tooltip" data-placement="right" 
+                                data-title="{{ translate('Character limit') }}: 150">
                                     <i class="tio-info text-muted fs-16"></i>
                                 </span>
                         </label>
@@ -38,8 +38,8 @@
                         </div>
                     </div>                                    
                     <div class="form-group mb-0">
-                        <label class="input-label fw-400" for="subtitle">{{ translate('messages.answer') }} ({{ translate('messages.default') }})<span class="form-label-secondary" data-toggle="tooltip" data-placement="right" 
-                        data-title="{{ translate('Add answer within 500 characters') }}">
+                        <label class="input-label fw-400" for="subtitle">{{ translate('messages.Answer') }} ({{ translate('Default') }})<span class="form-label-secondary" data-toggle="tooltip" data-placement="right" 
+                        data-title="{{ translate('Character limit') }}: 500">
                                     <i class="tio-info text-muted fs-16"></i>
                                 </span>
                         </label>
@@ -53,19 +53,19 @@
         </div>
     </div>
     <div class="btn--container justify-content-end">
-        <button type="reset" class="btn btn--reset">{{translate('Reset')}}</button>
-        <button type="submit"   class="btn btn--primary">{{translate('add')}}</button>
+        <button type="reset" class="btn btn--reset"><i class="tio-refresh"></i> {{translate('Reset')}}</button>
+        <button type="submit"   class="btn btn--primary"><i class="tio-add-circle"></i> {{translate('Add')}}</button>
     </div>
 </div>
 
 <div class="card">
     <div class="card-header border-0 p-20">
         <div class="search--button-wrapper">
-            <h4 class="card-title d-flex align-items-center">{{translate('messages.FAQ List')}}</h4>
+            <h4 class="card-title d-flex align-items-center">{{translate('FAQ list')}}</h4>
             <form class="search-form">
                 <div class="input-group input--group">
                     <input id="datatableSearch_" type="search" name="search" value="{{ request()?->search ?? null }}" class="form-control"
-                            placeholder="{{translate('Search_title')}}" aria-label="{{translate('messages.search_here')}}" >
+                            placeholder="{{translate('Search title')}}" aria-label="{{translate('Search')}}" >
                     <button type="submit" class="btn btn--secondary secondary-cmn"><i class="tio-search"></i></button>
 
                 </div>
@@ -77,7 +77,7 @@
             <table class="table table-borderless table-thead-borderless table-align-middle table-nowrap card-table">
                 <thead class="thead-light border-0">
                     <tr>
-                        <th class="border-top-0">{{ translate('Sl') }}</th>
+                        <th class="border-top-0">{{ translate('SL') }}</th>
                         <th class="border-top-0">{{ translate('Question') }}</th>
                         <th class="border-top-0">{{ translate('Answer') }} </th>
                         <th class="border-top-0">{{ translate('Status') }}</th>
@@ -107,12 +107,12 @@
                         </td>
                         <td>
                             <div class="btn--container justify-content-center">
-                                <a class="btn action-btn btn--primary btn-outline-primary offcanvas-trigger" 
+                                <a class="btn action-btn action-btn--edit offcanvas-trigger" 
                                     href="javascript:;" 
                                     data-target="#edit_faq">
                                     <i class="tio-edit"></i>
                                 </a>
-                                <a class="btn action-btn btn--danger btn-outline-danger" href="javascript:" title="">
+                                <a class="btn action-btn action-btn--delete" href="javascript:" title="">
                                     <i class="tio-delete-outlined"></i>
                                 </a>
                             </div>

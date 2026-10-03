@@ -1,4 +1,3 @@
-@php($params = session('dash_params'))
 <div id="grow-sale-chart"></div>
 
 <script>

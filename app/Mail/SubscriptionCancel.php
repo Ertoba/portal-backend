@@ -2,24 +2,25 @@
 
 namespace App\Mail;
 
-use App\CentralLogics\Helpers;
-use App\Models\BusinessSetting;
 use App\Models\EmailTemplate;
+use App\Mail\Concerns\BuildsTemplatedMail;
+use App\Mail\Concerns\QueueableMailable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Queue\SerializesModels;
+use App\Support\Notification\NotificationText;
+use App\Services\System\BusinessSettingService;
 
-class SubscriptionCancel extends Mailable
+class SubscriptionCancel extends Mailable implements ShouldQueue
 {
-    use Queueable, SerializesModels;
+    use BuildsTemplatedMail, Queueable, QueueableMailable, SerializesModels;
 
     /**
      * Create a new message instance.
      *
      * @return void
      */
-
-
     protected $name;
 
     public function __construct($name)
@@ -34,17 +35,17 @@ class SubscriptionCancel extends Mailable
      */
     public function build()
     {
-        $company_name = BusinessSetting::where('key', 'business_name')->first()->value;
-        $data=EmailTemplate::where('type','store')->where('email_type', 'subscription-cancel')->first();
-
-        $template=$data?$data->email_template:5;
-        $url = BusinessSetting::where('key', 'email_address')->first()?->value ?? '6am Mart' ;
-
+        $url = app(BusinessSettingService::class)->value('email_address', false) ?? '6am Mart';
         $store_name = $this->name;
-        $title = Helpers::text_variable_data_format( value:$data['title']??'',store_name:$store_name??'');
-        $body = Helpers::text_variable_data_format( value:$data['body']??'',store_name:$store_name??'');
-        $footer_text = Helpers::text_variable_data_format( value:$data['footer_text']??'',store_name:$store_name??'');
-        $copyright_text = Helpers::text_variable_data_format( value:$data['copyright_text']??'',store_name:$store_name??'');
-        return $this->subject(translate('Subscription_Canceled'))->view('email-templates.new-email-format-'.$template, ['company_name'=>$company_name,'data'=>$data,'title'=>$title,'body'=>$body,'footer_text'=>$footer_text,'copyright_text'=>$copyright_text,'url'=>$url]);
+
+        return $this->templatedMail(
+            template: EmailTemplate::where('type', 'store')->where('email_type', 'subscription-cancel')->first(),
+            fallbackTemplate: 5,
+            subject: translate('Subscription canceled'),
+            placeholders: [
+                'store_name' => $store_name ?? '',
+            ],
+            viewData: ['url' => $url],
+        );
     }
 }

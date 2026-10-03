@@ -1,6 +1,6 @@
 @extends('layouts.admin.app')
 
-@section('title',translate('messages.new_page'))
+@section('title',translate('messages.New page'))
 
 @push('css_or_js')
 <meta name="csrf-token" content="{{ csrf_token() }}">
@@ -13,14 +13,15 @@
         <div class="d-flex flex-wrap justify-content-between">
             <h1 class="page-header-title">
                 <span class="page-header-icon">
-                    <img src="{{asset('public/assets/admin/img/landing.png')}}" class="w--20" alt="">
+                    <img src="{{asset('public/assets/admin/img/outline/landing.svg')}}" class="w--26" alt="">
                 </span>
                 <span>
-                    {{ translate('messages.react_landing_page') }}
+                    {{ translate('React landing page') }}
                 </span>
             </h1>
+            <p class="page-header-desc">{{ translate('The client logos shown as proof on the react landing page.') }}</p>
             <div class="text--primary-2 py-1 d-flex flex-wrap align-items-center" type="button" data-toggle="modal" data-target="#how-it-works">
-                <strong class="mr-2">{{translate('See_how_it_works!')}}</strong>
+                <strong class="mr-2">{{translate('See how it works')}}</strong>
                 <div>
                     <i class="tio-info-outined"></i>
                 </div>
@@ -37,7 +38,7 @@
             <div class="">
                 <h3 class="mb-1">{{ translate('Popular Clients Section') }}</h3>
                 <p class="mb-0 gray-dark fs-12">
-                    {{ translate('See how your Popular Clients Section will look to customers.') }}
+                    {{ translate('See how this section will look to customers.') }}
                 </p>
             </div>
             <div class="max-w-300px ml-sm-auto">
@@ -54,7 +55,7 @@
                 <div class="col-lg-8 col-md-7 col-sm-7">
                     <div>
                         <h3 class="mb-1">{{translate('messages.Popular Clients Section') }}</h3>
-                        <p class="m-0 fs-12 color-656566">{{ translate('If you turn of the availability status, this section will not show in the website') }}</p>
+                        <p class="m-0 fs-12 color-656566">{{ translate('If you turn off the availability status, this section will not show on the website') }}</p>
                     </div>
                 </div>
                 <div class="col-lg-4 col-md-5 col-sm-5">
@@ -85,22 +86,22 @@
             <div class="bg--secondary h-100 rounded p-md-4 p-3 mb-20">
                 <ul class="nav nav-tabs mb-4 border-bottom">
                     <li class="nav-item">
-                        <a class="nav-link lang_link active" href="#" id="default-link">{{translate('messages.default')}}</a>
+                        <a class="nav-link lang_link active" href="#" id="default-link">{{translate('Default')}}</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link lang_link" href="#" id="">{{translate('messages.English')}} ({{ translate('messages.EN') }})</a>
+                        <a class="nav-link lang_link" href="#" id="">English (EN)</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link lang_link" href="#" id="">{{translate('messages.Arabic')}} ({{ translate('messages.(AR)') }})</a>
+                        <a class="nav-link lang_link" href="#" id="">Arabic (AR)</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link lang_link" href="#" id="">{{translate('messages.Spanish')}} ({{ translate('messages.(ES)') }})</a>
+                        <a class="nav-link lang_link" href="#" id="">Spanish (ES)</a>
                     </li>
                 </ul>
                 <div class="row g-1 lang_form default-form">
                     <div class="col-sm-12">
-                        <label for=""  class="form-label">{{translate('Title')}} ({{ translate('messages.default') }})
-                        <span class="form-label-secondary" data-toggle="tooltip" data-placement="right" data-original-title="{{ translate('Write_the_title_within_20_characters') }}">
+                        <label for=""  class="form-label">{{translate('Title')}} ({{ translate('Default') }})
+                        <span class="form-label-secondary" data-toggle="tooltip" data-placement="right" data-original-title="{{ translate('Character limit') }}: 20">
                                     <i class="tio-info color-A7A7A7"></i>
                                 </span>
                                 <span class="form-label-secondary text-danger"
@@ -108,19 +109,19 @@
                                 data-original-title="{{ translate('messages.Required.')}}"> 
                                 </span>
                             </label>
-                        <textarea id="" type="text"  maxlength="100" name="[]" class="form-control min-h-45px" value="" rows="1" placeholder="{{translate('messages.title_here...')}}"></textarea>
+                        <textarea id="" type="text"  maxlength="100" name="[]" class="form-control min-h-45px" value="" rows="1" placeholder="{{translate('Enter title')}}"></textarea>
                         <span class="text-right text-counting color-A7A7A7 d-block mt-1">0/100</span>
                     </div>
                     <div class="col-sm-12">
-                        <label for=""  class="form-label">{{translate('Sub Title')}} ({{ translate('messages.default') }})
-                        <span class="form-label-secondary" data-toggle="tooltip" data-placement="right" data-original-title="{{ translate('Write_the_sub_title_within_30_characters') }}">
+                        <label for=""  class="form-label">{{translate('Sub Title')}} ({{ translate('Default') }})
+                        <span class="form-label-secondary" data-toggle="tooltip" data-placement="right" data-original-title="{{ translate('Character limit') }}: 30">
                                     <i class="tio-info color-A7A7A7"></i>
                                 </span><span class="form-label-secondary text-danger"
                                 data-toggle="tooltip" data-placement="right"
                                 data-original-title="{{ translate('messages.Required.')}}"> 
                                 </span>
                         </label>
-                        <textarea id="" type="text"  maxlength="200" name="" class="form-control min-h-45px" value="" rows="1" placeholder="{{translate('messages.sub_title_here...')}}"></textarea>
+                        <textarea id="" type="text"  maxlength="200" name="" class="form-control min-h-45px" value="" rows="1" placeholder="{{translate('Enter subtitle')}}"></textarea>
                         <span class="text-right text-counting color-A7A7A7 d-block mt-1">0/200</span>
                     </div>
                 </div>
@@ -129,20 +130,18 @@
                 <div class="mb-20">
                     <h5 class="mb-1">{{ translate('Clients Section Image') }}</h5>
                     <p class="mb-0 gray-dark fs-12">
-                        {{ translate('JPG, JPEG, PNG, Gif Image size : Max 2 MB') }}
+                        {{ 'JPG, JPEG, PNG, GIF' . ' image, max ' . 2 . ' MB' }}
                     </p>
                 </div>
-                 <!-- Product Image 2 -->
                 <div class="d-flex flex-wrap __gap-12px __new-coba" id="coba">
                     
                 </div>
             </div>
             <div class="btn--container justify-content-end mt-20">
-                <button type="reset" class="btn btn--reset mb-2">{{translate('Reset')}}</button>
-                <button type="submit"   class="btn btn--primary mb-2">{{translate('Save')}}</button>
+                <button type="reset" class="btn btn--reset mb-2"><i class="tio-refresh"></i> {{translate('Reset')}}</button>
+                <button type="submit"   class="btn btn--primary mb-2"><i class="tio-save"></i> {{translate('Save')}}</button>
             </div>
         </div>
-        <!--- Old Code -->
         <!-- <div class="card">
             <form action="#0">
                 <div class="card-header">
@@ -159,7 +158,7 @@
                             <div class="card">
                                 <div class="card-header">
                                     <div class="w-100 d-flex align-items-center gap-2 flex-wrap justify-content-between">
-                                        <h3 class="mb-0">{{ translate('Client 1') }}</h3>                                
+                                        <h3 class="mb-0">{{ translate('Client') }} 1</h3>                                
                                     </div>
                                 </div>
                                 <div class="card-body">
@@ -167,8 +166,8 @@
                                         <div class="text-center py-1">                            
                                             <div class="mx-auto text-center">
                                                 <div class="mb-30">
-                                                    <h5 class="mb-1">{{ translate('Upload Image') }}</h5>
-                                                    <p class="mb-0 fs-12 gray-dark">{{ translate('Upload 1st Card  Image') }}</p>
+                                                    <h5 class="mb-1">{{ translate('Upload image') }}</h5>
+                                                    <p class="mb-0 fs-12 gray-dark">{{ translate('Upload first card image') }}</p>
                                                 </div>
                                                 <div class="upload-file_custom">
                                                     <input type="file" name="image" class="upload-file__input single_file_input"
@@ -200,7 +199,7 @@
                                                 </div>
                                             </div>
                                             <p class="fs-10 text-center mb-0 mt-lg-4 mt-3">
-                                                <span class="font-medium color-656566">{{ translate('Ratio (1:1)')}}</span>
+                                                <span class="font-medium color-656566">Ratio 1:1</span>
                                             </p>
                                         </div>
                                     </div>                            
@@ -211,7 +210,7 @@
                             <div class="card">
                                 <div class="card-header">
                                     <div class="w-100 d-flex align-items-center gap-2 flex-wrap justify-content-between">
-                                        <h3 class="mb-0">{{ translate('Client 2') }}</h3>                                
+                                        <h3 class="mb-0">{{ translate('Client') }} 2</h3>                                
                                     </div>
                                 </div>
                                 <div class="card-body">
@@ -219,8 +218,8 @@
                                         <div class="text-center py-1">                            
                                             <div class="mx-auto text-center">
                                                 <div class="mb-30">
-                                                    <h5 class="mb-1">{{ translate('Upload Image') }}</h5>
-                                                    <p class="mb-0 fs-12 gray-dark">{{ translate('Upload 1st Card  Image') }}</p>
+                                                    <h5 class="mb-1">{{ translate('Upload image') }}</h5>
+                                                    <p class="mb-0 fs-12 gray-dark">{{ translate('Upload first card image') }}</p>
                                                 </div>
                                                 <div class="upload-file_custom">
                                                     <input type="file" name="image" class="upload-file__input single_file_input"
@@ -252,7 +251,7 @@
                                                 </div>
                                             </div>
                                             <p class="fs-10 text-center mb-0 mt-lg-4 mt-3">
-                                                <span class="font-medium color-656566">{{ translate('Ratio (1:1)')}}</span>
+                                                <span class="font-medium color-656566">Ratio 1:1</span>
                                             </p>
                                         </div>
                                     </div>                            
@@ -263,7 +262,7 @@
                             <div class="card">
                                 <div class="card-header">
                                     <div class="w-100 d-flex align-items-center gap-2 flex-wrap justify-content-between">
-                                        <h3 class="mb-0">{{ translate('Client 3') }}</h3>                                
+                                        <h3 class="mb-0">{{ translate('Client') }} 3</h3>                                
                                     </div>
                                 </div>
                                 <div class="card-body">
@@ -271,8 +270,8 @@
                                         <div class="text-center py-1">                            
                                             <div class="mx-auto text-center">
                                                 <div class="mb-30">
-                                                    <h5 class="mb-1">{{ translate('Upload Image') }}</h5>
-                                                    <p class="mb-0 fs-12 gray-dark">{{ translate('Upload 1st Card  Image') }}</p>
+                                                    <h5 class="mb-1">{{ translate('Upload image') }}</h5>
+                                                    <p class="mb-0 fs-12 gray-dark">{{ translate('Upload first card image') }}</p>
                                                 </div>
                                                 <div class="upload-file_custom">
                                                     <input type="file" name="image" class="upload-file__input single_file_input"
@@ -304,7 +303,7 @@
                                                 </div>
                                             </div>
                                             <p class="fs-10 text-center mb-0 mt-lg-4 mt-3">
-                                                <span class="font-medium color-656566">{{ translate('Ratio (1:1)')}}</span>
+                                                <span class="font-medium color-656566">Ratio 1:1</span>
                                             </p>
                                         </div>
                                     </div>                            
@@ -315,7 +314,7 @@
                             <div class="card">
                                 <div class="card-header">
                                     <div class="w-100 d-flex align-items-center gap-2 flex-wrap justify-content-between">
-                                        <h3 class="mb-0">{{ translate('Client 4') }}</h3>                                
+                                        <h3 class="mb-0">{{ translate('Client') }} 4</h3>                                
                                     </div>
                                 </div>
                                 <div class="card-body">
@@ -323,8 +322,8 @@
                                         <div class="text-center py-1">                            
                                             <div class="mx-auto text-center">
                                                 <div class="mb-30">
-                                                    <h5 class="mb-1">{{ translate('Upload Image') }}</h5>
-                                                    <p class="mb-0 fs-12 gray-dark">{{ translate('Upload 1st Card  Image') }}</p>
+                                                    <h5 class="mb-1">{{ translate('Upload image') }}</h5>
+                                                    <p class="mb-0 fs-12 gray-dark">{{ translate('Upload first card image') }}</p>
                                                 </div>
                                                 <div class="upload-file_custom">
                                                     <input type="file" name="image" class="upload-file__input single_file_input"
@@ -356,7 +355,7 @@
                                                 </div>
                                             </div>
                                             <p class="fs-10 text-center mb-0 mt-lg-4 mt-3">
-                                                <span class="font-medium color-656566">{{ translate('Ratio (1:1)')}}</span>
+                                                <span class="font-medium color-656566">Ratio 1:1</span>
                                             </p>
                                         </div>
                                     </div>                            
@@ -367,7 +366,7 @@
                             <div class="card">
                                 <div class="card-header">
                                     <div class="w-100 d-flex align-items-center gap-2 flex-wrap justify-content-between">
-                                        <h3 class="mb-0">{{ translate('Client 5') }}</h3>                                
+                                        <h3 class="mb-0">{{ translate('Client') }} 5</h3>                                
                                     </div>
                                 </div>
                                 <div class="card-body">
@@ -375,8 +374,8 @@
                                         <div class="text-center py-1">                            
                                             <div class="mx-auto text-center">
                                                 <div class="mb-30">
-                                                    <h5 class="mb-1">{{ translate('Upload Image') }}</h5>
-                                                    <p class="mb-0 fs-12 gray-dark">{{ translate('Upload 1st Card  Image') }}</p>
+                                                    <h5 class="mb-1">{{ translate('Upload image') }}</h5>
+                                                    <p class="mb-0 fs-12 gray-dark">{{ translate('Upload first card image') }}</p>
                                                 </div>
                                                 <div class="upload-file_custom">
                                                     <input type="file" name="image" class="upload-file__input single_file_input"
@@ -408,7 +407,7 @@
                                                 </div>
                                             </div>
                                             <p class="fs-10 text-center mb-0 mt-lg-4 mt-3">
-                                                <span class="font-medium color-656566">{{ translate('Ratio (1:1)')}}</span>
+                                                <span class="font-medium color-656566">Ratio 1:1</span>
                                             </p>
                                         </div>
                                     </div>                            
@@ -419,7 +418,7 @@
                             <div class="card">
                                 <div class="card-header">
                                     <div class="w-100 d-flex align-items-center gap-2 flex-wrap justify-content-between">
-                                        <h3 class="mb-0">{{ translate('Client 6') }}</h3>                                
+                                        <h3 class="mb-0">{{ translate('Client') }} 6</h3>                                
                                     </div>
                                 </div>
                                 <div class="card-body">
@@ -427,8 +426,8 @@
                                         <div class="text-center py-1">                            
                                             <div class="mx-auto text-center">
                                                 <div class="mb-30">
-                                                    <h5 class="mb-1">{{ translate('Upload Image') }}</h5>
-                                                    <p class="mb-0 fs-12 gray-dark">{{ translate('Upload 1st Card  Image') }}</p>
+                                                    <h5 class="mb-1">{{ translate('Upload image') }}</h5>
+                                                    <p class="mb-0 fs-12 gray-dark">{{ translate('Upload first card image') }}</p>
                                                 </div>
                                                 <div class="upload-file_custom">
                                                     <input type="file" name="image" class="upload-file__input single_file_input"
@@ -460,7 +459,7 @@
                                                 </div>
                                             </div>
                                             <p class="fs-10 text-center mb-0 mt-lg-4 mt-3">
-                                                <span class="font-medium color-656566">{{ translate('Ratio (1:1)')}}</span>
+                                                <span class="font-medium color-656566">Ratio 1:1</span>
                                             </p>
                                         </div>
                                     </div>                            
@@ -471,7 +470,7 @@
                             <div class="card">
                                 <div class="card-header">
                                     <div class="w-100 d-flex align-items-center gap-2 flex-wrap justify-content-between">
-                                        <h3 class="mb-0">{{ translate('Client 7') }}</h3>                                
+                                        <h3 class="mb-0">{{ translate('Client') }} 7</h3>                                
                                     </div>
                                 </div>
                                 <div class="card-body">
@@ -479,8 +478,8 @@
                                         <div class="text-center py-1">                            
                                             <div class="mx-auto text-center">
                                                 <div class="mb-30">
-                                                    <h5 class="mb-1">{{ translate('Upload Image') }}</h5>
-                                                    <p class="mb-0 fs-12 gray-dark">{{ translate('Upload 1st Card  Image') }}</p>
+                                                    <h5 class="mb-1">{{ translate('Upload image') }}</h5>
+                                                    <p class="mb-0 fs-12 gray-dark">{{ translate('Upload first card image') }}</p>
                                                 </div>
                                                 <div class="upload-file_custom">
                                                     <input type="file" name="image" class="upload-file__input single_file_input"
@@ -512,7 +511,7 @@
                                                 </div>
                                             </div>
                                             <p class="fs-10 text-center mb-0 mt-lg-4 mt-3">
-                                                <span class="font-medium color-656566">{{ translate('Ratio (1:1)')}}</span>
+                                                <span class="font-medium color-656566">Ratio 1:1</span>
                                             </p>
                                         </div>
                                     </div>                            
@@ -523,7 +522,7 @@
                             <div class="card">
                                 <div class="card-header">
                                     <div class="w-100 d-flex align-items-center gap-2 flex-wrap justify-content-between">
-                                        <h3 class="mb-0">{{ translate('Client 8') }}</h3>                                
+                                        <h3 class="mb-0">{{ translate('Client') }} 8</h3>                                
                                     </div>
                                 </div>
                                 <div class="card-body">
@@ -531,8 +530,8 @@
                                         <div class="text-center py-1">                            
                                             <div class="mx-auto text-center">
                                                 <div class="mb-30">
-                                                    <h5 class="mb-1">{{ translate('Upload Image') }}</h5>
-                                                    <p class="mb-0 fs-12 gray-dark">{{ translate('Upload 1st Card  Image') }}</p>
+                                                    <h5 class="mb-1">{{ translate('Upload image') }}</h5>
+                                                    <p class="mb-0 fs-12 gray-dark">{{ translate('Upload first card image') }}</p>
                                                 </div>
                                                 <div class="upload-file_custom">
                                                     <input type="file" name="image" class="upload-file__input single_file_input"
@@ -564,7 +563,7 @@
                                                 </div>
                                             </div>
                                             <p class="fs-10 text-center mb-0 mt-lg-4 mt-3">
-                                                <span class="font-medium color-656566">{{ translate('Ratio (1:1)')}}</span>
+                                                <span class="font-medium color-656566">Ratio 1:1</span>
                                             </p>
                                         </div>
                                     </div>                            
@@ -575,7 +574,7 @@
                             <div class="card">
                                 <div class="card-header">
                                     <div class="w-100 d-flex align-items-center gap-2 flex-wrap justify-content-between">
-                                        <h3 class="mb-0">{{ translate('Client 9') }}</h3>                                
+                                        <h3 class="mb-0">{{ translate('Client') }} 9</h3>                                
                                     </div>
                                 </div>
                                 <div class="card-body">
@@ -583,8 +582,8 @@
                                         <div class="text-center py-1">                            
                                             <div class="mx-auto text-center">
                                                 <div class="mb-30">
-                                                    <h5 class="mb-1">{{ translate('Upload Image') }}</h5>
-                                                    <p class="mb-0 fs-12 gray-dark">{{ translate('Upload 1st Card  Image') }}</p>
+                                                    <h5 class="mb-1">{{ translate('Upload image') }}</h5>
+                                                    <p class="mb-0 fs-12 gray-dark">{{ translate('Upload first card image') }}</p>
                                                 </div>
                                                 <div class="upload-file_custom">
                                                     <input type="file" name="image" class="upload-file__input single_file_input"
@@ -616,7 +615,7 @@
                                                 </div>
                                             </div>
                                             <p class="fs-10 text-center mb-0 mt-lg-4 mt-3">
-                                                <span class="font-medium color-656566">{{ translate('Ratio (1:1)')}}</span>
+                                                <span class="font-medium color-656566">Ratio 1:1</span>
                                             </p>
                                         </div>
                                     </div>                            
@@ -627,7 +626,7 @@
                             <div class="card">
                                 <div class="card-header">
                                     <div class="w-100 d-flex align-items-center gap-2 flex-wrap justify-content-between">
-                                        <h3 class="mb-0">{{ translate('Client 10') }}</h3>                                
+                                        <h3 class="mb-0">{{ translate('Client') }} 10</h3>                                
                                     </div>
                                 </div>
                                 <div class="card-body">
@@ -635,8 +634,8 @@
                                         <div class="text-center py-1">                            
                                             <div class="mx-auto text-center">
                                                 <div class="mb-30">
-                                                    <h5 class="mb-1">{{ translate('Upload Image') }}</h5>
-                                                    <p class="mb-0 fs-12 gray-dark">{{ translate('Upload 1st Card  Image') }}</p>
+                                                    <h5 class="mb-1">{{ translate('Upload image') }}</h5>
+                                                    <p class="mb-0 fs-12 gray-dark">{{ translate('Upload first card image') }}</p>
                                                 </div>
                                                 <div class="upload-file_custom">
                                                     <input type="file" name="image" class="upload-file__input single_file_input"
@@ -668,7 +667,7 @@
                                                 </div>
                                             </div>
                                             <p class="fs-10 text-center mb-0 mt-lg-4 mt-3">
-                                                <span class="font-medium color-656566">{{ translate('Ratio (1:1)')}}</span>
+                                                <span class="font-medium color-656566">Ratio 1:1</span>
                                             </p>
                                         </div>
                                     </div>                            
@@ -679,7 +678,7 @@
                             <div class="card">
                                 <div class="card-header">
                                     <div class="w-100 d-flex align-items-center gap-2 flex-wrap justify-content-between">
-                                        <h3 class="mb-0">{{ translate('Client 11') }}</h3>                                
+                                        <h3 class="mb-0">{{ translate('Client') }} 11</h3>                                
                                     </div>
                                 </div>
                                 <div class="card-body">
@@ -687,8 +686,8 @@
                                         <div class="text-center py-1">                            
                                             <div class="mx-auto text-center">
                                                 <div class="mb-30">
-                                                    <h5 class="mb-1">{{ translate('Upload Image') }}</h5>
-                                                    <p class="mb-0 fs-12 gray-dark">{{ translate('Upload 1st Card  Image') }}</p>
+                                                    <h5 class="mb-1">{{ translate('Upload image') }}</h5>
+                                                    <p class="mb-0 fs-12 gray-dark">{{ translate('Upload first card image') }}</p>
                                                 </div>
                                                 <div class="upload-file_custom">
                                                     <input type="file" name="image" class="upload-file__input single_file_input"
@@ -720,7 +719,7 @@
                                                 </div>
                                             </div>
                                             <p class="fs-10 text-center mb-0 mt-lg-4 mt-3">
-                                                <span class="font-medium color-656566">{{ translate('Ratio (1:1)')}}</span>
+                                                <span class="font-medium color-656566">Ratio 1:1</span>
                                             </p>
                                         </div>
                                     </div>                            
@@ -731,7 +730,7 @@
                             <div class="card">
                                 <div class="card-header">
                                     <div class="w-100 d-flex align-items-center gap-2 flex-wrap justify-content-between">
-                                        <h3 class="mb-0">{{ translate('Client 12') }}</h3>                                
+                                        <h3 class="mb-0">{{ translate('Client') }} 12</h3>                                
                                     </div>
                                 </div>
                                 <div class="card-body">
@@ -739,8 +738,8 @@
                                         <div class="text-center py-1">                            
                                             <div class="mx-auto text-center">
                                                 <div class="mb-30">
-                                                    <h5 class="mb-1">{{ translate('Upload Image') }}</h5>
-                                                    <p class="mb-0 fs-12 gray-dark">{{ translate('Upload 1st Card  Image') }}</p>
+                                                    <h5 class="mb-1">{{ translate('Upload image') }}</h5>
+                                                    <p class="mb-0 fs-12 gray-dark">{{ translate('Upload first card image') }}</p>
                                                 </div>
                                                 <div class="upload-file_custom">
                                                     <input type="file" name="image" class="upload-file__input single_file_input"
@@ -772,7 +771,7 @@
                                                 </div>
                                             </div>
                                             <p class="fs-10 text-center mb-0 mt-lg-4 mt-3">
-                                                <span class="font-medium color-656566">{{ translate('Ratio (1:1)')}}</span>
+                                                <span class="font-medium color-656566">Ratio 1:1</span>
                                             </p>
                                         </div>
                                     </div>                            
@@ -781,15 +780,14 @@
                         </div>
                     </div>
                     <div class="btn--container justify-content-end mt-20">
-                        <button type="reset" class="btn btn--reset mb-2">{{translate('Reset')}}</button>
-                        <button type="submit"   class="btn btn--primary mb-2">{{translate('Save')}}</button>
+                        <button type="reset" class="btn btn--reset mb-2"><i class="tio-refresh"></i> {{translate('Reset')}}</button>
+                        <button type="submit"   class="btn btn--primary mb-2"><i class="tio-save"></i> {{translate('Save')}}</button>
                     </div>
                 </div>
             </form>
         </div>   -->
     </div>
 
-<!-- Section View Offcanvas here -->
 <div id="clients_section" class="custom-offcanvas offcanvas-750 d-flex flex-column justify-content-between">
     <form action="{{ route('taxvat.store') }}" method="post">
         <div>
@@ -865,7 +863,6 @@
     </form>
 </div>
 <div id="offcanvasOverlay" class="offcanvas-overlay"></div>
-<!-- Section View Offcanvas end -->
 @endsection
 
 @push('script_2')

@@ -26,36 +26,36 @@ class UnitRepository implements UnitRepositoryInterface
 
     public function getFirstWhere(array $params, array $relations = []): ?Model
     {
-        return $this->unit->where($params)->first();
+        return $this->unit->with($relations)->where($params)->first();
     }
 
-    public function getList(array $orderBy = [], array $relations = [], int|string $dataLimit = DEFAULT_DATA_LIMIT, int $offset = null): Collection|LengthAwarePaginator
+    public function getList(array $orderBy = [], array $relations = [], int|string $dataLimit = DEFAULT_DATA_LIMIT, ?int $offset = null): Collection|LengthAwarePaginator
     {
         $dataLimit = is_string($dataLimit) ? (int)$dataLimit : $dataLimit;
-        return $this->unit->paginate($dataLimit);
+        return $this->unit->with($relations)->paginate($dataLimit);
     }
 
-    public function getListWhere(string $searchValue = null, array $filters = [], array $relations = [], int|string $dataLimit = DEFAULT_DATA_LIMIT, int $offset = null): Collection|LengthAwarePaginator
+    public function getListWhere(?string $searchValue = null, array $filters = [], array $relations = [], int|string $dataLimit = DEFAULT_DATA_LIMIT, ?int $offset = null): Collection|LengthAwarePaginator
     {
-        $key = explode(' ', $searchValue);
-        return $this->unit->where(function ($q) use ($key) {
+        $key = explode(' ', $searchValue ?? '');
+        return $this->unit->with($relations)->where(function ($q) use ($key) {
             foreach ($key as $value) {
                 $q->orWhere('unit', 'like', "%{$value}%");
             }
-        })->paginate($dataLimit);
+        })->latest('id')->paginate($dataLimit);
     }
     public function getExportList($request): Collection
     {
-        $key = explode(' ', $request['search']);
+        $key = explode(' ', $request['search'] ?? '');
         return $this->unit
-        ->when(isset($key) , function($q) use($key){
+        ->when($request['search'] , function($q) use($key){
                 $q->where(function ($q) use ($key) {
                     foreach ($key as $value) {
                        $q->orWhere('unit', 'like', "%{$value}%");
                     }
                 });
             })
-
+        ->latest('id')
         ->get();
     }
 
@@ -80,6 +80,6 @@ class UnitRepository implements UnitRepositoryInterface
 
     public function getFirstWithoutGlobalScopeWhere(array $params, array $relations = []): ?Model
     {
-        return $this->unit->withoutGlobalScope('translate')->where($params)->first();
+        return $this->unit->with($relations)->withoutGlobalScope('translate')->with('translations')->where($params)->first();
     }
 }

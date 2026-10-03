@@ -3,229 +3,159 @@
 @section('title',translate('messages.attributes'))
 
 @push('css_or_js')
-
+    <link rel="stylesheet" href="{{ asset('public/assets/admin/css/third-party-setup.css') }}">
 @endpush
 
 @section('content')
     <div class="content container-fluid">
-        <!-- Page Header -->
         <div class="page-header">
             <h1 class="page-header-title">
                 <span class="page-header-icon">
-                    <img src="{{asset('public/assets/admin/img/attribute.png')}}" class="w--26" alt="">
+                    <img src="{{ asset('public/assets/admin/img/attribute.png') }}" class="w--26" alt="">
                 </span>
                 <span>
-                    {{translate('messages.add_new_attribute')}}
+                    {{ translate('messages.Add new attribute') }}
                 </span>
             </h1>
+            <p class="page-header-desc">{{ translate('Choices such as size or colour that a store attaches to an item when adding it.') }}</p>
         </div>
-        <!-- End Page Header -->
-        <div class="row g-3">
-            <div class="col-12">
-                <div class="card">
-                    <div class="card-body">
-                        <form action="{{route('admin.attribute.store')}}" method="post">
-                            @csrf
-                            @if ($language)
-                                    <ul class="nav nav-tabs mb-3 border-0">
-                                        <li class="nav-item">
-                                            <a class="nav-link lang_link active"
-                                            href="#"
-                                            id="default-link">{{translate('messages.default')}}</a>
-                                        </li>
-                                        @foreach ($language as $lang)
-                                            <li class="nav-item">
-                                                <a class="nav-link lang_link"
-                                                    href="#"
-                                                    id="{{ $lang }}-link">{{ \App\CentralLogics\Helpers::get_language_name($lang) . '(' . strtoupper($lang) . ')' }}</a>
-                                            </li>
-                                        @endforeach
-                                    </ul>
-                                    <div class="lang_form" id="default-form">
-                                        <div class="form-group">
-                                            <label class="input-label"
-                                                for="default_title">{{ translate('messages.name') }}
-                                                ({{translate('messages.default')}}) <span class="form-label-secondary text-danger"
-                                                data-toggle="tooltip" data-placement="right"
-                                                data-original-title="{{ translate('messages.Required.')}}"> *
-                                                </span>
 
+        <div class="row g-3">
+            <div class="col-12 tps">
+                <div class="tps-card">
+                    <form action="{{ route('admin.attribute.store') }}" method="post" class="custom-validation"
+                        data-ajax-form
+                        data-ajax-refresh="[data-ajax-region]"
+                        data-ajax-reset>
+                        @csrf
+
+                        <div class="tps-card__body">
+                            @if ($language)
+                                <ul class="nav nav-tabs mb-3 border-0">
+                                    <li class="nav-item">
+                                        <a class="nav-link lang_link active" href="#"
+                                            id="default-link">{{ translate('Default') }}</a>
+                                    </li>
+                                    @foreach ($language as $lang)
+                                        <li class="nav-item">
+                                            <a class="nav-link lang_link" href="#"
+                                                id="{{ $lang }}-link">{{ \App\CentralLogics\Helpers::get_language_name($lang) . '(' . strtoupper($lang) . ')' }}</a>
+                                        </li>
+                                    @endforeach
+                                </ul>
+                                <div class="lang_form" id="default-form">
+                                    <div class="tps-field">
+                                        <div class="error-wrapper">
+                                            <label class="tps-field__label" for="default_title">
+                                                {{ translate('Name') }} ({{ translate('Default') }})
+                                                <span class="tps-req" data-toggle="tooltip" data-placement="right"
+                                                    data-original-title="{{ translate('messages.Required.') }}">*</span>
                                             </label>
                                             <input type="text" name="name[]" id="default_title"
-                                                class="form-control" placeholder="{{ translate('messages.ex_:_new_attribute') }}"
-                                            >
+                                                class="form-control attribute-input"
+                                                placeholder="{{ translate('messages.Ex') }}: Size" maxlength="100" required>
                                         </div>
-                                        <input type="hidden" name="lang[]" value="default">
+                                        <small class="tps-field__hint">
+                                            {{ translate('Name the choice itself, not its values — size, not small.') }}
+                                        </small>
                                     </div>
-                                        @foreach ($language as $lang)
-                                            <div class="d-none lang_form"
-                                                id="{{ $lang }}-form">
-                                                <div class="form-group">
-                                                    <label class="input-label"
-                                                        for="{{ $lang }}_title">{{ translate('messages.name') }}
-                                                        ({{ strtoupper($lang) }})
-                                                    </label>
-                                                    <input type="text" name="name[]" id="{{ $lang }}_title"
-                                                        class="form-control" placeholder="{{ translate('messages.ex_:_new_attribute') }}">
-                                                </div>
-                                                <input type="hidden" name="lang[]" value="{{ $lang }}">
-                                            </div>
-                                        @endforeach
-                                    @else
-                                        <div id="default-form">
-                                            <div class="form-group">
-                                                <label class="input-label"
-                                                    for="exampleFormControlInput1">{{ translate('messages.name') }} ({{ translate('messages.default') }})</label>
-                                                <input type="text" name="name[]" class="form-control"
-                                                    placeholder="{{ translate('messages.ex_:_new_attribute') }}">
-                                            </div>
-                                            <input type="hidden" name="lang[]" value="default">
+                                    <input type="hidden" name="lang[]" value="default">
+                                </div>
+                                @foreach ($language as $lang)
+                                    <div class="d-none lang_form" id="{{ $lang }}-form">
+                                        <div class="tps-field">
+                                            <label class="tps-field__label" for="{{ $lang }}_title">
+                                                {{ translate('Name') }} ({{ strtoupper($lang) }})
+                                                <span class="tps-opt">{{ translate('Optional') }}</span>
+                                            </label>
+                                            <input type="text" name="name[]" id="{{ $lang }}_title"
+                                                class="form-control attribute-input"
+                                                placeholder="{{ translate('messages.Attribute name') }}" maxlength="100">
+                                            <small class="tps-field__hint">
+                                                {{ translate('Leave it empty to fall back to the default name.') }}
+                                            </small>
                                         </div>
-                                    @endif
-                            <div class="btn--container justify-content-end">
-                                <button type="reset" class="btn btn--reset">{{translate('messages.reset')}}</button>
-                                <button type="submit" class="btn btn--primary">{{translate('messages.submit')}}</button>
+                                        <input type="hidden" name="lang[]" value="{{ $lang }}">
+                                    </div>
+                                @endforeach
+                            @else
+                                <div id="default-form">
+                                    <div class="tps-field">
+                                        <div class="error-wrapper">
+                                            <label class="tps-field__label" for="default_title">
+                                                {{ translate('Name') }} ({{ translate('Default') }})
+                                                <span class="tps-req">*</span>
+                                            </label>
+                                            <input type="text" name="name[]" id="default_title"
+                                                class="form-control attribute-input"
+                                                placeholder="{{ translate('messages.Ex') }}: Size" maxlength="100" required>
+                                        </div>
+                                        <small class="tps-field__hint">
+                                            {{ translate('Name the choice itself, not its values — size, not small.') }}
+                                        </small>
+                                    </div>
+                                    <input type="hidden" name="lang[]" value="default">
+                                </div>
+                            @endif
+
+                            <div class="d-flex flex-wrap align-items-center mt-3">
+                                <small class="tps-field__hint mr-2 mt-0">{{ translate('Examples') }}:</small>
+                                @foreach (['Size', 'Color', 'Weight', 'Capacity', 'Material', 'Flavour'] as $example)
+                                    <button type="button"
+                                        class="badge badge-soft-primary border-0 attribute-example mr-1 mb-1">{{ $example }}</button>
+                                @endforeach
                             </div>
-                        </form>
-                    </div>
+                        </div>
+
+                        <div class="tps-card__foot">
+                            <span class="tps-foot-note">{{ translate('An attribute name can only be used once.') }}</span>
+                            <button type="reset" class="btn btn--reset"><i class="tio-refresh"></i>
+                                {{ translate('messages.Reset') }}</button>
+                            <button type="submit" class="btn btn--primary"><i class="tio-add-circle"></i>
+                                {{ translate('Add') }}</button>
+                        </div>
+                    </form>
                 </div>
             </div>
 
             <div class="col-12">
-                <div class="card">
-                    <div class="card-header py-2 border-0">
-                        <div class="search--button-wrapper">
-                            <h5 class="card-title">
-                                {{translate('messages.attribute_list')}}<span class="badge badge-soft-dark ml-2" id="itemCount">{{$attributes->total()}}</span>
-                            </h5>
-                            <form  class="search-form">
-                                <!-- Search -->
-
-                                <div class="input-group input--group">
-                                    <input id="datatableSearch_" value="{{ request()?->search ?? null }}" type="search" name="search" class="form-control"
-                                            placeholder="{{translate('ex_:_attribute_name')}}" aria-label="Search" >
-                                    <button type="submit" class="btn btn--secondary"><i class="tio-search"></i></button>
-                                </div>
-                                <!-- End Search -->
-                            </form>
-                            @if(request()->input('search'))
-                            <button type="reset" class="btn btn--primary ml-2 location-reload-to-base" data-url="{{url()->full()}}">{{translate('messages.reset')}}</button>
-                            @endif
-
-
-                            <!-- Unfold -->
-                            <div class="hs-unfold mr-2">
-                                <a class="js-hs-unfold-invoker btn btn-sm btn-white dropdown-toggle min-height-40" href="javascript:;"
-                                    data-hs-unfold-options='{
-                                            "target": "#usersExportDropdown",
-                                            "type": "css-animation"
-                                        }'>
-                                    <i class="tio-download-to mr-1"></i> {{ translate('messages.export') }}
-                                </a>
-
-                                <div id="usersExportDropdown"
-                                    class="hs-unfold-content dropdown-unfold dropdown-menu dropdown-menu-sm-right">
-
-                                    <span class="dropdown-header">{{ translate('messages.download_options') }}</span>
-                                    <a id="export-excel" class="dropdown-item" href="{{route('admin.attribute.export-attributes', ['type'=>'excel' , request()->getQueryString() ])}}">
-                                        <img class="avatar avatar-xss avatar-4by3 mr-2"
-                                            src="{{ asset('public/assets/admin') }}/svg/components/excel.svg"
-                                            alt="Image Description">
-                                        {{ translate('messages.excel') }}
-                                    </a>
-                                    <a id="export-csv" class="dropdown-item" href="{{route('admin.attribute.export-attributes', ['type'=>'csv' , request()->getQueryString() ])}}">
-                                        <img class="avatar avatar-xss avatar-4by3 mr-2"
-                                            src="{{ asset('public/assets/admin') }}/svg/components/placeholder-csv-format.svg"
-                                            alt="Image Description">
-                                        {{ translate('messages.csv') }}
-                                    </a>
-
-                                </div>
-                            </div>
-                            <!-- End Unfold -->
-                        </div>
-                    </div>
-                    <!-- Table -->
-                    <div class="table-responsive datatable-custom">
-                        <table id="columnSearchDatatable"
-                               class="table table-borderless table-thead-bordered table-nowrap table-align-middle card-table"
-                               data-hs-datatables-options='{
-                                 "order": [],
-                                 "orderCellsTop": true,
-                                 "paging":false
-                               }'>
-                            <thead class="thead-light">
-                            <tr class="text-center">
-                                <th class="border-0">{{translate('sl')}}</th>
-                                <th class="border-0">{{translate('ID')}}</th>
-                                <th class="border-0">{{translate('messages.name')}}</th>
-                                <th class="border-0">{{translate('messages.action')}}</th>
-                            </tr>
-
-                            </thead>
-
-                            <tbody id="set-rows">
-                            @foreach($attributes as $key=>$attribute)
-                                <tr>
-                                    <td class="text-center">
-                                        <span class="mr-3">
-                                            {{$key+$attributes->firstItem()}}
-                                        </span>
-                                    </td>
-                                    <td class="text-center">
-                                        <span class="mr-3">
-                                            {{$attribute['id']}}
-                                        </span>
-                                    </td>
-                                    <td class="text-center">
-                                        <span title="{{ $attribute['name'] }}" class="font-size-sm text-body mr-3">
-                                            {{Str::limit($attribute['name'],20,'...')}}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <div class="btn--container justify-content-center">
-                                            <a class="btn action-btn btn--primary btn-outline-primary" href="{{route('admin.attribute.edit',[$attribute['id']])}}" title="{{translate('messages.edit')}}"><i class="tio-edit"></i>
-                                            </a>
-                                            <a class="btn action-btn btn--danger btn-outline-danger form-alert" href="javascript:" data-id="attribute-{{$attribute['id']}}" data-message="{{ translate('Want to delete this attribute ?') }}" title="{{translate('messages.delete')}}"><i class="tio-delete-outlined"></i></a>
-                                            <form action="{{route('admin.attribute.delete',[$attribute['id']])}}"
-                                                    method="post" id="attribute-{{$attribute['id']}}">
-                                                @csrf @method('delete')
-                                            </form>
-                                        </div>
-                                    </td>
-                                </tr>
-                            @endforeach
-                            </tbody>
-                        </table>
-                    </div>
-                    @if(count($attributes) !== 0)
-                    <hr>
-                    @endif
-                    <div class="page-area">
-                        {!! $attributes->links() !!}
-                    </div>
-                    @if(count($attributes) === 0)
-                    <div class="empty--data">
-                        <img src="{{asset('/public/assets/admin/svg/illustrations/sorry.svg')}}" alt="public">
-                        <h5>
-                            {{translate('no_data_found')}}
-                        </h5>
-                    </div>
-                    @endif
+                <div id="attribute-list-wrapper" data-ajax-region
+                    data-ajax-url="{{ url()->full() }}"
+                    data-ajax-links=".page-link, .list-reset-search"
+                    data-ajax-forms=".search-form">
+                    @include('admin-views.attribute.partials._list', [
+                        'attributes' => $attributes,
+                        'usageStats' => $usageStats,
+                        'translatedLocales' => $translatedLocales,
+                    ])
                 </div>
             </div>
-            <!-- End Table -->
         </div>
     </div>
 
 @endsection
 
 @push('script_2')
-    <script src="{{asset('public/assets/admin')}}/js/view-pages/attribute-index.js"></script>
     <script>
         "use strict";
 
-        $(".lang_link").click(function(e){
+        function initAttributeTable($root) {
+            let $table = ($root ? $($root) : $(document)).find('#columnSearchDatatable');
+
+            if ($table.length && $.HSCore && $.HSCore.components && $.HSCore.components.HSDatatables) {
+                $.HSCore.components.HSDatatables.init($table);
+            }
+        }
+
+        $(document).on('ready', function () {
+            initAttributeTable(document);
+        });
+
+        if (window.AppAjax) {
+            window.AppAjax.onMount(initAttributeTable);
+        }
+
+        $(".lang_link").click(function (e) {
             e.preventDefault();
             $(".lang_link").removeClass('active');
             $(".lang_form").addClass('d-none');
@@ -233,8 +163,17 @@
 
             let form_id = this.id;
             let lang = form_id.substring(0, form_id.length - 5);
-            console.log(lang);
-            $("#"+lang+"-form").removeClass('d-none');
-        })
+            $("#" + lang + "-form").removeClass('d-none');
+        });
+
+        $(document).on('click', '.attribute-example', function () {
+            let $input = $('.lang_form:not(.d-none) .attribute-input').first();
+
+            if (!$input.length) {
+                $input = $('.attribute-input').first();
+            }
+
+            $input.val($(this).text().trim()).trigger('input').trigger('focus');
+        });
     </script>
 @endpush

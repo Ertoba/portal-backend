@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Rules\EmailAddress;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StoreNewsletterRequest extends FormRequest
@@ -24,7 +25,7 @@ class StoreNewsletterRequest extends FormRequest
     public function rules()
     {
         return [
-            'email' => 'required|email|unique:newsletters,email'
+            'email' => EmailAddress::rules('required', 'newsletters,email')
         ];
     }
 

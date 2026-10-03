@@ -1,7 +1,7 @@
 <div id="offcanvas__editfaq-{{ $faq->id }}" class="custom-offcanvas d-flex flex-column" style="--offcanvas-width: 480px">
     <div class="custom-offcanvas-header bg-light d-flex justify-content-between align-items-center flex-shrink-0">
         <div class="px-3 py-3 d-flex justify-content-between w-100">
-            <h3 class="mb-0 fs-18 text-title fw-500 text-capitalize">{{ translate('messages.Edit_FAQ') }}</h3>
+            <h3 class="mb-0 fs-18 text-title fw-500 text-capitalize">{{ translate('messages.Edit FAQ') }}</h3>
             <button type="button" class="btn-close w-25px h-25px border rounded-circle d-center bg--secondary offcanvas-close fz-15px p-0" aria-label="Close">&times;</button>
         </div>
     </div>
@@ -19,7 +19,7 @@
                         <ul class="nav nav-tabs mb-4">
                             <li class="nav-item">
                                 <a class="nav-link lang_link active" href="#"
-                                   id="default-link-faq-edit-{{ $faq->id }}">{{ translate('messages.Default') }}</a>
+                                   id="default-link-faq-edit-{{ $faq->id }}">{{ translate('Default') }}</a>
                             </li>
                             @foreach($language as $lang)
                                 <li class="nav-item">
@@ -36,7 +36,7 @@
                 <input type="hidden" name="lang[]" value="default">
                 <div class="lang_form" id="default-form-faq-edit-{{ $faq->id }}">
                     @include('admin-views.pro-customer.partials._faq-fields', [
-                        'localeLabel'      => translate('messages.Default'),
+                        'localeLabel'      => translate('Default'),
                         'localeKey'        => 'default',
                         'questionRequired' => true,
                         'questionValue'    => $faq->getRawOriginal('question'),
@@ -66,8 +66,8 @@
         </div>
 
         <div class="align-items-center bg-white d-flex gap-3 justify-content-center offcanvas-footer p-3 flex-shrink-0 border-top">
-            <button type="button" class="btn w-100 btn--reset offcanvas-close text-capitalize">{{ translate('messages.Cancel') }}</button>
-            <button type="submit" class="btn w-100 btn--primary text-capitalize">{{ translate('messages.Update') }}</button>
+            <button type="button" class="btn w-100 btn--reset offcanvas-close text-capitalize"><i class="tio-clear-circle-outlined"></i> {{ translate('messages.Cancel') }}</button>
+            <button type="submit" class="btn w-100 btn--primary text-capitalize"><i class="tio-save"></i> {{ translate('Update') }}</button>
         </div>
     </form>
 </div>

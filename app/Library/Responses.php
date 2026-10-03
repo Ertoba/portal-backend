@@ -1,6 +1,5 @@
 <?php
 
-//default responses
 const GATEWAYS_DEFAULT_200 = [
     'response_code' => 'gateways_default_200',
     'message' => 'successfully loaded'

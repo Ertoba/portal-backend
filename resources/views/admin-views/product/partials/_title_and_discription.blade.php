@@ -2,8 +2,8 @@
            <div class="card shadow--card-2 border-0">
                <div class="card-body ">
                 <div class="mb-20">
-                    <h3 class="text-dark fs-18 mb-1">
-                        {{ translate('messages.Basic Setup') }}
+                    <h3 class="text-dark mb-0">
+                        {{ translate('Basic setup') }}
                     </h3>
                     <p class="fs-12 mb-0">
                         {{ translate('messages.Provide the product name and short description. Add translations for each available language to display the product correctly across locales.') }}
@@ -30,7 +30,7 @@
                         <div class="lang_form" id="default-form">
                             <div class="form-group">
                                 <div class="justify-content-between d-flex">
-                                    <label class="input-label" for="default_name">{{ translate('messages.name') }}
+                                    <label class="input-label" for="default_name">{{ translate('Name') }}
                                         ({{ translate('Default') }}) <span class="form-label-secondary text-danger"
                                             data-toggle="tooltip" data-placement="right"
                                             data-original-title="{{ translate('messages.Required.') }}"> *
@@ -47,7 +47,7 @@
                                              src="{{ asset('public/assets/admin/img/svg/blink-right-small.svg') }}" alt="">
                                      </div>
                                      <span class="ai-text-animation d-none" role="status">
-                                         {{ translate('Just_a_second') }}
+                                         {{ translate('Just a second') }}
                                      </span>
                                      <span class="btn-text">{{ translate('Generate') }}</span>
                                  </button>
@@ -58,7 +58,7 @@
                                     <div class="outline-wrapper">
                                         <input type="text" name="name[]" id="default_name" class="form-control"
                                             value="{{ $product?->getRawOriginal('name') ?? old('name.0') }}"
-                                            placeholder="{{ translate('messages.new_food') }}" required>
+                                            placeholder="{{ translate('messages.New food') }}" required>
                                     </div>
                                 </div>
                             </div>
@@ -67,7 +67,7 @@
      
                                 <div class="justify-content-between d-flex">
                                     <label class="input-label"
-                                        for="exampleFormControlInput1">{{ translate('messages.short_description') }}
+                                        for="exampleFormControlInput1">{{ translate('Short description') }}
                                         ({{ translate('Default') }}) <span class="form-label-secondary text-danger"
                                             data-toggle="tooltip" data-placement="right"
                                             data-original-title="{{ translate('messages.Required.') }}"> *
@@ -84,7 +84,7 @@
                                                      src="{{ asset('public/assets/admin/img/svg/blink-right-small.svg') }}" alt="">
                                              </div>
                                              <span class="ai-text-animation d-none" role="status">
-                                                 {{ translate('Just_a_second') }}
+                                                 {{ translate('Just a second') }}
                                              </span>
                                              <span class="btn-text">{{ translate('Generate') }}</span>
                                         </button>
@@ -122,7 +122,7 @@
      
                                     <div class="justify-content-between d-flex">
                                         <label class="input-label"
-                                            for="{{ $lang }}_name">{{ translate('messages.name') }}
+                                            for="{{ $lang }}_name">{{ translate('Name') }}
                                             ({{ strtoupper($lang) }})
                                         </label>
      
@@ -130,14 +130,14 @@
      
                                      <button type="button" class="btn bg-white text-primary opacity-1 generate_btn_wrapper auto_fill_title"
                                          id="title-{{ $lang }}-action-btn" data-lang="{{ $lang }}"
-                                         data-error="{{ translate('Please provide a product name so the AI can generate a suitable title or description.') }}"
+                                         data-error="{{ translate('Please provide a product name so the AI can generate a suitable title or description') }}"
                                          data-route="{{ route('admin.product.title-auto-fill') }}">
                                          <div class="btn-svg-wrapper">
                                              <img width="18" height="18" class=""
                                                  src="{{ asset('public/assets/admin/img/svg/blink-right-small.svg') }}" alt="">
                                          </div>
                                          <span class="ai-text-animation d-none" role="status">
-                                             {{ translate('Just_a_second') }}
+                                             {{ translate('Just a second') }}
                                          </span>
                                          <span class="btn-text">{{ translate('Generate') }}</span>
                                      </button>
@@ -147,7 +147,7 @@
                                     <div class="error-wrapper">
                                         <input type="text" name="name[]" id="{{ $lang }}_name"
                                             value="{{ isset($translate[$lang]['name']) ? $translate[$lang]['name'] : old('name.' . $key + 1) }}"
-                                            class="form-control" placeholder="{{ translate('messages.new_food') }}">
+                                            class="form-control" placeholder="{{ translate('messages.New food') }}">
      
                                     </div>
                                 </div>
@@ -155,7 +155,7 @@
                                 <div class="form-group mb-0">
                                     <div class="justify-content-between d-flex">
                                         <label class="input-label"
-                                            for="exampleFormControlInput1">{{ translate('messages.short_description') }}
+                                            for="exampleFormControlInput1">{{ translate('Short description') }}
      
                                             ({{ strtoupper($lang) }})</label>
                                            @if (isset($openai_config) && data_get($openai_config, 'status') == 1)
@@ -169,7 +169,7 @@
                                                          src="{{ asset('public/assets/admin/img/svg/blink-right-small.svg') }}" alt="">
                                                  </div>
                                                  <span class="ai-text-animation d-none" role="status">
-                                                     {{ translate('Just_a_second') }}
+                                                     {{ translate('Just a second') }}
                                                  </span>
                                                  <span class="btn-text">{{ translate('Generate') }}</span>
                                            </button>

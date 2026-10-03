@@ -1,10 +1,12 @@
 @extends('layouts.admin.app')
 
-@section('title', translate('POS Orders'))
+@section('title', translate('POS orders'))
 
 @push('css_or_js')
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <link rel="stylesheet" href="{{ asset('public/assets/admin/css/delivery-type.css') }}">
+    <link rel="stylesheet"
+          href="{{ asset('public/assets/admin/css/view-pages/pos.css') }}?v={{ @filemtime(public_path('assets/admin/css/view-pages/pos.css')) ?: 1 }}">
 
     <style type="text/css" media="print">
         @page {
@@ -14,288 +16,306 @@
     </style>
 @endpush
 
-
 @section('content')
-    <!-- ========================= SECTION CONTENT ========================= -->
-    <section class="section-content padding-y-sm bg-default mt-1">
-        <div class="content container-fluid">
-            <div class="d-flex flex-wrap">
-                <div class="order--pos-left">
-                    <div class="card h-100">
-                        <div class="card-header bg-light border-0">
-                            <h5 class="card-title">
-                                <span>
-                                    {{translate('product_section')}}
-                                </span>
-                            </h5>
-                        </div>
+    @php($customer = session('customer') ?? ($customer ?? null))
 
-                        <div class="card-body d-flex flex-column" id="items">
-                            <div class="mb-4">
-                                <div class="row g-2 justify-content-around">
-                                    <div class="col-sm-6 col-12">
-                                        <select name="store_id" id="store_select" data-url="{{url()->full()}}"
-                                            data-search-placeholder="{{ translate('messages.search_store') }}"
-                                            data-filter="store_id" data-placeholder="{{translate('messages.select_store')}}"
-                                            class="js-data-example-ajax form-control h--45px set-filter">
-                                            @if($store)
-                                                <option value="{{$store->id}}" data-verified="{{ (int) $store->verified_seller }}" selected>{{$store->name}}</option>
-                                            @endif
-                                        </select>
-                                    </div>
-                                    <div class="col-sm-6 col-12">
-                                        <select name="category" id="category"
-                                        data-search-placeholder="{{ translate('messages.search_category') }}"
-                                            class="form-control js-select2-custom mx-1 set-filter"
-                                            data-url="{{url()->full()}}" data-filter="category_id"
-                                            title="{{translate('messages.select_category')}}" disabled>
-                                            <option value="">{{translate('messages.all_categories')}}</option>
-                                            @foreach ($categories as $item)
-                                                <option value="{{$item->id}}" {{$category == $item->id ? 'selected' : ''}}>
-                                                    {{Str::limit($item->name, 20, '...')}}</option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-                                    <div class="col-sm-12 col-12">
-                                        <form id="search-form" class="search-form">
-                                            <!-- Search -->
-                                            <div class="position-relative">
-                                                <input id="datatableSearch" type="search" value="{{$search ?? ''}}"
-                                                    name="searchKey" class="form-control h--45px pl-5"
-                                                    placeholder="{{translate('messages.Search_by_product_name')}}"
-                                                    aria-label="{{translate('messages.search_here')}}" disabled>
-                                                <img width="16" height="16"
-                                                    src="{{asset('public/assets/admin/img/icons/search-icon.png')}}" alt=""
-                                                    class="search-icon">
+    <div class="content container-fluid pos-screen">
 
-                                            </div>
-                                            <!-- End Search -->
-                                        </form>
+        @include('partials._page-head', [
+            'title'    => translate('POS orders'),
+            'subtitle' => translate('messages.Build an order on behalf of a customer: pick a store, add products, set the delivery details and take payment.'),
+            'icon_class' => 'tio-shopping-cart',
+            'count'    => null,
+            'actions'  => 'admin-views.pos._store-chip',
+        ])
 
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="row g-3 mb-auto" id="single-list">
-                                <?php
-                                    if (session()->get('cart_product_ids') && count(session()->get('cart_product_ids')) > 0) {
-                                        $cart_product_ids = session()->get('cart_product_ids');
-                                    } else {
-                                        $cart_product_ids = [];
-                                    }
-                                ?>
-                                @foreach($products as $product)
-                                    <div class="order--item-box item-box">
-                                        @include('admin-views.pos._single_product', ['product' => $product, 'store_data' => $store, 'cart_product_ids' => $cart_product_ids])
-                                    </div>
-                                @endforeach
-                            </div>
-                            @if(count($products) === 0)
-                                <div class="search--no-found">
-                                    <img src="{{asset('public/assets/admin/img/search-icon.png')}}" alt="img">
-                                    <p>
-                                        {{translate('messages.no_products_on_pos_search')}}
-                                    </p>
-                                </div>
+        <div class="pos-workspace">
+
+            <section class="pos-panel pos-catalog">
+                <div class="pos-panel-head">
+                    <h2 class="pos-panel-title">
+                        <i class="tio-shopping-basket"></i>{{ translate('Product section') }}
+                    </h2>
+                    <span class="pos-chip" id="pos-product-count">
+                        {{ $products->total() }} {{ translate('messages.Items') }}
+                    </span>
+                </div>
+
+                <div class="pos-toolbar">
+                    <div class="pos-field">
+                        <label class="pos-field-label" for="store_select">{{ translate('messages.Store') }}</label>
+                        <select name="store_id" id="store_select" data-url="{{ url()->full() }}"
+                                data-search-placeholder="{{ translate('messages.Search store') }}"
+                                data-filter="store_id" data-placeholder="{{ translate('Select store') }}"
+                                class="js-data-example-ajax form-control set-filter">
+                            @if ($store)
+                                <option value="{{ $store->id }}" data-verified="{{ (int) $store->verified_seller }}" selected>
+                                    {{ $store->name }}
+                                </option>
                             @endif
-                        </div>
-                        <div class="card-footer border-0">
-                            {!!$products->withQueryString()->links()!!}
-                        </div>
+                        </select>
+                    </div>
+
+                    <div class="pos-field">
+                        <label class="pos-field-label" for="category">{{ translate('messages.Category') }}</label>
+                        <select name="category" id="category"
+                                data-search-placeholder="{{ translate('messages.Search category') }}"
+                                class="form-control js-select2-custom set-filter"
+                                data-url="{{ url()->full() }}" data-filter="category_id"
+                                title="{{ translate('Select category') }}" {{ $store ? '' : 'disabled' }}>
+                            <option value="">{{ translate('All categories') }}</option>
+                            @foreach ($categories as $item)
+                                <option value="{{ $item->id }}" {{ $category == $item->id ? 'selected' : '' }}>
+                                    {{ Str::limit($item->name, 20, '...') }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div class="pos-field">
+                        <label class="pos-field-label" for="datatableSearch">{{ translate('messages.Search') }}</label>
+                        <form id="search-form" class="pos-search">
+                            <i class="tio-search pos-search-icon" aria-hidden="true"></i>
+                            <input id="datatableSearch" type="search" value="{{ $search ?? '' }}" name="searchKey"
+                                   class="form-control pos-search-input"
+                                   placeholder="{{ translate('messages.Search by product name') }}"
+                                   aria-label="{{ translate('Search') }}" {{ $store ? '' : 'disabled' }}>
+
+                            <button type="button" class="pos-search-clear {{ $search ? '' : 'd-none' }}"
+                                    id="pos-search-clear" aria-label="{{ translate('messages.Clear filters') }}">
+                                <i class="tio-clear"></i>
+                            </button>
+                            <button type="submit" class="pos-search-submit"
+                                    aria-label="{{ translate('messages.Search') }}" {{ $store ? '' : 'disabled' }}>
+                                <i class="tio-search"></i>
+                            </button>
+                        </form>
                     </div>
                 </div>
-                <div class="order--pos-right">
-                    <div class="card h-100">
-                        <div class="card-header bg-light border-0">
-                            <h5 class="card-title">
-                                <span>
-                                    {{translate('billing_section')}}
-                                </span>
-                            </h5>
+
+                <div class="pos-panel-body" id="pos-products">
+                    @include('admin-views.pos._single_product_list', ['products' => $products, 'store' => $store])
+                </div>
+            </section>
+
+            <aside class="pos-panel pos-ticket">
+                <div class="pos-panel-head">
+                    <h2 class="pos-panel-title">
+                        <i class="tio-receipt-outlined"></i>{{ translate('Billing section') }}
+                    </h2>
+                    <span class="pos-chip pos-chip--accent" id="pos-cart-count">
+                        0 {{ translate('messages.Items') }}
+                    </span>
+                </div>
+
+                <div class="pos-ticket-body">
+
+                    <div class="pos-block">
+                        <div class="pos-block-head">
+                            <h3 class="pos-block-title">
+                                <i class="tio-user"></i>{{ translate('messages.Customer') }}
+                            </h3>
                         </div>
-                        <?php
-                                $customer = session('customer') ?? (isset($customer) ? $customer : null);
-                            ?>
-                        <div class="card-body p-0">
-                            <div class="d-flex flex-wrap p-3 add--customer-btn">
-                                <select id="customer" name="customer_id"
-                                    data-search-placeholder="{{ translate('messages.search_customer') }}"
-                                    data-placeholder="{{ translate('messages.select_customer') }}"
+
+                        <div class="pos-customer-picker">
+                            <select id="customer" name="customer_id"
+                                    data-search-placeholder="{{ translate('messages.Search customer') }}"
+                                    data-placeholder="{{ translate('Select customer') }}"
                                     class="js-data-example-ajax form-control">
-                                    @if (isset($customer))
-                                        <option selected value="{{ $customer->id }}">
-                                            {{ $customer->f_name . ' ' . $customer->l_name }} ({{ $customer->phone }})</option>
-                                    @endif
-                                </select>
-                                <button class="btn btn--primary rounded font-regular" id="add_new_customer" type="button"
-                                    data-toggle="modal" data-target="#add-customer" title="Add Customer">
-                                    {{ translate('Add new customer') }}
-                                </button>
-                            </div>
+                                @if ($customer)
+                                    <option selected value="{{ $customer->id }}">
+                                        {{ $customer->f_name . ' ' . $customer->l_name }} ({{ $customer->phone }})
+                                    </option>
+                                @endif
+                            </select>
+                            <button class="btn btn--primary pos-customer-add" id="add_new_customer" type="button"
+                                    data-toggle="modal" data-target="#add-customer"
+                                    title="{{ translate('Add new customer') }}">
+                                <i class="tio-user-add"></i>{{ translate('messages.New') }}
+                            </button>
+                        </div>
 
-
-
-
-
-
-                            <div id="customer_data" class="{{ isset($customer) ? '' : 'd-none' }} ">
-                                <!-- Card -->
-                                <div class="p-2">
-                                    <div class="p-2 rounded bg--secondary">
-                                        <div class="media align-items-center customer--information-single"
-                                            href="javascript:">
-                                            @include('partials._user-avatar', [
-                                                'imageUrl'  => isset($customer) ? $customer->image_full_url : '',
-                                                'proStatus' => isset($customer) ? ($customer->pro_status ?? false) : false,
-                                                'imgId'     => 'customer_image',
-                                                'size'      => 42,
-                                            ])
-                                            <div class="media-body">
-                                                <ul class="list-unstyled m-0">
-                                                    <li class="pb-1">
-                                                        <h4> <span id="customer_name"
-                                                                class="text--primary">{{ isset($customer) ? $customer->f_name . ' ' . $customer->l_name : '' }}</span>,
-                                                            <small
-                                                                id="customer_phone">{{ isset($customer) ? $customer->phone : '' }}</small>
-                                                        </h4>
-                                                    </li>
-                                                    <li>
-                                                        {{ translate('messages.Wallet') }} : <strong class="text-dark"
-                                                            id="customer_wallet">{{ isset($customer) ? \App\CentralLogics\Helpers::format_currency($customer->wallet_balance) : '' }}</strong>
-                                                    </li>
-                                                </ul>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <!-- End Card -->
-                            </div>
-
-                            <div class="pos--delivery-options">
-                                <div class="d-flex justify-content-between mb-2">
-                                    <h5 class="card-title d-flex align-items-center gap-2">
-                                        <span class="card-title-icon">
-                                            <i class="tio-user"></i>
+                        <div id="customer_data" class="{{ $customer ? '' : 'd-none' }}">
+                            <div class="pos-customer-card">
+                                @include('partials._user-avatar', [
+                                    'imageUrl'  => $customer ? $customer->image_full_url : '',
+                                    'proStatus' => $customer ? ($customer->pro_status ?? false) : false,
+                                    'imgId'     => 'customer_image',
+                                    'size'      => 40,
+                                ])
+                                <span class="pos-customer-info">
+                                    <span class="pos-customer-name" id="customer_name">
+                                        {{ $customer ? $customer->f_name . ' ' . $customer->l_name : '' }}
+                                    </span>
+                                    <span class="pos-customer-meta">
+                                        <span id="customer_phone">{{ $customer ? $customer->phone : '' }}</span>
+                                        <span>
+                                            {{ translate('messages.Wallet') }}:
+                                            <strong id="customer_wallet">
+                                                {{ $customer ? \App\CentralLogics\Helpers::format_currency($customer->wallet_balance) : '' }}
+                                            </strong>
                                         </span>
-                                        <span>{{ translate('Delivery Information') }}
-                                            <small>({{ translate('Home Delivery') }})</small></span>
-                                    </h5>
-                                    <span class="delivery--edit-icon text-primary" id="delivery_address" data-toggle="modal"
-                                        data-target="#deliveryAddrModal"><i class="tio-edit"></i></span>
-                                </div>
-                                <div class="pos--delivery-options-info d-flex flex-wrap" id="del-add">
-                                    @include('admin-views.pos._address')
-                                </div>
-                            </div>
-
-                            @include('partials.delivery-type-selector', [
-                                'getUrl'            => route('admin.pos.delivery_type.get'),
-                                'setUrl'            => route('admin.pos.delivery_type.set'),
-                                'zoneId'            => $store?->zone_id ?? '',
-                                'moduleId'          => $module_id ?? \Illuminate\Support\Facades\Config::get('module.current_module_id'),
-                                'storeDeliveryTime' => $store?->delivery_time ?? '',
-                            ])
-                            <div class='w-100' id="cart">
-                                @include('admin-views.pos._cart', ['store' => $store])
+                                    </span>
+                                </span>
                             </div>
                         </div>
                     </div>
-                </div>
-            </div>
-        </div>
-    </section>
 
-    <!-- Quick View Modal -->
-    <div class="modal fade" id="quick-view" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content" id="quick-view-modal">
-
-            </div>
-        </div>
-    </div>
-
-
-    {{-- Print Invoice Modal --}}
-    <div class="modal fade" id="print-invoice" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">{{translate('messages.print_invoice')}}</h5>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
-                <div class="modal-body row ff-emoji">
-                    <div class="col-md-12">
-                        <div class="text-center">
-                            <input type="button" class="btn btn--primary non-printable text-white print-Div"
-                                value="{{ translate('Proceed, If thermal printer is ready.') }}" />
-                            <a href="{{url()->previous()}}"
-                                class="btn btn-danger non-printable">{{ translate('messages.back') }}</a>
+                    <div class="pos-block">
+                        <div class="pos-block-head">
+                            <h3 class="pos-block-title">
+                                <i class="tio-poi"></i>{{ translate('Delivery information') }}
+                                <small>({{ translate('Home delivery') }})</small>
+                            </h3>
+                            <button type="button" class="pos-icon-btn" id="delivery_address"
+                                    data-toggle="modal" data-target="#deliveryAddrModal"
+                                    aria-label="{{ translate('Update delivery address') }}">
+                                <i class="tio-edit"></i>
+                            </button>
                         </div>
-                        <hr class="non-printable">
+                        <div id="del-add">
+                            @include('admin-views.pos._address', $address_view)
+                        </div>
                     </div>
-                    <div class="row m-auto" id="print-modal-content"></div>
+
+                    @include('partials.delivery-type-selector', [
+                        'getUrl'            => route('admin.pos.delivery_type.get'),
+                        'setUrl'            => route('admin.pos.delivery_type.set'),
+                        'zoneId'            => $store?->zone_id ?? '',
+                        'moduleId'          => $module_id ?? \Illuminate\Support\Facades\Config::get('module.current_module_id'),
+                        'storeId'           => $store?->id ?? '',
+                        'storeDeliveryTime' => $store?->delivery_time ?? '',
+                    ])
+
+                    <div id="cart">
+                        @include('admin-views.pos._cart', ['store' => $store])
+                    </div>
                 </div>
-            </div>
+
+                <div class="pos-actions">
+                    <div class="pos-actions-total">
+                        <span>{{ translate('messages.Payable') }}</span>
+                        <strong id="pos-payable">{{ \App\CentralLogics\Helpers::format_currency(0) }}</strong>
+                    </div>
+                    <div class="pos-actions-row">
+                        <button type="button" class="btn btn-outline-danger empty-Cart" disabled>
+                            <i class="tio-clear-circle-outlined"></i>{{ translate('Clear cart') }}
+                        </button>
+                        <button type="submit" form="order_place" class="btn btn--primary place-order-submit" disabled>
+                            <i class="tio-checkmark-circle-outlined"></i>{{ translate('messages.Place order') }}
+                        </button>
+                    </div>
+                </div>
+            </aside>
+        </div>
+
+    <div class="modal fade pos-modal" id="quick-view" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content" id="quick-view-modal"></div>
         </div>
     </div>
 
-
-    {{-- Add Customer Modal --}}
-    <div class="modal fade" id="add-customer" tabindex="-1">
-        <div class="modal-dialog">
+    <div class="modal fade pos-modal pos-modal--receipt" id="print-invoice" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">{{translate('add_new_customer')}}</h5>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <div class="pos-receipt-head">
+                        <span class="pos-receipt-head__icon"><i class="tio-receipt-outlined"></i></span>
+                        <span class="pos-receipt-head__text">
+                            <h5 class="modal-title">
+                                {{ translate('messages.Print invoice') }}
+                                <span class="pos-receipt-id" id="print-invoice-id"></span>
+                            </h5>
+                            <span class="pos-receipt-sub">
+                                {{ translate('messages.Receipt preview') }}
+                                <span>80 mm</span>
+                            </span>
+                        </span>
+                    </div>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="{{ translate('messages.Close') }}">
                         <span aria-hidden="true">&times;</span>
                     </button>
                 </div>
                 <div class="modal-body">
-                    <form action="{{route('admin.pos.customer-store')}}" method="post" id="product_form">
+                    <div class="pos-receipt-stage">
+                        <div class="pos-receipt-paper" id="print-modal-content">
+                            <div class="pos-receipt-empty">
+                                <i class="tio-receipt-outlined"></i>
+                                {{ translate('messages.loading') }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <p class="pos-receipt-note">
+                        <i class="tio-info-outined"></i>
+                        {{ translate('messages.Make sure the thermal printer is ready.') }}
+                    </p>
+                    <div class="pos-receipt-actions">
+                        <button type="button" class="btn btn-outline-secondary" data-dismiss="modal">
+                            <i class="tio-clear"></i> {{ translate('messages.Close') }}
+                        </button>
+                        <button type="button" class="btn btn--primary print-Div">
+                            <i class="tio-print"></i> {{ translate('messages.Print receipt') }}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade pos-modal" id="add-customer" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">{{ translate('Add new customer') }}</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="{{ translate('messages.Close') }}">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form action="{{ route('admin.pos.customer-store') }}" method="post" id="product_form">
                         @csrf
-                        <div class="row">
+                        <div class="row g-2">
                             <div class="col-12 col-lg-6">
-                                <div class="form-group">
-                                    <label for="f_name" class="input-label">{{translate('first_name')}} <span
-                                            class="input-label-secondary text-danger">*</span></label>
-                                    <input id="f_name" type="text" name="f_name" class="form-control"
-                                        value="{{ old('f_name') }}" placeholder="{{translate('first_name')}}" required>
-                                </div>
+                                <label for="f_name" class="input-label">
+                                    {{ translate('First name') }}
+                                    <span class="input-label-secondary text-danger">*</span>
+                                </label>
+                                <input id="f_name" type="text" name="f_name" class="form-control"
+                                       value="{{ old('f_name') }}" placeholder="{{ translate('First name') }}" required>
                             </div>
                             <div class="col-12 col-lg-6">
-                                <div class="form-group">
-                                    <label for="l_name" class="input-label">{{translate('last_name')}} <span
-                                            class="input-label-secondary text-danger">*</span></label>
-                                    <input id="l_name" type="text" name="l_name" class="form-control"
-                                        value="{{ old('l_name') }}" placeholder="{{translate('last_name')}}" required>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-12 col-lg-6">
-                                <div class="form-group">
-                                    <label for="email" class="input-label">{{translate('email')}}<span
-                                            class="input-label-secondary text-danger">*</span></label>
-                                    <input id="email" type="email" name="email" class="form-control"
-                                        value="{{ old('email') }}" placeholder="{{translate('Ex_:_ex@example.com')}}"
-                                        required>
-                                </div>
+                                <label for="l_name" class="input-label">
+                                    {{ translate('Last name') }}
+                                    <span class="input-label-secondary text-danger">*</span>
+                                </label>
+                                <input id="l_name" type="text" name="l_name" class="form-control"
+                                       value="{{ old('l_name') }}" placeholder="{{ translate('Last name') }}" required>
                             </div>
                             <div class="col-12 col-lg-6">
-                                <div class="form-group">
-                                    <label for="phone" class="input-label">{{translate('phone')}}
-                                        ({{translate('with_country_code')}})<span
-                                            class="input-label-secondary text-danger">*</span></label>
-                                    <input id="phone" type="tel" name="phone" class="form-control"
-                                        value="{{ old('phone') }}" placeholder="{{translate('phone')}}" required>
-                                </div>
+                                <label for="email" class="input-label">
+                                    {{ translate('email') }}
+                                    <span class="input-label-secondary text-danger">*</span>
+                                </label>
+                                <input id="email" type="email" name="email" class="form-control"
+                                       value="{{ old('email') }}"
+                                       placeholder="{{ translate('Ex') . ' : ex@example.com' }}" required>
+                            </div>
+                            <div class="col-12 col-lg-6">
+                                <label for="phone" class="input-label">
+                                    {{ translate('Phone') }} ({{ translate('With country code') }})
+                                    <span class="input-label-secondary text-danger">*</span>
+                                </label>
+                                <input id="phone" type="tel" name="phone" class="form-control"
+                                       value="{{ old('phone') }}" placeholder="{{ translate('Phone') }}" required>
                             </div>
                         </div>
-                        <div class="btn--container justify-content-end">
-                            <button type="reset" class="btn btn--reset">{{translate('reset')}}</button>
-                            <button type="submit" id="submit_new_customer"
-                                class="btn btn--primary">{{translate('submit')}}</button>
+                        <div class="btn--container justify-content-end mt-3">
+                            <button type="reset" class="btn btn--reset"><i class="tio-refresh"></i> {{ translate('Reset') }}</button>
+                            <button type="submit" id="submit_new_customer" class="btn btn--primary">
+                                <i class="tio-checkmark-circle-outlined"></i> {{ translate('Submit') }}
+                            </button>
                         </div>
                     </form>
                 </div>
@@ -303,62 +323,67 @@
         </div>
     </div>
 
+        @include('admin-views.pos._delivery-address-modal', ['store' => $store, 'customer' => $customer])
+    </div>
 @endsection
-
 
 @push('script_2')
 <script async
-    src="https://maps.googleapis.com/maps/api/js?key={{ \App\Models\BusinessSetting::where('key', 'map_api_key')->first()->value }}&libraries=places,marker&callback=initMap&loading=async&v=weekly">
+    src="https://maps.googleapis.com/maps/api/js?key={{ \App\CentralLogics\Helpers::get_business_settings('map_api_key', false) }}&libraries=places,marker&callback=initMap&loading=async&v=weekly">
     </script>
+@php($pos_cart_lang = [
+    'title' => translate('Cart'),
+    'confirm' => translate('OK'),
+    'close' => translate('Close'),
+    'minValue' => translate('messages.Sorry, the minimum value was reached'),
+    'stockLimit' => translate('messages.Sorry, stock limit exceeded.'),
+])
+<script>
+    window.posCartLang = @json($pos_cart_lang);
+</script>
+
 <script src="{{asset('public/assets/admin/js/view-pages/pos.js')}}"></script>
 <script src="{{asset('public/assets/admin/js/views/delivery-type-selector.js')}}?v={{ @filemtime(public_path('assets/admin/js/views/delivery-type-selector.js')) ?: 1 }}"></script>
 
 <script>
     "use strict";
-    // --- Product items equal width
-    function updateGrid() {
-        const container = document.getElementById('single-list');
-        const items = container.querySelectorAll('.order--item-box');
-
-        container.classList.toggle('equal-grid', items.length >= 10);
-    }
-    updateGrid();
-    // --- End Product items equal width
 
     $(document).on('click', '.place-order-submit', function (event) {
         event.preventDefault();
+
+        let $btn = $(this);
         let customer_id = document.getElementById('customer');
-        if (customer_id.value) {
-            document.getElementById('customer_id').value = customer_id.value;
-            let form = document.getElementById('order_place');
-            form.submit();
-        } else {
-            toastr.error('{{ translate('messages.customer_not_selected') }}', {
+
+        if (!customer_id.value) {
+            toastr.error('{{ translate('messages.Customer not selected') }}', {
                 CloseButton: true,
                 ProgressBar: true
             });
+            return;
         }
-    });
-    $('#deliveryAddrModal').on('hidden.bs.modal', function () {
-        // Remove any lingering backdrops
-        $('.modal-backdrop').remove();
-        // Remove modal-open class from body
-        $('body').removeClass('modal-open');
-        // Reset body padding
-        $('body').css('padding-right', '');
+
+        if ($btn.data('submitting')) {
+            return;
+        }
+        $btn.data('submitting', true).prop('disabled', true);
+
+        document.getElementById('customer_id').value = customer_id.value;
+        document.getElementById('order_place').submit();
     });
 
-    // Also add this as a safety measure for all modals
+    $('#deliveryAddrModal').on('hidden.bs.modal', function () {
+        $('.modal-backdrop').remove();
+        $('body').removeClass('modal-open').css('padding-right', '');
+    });
+
     $(document).on('hidden.bs.modal', '.modal', function () {
         if ($('.modal:visible').length) {
             $('body').addClass('modal-open');
         } else {
             $('.modal-backdrop').remove();
-            $('body').removeClass('modal-open');
-            $('body').css('padding-right', '');
+            $('body').removeClass('modal-open').css('padding-right', '');
         }
     });
-
 
     function togglePinLoading(isLoading) {
         let $btn = $('.delivery-Address-Store');
@@ -376,7 +401,7 @@
     }
 
     function initMap() {
-        const mapId = "{{ \App\Models\BusinessSetting::where('key', 'map_api_key')->first()->value }}"
+        const mapId = "{{ \App\CentralLogics\Helpers::get_business_settings('map_api_key', false) }}"
 
         let map = new google.maps.Map(document.getElementById("map"), {
             zoom: 13,
@@ -389,13 +414,11 @@
 
         let zonePolygon = null;
 
-        //get current location block
         let infoWindow = new google.maps.InfoWindow();
         const geoErrorMessages = {
-            geolocationFailed: "{{ translate('The Geolocation service failed') }}",
-            noGeolocationSupport: "{{ translate('Your browser doesn`t support geolocation') }}",
+            geolocationFailed: "{{ translate('The geolocation service failed') }}",
+            noGeolocationSupport: "{{ translate('Your browser doesn\'t support geolocation') }}",
         };
-        // Try HTML5 geolocation.
         if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(
                 (position) => {
@@ -413,15 +436,13 @@
                 }
             );
         } else {
-            // Browser doesn't support Geolocation
             handleLocationError(false, infoWindow, map.getCenter(), map, geoErrorMessages);
         }
-        //-----end block------
         const bounds = new google.maps.LatLngBounds();
         posInitPlaceSearch({
             map: map,
             inputId: "pac-input",
-            outOfCoverageMessage: '{{ translate('messages.out_of_coverage') }}',
+            outOfCoverageMessage: '{{ translate('messages.Out of coverage') }}',
             getZonePolygon: () => zonePolygon,
             @if ($store)
             onLocationSelected: function (location, address) {
@@ -468,7 +489,6 @@
                         map.setCenter(data.center);
                         google.maps.event.addListener(zonePolygon, 'click', function (mapsMouseEvent) {
                             infoWindow.close();
-                            // Create a new InfoWindow.
                             infoWindow = new google.maps.InfoWindow({
                                 position: mapsMouseEvent.latLng,
                                 content: JSON.stringify(mapsMouseEvent.latLng.toJSON(), null,
@@ -522,8 +542,15 @@
                 });
         @endif
 
+        posInitCoveragePicker({
+            coverageUrl: '{{ route('admin.pos.delivery_coverage') }}',
+            extraChargeUrl: '{{ route('admin.pos.extra_charge') }}',
+            storeId: {{ $store ? $store->id : 'null' }},
+            currencySymbol: '{{ \App\CentralLogics\Helpers::currency_symbol() }}',
+            areaLabel: '{{ translate('messages.Select Area') }}',
+            zipLabel: '{{ translate('Select zip code') }}',
+        });
     }
-
 
     $(document).on('ready', function () {
         $('#store_select').select2({
@@ -554,14 +581,40 @@
         });
     });
 
-         $('#search-form').on('submit', function (e) {
-            e.preventDefault();
-            let keyword = $('#datatableSearch').val();
-            let nurl = new URL('{!! url()->full() !!}');
+    function posApplySearch(keyword) {
+        let nurl = new URL('{!! url()->full() !!}');
+        if (keyword) {
             nurl.searchParams.set('search', keyword);
-            nurl.searchParams.delete('page');
-            location.href = nurl;
-        });
+        } else {
+            nurl.searchParams.delete('search');
+        }
+        nurl.searchParams.delete('page');
+        location.href = nurl;
+    }
+
+    $('#search-form').on('submit', function (e) {
+        e.preventDefault();
+        posApplySearch($('#datatableSearch').val().trim());
+    });
+
+    $(document).on('input', '#datatableSearch', function () {
+        $('#pos-search-clear').toggleClass('d-none', $(this).val().length === 0);
+    });
+
+    $(document).on('click', '#pos-search-clear', function () {
+        $('#datatableSearch').val('').trigger('input').focus();
+        if (new URLSearchParams(window.location.search).has('search')) {
+            posApplySearch('');
+        }
+    });
+
+    $(document).on('click', '.pos-reset-filters', function () {
+        let nurl = new URL('{!! url()->full() !!}');
+        nurl.searchParams.delete('search');
+        nurl.searchParams.delete('category_id');
+        nurl.searchParams.delete('page');
+        location.href = nurl;
+    });
 
     $(document).on('click', '.quick-View', function () {
         $.get({
@@ -574,17 +627,10 @@
                 $('#loading').show();
             },
             success: function (data) {
-                // $('#quick-view').modal('show');
                 $('#quick-view-modal').empty().html(data.view);
             },
-            complete: function () {
-                // $('#loading').hide();
-            },
         });
-        // check_stock();
     });
-
-
 
     $(document).on('click', '.quick-View-Cart-Item', function () {
         $.get({
@@ -598,6 +644,11 @@
                 $('#loading').show();
             },
             success: function (data) {
+                if (data.success === 0) {
+                    toastr.error(data.message, { CloseButton: true, ProgressBar: true });
+                    updateCart();
+                    return;
+                }
                 $('#quick-view').modal('show');
                 $('#quick-view-modal').empty().html(data.view);
             },
@@ -606,7 +657,6 @@
             },
         });
     });
-
 
     function checkAddToCartValidity() {
         let names = {};
@@ -623,20 +673,8 @@
         return true;
     }
 
-    function checkStore() {
-        let module_id = {{Config::get('module.current_module_id')}};
-        let store_id = getUrlParameter('store_id');
-        if (module_id && store_id) {
-            $('#category').prop("disabled", false);
-            $('#datatableSearch').prop("disabled", false);
-        }
-    }
-
-    checkStore();
-
     function getVariantPrice() {
         if ($('#add-to-cart-form input[name=quantity]').val() > 0 && checkAddToCartValidity()) {
-            // alert(1);
             $.ajaxSetup({
                 headers: {
                     'X-CSRF-TOKEN': $('meta[name="_token"]').attr('content')
@@ -659,7 +697,6 @@
         }
     }
 
-
     $(document).on('click', '.add-To-Cart', function () {
 
         if (checkAddToCartValidity()) {
@@ -677,50 +714,30 @@
                 },
                 success: function (data) {
                     if (data.data === 1) {
-                        Swal.fire({
-                            icon: 'info',
-                            title: 'Cart',
-                            text: "{{translate('messages.product_already_added_in_cart')}}"
-                        });
+                        posCartAlert('info', "{{translate('messages.Product already added in cart')}}");
                         return false;
                     }
                     else if (data.data === 2) {
                         updateCart();
-                        Swal.fire({
-                            icon: 'info',
-                            title: 'Cart',
-                            text: "{{translate('messages.product_has_been_updated_in_cart')}}"
-                        });
+                        posCartAlert('info', "{{translate('messages.Product has been updated in cart')}}");
 
                         return false;
                     }
                     else if (data.data === 0) {
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'Cart',
-                            text: '{{translate("Sorry, product out of stock")}}.'
-                        });
+                        posCartAlert('error', '{{translate("Sorry, product out of stock")}}.');
                         return false;
                     }
                     else if (data.data === -1) {
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'Cart',
-                            text: '{{translate("Sorry, you can not add multiple stores data in same cart")}}.'
-                        });
+                        posCartAlert('error', '{{translate("Sorry, you cannot add multiple stores data in same cart")}}.');
                         return false;
                     }
                     else if (data.data === 'variation_error') {
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'Cart',
-                            text: data.message
-                        });
+                        posCartAlert('error', data.message);
                         return false;
                     }
                     $('.call-when-done').click();
 
-                    toastr.success('{{translate('messages.product_has_been_added_in_cart')}}', {
+                    toastr.success('{{translate('messages.Product has been added in cart')}}', {
                         CloseButton: true,
                         ProgressBar: true
                     });
@@ -732,21 +749,14 @@
                 }
             });
         } else {
-            Swal.fire({
-                type: 'info',
-                title: '{{translate('Cart')}}',
-                text: '{{translate("Please choose all the options")}}'
-            });
+            posCartAlert('info', '{{translate("Please choose all the options")}}');
         }
 
     });
 
-
-
     $(document).on('click', '.check-stock', function () {
         check_stock();
     });
-
 
     function check_stock() {
         $.ajaxSetup({
@@ -758,12 +768,7 @@
         $.post({
             url: '{{ route('admin.pos.item_stock_view') }}',
             data: $('#' + form_id).serializeArray(),
-            beforeSend: function () {
-                // $('#loading').show();
-            },
             success: function (data) {
-
-
                 $('#add-to-cart-form input[name=quantity]').empty()
                 $('#quick-view').modal('show');
                 $('#quick-view-modal').empty().html(data.view);
@@ -774,12 +779,9 @@
         });
     }
 
-
-
     $(document).on('click', '.item-stock-view-update', function () {
         item_stock_view_update();
     });
-
 
     function item_stock_view_update() {
         $.ajaxSetup({
@@ -791,10 +793,12 @@
         $.post({
             url: '{{ route('admin.pos.item_stock_view_update') }}',
             data: $('#' + form_id).serializeArray(),
-            beforeSend: function () {
-                // $('#loading').show();
-            },
             success: function (data) {
+                if (data.success === 0) {
+                    toastr.error(data.message, { CloseButton: true, ProgressBar: true });
+                    updateCart();
+                    return;
+                }
                 $('#quick-view').modal('show');
                 $('#quick-view-modal').empty().html(data.view);
             },
@@ -805,6 +809,14 @@
     }
 
     $(document).on('click', '.delivery-Address-Store', function () {
+
+        if (posCoverageSelectionMissing()) {
+            toastr.error(
+                '{{ translate('messages.Please select') }} ' + $('#coverage_picker_label_text').text(),
+                { CloseButton: true, ProgressBar: true }
+            );
+            return;
+        }
 
         $.ajaxSetup({
             headers: {
@@ -828,22 +840,15 @@
                     }
                 } else {
                     $('#del-add').empty().html(data.view);
+                    $('#deliveryAddrModal').modal('hide');
                 }
                 updateCart();
                 $('.call-when-done').click();
             },
             complete: function () {
                 $('#loading').hide();
-                $('#deliveryAddrModal').modal('hide');
-                setTimeout(function() {
-                    $('.modal-backdrop').remove();
-                    $('body').removeClass('modal-open');
-                }, 300);
             }
         });
-
-
-
     });
 
     $(document).on('click', '.remove-From-Cart', function () {
@@ -858,7 +863,7 @@
                 }
             } else {
                 updateCart();
-                toastr.info('{{translate('messages.item_has_been_removed_from_cart')}}', {
+                toastr.info('{{translate('messages.Item has been removed from cart')}}', {
                     CloseButton: true,
                     ProgressBar: true
                 });
@@ -876,13 +881,12 @@
             $('#customer_data').addClass('d-none');
             $('#customer').val('').trigger('change');
             updateCart();
-            toastr.info('{{ translate('messages.item_has_been_removed_from_cart') }}', {
+            toastr.info('{{ translate('messages.Item has been removed from cart') }}', {
                 CloseButton: true,
                 ProgressBar: true
             });
         });
     });
-
 
     document.addEventListener('delivery-type:changed', function () { updateCart(); });
 
@@ -892,22 +896,122 @@
         }
     }
 
-    function updateCart() {
-        $.post('<?php echo e(route('admin.pos.cart_items')); ?>?store_id={{request()?->store_id}}', { _token: '<?php echo e(csrf_token()); ?>' }, function (data) {
-            $('#cart').empty().html(data);
-            syncDeliveryTypeFromCart();
-        });
-        $.post('<?php echo e(route('admin.pos.single_items')); ?>' + window.location.search, { _token: '<?php echo e(csrf_token()); ?>' }, function (data) {
-            $('#single-list').empty().html(data);
+    function posSyncCounts() {
+        let items = parseInt($('#cart_item_count').val() || '0', 10);
+        $('#pos-cart-count').text(items + ' {{ translate('messages.Items') }}');
+
+        let total = $('#pos_product_total').val();
+        if (typeof total !== 'undefined') {
+            $('#pos-product-count').text(total + ' {{ translate('messages.Items') }}');
+        }
+
+        let payable = $('#cart_payable').val();
+        if (typeof payable !== 'undefined') {
+            $('#pos-payable').text(payable);
+        }
+        $('.pos-actions .empty-Cart, .pos-actions .place-order-submit').prop('disabled', items === 0);
+
+        $('[data-toggle="tooltip"]').tooltip();
+    }
+
+    let posCatalogPageSize = 10;
+    let posCatalogLoading = false;
+
+    function posCatalogParams(extra) {
+        let params = new URLSearchParams(window.location.search);
+        params.delete('page');
+        let data = { _token: '{{ csrf_token() }}' };
+        params.forEach(function (value, key) { data[key] = value; });
+        return $.extend(data, extra || {});
+    }
+
+    function posCatalogLoaded() {
+        return $('#single-list .pos-card').length;
+    }
+
+    function posCatalogHasMore() {
+        return $('#pos-scroll-more').attr('data-has-more') === '1';
+    }
+
+    function posLoadMoreProducts() {
+        if (posCatalogLoading || !posCatalogHasMore()) {
+            return;
+        }
+        posCatalogLoading = true;
+
+        $.post('{{ route('admin.pos.single_items') }}',
+            posCatalogParams({
+                page: Math.floor(posCatalogLoaded() / posCatalogPageSize) + 1,
+                per_page: posCatalogPageSize
+            }),
+            function (data) {
+                let $incoming = $('<div>').html(data);
+                let $cards = $incoming.find('#single-list').children();
+
+                $('#single-list').append($cards);
+                $('#pos_product_total').val($incoming.find('#pos_product_total').val());
+                $('#pos-scroll-more').attr(
+                    'data-has-more',
+                    $cards.length ? ($incoming.find('#pos-scroll-more').attr('data-has-more') || '0') : '0'
+                );
+                posSyncCounts();
+            }
+        ).always(function () {
+            posCatalogLoading = false;
+            posFillCatalog();
         });
     }
 
+    function posFillCatalog() {
+        let panel = document.getElementById('pos-products');
+
+        if (panel && posCatalogHasMore() && panel.scrollHeight - panel.scrollTop - panel.clientHeight <= 160) {
+            posLoadMoreProducts();
+        }
+    }
+
+    $('#pos-products').on('scroll', posFillCatalog);
+
+    function updateCart() {
+        $.post('{{ route('admin.pos.cart_items') }}?store_id={{ request()?->store_id }}', { _token: '{{ csrf_token() }}' }, function (data) {
+            $('#cart').empty().html(data);
+            syncDeliveryTypeFromCart();
+            posSyncCounts();
+        });
+
+        let panel = $('#pos-products');
+        let offset = panel.scrollTop();
+
+        $.post('{{ route('admin.pos.single_items') }}',
+            posCatalogParams({
+                page: 1,
+                per_page: Math.max(posCatalogLoaded(), posCatalogPageSize)
+            }),
+            function (data) {
+                panel.empty().html(data).scrollTop(offset);
+                posSyncCounts();
+            });
+    }
 
     $(function () {
         syncDeliveryTypeFromCart();
+        posSyncCounts();
+        posFillCatalog();
         $(document).on('click', 'input[type=number]', function () { this.select(); });
     });
 
+    $(document).on('click', '.pos-qty-step', function () {
+        let $input = $(this).closest('.pos-qty').find('.update-Quantity');
+        let step = parseInt($(this).data('step'), 10);
+        let next = (parseInt($input.val(), 10) || 0) + step;
+        let min = parseInt($input.attr('min'), 10);
+        let max = parseInt($input.attr('max'), 10);
+
+        if (next < min || next > max) {
+            return;
+        }
+        $input.val(next).trigger('change');
+    });
 
     $(document).on('change', '.update-Quantity', function (event) {
 
@@ -923,41 +1027,14 @@
                 updateCart();
             });
         } else if (valueCurrent > maxValue) {
-            Swal.fire({
-                icon: 'error',
-                title: 'Cart',
-                text: 'Sorry, cart limit exceeded.'
-            });
+            posCartAlert('error', '{{ translate('messages.Sorry, cart limit exceeded.') }}');
             element.val(element.data('oldvalue'));
         }
         else {
-            Swal.fire({
-                icon: 'error',
-                title: 'Cart',
-                text: '{{ translate('Sorry, the minimum value was reached') }}'
-            });
+            posCartAlert('error', '{{ translate('Sorry, the minimum value was reached') }}');
             element.val(element.data('oldvalue'));
         }
-
-
-        // Allow: backspace, delete, tab, escape, enter and .
-        if (event.type === 'keydown') {
-            if ($.inArray(event.keyCode, [46, 8, 9, 27, 13, 190]) !== -1 ||
-                // Allow: Ctrl+A
-                (event.keyCode === 65 && event.ctrlKey === true) ||
-                // Allow: home, end, left, right
-                (event.keyCode >= 35 && event.keyCode <= 39)) {
-                // let it happen, don't do anything
-                return;
-            }
-            // Ensure that it is a number and stop the keypress
-            if ((event.shiftKey || (event.keyCode < 48 || event.keyCode > 57)) && (event.keyCode < 96 || event.keyCode > 105)) {
-                event.preventDefault();
-            }
-        }
-
     });
-
 
     $('#customer').select2({
         ajax: {
@@ -992,8 +1069,9 @@
                 $('#loading').show();
             },
             success: function (data) {
-                $('#print-invoice').modal('show');
+                $('#print-invoice-id').text('#' + order_id);
                 $('#print-modal-content').empty().html(data.view);
+                $('#print-invoice').modal('show');
             },
             complete: function () {
                 $('#loading').hide();
@@ -1001,19 +1079,9 @@
         });
     }
     @if (session('last_order'))
-    $(document).on('ready', function () {
-        $('#print-invoice').modal('show');
-    });
-    print_invoice("{{session('last_order')}}")
+    print_invoice("{{ session('last_order') }}");
     @php(session(['last_order' => false]))
     @endif
-
-    $('.location-reload-to-base-pos').on('click', function () {
-        const url = $(this).data('url');
-        let nurl = new URL(url);
-        nurl.searchParams.delete('search');
-        location.href = nurl;
-    });
 
     $("#customer").change(function () {
         if ($(this).val()) {
@@ -1033,9 +1101,7 @@
                     $('#customer_wallet').text(data.customer_wallet);
                     $('#customer_image').attr('src', data.customer_image);
                     $('#customer_data').removeClass('d-none');
-                    if (typeof updateCart === 'function') {
-                        updateCart();
-                    }
+                    updateCart();
                 },
                 complete: function () {
                     $('#loading').hide();
@@ -1044,51 +1110,51 @@
         }
     });
 
-        document.querySelectorAll('[name="searchKey"]').forEach(function(element) {
-            element.addEventListener('input', function(event) {
-                const urlParams = new URLSearchParams(window.location.search);
-                if (this.value === "" && urlParams.has('search')) {
-                        var nurl = new URL('{!! url()->full() !!}');
-                        nurl.searchParams.delete("search");
-                        location.href = nurl;
-                }
-            });
-        });
+    $(document).on('change', '#customer', function (event) {
+        var contactName = document.getElementById('contact_person_name');
+        var contactNumber = document.getElementById('contact_person_number');
 
-        $(document).on('change', '#customer', function (event) {
-            if (!$(this).val()) {
-                document.getElementById('contact_person_name').value = '';
-                document.getElementById('contact_person_number').value = '';
-            } else {
-                var selectedOption = $(this).find('option:selected');
-                var selectedText = selectedOption.text().trim();
-                var parts = selectedText.split("(");
-                document.getElementById('contact_person_name').value = parts[0];
-                document.getElementById('contact_person_number').value = parts[1] ? parts[1].replace(/[()]/g, '') : '';
+        if (!$(this).val()) {
+            if (contactName) {
+                contactName.value = '';
             }
-
-            var resetIds = ['road', 'house', 'floor', 'longitude', 'latitude', 'address', 'distance', 'delivery_fee'];
-            resetIds.forEach(function (id) {
-                var el = document.getElementById(id);
-                if (el) {
-                    el.value = '';
-                }
-            });
-            $('#delivery_fee').siblings('strong').html('0 {{ \App\CentralLogics\Helpers::currency_symbol() }}');
-
-            var pac = document.getElementById('pac-input');
-            if (pac) {
-                pac.value = '';
+            if (contactNumber) {
+                contactNumber.value = '';
             }
-            $('#del-add').empty();
-            $('#delivery_price').text('{{ \App\CentralLogics\Helpers::format_currency(0) }}');
-        });
+        } else {
+            var selectedOption = $(this).find('option:selected');
+            var selectedText = selectedOption.text().trim();
+            var parts = selectedText.split("(");
+            if (contactName) {
+                contactName.value = parts[0];
+            }
+            if (contactNumber) {
+                contactNumber.value = parts[1] ? parts[1].replace(/[()]/g, '') : '';
+            }
+        }
 
-       $(document).on('click', '#delivery_address', function () {
-            if (!$('.iti').length || $('.iti').length == 1) {
-                initTelInputs();
+        var resetIds = ['road', 'house', 'floor', 'longitude', 'latitude', 'address', 'distance', 'delivery_fee'];
+        resetIds.forEach(function (id) {
+            var el = document.getElementById(id);
+            if (el) {
+                el.value = '';
             }
         });
+        $('#delivery_fee').siblings('strong').html('0 {{ \App\CentralLogics\Helpers::currency_symbol() }}');
+
+        var pac = document.getElementById('pac-input');
+        if (pac) {
+            pac.value = '';
+        }
+        $('#del-add').empty();
+        $('#delivery_price').text('{{ \App\CentralLogics\Helpers::format_currency(0) }}');
+    });
+
+    $(document).on('click', '#delivery_address', function () {
+        if (!$('.iti').length || $('.iti').length == 1) {
+            initTelInputs();
+        }
+    });
 
 </script>
 @endpush

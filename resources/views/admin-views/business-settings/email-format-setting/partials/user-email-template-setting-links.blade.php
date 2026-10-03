@@ -1,17 +1,16 @@
 <div class="d-flex flex-wrap justify-content-between align-items-center tabs-slide-wrap position-relative mb-2 __gap-12px">
     <div class="js-nav-scroller hs-nav-scroller-horizontal mt-2">
-        <!-- Nav -->
         <ul class="nav nav-tabs tabs-inner border-0 nav--tabs nav--pills">
             <li class="nav-item tabs-slide_items">
                 <a class="nav-link {{ Request::is('admin/business-settings/email-setup/user/registration') ? 'active' : '' }}"
                 href="{{ route('admin.business-settings.email-setup', ['user','registration']) }}">
-                    {{translate('New_Customer_Registration')}}
+                    {{translate('New Customer Registration')}}
                 </a>
             </li>
             <li class="nav-item tabs-slide_items">
                 <a class="nav-link {{ Request::is('admin/business-settings/email-setup/user/pos-registration') ? 'active' : '' }}"
                    href="{{ route('admin.business-settings.email-setup', ['user','pos-registration']) }}">
-                    {{translate('POS_New_Customer_Registration')}}
+                    {{translate('POS New Customer Registration')}}
                 </a>
             </li>
             <li class="nav-item tabs-slide_items">
@@ -20,71 +19,64 @@
                     {{translate('Registration OTP')}}
                 </a>
             </li>
-            {{-- <li class="nav-item tabs-slide_items">
-                <a class="nav-link {{ Request::is('admin/business-settings/email-setup/user/login-otp') ? 'active' : '' }}"
-                href="{{ route('admin.business-settings.email-setup', ['user','login-otp']) }}">
-                    {{translate('Login OTP')}}
-                </a>
-            </li> --}}
             <li class="nav-item tabs-slide_items">
                 <a class="nav-link {{ Request::is('admin/business-settings/email-setup/user/forgot-password') ? 'active' : '' }}"
                 href="{{ route('admin.business-settings.email-setup', ['user','forgot-password']) }}">
-                    {{translate('Forgot Password')}}
+                    {{translate('Forgot password')}}
                 </a>
             </li>
             <li class="nav-item tabs-slide_items">
                 <a class="nav-link {{ Request::is('admin/business-settings/email-setup/user/order-verification') ? 'active' : '' }}"
                 href="{{ route('admin.business-settings.email-setup', ['user','order-verification']) }}">
-                    {{translate('Delivery_Verification')}}
+                    {{translate('Delivery Verification?')}}
                 </a>
             </li>
             <li class="nav-item tabs-slide_items">
                 <a class="nav-link {{ Request::is('admin/business-settings/email-setup/user/new-order') ? 'active' : '' }}"
-                href="{{ route('admin.business-settings.email-setup', ['user','new-order']) }}">{{translate('Order_Placement')}}</a>
+                href="{{ route('admin.business-settings.email-setup', ['user','new-order']) }}">{{translate('Order Placement')}}</a>
             </li>
             <li class="nav-item tabs-slide_items">
                 <a class="nav-link {{ Request::is('admin/business-settings/email-setup/user/refund-order') ? 'active' : '' }}"
-                href="{{ route('admin.business-settings.email-setup', ['user','refund-order']) }}">{{translate('messages.refund_order')}}</a>
+                href="{{ route('admin.business-settings.email-setup', ['user','refund-order']) }}">{{translate('messages.Refund order')}}</a>
             </li>
 
             <li class="nav-item tabs-slide_items">
                 <a class="nav-link {{ Request::is('admin/business-settings/email-setup/user/refund-request-deny') ? 'active' : '' }}"
                 href="{{ route('admin.business-settings.email-setup', ['user','refund-request-deny']) }}">
-                    {{translate('Refund_Request_Rejected')}}
+                    {{translate('Refund Request Rejected')}}
                 </a>
             </li>
             <li class="nav-item tabs-slide_items">
                 <a class="nav-link {{ Request::is('admin/business-settings/email-setup/user/add-fund') ? 'active' : '' }}"
                 href="{{ route('admin.business-settings.email-setup', ['user','add-fund']) }}">
-                    {{translate('Fund_Add')}}
+                    {{translate('Fund added')}}
                 </a>
             </li>
             <li class="nav-item tabs-slide_items">
                 <a class="nav-link {{ Request::is('admin/business-settings/email-setup/user/offline-payment-approve') ? 'active' : '' }}"
                 href="{{ route('admin.business-settings.email-setup', ['user','offline-payment-approve']) }}">
-                    {{translate('Offline_Payment_Approve')}}
+                    {{translate('Offline Payment Approve')}}
                 </a>
             </li>
             <li class="nav-item tabs-slide_items">
                 <a class="nav-link {{ Request::is('admin/business-settings/email-setup/user/offline-payment-deny') ? 'active' : '' }}"
                 href="{{ route('admin.business-settings.email-setup', ['user','offline-payment-deny']) }}">
-                    {{translate('Offline_Payment_Deny')}}
+                    {{translate('Offline Payment Deny')}}
                 </a>
             </li>
             <li class="nav-item tabs-slide_items">
                 <a class="nav-link {{ Request::is('admin/business-settings/email-setup/user/suspend') ? 'active' : '' }}"
                 href="{{ route('admin.business-settings.email-setup', ['user','suspend']) }}">
-                    {{translate('Account_Suspension')}}
+                    {{translate('Account Suspension')}}
                 </a>
             </li>
             <li class="nav-item tabs-slide_items">
                 <a class="nav-link {{ Request::is('admin/business-settings/email-setup/user/unsuspend') ? 'active' : '' }}"
                 href="{{ route('admin.business-settings.email-setup', ['user','unsuspend']) }}">
-                    {{translate('Account_Unsuspension')}}
+                    {{translate('Account Unsuspension')}}
                 </a>
             </li>
         </ul>
-        <!-- End Nav -->
     </div>
     <div class="arrow-area">
         <div class="button-prev align-items-center">

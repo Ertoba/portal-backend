@@ -1,23 +1,34 @@
 <?php
-
-use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\PaytmController;
-use App\Http\Controllers\LiqPayController;
-use App\Http\Controllers\PaymobController;
-use App\Http\Controllers\PaytabsController;
-use App\Http\Controllers\FirebaseController;
-use App\Http\Controllers\PaystackController;
-use App\Http\Controllers\RazorPayController;
-use App\Http\Controllers\SenangPayController;
-use App\Http\Controllers\MercadoPagoController;
-use App\Http\Controllers\BkashPaymentController;
-use App\Http\Controllers\FlutterwaveV3Controller;
+use App\Http\Controllers\BogPaymentController;
 use App\Http\Controllers\FlittPaymentController;
 use App\Http\Controllers\KeepzPaymentController;
-use App\Http\Controllers\PaypalPaymentController;
-use App\Http\Controllers\BogPaymentController;
-use App\Http\Controllers\StripePaymentController;
-use App\Http\Controllers\SslCommerzPaymentController;
+
+use App\Http\Controllers\{
+    BkashPaymentController,
+    DeliveryManController,
+    FirebaseController,
+    FlutterwaveV3Controller,
+    HomeController,
+    LiqPayController,
+    LoginController,
+    MercadoPagoController,
+    NewsletterController,
+    PaymentController,
+    PaymobController,
+    PaypalPaymentController,
+    PaystackController,
+    PaytabsController,
+    PaytmController,
+    RazorPayController,
+    RiderRegistrationController,
+    SenangPayController,
+    SslCommerzPaymentController,
+    StripePaymentController,
+    VendorController,
+};
+use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Artisan;
 
 /*
 |--------------------------------------------------------------------------
@@ -29,228 +40,221 @@ use App\Http\Controllers\SslCommerzPaymentController;
 | contains the "web" middleware group. Now create something great!
 |
 */
-
-
-Route::post('/subscribeToTopic', [FirebaseController::class, 'subscribeToTopic']);
-Route::get('/', 'HomeController@index')->name('home');
-Route::get('lang/{locale}', 'HomeController@lang')->name('lang');
-Route::get('terms-and-conditions', 'HomeController@terms_and_conditions')->name('terms-and-conditions');
-Route::get('about-us', 'HomeController@about_us')->name('about-us');
-Route::get('contact-us', 'HomeController@contact_us')->name('contact-us');
-Route::post('send-message', 'HomeController@send_message')->name('send-message');
-Route::get('privacy-policy', 'HomeController@privacy_policy')->name('privacy-policy');
-Route::get('cancelation', 'HomeController@cancelation')->name('cancelation');
-Route::get('refund', 'HomeController@refund_policy')->name('refund');
-Route::get('shipping-policy', 'HomeController@shipping_policy')->name('shipping-policy');
-Route::post('newsletter/subscribe', 'NewsletterController@newsLetterSubscribe')->name('newsletter.subscribe');
-Route::get('subscription-invoice/{id}', 'HomeController@subscription_invoice')->name('subscription_invoice');
-Route::get('order-invoice/{id}', 'HomeController@order_invoice')->name('order_invoice');
-Route::get('deliveryman-earning-report-invoice/{id}', 'HomeController@earningReportInvoice')->name('delivery_earning_invoice')->middleware('localization');
-
-Route::get('login/{tab}', 'LoginController@login')->name('login');
-Route::post('login_submit', 'LoginController@submit')->name('login_post')->middleware('mili.feature');
-Route::get('logout', 'LoginController@logout')->name('logout');
-Route::get('/reload-captcha', 'LoginController@reloadCaptcha')->name('reload-captcha');
-Route::get('/reset-password', 'LoginController@reset_password_request')->name('reset-password');
-Route::post('/vendor-reset-password', 'LoginController@vendor_reset_password_request')->name('vendor-reset-password');
-Route::get('/password-reset', 'LoginController@reset_password')->name('change-password');
-Route::post('verify-otp', 'LoginController@verify_token')->name('verify-otp');
-Route::post('reset-password-submit', 'LoginController@reset_password_submit')->name('reset-password-submit');
-Route::get('otp-resent', 'LoginController@otp_resent')->name('otp_resent');
-
-Route::get('authentication-failed', function () {
-    $errors = [];
-    array_push($errors, ['code' => 'auth-001', 'message' => 'Unauthenticated.']);
-    return response()->json([
-        'errors' => $errors,
-    ], 401);
-})->name('authentication-failed');
-
-Route::group(['prefix' => 'payment-mobile'], function () {
-    Route::get('/', 'PaymentController@payment')->name('payment-mobile');
-    Route::get('flitt-intent', 'PaymentController@flittMobileIntent')->name('payment-mobile.flitt-intent');
-    Route::get('keepz-intent', 'PaymentController@keepzMobileIntent')->name('payment-mobile.keepz-intent');
-    // Route::get('set-payment-method/{name}', 'PaymentController@set_payment_method')->name('set-payment-method');
+Route::controller(FirebaseController::class)->group(function () {
+    Route::post('/subscribeToTopic', 'subscribeToTopic')->middleware(['auth:admin,vendor,vendor_employee', 'throttle:10,1']);
 });
-
-Route::get('payment-success', 'PaymentController@success')->name('payment-success');
-Route::get('payment-fail', 'PaymentController@fail')->name('payment-fail');
-Route::get('payment-cancel', 'PaymentController@cancel')->name('payment-cancel');
-
-$is_published = 0;
-try {
-$full_data = include('Modules/Gateways/Addon/info.php');
-$is_published = $full_data['is_published'] == 1 ? 1 : 0;
-} catch (\Exception $exception) {}
-
-if (!$is_published) {
-    Route::group(['prefix' => 'payment'], function () {
-
-        //SSLCOMMERZ
-        Route::group(['prefix' => 'sslcommerz', 'as' => 'sslcommerz.'], function () {
-            Route::get('pay', [SslCommerzPaymentController::class, 'index'])->name('pay');
-            Route::post('success', [SslCommerzPaymentController::class, 'success'])
-                ->withoutMiddleware([\App\Http\Middleware\VerifyCsrfToken::class]);
-            Route::post('failed', [SslCommerzPaymentController::class, 'failed'])
-                ->withoutMiddleware([\App\Http\Middleware\VerifyCsrfToken::class]);
-            Route::post('canceled', [SslCommerzPaymentController::class, 'canceled'])
-                ->withoutMiddleware([\App\Http\Middleware\VerifyCsrfToken::class]);
-        });
-
-        //STRIPE
-        Route::group(['prefix' => 'stripe', 'as' => 'stripe.'], function () {
-            Route::get('pay', [StripePaymentController::class, 'index'])->name('pay');
-            Route::get('token', [StripePaymentController::class, 'payment_process_3d'])->name('token');
-            Route::get('success', [StripePaymentController::class, 'success'])->name('success');
-            Route::get('canceled', [StripePaymentController::class, 'canceled'])
-                ->withoutMiddleware([\App\Http\Middleware\VerifyCsrfToken::class]);
-        });
-
-      //RAZOR-PAY
-      Route::group(['prefix' => 'razor-pay', 'as' => 'razor-pay.'], function () {
-        Route::get('pay', [RazorPayController::class, 'index']);
-        Route::post('payment', [RazorPayController::class, 'payment'])->name('payment')
-            ->withoutMiddleware([\App\Http\Middleware\VerifyCsrfToken::class]);
-        Route::post('callback', [RazorPayController::class, 'callback'])->name('callback')
-            ->withoutMiddleware([\App\Http\Middleware\VerifyCsrfToken::class]);
-        Route::any('cancel', [RazorPayController::class, 'cancel'])->name('cancel')
-            ->withoutMiddleware([\App\Http\Middleware\VerifyCsrfToken::class]);
-
-        Route::any('create-order', [RazorPayController::class, 'createOrder'])->name('create-order')
-            ->withoutMiddleware([\App\Http\Middleware\VerifyCsrfToken::class]);
-        Route::any('verify-payment', [RazorPayController::class, 'verifyPayment'])->name('verify-payment')
-            ->withoutMiddleware([\App\Http\Middleware\VerifyCsrfToken::class]);
+Route::controller(HomeController::class)->group(function () {
+    Route::get('/', 'index')->name('home');
+    Route::get('maintenance-mode', 'maintenanceMode')->name('maintenance_mode');
+    Route::get('lang/{locale}', [HomeController::class, 'lang'])->name('lang');
+    Route::get('terms-and-conditions', 'terms_and_conditions')->name('terms-and-conditions');
+    Route::get('about-us', 'about_us')->name('about-us');
+    Route::get('contact-us', 'contact_us')->name('contact-us');
+    Route::post('send-message', 'send_message')->name('send-message');
+    Route::get('privacy-policy', 'privacy_policy')->name('privacy-policy');
+    Route::get('cancelation', 'cancelation')->name('cancelation');
+    Route::get('refund', 'refund_policy')->name('refund');
+    Route::get('shipping-policy', 'shipping_policy')->name('shipping-policy');
+    Route::get('subscription-invoice/{id}', 'subscription_invoice')->name('subscription_invoice');
+    Route::get('order-invoice/{id}', 'order_invoice')->name('order_invoice');
+    Route::get('deliveryman-earning-report-invoice/{id}', 'earningReportInvoice')->name('delivery_earning_invoice')->middleware('localization');
+    Route::get('activation-check', 'getActivationCheckView')->name('system.activation-check');
+    Route::post('activation-check', 'activationCheck');
+});
+Route::controller(NewsletterController::class)->group(function () {
+    Route::post('newsletter/subscribe', 'newsLetterSubscribe')->name('newsletter.subscribe');
+});
+Route::controller(LoginController::class)->group(function () {
+    Route::get('login/{tab}', 'login')->name('login');
+    Route::post('login_submit', 'submit')->name('login_post')->middleware('actch');
+    Route::get('logout', 'logout')->name('logout');
+    Route::get('/reload-captcha', 'reloadCaptcha')->name('reload-captcha');
+    Route::post('/reset-password', 'reset_password_request')->name('reset-password')->middleware('throttle:3,60');
+    Route::post('/vendor-reset-password', 'vendor_reset_password_request')->name('vendor-reset-password')->middleware('throttle:3,60');
+    Route::get('/password-reset', 'reset_password')->name('change-password');
+    Route::post('verify-otp', 'verify_token')->name('verify-otp');
+    Route::post('reset-password-submit', 'reset_password_submit')->name('reset-password-submit');
+    Route::get('otp-resent', 'otp_resent')->name('otp_resent');
+});
+Route::get('authentication-failed', function () {
+$errors = [];
+array_push($errors, ['code' => 'auth-001', 'message' => 'Unauthenticated.']);
+return response()->json([
+'errors' => $errors,
+], 401);
+})->name('authentication-failed');
+Route::prefix('payment-mobile')->group(function () {
+    Route::controller(PaymentController::class)->group(function () {
+        Route::get('/', 'payment')->name('payment-mobile');
+        Route::get('set-payment-method/{name}', 'set_payment_method')->name('set-payment-method');
     });
-
-        //PAYPAL
-        Route::group(['prefix' => 'paypal', 'as' => 'paypal.'], function () {
-            Route::get('pay', [PaypalPaymentController::class, 'payment']);
-            Route::any('success', [PaypalPaymentController::class, 'success'])->name('success')
-                ->withoutMiddleware([\App\Http\Middleware\VerifyCsrfToken::class]);;
-            Route::any('cancel', [PaypalPaymentController::class, 'cancel'])->name('cancel')
-                ->withoutMiddleware([\App\Http\Middleware\VerifyCsrfToken::class]);;
+});
+Route::controller(PaymentController::class)->group(function () {
+    Route::get('payment-success', 'success')->name('payment-success');
+    Route::get('payment-fail', 'fail')->name('payment-fail');
+    Route::get('payment-cancel', 'cancel')->name('payment-cancel');
+});
+$is_published = addon_published_status('Gateways');
+if (!$is_published) {
+Route::prefix('payment')->group(function () {
+    Route::prefix('sslcommerz')->name('sslcommerz.')->group(function () {
+        Route::controller(SslCommerzPaymentController::class)->group(function () {
+            Route::get('pay', 'index')->name('pay');
+            Route::post('success', 'success')->withoutMiddleware([\App\Http\Middleware\VerifyCsrfToken::class]);
+            Route::post('failed', 'failed')->withoutMiddleware([\App\Http\Middleware\VerifyCsrfToken::class]);
+            Route::post('canceled', 'canceled')->withoutMiddleware([\App\Http\Middleware\VerifyCsrfToken::class]);
         });
-
-        //SENANG-PAY
-        Route::group(['prefix' => 'senang-pay', 'as' => 'senang-pay.'], function () {
-            Route::get('pay', [SenangPayController::class, 'index']);
-            Route::any('callback', [SenangPayController::class, 'return_senang_pay']);
+    });
+    Route::prefix('stripe')->name('stripe.')->group(function () {
+        Route::controller(StripePaymentController::class)->group(function () {
+            Route::get('pay', 'index')->name('pay');
+            Route::get('token', 'payment_process_3d')->name('token');
+            Route::get('success', 'success')->name('success');
+            Route::get('canceled', 'canceled')->withoutMiddleware([\App\Http\Middleware\VerifyCsrfToken::class]);
         });
-
-        //PAYTM
-        Route::group(['prefix' => 'paytm', 'as' => 'paytm.'], function () {
-            Route::get('pay', [PaytmController::class, 'payment']);
-            Route::any('response', [PaytmController::class, 'callback'])->name('response')
-            ->withoutMiddleware([\App\Http\Middleware\VerifyCsrfToken::class]);
+    });
+    Route::prefix('razor-pay')->name('razor-pay.')->group(function () {
+        Route::controller(RazorPayController::class)->group(function () {
+            Route::get('pay', 'index');
+            Route::post('payment', 'payment')->name('payment')->withoutMiddleware([\App\Http\Middleware\VerifyCsrfToken::class]);
+            Route::post('callback', 'callback')->name('callback')->withoutMiddleware([\App\Http\Middleware\VerifyCsrfToken::class]);
+            Route::any('cancel', 'cancel')->name('cancel')->withoutMiddleware([\App\Http\Middleware\VerifyCsrfToken::class]);
+            Route::any('create-order', 'createOrder')->name('create-order')->withoutMiddleware([\App\Http\Middleware\VerifyCsrfToken::class]);
+            Route::any('verify-payment', 'verifyPayment')->name('verify-payment')->withoutMiddleware([\App\Http\Middleware\VerifyCsrfToken::class]);
         });
-
-        //FLUTTERWAVE
-        Route::group(['prefix' => 'flutterwave-v3', 'as' => 'flutterwave-v3.'], function () {
-            Route::get('pay', [FlutterwaveV3Controller::class, 'initialize'])->name('pay');
-            Route::get('callback', [FlutterwaveV3Controller::class, 'callback'])->name('callback');
+    });
+    Route::prefix('paypal')->name('paypal.')->group(function () {
+        Route::controller(PaypalPaymentController::class)->group(function () {
+            Route::get('pay', 'payment');
+            Route::any('success', 'success')->name('success')->withoutMiddleware([\App\Http\Middleware\VerifyCsrfToken::class]);
+            Route::any('cancel', 'cancel')->name('cancel')->withoutMiddleware([\App\Http\Middleware\VerifyCsrfToken::class]);
         });
-
-        //PAYSTACK
-        Route::group(['prefix' => 'paystack', 'as' => 'paystack.'], function () {
-            Route::get('pay', [PaystackController::class, 'index'])->name('pay');
-            Route::get('callback', [PaystackController::class, 'handleGatewayCallback'])->name('callback');
-            Route::get('cancel', [PaystackController::class, 'cancel'])->name('cancel');
+    });
+    Route::prefix('senang-pay')->name('senang-pay.')->group(function () {
+        Route::controller(SenangPayController::class)->group(function () {
+            Route::get('pay', 'index');
+            Route::any('callback', 'return_senang_pay');
         });
-
-        //BKASH
-        Route::group(['prefix' => 'bkash', 'as' => 'bkash.'], function () {
-            // Payment Routes for bKash
-            Route::get('make-payment', [BkashPaymentController::class, 'make_tokenize_payment'])->name('make-payment');
-            Route::any('callback', [BkashPaymentController::class, 'callback'])->name('callback');
-
-            // Refund Routes for bKash
-            // Route::get('refund', 'BkashRefundController@index')->name('bkash-refund');
-            // Route::post('refund', 'BkashRefundController@refund')->name('bkash-refund');
+    });
+    Route::prefix('paytm')->name('paytm.')->group(function () {
+        Route::controller(PaytmController::class)->group(function () {
+            Route::get('pay', 'payment');
+            Route::any('response', 'callback')->name('response')->withoutMiddleware([\App\Http\Middleware\VerifyCsrfToken::class]);
         });
-
-        //Liqpay
-        Route::group(['prefix' => 'liqpay', 'as' => 'liqpay.'], function () {
-            Route::get('payment', [LiqPayController::class, 'payment'])->name('payment');
-            Route::any('callback', [LiqPayController::class, 'callback'])->name('callback');
+    });
+    Route::prefix('flutterwave-v3')->name('flutterwave-v3.')->group(function () {
+        Route::controller(FlutterwaveV3Controller::class)->group(function () {
+            Route::get('pay', 'initialize')->name('pay');
+            Route::get('callback', 'callback')->name('callback');
         });
-
-        //BOG PAY
-        Route::group(['prefix' => 'bog', 'as' => 'bog.'], function () {
-            Route::get('pay', [BogPaymentController::class, 'payment'])->name('pay');
-            Route::any('success', [BogPaymentController::class, 'success'])->name('success')
-                ->withoutMiddleware([\App\Http\Middleware\VerifyCsrfToken::class]);
-            Route::any('fail', [BogPaymentController::class, 'fail'])->name('fail')
-                ->withoutMiddleware([\App\Http\Middleware\VerifyCsrfToken::class]);
-            Route::any('callback', [BogPaymentController::class, 'callback'])->name('callback')
-                ->withoutMiddleware([\App\Http\Middleware\VerifyCsrfToken::class]);
+    });
+    Route::prefix('paystack')->name('paystack.')->group(function () {
+        Route::controller(PaystackController::class)->group(function () {
+            Route::get('pay', 'index')->name('pay');
+            Route::get('callback', 'handleGatewayCallback')->name('callback');
+            Route::get('cancel', 'cancel')->name('cancel');
         });
-
-        //FLITT
-        Route::group(['prefix' => 'flitt', 'as' => 'flitt.'], function () {
-            Route::get('pay', [FlittPaymentController::class, 'payment'])->name('pay');
-            Route::get('mobile-intent', [FlittPaymentController::class, 'mobileIntent'])->name('mobile-intent');
-            Route::get('mobile-status', [FlittPaymentController::class, 'mobileStatus'])->name('mobile-status');
-            Route::any('mobile-return', [FlittPaymentController::class, 'mobileReturn'])->name('mobile-return')
-                ->withoutMiddleware([\App\Http\Middleware\VerifyCsrfToken::class]);
-            Route::any('response', [FlittPaymentController::class, 'response'])->name('response')
-                ->withoutMiddleware([\App\Http\Middleware\VerifyCsrfToken::class]);
-            Route::post('callback', [FlittPaymentController::class, 'callback'])->name('callback')
-                ->withoutMiddleware([\App\Http\Middleware\VerifyCsrfToken::class]);
+    });
+    Route::prefix('bkash')->name('bkash.')->group(function () {
+        Route::controller(BkashPaymentController::class)->group(function () {
+            Route::get('make-payment', 'make_tokenize_payment')->name('make-payment');
+            Route::any('callback', 'callback')->name('callback');
         });
-
-        //KEEPZ
-        Route::group(['prefix' => 'keepz', 'as' => 'keepz.'], function () {
-            Route::get('pay', [KeepzPaymentController::class, 'payment'])->name('pay');
-            Route::any('success', [KeepzPaymentController::class, 'success'])->name('success')
-                ->withoutMiddleware([\App\Http\Middleware\VerifyCsrfToken::class]);
-            Route::any('fail', [KeepzPaymentController::class, 'fail'])->name('fail')
-                ->withoutMiddleware([\App\Http\Middleware\VerifyCsrfToken::class]);
-            Route::post('callback', [KeepzPaymentController::class, 'callback'])->name('callback')
-                ->withoutMiddleware([\App\Http\Middleware\VerifyCsrfToken::class]);
+    });
+    Route::prefix('liqpay')->name('liqpay.')->group(function () {
+        Route::controller(LiqPayController::class)->group(function () {
+            Route::get('payment', 'payment')->name('payment');
+            Route::any('callback', 'callback')->name('callback');
         });
-
-        //MERCADOPAGO
-          Route::group(['prefix' => 'mercadopago', 'as' => 'mercadopago.'], function () {
-            Route::get('pay', [MercadoPagoController::class, 'index'])->name('index');
-            Route::post('make-payment', [MercadoPagoController::class, 'make_payment'])->name('make_payment')->withoutMiddleware([\App\Http\Middleware\VerifyCsrfToken::class]);;
-            Route::any('callback', [MercadoPagoController::class, 'callback'])->name('callback')->withoutMiddleware([\App\Http\Middleware\VerifyCsrfToken::class]);;
+    });
+    Route::prefix('mercadopago')->name('mercadopago.')->group(function () {
+        Route::controller(MercadoPagoController::class)->group(function () {
+            Route::get('pay', 'index')->name('index');
+            Route::post('make-payment', 'make_payment')->name('make_payment')->withoutMiddleware([\App\Http\Middleware\VerifyCsrfToken::class]);
+            Route::any('callback', 'callback')->name('callback')->withoutMiddleware([\App\Http\Middleware\VerifyCsrfToken::class]);
         });
-
-        //PAYMOB
-        Route::group(['prefix' => 'paymob', 'as' => 'paymob.'], function () {
-            Route::any('pay', [PaymobController::class, 'credit'])->name('pay');
-            Route::any('callback', [PaymobController::class, 'callback'])->name('callback');
+    });
+    Route::prefix('paymob')->name('paymob.')->group(function () {
+        Route::controller(PaymobController::class)->group(function () {
+            Route::any('pay', 'credit')->name('pay');
+            Route::any('callback', 'callback')->name('callback');
         });
-
-        //PAYTABS
-        Route::group(['prefix' => 'paytabs', 'as' => 'paytabs.'], function () {
-            Route::any('pay', [PaytabsController::class, 'payment'])->name('pay');
-            Route::any('callback', [PaytabsController::class, 'callback'])->name('callback');
+    });
+    Route::prefix('paytabs')->name('paytabs.')->group(function () {
+        Route::controller(PaytabsController::class)->group(function () {
+            Route::any('pay', 'payment')->name('pay');
+            Route::any('callback', 'callback')->name('callback');
             Route::any('response', [PaytabsController::class, 'response'])->name('response');
         });
     });
+});
 }
-
-
-//Restaurant Registration
-Route::group(['prefix' => 'vendor', 'as' => 'restaurant.'], function () {
-    Route::get('apply', 'VendorController@create')->name('create');
-    Route::post('apply', 'VendorController@store')->name('store');
-    Route::get('get-all-modules', 'VendorController@get_all_modules')->name('get-all-modules');
-    Route::get('get-module-type', 'VendorController@get_modules_type')->name('get-module-type');
-    Route::get('check-module-type', 'VendorController@check_module_type')->name('check-module-type');
-
-    Route::get('back', 'VendorController@back')->name('back');
-    Route::post('business-plan', 'VendorController@business_plan')->name('business_plan');
-    Route::get('business-plan', 'VendorController@secondStep')->name('secondStep');
-    Route::post('payment', 'VendorController@payment')->name('payment');
-    Route::get('final-step', 'VendorController@final_step')->name('final_step');
+Route::get('/test', function () {
+Artisan::call('optimize:clear');
+$homeRoute = app('router')->getRoutes()->getByName('home');
+});
+Route::get('module-test', function () {
+});
+Route::prefix('vendor')->name('restaurant.')->group(function () {
+    Route::controller(VendorController::class)->group(function () {
+        Route::get('apply', 'create')->name('create');
+        Route::post('apply', 'store')->name('store');
+        Route::get('get-all-modules', 'get_all_modules')->name('get-all-modules');
+        Route::get('get-module-type', 'get_modules_type')->name('get-module-type');
+        Route::get('check-module-type', 'check_module_type')->name('check-module-type');
+        Route::get('back', 'back')->name('back');
+        Route::post('business-plan', 'business_plan')->name('business_plan');
+        Route::get('business-plan', 'secondStep')->name('secondStep');
+        Route::post('payment', 'payment')->name('payment');
+        Route::get('final-step', 'final_step')->name('final_step');
+    });
+});
+Route::prefix('rider')->name('rider.')->group(function () {
+    Route::controller(RiderRegistrationController::class)->group(function () {
+        Route::get('apply', 'create')->name('create');
+        Route::post('apply', 'store')->name('store');
+    });
+});
+Route::prefix('deliveryman')->name('deliveryman.')->group(function () {
+    Route::controller(DeliveryManController::class)->group(function () {
+        Route::get('apply', 'create')->name('create');
+        Route::post('apply', 'store')->name('store');
+    });
+});
+Route::get('/image-proxy', function () {
+$url = request('url');
+if (!$url) {
+abort(400, 'Missing url parameter');
+}
+$response = Http::withHeaders([
+'User-Agent' => 'Laravel-Image-Proxy'
+])->get($url);
+return response($response->body(), $response->status())
+->header('Content-Type', $response->header('Content-Type'))
+->header('Access-Control-Allow-Origin', '*');
 });
 
-//Deliveryman Registration
-Route::group(['prefix' => 'deliveryman', 'as' => 'deliveryman.'], function () {
-    Route::get('apply', 'DeliveryManController@create')->name('create');
-    Route::post('apply', 'DeliveryManController@store')->name('store');
 
+// MILI payment gateways retained across the V4.2 core upgrade.
+Route::prefix('payment')->group(function () {
+    Route::prefix('bog')->name('bog.')->group(function () {
+        Route::get('pay', [BogPaymentController::class, 'payment'])->name('pay');
+        Route::any('success', [BogPaymentController::class, 'success'])->name('success');
+        Route::any('fail', [BogPaymentController::class, 'fail'])->name('fail');
+        Route::any('callback', [BogPaymentController::class, 'callback'])->name('callback');
+    });
+    Route::prefix('flitt')->name('flitt.')->group(function () {
+        Route::get('pay', [FlittPaymentController::class, 'payment'])->name('pay');
+        Route::get('mobile-intent', [FlittPaymentController::class, 'mobileIntent'])->name('mobile-intent');
+        Route::get('mobile-status', [FlittPaymentController::class, 'mobileStatus'])->name('mobile-status');
+        Route::any('mobile-return', [FlittPaymentController::class, 'mobileReturn'])->name('mobile-return');
+        Route::any('response', [FlittPaymentController::class, 'response'])->name('response');
+        Route::post('callback', [FlittPaymentController::class, 'callback'])->name('callback');
+    });
+    Route::prefix('keepz')->name('keepz.')->group(function () {
+        Route::get('pay', [KeepzPaymentController::class, 'payment'])->name('pay');
+        Route::any('success', [KeepzPaymentController::class, 'success'])->name('success');
+        Route::any('fail', [KeepzPaymentController::class, 'fail'])->name('fail');
+        Route::post('callback', [KeepzPaymentController::class, 'callback'])->name('callback');
+    });
 });
-

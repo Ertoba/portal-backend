@@ -1,15 +1,15 @@
 
-<h3 class="modal-title text-center fs-20 mb-4">{{ translate('messages.stock_Update') }}</h3>
+<h3 class="modal-title text-center fs-20 mb-4">{{ translate('messages.stock Update') }}</h3>
 
 <div class="d-flex gap-4 mb-3">
     <img class="rounded img--100"  src="{{ $product['image_full_url'] ?? asset('public/assets/admin/img/160x160/img2.jpg') }}"alt="product">
     <div>
         <div class="d-flex gap-2 fs-16 align-items-center">
-            <span>{{ translate('Product_Name') }} </span>:
+            <span>{{ translate('Product name') }} </span>:
             <span class="font-semibold text-dark">{{ $product->name }}</span>
         </div>
         <div class="d-flex gap-2 fs-16 align-items-center">
-            <span>{{ translate('Current_Stock') }} </span>:
+            <span>{{ translate('Current stock') }} </span>:
             <span class="font-semibold text-dark">{{ max((int) $product->stock, 0) }}</span>
         </div>
     </div>
@@ -18,7 +18,7 @@
 <input name="product_id" value="{{$product->id}}" type="hidden" class="initial-hidden">
 <div id="quantity" class="form-group error-wrapper">
     <label for="total_qty" class="input-label" >
-        {{translate('Total_Quantity')}}
+        {{translate('Total quantity')}}
     </label>
     <input type="number" min="1" class="form-control" id="total_qty" name="current_stock" value="{{ max((int) $product->stock, 0) }}" id="quantity" {{count(json_decode($product['variations'],true)) > 0 ? 'readonly' : ""}}>
 </div>
@@ -31,8 +31,8 @@
             <tr>
                 <th class="text--title fs-20">{{ translate('SL') }}</th>
                 <th class="text--title fs-20">{{ translate('Variant') }}</th>
-                <th class="text--title fs-20 ">{{ translate('Price') }}</th>
-                <th class="text--title fs-20 ">{{ translate('Stock') }}</th>
+                <th class="text--title fs-20 ">{{ translate('price') }}</th>
+                <th class="text--title fs-20 ">{{ translate('stock') }}</th>
             </tr>
         </thead>
         <tbody id="set-rows">

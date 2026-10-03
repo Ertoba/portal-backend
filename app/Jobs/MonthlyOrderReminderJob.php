@@ -5,13 +5,15 @@ namespace App\Jobs;
 use App\CentralLogics\Helpers;
 use App\Models\MonthlyOrderReminder;
 use App\Models\NotificationMessage;
-use App\Models\UserNotification;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Log;
+use App\Support\Notification\SendNotification;
+use App\Support\Notification\NotificationMessages;
+use App\Support\Notification\NotificationText;
 
 class MonthlyOrderReminderJob implements ShouldQueue
 {
@@ -55,28 +57,15 @@ class MonthlyOrderReminderJob implements ShouldQueue
                 return;
             }
 
-            $title = translate('Time to Reorder!');
-            $body  = Helpers::text_variable_data_format(
+            $title = translate('Time to reorder!');
+            $body  = NotificationText::format(
                 value: $message,
                 user_name: trim(($user->f_name ?? '') . ' ' . ($user->l_name ?? '')),
             );
 
-            $data = [
-                'title'       => $title,
-                'description' => $body,
-                'body'        => $body,
-                'image'       => '',
-                'type'        => 'monthly_order_reminder',
-                'order_id'    => (string) $this->reminder->order_id,
-                'data_id'     => (string) $this->reminder->id,
-            ];
+            $data = NotificationMessages::monthlyOrderReminder($title, $body, $this->reminder->order_id, $this->reminder->id);
 
-            Helpers::send_push_notif_to_device($user->cm_firebase_token, $data);
-
-            UserNotification::create([
-                'data'    => json_encode($data),
-                'user_id' => $user->id,
-            ]);
+            SendNotification::pushToCustomer($user->id, $user->cm_firebase_token, $data);
 
             $this->reminder->update([
                 'status'      => 'sent',

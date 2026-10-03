@@ -31,7 +31,7 @@
                                 alt="">
                             <img src="{{ asset('/public/assets/landing/img/check-2.svg') }}" class="check-white"
                                 alt=""> <span>
-                                {{ translate('messages.mobile_app') }} </span>
+                                {{ translate('Mobile app') }} </span>
                         </li>
                     @endif
                     @if ($package->chat)
@@ -40,7 +40,7 @@
                                 alt="">
                             <img src="{{ asset('/public/assets/landing/img/check-2.svg') }}" class="check-white"
                                 alt=""> <span>
-                                {{ translate('messages.chatting_options') }} </span>
+                                {{ translate('messages.Chatting options') }} </span>
                         </li>
                     @endif
                     @if ($package->review)
@@ -49,7 +49,7 @@
                                 alt="">
                             <img src="{{ asset('/public/assets/landing/img/check-2.svg') }}" class="check-white"
                                 alt=""> <span>
-                                {{ translate('messages.review_section') }} </span>
+                                {{ translate('Review section') }} </span>
                         </li>
                     @endif
                     @if ($package->self_delivery)
@@ -58,7 +58,7 @@
                                 alt="">
                             <img src="{{ asset('/public/assets/landing/img/check-2.svg') }}" class="check-white"
                                 alt=""> <span>
-                                {{ translate('messages.self_delivery') }} </span>
+                                {{ translate('messages.Self delivery') }} </span>
                         </li>
                     @endif
                     @if ($package->max_order == 'unlimited')
@@ -67,7 +67,7 @@
                                 alt="">
                             <img src="{{ asset('/public/assets/landing/img/check-2.svg') }}" class="check-white"
                                 alt=""> <span>
-                                {{ isset($module) && $module == 'rental' ?  translate('messages.Unlimited_Trips') : translate('messages.Unlimited_Orders') }} </span>
+                                {{ isset($module) && $module == 'rental' ?  translate('Unlimited trips') : translate('Unlimited orders') }} </span>
                         </li>
                     @else
                         <li>
@@ -85,7 +85,7 @@
                                 alt="">
                             <img src="{{ asset('/public/assets/landing/img/check-2.svg') }}" class="check-white"
                                 alt=""> <span>
-                                {{ translate('messages.Unlimited_uploads') }} </span>
+                                {{ translate('messages.Unlimited uploads') }} </span>
                         </li>
                     @else
                         <li>
@@ -105,10 +105,9 @@
     @endforelse
 </div>
 <script>
-    // Deferred init — owl carousel may not be loaded yet when this partial renders
     window._initPackageSlider = function() {
         if (typeof jQuery === 'undefined' || typeof jQuery.fn.owlCarousel === 'undefined') return;
-        if (jQuery('.plan-slider').data('owl.carousel')) return; // already initialized
+        if (jQuery('.plan-slider').data('owl.carousel')) return;
 
         jQuery('.plan-slider').owlCarousel({
             loop: false,

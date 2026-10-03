@@ -13,6 +13,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: shivammathur/setup-php@v2
         with:
           php-version: '8.3'
@@ -20,17 +22,19 @@ jobs:
           coverage: none
       - name: Validate entitlement protection
         run: bash tools/verify-mili-entitlement-protection.sh
-      - name: Lint critical MILI files
+      - name: Lint all Backend PHP source
         run: |
-          php -l app/helpers.php
-          php -l app/Http/Middleware/MiliFeatureAccessMiddleware.php
-          php -l app/Services/MiliEntitlementService.php
+          find app bootstrap config routes database Modules \
+            -type f -name '*.php' ! -name '*.blade.php' -print0 \
+            | sort -z \
+            | xargs -0 -n1 php -l
       - name: Composer metadata validation
         run: composer validate --no-check-publish
       - name: Promote validated V4.2 source to main
         if: ${{ hashFiles('.mili-v42-source-merged') != '' }}
         run: |
           grep -Fxq 'MILI-V42-SOURCE-MERGED-20261002' .mili-v42-source-merged
-          git fetch origin main
+          git fetch --no-tags origin main upgrade-v42-20261002
+          test "$(git rev-parse HEAD)" = "$(git rev-parse origin/upgrade-v42-20261002)"
           git merge-base --is-ancestor origin/main HEAD
           git push origin HEAD:main

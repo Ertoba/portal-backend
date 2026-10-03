@@ -15,11 +15,13 @@ class BroadcastServiceProvider extends ServiceProvider
     public function boot()
     {
         Broadcast::routes();
-        // Broadcast::routes(['middleware' => ['web', 'auth:api']]);
 
         require base_path('routes/channels.php');
 
-        if(addon_published_status('RideShare')){
+        // is_file as well as the published flag: an older RideShare copy left behind by a
+        // partial update is still "published" but need not ship this file, and a failed
+        // require here runs on every request.
+        if (addon_published_status('RideShare') && is_file(base_path('Modules/RideShare/Routes/channels.php'))) {
             require base_path('Modules/RideShare/Routes/channels.php');
         }
     }

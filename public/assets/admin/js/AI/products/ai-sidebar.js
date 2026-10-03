@@ -1,5 +1,10 @@
 document.addEventListener('DOMContentLoaded', function () {
     const modal = document.getElementById('aiAssistantModal');
+
+    if (!modal) {
+        return;
+    }
+
     const modalTitle = document.getElementById('modalTitle');
     const mainContent = document.getElementById('mainAiContent');
     const uploadContent = document.getElementById('uploadImageContent');
@@ -220,16 +225,12 @@ $(document).on('click', '#analyzeImageBtn', function () {
             $('#default_name').val(response.data.title);
 
             const aiFile = originalimageInput.files[0];
-            if (aiFile) {
+            const targetImageInput = document.getElementById('image-input');
+            if (aiFile && targetImageInput) {
                 const dt1 = new DataTransfer();
                 dt1.items.add(aiFile);
-                document.getElementById('image-input').files = dt1.files;
+                targetImageInput.files = dt1.files;
                 $("#image-input").trigger("change");
-
-                const dt2 = new DataTransfer();
-                dt2.items.add(aiFile);
-                // document.getElementById('image-input2').files = dt2.files;
-                // $("#image-input2").trigger("change");
             }
 
             const $nameField = $('#default_name');
@@ -287,7 +288,8 @@ $(document).on('click', '#analyzeImageBtn', function () {
 });
 
 function waitForDescriptionAndContinue(lang, $button, $imageRemoveButton, $chooseImageBtn,requestType) {
-    const descriptionField = $('#description-' + lang);
+    let descriptionField = $('#description-' + lang);
+    if (!descriptionField.length) descriptionField = $('#description-default');
     let checkCount = 0;
     const maxChecks = 15;
 
@@ -306,7 +308,7 @@ function waitForDescriptionAndContinue(lang, $button, $imageRemoveButton, $choos
                 ? '.variation_setup_auto_fill'
                 : '.other_variation_setup_auto_fill';
 
-           const remainingSteps = [
+           const remainingSteps = window.aiSidebarSteps || [
                 { selector: '.general_setup_auto_fill', delay: 2000 },
                 { selector: '.price_others_auto_fill', delay: 3000 },
                 { selector: variationSelector, delay: 4500 },
@@ -321,7 +323,9 @@ function waitForDescriptionAndContinue(lang, $button, $imageRemoveButton, $choos
                             scrollTop: $card.offset().top - 100
                         }, 800);
                     }
-                    $(step.selector + '[data-lang="' + lang + '"]').trigger('click');
+                    let $stepBtn = $(step.selector + '[data-lang="' + lang + '"]');
+                    if (!$stepBtn.length) $stepBtn = $(step.selector).first();
+                    $stepBtn.trigger('click');
                 }, step.delay);
             });
 

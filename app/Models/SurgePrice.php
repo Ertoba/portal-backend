@@ -4,11 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Builder;
+use App\Traits\Model\HasTranslationsTrait;
 
 class SurgePrice extends Model
 {
-    use HasFactory;
+    use HasFactory, HasTranslationsTrait;
 
     protected $casts = [
         'custom_days' => 'array',
@@ -17,11 +17,6 @@ class SurgePrice extends Model
         'module_ids' => 'array',
         'customer_note_status' => 'integer',
     ];
-
-    public function translations()
-    {
-        return $this->morphMany(Translation::class, 'translationable');
-    }
 
     public function zone()
     {
@@ -33,27 +28,13 @@ class SurgePrice extends Model
         return $this->hasMany(SurgePriceDate::class, 'surge_price_id');
     }
 
-    public function getSurgePriceNameAttribute($value){
-        if (count($this->translations) > 0) {
-            foreach ($this->translations as $translation) {
-                if ($translation['key'] == 'surge_price_name') {
-                    return $translation['value'];
-                }
-            }
-        }
-
-        return $value;
+    public function getSurgePriceNameAttribute($value)
+    {
+        return $this->translatedAttribute('surge_price_name', $value);
     }
-    public function getCustomerNoteAttribute($value){
-        if (count($this->translations) > 0) {
-            foreach ($this->translations as $translation) {
-                if ($translation['key'] == 'customer_note') {
-                    return $translation['value'];
-                }
-            }
-        }
-
-        return $value;
+    public function getCustomerNoteAttribute($value)
+    {
+        return $this->translatedAttribute('customer_note', $value);
     }
 
     public function scopeActive($query)
@@ -61,12 +42,4 @@ class SurgePrice extends Model
         return $query->where('status', '=', 1);
     }
 
-    protected static function booted()
-    {
-        static::addGlobalScope('translate', function (Builder $builder) {
-            $builder->with(['translations' => function($query){
-                return $query->where('locale', app()->getLocale());
-            }]);
-        });
-    }
 }

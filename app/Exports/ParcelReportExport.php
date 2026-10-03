@@ -39,8 +39,8 @@ class ParcelReportExport implements FromView, ShouldAutoSize, WithStyles, WithCo
 
     public function styles(Worksheet $sheet)
     {
-        $sheet->getStyle('A2:K3')->getFont()->setBold(true);
-        $sheet->getStyle('A3:K3')->getFill()->applyFromArray([
+        $sheet->getStyle('A2:L3')->getFont()->setBold(true);
+        $sheet->getStyle('A3:L3')->getFill()->applyFromArray([
             'fillType' => 'solid',
             'rotation' => 0,
             'color' => ['rgb' => '9F9F9F'],
@@ -49,7 +49,7 @@ class ParcelReportExport implements FromView, ShouldAutoSize, WithStyles, WithCo
         $sheet->setShowGridlines(false);
 
         return [
-            'A1:K' . ($this->data['orders']->count() + 3) => [
+            'A1:L' . ($this->data['orders']->count() + 3) => [
                 'borders' => [
                     'allBorders' => [
                         'borderStyle' => Border::BORDER_THIN,
@@ -64,7 +64,7 @@ class ParcelReportExport implements FromView, ShouldAutoSize, WithStyles, WithCo
     {
         return [
             AfterSheet::class => function (AfterSheet $event) {
-                $event->sheet->getStyle('A1:K1')
+                $event->sheet->getStyle('A1:L1')
                     ->getAlignment()
                     ->setHorizontal(Alignment::HORIZONTAL_CENTER)
                     ->setVertical(Alignment::VERTICAL_CENTER);
@@ -72,18 +72,18 @@ class ParcelReportExport implements FromView, ShouldAutoSize, WithStyles, WithCo
                     ->getAlignment()
                     ->setHorizontal(Alignment::HORIZONTAL_CENTER)
                     ->setVertical(Alignment::VERTICAL_CENTER);
-                $event->sheet->getStyle('A3:K' . ($this->data['orders']->count() + 3))
+                $event->sheet->getStyle('A3:L' . ($this->data['orders']->count() + 3))
                     ->getAlignment()
                     ->setHorizontal(Alignment::HORIZONTAL_CENTER)
                     ->setVertical(Alignment::VERTICAL_CENTER);
-                $event->sheet->getStyle('D2:K2')
+                $event->sheet->getStyle('D2:L2')
                     ->getAlignment()
                     ->setHorizontal(Alignment::HORIZONTAL_LEFT)
                     ->setVertical(Alignment::VERTICAL_CENTER);
 
-                $event->sheet->mergeCells('A1:K1');
+                $event->sheet->mergeCells('A1:L1');
                 $event->sheet->mergeCells('A2:C2');
-                $event->sheet->mergeCells('D2:K2');
+                $event->sheet->mergeCells('D2:L2');
                 $event->sheet->getRowDimension(2)->setRowHeight(100);
                 $event->sheet->getDefaultRowDimension()->setRowHeight(30);
             },

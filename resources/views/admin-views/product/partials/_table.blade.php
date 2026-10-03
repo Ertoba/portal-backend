@@ -15,10 +15,10 @@
             </a>
         </td>
         <td>
-            {{ Str::limit($item->category ? $item->category->name : translate('messages.category_deleted'), 20, '...') }}
+            {{ Str::limit($item->category ? $item->category->name : translate('messages.Category deleted'), 20, '...') }}
         </td>
         <td>
-            {{ Str::limit($item->store ? $item->store->name : translate('messages.store deleted!'), 20, '...') }}
+            {{ Str::limit($item->store ? $item->store->name : translate('messages.Store deleted'), 20, '...') }}
         </td>
         <td>
             <div class="text-right mw--85px">
@@ -36,13 +36,13 @@
         </td>
         <td>
             <div class="btn--container justify-content-center">
-                <a class="btn action-btn btn--primary btn-outline-primary"
+                <a class="btn action-btn action-btn--edit"
                     href="{{ route('admin.item.edit', [$item['id']]) }}"
-                    title="{{ translate('messages.edit_item') }}"><i class="tio-edit"></i>
+                    title="{{ translate('Edit item') }}"><i class="tio-edit"></i>
                 </a>
-                <a class="btn  action-btn btn--danger btn-outline-danger form-alert" href="javascript:"
-                    data-id="food-{{ $item['id'] }}" data-message="{{ translate('messages.Want_to_delete_this_item') }}"
-                    title="{{ translate('messages.delete_item') }}"><i
+                <a class="btn action-btn action-btn--delete form-alert" href="javascript:"
+                    data-id="food-{{ $item['id'] }}" data-message="{{ translate('Want to delete this item?') }}"
+                    title="{{ translate('messages.Delete item') }}"><i
                         class="tio-delete-outlined"></i>
                 </a>
                 <form action="{{ route('admin.item.delete', [$item['id']]) }}" method="post"

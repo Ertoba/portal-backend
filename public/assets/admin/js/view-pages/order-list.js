@@ -23,14 +23,7 @@ $(document).ready(function() {
         window.location.href = $(this).val();
     });
 
-    $('.filter-button-show').on('click', function(){
-        $('#datatableFilterSidebar,.hs-unfold-overlay').show(500)
-    });
-
-    $('.filter-button-hide').on('click', function(){
-        $('#datatableFilterSidebar,.hs-unfold-overlay').hide(500)
-    });
-
+    // Opening/closing the filter panel is handled globally by filter-drawer.js.
 
     // INITIALIZATION OF TAGIFY
     // =======================================================

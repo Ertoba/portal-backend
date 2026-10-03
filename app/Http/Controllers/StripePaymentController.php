@@ -1,6 +1,8 @@
 <?php
 
 namespace App\Http\Controllers;
+use App\CentralLogics\Helpers;
+use App\Services\System\BusinessSettingService;
 
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Contracts\View\Factory;
@@ -12,20 +14,20 @@ use Illuminate\Routing\Controller;
 use Illuminate\Routing\Redirector;
 use Illuminate\Support\Facades\Validator;
 use App\Models\PaymentRequest;
-use App\Traits\Processor;
+use App\Traits\System\ProcessorTrait;
 use Stripe\Checkout\Session;
 use Stripe\Stripe;
 
 class StripePaymentController extends Controller
 {
-    use Processor;
+    use ProcessorTrait;
 
     private $config_values;
     private PaymentRequest $payment;
 
     public function __construct(PaymentRequest $payment)
     {
-        $config = $this->payment_config('stripe', 'payment_config');
+        $config = $this->paymentConfig('stripe', 'payment_config');
         if (!is_null($config) && $config->mode == 'live') {
             $this->config_values = json_decode($config->live_values);
         } elseif (!is_null($config) && $config->mode == 'test') {
@@ -41,12 +43,12 @@ class StripePaymentController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return response()->json($this->response_formatter(GATEWAYS_DEFAULT_400, null, $this->error_processor($validator)), 400);
+            return response()->json($this->responseFormatter(GATEWAYS_DEFAULT_400, null, $this->errorProcessor($validator)), 400);
         }
 
         $data = $this->payment::where(['id' => $request['payment_id']])->where(['is_paid' => 0])->first();
         if (!isset($data)) {
-            return response()->json($this->response_formatter(GATEWAYS_DEFAULT_204), 200);
+            return response()->json($this->responseFormatter(GATEWAYS_DEFAULT_204), 200);
         }
         $config = $this->config_values;
 
@@ -57,7 +59,7 @@ class StripePaymentController extends Controller
     {
         $data = $this->payment::where(['id' => $request['payment_id']])->where(['is_paid' => 0])->first();
         if (!isset($data)) {
-            return response()->json($this->response_formatter(GATEWAYS_DEFAULT_204), 200);
+            return response()->json($this->responseFormatter(GATEWAYS_DEFAULT_204), 200);
         }
         $payment_amount = $data['payment_amount'];
 
@@ -70,16 +72,16 @@ class StripePaymentController extends Controller
             $business_name = $business->business_name ?? "my_business";
             $business_logo = $business->business_logo ??  url('/');
         } else {
-            $logo = \App\Models\BusinessSetting::where('key', 'logo')->first();
-            $logo = $logo->value ?? '';
+            $logo = Helpers::get_business_settings('logo', false) ?? '';
             $name = \App\Models\BusinessSetting::where('key', 'business_name')->first();
             $business_name = $name->value ?? "my_business";
-            $business_logo = $logo ? asset('storage/app/public/business/' . $logo): url('/');
+            $business_logo = $logo
+                ? Helpers::get_full_url('business', $logo, app(BusinessSettingService::class)->findStorageDisk('logo'))
+                : url('/');
         }
 
         $currencies_not_supported_cents = ['BIF', 'CLP', 'DJF', 'GNF', 'JPY', 'KMF', 'KRW', 'MGA', 'PYG', 'RWF', 'UGX', 'VND', 'VUV', 'XAF', 'XOF', 'XPF'];
         $checkout_session = Session::create([
-            // 'payment_method_types' => ['card'],
             'line_items' => [[
                 'price_data' => [
                     'currency' => $currency_code ?? 'usd',
@@ -102,7 +104,7 @@ class StripePaymentController extends Controller
     public function success(Request $request)
     {
         Stripe::setApiKey($this->config_values->api_key);
-        $session = Session::retrieve($request->get('session_id'));
+        $session = Session::retrieve($request->input('session_id'));
 
         if ($session->payment_status == 'paid' && $session->status == 'complete') {
 
@@ -118,13 +120,13 @@ class StripePaymentController extends Controller
                 call_user_func($data->success_hook, $data);
             }
 
-            return $this->payment_response($data,'success');
+            return $this->paymentResponse($data,'success');
         }
         $payment_data = $this->payment::where(['id' => $request['payment_id']])->first();
         if (isset($payment_data) && function_exists($payment_data->failure_hook)) {
             call_user_func($payment_data->failure_hook, $payment_data);
         }
-        return $this->payment_response($payment_data,'fail');
+        return $this->paymentResponse($payment_data,'fail');
     }
 
     public function canceled(Request $request): JsonResponse|Redirector|RedirectResponse|Application
@@ -133,6 +135,6 @@ class StripePaymentController extends Controller
         if (isset($payment_data) && function_exists($payment_data->failure_hook)) {
             call_user_func($payment_data->failure_hook, $payment_data);
         }
-        return $this->payment_response($payment_data, 'cancel');
+        return $this->paymentResponse($payment_data, 'cancel');
     }
 }

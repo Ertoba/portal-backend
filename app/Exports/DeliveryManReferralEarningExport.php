@@ -37,7 +37,6 @@ class DeliveryManReferralEarningExport implements  FromView, ShouldAutoSize, Wit
     public function columnWidths(): array
     {
         return [
-            // 'C' => 45,
         ];
     }
 

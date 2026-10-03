@@ -3,6 +3,9 @@
 namespace App\Builder;
 
 use App\CentralLogics\Helpers;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
+use App\Services\Item\ItemService;
+use App\Http\Resources\Common\Item\CartProductResource;
 use App\Models\Cart;
 use App\Models\Item;
 use App\Models\ItemCampaign;
@@ -27,15 +30,6 @@ class CartProvider implements CartProviderContract
         return $this->withTotals($rows);
     }
 
-    /**
-     * Backfill `store_id` on this shopper's rows that predate the column
-     * being persisted (or were written by an older build). The host tax and
-     * coupon pipelines filter the cart by `store_id`, so a NULL there makes
-     * them read an empty cart and silently return zero tax. We only touch
-     * rows whose item actually belongs to the active store, so a multi-store
-     * shopper never gets another store's rows reassigned. Idempotent and a
-     * cheap no-op once healed.
-     */
     private function healMissingStoreId(): void
     {
         [$shopperId, $isGuest, $moduleId, $storeId] = $this->shopperContext();
@@ -60,12 +54,6 @@ class CartProvider implements CartProviderContract
         }
     }
 
-    /**
-     * Add (upsert) an item to the cart. Price comes from the client — same
-     * convention as the existing API CartController. When a line with the
-     * same combo (item_id, item_type, variation, add_on_ids, add_on_qtys)
-     * already exists, we sum its quantity and price with the incoming line.
-     */
     public function add(array $payload): array
     {
         [$shopperId, $isGuest, $moduleId, $storeId] = $this->shopperContext();
@@ -74,7 +62,7 @@ class CartProvider implements CartProviderContract
         $item       = $modelClass::find($itemId);
 
         if (!$item) {
-            throw ValidationException::withMessages(['item_id' => __('Item not found')]);
+            throw ValidationException::withMessages(['item_id' => translate('No data found')]);
         }
         if ((int) ($item->store_id ?? 0) !== (int) $storeId) {
             throw ValidationException::withMessages(['item_id' => __('Item does not belong to this store')]);
@@ -100,20 +88,11 @@ class CartProvider implements CartProviderContract
             $cart->user_id = $shopperId;
             $cart->is_guest = $isGuest;
             $cart->module_id = $moduleId;
-            // Persist store_id on the row (mirrors the legacy API
-            // CartController). The host tax/coupon pipelines filter the cart
-            // by `store_id`; without it `getCalculatedTax` reads an empty
-            // cart and returns tax_amount=0.
             $cart->store_id = (int) $storeId;
             $cart->item_id = $itemId;
             $cart->item_type = $modelClass;
             $cart->quantity = $qtyDelta;
             $cart->price = $priceDelta;
-            // Match the existing 6amMart API CartController convention
-            // (json_encode at the call site even though the Cart model has
-            // an 'array' cast on these columns). The cast then encodes a
-            // second time, which is exactly the storage shape the rest of
-            // the platform reads — see cart_product_data_formatting et al.
             $cart->variation   = \json_encode($variation);
             $cart->add_on_ids  = \json_encode($addOnIds);
             $cart->add_on_qtys = \json_encode($addOnQtys);
@@ -124,10 +103,6 @@ class CartProvider implements CartProviderContract
         return $this->list();
     }
 
-    /**
-     * Update an existing line. Variation/addons fall back to stored values
-     * when omitted; price is taken from the payload.
-     */
     public function update(int $cartId, array $payload): array
     {
         [$shopperId, $isGuest, $moduleId, $storeId] = $this->shopperContext();
@@ -241,13 +216,6 @@ class CartProvider implements CartProviderContract
             });
     }
 
-    /**
-     * Build a stable identity for a variation array that ignores the
-     * volatile fields (`price`, `stock`) — non-food cart variations carry
-     * `stock` as the per-add quantity, which mutates between adds, and
-     * `price` can drift with discounts. The combination's `type` (and for
-     * food, `name` + `values.label`) uniquely identifies the choice.
-     */
     private function variationMatchKey(array $variation): string
     {
         $normalized = \array_map(static function ($entry) {
@@ -260,6 +228,31 @@ class CartProvider implements CartProviderContract
         return \json_encode($normalized) ?: '';
     }
 
+    private function tracksStock($itemModel): bool
+    {
+        $moduleType = $itemModel?->module?->module_type;
+
+        return $moduleType ? (bool) config("module.{$moduleType}.stock", false) : false;
+    }
+
+    private function remainingStock($itemModel, array $variation): int
+    {
+        if (!$itemModel || !$this->tracksStock($itemModel)) {
+            return 0;
+        }
+
+        $type = $variation[0]['type'] ?? null;
+        if ($type !== null) {
+            foreach ($this->decodeJson($itemModel->getAttributes()['variations'] ?? null) as $combo) {
+                if (\is_array($combo) && (string) ($combo['type'] ?? '') === (string) $type) {
+                    return (int) ($combo['stock'] ?? 0);
+                }
+            }
+        }
+
+        return (int) ($itemModel->getAttributes()['stock'] ?? 0);
+    }
+
     /* ─── formatting ──────────────────────────────────────── */
 
     private function formatRow(Cart $row): array
@@ -269,9 +262,7 @@ class CartProvider implements CartProviderContract
         $addOnQtys = $this->decodeJson($row->add_on_qtys);
 
         $itemModel = $row->item;
-        $formatted = $itemModel
-            ? Helpers::cart_product_data_formatting($itemModel, $variation, $addOnIds, $addOnQtys, false, \app()->getLocale())
-            : null;
+        $formatted = $itemModel ? $this->formatCartItem($itemModel, $variation, $addOnIds, $addOnQtys) : null;
 
         return [
             'id'          => $row->id,
@@ -283,12 +274,11 @@ class CartProvider implements CartProviderContract
             'add_on_ids'  => $addOnIds,
             'add_on_qtys' => $addOnQtys,
             'item'        => $formatted,
+            'tracksStock' => $this->tracksStock($itemModel),
+            'stock'       => $this->remainingStock($itemModel, $variation),
         ];
     }
 
-    /**
-     * `price` on each row is the line total, so subtotal is a straight sum.
-     */
     private function withTotals(array $rows): array
     {
         $count    = \count($rows);
@@ -348,7 +338,7 @@ class CartProvider implements CartProviderContract
         $max = (int) ($item->maximum_cart_quantity ?? 0);
         if ($max > 0 && $qty > $max) {
             throw ValidationException::withMessages([
-                'quantity' => __('messages.maximum_cart_quantity_exceeded'),
+                'quantity' => __('messages.Maximum cart quantity exceeded'),
             ]);
         }
     }
@@ -368,5 +358,12 @@ class CartProvider implements CartProviderContract
             return \is_array($decoded) ? $decoded : [];
         }
         return [];
+    }
+
+    private function formatCartItem(Model $item, array $variation, array $addOnIds, array $addOnQtys): array
+    {
+        app(ItemService::class)->loadCartProductRelations(new EloquentCollection([$item]));
+
+        return (new CartProductResource($item, $variation, $addOnIds, $addOnQtys))->toArray(request());
     }
 }

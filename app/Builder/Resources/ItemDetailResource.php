@@ -5,6 +5,9 @@ namespace App\Builder\Resources;
 use App\Builder\Support\CardContext;
 use App\Builder\Support\ItemPricing;
 use App\CentralLogics\Helpers;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
+use App\Services\Item\ItemService;
+use App\Http\Resources\Common\Item\ProductResource;
 use App\Models\Item;
 use App\Models\Review;
 use Illuminate\Support\Str;
@@ -15,7 +18,7 @@ class ItemDetailResource
 {
     public static function fromOne(Item $item): array
     {
-        $formatted = Helpers::product_data_formatting($item, false, true, app()->getLocale());
+        $formatted = self::productPayload($item);
         $images = collect($formatted['images_full_url'] ?? [])
             ->filter()
             ->values();
@@ -28,8 +31,17 @@ class ItemDetailResource
             $images = collect([asset('public/assets/admin/img/100x100/2.jpg')]);
         }
 
-        $variationCombinations = self::detailVariationCombinations($formatted, $item);
         $pricing = ItemPricing::compute($item);
+
+        $moduleType  = $formatted['module_type'] ?? $item->module?->module_type;
+        $tracksStock = (bool) data_get(config('module.' . $moduleType), 'stock', false);
+        $stock       = (int) ($formatted['stock'] ?? $item->stock ?? 0);
+
+        $variationCombinations = self::detailVariationCombinations($formatted, $item, $tracksStock);
+
+        // Live review average so the detail headline agrees with the card and
+        // the admin panel, rather than the drift-prone stored avg_rating column.
+        $live = self::liveRating($item);
 
         $data = [
             'id' => $item->id,
@@ -41,14 +53,13 @@ class ItemDetailResource
             'discountPercent' => $pricing['discountPercent'],
             'discountType' => $pricing['discountType'],
             'discountSource' => $pricing['discountSource'],
-            'rating' => round((float) ($formatted['avg_rating'] ?? $item->avg_rating ?? 0), 1),
-            'ratingCount' => (int) ($formatted['rating_count'] ?? $item->rating_count ?? 0),
+            'rating' => $live['rating'],
+            'ratingCount' => $live['count'],
             'reviewCount' => (int) ($formatted['review_count'] ?? 0),
-            // 5-bucket distribution for the "View All" reviews drawer's
-            // summary bars. One GROUP-BY query, status-approved only.
             'ratingDistribution' => self::ratingDistribution($item),
-            'inStock' => ((int) ($formatted['stock'] ?? $item->stock ?? 0)) > 0,
-            'stock' => (int) ($formatted['stock'] ?? $item->stock ?? 0),
+            'tracksStock' => $tracksStock,
+            'inStock' => !$tracksStock || $stock > 0,
+            'stock' => $stock,
             'lowStockThreshold' => 10,
             'maxCartQuantity' => (int) ($item->maximum_cart_quantity ?? 0),
             'moduleType' => $formatted['module_type'] ?? $item->module?->module_type,
@@ -58,6 +69,7 @@ class ItemDetailResource
             'variationCombinations' => $variationCombinations,
             'tags' => $item->tags->pluck('tag')->filter()->values()->all(),
             'description' => (string) ($formatted['description'] ?? ''),
+            'videoUrl' => $item->video ?: null,
             'reviews' => self::detailReviews($item),
             'isWishlist' => app(WishlistProvider::class)->has((int) $item->id),
             'nutritionsName' => collect($formatted['nutritions_name'] ?? [])->filter()->values()->all(),
@@ -101,15 +113,12 @@ class ItemDetailResource
             ->all();
     }
 
-    private static function detailVariationCombinations($formatted, Item $item): array
+    private static function detailVariationCombinations($formatted, Item $item, bool $tracksStock): array
     {
         return collect($formatted['variations'] ?? [])
             ->filter(fn ($variation) => \filled($variation['type'] ?? null))
-            ->mapWithKeys(function ($variation) use ($item) {
+            ->mapWithKeys(function ($variation) use ($item, $tracksStock) {
                 $originalPrice = (float) ($variation['price'] ?? 0);
-                // Apply the same flash/store/product discount to each
-                // combination's base price so the modal's per-combo display
-                // matches the page header (and the cart line).
                 $pricing = ItemPricing::compute($item, $originalPrice);
                 $stock = (int) ($variation['stock'] ?? 0);
 
@@ -119,31 +128,16 @@ class ItemDetailResource
                         'oldPrice' => $pricing['oldPrice'],
                         'discountPercent' => $pricing['discountPercent'],
                         'stock' => $stock,
-                        'inStock' => $stock > 0,
+                        'inStock' => !$tracksStock || $stock > 0,
                     ],
                 ];
             })
             ->all();
     }
 
-    /**
-     * Map a single Review row to the shape the frontend expects.
-     * Shared between `detailReviews()` (first-page bootstrap) and
-     * `ItemProvider::listReviews()` (paginated drawer fetch) so both
-     * surfaces render identical cards.
-     */
     public static function reviewRow(Review $review): array
     {
-        $images = collect(Helpers::decodeJsonToArray($review->attachment ?? []))
-            ->map(function ($image) {
-                if (!\is_string($image) || $image === '') {
-                    return null;
-                }
-                return Helpers::get_full_url('review', $image, 'public');
-            })
-            ->filter()
-            ->values()
-            ->all();
+        $images = $review->attachment_full_url;
 
         return [
             'id' => $review->id,
@@ -164,12 +158,6 @@ class ItemDetailResource
 
     private static function detailReviews(Item $item): array
     {
-        // Reviewer identity should display regardless of which storefront
-        // the active customer is on — otherwise reviews authored by users
-        // bound to a different tenant fall out of `$review->customer` and
-        // render as "Customer" with no avatar. Re-query the reviews here
-        // (instead of using the upstream-loaded `$item->reviews`
-        // collection) so the `customer` eager-load can drop HostScope.
         $reviews = $item->reviews()
             ->where('status', 1)
             ->take(12)
@@ -188,6 +176,31 @@ class ItemDetailResource
     private static function normalizeVariationValue(string $value): string
     {
         return \preg_replace('/\s+/', '', \trim($value)) ?? '';
+    }
+
+    /**
+     * Live AVG(rating)/COUNT(*) for a single item from the reviews table (all
+     * reviews, matching how the admin panel counts them). Falls back to the
+     * stored avg_rating/rating_count columns when the item has no reviews.
+     * Public so FoodDetailsResource (the quick-view modal) can reuse it.
+     */
+    public static function liveRating(Item $item): array
+    {
+        $agg = Review::query()
+            ->where('item_id', $item->id)
+            ->selectRaw('AVG(rating) as avg_rating, COUNT(*) as rating_count')
+            ->first();
+
+        $count = (int) ($agg->rating_count ?? 0);
+
+        return [
+            'rating' => $count > 0
+                ? round((float) $agg->avg_rating, 1)
+                : round((float) ($item->avg_rating ?? 0), 1),
+            'count'  => $count > 0
+                ? $count
+                : (int) ($item->rating_count ?? 0),
+        ];
     }
 
     /**
@@ -211,5 +224,12 @@ class ItemDetailResource
             $out[$star] = (int) ($rows[$star] ?? 0);
         }
         return $out;
+    }
+
+    private static function productPayload(Item $item): array
+    {
+        app(ItemService::class)->loadProductRelations(new EloquentCollection([$item]));
+
+        return (new ProductResource($item))->toArray(request());
     }
 }

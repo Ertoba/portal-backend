@@ -5,33 +5,16 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
-/**
- * Per-storefront identity scoping — adds (tenant_id, sub_tenant_id) to
- * `users` and the auth aux tables so the same email/phone can register
- * independently against the host site and each storefront.
- *
- * Existing rows default to (0, 0) — the host scope — so host login flows
- * are unaffected. The host AuthProvider adapter and the HostScope global
- * scope (added in Phase 2) keep host-side code reading host-only rows
- * without further changes.
- *
- * Sentinel `0` (not NULL) is used because MySQL treats NULLs as distinct
- * in UNIQUE indexes — using NULL would silently allow duplicate
- * (email, NULL, NULL) rows on the host scope, defeating the constraint.
- */
 return new class extends Migration
 {
     public function up(): void
     {
-        // ── users ─────────────────────────────────────────────────────
-        // users.email is NOT unique today (verified by schema dump), so
-        // only phone & ref_code uniques need swapping.
         $this->dropIndexIfExists('users', 'users_phone_unique');
         $this->dropIndexIfExists('users', 'users_ref_code_unique');
 
         Schema::table('users', function (Blueprint $t) {
-            $t->unsignedBigInteger('tenant_id')->default(0)->after('id');
-            $t->unsignedBigInteger('sub_tenant_id')->default(0)->after('tenant_id');
+            $t->unsignedBigInteger('tenant_id')->default(0);
+            $t->unsignedBigInteger('sub_tenant_id')->default(0);
 
             $t->unique(['email', 'tenant_id', 'sub_tenant_id'], 'users_email_scope_unique');
             $t->unique(['phone', 'tenant_id', 'sub_tenant_id'], 'users_phone_scope_unique');
@@ -39,8 +22,6 @@ return new class extends Migration
             $t->index(['tenant_id', 'sub_tenant_id'], 'users_scope_index');
         });
 
-        // ── phone_verifications ──────────────────────────────────────
-        // Has phone_unique today — swap for composite.
         $this->dropIndexIfExists('phone_verifications', 'phone_verifications_phone_unique');
 
         Schema::table('phone_verifications', function (Blueprint $t) {
@@ -50,15 +31,12 @@ return new class extends Migration
             $t->index(['tenant_id', 'sub_tenant_id'], 'phone_verifications_scope_index');
         });
 
-        // ── password_resets ──────────────────────────────────────────
-        // No unique constraints today; just add scope columns + index.
         Schema::table('password_resets', function (Blueprint $t) {
             $t->unsignedBigInteger('tenant_id')->default(0);
             $t->unsignedBigInteger('sub_tenant_id')->default(0);
             $t->index(['tenant_id', 'sub_tenant_id'], 'password_resets_scope_index');
         });
 
-        // ── email_verifications ──────────────────────────────────────
         Schema::table('email_verifications', function (Blueprint $t) {
             $t->unsignedBigInteger('tenant_id')->default(0);
             $t->unsignedBigInteger('sub_tenant_id')->default(0);
@@ -96,10 +74,6 @@ return new class extends Migration
         });
     }
 
-    /**
-     * Drop a named index only if it exists. Survives partial / inconsistent
-     * states across dev databases.
-     */
     private function dropIndexIfExists(string $table, string $index): void
     {
         $rows = DB::select(

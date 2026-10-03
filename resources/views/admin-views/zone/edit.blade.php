@@ -9,18 +9,17 @@
 @section('content')
 
     <div class="content container-fluid">
-        <!-- Page Header -->
         <div class="page-header">
             <h1 class="page-header-title">
                 <span class="page-header-icon">
                     <img src="{{asset('public/assets/admin/img/edit.png')}}" class="w--26" alt="">
                 </span>
                 <span>
-                   {{ translate('edit_zone')}}
+                   {{ translate('Edit zone')}}
                 </span>
             </h1>
+            <p class="page-header-desc">{{ translate('Redraw this zone on the map, or change what it is allowed to run.') }}</p>
         </div>
-        <!-- End Page Header -->
         <form action="{{route('admin.business-settings.zone.update', $zone->id)}}" method="post" id="zone_form" class="shadow--card">
             @csrf
             <div class="row">
@@ -29,7 +28,7 @@
                         <div class="zone-setup-top">
                             <h6 class="subtitle">{{ translate('Instructions') }}</h6>
                             <p>
-                                {{ translate('Create_&_connect_dots_in_a_specific_area_on_the_map_to_add_a_new_business_zone.') }}
+                                {{ translate('Create & connect dots in a specific area on the map to add a new business zone.') }}
                             </p>
                         </div>
                         <div class="zone-setup-item">
@@ -37,7 +36,7 @@
                                 <i class="tio-hand-draw"></i>
                             </div>
                             <div class="info">
-                                {{ translate('Use_this_‘Hand_Tool’_to_find_your_target_zone.') }}
+                                {{ translate('Use this \'Hand Tool\' to find your target zone.') }}
                             </div>
                         </div>
                         <div class="zone-setup-item">
@@ -45,7 +44,7 @@
                                 <i class="tio-free-transform"></i>
                             </div>
                             <div class="info">
-                                {{ translate('Use_this_‘Shape_Tool’_to_point_out_the_areas_and_connect_the_dots._Minimum_3_points/dots_are_required.') }}
+                                {{ translate('Use this \'shape tool\' to point out the areas and connect the dots.') }} {{ translate('Minimum points') }}: 3
                             </div>
                         </div>
                         <div class="instructions-image mt-4">
@@ -60,7 +59,7 @@
                                 <li class="nav-item">
                                     <a class="nav-link lang_link active"
                                     href="#"
-                                    id="default-link">{{translate('messages.default')}}</a>
+                                    id="default-link">{{translate('Default')}}</a>
                                 </li>
                                 @foreach ($language as $lang)
                                     <li class="nav-item">
@@ -77,12 +76,12 @@
                         @if($language)
                             <div class="row lang_form" id="default-form">
                                 <div class="form-group col-6">
-                                    <label class="input-label" for="exampleFormControlInput1">{{translate('messages.name')}} ({{ translate('messages.default') }})</label>
-                                    <input type="text" name="name[]" class="form-control" placeholder="{{translate('messages.new_zone')}}" maxlength="191" value="{{$zone?->getRawOriginal('name')}}"  >
+                                    <label class="input-label" for="exampleFormControlInput1">{{translate('Name')}} ({{ translate('Default') }}) <span class="text-danger">*</span></label>
+                                    <input type="text" name="name[]" class="form-control" placeholder="{{translate('messages.New zone')}}" maxlength="191" value="{{$zone?->getRawOriginal('name')}}"  >
                                 </div>
                                 <div class="form-group col-6">
-                                    <label class="input-label" for="exampleFormControlInput1">{{translate('messages.display_name')}} ({{ translate('messages.default') }})</label>
-                                    <input type="text" name="display_name[]" class="form-control" placeholder="{{translate('messages.display_name')}}" maxlength="191" value="{{$zone?->getRawOriginal('display_name')}}"  >
+                                    <label class="input-label" for="exampleFormControlInput1">{{translate('messages.Display name')}} ({{ translate('Default') }}) <span class="text-danger">*</span></label>
+                                    <input type="text" name="display_name[]" class="form-control" placeholder="{{translate('messages.Display name')}}" maxlength="191" value="{{$zone?->getRawOriginal('display_name')}}"  >
                                 </div>
                                 <input type="hidden" name="lang[]" value="default">
                             </div>
@@ -103,12 +102,12 @@
                                     ?>
                                 <div class="row lang_form d-none" id="{{$lang}}-form">
                                     <div class="form-group col-6">
-                                        <label class="input-label" for="exampleFormControlInput1">{{translate('messages.name')}} ({{strtoupper($lang)}})</label>
-                                        <input type="text" name="name[]" class="form-control" placeholder="{{translate('messages.new_zone')}}" maxlength="191" value="{{$translate[$lang]['name']??''}}"  >
+                                        <label class="input-label" for="exampleFormControlInput1">{{translate('Name')}} ({{strtoupper($lang)}})</label>
+                                        <input type="text" name="name[]" class="form-control" placeholder="{{translate('messages.New zone')}}" maxlength="191" value="{{$translate[$lang]['name']??''}}"  >
                                     </div>
                                     <div class="form-group col-6">
-                                        <label class="input-label" for="exampleFormControlInput1">{{translate('messages.display_name')}} ({{strtoupper($lang)}})</label>
-                                        <input type="text" name="display_name[]" class="form-control" placeholder="{{translate('messages.display_name')}}" maxlength="191" value="{{$translate[$lang]['display_name']??''}}"  >
+                                        <label class="input-label" for="exampleFormControlInput1">{{translate('messages.Display name')}} ({{strtoupper($lang)}})</label>
+                                        <input type="text" name="display_name[]" class="form-control" placeholder="{{translate('messages.Display name')}}" maxlength="191" value="{{$translate[$lang]['display_name']??''}}"  >
                                     </div>
                                     <input type="hidden" name="lang[]" value="{{$lang}}">
                                 </div>
@@ -116,8 +115,8 @@
                             @endif
                         <div class="form-group d-none">
                             <label class="input-label" for="exampleFormControlInput1">{{ translate('messages.Coordinates') }}
-                                <span class="form-label-secondary" data-toggle="tooltip" data-placement="right" data-original-title="{{translate('messages.draw_your_zone_on_the_map')}}">
-                                    {{translate('messages.draw_your_zone_on_the_map')}}
+                                <span class="form-label-secondary" data-toggle="tooltip" data-placement="right" data-original-title="{{translate('messages.Draw your zone on the map')}}">
+                                    {{translate('messages.Draw your zone on the map')}}
                                 </span>
                             </label>
                                 <textarea type="text" rows="8" name="coordinates" id="coordinates" class="form-control" readonly>@foreach($zone->coordinates[0]->toArray()['coordinates'] as $key=>$coords)<?php if(count($zone->coordinates[0]->toArray()['coordinates']) != $key+1) {if($key != 0) echo(','); ?>({{$coords[1]}}, {{$coords[0]}})<?php } ?>@endforeach</textarea>
@@ -125,15 +124,15 @@
 
 
                         <div class="map-warper rounded mt-0">
-                            <input id="pac-input" class="controls rounded initial--33" title="{{translate('messages.search_your_location_here')}}" type="text" placeholder="{{translate('messages.search_here')}}"/>
+                            <input id="pac-input" class="controls rounded initial--33" title="{{translate('Search your location')}}" type="text" placeholder="{{translate('Search')}}"/>
                             <div id="map-canvas" class="initial--34"></div>
                         </div>
                     </div>
                 </div>
             </div>
             <div class="btn--container mt-3 justify-content-end">
-                <button id="reset_btn" type="reset" class="btn btn--reset">{{translate('messages.reset')}}</button>
-                <button type="submit" class="btn btn--primary">{{translate('messages.Save_changes')}}</button>
+                <button id="reset_btn" type="reset" class="btn btn--reset"><i class="tio-refresh"></i> {{translate('messages.Reset')}}</button>
+                <button type="submit" class="btn btn--primary"><i class="tio-save"></i> {{translate('messages.Save changes')}}</button>
             </div>
         </form>
     </div>
@@ -142,7 +141,7 @@
 
 @push('script_2')
 <script async
-    src="https://maps.googleapis.com/maps/api/js?key={{\App\Models\BusinessSetting::where('key', 'map_api_key')->first()->value}}&libraries=places,marker&v=quarterly&loading=async&callback=initialize"></script>
+    src="https://maps.googleapis.com/maps/api/js?key={{\App\CentralLogics\Helpers::get_business_settings('map_api_key', false)}}&libraries=places,marker&v=quarterly&loading=async&callback=initialize"></script>
 <script>
     "use strict";
     auto_grow();
@@ -205,7 +204,7 @@
                 map: map,
                 content: vertexElement(canClose),
                 gmpClickable: canClose,
-                title: canClose ? "{{ translate('Click_to_close_polygon') }}" : "",
+                title: canClose ? "{{ translate('Click to close polygon') }}" : "",
                 zIndex: 9999,
             });
             // AdvancedMarkerElement fires 'gmp-click', not 'click'.
@@ -215,6 +214,10 @@
     }
 
     function clearDrawing() {
+        // Nothing drawn yet means #coordinates still holds the zone's original, valid
+        // boundary (pre-filled server-side). The "X" resets an in-progress edit — it must
+        // not also wipe that untouched, still-required value.
+        const hadDrawing = polygonClosed || (drawingPolyline && drawingPolyline.getPath().getLength() > 0);
         if (drawingPolygon) {
             drawingPolygon.setMap(null);
             drawingPolygon = null;
@@ -227,7 +230,9 @@
         polygonClosed = false;
         vertexMarkers.forEach(function (m) { m.map = null; });
         vertexMarkers = [];
-        $('#coordinates').val('');
+        if (hadDrawing) {
+            $('#coordinates').val('');
+        }
         auto_grow();
     }
 
@@ -336,7 +341,7 @@
 
     function initialize() {
         let myLatlng = new google.maps.LatLng({{trim(explode(' ',$zone->center)[1], 'POINT()')}}, {{trim(explode(' ',$zone->center)[0], 'POINT()')}});
-        const mapId = "{{ \App\Models\BusinessSetting::where('key', 'map_api_key')->first()->value }}"
+        const mapId = "{{ \App\CentralLogics\Helpers::get_business_settings('map_api_key', false) }}"
 
         let myOptions = {
             zoom: 13,
@@ -486,7 +491,7 @@
             const startedDrawing = drawingPolyline && drawingPolyline.getPath().getLength() > 0;
             if (startedDrawing && !polygonClosed) {
                 e.preventDefault();
-                toastr.warning("{{ translate('Connect_the_last_dot_to_the_first_dot_to_close_the_polygon_before_saving') }}");
+                toastr.warning("{{ translate('Connect the last dot to the first dot to close the polygon before saving') }}");
                 return false;
             }
         });

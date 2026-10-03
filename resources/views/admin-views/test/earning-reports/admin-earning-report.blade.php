@@ -1,6 +1,6 @@
 @extends('layouts.admin.app')
 
-@section('title', translate('messages.new_page'))
+@section('title', translate('messages.New page'))
 
 @push('css_or_js')
     <meta name="csrf-token" content="{{ csrf_token() }}">
@@ -8,40 +8,37 @@
 
 @section('content')
     <div class="content container-fluid">
-        <!-- Page Header -->
         <div class="page-header pb-0">
             <div>
                 <h1 class="page-header-title text-capitalize">
-                    {{translate('messages.Admin_Earning_Report') }}
+                    {{translate('Admin earning report') }}
                 </h1>
+                <p class="page-header-desc">{{ translate('What you kept from every order, broken down by commission, fees and charges.') }}</p>
                 <p>
-                    {{translate('messages.Comprehensive_financial_overview_and_analytics')}}
+                    {{translate('messages.Comprehensive financial overview and analytics')}}
                 </p>
             </div>
         </div>
-        <!-- End Page Header -->
 
         <div class="js-nav-scroller hs-nav-scroller-horizontal mb-20">
-            <!-- Nav -->
             <ul class="nav mb-0 nav-tabs border-0 nav--tabs nav--pills">
                 <li class="nav-item">
-                    <a class="nav-link active" href="#" aria-disabled="true">{{ translate('messages.All Modules') }}</a>
+                    <a class="nav-link active" href="#" aria-disabled="true">{{ translate('All modules') }}</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="#" aria-disabled="true">{{ translate('messages.Rental Module') }}</a>
+                    <a class="nav-link" href="#" aria-disabled="true">{{ translate('Rental module') }}</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="#" aria-disabled="true">{{ translate('messages.Ride Share') }}</a>
+                    <a class="nav-link" href="#" aria-disabled="true">{{ translate('Ride share') }}</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="#" aria-disabled="true">{{ translate('messages.Parcel Module') }}</a>
+                    <a class="nav-link" href="#" aria-disabled="true">{{ translate('Parcel module') }}</a>
                 </li>
             </ul>
-            <!-- End Nav -->
         </div>
 
         <div class="card card-body mb-20">
-            <h3 class="mb-20">{{ translate('messages.Filter_Data') }}</h3>
+            <h3 class="mb-20">{{ translate('Filter data') }}</h3>
             <form action="">
                 <div class="__bg-F8F9FC-card">
                     <div class="row g-3 date-filter-wrapper">
@@ -60,78 +57,49 @@
                         </div>
                         <div class="col-lg-3 col-sm-6">
                             <label for="" class="input-label text-capitalize">
-                                {{ translate('messages.Date_Range') }}
+                                {{ translate('Date range') }}
                             </label>
                             <select name="" id="" class="form-control custom-select date-type-select">
-                                <option value="all" selected>{{ translate('messages.All_Time') }}</option>
-                                <option value="month">{{ translate('messages.This_Month') }}</option>
-                                <option value="year">{{ translate('messages.This_Year') }}</option>
-                                <option value="custom">{{ translate('messages.Custom_Range') }}</option>
+                                <option value="all" selected>{{ translate('All time') }}</option>
+                                <option value="month">{{ translate('This month') }}</option>
+                                <option value="year">{{ translate('This year') }}</option>
+                                <option value="custom">{{ translate('Custom range') }}</option>
                             </select>
                         </div>
                         <div class="col-lg-3 col-sm-6 custom-date-div">
                             <label for="" class="input-label text-capitalize">
-                                {{ translate('messages.Start_Date') }} <span class="text-danger">*</span>
+                                {{ translate('Start date') }} <span class="text-danger">*</span>
                             </label>
                             <input type="date" name="" id="" class="form-control">
                         </div>
                         <div class="col-lg-3 col-sm-6 custom-date-div">
                             <label for="" class="input-label text-capitalize">
-                                {{ translate('messages.End_Date') }} <span class="text-danger">*</span>
+                                {{ translate('End date') }} <span class="text-danger">*</span>
                             </label>
                             <input type="date" name="" id="" class="form-control">
                         </div>
                     </div>
                 </div>
 
-                <!-- Rental Module Here -->
-                {{--<div class="__bg-F8F9FC-card">
-                    <div class="row g-3 date-filter-wrapper">
-                        <div class="col-lg-4 col-sm-6">
-                            <label for="" class="input-label text-capitalize">
-                                {{ translate('messages.Date_Range') }}
-                            </label>
-                            <select name="" id="" class="form-control custom-select date-type-select">
-                                <option value="all" selected>{{ translate('messages.All_Time') }}</option>
-                                <option value="month">{{ translate('messages.This_Month') }}</option>
-                                <option value="year">{{ translate('messages.This_Year') }}</option>
-                                <option value="custom">{{ translate('messages.Custom_Range') }}</option>
-                            </select>
-                        </div>
-                        <div class="col-lg-4 col-sm-6 custom-date-div">
-                            <label for="" class="input-label text-capitalize">
-                                {{ translate('messages.Start_Date') }} <span class="text-danger">*</span>
-                            </label>
-                            <input type="date" name="" id="" class="form-control">
-                        </div>
-                        <div class="col-lg-4 col-sm-6 custom-date-div">
-                            <label for="" class="input-label text-capitalize">
-                                {{ translate('messages.End_Date') }} <span class="text-danger">*</span>
-                            </label>
-                            <input type="date" name="" id="" class="form-control">
-                        </div>
-                    </div>
-                </div>--}}
-                <!-- Rental Module End -->
 
                 <div class="btn--container mt-4 justify-content-end">
-                    <button id="resetbtn" type="reset" class="btn btn--reset">{{ translate('messages.reset') }}</button>
-                    <button type="submit" class="btn btn--primary">{{ translate('messages.filter') }}</button>
+                    <button id="resetbtn" type="reset" class="btn btn--reset"><i class="tio-refresh"></i> {{ translate('messages.Reset') }}</button>
+                    <button type="submit" class="btn btn--primary"><i class="tio-filter-list"></i> {{ translate('messages.Filter') }}</button>
                 </div>
             </form>
         </div>
 
         <div class="card card-body mb-20">
             <div class="mb-3">
-                <h3 class="mb-1">{{ translate('messages.Earnings_Summary') }}</h3>
-                <p class="fs-12 mb-0">{{ translate('messages.Breakdown of Revenue Sources and Performance') }}</p>
+                <h3 class="mb-1">{{ translate('Earnings summary') }}</h3>
+                <p class="fs-12 mb-0">{{ translate('Breakdown of revenue sources and performance') }}</p>
             </div>
             <div class="row g-3 mb-20">
                 <div class="col-lg-4 col-md-6">
                     <div class="card-shape-in position-relative bg-success-gradient text-white rounded-10 p-3 p-xxl-20 d-flex gap-2 justify-content-between align-items-start overflow-hidden z-2 cursor-pointer"
                         data-url="">
                         <div class="flex-grow-1">
-                            <div class="opacity-lg fs-14 mb-2">{{ translate('messages.Total_Earnings') }}</div>
+                            <div class="opacity-lg fs-14 mb-2">{{ translate('Total earnings') }}</div>
                             <h2 class="font-medium fs-32 fs-18-mobile text-white mb-2">$84,000.00</h2>
                             <div class="opacity-lg fs-14">↑ 12.5% {{ translate('messages.vs last period') }}</div>
                         </div>
@@ -145,7 +113,7 @@
                     <div class="card-shape-in position-relative bg-warning-gradient text-white rounded-10 p-3 p-xxl-20 d-flex gap-2 justify-content-between align-items-start overflow-hidden z-2 cursor-pointer"
                         data-url="">
                         <div class="flex-grow-1">
-                            <div class="opacity-lg fs-14 mb-2">{{ translate('messages.Total_Expenses') }}</div>
+                            <div class="opacity-lg fs-14 mb-2">{{ translate('Total expenses') }}</div>
                             <h2 class="font-medium fs-32 fs-18-mobile text-white mb-2">$4,000.00</h2>
                             <div class="opacity-lg fs-14">↓ 3.2% {{ translate('messages.vs last period') }}</div>
                         </div>
@@ -161,10 +129,10 @@
                         <div class="flex-grow-1">
                             <div class="fs-14 mb-2">
                                 <span class="opacity-lg">
-                                    {{ translate('messages.Net_Profit') }}
+                                    {{ translate('Net profit') }}
                                 </span>
                                 <span data-toggle="tooltip" data-placement="right"
-                                    data-original-title="{{ translate('messages.Content Need')}}"
+                                    data-original-title="{{ translate('Content need')}}"
                                     class="text-white tio-info fs-16 m-0"></span>
                             </div>
                             <h2 class="font-medium fs-32 fs-18-mobile text-white mb-2">$80,000.00</h2>
@@ -177,7 +145,7 @@
                     </div>
                 </div>
             </div>
-            <h4 class="mb-3">{{ translate('messages.Earnings_Breakdown') }}</h4>
+            <h4 class="mb-3">{{ translate('Earnings breakdown') }}</h4>
             <div class="border rounded-10 p-3 p-xxl-20 mb-4">
                 <div class="row g-lg-5 gx-3 gy-3 earnings-breakdown">
                     <div class="col-lg-4 col-sm-6">
@@ -187,10 +155,10 @@
                                 <img src="{{asset('public/assets/admin/img/report/earning-breakdown/order-commission.svg')}}"
                                     alt="earning">
                             </div>
-                            <div class="mb-2">{{ translate('messages.Order Commission') }}</div>
+                            <div class="mb-2">{{ translate('Order commission') }}</div>
                             <h2 class="font-medium fs-24 fs-18-mobile mb-2">$42,500.00</h2>
                             <div class="fs-12 bg-light px-2 py-1 rounded-lg w-max-content">50.6%
-                                {{ translate('messages.of Total') }}</div>
+                                {{ translate('Of total') }}</div>
                         </div>
                     </div>
                     <div class="col-lg-4 col-sm-6">
@@ -200,10 +168,10 @@
                                 <img src="{{asset('public/assets/admin/img/report/earning-breakdown/subscription.svg')}}"
                                     alt="earning">
                             </div>
-                            <div class="mb-2">{{ translate('messages.Subscription Packages') }}</div>
+                            <div class="mb-2">{{ translate('Subscription packages') }}</div>
                             <h2 class="font-medium fs-24 fs-18-mobile mb-2">$18,700.00</h2>
                             <div class="fs-12 bg-light px-2 py-1 rounded-lg w-max-content">50.6%
-                                {{ translate('messages.of Total') }}</div>
+                                {{ translate('Of total') }}</div>
                         </div>
                     </div>
                     <div class="col-lg-4 col-sm-6">
@@ -216,7 +184,7 @@
                             <div class="mb-2">{{ translate('messages.Service Charge Collected') }}</div>
                             <h2 class="font-medium fs-24 fs-18-mobile mb-2">$42,500.00</h2>
                             <div class="fs-12 bg-light px-2 py-1 rounded-lg w-max-content">50.6%
-                                {{ translate('messages.of Total') }}</div>
+                                {{ translate('Of total') }}</div>
                         </div>
                     </div>
                     <div class="col-lg-4 col-sm-6">
@@ -226,10 +194,10 @@
                                 <img src="{{asset('public/assets/admin/img/report/earning-breakdown/additional-fees.svg')}}"
                                     alt="earning">
                             </div>
-                            <div class="mb-2">{{ translate('messages.Additional Fees') }}</div>
+                            <div class="mb-2">{{ translate('Additional fees') }}</div>
                             <h2 class="font-medium fs-24 fs-18-mobile mb-2">$42,500.00</h2>
                             <div class="fs-12 bg-light px-2 py-1 rounded-lg w-max-content">50.6%
-                                {{ translate('messages.of Total') }}</div>
+                                {{ translate('Of total') }}</div>
                         </div>
                     </div>
                     <div class="col-lg-4 col-sm-6">
@@ -239,10 +207,10 @@
                                 <img src="{{asset('public/assets/admin/img/report/earning-breakdown/tax-collected.svg')}}"
                                     alt="earning">
                             </div>
-                            <div class="mb-2">{{ translate('messages.Tax Collected') }}</div>
+                            <div class="mb-2">{{ translate('Tax collected') }}</div>
                             <h2 class="font-medium fs-24 fs-18-mobile mb-2">$42,500.00</h2>
                             <div class="fs-12 bg-light px-2 py-1 rounded-lg w-max-content">50.6%
-                                {{ translate('messages.of Total') }}</div>
+                                {{ translate('Of total') }}</div>
                         </div>
                     </div>
                     <div class="col-lg-4 col-sm-6">
@@ -255,12 +223,12 @@
                             <div class="mb-2">{{ translate('messages.Other Income') }}</div>
                             <h2 class="font-medium fs-24 fs-18-mobile mb-2">$42,500.00</h2>
                             <div class="fs-12 bg-light px-2 py-1 rounded-lg w-max-content">50.6%
-                                {{ translate('messages.of Total') }}</div>
+                                {{ translate('Of total') }}</div>
                         </div>
                     </div>
                 </div>
             </div>
-            <h4 class="mb-3">{{ translate('messages.Expenses_Breakdown') }}</h4>
+            <h4 class="mb-3">{{ translate('Expenses breakdown') }}</h4>
             <div class="border rounded-10 p-3 p-xxl-20">
                 <div class="row g-lg-5 gx-3 gy-3 earnings-breakdown">
                     <div class="col-lg-3 col-sm-6">
@@ -270,10 +238,10 @@
                                 <img src="{{asset('public/assets/admin/img/report/earning-breakdown/free-delivery.svg')}}"
                                     alt="earning">
                             </div>
-                            <div class="mb-2">{{ translate('messages.Free Delivery Costs') }}</div>
+                            <div class="mb-2">{{ translate('Free delivery costs') }}</div>
                             <h2 class="font-medium fs-24 fs-18-mobile mb-2">$2,400.00</h2>
                             <div class="fs-12 bg-light px-2 py-1 rounded-lg w-max-content">50.6%
-                                {{ translate('messages.of Total') }}</div>
+                                {{ translate('Of total') }}</div>
                         </div>
                     </div>
                     <div class="col-lg-3 col-sm-6">
@@ -283,10 +251,10 @@
                                 <img src="{{asset('public/assets/admin/img/report/earning-breakdown/coupon-offers.svg')}}"
                                     alt="earning">
                             </div>
-                            <div class="mb-2">{{ translate('messages.Coupon Offers') }}</div>
+                            <div class="mb-2">{{ translate('Coupon offers') }}</div>
                             <h2 class="font-medium fs-24 fs-18-mobile mb-2">$800.00</h2>
                             <div class="fs-12 bg-light px-2 py-1 rounded-lg w-max-content">50.6%
-                                {{ translate('messages.of Total') }}</div>
+                                {{ translate('Of total') }}</div>
                         </div>
                     </div>
                     <div class="col-lg-3 col-sm-6">
@@ -299,7 +267,7 @@
                             <div class="mb-2">{{ translate('messages.Refunds') }}</div>
                             <h2 class="font-medium fs-24 fs-18-mobile mb-2">$350.00</h2>
                             <div class="fs-12 bg-light px-2 py-1 rounded-lg w-max-content">50.6%
-                                {{ translate('messages.of Total') }}</div>
+                                {{ translate('Of total') }}</div>
                         </div>
                     </div>
                     <div class="col-lg-3 col-sm-6">
@@ -312,7 +280,7 @@
                             <div class="mb-2">{{ translate('messages.Tax Payments') }}</div>
                             <h2 class="font-medium fs-24 fs-18-mobile mb-2">$450.00</h2>
                             <div class="fs-12 bg-light px-2 py-1 rounded-lg w-max-content">50.6%
-                                {{ translate('messages.of Total') }}</div>
+                                {{ translate('Of total') }}</div>
                         </div>
                     </div>
                 </div>
@@ -322,7 +290,7 @@
             <div class="col-12">
                 <div class="card h-100">
                     <div class="card-header border-0 pb-0">
-                        <h3 class="mb-1 text-title">{{ translate('messages.Earnings Trend') }}</h3>
+                        <h3 class="mb-1 text-title">{{ translate('Earnings trend') }}</h3>
                     </div>
                     <div class="card-body px-1 px-sm-2 py-0">
                         <div id="earning-trend-chart"></div>
@@ -332,7 +300,7 @@
             <div class="col-lg-6">
                 <div class="card h-100">
                     <div class="card-header border-0 pb-0">
-                        <h3 class="mb-1 text-title">{{ translate('messages.Earnings vs Expenses') }}</h3>
+                        <h3 class="mb-1 text-title">{{ translate('Earnings vs expenses') }}</h3>
                     </div>
                     <div class="card-body px-0 py-0">
                         <div id="monthly-earning-expense-graph"></div>
@@ -342,7 +310,7 @@
             <div class="col-lg-6">
                 <div class="card h-100">
                     <div class="card-header border-0 pb-0">
-                        <h3 class="mb-1 text-title">{{ translate('messages.Earnings by Source') }}</h3>
+                        <h3 class="mb-1 text-title">{{ translate('Earnings by source') }}</h3>
                     </div>
                     <div class="card-body px-0 py-0">
                         <div id="earnings-pie-chart" class="chartjs-custom mx-auto" style="max-width:400px;"></div>
@@ -461,7 +429,7 @@
             </div>
             <div class="col-lg-6">
                 <div class="card card-body shadow-none h-100 pb-2">
-                    <h3 class="mb-3">{{ translate('messages.Zone-wise_Earnings') }}</h3>
+                    <h3 class="mb-3">{{ translate('Zone-wise earnings') }}</h3>
                     <div class="">
                         <div class="border-top py-3 d-flex gap-3 justify-content-between align-items-center flex-wrap">
                             <div class="flex-grow-1 d-flex gap-2 align-items-center">
@@ -552,12 +520,10 @@
             </div>
             <div class="col-12">
                 <div class="card card-body">
-                    <!-- Header -->
                     <div class="d-flex justify-content-between align-items-center gap-2 flex-wrap border-0 recent-transaction-header">
                         <div>
-                            <h3 class="mb-20">{{ translate('messages.Recent_Transactions') }}</h3>
+                            <h3 class="mb-20">{{ translate('Recent transactions') }}</h3>
                             <div class="js-nav-scroller hs-nav-scroller-horizontal">
-                                <!-- Nav -->
                                 <ul class="nav mb-0 flex-wrap gap-2 nav-tabs border-0 nav--tabs nav--pills">
                                     <li class="nav-item">
                                         <a class="nav-link active" href="#"
@@ -565,67 +531,59 @@
                                     </li>
                                     <li class="nav-item">
                                         <a class="nav-link" href="#"
-                                            aria-disabled="true">{{ translate('messages.Subscription Earnings') }}</a>
+                                            aria-disabled="true">{{ translate('Subscription earnings') }}</a>
                                     </li>
                                     <li class="nav-item">
                                         <a class="nav-link" href="#"
                                             aria-disabled="true">{{ translate('messages.Expenses') }}</a>
                                     </li>
                                 </ul>
-                                <!-- End Nav -->
                             </div>
                         </div>
                         <div class="search--button-wrapper justify-content-end">
                             <form class="m-0">
-                                <!-- Search -->
                                 <div class="input--group input-group input-group-merge input-group-flush">
                                     <input id="datatableSearch_" type="search" name="search" class="form-control" value=""
-                                        placeholder="{{ translate('Search_here') }}" aria-label="Search" required>
+                                        placeholder="{{ translate('Search') }}" aria-label="Search" required>
                                     <button type="submit" class="btn btn--secondary">
                                         <i class="tio-search"></i>
                                     </button>
                                 </div>
-                                <!-- End Search -->
                             </form>
                             <div
                                 class="d-flex flex-wrap gpa-3 justify-content-sm-end align-items-sm-center ml-0 mr-0 flex-grow-0">
-                                <!-- Unfold -->
                                 <div class="hs-unfold m-0">
                                     <a class="js-hs-unfold-invoker btn btn-sm btn-white dropdown-toggle min-height-40"
                                         href="javascript:;" data-hs-unfold-options='{
                                                     "target": "#usersExportDropdown",
                                                     "type": "css-animation"
                                                 }'>
-                                        <i class="tio-download-to mr-1"></i> {{ translate('messages.export') }}
+                                        <i class="tio-download-to mr-1"></i> {{ translate('messages.Export') }}
                                     </a>
 
                                     <div id="usersExportDropdown"
                                         class="hs-unfold-content dropdown-unfold dropdown-menu dropdown-menu-sm-right">
-                                        <span class="dropdown-header">{{ translate('messages.download_options') }}</span>
+                                        <span class="dropdown-header">{{ translate('messages.Download options') }}</span>
                                         <a id="export-excel" class="dropdown-item"
                                             href="{{route('admin.users.customer.wallet.export', ['type' => 'excel', request()->getQueryString()])}}">
                                             <img class="avatar avatar-xss avatar-4by3 mr-2"
                                                 src="{{ asset('public/assets/admin') }}/svg/components/excel.svg"
                                                 alt="Image Description">
-                                            {{ translate('messages.excel') }}
+                                            Excel
                                         </a>
                                         <a id="export-csv" class="dropdown-item"
                                             href="{{route('admin.users.customer.wallet.export', ['type' => 'csv', request()->getQueryString()])}}">
                                             <img class="avatar avatar-xss avatar-4by3 mr-2"
                                                 src="{{ asset('public/assets/admin') }}/svg/components/placeholder-csv-format.svg"
                                                 alt="Image Description">
-                                            {{ translate('messages.csv') }}
+                                            CSV
                                         </a>
                                     </div>
                                 </div>
-                                <!-- End Unfold -->
                             </div>
                         </div>
-                        <!-- End Row -->
                     </div>
-                    <!-- End Header -->
 
-                    <!-- Table All Module Here -->
                     <div class="table-responsive datatable-custom mt-4 z-index-2">
                         <table id="datatable"
                             class="table table-hover table-borderless table-thead-bordered table-nowrap table-align-middle card-table text-dark"
@@ -650,11 +608,11 @@
                                     <th class="border-0">
                                         {{ translate('SL') }}
                                     </th>
-                                    <th class="table-column-pl-0 border-0">{{ translate('messages.Transaction_ID') }}</th>
+                                    <th class="table-column-pl-0 border-0">{{ translate('messages.Transaction ID') }}</th>
                                     <th class="border-0">{{ translate('messages.Date') }}</th>
                                     <th class="border-0">{{ translate('messages.Source') }}</th>
-                                    <th class="border-0 text-center">{{ translate('messages.Earning_Source') }}</th>
-                                    <th class="border-0 text-right">{{ translate('messages.Amount') }}</th>
+                                    <th class="border-0 text-center">{{ translate('Earning source') }}</th>
+                                    <th class="border-0 text-right">{{ translate('Amount') }}</th>
                                 </tr>
                             </thead>
                             <tbody id="set-rows">
@@ -669,7 +627,7 @@
                                     <td>
                                         <div class="mb-1">Golden Spoon Diner</div>
                                         <div class="badge text-danger bg-danger bg-opacity-10 rounded-lg font-medium px-2">
-                                            {{ translate('messages.Vendor') }}</div>
+                                            {{ translate('messages.vendor') }}</div>
                                     </td>
                                     <td class="text-center">
                                         <div class="fs-12 mt-1">#ORD 100021</div>
@@ -687,12 +645,12 @@
                                     <td>
                                         <div class="mb-1">Golden Spoon Diner</div>
                                         <div class="badge text-info bg-info bg-opacity-10 rounded-lg font-medium px-2">
-                                            {{ translate('messages.Delivery_Man') }}</div>
+                                            {{ translate('Deliveryman') }}</div>
                                     </td>
                                     <td class="text-center">
                                         <div
                                             class="badge text-success bg-success bg-opacity-10 rounded-lg font-regular px-2">
-                                            {{ translate('messages.Delivery Commission') }}</div>
+                                            {{ translate('Delivery commission') }}</div>
                                         <div class="fs-12 mt-1">#ORD 100021</div>
                                     </td>
                                     <td class="text-right">$1,250.00</td>
@@ -708,12 +666,12 @@
                                     <td>
                                         <div class="mb-1">Golden Spoon Diner</div>
                                         <div class="badge text-danger bg-danger bg-opacity-10 rounded-lg font-medium px-2">
-                                            {{ translate('messages.Vendor') }}</div>
+                                            {{ translate('messages.vendor') }}</div>
                                     </td>
                                     <td class="text-center">
                                         <div
                                             class="badge text-success bg-success bg-opacity-10 rounded-lg font-regular px-2">
-                                            {{ translate('messages.Tax Collected') }}</div>
+                                            {{ translate('Tax collected') }}</div>
                                         <div class="fs-12 mt-1">#ORD 100021</div>
                                     </td>
                                     <td class="text-right">$1,250.00</td>
@@ -744,7 +702,7 @@
                                     <td>
                                         <div class="mb-1">Crimson Hearth Grill</div>
                                         <div class="badge text-danger bg-danger bg-opacity-10 rounded-lg font-medium px-2">
-                                            {{ translate('messages.Vendor') }}</div>
+                                            {{ translate('messages.vendor') }}</div>
                                     </td>
                                     <td class="text-center">
                                         <div class="fs-12 mt-1">#ORD 100021</div>
@@ -762,7 +720,7 @@
                                     <td>
                                         <div class="mb-1">Crimson Hearth Grill</div>
                                         <div class="badge text-danger bg-danger bg-opacity-10 rounded-lg font-medium px-2">
-                                            {{ translate('messages.Vendor') }}</div>
+                                            {{ translate('messages.vendor') }}</div>
                                     </td>
                                     <td class="text-center">
                                         <div class="fs-12 mt-1">#ORD 100021</div>
@@ -772,132 +730,9 @@
                             </tbody>
                         </table>
                     </div>
-                    <!-- Subscription Earnings tabs -->
-                    {{--<div class="table-responsive datatable-custom">
-                        <table id="datatable"
-                            class="table table-hover table-borderless table-thead-bordered table-nowrap table-align-middle card-table text-dark"
-                            data-hs-datatables-options='{
-                                "columnDefs": [{
-                                    "targets": [0],
-                                    "orderable": false
-                                }],
-                                "order": [],
-                                "info": {
-                                "totalQty": "#datatableWithPaginationInfoTotalQty"
-                                },
-                                "search": "#datatableSearch",
-                                "entries": "#datatableEntries",
-                                "pageLength": 25,
-                                "isResponsive": false,
-                                "isShowPaging": false,
-                                "paging":false
-                            }'>
-                            <thead class="thead-light">
-                                <tr>
-                                    <th class="border-0">
-                                        {{ translate('SL') }}
-                                    </th>
-                                    <th class="table-column-pl-0 border-0">{{ translate('messages.Transaction_ID') }}</th>
-                                    <th class="border-0">{{ translate('messages.Date') }}</th>
-                                    <th class="border-0">{{ translate('messages.Vendor') }}</th>
-                                    <th class="border-0 text-center">{{ translate('messages.Earning_Source') }}</th>
-                                    <th class="border-0 text-right">{{ translate('messages.Amount') }}</th>
-                                </tr>
-                            </thead>
-                            <tbody id="set-rows">
-                                <tr>
-                                    <td>1</td>
-                                    <td class="font-medium">TXN001</td>
-                                    <td>
-                                        28 Dec 2024
-                                        <br>
-                                        11:09 pm
-                                    </td>
-                                    <td>
-                                        <div class="mb-1">Golden Spoon Diner</div>
-                                    </td>
-                                    <td class="text-center">
-                                        <div
-                                            class="badge title-clr fw-normal bg-warning bg-opacity-10 rounded-lg px-2 font-regular">
-                                            {{ translate('messages.Upgrade subscription') }}</div>
-                                    </td>
-                                    <td class="text-right">$1,250.00</td>
-                                </tr>
-                                <tr>
-                                    <td>1</td>
-                                    <td class="font-medium">TXN001</td>
-                                    <td>
-                                        28 Dec 2024
-                                        <br>
-                                        11:09 pm
-                                    </td>
-                                    <td>
-                                        <div class="mb-1">Golden Spoon Diner</div>
-                                    </td>
-                                    <td class="text-center">
-                                        <div
-                                            class="badge title-clr fw-normal bg-opacity-theme-10 bg-secondary rounded-lg px-2 font-regular">
-                                            {{ translate('messages.Upgrade subscription') }}</div>
-                                    </td>
-                                    <td class="text-right">$1,250.00</td>
-                                </tr>
-                                <tr>
-                                    <td>1</td>
-                                    <td class="font-medium">TXN001</td>
-                                    <td>
-                                        28 Dec 2024
-                                        <br>
-                                        11:09 pm
-                                    </td>
-                                    <td>
-                                        <div class="mb-1">Golden Spoon Diner</div>
-                                    </td>
-                                    <td class="text-center">
-                                        <div
-                                            class="badge title-clr fw-normal bg-warning bg-opacity-10 rounded-lg px-2 font-regular">
-                                            {{ translate('messages.Upgrade subscription') }}</div>
-                                    </td>
-                                    <td class="text-right">$1,250.00</td>
-                                </tr>
-                                <tr>
-                                    <td>1</td>
-                                    <td class="font-medium">TXN001</td>
-                                    <td>
-                                        28 Dec 2024
-                                        <br>
-                                        11:09 pm
-                                    </td>
-                                    <td>
-                                        <div class="mb-1">Golden Spoon Diner</div>
-                                    </td>
-                                    <td class="text-center">
-                                        <div
-                                            class="badge title-clr fw-normal bg-opacity-theme-10 bg-secondary rounded-lg px-2 font-regular">
-                                            {{ translate('messages.Upgrade subscription') }}</div>
-                                    </td>
-                                    <td class="text-right">$1,250.00</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div> --}}
-
-                    {{-- <div class="empty--data">
-                        <img src="{{ asset('public/assets/admin/svg/illustrations/sorry.svg') }}" alt="public">
-                        <h5>
-                            {{ translate('no_data_found') }}
-                        </h5>
-                    </div> --}}
 
 
-                    <!-- End Table -->
-                    {{-- <div class="page-area px-4 pb-3">
-                        <div class="d-flex align-items-center justify-content-end">
-                            <div>
-                                {!! $customers->withQueryString()->links() !!}
-                            </div>
-                        </div>
-                    </div> --}}
-                    <!-- End Footer -->
+
 
                 </div>
             </div>
@@ -906,9 +741,7 @@
 @endsection
 
 @push('script_2')
-    <!-- Apex Charts -->
     <script src="{{ asset('/public/assets/admin/js/apex-charts/apexcharts.js') }}"></script>
-    <!-- Apex Charts -->
     <script>
         let earningTrendChart;
 
@@ -922,13 +755,11 @@
                 earningTrendChart = null;
             }
 
-            // Demo months
             const categories = [
                 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
                 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
             ];
 
-            // Demo earnings data
             const seriesData = [120, 180, 150, 220, 260, 210, 300, 280, 320, 350, 370, 390];
 
             const options = {

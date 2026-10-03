@@ -10,7 +10,7 @@ use Illuminate\Routing\Controller;
 use Illuminate\Routing\Redirector;
 use Illuminate\Support\Str;
 use App\Models\PaymentRequest;
-use App\Traits\Processor;
+use App\Traits\System\ProcessorTrait;
 use stdClass;
 use Symfony\Component\Process\Exception\InvalidArgumentException;
 
@@ -115,10 +115,10 @@ class LiqPay
 
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $url);
-        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true); // Avoid MITM vulnerability http://phpsecurity.readthedocs.io/en/latest/Input-Validation.html#validation-of-input-sources
-        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2);    // Check the existence of a common name and also verify that it matches the hostname provided
-        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, $timeout);   // The number of seconds to wait while trying to connect
-        curl_setopt($ch, CURLOPT_TIMEOUT, $timeout);          // The maximum number of seconds to allow cURL functions to execute
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2);
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, $timeout);
+        curl_setopt($ch, CURLOPT_TIMEOUT, $timeout);
         curl_setopt($ch, CURLOPT_POST, true);
         curl_setopt($ch, CURLOPT_POSTFIELDS, $postfields);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
@@ -279,7 +279,7 @@ class LiqPay
 
 class LiqPayController extends Controller
 {
-    use Processor;
+    use ProcessorTrait;
 
     private PaymentRequest $payment;
 
@@ -291,7 +291,7 @@ class LiqPayController extends Controller
     public function payment(Request $request): JsonResponse|string|RedirectResponse
     {
         try {
-            $config = $this->payment_config('liqpay', 'payment_config');
+            $config = $this->paymentConfig('liqpay', 'payment_config');
             if (!is_null($config) && $config->mode == 'live') {
                 $values = json_decode($config->live_values);
             } elseif (!is_null($config) && $config->mode == 'test') {
@@ -301,7 +301,7 @@ class LiqPayController extends Controller
             $tran = Str::random(6) . '-' . rand(1, 1000);
             $data = $this->payment::where(['id' => $request['payment_id']])->where(['is_paid' => 0])->first();
             if (!isset($data)) {
-                return response()->json($this->response_formatter(GATEWAYS_DEFAULT_204), 200);
+                return response()->json($this->responseFormatter(GATEWAYS_DEFAULT_204), 200);
             }
 
             $public_key = $values->public_key;
@@ -310,7 +310,7 @@ class LiqPayController extends Controller
             $html = $liqpay->cnb_form(array(
                 'action' => 'pay',
                 'amount' => round($data->payment_amount, 2),
-                'currency' => $data->currency_code, //USD
+                'currency' => $data->currency_code,
                 'description' => 'Transaction ID: ' . $tran,
                 'order_id' => $data->attribute_id,
                 'result_url' => route('liqpay.callback', ['payment_id' => $data->id]),
@@ -335,12 +335,12 @@ class LiqPayController extends Controller
             if (isset($data) && function_exists($data->success_hook)) {
                 call_user_func($data->success_hook, $data);
             }
-            return $this->payment_response($data,'success');
+            return $this->paymentResponse($data,'success');
         }
         $payment_data = $this->payment::where(['id' => $request['payment_id']])->first();
         if (isset($payment_data) && function_exists($payment_data->failure_hook)) {
             call_user_func($payment_data->failure_hook, $payment_data);
         }
-        return $this->payment_response($payment_data,'fail');
+        return $this->paymentResponse($payment_data,'fail');
     }
 }

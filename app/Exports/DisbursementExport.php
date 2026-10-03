@@ -2,6 +2,7 @@
 
 namespace App\Exports;
 
+use App\CentralLogics\Helpers;
 use Illuminate\Contracts\View\View;
 use Maatwebsite\Excel\Concerns\FromView;
 use Maatwebsite\Excel\Events\AfterSheet;
@@ -19,7 +20,6 @@ class DisbursementExport implements  FromView, ShouldAutoSize, WithStyles ,WithH
 
     use Exportable;
     protected $data;
-    // protected $search;
 
     public function __construct($data) {
         $this->data = $data;
@@ -54,12 +54,11 @@ class DisbursementExport implements  FromView, ShouldAutoSize, WithStyles ,WithH
         ];
         $sheet->getStyle('A1:E1')->applyFromArray($styleArray);
         return [
-            // Define the style for cells with data
             'A1:E'.$this->data['disbursements']->count() +4 => [
                 'borders' => [
                     'allBorders' => [
                         'borderStyle' => Border::BORDER_THIN,
-                        'color' => ['argb' => '000000'], // Specify the color of the border (optional)
+                        'color' => ['argb' => '000000'],
                     ],
                 ],
             ],
@@ -68,7 +67,7 @@ class DisbursementExport implements  FromView, ShouldAutoSize, WithStyles ,WithH
     }
 
     public function setImage($workSheet) {
-        $logo = \App\Models\BusinessSetting::where(['key' => 'logo'])->first()->value;
+        $logo = Helpers::get_business_settings('logo', false);
         $drawing = new Drawing();
         $drawing->setPath(is_file(storage_path('app/public/business/'.$logo))?storage_path('app/public/business/'.$logo):public_path('/assets/admin/img/160x160/img2.jpg'));
         $drawing->setWidth(150);
@@ -85,7 +84,7 @@ class DisbursementExport implements  FromView, ShouldAutoSize, WithStyles ,WithH
     {
         return [
             AfterSheet::class => function(AfterSheet $event) {
-                $event->sheet->getStyle('A1:E1') // Adjust the range as per your needs
+                $event->sheet->getStyle('A1:E1')
                     ->getAlignment()
                     ->setHorizontal(Alignment::HORIZONTAL_LEFT)
                     ->setVertical(Alignment::VERTICAL_CENTER);

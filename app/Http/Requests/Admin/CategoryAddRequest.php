@@ -2,8 +2,12 @@
 
 namespace App\Http\Requests\Admin;
 
+use App\Models\Category;
+use App\Rules\ImageFile;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Facades\Config;
+use Illuminate\Validation\Validator;
 
 /**
  * @property int parent_id
@@ -13,9 +17,6 @@ use Illuminate\Foundation\Http\FormRequest;
  */
 class CategoryAddRequest extends FormRequest
 {
-    /**
-     * Determine if the user is authorized to make this request.
-     */
     public function authorize(): bool
     {
         return true;
@@ -31,16 +32,35 @@ class CategoryAddRequest extends FormRequest
         return [
             'name' => 'required|max:100',
             'name.0' => 'required',
-            'image' => 'required_if:position,==,0',
+            'image' => ImageFile::rules('required_if:position,==,0'),
         ];
+    }
+
+    public function withValidator(Validator $validator): void
+    {
+        $validator->after(function (Validator $validator) {
+            $defaultName = Category::defaultName($this->name, $this->lang);
+            if ($defaultName === null) {
+                return;
+            }
+
+            $parentId = (int) ($this->position == 0 ? 0 : ($this->parent_id ?? 0));
+            $moduleId = (int) Config::get('module.current_module_id');
+
+            if (Category::isDuplicateName($defaultName, $moduleId, $parentId)) {
+                $validator->errors()->add('name.0', translate($parentId === 0
+                    ? 'messages.category_name_already_exists'
+                    : 'messages.sub_category_name_already_exists_under_this_category'));
+            }
+        });
     }
 
     public function messages(): array
     {
         return [
-            'name.required' => translate('messages.Name is required!'),
-            'image.required_if' => translate('messages.Image is required!'),
-            'name.0.required' => translate('default_name_is_required'),
+            'name.required' => translate('messages.Name is required'),
+            'image.required_if' => translate('messages.Image is required'),
+            'name.0.required' => translate('Default name is required'),
         ];
     }
 }

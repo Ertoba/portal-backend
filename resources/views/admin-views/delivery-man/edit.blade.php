@@ -1,20 +1,19 @@
 @extends('layouts.admin.app')
 
-@section('title',translate('Update delivery-man'))
+@section('title',translate('Update deliveryman'))
 
 
 @section('content')
     <div class="content container-fluid">
-        <!-- Page Header -->
         <div class="page-header  mb-15 mt-2">
-            <h1 class="page-header-title mb-0 fs-24 text-break">
+            <h1 class="page-header-title mb-0 text-break">
                 <span class="page-header-icon">
                     <img src="{{asset('public/assets/admin/img/edit.png')}}" class="w--26" alt="">
                 </span>
-                <span>{{translate('messages.update_deliveryman')}}</span>
+                <span>{{translate('Update deliveryman')}}</span>
             </h1>
+            <p class="page-header-desc">{{ translate('Change this deliveryman\'s details, zone, vehicle or account state.') }}</p>
         </div>
-        <!-- End Page Header -->
 
         <form class="validate-form global-ajax-form" action="{{route('admin.users.delivery-man.update',[$deliveryMan['id']])}}" method="post"
                 enctype="multipart/form-data">
@@ -24,7 +23,7 @@
                 <div class="card-header">
                    <div>
                         <h3 class="mb-1">
-                            {{ translate('Basic Information') }}
+                            {{ translate('Basic information') }}
                         </h3>
                         <p class="mb-0 fs-12">
                             {{ translate('Here you setup your all business information.') }}
@@ -38,25 +37,25 @@
                                 <div class="row g-3">
                                     <div class="col-sm-6">
                                         <div class="form-group mb-0">
-                                            <label class="input-label" for="exampleFormControlInput1">{{translate('messages.first_name')}} <span class="form-label-secondary text-danger"
+                                            <label class="input-label" for="exampleFormControlInput1">{{translate('First name')}} <span class="form-label-secondary text-danger"
                                                 data-toggle="tooltip" data-placement="right"
                                                 data-original-title="{{ translate('messages.Required.')}}"> *
                                                 </span>
                                                     </label>
                                                             <input type="text" value="{{$deliveryMan['f_name']}}" name="f_name"
-                                                                    class="form-control" placeholder="{{translate('messages.first_name')}}"
+                                                                    class="form-control" placeholder="{{translate('First name')}}"
                                                                     required>
                                                         </div>
                                                     </div>
                                                     <div class="col-sm-6">
                                                         <div class="form-group mb-0">
-                                                            <label class="input-label" for="exampleFormControlInput1">{{translate('messages.last_name')}} <span class="form-label-secondary text-danger"
+                                                            <label class="input-label" for="exampleFormControlInput1">{{translate('Last name')}} <span class="form-label-secondary text-danger"
                                                 data-toggle="tooltip" data-placement="right"
                                                 data-original-title="{{ translate('messages.Required.')}}"> *
                                                 </span>
                                                     </label>
                                                             <input type="text" value="{{$deliveryMan['l_name']}}" name="l_name"
-                                                                    class="form-control" placeholder="{{translate('messages.last_name')}}"
+                                                                    class="form-control" placeholder="{{translate('Last name')}}"
                                                                     required>
                                                         </div>
                                                     </div>
@@ -68,20 +67,20 @@
                                                 </span>
                                                     </label>
                                                             <input type="email" value="{{$deliveryMan['email']}}" name="email" class="form-control"
-                                                                    placeholder="{{ translate('messages.Ex:') }} ex@example.com"
+                                                                    placeholder="{{ translate('messages.Ex') }}: ex@example.com"
                                                                     required>
                                                         </div>
                                                     </div>
                                                     <div class="col-sm-6">
                                                         <div class="form-group mb-0">
-                                                            <label class="input-label" for="exampleFormControlInput1">{{translate('messages.deliveryman_type')}} <span class="form-label-secondary text-danger"
+                                                            <label class="input-label" for="exampleFormControlInput1">{{translate('Deliveryman type')}} <span class="form-label-secondary text-danger"
                                                 data-toggle="tooltip" data-placement="right"
                                                 data-original-title="{{ translate('messages.Required.')}}"> *
                                                 </span>
                                                     </label>
                                                             <select name="earning" class="form-control  js-select2-custom" required>
-                                                                <option value="1" {{$deliveryMan->earning?'selected':''}}>{{translate('messages.freelancer')}}</option>
-                                                                <option value="0" {{$deliveryMan->earning?'':'selected'}}>{{translate('messages.salary_based')}}</option>
+                                                                <option value="1" {{$deliveryMan->earning?'selected':''}}>{{translate('Freelancer')}}</option>
+                                                                <option value="0" {{$deliveryMan->earning?'':'selected'}}>{{translate('Salary based')}}</option>
                                                             </select>
                                                         </div>
                                                     </div>
@@ -95,7 +94,7 @@
                                                                 </span>
                                                             </label>
                                             <select name="zone_id" class="form-control  js-select2-custom">
-                                            @foreach(\App\Models\Zone::all() as $zone)
+                                            @foreach(\App\CentralLogics\Helpers::zones_dropdown() as $zone)
                                                 @if(auth('admin')?->user()?->zone_id)
                                                     @if(auth('admin')->user()->zone_id == $zone->id)
                                                         <option value="{{$zone->id}}" {{$zone->id == $deliveryMan->zone_id?'selected':''}}>{{$zone->name}}</option>
@@ -109,14 +108,14 @@
                                     </div>
                                     <div class="col-sm-6">
                                         <div class="form-group m-0">
-                                            <label class="input-label" for="exampleFormControlInput1">{{translate('messages.vehicle Type')}}<span class="form-label-secondary text-danger"
+                                            <label class="input-label" for="exampleFormControlInput1">{{translate('messages.Vehicle type')}}<span class="form-label-secondary text-danger"
                                                 data-toggle="tooltip" data-placement="right"
                                                 data-original-title="{{ translate('messages.Required.')}}"> *
                                                 </span>
                                             </label>
                                             <select name="vehicle_id" class="form-control js-select2-custom h--45px">
-                                                <option value="" readonly="true" hidden="true">{{ translate('messages.select_vehicle') }}</option>
-                                            @foreach(\App\Models\DMVehicle::where('status',1)->get(['id','type']) as $v)
+                                                <option value="" readonly="true" hidden="true">{{ translate('Select vehicle') }}</option>
+                                            @foreach(\App\CentralLogics\Helpers::cached_list(\App\Models\DMVehicle::class, ['status' => 1]) as $v)
                                                 <option value="{{$v->id}}" {{$v->id == $deliveryMan->vehicle_id?'selected':''}}>{{$v->type}}</option>
                                             @endforeach
                                             </select>
@@ -153,7 +152,7 @@
                 <div class="card-header">
                    <div>
                         <h3 class="mb-1">
-                            {{ translate('General Setup') }}
+                            {{ translate('General setup') }}
                         </h3>
                         <p class="mb-0 fs-12">
                             {{ translate('Here you can manage time settings to match with your business criteria') }}
@@ -164,7 +163,7 @@
                     <div class="shadow-sm p-xxl-20 p-xl-3 p-2 bg-white mb-20">
                         <div class="mb-20">
                             <h4 class="mb-1">
-                                {{ translate('Identity Info') }}
+                                {{ translate('Identity information') }}
                             </h4>
                             <p class="mb-0 fs-12">
                                 {{ translate('Setup your business time zone and format from here') }}
@@ -174,7 +173,7 @@
                             <div class="row g-3">
                                 <div class="col-sm-6 col-lg-6">
                                     <div class="form-group mb-0">
-                                        <label class="input-label" for="exampleFormControlInput1">{{translate('messages.identity_type')}}<span class="form-label-secondary text-danger"
+                                        <label class="input-label" for="exampleFormControlInput1">{{translate('Identity type')}}<span class="form-label-secondary text-danger"
                                             data-toggle="tooltip" data-placement="right"
                                             data-original-title="{{ translate('messages.Required.')}}"> *
                                             </span>
@@ -182,31 +181,31 @@
                                         <select name="identity_type" class="form-control  js-select2-custom">
                                             <option
                                                 value="passport" {{$deliveryMan['identity_type']=='passport'?'selected':''}}>
-                                                {{translate('messages.passport')}}
+                                                {{translate('Passport')}}
                                             </option>
                                             <option
                                                 value="driving_license" {{$deliveryMan['identity_type']=='driving_license'?'selected':''}}>
-                                                {{translate('messages.driving_license')}}
+                                                {{translate('messages.Driving license')}}
                                             </option>
-                                            <option value="nid" {{$deliveryMan['identity_type']=='nid'?'selected':''}}>{{translate('messages.nid')}}
+                                            <option value="nid" {{$deliveryMan['identity_type']=='nid'?'selected':''}}>NID
                                             </option>
                                             <option
                                                 value="store_id" {{$deliveryMan['identity_type']=='store_id'?'selected':''}}>
-                                                {{translate('messages.store_id')}}
+                                                {{translate('messages.Store ID')}}
                                             </option>
                                         </select>
                                     </div>
                                 </div>
                                 <div class="col-sm-6 col-lg-6">
                                     <div class="form-group mb-0">
-                                        <label class="input-label" for="exampleFormControlInput1">{{translate('messages.identity_number')}}<span class="form-label-secondary text-danger"
+                                        <label class="input-label" for="exampleFormControlInput1">{{translate('Identity number')}}<span class="form-label-secondary text-danger"
                                             data-toggle="tooltip" data-placement="right"
                                             data-original-title="{{ translate('messages.Required.')}}"> *
                                             </span>
                                         </label>
                                         <input type="text" name="identity_number" value="{{$deliveryMan['identity_number']}}"
                                                 class="form-control"
-                                                placeholder="{{ translate('messages.Ex:') }} DH-23434-LS"
+                                                placeholder="{{ translate('messages.Ex') }}: DH-23434-LS"
                                                 required>
                                     </div>
                                 </div>
@@ -215,10 +214,10 @@
                         <div class="bg-light2 rounded p-xxl-20 p-xl-3 p-3 mb-20">
                             <div class="mb-0">
                                 <h4 class="mb-1">
-                                    {{ translate('Update Identity Image') }} <span class="text-danger">*</span>
+                                    {{ translate('Update identity image') }} <span class="text-danger">*</span>
                                 </h4>
                                 <p class="mb-0 fs-12">
-                                    {{ translate(' Jpg, jpeg, png, gif, webp. Less Than 2MB') }} <span class="text-dark">(2:1)</span>
+                                     {{ 'JPG, JPEG, PNG, GIF, WEBP' . ' image, max ' . 2 . ' MB' }} <span class="text-dark">(2:1)</span>
                                 </p>
                             </div>
                             <div class="identity_documnet_body multiple_coba-img tabs-slide-wrap position-relative">
@@ -258,7 +257,7 @@
                     <div class="shadow-sm p-xxl-20 p-xl-3 p-2 bg-white">
                         <div class="mb-20">
                             <h4 class="mb-1">
-                                {{ translate('Account Information') }}
+                                {{ translate('Account information') }}
                             </h4>
                             <p class="mb-0 fs-12">
                                 {{ translate('Setup your business time zone and format from here') }}
@@ -268,13 +267,13 @@
                             <div class="row g-3">
                                 <div class="col-sm-4">
                                     <div class="form-group mb-0">
-                                        <label class="input-label" for="exampleFormControlInput1">{{translate('messages.phone')}}<span class="form-label-secondary text-danger"
+                                        <label class="input-label" for="exampleFormControlInput1">{{translate('Phone')}}<span class="form-label-secondary text-danger"
                                             data-toggle="tooltip" data-placement="right"
                                             data-original-title="{{ translate('messages.Required.')}}"> *
                                             </span>
                                 </label>
                                         <input type="tel" id="phone" name="phone" value="{{$deliveryMan['phone']}}" class="form-control"
-                                                placeholder="{{ translate('messages.Ex:') }} 017********"
+                                                placeholder="{{ translate('messages.Ex') }}: 017********"
                                                 required>
                                     </div>
                                 </div>
@@ -282,12 +281,12 @@
                                     <div class="js-form-message form-group mb-0">
                                         <label class="input-label" for="signupSrPassword">{{translate('messages.password')}}
                                             <span class="form-label-secondary" data-toggle="tooltip" data-placement="right"
-                                    data-original-title="{{ translate('messages.Must_contain_at_least_one_number_and_one_uppercase_and_lowercase_letter_and_symbol,_and_at_least_8_or_more_characters') }}"><i class="tio-info text-muted"></i></span>
+                                    data-original-title="{{ translate('Use at least one uppercase letter, one lowercase letter, one number and one symbol.') }} {{ translate('Minimum characters') }}: 8"><i class="tio-info text-muted"></i></span>
                                         </label>
 
                                         <div class="input-group input-group-merge">
-                                            <input type="password" class="js-toggle-password form-control" name="password" id="signupSrPassword"                                        pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}" title="{{ translate('messages.Must_contain_at_least_one_number_and_one_uppercase_and_lowercase_letter_and_symbol,_and_at_least_8_or_more_characters') }}"
-                                            placeholder="{{ translate('messages.password_length_placeholder', ['length' => '8+']) }}"
+                                            <input type="password" class="js-toggle-password form-control" name="password" id="signupSrPassword"                                        pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}" title="{{ translate('Use at least one uppercase letter, one lowercase letter, one number and one symbol.') }} {{ translate('Minimum characters') }}: 8"
+                                            placeholder="{{ translate('Minimum characters') }}: 8+"
                                             aria-label="8+ characters required"
                                             data-msg="Your password is invalid. Please try again."
                                             data-hs-toggle-password-options='{
@@ -306,10 +305,10 @@
                                 </div>
                                 <div class="col-sm-4">
                                     <div class="js-form-message form-group mb-0">
-                                        <label class="input-label" for="signupSrConfirmPassword">{{translate('messages.confirm_password')}}</label>
+                                        <label class="input-label" for="signupSrConfirmPassword">{{translate('Confirm password')}}</label>
                                         <div class="input-group input-group-merge">
-                                        <input type="password" class="js-toggle-password form-control" name="confirmPassword" id="signupSrConfirmPassword" pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}" title="{{ translate('messages.Must_contain_at_least_one_number_and_one_uppercase_and_lowercase_letter_and_symbol,_and_at_least_8_or_more_characters') }}"
-                                        placeholder="{{ translate('messages.password_length_placeholder', ['length' => '8+']) }}"
+                                        <input type="password" class="js-toggle-password form-control" name="confirmPassword" id="signupSrConfirmPassword" pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}" title="{{ translate('Use at least one uppercase letter, one lowercase letter, one number and one symbol.') }} {{ translate('Minimum characters') }}: 8"
+                                        placeholder="{{ translate('Minimum characters') }}: 8+"
                                         aria-label="8+ characters required"
                                                 data-msg="Password does not match the confirm password."
                                                 data-hs-toggle-password-options='{
@@ -333,8 +332,8 @@
             </div>
 
             <div class="btn--container justify-content-end mt-20">
-                <button type="reset" id="reset_btn" class="btn btn--reset min-w-120px">{{translate('messages.reset')}}</button>
-                    <button type="submit" class="btn btn--primary min-w-120px"><i class="tio-save"></i> {{translate('messages.Save Information')}}</button>
+                <button type="reset" id="reset_btn" class="btn btn--reset min-w-120px"><i class="tio-refresh"></i> {{translate('messages.Reset')}}</button>
+                    <button type="submit" class="btn btn--primary min-w-120px"><i class="tio-save"></i> {{translate('Save information')}}</button>
             </div>
         </form>
     </div>
@@ -386,7 +385,7 @@
 
                     },
                     onExtensionErr: function (index, file) {
-                        toastr.error('Please only input png or jpg type file', {
+                        toastr.error('{{ translate('Please upload a file in a supported format') . ': PNG, JPG' }}', {
                             CloseButton: true,
                             ProgressBar: true
                         });

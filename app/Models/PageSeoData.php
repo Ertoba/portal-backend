@@ -4,16 +4,15 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use App\CentralLogics\Helpers;
-use Illuminate\Database\Eloquent\Builder;
-use App\Traits\GeneratesSlug;
+use App\Traits\Model\SlugTrait;
+use App\Traits\Model\HasTranslationsTrait;
+use App\Traits\Model\HasStorageTrait;
 
 class PageSeoData extends Model
 {
-    use GeneratesSlug;
+    use SlugTrait, HasTranslationsTrait, HasStorageTrait;
 
     protected $guarded = ['id'];
-    protected $appends = ['image_full_url'];
-    protected $with = ['storage', 'translations'];
 
     protected $casts = [
         'status' => 'integer',
@@ -24,68 +23,27 @@ class PageSeoData extends Model
 
     public function getImageFullUrlAttribute()
     {
-        $value = $this->image;
-        if (count($this->storage) > 0) {
-            foreach ($this->storage as $storage) {
-                if ($storage['key'] == 'image') {
-                    return Helpers::get_full_url('page_meta_data', $value, $storage['value']);
-                }
-            }
-        }
-        return Helpers::get_full_url('page_meta_data', $value, 'public');
+        return $this->storageFullUrl('page_meta_data', 'image', $this->image);
     }
 
 
-    // public function getNameAttribute($value)
-    // {
-    //     if (count($this->translations) > 0) {
 
-    //         foreach ($this->translations as $translation) {
-    //             if ($translation['key'] == 'name') {
-    //                 return $translation['value'];
-    //             }
-    //         }
-    //     }
 
-    //     return $value;
-    // }
 
-    // public function getDescriptionAttribute($value)
-    // {
-    //     if (count($this->translations) > 0) {
-    //         foreach ($this->translations as $translation) {
-    //             if ($translation['key'] == 'description') {
-    //                 return $translation['value'];
-    //             }
-    //         }
-    //     }
 
-    //     return $value;
-    // }
-
-    public function translations()
-    {
-        return $this->morphMany(Translation::class, 'translationable');
-    }
-
-        public function storage()
-    {
-        return $this->morphMany(Storage::class, 'data');
-    }
 
     protected static function booted()
     {
+        static::saved(function ($model) {
+            self::recordStorageDisk($model, 'image', 'image');
+        });
+
         static::created(function ($data) {
             $data->slug = $data->generateSlug($data->name);
             $data->save();
         });
 
 
-        static::addGlobalScope('translate', function (Builder $builder) {
-            $builder->with(['translations' => function ($query) {
-                return $query->where('locale', app()->getLocale());
-            }]);
-        });
     }
 
 

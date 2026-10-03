@@ -26,17 +26,17 @@ class MessageRepository implements MessageRepositoryInterface
 
     public function getFirstWhere(array $params, array $relations = []): ?Model
     {
-        return $this->message->where($params)->first();
+        return $this->message->with($relations)->where($params)->first();
     }
 
-    public function getList(array $orderBy = [], array $relations = [], int|string $dataLimit = DEFAULT_DATA_LIMIT, int $offset = null): Collection|LengthAwarePaginator
+    public function getList(array $orderBy = [], array $relations = [], int|string $dataLimit = DEFAULT_DATA_LIMIT, ?int $offset = null): Collection|LengthAwarePaginator
     {
-        return $this->message->paginate($dataLimit);
+        return $this->message->with($relations)->paginate($dataLimit);
     }
 
-    public function getListWhere(string $searchValue = null, array $filters = [], array $relations = [], int|string $dataLimit = DEFAULT_DATA_LIMIT, int $offset = null): Collection|LengthAwarePaginator
+    public function getListWhere(?string $searchValue = null, array $filters = [], array $relations = [], int|string $dataLimit = DEFAULT_DATA_LIMIT, ?int $offset = null): Collection|LengthAwarePaginator
     {
-        $data = $this->message->where($filters);
+        $data = $this->message->with($relations)->where($filters);
         if($dataLimit == 'all'){
             return $data->get();
         }

@@ -11,7 +11,7 @@
 @endpush
 
 <div class="card card-body mb-20">
-    <h3 class="mb-20">{{ translate('messages.Filter_Data') }}</h3>
+    <h3 class="mb-20">{{ translate('Filter data') }}</h3>
     <form action="">
         <div class="__bg-F8F9FC-card">
             <div class="row g-3 date-filter-wrapper">
@@ -21,11 +21,11 @@
                         {{ translate('messages.Module') }}
                     </label>
                     <select name="module_id" id="module_id" class="form-control js-select2-custom"
-                        title="{{ translate('messages.select_modules') }}">
+                        title="{{ translate('messages.Select modules') }}">
                         <option value="all" {{ $module_id == 'all' ? 'selected' : '' }}>
-                            {{ translate('messages.all_modules') }}
+                            {{ translate('All modules') }}
                         </option>
-                        @foreach (\App\Models\Module::whereIn('module_type', ['grocery', 'food', 'pharmacy', 'ecommerce'])->get(['id', 'module_name']) as $module)
+                        @foreach (\App\CentralLogics\Helpers::modules_list()->whereIn('module_type', ['grocery', 'food', 'pharmacy', 'ecommerce']) as $module)
                             <option value="{{ $module->id }}" {{ (string) $module_id === (string) $module->id ? 'selected' : '' }}>
                                 {{ $module['module_name'] }}
                             </option>
@@ -34,42 +34,42 @@
                 </div>
                 <div class="col-lg-4 col-sm-6">
                     <label for="" class="input-label text-capitalize">
-                        {{ translate('messages.Select_Store') }}
+                        {{ translate('Select store') }}
                     </label>
-                    <select name="store_id" id="store_id" data-placeholder="{{ translate('messages.select_store') }}" class="js-data-example-ajax form-control">
+                    <select name="store_id" id="store_id" data-placeholder="{{ translate('Select store') }}" class="js-data-example-ajax form-control">
                         @if (isset($store))
                             <option value="{{ $store->id }}" data-verified="{{ (int) $store->verified_seller }}" selected>{{ $store->name }}</option>
                         @else
-                            <option value="all" selected>{{ translate('messages.all_stores') }}</option>
+                            <option value="all" selected>{{ translate('All stores') }}</option>
                         @endif
                     </select>
 
                 </div>
                 @else
-                    <input type="hidden" class="select2-hidden-accessible" name="store_id" id="store_id" value="{{ $store_id }}">
+                    <input type="hidden" name="store_id" id="store_id" value="{{ $store_id }}">
                 @endif
-                <div class="{{ $show_store_select ? 'col-lg-4 col-sm-6' : 'col-lg-12' }}">
+                <div class="col-lg-4 col-sm-6">
                     <label for="" class="input-label text-capitalize">
-                        {{ translate('messages.Date_Range') }}
+                        {{ translate('Date range') }}
                     </label>
                     <select name="filter" id="filter" class="form-control custom-select date-type-select">
-                        <option value="all_time" {{ request('filter') == 'all_time' ? 'selected' : '' }}>{{ translate('messages.All_Time') }}</option>
-                        <option value="this_week" {{ request('filter') == 'this_week' ? 'selected' : '' }}>{{ translate('messages.This_Week') }}</option>
-                        <option value="this_month" {{ request('filter') == 'this_month' ? 'selected' : '' }}>{{ translate('messages.This_Month') }}</option>
-                        <option value="this_year" {{ request('filter') == 'this_year' ? 'selected' : '' }}>{{ translate('messages.This_Year') }}</option>
-                        <option value="previous_year" {{ request('filter') == 'previous_year' ? 'selected' : '' }}>{{ translate('messages.Previous_Year') }}</option>
-                        <option value="custom" {{ request('filter') == 'custom' ? 'selected' : '' }}>{{ translate('messages.Custom_Range') }}</option>
+                        <option value="all_time" {{ request('filter') == 'all_time' ? 'selected' : '' }}>{{ translate('All time') }}</option>
+                        <option value="this_week" {{ request('filter') == 'this_week' ? 'selected' : '' }}>{{ translate('This week') }}</option>
+                        <option value="this_month" {{ request('filter') == 'this_month' ? 'selected' : '' }}>{{ translate('This month') }}</option>
+                        <option value="this_year" {{ request('filter') == 'this_year' ? 'selected' : '' }}>{{ translate('This year') }}</option>
+                        <option value="previous_year" {{ request('filter') == 'previous_year' ? 'selected' : '' }}>{{ translate('Previous year') }}</option>
+                        <option value="custom" {{ request('filter') == 'custom' ? 'selected' : '' }}>{{ translate('Custom range') }}</option>
                     </select>
                 </div>
-                <div class="col-lg-6 custom-date-div d--none">
+                <div class="{{ $show_store_select ? 'col-lg-6' : 'col-lg-4 col-sm-6' }} custom-date-div d--none">
                     <label for="" class="input-label text-capitalize">
-                        {{ translate('messages.Start_Date') }} <span class="text-danger">*</span>
+                        {{ translate('Start date') }} <span class="text-danger">*</span>
                     </label>
                     <input type="date" name="from" id="from" value="{{ request('from') }}" class="form-control">
                 </div>
-                <div class="col-lg-6 custom-date-div d--none">
+                <div class="{{ $show_store_select ? 'col-lg-6' : 'col-lg-4 col-sm-6' }} custom-date-div d--none">
                     <label for="" class="input-label text-capitalize">
-                        {{ translate('messages.End_Date') }} <span class="text-danger">*</span>
+                        {{ translate('End date') }} <span class="text-danger">*</span>
                     </label>
                     <input type="date" name="to" id="to" value="{{ request('to') }}" class="form-control">
                 </div>
@@ -78,37 +78,38 @@
             <div class="btn--container mt-4 justify-content-end">
             <button id="resetbtn" type="reset"
             data-url="{{ $reset_url }}"
-                class="btn btn--reset {{ request()->has('filter') ? 'redirect-url' : ''}} ">{{ translate('messages.reset') }}</button>
-            <button type="submit" class="btn btn--primary">{{ translate('messages.filter') }}</button>
+                class="btn btn--reset {{ request()->has('filter') ? 'redirect-url' : ''}} "><i class="tio-refresh"></i> {{ translate('messages.Reset') }}</button>
+            <button type="submit" class="btn btn--primary"><i class="tio-filter-list"></i> {{ translate('messages.Filter') }}</button>
         </div>
     </form>
 </div>
 
 <div class="card card-body mb-20">
     <div class="mb-3">
-        <h3 class="mb-1">{{ translate('messages.Earnings_Summary') }}</h3>
-        <p class="fs-12 mb-0">{{ translate('messages.Breakdown of Revenue Sources and Performance') }}</p>
+        <h3 class="mb-1">{{ translate('Earnings summary') }}</h3>
+        <p class="fs-12 mb-0">{{ translate('Breakdown of revenue sources and performance') }}</p>
     </div>
     <div id="store_earning_summary"></div>
 
-    <h4 class="mb-3">{{ translate('messages.Earnings_Breakdown') }}</h4>
+    <h4 class="mb-3">{{ translate('Earnings breakdown') }}</h4>
     <div id="store_earning_breakdown"></div>
 
-    <h4 class="mb-3">{{ translate('messages.Expenses_Breakdown') }}</h4>
+    <h4 class="mb-3">{{ translate('Expenses breakdown') }}</h4>
     <div id="store_expense_breakdown"></div>
 </div>
 
 <div class="card h-100 mb-20">
     <div class="card-header border-0 d-block pb-0">
-        <h3 class="mb-1 text-title">{{ translate('messages.Store Earnings Trend') }}</h3>
+        <h3 class="mb-1 text-title">{{ translate('Store earnings trend') }}</h3>
         <p class="mb-1">{{ translate('messages.Revenue performance over time') }}</p>
     </div>
     <div class="card-body px-3 px-sm-4 pt-2 pb-3">
-        <div class="report-chart-frame">
-            <div class="report-chart-y-axis">{{ translate('messages.Earning_Amount') }}</div>
+        <div id="earning-trend-empty" class="text-center text-muted py-5" hidden>{{ translate('messages.Nothing earned in this period, so there is nothing to chart yet.') }}</div>
+        <div class="report-chart-frame" id="earning-trend-frame">
+            <div class="report-chart-y-axis">{{ translate('Earning amount') }}</div>
             <div class="report-chart-body">
                 <div id="earning-trend-chart"></div>
-                <div class="report-chart-x-axis">{{ translate('messages.Time_Period') }}</div>
+                <div class="report-chart-x-axis">{{ translate('Time period') }}</div>
             </div>
         </div>
     </div>
@@ -119,15 +120,15 @@
     <div class="col-lg-7">
         <div class="card h-100">
             <div class="card-header border-0 d-block pb-0">
-                <h3 class="mb-1 text-title">{{ translate('messages.Earning_vs_Expense') }}</h3>
-                <p class="mb-1">{{ translate('messages.Monthly_earning_and_expense_comparison') }}</p>
+                <h3 class="mb-1 text-title">{{ translate('Earning vs expense') }}</h3>
+                <p class="mb-1">{{ translate('messages.Monthly earning and expense comparison') }}</p>
             </div>
             <div class="card-body px-3 px-sm-4 pt-2 pb-3">
                 <div class="report-chart-frame">
-                    <div class="report-chart-y-axis">{{ translate('messages.Amount') }}</div>
+                    <div class="report-chart-y-axis">{{ translate('Amount') }}</div>
                     <div class="report-chart-body">
                         <div id="monthly-earning-expense-graph"></div>
-                        <div class="report-chart-x-axis">{{ translate('messages.Time_Period') }}</div>
+                        <div class="report-chart-x-axis">{{ translate('Time period') }}</div>
                     </div>
                 </div>
             </div>
@@ -141,12 +142,10 @@
 
 
 <div class="card card-body recent-transactions-card">
-    <!-- Header -->
     <div class="d-flex justify-content-between align-items-center gap-2 flex-wrap border-0 recent-transaction-header">
         <div>
-            <h3 class="mb-20">{{ translate('messages.Recent_Transactions') }}</h3>
+            <h3 class="mb-20">{{ translate('Recent transactions') }}</h3>
             <div class="js-nav-scroller hs-nav-scroller-horizontal">
-                <!-- Nav -->
                 <ul class="nav nav-tabs border-0 nav--tabs nav--pills transaction-nav-tabs">
                     <li class="nav-item">
                         <a class="nav-link active transaction-tab" data-type="order" href="#" aria-disabled="true">{{ translate('messages.Earnings') }}</a>
@@ -158,24 +157,20 @@
                         <a class="nav-link transaction-tab" data-type="subscription" href="#" aria-disabled="true">{{ translate('messages.Subscription') }}</a>
                     </li>
                 </ul>
-                <!-- End Nav -->
             </div>
         </div>
         <div class="search--button-wrapper justify-content-end">
             <form id="store-transaction-search-form" class="">
-                <!-- Search -->
                 <div class="input--group input-group input-group-merge input-group-flush">
                     <input id="datatableSearch_" type="search" name="report_search" class="form-control"
                         value=""
-                        placeholder="{{ translate('Search By Order ID') }}" aria-label="Search" required>
+                        placeholder="{{ translate('Search by order ID') }}" aria-label="Search" required>
                     <button type="submit" class="btn btn--secondary">
                         <i class="tio-search"></i>
                     </button>
                 </div>
-                <!-- End Search -->
             </form>
             <div class="d-flex flex-wrap gpa-3 justify-content-sm-end align-items-sm-center ml-0 mr-0 flex-grow-0">
-                <!-- Unfold -->
                 <div class="hs-unfold ml-3">
                     <a class="js-hs-unfold-invoker btn btn-sm btn-white dropdown-toggle btn export-btn font--sm"
                         href="javascript:;"
@@ -185,36 +180,32 @@
                             "boundary": "viewport"
                         }'
                         data-hs-unfold-target="#usersExportDropdown" data-hs-unfold-invoker="">
-                        <i class="tio-download-to mr-1"></i> {{ translate('export') }}
+                        <i class="tio-download-to mr-1"></i> {{ translate('Export') }}
                     </a>
 
                     <div id="usersExportDropdown"
                         class="hs-unfold-content dropdown-unfold dropdown-menu dropdown-menu-sm-right">
-                        <span class="dropdown-header">{{ translate('download_options') }}</span>
+                        <span class="dropdown-header">{{ translate('Download options') }}</span>
                         <a id="export-excel" class="dropdown-item"
                             href="javascript:;">
                             <img class="avatar avatar-xss avatar-4by3 mr-2"
                                 src="{{ asset('public/assets/admin') }}/svg/components/excel.svg"
                                 alt="Image Description">
-                            {{ translate('messages.excel') }}
+                            Excel
                         </a>
                         <a id="export-csv" class="dropdown-item"
                             href="javascript:;">
                             <img class="avatar avatar-xss avatar-4by3 mr-2"
                                 src="{{ asset('public/assets/admin') }}/svg/components/placeholder-csv-format.svg"
                                 alt="Image Description">
-                            .{{ translate('messages.csv') }}
+                            .csv
                         </a>
                     </div>
                 </div>
-                <!-- End Unfold -->
             </div>
         </div>
-        <!-- End Row -->
     </div>
-    <!-- End Header -->
 
-    <!-- Table -->
     <div id="transaction_table_container"></div>
 </div>
 
@@ -296,13 +287,20 @@
                 earningTrendChart = null;
             }
 
+            const hasEarnings = (seriesData || []).some(function (value) { return Number(value) > 0; });
+            document.getElementById('earning-trend-empty').hidden = hasEarnings;
+            document.getElementById('earning-trend-frame').hidden = !hasEarnings;
+            if (!hasEarnings) {
+                return;
+            }
+
             const chartData = buildSinglePointParabola(categories, seriesData);
             categories = chartData.categories;
             seriesData = chartData.values;
 
             const options = {
                 series: [{
-                    name: '{{ translate('messages.Total_Earnings') }}',
+                    name: '{{ translate('Total earnings') }}',
                     data: seriesData
                 }],
                 chart: {
@@ -509,7 +507,6 @@
                 $('#from').attr('max', $(this).val());
             });
 
-            // Initialize min/max on page load
             let initialStartDate = $('#from').val();
             let initialEndDate = $('#to').val();
             if (initialStartDate) {
@@ -563,11 +560,11 @@
                 currentTransactionSearch = '';
                 $('#datatableSearch_').val('');
 
-                let placeholder = "{{ translate('Search By Order ID') }}";
+                let placeholder = "{{ translate('Search by order ID') }}";
                 if (currentTransactionType === 'subscription') {
-                    placeholder = "{{ translate('Search By Txn ID or Store Name') }}";
+                    placeholder = "{{ translate('Search by transaction ID or store name') }}";
                 } else{
-                    placeholder = "{{ translate('Search By Order ID') }}";
+                    placeholder = "{{ translate('Search by order ID') }}";
                 }
                 $('#datatableSearch_').attr('placeholder', placeholder);
 
@@ -638,6 +635,7 @@
             const $icon = $trigger.find('i');
 
             $targetRow.toggleClass('d-none');
+            $trigger.attr('aria-expanded', String(!$targetRow.hasClass('d-none')));
 
             if ($targetRow.hasClass('d-none')) {
                 $icon.removeClass('tio-chevron-up').addClass('tio-chevron-down');
@@ -656,7 +654,11 @@
             const initStoreSelect = function () {
                 const $storeSelect = $('#store_id');
 
-                if ($storeSelect.hasClass('select2-hidden-accessible')) {
+                if (!$storeSelect.is('select')) {
+                    return;
+                }
+
+                if ($storeSelect.data('select2')) {
                     $storeSelect.select2('destroy');
                 }
 
@@ -692,7 +694,7 @@
             $(document).on('change', '#module_id', function () {
                 const $storeSelect = $('#store_id');
                 $storeSelect.val(null).trigger('change');
-                $storeSelect.empty().append(new Option("{{ translate('messages.all_stores') }}", 'all', true, true));
+                $storeSelect.empty().append(new Option("{{ translate('All stores') }}", 'all', true, true));
                 initStoreSelect();
             });
         });

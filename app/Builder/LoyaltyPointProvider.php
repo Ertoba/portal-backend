@@ -2,7 +2,8 @@
 
 namespace App\Builder;
 
-use App\CentralLogics\CustomerLogic;
+use App\Services\Payment\LoyaltyPointTransactionService;
+use App\Services\Payment\WalletTransactionService;
 use App\Models\BusinessSetting;
 use App\Models\LoyaltyPointTransaction;
 use App\Models\User;
@@ -116,12 +117,12 @@ class LoyaltyPointProvider implements LoyaltyPointProviderContract
                     throw new \RuntimeException('insufficient_point');
                 }
 
-                $walletTransaction = CustomerLogic::create_wallet_transaction($locked->id, (float) $point, 'loyalty_point', null);
+                $walletTransaction = app(WalletTransactionService::class)->recordWalletTransaction($locked->id, (float) $point, 'loyalty_point', null);
                 if (!$walletTransaction) {
                     throw new \RuntimeException('wallet_transaction_failed');
                 }
 
-                CustomerLogic::create_loyalty_point_transaction($locked->id, $walletTransaction->transaction_id, $point, 'point_to_wallet');
+                app(LoyaltyPointTransactionService::class)->recordLoyaltyPointTransaction($locked->id, $walletTransaction->transaction_id, $point, 'point_to_wallet');
             });
 
             $fresh = User::query()->select(self::SELECT)->find($user->id);

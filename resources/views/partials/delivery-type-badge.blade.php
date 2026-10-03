@@ -5,7 +5,7 @@
     }
     $deliveryTypeBadge = [
         'express'        => ['class' => 'badge-soft-warning',   'label' => 'messages.express'],
-        'slightly_delay' => ['class' => 'badge-soft-secondary', 'label' => 'messages.slightly_delay'],
+        'slightly_delay' => ['class' => 'badge-soft-secondary', 'label' => 'messages.Slightly delay'],
     ];
 @endphp
 @if ($deliveryTypeForBadge)

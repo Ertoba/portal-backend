@@ -27,14 +27,14 @@
         </a>
         @else
             <label class="badge badge-danger">{{ translate('messages.invalid') }}
-                {{ translate('messages.customer') }}
-                {{ translate('messages.data') }}</label>
+                {{ translate('messages.Customer') }}
+                {{ translate('messages.Data.') }}</label>
         @endif
     </td>
     <td>
         <div class="text-right mw--85px">
             <div>
-                {{ \App\CentralLogics\Helpers::number_format_short($order['order_amount']-$order['dm_tips']-$order['total_tax_amount']-\App\CentralLogics\DeliveryFeeLogic::adjustedFeeForOrder($order)['adjusted']+$order['coupon_discount_amount'] + $order['store_discount_amount']) }}
+                {{ \App\CentralLogics\Helpers::number_format_short($order['order_amount']-$order['dm_tips']-$order['total_tax_amount']-app(\App\Services\Order\OrderService::class)->adjustedFeeForOrder($order)['adjusted']+$order['coupon_discount_amount'] + $order['store_discount_amount']) }}
             </div>
             @if ($order->payment_status == 'paid')
                 <strong class="text-success">
@@ -79,15 +79,15 @@
         </div>
     </td>
     <td class="text-center mw--85px text-capitalize">
-        {{isset($order->transaction) ? $order->transaction->received_by : translate('messages.not_received_yet')}}
+        {{isset($order->transaction) ? $order->transaction->received_by : translate('messages.Not received yet')}}
     </td>
     <td class="text-center mw--85px text-capitalize">
-            {{ translate(str_replace('_', ' ', $order['payment_method'])) }}
+            {{ payment_method_label($order['payment_method']) }}
     </td>
     <td class="text-center mw--85px text-capitalize">
         @if($order['order_status']=='pending')
                 <span class="badge badge-soft-info">
-                  {{translate('messages.pending')}}
+                  {{translate('Pending')}}
                 </span>
             @elseif($order['order_status']=='confirmed')
                 <span class="badge badge-soft-info">
@@ -95,19 +95,19 @@
                 </span>
             @elseif($order['order_status']=='processing')
                 <span class="badge badge-soft-warning">
-                  {{translate('messages.processing')}}
+                  {{translate('Processing')}}
                 </span>
             @elseif($order['order_status']=='picked_up')
                 <span class="badge badge-soft-warning">
-                  {{translate('messages.out_for_delivery')}}
+                  {{translate('Out for delivery')}}
                 </span>
             @elseif($order['order_status']=='delivered')
                 <span class="badge badge-soft-success">
-                  {{translate('messages.delivered')}}
+                  {{translate('Delivered')}}
                 </span>
             @elseif($order['order_status']=='failed')
                 <span class="badge badge-soft-danger">
-                  {{translate('messages.payment_failed')}}
+                  {{translate('Payment failed')}}
                 </span>
             @elseif($order['order_status']=='handover')
                 <span class="badge badge-soft-danger">
@@ -115,11 +115,11 @@
                 </span>
             @elseif($order['order_status']=='canceled')
                 <span class="badge badge-soft-danger">
-                  {{translate('messages.canceled')}}
+                  {{translate('Canceled')}}
                 </span>
             @elseif($order['order_status']=='accepted')
                 <span class="badge badge-soft-danger">
-                  {{translate('messages.accepted')}}
+                  {{translate('Accepted')}}
                 </span>
             @else
                 <span class="badge badge-soft-danger">
@@ -132,12 +132,12 @@
 
     <td>
         <div class="btn--container justify-content-center">
-            <a class="ml-2 btn btn-sm btn--warning btn-outline-warning action-btn"
+            <a class="ml-2 btn btn-sm action-btn action-btn--view"
                 href="{{ route('admin.order.details', ['id' => $order['id'],'module_id'=>$order['module_id']]) }}">
-                <i class="tio-invisible"></i>
+                <i class="tio-visible-outlined"></i>
             </a>
             <a class="ml-2 btn btn-sm btn--primary btn-outline-primary action-btn"
-                href="{{ route('admin.transactions.order.generate-invoice', ['id' => $order['id']]) }}">
+                href="{{ route('admin.order.generate-invoice', ['id' => $order['id']]) }}">
                 <i class="tio-print"></i>
             </a>
         </div>

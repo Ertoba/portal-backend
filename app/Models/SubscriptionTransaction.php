@@ -5,11 +5,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Scopes\ZoneScope;
-use App\Traits\ReportFilter;
+use App\Traits\Report\ReportFilterTrait;
 
 class SubscriptionTransaction extends Model
 {
-    use HasFactory, ReportFilter;
+    use HasFactory, ReportFilterTrait;
 
     protected $guarded = ['id'];
 

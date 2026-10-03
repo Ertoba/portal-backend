@@ -1,9 +1,8 @@
-{{-- {{ dd($withdrawal_method) }} --}}
 
 <div class="modal-body pt-0 pb-2">
-    <h4 class="text-center mb-1">{{translate('withdraw_Method_List')}}</h4>
+    <h4 class="text-center mb-1">{{translate('Withdraw method list')}}</h4>
     <div class="d-flex justify-content-center  align-items-center gap-2">
-        <span>{{translate('method_Name')}}</span>
+        <span>{{translate('Method name')}}</span>
         :
         <span class="font-semibold text-dark">{{ $withdrawal_method->method_name }}</span>
     </div>
@@ -12,13 +11,22 @@
 <div class="table-responsive">
     <table class="table table-align-middle text-dark">
         <tbody>
+            @php
+                $input_type_labels = [
+                    'string' => translate('Text'),
+                    'number' => translate('Number'),
+                    'date' => translate('Date'),
+                    'email' => translate('Email'),
+                    'phone' => translate('Phone'),
+                ];
+            @endphp
             @foreach($withdrawal_method['method_fields'] as $key=>$method_field)
             <tr>
                 <td class="px-4 {{1+$key === 1 ? "border-top-0" : ""}}">{{1+$key}}</td>
                 <td class="{{1+$key === 1 ? "border-top-0" : ""}}">
                     <div>
-                        <div>{{ translate('messages.Name')}}: {{ translate($method_field['input_name'])}}</div>
-                        <div>{{ translate('messages.Type')}}: {{ translate($method_field['input_type']) }}</div>
+                        <div>{{ translate('Name')}}: {{ $method_field['input_name'] }}</div>
+                        <div>{{ translate('Type')}}: {{ $input_type_labels[$method_field['input_type']] ?? ucfirst($method_field['input_type']) }}</div>
                         <div>{{ translate('messages.Placeholder')}}: {{ $method_field['placeholder'] }}</div>
                     </div>
                 </td>
@@ -30,7 +38,7 @@
                             </svg>' :
                             ''
                         !!}
-                        {{ $method_field['is_required'] ? translate('messages.Required') :  translate('messages.Optional') }}
+                        {{ $method_field['is_required'] ? translate('messages.Required.') :  translate('Optional') }}
                     </div>
                 </td>
             </tr>

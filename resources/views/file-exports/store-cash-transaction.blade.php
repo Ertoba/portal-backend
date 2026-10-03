@@ -7,23 +7,23 @@
     <table>
         <thead>
             <tr>
-                <th>{{ translate('Filter_Criteria') }}</th>
+                <th>{{ translate('Filter criteria') }}</th>
                 <th></th>
                 <th>
-                    {{ translate('Search_Bar_Content')  }}: {{ $data['search'] ?? translate('N/A') }}
+                    {{ translate('Search bar content')  }}: {{ $data['search'] ?? translate('N/A') }}
                 </th>
                 <th> </th>
                 </tr>
 
 
         <tr>
-            <th>{{ translate('sl') }}</th>
-            <th>{{ translate('Transaction_ID') }}</th>
-            <th>{{ translate('Transaction_Time') }}</th>
-            <th>{{ translate('Balance_Before_Transaction') }}</th>
-            <th>{{ translate('Transaction_Amount') }}</th>
-            <th>{{ translate('Reference') }}</th>
-            <th>{{ translate('Payment_method') }}</th>
+            <th>{{ translate('SL') }}</th>
+            <th>{{ translate('Transaction ID') }}</th>
+            <th>{{ translate('Transaction time') }}</th>
+            <th>{{ translate('Balance before transaction') }}</th>
+            <th>{{ translate('Transaction amount') }}</th>
+            <th>{{ translate('reference') }}</th>
+            <th>{{ translate('Payment method') }}</th>
 
         </thead>
         <tbody>

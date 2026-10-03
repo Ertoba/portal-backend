@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::table('users', function (Blueprint $table) {
             if (!Schema::hasColumn('users', 'pro_status')) {
-                $table->boolean('pro_status')->default(false)->after('status');
+                $table->boolean('pro_status')->default(false);
             }
         });
     }

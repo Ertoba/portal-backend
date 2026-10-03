@@ -7,7 +7,7 @@ use App\Contracts\Repositories\TranslationRepositoryInterface;
 use App\Enums\ViewPaths\Admin\Attribute as AttributeViewPath;
 use App\Http\Controllers\BaseController;
 use App\Http\Requests\Admin\AttributeAddRequest;
-use App\Services\AttributeService;
+use App\Services\Item\AttributeService;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -40,16 +40,19 @@ class AttributeController extends BaseController
             searchValue: $request['search'],
             dataLimit: config('default_pagination')
         );
+        $attributeIds = $attributes->pluck('id')->all();
+        $usageStats = $this->attributeService->getUsageStats(attributeIds: $attributeIds);
+        $translatedLocales = $this->attributeService->getTranslatedLocales(attributeIds: $attributeIds);
         $language = getWebConfig('language');
         $defaultLang = str_replace('_', '-', app()->getLocale());
-        return view(AttributeViewPath::INDEX[VIEW], compact('attributes','language','defaultLang'));
+        return view(AttributeViewPath::INDEX[VIEW], compact('attributes','language','defaultLang','usageStats','translatedLocales'));
     }
 
     public function add(AttributeAddRequest $request): RedirectResponse
     {
-        $attribute = $this->attributeRepo->add(data: $this->attributeService->getAddData(request: $request));
+        $attribute = $this->attributeRepo->add(data: $this->attributeService->getAddData($request->all()));
         $this->translationRepo->addByModel(request: $request, model: $attribute, modelPath: 'App\Models\Attribute', attribute: 'name');
-        Toastr::success(translate('messages.attribute_added_successfully'));
+        Toastr::success(translate('Added successfully'));
         return back();
     }
 
@@ -63,16 +66,16 @@ class AttributeController extends BaseController
 
     public function update(AttributeUpdateRequest $request, $id): RedirectResponse
     {
-        $attribute = $this->attributeRepo->update(id: $id ,data: $this->attributeService->getAddData(request: $request));
+        $attribute = $this->attributeRepo->update(id: $id ,data: $this->attributeService->getAddData($request->all()));
         $this->translationRepo->updateByModel(request: $request, model: $attribute, modelPath: 'App\Models\Attribute', attribute: 'name');
-        Toastr::success(translate('messages.attribute_updated_successfully'));
+        Toastr::success(translate('Updated successfully'));
         return back();
     }
 
     public function delete(Request $request): RedirectResponse
     {
         $this->attributeRepo->delete(id: $request['id']);
-        Toastr::success(translate('messages.attribute_deleted_successfully'));
+        Toastr::success(translate('Deleted successfully'));
         return back();
     }
 

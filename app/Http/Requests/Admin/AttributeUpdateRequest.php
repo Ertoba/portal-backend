@@ -11,9 +11,6 @@ use Illuminate\Foundation\Http\FormRequest;
  */
 class AttributeUpdateRequest extends FormRequest
 {
-    /**
-     * Determine if the user is authorized to make this request.
-     */
     public function authorize(): bool
     {
         return true;
@@ -36,8 +33,8 @@ class AttributeUpdateRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'name.required' => translate('messages.Name is required!'),
-            'name.0.required'=>translate('default_data_is_required'),
+            'name.required' => translate('messages.Name is required'),
+            'name.0.required'=>translate('Default data is required'),
         ];
     }
 }

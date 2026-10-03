@@ -1,29 +1,15 @@
 "use strict";
 
-var forms = document.querySelectorAll('.priority-form');
-
-forms.forEach(function(form) {
-    var select = form.querySelector('.priority-select');
-
-    select.addEventListener('change', function() {
-        form.submit();
-    });
-});
-
-  $('.location-reload-to-category').on('click', function() {
-                const url = $(this).data('url');
-                let nurl = new URL(url);
-                nurl.searchParams.delete('search');
-                location.href = nurl;
-            });
-
             $('#reset_btn').click(function(){
             $('#exampleFormControlSelect1').val(null).trigger('change');
             })
 
-             $(document).on('click', '.data-info-show', function() {
+        $(document).on('click', '.data-info-show', function() {
             let id = $(this).data('id');
             let url = $(this).data('url');
+            $($(this).data('target')).addClass('open');
+            $('#offcanvasOverlay').addClass('show');
+            $('body').addClass('modal-open');
             $('#content-disable').addClass('disabled');
             fetch_data(id, url)
         })
@@ -46,7 +32,6 @@ forms.forEach(function(form) {
                 }
             })
         }
-
 
         function initLangTabs() {
             const langLinks = document.querySelectorAll(".lang_link1");

@@ -1,5 +1,5 @@
 <div class="row">
-    <div class="col-lg-12 text-center "><h1 >{{ translate('expense_reports') }}</h1></div>
+    <div class="col-lg-12 text-center "><h1 >{{ translate('Expense reports') }}</h1></div>
     <div class="col-lg-12">
 
 
@@ -7,21 +7,21 @@
     <table>
         <thead>
             <tr>
-                <th>{{ translate('Search_Criteria') }}</th>
+                <th>{{ translate('Search criteria') }}</th>
                 <th></th>
                 <th></th>
                 <th>
                     @if(isset($data['module']))
-                    {{ translate('module' )}} - {{ $data['module']?translate($data['module']):translate('all') }}
+                    {{ translate('Module' )}} - {{ $data['module']?translate($data['module']):translate('All') }}
                     <br>
                     @endif
 
-                    {{ translate('zone' )}} - {{ $data['zone']??translate('all') }}
+                    {{ translate('Zone' )}} - {{ $data['zone']??translate('All') }}
                     <br>
-                    {{ (isset($data['module_type']) && $data['module_type'] == 'rental')?translate('provider'):translate('vendor')}} - {{ $data['store']??translate('all') }}
+                    {{ (isset($data['module_type']) && $data['module_type'] == 'rental')?translate('Provider'):translate('vendor')}} - {{ $data['store']??translate('All') }}
                     @if (!isset($data['type']) )
                     <br>
-                    {{ translate('customer' )}} - {{ $data['customer']??translate('all') }}
+                    {{ translate('Customer' )}} - {{ $data['customer']??translate('All') }}
                     @endif
                     @if ($data['from'])
                     <br>
@@ -32,9 +32,9 @@
                     {{ translate('to' )}} - {{ $data['to']?Carbon\Carbon::parse($data['to'])->format('d M Y'):'' }}
                     @endif
                     <br>
-                    {{ translate('filter')  }}- {{  translate($data['filter']) }}
+                    {{ translate('Filter')  }}- {{  translate($data['filter']) }}
                     <br>
-                    {{ translate('Search_Bar_Content')  }}- {{ $data['search'] ??translate('N/A') }}
+                    {{ translate('Search bar content')  }}- {{ $data['search'] ??translate('N/A') }}
 
                 </th>
                 <th> </th>
@@ -43,17 +43,17 @@
                 <th></th>
                 </tr>
         <tr>
-            <th>{{ translate('sl') }}</th>
+            <th>{{ translate('SL') }}</th>
             @if (isset($data['module_type']))
-            <th>{{$data['module_type'] == 'rental'? translate('trip_id') : translate('messages.order_id') }}</th>
+            <th>{{$data['module_type'] == 'rental'? translate('Trip ID') : ($data['module_type'] == 'service'? translate('Booking ID') : translate('messages.Order ID')) }}</th>
             @elseif(addon_published_status('Rental'))
-                <th>{{ translate('messages.order_id') }}</th>
-                <th>{{ translate('trip_id') }}</th>
+                <th>{{ translate('messages.Order ID') }}</th>
+                <th>{{ translate('Trip ID') }}</th>
             @endif
-            <th>{{translate('Date & Time')}}</th>
-            <th>{{ translate('Expense Type') }}</th>
-            <th>{{ translate('Customer Name') }}</th>
-            <th>{{translate('expense amount')}}</th>
+            <th>{{translate('Date & time')}}</th>
+            <th>{{ translate('Expense type') }}</th>
+            <th>{{ translate('Customer name') }}</th>
+            <th>{{translate('Expense amount')}}</th>
         </thead>
         <tbody>
         @foreach($data['expenses'] as $key => $exp)
@@ -61,7 +61,9 @@
                 <td>{{ $key+1}}</td>
                 @if (isset($data['module_type']))
                     <td>
-                        @if ($exp->order && $data['module_type'] != 'rental')
+                        @if ($data['module_type'] == 'service')
+                            {{ $exp['service_booking_id'] }}
+                        @elseif ($exp->order && $data['module_type'] != 'rental')
                             {{ $exp['order_id'] }}
                         @elseif ($exp->trip && $data['module_type'] == 'rental')
                             {{ $exp['trip_id'] }}
@@ -87,7 +89,7 @@
                     {{$exp->order?->customer['f_name'].' '.$exp->order?->customer['l_name']}}
                     @else
                         <label
-                            class="badge badge-danger">{{translate('messages.invalid_customer_data')}}</label>
+                            class="badge badge-danger">{{translate('messages.Invalid customer data')}}</label>
                     @endif
 
                     @elseif($exp->trip)
@@ -100,14 +102,23 @@
                                 {{$exp?->trip?->user_info['contact_person_name'] }}
                             </div>
                         @else
-                            {{ translate('messages.Guest_user') }}
+                            {{ translate('messages.Guest user') }}
                         @endif
 
+
+                    @elseif ($exp->serviceBooking)
+                    @if($exp->serviceBooking?->is_guest)
+                        <strong>{{ $exp->serviceBooking['user_info']['contact_person_name'] ?? translate('messages.Guest user') }}</strong>
+                    @elseif($exp->serviceBooking?->customer)
+                        {{ $exp->serviceBooking?->customer['f_name'].' '.$exp->serviceBooking?->customer['l_name'] }}
+                    @else
+                        <label class="badge badge-danger">{{translate('messages.Invalid customer data')}}</label>
+                    @endif
 
                     @elseif ($exp['type'] == 'add_fund_bonus')
                     {{ $exp->user->f_name.' '.$exp->user->l_name }}
                     @else
-                    <label class="badge badge-danger">{{translate('messages.invalid_customer_data')}}</label>
+                    <label class="badge badge-danger">{{translate('messages.Invalid customer data')}}</label>
 
                     @endif
                 </td>

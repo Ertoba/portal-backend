@@ -17,10 +17,6 @@ use Modules\TaxModule\Entities\Tax;
 
 class AdminTaxReportController extends Controller
 {
-    public function __construct()
-    {
-        DB::statement("SET sql_mode=(SELECT REPLACE(@@sql_mode,'ONLY_FULL_GROUP_BY',''));");
-    }
 
     public function getTaxReport(Request $request)
     {
@@ -44,7 +40,6 @@ class AdminTaxReportController extends Controller
         $taxRates =  $this->getTaxRates($request);
 
         $tax_on_subscription = $taxRates['tax_on_subscription'];
-        // $tax_on_packaging_charge =  $taxRates['tax_on_packaging_charge'];
         $tax_on_service_charge = $taxRates['tax_on_service_charge'];
         $tax_on_delivery_charge_commission = $taxRates['tax_on_delivery_charge_commission'];
         $tax_on_order_commission = $taxRates['tax_on_order_commission'];
@@ -87,7 +82,6 @@ class AdminTaxReportController extends Controller
         }
         $selectedTax = [
             'tax_on_subscription' => !isset($request->tax_rate) ?   $tax_on_subscription?->select('id', 'tax_rate', 'name')?->toArray() : [],
-            // 'tax_on_packaging_charge' => !isset($request->tax_rate) ? $tax_on_packaging_charge?->select('id', 'tax_rate', 'name')?->toArray() : [],
             'tax_on_service_charge' => !isset($request->tax_rate) ? $tax_on_service_charge?->select('id', 'tax_rate', 'name')?->toArray() : [],
             'tax_on_delivery_charge_commission' => !isset($request->tax_rate) ? $tax_on_delivery_charge_commission?->select('id', 'tax_rate', 'name')?->toArray() : [],
             'tax_on_order_commission' => !isset($request->tax_rate) ? $tax_on_order_commission?->select('id', 'tax_rate', 'name')?->toArray() : [],
@@ -195,7 +189,7 @@ class AdminTaxReportController extends Controller
                 ];
             });
         if (isset($request->all)) {
-            $data[] = (object)['id' => 'all', 'text' => translate('messages.all')];
+            $data[] = (object)['id' => 'all', 'text' => translate('All')];
         }
         return response()->json($data);
     }
@@ -205,9 +199,6 @@ class AdminTaxReportController extends Controller
     {
         $subqueries = [];
 
-        // if (count($tax_on_packaging_charge)) {
-        //     $subqueries[] = $this->buildTaxSubquery($tax_on_packaging_charge, 'extra_packaging_amount', 'packaging_charge', $startDate, $endDate);
-        // }
         if (count($tax_on_service_charge)) {
             $subqueries[] = $this->buildTaxSubquery($tax_on_service_charge, 'additional_charge', 'service_charge', $startDate, $endDate);
         }
@@ -450,6 +441,7 @@ class AdminTaxReportController extends Controller
 
         $total_tax_amount = 0;
         $orderData = OrderTransaction::whereNull('status')
+            ->with('order')
             ->whereBetween('created_at', [$startDate, $endDate])
             ->select('order_id', 'order_amount', 'tax', 'admin_commission', 'admin_expense', 'delivery_fee_comission', 'additional_charge');
 
@@ -528,6 +520,7 @@ class AdminTaxReportController extends Controller
 
         $total_tax_amount = 0;
         $orderData = OrderTransaction::whereNull('status')
+            ->with('order')
             ->whereBetween('created_at', [$startDate, $endDate])
             ->select('order_id', 'order_amount', 'delivery_fee_comission');
         if ($export === false) {
@@ -601,6 +594,7 @@ class AdminTaxReportController extends Controller
 
         $total_tax_amount = 0;
         $orderData = OrderTransaction::whereNull('status')
+            ->with('order')
             ->whereBetween('created_at', [$startDate, $endDate])
             ->select('order_id', 'order_amount', 'additional_charge');
 
@@ -742,7 +736,6 @@ class AdminTaxReportController extends Controller
         $taxRates =  $this->getTaxRates($request);
 
         $tax_on_subscription = $taxRates['tax_on_subscription'];
-        // $tax_on_packaging_charge =  $taxRates['tax_on_packaging_charge'];
         $tax_on_service_charge = $taxRates['tax_on_service_charge'];
         $tax_on_delivery_charge_commission = $taxRates['tax_on_delivery_charge_commission'];
         $tax_on_order_commission = $taxRates['tax_on_order_commission'];
@@ -819,14 +812,17 @@ class AdminTaxReportController extends Controller
         $startDate = $startDate->startOfDay();
         $endDate = $endDate->endOfDay();
 
-        $orders = Order::where('order_type', 'parcel')
+        $query = Order::where('order_type', 'parcel')
             ->whereIn('order_status', ['delivered', 'refund_requested', 'refund_request_canceled'])
-            ->whereBetween('created_at', [$startDate, $endDate])
+            ->whereBetween('created_at', [$startDate, $endDate]);
+        $totals = (clone $query)->selectRaw('COUNT(*) as total_orders, COALESCE(SUM(order_amount), 0) as total_order_amount, COALESCE(SUM(total_tax_amount), 0) as total_tax')->first();
+        $totalOrders = $totals->total_orders;
+        $totalOrderAmount = $totals->total_order_amount;
+        $totalTax = $totals->total_tax;
+        $orders = $query->with(['orderTaxes', 'customer:id,f_name,l_name,phone', 'parcel_category:id,name'])
+            ->latest()
             ->paginate(config('default_pagination'))
             ->withQueryString();
-        $totalOrders = $orders->count();
-        $totalOrderAmount = $orders->sum('order_amount');
-        $totalTax = $orders->sum('total_tax_amount');
 
         $dateRange = $startDate->format('m/d/Y') . ' - ' . $endDate->format('m/d/Y');
         $startDate = $startDate->toIso8601String();

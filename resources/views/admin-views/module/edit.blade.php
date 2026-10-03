@@ -1,9 +1,10 @@
 @extends('layouts.admin.app')
 
-@section('title',translate('Update_Business_Module'))
+@section('title',translate('Update business module'))
 
 @push('css_or_js')
-<link rel="stylesheet" href="{{asset('public/assets/admin/css/radio-image.css')}}">
+    <link rel="stylesheet" href="{{asset('public/assets/admin/css/third-party-setup.css')}}">
+    <link rel="stylesheet" href="{{asset('public/assets/admin/css/module-setup.css')}}">
 @endpush
 
 @section('edit_module')
@@ -11,210 +12,267 @@ active
 @endsection
 
 @section('content')
-    <div class="content container-fluid">
-        <!-- Page Header -->
-        <div class="page-header">
+@php
+    /*
+     * One pass over the eager-loaded translations instead of a nested loop per
+     * language tab — the controller loads every locale here (the edit form needs
+     * them all), so the rows are already in memory.
+     */
+    $translations = [];
+    foreach ($module->translations as $t) {
+        $translations[$t->locale][$t->key] = $t->value;
+    }
+
+    $typeMeta = config('module.module_type_meta', []);
+    $typeIcon = $typeMeta[$module->module_type]['icon'] ?? 'tio-layers-outlined';
+    $typeDescription = config('module.'.$module->module_type.'.description');
+@endphp
+<div class="content container-fluid tps mds">
+    <div class="page-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <div>
             <h1 class="page-header-title">
                 <span class="page-header-icon">
                     <img src="{{asset('public/assets/admin/img/module.png')}}" alt="">
                 </span>
                 <span>
-                    {{translate('Edit_Business_Module')}}
+                    {{translate('Edit business module')}}
                 </span>
             </h1>
+            <p class="page-header-desc">{{ translate('Change this module\'s name, artwork or the zones it is switched on in.') }}</p>
         </div>
-        <!-- End Page Header -->
-        <div class="card">
-            <div class="card-body pb-0">
-                <form action="{{route('admin.business-settings.module.update',[$module['id']])}}" method="post" enctype="multipart/form-data">
-                    @method('PUT')
-                    @csrf
+        <div class="page-header-actions">
+            <a href="{{route('admin.business-settings.module.index')}}" class="btn btn--reset">
+                <i class="tio-arrow-backward"></i> {{translate('messages.Back')}}
+            </a>
+        </div>
+    </div>
+
+    <form action="{{route('admin.business-settings.module.update',[$module['id']])}}" method="post" enctype="multipart/form-data" class="row g-3">
+        @method('PUT')
+        @csrf
+
+        <div class="col-xl-8">
+            <div class="tps-card">
+                <div class="tps-card__head">
+                    <span class="tps-card__brand"><i class="tio-file-text-outlined"></i></span>
+                    <div class="tps-card__titles">
+                        <h2 class="tps-card__title">{{translate('Module details')}}</h2>
+                        <p class="tps-card__subtitle">{{translate('The name and description customers see for this module in the apps and on your landing page.')}}</p>
+                    </div>
+                </div>
+                <div class="tps-card__body">
                     @if($language)
-                        <ul class="nav nav-tabs mb-4 border-0">
+                        <ul class="nav nav-tabs mb-3 border-0">
                             <li class="nav-item">
-                                <a class="nav-link lang_link active"
-                                href="#"
-                                id="default-link">{{translate('messages.default')}}</a>
+                                <a class="nav-link lang_link active" href="#" id="default-link">{{translate('Default')}}</a>
                             </li>
                             @foreach ($language as $lang)
                                 <li class="nav-item">
-                                    <a class="nav-link lang_link"
-                                        href="#"
-                                        id="{{ $lang }}-link">{{ \App\CentralLogics\Helpers::get_language_name($lang) . '(' . strtoupper($lang) . ')' }}</a>
+                                    <a class="nav-link lang_link" href="#"
+                                       id="{{ $lang }}-link">{{ \App\CentralLogics\Helpers::get_language_name($lang) . '(' . strtoupper($lang) . ')' }}</a>
                                 </li>
                             @endforeach
                         </ul>
+
                         <div class="lang_form" id="default-form">
-                            <div class="form-group" >
-                                <label class="input-label" for="exampleFormControlInput1">{{ translate('messages.Business_Module_name')}} ({{ translate('messages.default') }})</label>
-                                <input type="text" name="module_name[]" class="form-control" maxlength="191" value="{{$module?->getRawOriginal('module_name')}}">
+                            <div class="tps-field">
+                                <label class="tps-field__label" for="module_name_default">
+                                    {{ translate('Business module name')}} ({{ translate('Default') }})
+                                    <span class="tps-req">*</span>
+                                </label>
+                                <input type="text" name="module_name[]" id="module_name_default" class="form-control" maxlength="191"
+                                       value="{{$module?->getRawOriginal('module_name')}}">
+                                <small class="tps-field__hint">{{translate('Keep it short — it is the label shown in the module switcher.')}}</small>
                             </div>
-                            <div class="form-group">
-                                <label class="input-label d-flex" for="module_type">{{translate('messages.description')}} ({{ translate('messages.default') }})<span class="form-label-secondary text-danger d-flex"
-                                    data-toggle="tooltip" data-placement="right"
-                                    data-original-title="{{ translate('messages.Write_a_short_description_of_your_new_business_module_within_100_words_(550_characters)')}}"><img
-                                        src="{{ asset('/public/assets/admin/img/info-circle.svg') }}"
-                                        alt="{{ translate('messages.veg_non_veg') }}"></span></label>
-                                <textarea  data-value="{!! $module->description ?? '' !!}" id="description"  class="ckeditor form-control" name="description[]">{!! $module?->getRawOriginal('description') ?? '' !!}</textarea>
+                            <div class="tps-field">
+                                <label class="tps-field__label" for="description">
+                                    {{translate('messages.Description')}} ({{ translate('Default') }})
+                                    <span class="tps-req">*</span>
+                                </label>
+                                <textarea data-value="{!! $module?->getRawOriginal('description') ?? '' !!}" id="description" class="ckeditor form-control" name="description[]">{!! $module?->getRawOriginal('description') ?? '' !!}</textarea>
+                                <small class="tps-field__hint">{{ translate('messages.Write a short description of your new business module.') }} {{ translate('Word limit') }}: 100, {{ translate('Character limit') }}: 550</small>
                             </div>
-                            <div class="form-group">
-                                <label class="input-label d-flex">{{ translate('Short_description') }} ({{ translate('messages.default') }})</label>
-                                <textarea class="form-control" name="short_description[]" maxlength="100" rows="2" placeholder="{{ translate('messages.Write_a_short_description') }}">{{ $module?->getRawOriginal('short_description') }}</textarea>
+                            <div class="tps-field">
+                                <label class="tps-field__label" for="short_description_default">
+                                    {{ translate('Short description') }} ({{ translate('Default') }})
+                                    <span class="tps-opt">{{ translate('Optional') }}</span>
+                                </label>
+                                <textarea class="form-control" name="short_description[]" id="short_description_default" maxlength="100" rows="2"
+                                          placeholder="{{ translate('messages.Write a short description') }}">{{ $module?->getRawOriginal('short_description') }}</textarea>
+                                <small class="tps-field__hint">{{translate('One line that sits under the module name in the module list.')}} {{translate('Character limit')}}: 100</small>
                             </div>
                         </div>
-
                         <input type="hidden" name="lang[]" value="default">
+
                         @foreach($language as $lang)
-                            <?php
-                                if(count($module['translations'])){
-                                    $translate = [];
-                                    foreach($module['translations'] as $t)
-                                    {
-                                        if($t->locale == $lang && $t->key=="module_name"){
-                                            $translate[$lang]['module_name'] = $t->value;
-                                        }
-
-                                        if($t->locale == $lang && $t->key=="description"){
-                                            $translate[$lang]['description'] = $t->value;
-                                        }
-
-                                        if($t->locale == $lang && $t->key=="short_description"){
-                                            $translate[$lang]['short_description'] = $t->value;
-                                        }
-                                    }
-                                }
-                            ?>
                             <div class="d-none lang_form" id="{{$lang}}-form">
-                                <div class="form-group" >
-                                    <label class="input-label" for="exampleFormControlInput1">{{ translate('messages.Business_Module_name')}} ({{strtoupper($lang)}})</label>
-                                    <input type="text" name="module_name[]" class="form-control" maxlength="191" value="{{$translate[$lang]['module_name']??''}}">
+                                <div class="tps-field">
+                                    <label class="tps-field__label" for="module_name_{{$lang}}">
+                                        {{ translate('Business module name')}} ({{strtoupper($lang)}})
+                                        <span class="tps-opt">{{ translate('Optional') }}</span>
+                                    </label>
+                                    <input type="text" name="module_name[]" id="module_name_{{$lang}}" class="form-control" maxlength="191"
+                                           value="{{$translations[$lang]['module_name'] ?? ''}}">
+                                    <small class="tps-field__hint">{{translate('Leave it empty to fall back to the default name.')}}</small>
                                 </div>
-                                <div class="form-group">
-                                    <label class="input-label d-flex" for="module_type">{{translate('messages.description')}} ({{strtoupper($lang)}})<span class="form-label-secondary text-danger d-flex"
-                                        data-toggle="tooltip" data-placement="right"
-                                        data-original-title="{{ translate('messages.Write_a_short_description_of_your_new_business_module_within_100_words_(550_characters)')}}"><img
-                                            src="{{ asset('/public/assets/admin/img/info-circle.svg') }}"
-                                            alt="{{ translate('messages.veg_non_veg') }}"></span></label>
-                                    <textarea  data-value="{!! $translate[$lang]['description']??'' !!}" id="description{{ $lang }}" class="ckeditor form-control" name="description[]">{!! $translate[$lang]['description']??'' !!}</textarea>
+                                <div class="tps-field">
+                                    <label class="tps-field__label" for="description{{ $lang }}">
+                                        {{translate('messages.Description')}} ({{strtoupper($lang)}})
+                                        <span class="tps-opt">{{ translate('Optional') }}</span>
+                                    </label>
+                                    <textarea data-value="{!! $translations[$lang]['description'] ?? '' !!}" id="description{{ $lang }}" class="ckeditor form-control" name="description[]">{!! $translations[$lang]['description'] ?? '' !!}</textarea>
+                                    <small class="tps-field__hint">{{ translate('messages.Write a short description of your new business module.') }} {{ translate('Word limit') }}: 100, {{ translate('Character limit') }}: 550</small>
                                 </div>
-                                <div class="form-group">
-                                    <label class="input-label d-flex">{{ translate('Short_description') }} ({{strtoupper($lang)}})</label>
-                                    <textarea class="form-control" name="short_description[]" maxlength="100" rows="2" placeholder="{{ translate('messages.Write_a_short_description') }}">{{ $translate[$lang]['short_description']??'' }}</textarea>
+                                <div class="tps-field">
+                                    <label class="tps-field__label" for="short_description_{{$lang}}">
+                                        {{ translate('Short description') }} ({{strtoupper($lang)}})
+                                        <span class="tps-opt">{{ translate('Optional') }}</span>
+                                    </label>
+                                    <textarea class="form-control" name="short_description[]" id="short_description_{{$lang}}" maxlength="100" rows="2"
+                                              placeholder="{{ translate('messages.Write a short description') }}">{{ $translations[$lang]['short_description'] ?? '' }}</textarea>
                                 </div>
                             </div>
-
                             <input type="hidden" name="lang[]" value="{{$lang}}">
                         @endforeach
                     @else
-                        <div class="form-group">
-                            <label class="input-label" for="exampleFormControlInput1">{{ translate('messages.Business_Module_name')}}</label>
-                            <input type="text" name="module_name" class="form-control" placeholder="{{translate('messages.new_category')}}" value="{{old('name')}}" maxlength="191">
+                        <div class="tps-field">
+                            <label class="tps-field__label" for="module_name_default">
+                                {{ translate('Business module name')}} <span class="tps-req">*</span>
+                            </label>
+                            <input type="text" name="module_name" id="module_name_default" class="form-control" maxlength="191"
+                                   value="{{$module?->getRawOriginal('module_name')}}">
+                            <small class="tps-field__hint">{{translate('Keep it short — it is the label shown in the module switcher.')}}</small>
                         </div>
-                        <div class="form-group">
-                            <label class="input-label" for="module_type">{{translate('messages.description')}}</label>
-                            <textarea  data-value="{!! $module->description !!}" id="description" class="ckeditor form-control" name="description">{!! $module->description !!}</textarea>
+                        <div class="tps-field">
+                            <label class="tps-field__label" for="description">
+                                {{translate('messages.Description')}} <span class="tps-req">*</span>
+                            </label>
+                            <textarea data-value="{!! $module->description !!}" id="description" class="ckeditor form-control" name="description">{!! $module->description !!}</textarea>
+                            <small class="tps-field__hint">{{ translate('messages.Write a short description of your new business module.') }} {{ translate('Word limit') }}: 100, {{ translate('Character limit') }}: 550</small>
                         </div>
-                        <div class="form-group">
-                            <label class="input-label">{{ translate('Short_description') }}</label>
-                            <textarea class="form-control" name="short_description" maxlength="100" rows="2" placeholder="{{ translate('messages.Write_a_short_description') }}">{{ $module?->getRawOriginal('short_description') }}</textarea>
+                        <div class="tps-field">
+                            <label class="tps-field__label" for="short_description_default">
+                                {{ translate('Short description') }} <span class="tps-opt">{{ translate('Optional') }}</span>
+                            </label>
+                            <textarea class="form-control" name="short_description" id="short_description_default" maxlength="100" rows="2"
+                                      placeholder="{{ translate('messages.Write a short description') }}">{{ $module?->getRawOriginal('short_description') }}</textarea>
+                            <small class="tps-field__hint">{{translate('One line that sits under the module name in the module list.')}} {{translate('Character limit')}}: 100</small>
                         </div>
                         <input type="hidden" name="lang[]" value="default">
                     @endif
                 </div>
             </div>
-                <br>
-                <h5 class="mb-3">{{translate('module_setup')}}</h5>
 
-                <div class="card">
-                    <div class="card-body">
-                        <div class="row g-3">
-                            <div class="col-lg-6">
-                                <div class="form-group">
-                                    <h6 class="mb-3">{{translate('business_module_type')}} <span class="badge badge-danger">{{ translate('not_editable') }}</span></h6>
-                                    <div class="card">
-                                        <div class="card-body p-0">
-                                            <div class="module-radio-group">
-                                            @foreach (config('module.module_type') as $key)
-                                            @if($key != 'rental'  )
-                                            <label class="form-check form--check">
-                                                <input class="form-check-input" disabled type="radio" name="module_type" value="{{$key}}" {{$key==$module->module_type?'checked':''}}>
-                                                <span class="form-check-label">
-                                                    {{translate($key)}}
-                                                </span>
-                                            </label>
-                                            @elseif($key == 'rental' && addon_published_status('Rental')  )
-                                            <label class="form-check form--check">
-                                                <input class="form-check-input" disabled type="radio" name="module_type" value="{{$key}}" {{$key==$module->module_type?'checked':''}}>
-                                                <span class="form-check-label">
-                                                    {{translate($key)}}
-                                                </span>
-                                            </label>
-                                            @endif
-                                            @endforeach
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="card mt-1" id="module_des_card">
-                                        <div class="card-body" id="module_description">{{config('module.'.$module->module_type)['description']}}</div>
-                                    </div>
-                                </div>
-                            </div>
-                        <div class="col-lg-6">
-                            <h6 class="mb-3">{{translate('Chose related images')}}</h6>
-                            <div class="card module-logo-card mb-3">
-                                <div class="card-body">
-                                    <div class="row h-100">
-                                        <div class="col-sm-6">
-                                            <div class="form-group m-0 h-100 d-flex flex-column justify-content-center align-items-center">
-                                                <label>
-                                                    {{translate('messages.icon')}}
-                                                    <small class="text-danger">* ( {{translate('messages.ratio')}} 1:1)</small>
-                                                </label>
-                                                <label class="text-center my-auto position-relative">
-                                                    <img class="img--176 h-unset aspect-ratio-1 image--border" id="viewer" data-onerror-image="{{asset('public/assets/admin/img/upload-img.png')}}" src="{{ $module['icon_full_url'] }}"
-                                                    alt="image" />
-                                                    <div class="icon-file-group">
-                                                        <div class="icon-file">
-                                                            <input type="file" name="icon" id="customFileEg1" class="custom-file-input" accept=".webp, .jpg, .png, .jpeg, .gif, .bmp, .tif, .tiff|image/*">
-                                                            <i class="tio-edit"></i>
-                                                        </div>
-                                                    </div>
-                                                </label>
-                                            </div>
-                                        </div>
-                                        <div class="col-sm-6">
-                                            <div class="form-group m-0 h-100 d-flex flex-column justify-content-center align-items-center">
-                                                <label>
-                                                    {{translate('messages.thumbnail')}}
-                                                    <small class="text-danger">* ( {{translate('messages.ratio')}} 1:1)</small>
-                                                </label>
-                                                <label class="text-center my-auto position-relative">
-                                                    <img class="img--176 h-unset aspect-ratio-1 image--border" id="viewer2" data-onerror-image="{{asset('public/assets/admin/img/upload-img.png')}}" src="{{ $module['thumbnail_full_url'] }}"
-                                                    alt="image" />
-                                                    <div class="icon-file-group">
-                                                        <div class="icon-file">
-                                                            <input type="file" name="thumbnail" id="customFileEg2" class="custom-file-input" accept=".webp, .jpg, .png, .jpeg, .gif, .bmp, .tif, .tiff|image/*">
-                                                            <i class="tio-edit"></i>
-                                                        </div>
-                                                    </div>
-                                                </label>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+            {{-- The type is fixed at creation, so the form states the one that is
+                 set instead of disabling a list of radios nobody can move. No
+                 input is posted either — ModuleUpdateRequest does not accept one. --}}
+            <div class="tps-card mt-3">
+                <div class="tps-card__head">
+                    <span class="tps-card__brand"><i class="tio-category-outlined"></i></span>
+                    <div class="tps-card__titles">
+                        <h2 class="tps-card__title">{{translate('Business module type')}}</h2>
+                        <p class="tps-card__subtitle">{{translate('The type decides how stores, items and orders behave. It cannot be changed after the module is created.')}}</p>
+                    </div>
+                    <div class="tps-card__aside">
+                        <span class="badge badge-soft-secondary"><i class="tio-lock-outlined"></i> {{ translate('Not editable') }}</span>
+                    </div>
+                </div>
+                <div class="tps-card__body">
+                    <div class="mds-locked-type">
+                        <span class="mds-type__icon"><i class="{{$typeIcon}}"></i></span>
+                        <div class="mds-locked-type__body">
+                            <h6 class="mds-locked-type__name">{{translate($module->module_type)}}</h6>
+                            @if($typeDescription)
+                                <p class="mds-locked-type__desc">{{$typeDescription}}</p>
+                            @endif
                         </div>
                     </div>
                 </div>
             </div>
-            <div class="btn--container justify-content-end mt-20">
-                <button type="reset" id="reset_btn" class="btn btn--reset">{{translate('messages.reset')}}</button>
-                <button type="submit" class="btn btn--primary">{{translate('messages.Save_changes')}}</button>
+        </div>
+
+        <div class="col-xl-4">
+            <div class="tps-card">
+                <div class="tps-card__head">
+                    <span class="tps-card__brand"><i class="tio-photo-gallery"></i></span>
+                    <div class="tps-card__titles">
+                        <h2 class="tps-card__title">{{translate('Choose related images')}}</h2>
+                        <p class="tps-card__subtitle">{{translate('The icon shows in the module switcher, the thumbnail on your landing page.')}}</p>
+                    </div>
+                </div>
+                <div class="tps-card__body">
+                    <div class="mds-media">
+                        <label class="mds-upload">
+                            <span class="mds-upload__label">
+                                {{translate('messages.Icon')}} <span class="mds-upload__ratio">{{translate('messages.Ratio')}} 1:1</span>
+                            </span>
+                            <input type="file" name="icon" id="customFileEg1" accept=".webp, .jpg, .png, .jpeg, .gif, .bmp, .tif, .tiff|image/*">
+                            <span class="mds-upload__frame">
+                                <img id="viewer" class="onerror-image" src="{{ $module['icon_full_url'] }}"
+                                     data-onerror-image="{{asset('public/assets/admin/img/upload-img.png')}}"
+                                     alt="{{translate('messages.Icon')}}">
+                                <span class="mds-upload__action"><i class="tio-edit"></i> {{translate('messages.Change')}}</span>
+                            </span>
+                            <small class="mds-upload__hint">JPG, PNG, WEBP &middot; max 2 MB</small>
+                        </label>
+
+                        <label class="mds-upload">
+                            <span class="mds-upload__label">
+                                {{translate('Thumbnail')}} <span class="mds-upload__ratio">{{translate('messages.Ratio')}} 1:1</span>
+                            </span>
+                            <input type="file" name="thumbnail" id="customFileEg2" accept=".webp, .jpg, .png, .jpeg, .gif, .bmp, .tif, .tiff|image/*">
+                            <span class="mds-upload__frame">
+                                <img id="viewer2" class="onerror-image" src="{{ $module['thumbnail_full_url'] }}"
+                                     data-onerror-image="{{asset('public/assets/admin/img/upload-img.png')}}"
+                                     alt="{{translate('Thumbnail')}}">
+                                <span class="mds-upload__action"><i class="tio-edit"></i> {{translate('messages.Change')}}</span>
+                            </span>
+                            <small class="mds-upload__hint">JPG, PNG, WEBP &middot; max 2 MB</small>
+                        </label>
+                    </div>
+                </div>
             </div>
-        </form>
-            <!-- End Table -->
-    </div>
-    </div>
+
+            <div class="tps-card mt-3">
+                <div class="tps-card__head">
+                    <span class="tps-card__brand"><i class="tio-info-outined"></i></span>
+                    <div class="tps-card__titles">
+                        <h2 class="tps-card__title">{{translate('At a glance')}}</h2>
+                    </div>
+                </div>
+                <div class="tps-card__body">
+                    <dl class="mds-facts">
+                        <dt>{{translate('messages.Module ID')}}</dt>
+                        <dd>#{{$module['id']}}</dd>
+                        <dt>{{translate('messages.Status')}}</dt>
+                        <dd>
+                            <span class="tps-pill tps-pill--{{$module->status ? 'on' : 'off'}}">
+                                {{$module->status ? translate('messages.Active') : translate('messages.Inactive')}}
+                            </span>
+                        </dd>
+                        <dt>{{translate('All zones')}}</dt>
+                        <dd>{{$module->all_zone_service ? translate('messages.Yes') : translate('messages.No')}}</dd>
+                        <dt>{{translate('messages.Created at')}}</dt>
+                        <dd>{{$module->created_at ? \App\CentralLogics\Helpers::date_format($module->created_at) : '-'}}</dd>
+                    </dl>
+                    <p class="tps-card__subtitle mt-3 mb-0">
+                        {{translate('Turn the module on or off from the module list.')}}
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12">
+            <div class="tps-card mds-actions">
+                <div class="tps-card__foot">
+                    <span class="tps-foot-note">{{translate('Changes go live for customers as soon as you save.')}}</span>
+                    <button type="reset" id="reset_btn" class="btn btn--reset"><i class="tio-refresh"></i> {{translate('messages.Reset')}}</button>
+                    <button type="submit" class="btn btn--primary"><i class="tio-save"></i> {{translate('messages.Save changes')}}</button>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
 
 @endsection
 
@@ -222,7 +280,6 @@ active
     <script src="{{asset('public/assets/admin/ckeditor/ckeditor.js')}}"></script>
     <script>
         "use strict";
-
 
         function readURL(input, id) {
             if (input.files && input.files[0]) {
@@ -244,12 +301,18 @@ active
             readURL(this,'viewer2');
         });
 
+        $(".lang_link").click(function(e) {
+            e.preventDefault();
+            $(".lang_link").removeClass('active');
+            $(".lang_form").addClass('d-none');
+            $(this).addClass('active');
 
+            let form_id = this.id;
+            let lang = form_id.substring(0, form_id.length - 5);
+            $("#" + lang + "-form").removeClass('d-none');
+        });
 
         $(document).ready(function () {
-            @if ($module->module_type=='parcel')
-                $('#module_des_card').hide();
-            @endif
             $('.ckeditor').ckeditor();
         });
 

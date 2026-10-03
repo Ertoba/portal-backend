@@ -8,10 +8,12 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
 use Modules\RideShare\Entities\FareManagement\RideFare;
 use Modules\RideShare\Entities\VehicleManagement\RiderVehicle;
+use App\Traits\Model\HasTranslationsTrait;
+use App\Traits\Model\HasStorageTrait;
 
 class DMVehicle extends Model
 {
-    use HasFactory;
+    use HasFactory, HasTranslationsTrait, HasStorageTrait;
     protected $guarded = ['id'];
     protected $casts = [
         'id' => 'integer',
@@ -19,26 +21,14 @@ class DMVehicle extends Model
         'extra_charges' => 'float',
         'starting_coverage_area' => 'float',
         'maximum_coverage_area' => 'float',
+        'max_weight' => 'float',
     ];
 
     protected $appends = ['image_full_url'];
 
-    public function getImageFullUrlAttribute(){
-        $value = $this->image;
-        if (count($this->storage) > 0) {
-            foreach ($this->storage as $storage) {
-                if ($storage['key'] == 'image') {
-                    return Helpers::get_full_url('vehicle/category',$value,$storage['value'],'category');
-                }
-            }
-        }
-
-        return Helpers::get_full_url('vehicle/category',$value,'public');
-    }
-
-    public function translations()
+    public function getImageFullUrlAttribute()
     {
-        return $this->morphMany(Translation::class, 'translationable');
+        return $this->storageFullUrl('vehicle/category', 'image', $this->image, 'category');
     }
 
     public function delivery_man()
@@ -46,9 +36,32 @@ class DMVehicle extends Model
         return $this->hasOne(DeliveryMan::class,'vehicle_id');
     }
 
+    /**
+     * Every deliveryman registered with this category.
+     *
+     * `delivery_man()` above is a hasOne and is kept for the callers that rely on it; a count
+     * over a hasOne returns 1 at most, which is not what the "Total Delivery Man" column means.
+     */
+    public function deliveryMen()
+    {
+        return $this->hasMany(DeliveryMan::class, 'vehicle_id');
+    }
+
     public function vehicles()
     {
         return $this->hasMany(RiderVehicle::class, 'category_id');
+    }
+
+    /**
+     * "Dimension Connect" — the package size classes a vehicle in this category can carry.
+     *
+     * Empty is possible on rows that predate the field; the form requires at least one whenever
+     * any dimension class exists to pick from.
+     */
+    public function dimensions()
+    {
+        return $this->belongsToMany(Dimension::class, 'd_m_vehicle_dimension', 'd_m_vehicle_id', 'dimension_id')
+            ->withTimestamps();
     }
 
     public function tripFares()
@@ -61,16 +74,9 @@ class DMVehicle extends Model
         return $query->where('status', 1);
     }
 
-    public function getTypeAttribute($value){
-        if (count($this->translations) > 0) {
-            foreach ($this->translations as $translation) {
-                if ($translation['key'] == 'type') {
-                    return $translation['value'];
-                }
-            }
-        }
-
-        return $value;
+    public function getTypeAttribute($value)
+    {
+        return $this->translatedAttribute('type', $value);
     }
 
     public function scopeRide($query)
@@ -78,17 +84,10 @@ class DMVehicle extends Model
         return $query->withoutGlobalScope('delivery_only')->where('is_ride', 1);
     }
 
-    public function storage()
-    {
-        return $this->morphMany(Storage::class, 'data');
-    }
-
     protected static function booted()
     {
-        static::addGlobalScope('translate', function (Builder $builder) {
-            $builder->with(['translations' => function ($query) {
-                return $query->where('locale', app()->getLocale());
-            }]);
+        static::saved(function ($model) {
+            self::recordStorageDisk($model, 'image', 'image');
         });
 
         if(addon_published_status('RideShare')){

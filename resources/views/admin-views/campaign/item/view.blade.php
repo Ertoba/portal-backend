@@ -8,26 +8,26 @@
 
 @section('content')
     <div class="content container-fluid">
-        <!-- Page Header -->
         <div class="page-header">
             <div class="d-flex flex-wrap justify-content-between align-items-center">
-                <h1 class="page-header-title">
-                    <span class="page-header-icon">
-                        <img src="{{asset('public/assets/admin/img/product.png')}}" class="w--26" alt="">
-                    </span>
-                    <span>
-                        {{$campaign['title']}}
-                    </span>
-                </h1>
+                <div>
+                    <h1 class="page-header-title">
+                        <span class="page-header-icon">
+                            <img src="{{asset('public/assets/admin/img/product.png')}}" class="w--26" alt="">
+                        </span>
+                        <span>
+                            {{$campaign['title']}}
+                        </span>
+                    </h1>
+                    <p class="page-header-desc">{{ translate('How this campaign looks to customers, and which items have joined it.') }}</p>
+                </div>
                     <a class="btn btn--primary" href="{{route('admin.campaign.edit',['item',$campaign['id']])}}">
-                        <i class="tio-edit"></i> {{translate('messages.edit')}}
+                        <i class="tio-edit"></i> {{translate('Edit')}}
                     </a>
             </div>
         </div>
-        <!-- End Page Header -->
 
         <div class="card mb-3">
-            <!-- Body -->
             <div class="card-body">
                 <div class="row align-items-md-center">
                     <div class="col-md-6 col-lg-4 mb-3 mb-md-0">
@@ -36,25 +36,24 @@
                     </div>
                     <div class="col-md-6">
                         <span class="d-block mb-1">
-                            {{translate('messages.campaign_starts_from')}} :
+                            {{translate('messages.Campaign starts from')}} :
                             <strong class="text--title">{{$campaign->start_date->format('Y-M-d')}}</strong>
                         </span>
                         <span class="d-block mb-1">
-                            {{translate('messages.campaign_ends_at')}} :
+                            {{translate('messages.Campaign ends at')}} :
                             <strong class="text--title">{{$campaign->end_date->format('Y-M-d')}}</strong>
                         </span>
                         <span class="d-block mb-1">
-                            {{translate('messages.available_time_starts')}} :
+                            {{translate('messages.Available time starts')}} :
                             <strong class="text--title">{{$campaign->start_time->format(config('timeformat'))}}</strong>
                         </span>
                         <span class="d-block">
-                            {{translate('messages.available_time_ends')}} :
+                            {{translate('messages.Available time ends')}} :
                             <strong class="text--title">{{$campaign->end_time->format(config('timeformat'))}}</strong>
                         </span>
                     </div>
                 </div>
             </div>
-            <!-- End Body -->
         </div>
 
         <div class="row g-2">
@@ -62,7 +61,7 @@
                 <div class="card h-100">
                     <div class="card-body d-flex flex-column justify-content-center">
                         <div class="text-center">
-                            <span class="mb-3">{{translate('messages.store_info')}}</span>
+                            <span class="mb-3">{{translate('Store information')}}</span>
                             @if($campaign->store)
                             <div class="w-100 my-2">
                                 <a href="{{route('admin.store.view', $campaign->store_id)}}" title="{{$campaign->store['name']}}">
@@ -74,7 +73,7 @@
                                     <h5 class="input-label mt-2">{{$campaign->store['name']}}</h5>
                                 </a>
                                 @else
-                                <span class="badge-info">{{translate('messages.store_deleted')}}</span>
+                                <span class="badge-info">{{translate('messages.Store deleted')}}</span>
                                 @endif
                             </div>
                         </div>
@@ -89,13 +88,13 @@
                                 <thead class="thead-light">
                                     <tr>
                                         <th class="px-4 border-0 w--120px">
-                                            <h4 class="m-0">{{translate('messages.short_description')}}</h4>
+                                            <h4 class="m-0">{{translate('Short description')}}</h4>
                                         </th>
                                         <th class="px-4 border-0 w--120px">
                                             <h4 class="m-0">{{translate('messages.price')}}</h4>
                                         </th>
                                         <th class="px-4 border-0 w--120px">
-                                            <h4 class="m-0">{{translate('messages.variations')}}</h4>
+                                            <h4 class="m-0">{{translate('Variations')}}</h4>
                                         </th>
                                         @if (in_array($campaign->module->module_type ,['food']))
                                         <th class="px-4 border-0 w--120px">
@@ -104,15 +103,15 @@
                                         @endif
                                         @if (in_array($campaign->module->module_type ,['food','grocery']))
                                             <th class="px-4 border-0 w--120px">
-                                                <h4 class="m-0 text-capitalize">{{ translate('nutrition') }}</h4>
+                                                <h4 class="m-0 text-capitalize">{{ translate('Nutrition') }}</h4>
                                             </th>
                                             <th class="px-4 border-0 w--120px">
-                                                <h4 class="m-0 text-capitalize">{{ translate('allergy') }}</h4>
+                                                <h4 class="m-0 text-capitalize">{{ translate('Allergy') }}</h4>
                                             </th>
                                         @endif
                                         @if (in_array($campaign->module->module_type ,['pharmacy']))
                                         <th class="px-4 border-0 w--120px">
-                                            <h4 class="m-0 text-capitalize">{{ translate('generic_name') }}</h4>
+                                            <h4 class="m-0 text-capitalize">{{ translate('Generic name') }}</h4>
                                         </th>
                                         @endif
                                     </tr>
@@ -128,7 +127,7 @@
                                                 <span class="d-block text-dark">{{translate('messages.price')}} : <strong>{{\App\CentralLogics\Helpers::format_currency($campaign['price'])}}</strong>
                                                 </span>
 
-                                                <span class="d-block text-dark">{{translate('messages.discount')}} :
+                                                <span class="d-block text-dark">{{translate('Discount')}} :
                                                     <strong>{{\App\CentralLogics\Helpers::format_currency(\App\CentralLogics\Helpers::discount_calculate($campaign,$campaign['price']))}}</strong>
                                                 </span>
                                             </div>
@@ -140,7 +139,7 @@
                                                     @if (isset($variation['price']))
                                                         <span class="d-block mb-1 text-capitalize">
                                                             <strong>
-                                                                {{ translate('please_update_the_food_variations.') }}
+                                                                {{ translate('Please update the food variations.') }}
                                                             </strong>
                                                         </span>
                                                     @break
@@ -151,18 +150,18 @@
                                                             {{ $variation['name'] }} -
                                                         </strong>
                                                         @if ($variation['type'] == 'multi')
-                                                            {{ translate('messages.multiple_select') }}
+                                                            {{ translate('messages.Multiple select') }}
                                                         @elseif($variation['type'] == 'single')
-                                                            {{ translate('messages.single_select') }}
+                                                            {{ translate('messages.Single select') }}
                                                         @endif
                                                         @if ($variation['required'] == 'on')
-                                                            - ({{ translate('messages.required') }})
+                                                            - ({{ translate('messages.Required.') }})
                                                         @endif
                                                     </span>
 
                                                     @if ($variation['min'] != 0 && $variation['max'] != 0)
-                                                        ({{ translate('messages.Min_select') }}: {{ $variation['min'] }} -
-                                                        {{ translate('messages.Max_select') }}: {{ $variation['max'] }})
+                                                        ({{ translate('messages.Min select') }}: {{ $variation['min'] }} -
+                                                        {{ translate('messages.Max select') }}: {{ $variation['max'] }})
                                                     @endif
 
                                                     @if (isset($variation['values']))
@@ -189,7 +188,7 @@
                                         @if (in_array($campaign->module->module_type ,['food']))
                                         </td>
                                         <td class="px-4">
-                                            @foreach(\App\Models\AddOn::whereIn('id',json_decode($campaign['add_ons'],true))->get() as $addon)
+                                            @foreach(\App\CentralLogics\Helpers::addons_by_ids(json_decode($campaign['add_ons'],true)) as $addon)
                                                 <small class="d-block text-capitalize">
                                                 {{$addon['name']}} : {{\App\CentralLogics\Helpers::format_currency($addon['price'])}}
                                                 </small>
@@ -229,9 +228,6 @@
             </div>
         </div>
 
-        <!-- End Card -->
-        @php($orders = $campaign->orderdetails()->paginate(config('default_pagination')))
-        <!-- Card -->
         <div class="card mt-3">
             <div class="table-responsive datatable-custom">
                 <table id="datatable"
@@ -257,13 +253,13 @@
                         <th class="border-0">
                             SL
                         </th>
-                        <th class="table-column-pl-0 border-0">{{translate('messages.order')}}</th>
-                        <th class="border-0">{{translate('messages.date')}}</th>
-                        <th class="border-0">{{translate('messages.customer')}}</th>
-                        <th class="border-0">{{translate('messages.store')}}</th>
-                        <th class="border-0">{{translate('messages.payment_status')}}</th>
-                        <th class="border-0">{{translate('messages.total')}}</th>
-                        <th class="border-0">{{translate('messages.order_status')}}</th>
+                        <th class="table-column-pl-0 border-0">{{translate('messages.Order')}}</th>
+                        <th class="border-0">{{translate('messages.Date')}}</th>
+                        <th class="border-0">{{translate('messages.Customer')}}</th>
+                        <th class="border-0">{{translate('messages.Store')}}</th>
+                        <th class="border-0">{{translate('Payment status')}}</th>
+                        <th class="border-0">{{translate('messages.Total')}}</th>
+                        <th class="border-0">{{translate('Order status')}}</th>
                     </tr>
                     </thead>
 
@@ -282,15 +278,15 @@
                                 @php($delivery_address = $order->order ? (is_array($order->order->delivery_address) ? $order->order->delivery_address : json_decode($order->order->delivery_address, true)) : null)
                                 @if($order->order && $order->order->customer)
                                     <a class="text-body text-capitalize"
-                                       href="{{route('admin.customer.view',[$order->order['user_id']])}}">{{$order->order->customer['f_name'].' '.$order->order->customer['l_name']}}</a>
+                                       href="{{route('admin.users.customer.view',[$order->order['user_id']])}}">{{$order->order->customer['f_name'].' '.$order->order->customer['l_name']}}</a>
                                 @elseif (!empty($delivery_address['contact_person_name']))
                                     <strong>{{$delivery_address['contact_person_name']}}</strong>
                                 @else
-                                    <label class="badge badge-danger">{{translate('messages.invalid_customer_data')}}</label>
+                                    <label class="badge badge-danger">{{translate('messages.Invalid customer data')}}</label>
                                 @endif
                             </td>
                             <td>
-                                <label class="badge badge-soft-primary">{{Str::limit($order->order->store?$order->order->store->name:translate('messages.store deleted!'),20,'...')}}</label>
+                                <label class="badge badge-soft-primary">{{Str::limit($order->order->store?$order->order->store->name:translate('messages.Store deleted'),20,'...')}}</label>
                             </td>
                             <td>
                                 @if($order->order->payment_status=='paid')
@@ -307,7 +303,7 @@
                             <td class="text-capitalize">
                                 @if($order->order['order_status']=='pending')
                                     <span class="badge badge-soft-info ml-2 ml-sm-3">
-                                      {{translate('messages.pending')}}
+                                      {{translate('Pending')}}
                                     </span>
                                 @elseif($order->order['order_status']=='confirmed')
                                     <span class="badge badge-soft-info ml-2 ml-sm-3">
@@ -315,15 +311,15 @@
                                     </span>
                                 @elseif($order->order['order_status']=='processing')
                                     <span class="badge badge-soft-warning ml-2 ml-sm-3">
-                                      {{translate('messages.processing')}}
+                                      {{translate('Processing')}}
                                     </span>
                                 @elseif($order->order['order_status']=='out_for_delivery')
                                     <span class="badge badge-soft-warning ml-2 ml-sm-3">
-                                      {{translate('messages.out_for_delivery')}}
+                                      {{translate('Out for delivery')}}
                                     </span>
                                 @elseif($order->order['order_status']=='delivered')
                                     <span class="badge badge-soft-success ml-2 ml-sm-3">
-                                      {{translate('messages.delivered')}}
+                                      {{translate('Delivered')}}
                                     </span>
                                 @else
                                     <span class="badge badge-soft-danger ml-2 ml-sm-3">
@@ -337,19 +333,14 @@
                     </tbody>
                 </table>
             </div>
-            <!-- Footer -->
             <div class="card-footer">
-                <!-- Pagination -->
                 <div class="row justify-content-center justify-content-sm-between align-items-sm-center">
                     <div class="col-12">
                         {!! $orders->links() !!}
                     </div>
                 </div>
-                <!-- End Pagination -->
             </div>
-            <!-- End Footer -->
         </div>
-        <!-- End Card -->
     </div>
 @endsection
 

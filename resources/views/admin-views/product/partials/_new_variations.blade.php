@@ -5,7 +5,7 @@
         <div class="d-flex align-items-center justify-content-between mb-3">
             <label class="form-check form--check error-wrapper">
                 <input class="form-check-input" name="options[{{ $key }}][required]" type="checkbox" {{ isset($item['required']) ? ($item['required'] == 'on' ? 'checked	' : '') : '' }}>
-                <span class="form-check-label">{{ translate('Required') }}</span>
+                <span class="form-check-label">{{ translate('Required.') }}</span>
             </label>
             <div>
                 <button type="button" class="btn btn-danger btn-sm delete_input_button removeOption"
@@ -16,7 +16,7 @@
         </div>
         <div class="row g-2">
             <div class="col-xl-4 col-lg-6 error-wrapper">
-                <label for="">{{ translate('name') }}</label>
+                <label for="">{{ translate('Name') }}</label>
                 <input required name="options[{{ $key }}][name]" class="form-control new_option_name"
                     type="text" data-count="{{ $key }}"
                     value="{{ $item['name'] }}">
@@ -25,7 +25,7 @@
             <div class="col-xl-4 col-lg-6">
                 <div class="form-group">
                     <label class="input-label text-capitalize d-flex alig-items-center"><span
-                            class="line--limit-1">{{ translate('messages.selcetion_type') }} </span>
+                            class="line--limit-1">{{ translate('messages.Selection type') }} </span>
                     </label>
                     <div class="resturant-type-group border">
                         <label class="form-check form--check mr-2 mr-md-4 error-wrapper">
@@ -75,13 +75,13 @@
                     @foreach ($item['values'] as $key_value => $value)
                         <div class="row add_new_view_row_class mb-3 position-relative pt-3 pt-md-0">
                             <div class="col-md-4 col-sm-6 error-wrapper">
-                                <label for="">{{ translate('Option_name') }}</label>
+                                <label for="">{{ translate('Option name') }}</label>
                                 <input class="form-control" required type="text"
                                     name="options[{{ $key }}][values][{{ $key_value }}][label]"
                                     value="{{ $value['label'] }}">
                             </div>
                             <div class="col-md-4 col-sm-6 error-wrapper">
-                                <label for="">{{ translate('Additional_price') }}</label>
+                                <label for="">{{ translate('Additional price') }}</label>
                                 <input class="form-control" required type="number" min="0" step="{{ \App\CentralLogics\Helpers::getDecimalPlaces() }}" max="999999999999.999"
                                     name="options[{{ $key }}][values][{{ $key_value }}][optionPrice]"
                                     value="{{ request()->product_gellary == 1 ? null : $value['optionPrice'] }}">
@@ -102,7 +102,7 @@
             </div>
                 <div class="row mt-3 p-3 mr-1 d-flex" id="add_new_button_{{ $key }}">
                     <button type="button"
-                        class="btn btn--primary btn-outline-primary add_new_row_button" data-count="{{ $key }}">{{ translate('Add_New_Option') }}</button>
+                        class="btn btn--primary btn-outline-primary add_new_row_button" data-count="{{ $key }}"><i class="tio-add-circle"></i> {{ translate('Add new option') }}</button>
                 </div>
 
             </div>

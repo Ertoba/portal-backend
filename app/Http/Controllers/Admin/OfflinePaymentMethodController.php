@@ -53,9 +53,9 @@ class OfflinePaymentMethodController extends Controller
             'input_data' => 'required|array',
             'customer_input' => 'required|array',
         ],[
-            'input_name.required' => translate('Payment_information_details_required'),
-            'input_data.required' => translate('Payment_information_details_required'),
-            'customer_input.required' => translate('Customer_input_information_required')
+            'input_name.required' => translate('Payment information details required'),
+            'input_data.required' => translate('Payment information details required'),
+            'customer_input.required' => translate('Customer input information required')
         ]);
 
         $method_fields = [];
@@ -89,7 +89,7 @@ class OfflinePaymentMethodController extends Controller
             'created_at' => Carbon::now(),
         ]);
 
-        Toastr::success(translate('offline_payment_method_added_successfully'));
+        Toastr::success(translate('Added successfully'));
         return to_route('admin.business-settings.offline');
     }
 
@@ -102,7 +102,7 @@ class OfflinePaymentMethodController extends Controller
         {
             return view('admin-views.business-settings.offline-payment.edit', compact('data'));
         }else{
-            Toastr::error(translate('offline_payment_method_not_found'));
+            Toastr::error(translate('No data found'));
             return to_route('admin.business-settings.offline');
         }
     }
@@ -116,9 +116,9 @@ class OfflinePaymentMethodController extends Controller
             'input_data' => 'required|array',
             'customer_input' => 'required|array',
         ],[
-            'input_name.required' => translate('Payment_information_details_required'),
-            'input_data.required' => translate('Payment_information_details_required'),
-            'customer_input.required' => translate('Customer_input_information_required')
+            'input_name.required' => translate('Payment information details required'),
+            'input_data.required' => translate('Payment information details required'),
+            'customer_input.required' => translate('Customer input information required')
         ]);
 
         $method_fields = [];
@@ -151,7 +151,7 @@ class OfflinePaymentMethodController extends Controller
             'created_at' => Carbon::now(),
         ]);
 
-        Toastr::success(translate('offline_payment_method_update_successfully'));
+        Toastr::success(translate('Offline payment method update successfully'));
         return to_route('admin.business-settings.offline');
     }
 
@@ -159,7 +159,7 @@ class OfflinePaymentMethodController extends Controller
     public function delete(Request $request)
     {
         $this->OfflinePaymentMethod->where('id', $request->id)->delete();
-        Toastr::success(translate('offline_payment_method_delete_successfully'));
+        Toastr::success(translate('Offline payment method delete successfully'));
         return to_route('admin.business-settings.offline');
     }
 
@@ -172,9 +172,9 @@ class OfflinePaymentMethodController extends Controller
             $data->update([
                 'status' => $data->status == 1 ? 0:1,
             ]);
-            $message = translate("status_updated_successfully");
+            $message = translate('Updated successfully');
         } else {
-            $message = translate("status_update_failed");
+            $message = translate('Status update failed');
         }
 
         Toastr::success(translate($message));

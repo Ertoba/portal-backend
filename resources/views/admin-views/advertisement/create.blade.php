@@ -1,6 +1,6 @@
 @extends('layouts.admin.app')
 
-@section('title','Advertisement Create')
+@section('title',translate('Create advertisement'))
 
 
 @section('advertisement')
@@ -13,330 +13,406 @@ active
 
 @push('css_or_js')
     <link rel="stylesheet" type="text/css" href="{{asset('public/assets/admin/css/daterangepicker.css')}}"/>
+    <link rel="stylesheet" href="{{asset('public/assets/admin/css/third-party-setup.css')}}">
+    <link rel="stylesheet" href="{{asset('public/assets/admin/css/view-pages/advertisement-form.css')}}">
 @endpush
 
 @section('content')
-<div class="content container-fluid">
+@php
+    $isProviderContext = in_array(config('module.current_module_type'), ['rental', 'service'], true);
+    $ownerLabel = $isProviderContext ? translate('Select provider') : translate('Select store');
+    $ownerHint = $isProviderContext
+        ? translate('Customers who tap this advertisement land on the provider page.')
+        : translate('Customers who tap this advertisement land on the store page.');
+    $storePromotionLabel = $isProviderContext
+        ? translate('Provider') . ' ' . translate('Promotion')
+        : translate('Store promotion');
+@endphp
+<div class="content container-fluid tps advf">
 
+    <div class="page-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <div>
+            <h1 class="page-header-title">
+                <span class="page-header-icon"><img src="{{asset('public/assets/admin/img/outline/advertisement.svg')}}" alt=""></span>
+                <span>{{ translate('Create advertisement') }}</span>
+            </h1>
+            <p class="page-header-desc">{{ $isProviderContext ? translate('Run a paid promotion for a provider and choose where and how long it appears.') : translate('Run a paid promotion for a store and choose where and how long it appears.') }}</p>
+        </div>
+        <div class="page-header-actions">
+            <a href="{{ route('admin.advertisement.index') }}" class="btn btn--reset">
+                <i class="tio-arrow-backward"></i> {{ translate('messages.Back') }}
+            </a>
+        </div>
+    </div>
 
-    <!-- Advertisement -->
-    <h1 class="page-header-title mb-3">
-        {{ translate('Create_Advertisement') }}
-    </h1>
-    <div class="card mb-20">
-        <div class="card-body p-30">
-            <form id="create-add-form"  method="POST" enctype="multipart/form-data" >
-                @csrf
-                @method("POST")
-                <div class="row g-4">
-                    <div class="col-lg-6">
-                        <div class="js-nav-scroller hs-nav-scroller-horizontal">
-                        <ul class="nav nav-tabs mb-3 border-0">
-                        <li class="nav-item">
-                            <a class="nav-link lang_link active"
-                            href="#"
-                            id="default-link">{{translate('messages.default')}}</a>
-                        </li>
+    <form id="create-add-form" action="{{ route('admin.advertisement.store') }}" method="POST"
+          enctype="multipart/form-data" class="row g-3">
+        @csrf
+
+        <div class="col-xl-8">
+            <div class="tps-card">
+                <div class="tps-card__body">
+
+                    <div class="tps-group">
+                        <h3 class="tps-group__label">{{ translate('Advertisement content') }}</h3>
 
                         @if ($language)
-                        @foreach ($language as $lang)
-                            <li class="nav-item">
-                                <a class="nav-link lang_link"
-                                    href="#"
-                                    id="{{ $lang }}-link">{{ \App\CentralLogics\Helpers::get_language_name($lang) . '(' . strtoupper($lang) . ')' }}</a>
+                            <ul class="nav nav-tabs mb-3 border-0">
+                                <li class="nav-item">
+                                    <a class="nav-link lang_link active" href="#" id="default-link">{{ translate('Default') }}</a>
                                 </li>
+                                @foreach ($language as $lang)
+                                    <li class="nav-item">
+                                        <a class="nav-link lang_link" href="#"
+                                           id="{{ $lang }}-link">{{ \App\CentralLogics\Helpers::get_language_name($lang) . '(' . strtoupper($lang) . ')' }}</a>
+                                    </li>
                                 @endforeach
                             </ul>
-                        </div>
 
                             <div class="lang_form" id="default-form">
-
-
-                            <div class="mb-20">
-                                <label class="form-label">{{ translate('Advertisement_Title') }} ({{ translate('Default') }})</label>
-                                <input type="text" class="form-control" id="title" name="title[]"
-                                    value="{{ old('title.0') }}" placeholder="{{ translate('Exclusive_Offer') }}" maxlength="255"
-                                    data-preview-text="preview-title">
-                            </div>
-                            <div class="form-floating mb-20">
-                                <label class="form-label">{{ translate('Short_Description') }} ({{ translate('Default') }})</label>
-                                <textarea class="form-control resize-none" id="description"
-                                    placeholder="{{ translate('Get_Discount') }}" name="description[]"
-                                    data-preview-text="preview-description">{{ old('description.0') }}</textarea>
+                                <div class="tps-field mb-3">
+                                    <label class="tps-field__label" for="title_default">
+                                        {{ translate('Advertisement title') }} ({{ translate('Default') }})
+                                        <span class="tps-req">*</span>
+                                    </label>
+                                    <input type="text" class="form-control" id="title_default" name="title[]"
+                                           value="{{ old('title.0') }}" placeholder="{{ translate('Exclusive offer') }}"
+                                           maxlength="255" required data-preview-text="preview-title">
+                                    <small class="tps-field__hint">{{ translate('The headline customers read first. Keep it under a handful of words.') }}</small>
                                 </div>
-
-                            <input type="hidden" name="lang[]" value="default">
+                                <div class="tps-field">
+                                    <label class="tps-field__label" for="description_default">
+                                        {{ translate('Short description') }} ({{ translate('Default') }})
+                                        <span class="tps-opt">({{ translate('Optional') }})</span>
+                                    </label>
+                                    <textarea class="form-control resize-none" id="description_default" rows="2"
+                                              placeholder="{{ translate('Get discount') }}" name="description[]"
+                                              data-preview-text="preview-description">{{ old('description.0') }}</textarea>
+                                    <small class="tps-field__hint">{{ translate('One line under the title. Leave it empty to show the title on its own.') }}</small>
+                                </div>
+                                <input type="hidden" name="lang[]" value="default">
                             </div>
 
                             @foreach ($language as $key => $lang)
-                            <div class="d-none lang_form"
-                                id="{{ $lang }}-form">
-
-
-
-
-                                <div class="mb-20">
-                                    <label class="form-label">{{ translate('Advertisement_Title') }}   ({{ strtoupper($lang) }})</label>
-                                    <input type="text" class="form-control" id="title" name="title[]"
-                                        value="{{ old('title.0') }}" placeholder="{{ translate('Exclusive_Offer') }}" maxlength="255"
-                                        data-preview-text="preview-title">
-                                </div>
-                                <div class="form-floating mb-20">
-                                    <label class="form-label">{{ translate('Short_Description') }}   ({{ strtoupper($lang) }})</label>
-                                    <textarea class="form-control resize-none" id="description"
-                                        placeholder="{{ translate('Get_Discount') }}" name="description[]"
-                                        data-preview-text="preview-description">{{ old('description.0') }}</textarea>
+                                <div class="d-none lang_form" id="{{ $lang }}-form">
+                                    <div class="tps-field mb-3">
+                                        <label class="tps-field__label" for="title_{{ $lang }}">
+                                            {{ translate('Advertisement title') }} ({{ strtoupper($lang) }})
+                                        </label>
+                                        <input type="text" class="form-control" id="title_{{ $lang }}" name="title[]"
+                                               value="{{ old('title.' . ($key + 1)) }}" placeholder="{{ translate('Exclusive offer') }}"
+                                               maxlength="255" data-preview-text="preview-title">
+                                        <small class="tps-field__hint">{{ translate('Leave it empty to fall back to the default title.') }}</small>
                                     </div>
-
-                                <input type="hidden" name="lang[]" value="{{ $lang }}">
+                                    <div class="tps-field">
+                                        <label class="tps-field__label" for="description_{{ $lang }}">
+                                            {{ translate('Short description') }} ({{ strtoupper($lang) }})
+                                            <span class="tps-opt">({{ translate('Optional') }})</span>
+                                        </label>
+                                        <textarea class="form-control resize-none" id="description_{{ $lang }}" rows="2"
+                                                  placeholder="{{ translate('Get discount') }}" name="description[]"
+                                                  data-preview-text="preview-description">{{ old('description.' . ($key + 1)) }}</textarea>
+                                    </div>
+                                    <input type="hidden" name="lang[]" value="{{ $lang }}">
+                                </div>
+                            @endforeach
+                        @else
+                            <div class="tps-field mb-3">
+                                <label class="tps-field__label" for="title_default">
+                                    {{ translate('Advertisement title') }} <span class="tps-req">*</span>
+                                </label>
+                                <input type="text" class="form-control" id="title_default" name="title[]"
+                                       value="{{ old('title.0') }}" placeholder="{{ translate('Exclusive offer') }}"
+                                       maxlength="255" required data-preview-text="preview-title">
+                                <small class="tps-field__hint">{{ translate('The headline customers read first. Keep it under a handful of words.') }}</small>
                             </div>
-                        @endforeach
-
-                            @else
-
-                            <div class="mb-20">
-                                <label class="form-label">{{ translate('Advertisement_Title') }}</label>
-                                <input type="text" class="form-control" id="title" name="title[]"
-                                    value="{{ old('title.0') }}" placeholder="{{ translate('Exclusive_Offer') }}" maxlength="255"
-                                    data-preview-text="preview-title">
-                            </div>
-                            <div class="form-floating mb-20">
-                                <label class="form-label">{{ translate('Short_Description') }}</label>
-                                <textarea class="form-control resize-none" id="description"
-                                    placeholder="{{ translate('Get_Discount') }}" name="description[]"
-                                    data-preview-text="preview-description">{{ old('description.0') }}</textarea>
+                            <div class="tps-field">
+                                <label class="tps-field__label" for="description_default">
+                                    {{ translate('Short description') }}
+                                    <span class="tps-opt">({{ translate('Optional') }})</span>
+                                </label>
+                                <textarea class="form-control resize-none" id="description_default" rows="2"
+                                          placeholder="{{ translate('Get discount') }}" name="description[]"
+                                          data-preview-text="preview-description">{{ old('description.0') }}</textarea>
+                                <small class="tps-field__hint">{{ translate('One line under the title. Leave it empty to show the title on its own.') }}</small>
                             </div>
                             <input type="hidden" name="lang[]" value="default">
+                        @endif
+                    </div>
 
-                            @endif
+                    <div class="tps-group">
+                        <h3 class="tps-group__label">{{ $isProviderContext ? translate('Provider and schedule') : translate('Store and schedule') }}</h3>
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <div class="tps-field">
+                                    <label class="tps-field__label" for="store_id">
+                                        {{ $ownerLabel }} <span class="tps-req">*</span>
+                                    </label>
+                                    <select name="store_id" id="store_id" required data-placeholder="{{ $ownerLabel }}"
+                                            class="js-data-example-ajax form-control"></select>
+                                    <small class="tps-field__hint">{{ $ownerHint }}</small>
+                                </div>
+                            </div>
+                            <div class="col-md-7">
+                                <div class="tps-field">
+                                    <label class="tps-field__label" for="dates">
+                                        {{ translate('Validity') }} <span class="tps-req">*</span>
+                                    </label>
+                                    <div class="tps-input-wrap advf-date">
+                                        <input type="text" class="form-control" id="dates" name="dates" required
+                                               placeholder="{{ translate('Select date') }}">
+                                        <i class="tio-calendar-month advf-date__icon"></i>
+                                    </div>
+                                    <small class="tps-field__hint">{{ translate('The advertisement runs from the first day to the last, both included.') }}</small>
+                                </div>
+                            </div>
+                            <div class="col-md-5">
+                                <div class="tps-field">
+                                    <label class="tps-field__label" for="priority">
+                                        {{ translate('Select priority') }}
+                                        <span class="tps-opt">({{ translate('Optional') }})</span>
+                                    </label>
+                                    <select class="form-control w-100 js-select2-custom" name="priority" id="priority">
+                                        <option value="">{{ translate('messages.N/A') }}</option>
+                                        @for ($i = 1; $i <= $total_adds; $i++)
+                                            <option value="{{ $i }}">{{ $i }}</option>
+                                        @endfor
+                                    </select>
+                                    <small class="tps-field__hint">{{ translate('The lowest number shows first. Advertisements already on this number or higher move down one place.') }}</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
+                    <div class="tps-group">
+                        <h3 class="tps-group__label">{{ translate('Format and media') }}</h3>
 
-
-
-
-
-
-
-
-
-                        <label class="form-label" for="exampleFormControlSelect1">{{ translate('messages.Select_Store') }} </label>
-                        <div class="mb-20">
-                            <select name="store_id" id="store_id"  data-placeholder="{{ translate('messages.select_store') }}"
-                            class="js-data-example-ajax form-control">
-                            </select>
+                        <div class="advf-types">
+                            <label class="tps-choice">
+                                <input type="radio" name="advertisement_type" value="store_promotion" checked>
+                                <span class="tps-choice__box">
+                                    <span class="advf-type__icon"><i class="tio-shop"></i></span>
+                                    <span>
+                                        <span class="tps-choice__title">{{ $storePromotionLabel }}</span>
+                                        <span class="tps-choice__desc">{{ translate('A cover image and a logo, shown with the rating customers already trust.') }}</span>
+                                    </span>
+                                </span>
+                            </label>
+                            <label class="tps-choice">
+                                <input type="radio" name="advertisement_type" value="video_promotion">
+                                <span class="tps-choice__box">
+                                    <span class="advf-type__icon"><i class="tio-video-camera-outlined"></i></span>
+                                    <span>
+                                        <span class="tps-choice__title">{{ translate('Video promotion') }}</span>
+                                        <span class="tps-choice__desc">{{ translate('A short clip that plays in place of the cover image.') }}</span>
+                                    </span>
+                                </span>
+                            </label>
                         </div>
 
-                        <label class="form-label">{{ translate('Select_Priority') }}</label>
-                        <div class="mb-20">
-                            <select class="form-control w-100 js-select2-custom" name="priority">
-                                <option value="" selected="" disabled="">{{ translate('Priority') }}</option>
-                                <option value="">{{ translate('messages.N/A') }}</option>
-                                @for ($i = 1; $i <= $total_adds; $i++)
-                                    <option value="{{ $i }}">{{ $i }}</option>
-                                @endfor
-                            </select>
-                        </div>
-                        <div class="mb-20">
-                            <label class="form-label">{{ translate('Advertisement_Type') }}</label>
-                            <select class="js-select form-control w-100 promotion_type" name="advertisement_type">
-                                <option value="video_promotion">{{ translate('Video_Promotion') }}</option>
-                                <option value="store_promotion" selected="">{{ translate('store_promotion') }}</option>
-                            </select>
-                        </div>
-                        <div class="mb-20">
-                            <label class="form-label">{{ translate('Validity') }}</label>
-                            <div class="position-relative">
-                                <i class="tio-calendar-month icon-absolute-on-right"></i>
-                                <input type="text" class="form-control h-45 position-relative bg-transparent"  name="dates" placeholder="{{ translate('messages.Select_Date') }}">
+                        <div class="promotion-typewise-upload-box" id="profile-upload-box">
+                            <div class="advf-drop">
+                                <div class="advf-drop__grid">
+                                    <div class="advf-drop__slot">
+                                        <p class="advf-drop__name">
+                                            {{ translate('Profile image') }}
+                                            <span class="advf-drop__ratio">1:1</span>
+                                        </p>
+                                        <div class="advf-drop__media">
+                                            <div class="upload-file">
+                                                <input type="file" class="cover_attachment js-upload-input"
+                                                       data-target="profile-prev-image" name="profile_image"
+                                                       aria-label="{{ translate('Profile image') }}"
+                                                       accept=".webp, .png,.jpg,.jpeg,.gif, |image/*">
+                                                <div class="upload-file__img">
+                                                    <img src="{{asset('public/assets/admin/img/media/upload-file.png')}}" alt="">
+                                                </div>
+                                                <button class="remove-file-button" type="button">
+                                                    <i class="tio-clear"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <p class="advf-drop__meta">
+                                            {{ translate('Supported formats') . ': PNG, JPG, JPEG, WEBP' }}
+                                            <br>
+                                            Maximum 2 MB
+                                        </p>
+                                    </div>
+                                    <div class="advf-drop__slot advf-drop__slot--banner">
+                                        <p class="advf-drop__name">
+                                            {{ translate('Upload cover') }}
+                                            <span class="advf-drop__ratio">2:1</span>
+                                        </p>
+                                        <div class="advf-drop__media">
+                                            <div class="upload-file">
+                                                <input type="file" class="cover_attachment js-upload-input"
+                                                       data-target="main-image" name="cover_image"
+                                                       aria-label="{{ translate('Upload cover') }}"
+                                                       accept=".webp, .png,.jpg,.jpeg,.gif, |image/*">
+                                                <div class="upload-file__img upload-file__img_banner aspect-2-1">
+                                                    <img src="{{asset('public/assets/admin/img/media/banner-upload-file.png')}}" alt="">
+                                                </div>
+                                                <button class="remove-file-button" type="button">
+                                                    <i class="tio-clear"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <p class="advf-drop__meta">
+                                            {{ translate('Supported formats') . ': PNG, JPG, JPEG, WEBP' }}
+                                            <br>
+                                            Maximum 2 MB
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="advf-checks">
+                                <p class="advf-checks__label">{{ translate('Show review') }} &amp; {{ translate('Ratings') }}</p>
+                                <label class="form-check form--check-2">
+                                    <input type="checkbox" id="is_review_checked" class="form-check-input" value="1" name="review" checked>
+                                    <span class="form-check-label">{{ translate('review') }}</span>
+                                </label>
+                                <label class="form-check form--check-2">
+                                    <input type="checkbox" id="is_rating_checked" class="form-check-input" value="1" name="rating" checked>
+                                    <span class="form-check-label">{{ translate('Rating') }}</span>
+                                </label>
                             </div>
                         </div>
 
                         <div class="promotion-typewise-upload-box" id="video-upload-box">
-                            <label class="form-label">{{ translate('Upload Related Files') }}</label>
-                            <div class="border rounded p-3">
-                                <div class="d-flex flex-column align-items-center gap-3">
-                                    <p class="title-color mb-0 ">{{ translate('Upload Your Video') }}
-
-                                        ({{ translate('16:9') }})</p>
-
-                                    <div class="upload-file">
-                                        <input type="file" class="video_attachment" name="video_attachment"
-                                            accept="video/mp4, video/webm, video/mkv">
-                                        <div class="upload-file__img upload-file__img_banner upload-file__video-not-playable h-140">
+                            <div class="advf-drop">
+                                <div class="advf-drop__grid">
+                                    <div class="advf-drop__slot advf-drop__slot--wide">
+                                        <p class="advf-drop__name">
+                                            {{ translate('Upload your video') }}
+                                            <span class="advf-drop__ratio">16:9</span>
+                                        </p>
+                                        <div class="advf-drop__media">
+                                            <div class="upload-file">
+                                                <input type="file" class="video_attachment" name="video_attachment"
+                                                       aria-label="{{ translate('Upload your video') }}"
+                                                       accept="video/mp4, video/webm, video/mkv">
+                                                <div class="upload-file__img upload-file__img_banner upload-file__video-not-playable h-140"></div>
+                                                <button class="remove-file-button" type="button">
+                                                    <i class="tio-clear"></i>
+                                                </button>
+                                            </div>
                                         </div>
-                                        <button class="remove-file-button" type="button">
-                                            <i class="tio-clear"></i>
-                                        </button>
+                                        <p class="advf-drop__meta">
+                                            {{ translate('Supported formats') }}: MP4, WEBM, MKV
+                                            <br>
+                                            {{ translate('Maximum size') }}: 5 MB
+                                        </p>
                                     </div>
-
-                                    <p class="opacity-75 max-w220 mx-auto text-center fs-12">
-                                        {{ translate('Maximum 5 MB') }}
-                                        <br>
-                                        {{ translate('Supports: MP4, WEBM, MKV') }}
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="promotion-typewise-upload-box" id="profile-upload-box">
-                            <h5 class="mb-3">{{ translate('Show Review') }} &amp; {{ translate('Ratings') }}</h5>
-                            <div class="card bg--secondary shadow-none">
-                                <div class="card-body p-3">
-                                    <div class="w-100 d-flex flex-wrap gap-3">
-                                        <label class="form-check form--check-2 me-3">
-                                            <input type="checkbox" id="is_review_checked" class="form-check-input" value="1" name="review" checked="">
-                                            <span class="form-check-label">{{ translate('Review') }}</span>
-                                        </label>
-                                        <label class="form-check form--check-2">
-                                            <input type="checkbox" id="is_rating_checked" class="form-check-input" value="1" name="rating" checked="">
-                                            <span class="form-check-label">{{ translate('Rating') }}</span>
-                                        </label>
-                                    </div>
-                                </div>
-                            </div>
-                            <br>
-                            <label class="form-label">{{ translate('Upload Related Files') }}</label>
-                            <div class="d-flex flex-wrap flex-sm-nowrap justify-content-center gap-3 border rounded p-3">
-                                <div class="d-flex flex-column align-items-center gap-3 flex-shrink-0">
-                                    <p class="title-color mb-0">{{ translate('Profile Image') }} <span class="text-danger">({{ translate('Ratio - 1:1') }})</span></p>
-
-                                    <div class="upload-file">
-                                        <input type="file" class="cover_attachment js-upload-input"
-                                            data-target="profile-prev-image" name="profile_image"
-                                            accept=".webp, .png,.jpg,.jpeg,.gif, |image/*">
-                                        <div class="upload-file__img">
-                                            <img src="{{asset('public/assets/admin/img/media/upload-file.png')}}" alt="" >
-                                        </div>
-                                        <button class="remove-file-button" type="button">
-                                            <i class="tio-clear"></i>
-                                        </button>
-                                    </div>
-
-                                    <p class="opacity-75 max-w220 mx-auto text-center fs-12">
-                                        {{ translate('Supports: PNG, JPG, JPEG, WEBP') }}
-                                        <br>
-                                        {{ translate('Maximum 2 MB') }}
-                                    </p>
-                                </div>
-                                <div class="d-flex flex-column align-items-center gap-3">
-                                    <p class="title-color mb-0">{{ translate('Upload Cover') }} <span class="text-danger">({{ translate('Ratio - 2:1') }})</span></p>
-                                    <div class="upload-file">
-                                        <input type="file" class="cover_attachment js-upload-input"
-                                            data-target="main-image" name="cover_image"
-                                            accept=".webp, .png,.jpg,.jpeg,.gif, |image/*">
-                                        <div class="upload-file__img upload-file__img_banner aspect-2-1">
-                                            <img src="{{asset('public/assets/admin/img/media/banner-upload-file.png')}}" alt="" >
-                                        </div>
-                                        <button class="remove-file-button" type="button">
-                                            <i class="tio-clear"></i>
-                                        </button>
-                                    </div>
-
-                                    <p class="opacity-75 max-w220 mx-auto text-center fs-12">
-                                        {{ translate('Supports: PNG, JPG, JPEG, WEBP') }}
-                                        <br>
-                                        {{ translate('Maximum 2 MB') }}
-                                    </p>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <div class="col-lg-6">
-                        <div class="position-sticky top-80px text-8797AB">
-                            <div class="bg-light p-3 p-sm-4 rounded">
-                                <label class="form-label">{{ translate('Advertisement Preview') }}</label>
-                                <div id="video-preview-box" class="video-preview-box">
-                                    <div class="bg--secondary rounded">
-                                        <div class="video h-200">
-                                            <video controls>
-                                                {{ translate('Your browser does not support the video tag.') }}
-                                            </video>
-                                        </div>
-                                        <div
-                                            class="prev-video-box rounded bg-white px-3 py-4 position-relative gap-4 mt-n2">
-                                            <div class="profile-img">
+                </div>
+
+                <div class="tps-card__foot">
+                    <span class="tps-foot-note">{{ translate('The advertisement goes live as soon as it is saved, and the store is notified.') }}</span>
+                    <button type="reset" id="reset_btn" class="btn btn--reset">
+                        <i class="tio-refresh"></i> {{ translate('Reset') }}
+                    </button>
+                    <button type="submit" class="btn btn--primary">
+                        <i class="tio-checkmark-circle-outlined"></i> {{ translate('Submit') }}
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-4">
+            <div class="advf-aside">
+                <div class="tps-card">
+                    <div class="tps-card__head">
+                        <span class="tps-card__brand"><i class="tio-devices-apple"></i></span>
+                        <div class="tps-card__titles">
+                            <h2 class="tps-card__title">{{ translate('Advertisement preview') }}</h2>
+                            <p class="tps-card__subtitle">{{ translate('How the advertisement looks to customers in the app.') }}</p>
+                        </div>
+                    </div>
+                    <div class="tps-card__body">
+                        <div class="advf-stage text-8797AB">
+                            <div id="video-preview-box" class="video-preview-box">
+                                <div class="bg--secondary rounded">
+                                    <div class="video h-200">
+                                        <video controls>
+                                            {{ translate('Your browser does not support the video tag.') }}
+                                        </video>
+                                    </div>
+                                    <div class="prev-video-box rounded bg-white px-3 py-4 position-relative gap-4 mt-n2">
+                                        <div class="profile-img"></div>
+                                        <div class="d-flex align-items-center justify-content-between gap-2">
+                                            <div class="d-flex flex-column gap-2 flex-grow-1">
+                                                <div class="preview-title w-100">
+                                                    <h5 class="main-text pe-4">{{ translate('Title') }}</h5>
+                                                    <div class="placeholder-text bg--secondary p-2 w-50"></div>
+                                                </div>
+                                                <div class="preview-description w-100">
+                                                    <div class="main-text line-limit-2">{{ translate('messages.Description') }}</div>
+                                                    <div class="placeholder-text bg--secondary p-2 w-75"></div>
+                                                </div>
+                                                <div class="preview-description w-100">
+                                                    <div class="placeholder-text bg--secondary p-2 w-65"></div>
+                                                </div>
                                             </div>
-                                            <div
-                                                class="d-flex align-items-center justify-content-between gap-2">
-                                                <div class="d-flex flex-column gap-2 flex-grow-1">
+                                            <a class="btn btn--primary py-2 px-3 cursor-auto">
+                                                <span class="tio-arrow-forward"></span>
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div id="profile-preview-box" class="profile-preview-box">
+                                <div class="bg--secondary rounded">
+                                    <div class="main-image rounded min-h-200" style="background: url('') center center / cover no-repeat"></div>
+                                    <div class="rounded bg-white px-3 py-4 position-relative mt-n2">
+                                        <div class="preview-title preview-description">
+                                            <div class="wishlist-btn bg--secondary placeholder-text"></div>
+                                            <div class="static-text wishlist-btn-2" style="display: block;">
+                                                <div class="h-100 w-100 d-flex align-items-center justify-content-center">
+                                                    <i class="tio-heart-outlined"></i>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="d-flex align-items-center justify-content-between gap-2">
+                                            <div class="profile-prev-image bg--secondary me-xl-3" style="background: url('') center center / cover no-repeat"></div>
+                                            <div class="review-rating-demo">
+                                                <div class="rating-text static-text">
+                                                    <div class="rating-number d-flex align-items-center">
+                                                        <i class="tio-star"></i><span id="rating_data">4.7</span>
+                                                    </div>
+                                                </div>
+                                                <span id="review_data" class="review--text static-text">(25+)</span>
+                                            </div>
+                                            <div class="w-0 d-flex flex-column gap-2 flex-grow-1">
+                                                <div class="d-flex justify-content-between">
                                                     <div class="preview-title w-100">
                                                         <h5 class="main-text pe-4">{{ translate('Title') }}</h5>
                                                         <div class="placeholder-text bg--secondary p-2 w-50"></div>
                                                     </div>
-                                                    <div class="preview-description w-100">
-                                                        <div class="main-text line-limit-2">{{ translate('messages.Description') }}
-                                                        </div>
-                                                        <div class="placeholder-text bg--secondary p-2 w-75"></div>
-                                                    </div>
-                                                    <div class="preview-description w-100">
-                                                        <div class="placeholder-text bg--secondary p-2 w-65"></div>
-                                                    </div>
                                                 </div>
-                                                <a class="btn btn--primary py-2 px-3 cursor-auto">
-                                                    <span class="tio-arrow-forward"></span>
-                                                </a>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div id="profile-preview-box" class="profile-preview-box">
-                                    <div class="bg--secondary rounded">
-                                        <!-- Existing Profile Banner Image -->
-                                        <div class="main-image rounded min-h-200" style="background: url('') center center / cover no-repeat">
-                                        </div>
-                                        <div class="rounded bg-white px-3 py-4 position-relative mt-n2">
-                                            <div class="preview-title preview-description">
-                                                <div class="wishlist-btn bg--secondary placeholder-text"></div>
-                                                <div class="static-text wishlist-btn-2" style="display: block;">
-                                                    <div
-                                                        class="h-100 w-100 d-flex align-items-center justify-content-center">
-                                                        <i class="tio-heart-outlined"></i>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div
-                                                class="d-flex align-items-center justify-content-between gap-2">
-                                                <!-- Existing Profile Image -->
-                                                <div class="profile-prev-image bg--secondary me-xl-3" style="background: url('') center center / cover no-repeat">
-                                                </div>
-                                                <div class="review-rating-demo">
-                                                    <div class="rating-text static-text">
-                                                        <div class="rating-number d-flex align-items-center">
-                                                            <i  class="tio-star"></i><span id="rating_data">{{ translate('4.7') }}</span>
-                                                        </div>
-                                                    </div>
-                                                    <span id="review_data" class="review--text static-text">({{ translate('25+') }})</span>
-                                                </div>
-                                                <div class="w-0 d-flex flex-column gap-2 flex-grow-1">
-                                                    <div class="d-flex justify-content-between">
-                                                        <div class="preview-title w-100">
-                                                            <h5 class="main-text pe-4">{{ translate('Title') }}</h5>
-                                                            <div class="placeholder-text bg--secondary p-2 w-50"></div>
-                                                        </div>
-                                                    </div>
-                                                    <div class="preview-description w-100">
-                                                        <div class="main-text line-limit-2">{{ translate('messages.Description') }}
-                                                        </div>
-                                                        <div class="placeholder-text bg--secondary p-2 w-75"></div>
-                                                    </div>
+                                                <div class="preview-description w-100">
+                                                    <div class="main-text line-limit-2">{{ translate('messages.Description') }}</div>
+                                                    <div class="placeholder-text bg--secondary p-2 w-75"></div>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                            <br>
-                            <br>
                         </div>
                     </div>
                 </div>
-                <div class="btn--container justify-content-end">
-                    <button type="reset" id="reset_btn" class="btn btn--reset">{{ translate('Reset') }}</button>
-                    <button type="submit" class="btn btn--primary">{{ translate('Submit') }}</button>
+
+                <div class="tps-note tps-note--info mt-3">
+                    <i class="tio-info-outined"></i>
+                    <p>{{ translate('The preview updates as you type and upload. Ratings and reviews are read from the selected store and cannot be edited here.') }}</p>
                 </div>
-            </form>
+            </div>
         </div>
-    </div>
-    <!-- Advertisement -->
+    </form>
 
 </div>
 @endsection
@@ -347,327 +423,226 @@ active
     <script type="text/javascript" src="{{asset('public/assets/admin/js/daterangepicker.min.js')}}"></script>
 
     <script>
-        $(function() {
-            $('input[name="dates"]').daterangepicker({
-                // timePicker: true,
-                minDate: new Date(),
-                startDate: moment().startOf('hour'),
-                endDate: moment().startOf('hour').add(10, 'day'),
-            });
+        "use strict";
 
-            $('.js-select').each(function () {
-                let select2 = $.HSCore.components.HSSelect2.init($(this));
-            });
-        });
-    </script>
+        const advertisementStoreUrl = '{{ route('admin.advertisement.store') }}';
+        const advertisementListUrl = '{{ route('admin.advertisement.index') }}';
+        const advertisementRatingUrl = '{{ route('admin.store.get-store-ratings') }}';
+        const advertisementStoreListUrl = '{{ route('admin.store.get-stores') }}';
+        const advertisementModuleId = {{ config('module')['current_module_id'] }};
 
+        const selectedPromotionType = () => $('input[name="advertisement_type"]:checked').val();
 
-    <!-- Video Upload Handlr -->
-    <script>
-        $(".video_attachment").on("change", function (event) {
-            const videoEl = $(".video > video")
-            const prevVideoBox = $('.prev-video-box')
-            let file = event.target.files[0];
-            let blobURL = URL.createObjectURL(file);
-            const prevImage = $(this).closest('.upload-file').find('.upload-file__img').find('img').attr('src');
-            videoEl.css('display', 'block');
-            videoEl.attr('src', blobURL);
-            videoEl.siblings('.play-icon').hide();
-            $(this).closest('.upload-file').find('.upload-file__img').html('<video src="' + blobURL + '" controls></video>');
-            $(this).closest('.upload-file').find('.remove-file-button').show()
-            $(this).closest('.upload-file').find('.remove-file-button').on('click', function () {
-                $(this).hide()
-                videoEl.siblings('.play-icon').show();
-                $(this).closest('.upload-file').find('.upload-file__img').find('img').attr('src', prevImage);
-                $(this).closest('.upload-file').find('.video_attachment').val('');
-                $(this).closest('.upload-file').find('.video > video').css('display', 'none');
-                videoEl.css('display', 'none');
-                videoEl.attr('src', '');
-            })
-        })
-
-        $(window).on('load', function () {
-            handleUploadBox();
-
-            const videoEl = $(".video > video")
-            let blobURL = "";
-            // prev video attachment file
-            {{-- blobURL = "{{asset('storage/app/public/advertisement').'/' . $advertisement?->attachment?->file_name}}"; --}}
-
-            videoEl.css('display', 'block');
-            videoEl.attr('src', blobURL);
-            $(".video_attachment").closest('.upload-file').find('.upload-file__img').html('<video src="' + blobURL + '" controls></video>');
-            $(".video_attachment").closest('.upload-file').find('.remove-file-button').show()
-            $(".video_attachment").closest('.upload-file').find('.remove-file-button').on('click', function () {
-                $(this).hide()
-                $(this).closest('.upload-file').find('.upload-file__img').html('<img src="{{asset('public/assets/admin/img/media/video-banner.png')}}" alt="">');
-                $(this).closest('.upload-file').find('.video_attachment').val('');
-                $(this).closest('.upload-file').find('.video > video').css('display', 'none');
-                videoEl.css('display', 'none');
-                videoEl.attr('src', '');
-            })
-        })
-    </script>
-
-    <!-- Select Toggler Scripts -->
-    <script>
         const handleUploadBox = () => {
-            const value = $('.promotion_type').val();
-            if (value == 'video_promotion') {
+            if (selectedPromotionType() === 'video_promotion') {
                 $('#video-upload-box, #video-preview-box').show();
                 $('#profile-upload-box, #profile-preview-box').hide();
             } else {
                 $('#video-upload-box, #video-preview-box').hide();
                 $('#profile-upload-box, #profile-preview-box').show();
             }
-        }
-        $(window).on('load', function () {
-            handleUploadBox()
-        })
+        };
 
-        $('.promotion_type').on('change', function () {
-            handleUploadBox();
-            $('.remove-file-button').click()
-        })
-    </script>
-
-    <!-- Profile Promotion Image Upload Handlr -->
-    <script>
-        $(".js-upload-input").on("change", function (event) {
-            let file = event.target.files[0];
-            const target = $(this).data('target');
-            let blobURL = URL.createObjectURL(file);
-            const prevImage = $(this).closest('.upload-file').find('.upload-file__img').find('img').attr('src');
-            $(this).closest('.upload-file').find('.upload-file__img').html('<img src="' + blobURL + '" alt="">');
-            $(this).closest('.upload-file').find('.remove-file-button').show()
-            $('#profile-preview-box').find('.' + target).css('background', 'url(' + blobURL + ') no-repeat center center / cover');
-            $(this).closest('.upload-file').find('.remove-file-button').on('click', function () {
-                $('#profile-preview-box').find('.' + target).css('background', 'rgba(117, 133, 144, 0.1)');
-                $(this).hide();
-                $(this).closest('.upload-file').find('.upload-file__img').find('img').attr('src', prevImage);
-                file ? $(this).closest('.upload-file').find('.js-upload-input').val(file) : ''
-            })
-        })
-    </script>
-
-    <!-- Title and Description Change Handlr -->
-    <script>
-        $('[data-preview-text]').on('input', function (event) {
-            const target = $(this).data('preview-text');
-            if (event.target.value) {
-                $('.' + target).each(function () {
-                    $(this).find('.main-text').text(event.target.value)
-                    $(this).find('.placeholder-text').hide()
-                    $(this).find('.static-text').show()
-                })
-            } else {
-                $('.' + target).each(function () {
-                    $(this).find('.main-text').text('')
-                    $(this).find('.placeholder-text').show()
-                    $(this).find('.static-text').hide()
-                })
-            }
-        })
         const resetTextHandlr = () => {
             $('[data-preview-text]').each(function () {
                 const target = $(this).data('preview-text');
-                const value = $(this).val()
+                const value = $(this).val();
                 if (value) {
                     $('.' + target).each(function () {
-                        $(this).find('.main-text').text(value)
-                        $(this).find('.placeholder-text').hide()
-                        $(this).find('.static-text').show()
-                    })
+                        $(this).find('.main-text').text(value);
+                        $(this).find('.placeholder-text').hide();
+                        $(this).find('.static-text').show();
+                    });
                 }
-            })
-        }
-        $(window).on('load', function () {
-            resetTextHandlr()
-        })
+            });
+        };
+
+        const syncReviewRating = () => {
+            const reviewOn = $('[name="review"]').is(':checked');
+            const ratingOn = $('[name="rating"]').is(':checked');
+
+            reviewOn ? $('.review--text').show() : $('.review--text').hide();
+            ratingOn ? $('.rating-text').show() : $('.rating-text').hide();
+            $('.review-rating-demo').css('opacity', reviewOn || ratingOn ? '1' : '0');
+        };
+
+        const loadReviewAndRating = (storeId) => {
+            if (!storeId) return;
+
+            $.ajax({
+                url: advertisementRatingUrl,
+                method: 'get',
+                data: {store_id: storeId},
+                success: function (response) {
+                    $('#rating_data').html(response.rating);
+                    $('#review_data').html(' (' + response.review + '+)');
+                }
+            });
+        };
+
+        $(function () {
+            $.ajaxSetup({
+                headers: {'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')}
+            });
+
+            $('input[name="dates"]').daterangepicker({
+                minDate: new Date(),
+                startDate: moment().startOf('hour'),
+                endDate: moment().startOf('hour').add(10, 'day'),
+            });
+
+            $('.js-data-example-ajax').select2({
+                ajax: {
+                    url: advertisementStoreListUrl,
+                    delay: 250,
+                    data: function (params) {
+                        return {
+                            q: params.term,
+                            page: params.page,
+                            module_id: advertisementModuleId,
+                            include_addon_providers: 1
+                        };
+                    },
+                    processResults: function (data) {
+                        return {results: data};
+                    }
+                }
+            });
+
+            handleUploadBox();
+            resetTextHandlr();
+            syncReviewRating();
+        });
+
+        $('input[name="advertisement_type"]').on('change', function () {
+            handleUploadBox();
+            $('.remove-file-button').click();
+        });
+
+        $('[name="review"], [name="rating"]').on('change', function () {
+            syncReviewRating();
+
+            if ($(this).is(':checked')) {
+                loadReviewAndRating($('.js-data-example-ajax').val());
+            }
+        });
+
+        $(document).on('change', '.js-data-example-ajax', function () {
+            loadReviewAndRating($(this).val());
+        });
+
+        $('[data-preview-text]').on('input', function (event) {
+            const target = $(this).data('preview-text');
+
+            $('.' + target).each(function () {
+                if (event.target.value) {
+                    $(this).find('.main-text').text(event.target.value);
+                    $(this).find('.placeholder-text').hide();
+                    $(this).find('.static-text').show();
+                } else {
+                    $(this).find('.main-text').text('');
+                    $(this).find('.placeholder-text').show();
+                    $(this).find('.static-text').hide();
+                }
+            });
+        });
+
+        $('.video_attachment').on('change', function (event) {
+            const videoEl = $('.video > video');
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const blobURL = URL.createObjectURL(file);
+            videoEl.css('display', 'block');
+            videoEl.attr('src', blobURL);
+            videoEl.siblings('.play-icon').hide();
+
+            const uploadFile = $(this).closest('.upload-file');
+            uploadFile.find('.upload-file__img').html('<video src="' + blobURL + '" controls></video>');
+            uploadFile.find('.remove-file-button').show();
+        });
+
+        $('.js-upload-input').on('change', function (event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const target = $(this).data('target');
+            const blobURL = URL.createObjectURL(file);
+            const uploadFile = $(this).closest('.upload-file');
+
+            uploadFile.find('.upload-file__img').html('<img src="' + blobURL + '" alt="">');
+            uploadFile.find('.remove-file-button').show();
+            $('#profile-preview-box').find('.' + target).css('background', 'url(' + blobURL + ') no-repeat center center / cover');
+        });
+
+        $(document).on('click', '.remove-file-button', function () {
+            const uploadFile = $(this).closest('.upload-file');
+            const videoInput = uploadFile.find('.video_attachment');
+
+            $(this).hide();
+
+            if (videoInput.length) {
+                const videoEl = $('.video > video');
+                videoInput.val('');
+                videoEl.css('display', 'none').attr('src', '');
+                videoEl.siblings('.play-icon').show();
+                uploadFile.find('.upload-file__img')
+                    .html('<img src="{{asset('public/assets/admin/img/media/video-banner.png')}}" alt="">');
+                return;
+            }
+
+            const uploadInput = uploadFile.find('.js-upload-input');
+            const target = uploadInput.data('target');
+            const placeholder = target === 'main-image'
+                ? '{{asset('public/assets/admin/img/media/banner-upload-file.png')}}'
+                : '{{asset('public/assets/admin/img/media/upload-file.png')}}';
+
+            uploadInput.val('');
+            uploadFile.find('.upload-file__img').html('<img src="' + placeholder + '" alt="">');
+            $('#profile-preview-box').find('.' + target).css('background', 'rgba(117, 133, 144, 0.1)');
+        });
 
         $('#create-add-form').on('reset', function () {
-            window.location.reload()
-        })
+            window.location.reload();
+        });
+
+        $('#create-add-form').on('submit', function (event) {
+            event.preventDefault();
+
+            const $button = $(this).find('button[type="submit"]');
+            if ($button.prop('disabled')) return;
+            $button.prop('disabled', true);
+
+            $.post({
+                url: advertisementStoreUrl,
+                data: new FormData(this),
+                cache: false,
+                contentType: false,
+                processData: false,
+                beforeSend: function () {
+                    $('#loading').show();
+                },
+                success: function (data) {
+                    if (data.errors) {
+                        $button.prop('disabled', false);
+                        for (let i = 0; i < data.errors.length; i++) {
+                            toastr.error(data.errors[i].message, {CloseButton: true, ProgressBar: true});
+                        }
+                        return;
+                    }
+
+                    toastr.success(data.message, {CloseButton: true, ProgressBar: true});
+                    setTimeout(function () {
+                        location.href = advertisementListUrl;
+                    }, 2000);
+                },
+                error: function () {
+                    $button.prop('disabled', false);
+                },
+                complete: function () {
+                    $('#loading').hide();
+                }
+            });
+        });
     </script>
-
-    <!-- Review and Rating Handlr -->
-    <script>
-        $('[name="review"]').on('change', function () {
-            if ($(this).is(':checked')) {
-                $('.review-placeholder').hide()
-                $('.review--text').show()
-                $('.review-rating-demo').css('opacity', '1')
-            } else {
-                $('.review-placeholder').show()
-                $('.review--text').hide()
-                if(!$('[name="rating"]').is(':checked')){
-                    $('.review-rating-demo').css('opacity', '0')
-                }
-            }
-        })
-        $('[name="rating"]').on('change', function () {
-            if ($(this).is(':checked')) {
-                $('.rating-text').show()
-                $('.review-rating-demo').css('opacity', '1')
-            } else {
-                $('.rating-text').hide()
-                if(!$('[name="review"]').is(':checked')){
-                    $('.review-rating-demo').css('opacity', '0')
-                }
-            }
-        })
-
-
-        $(window).on('load', function () {
-            $('[name="review"]').each(function () {
-                if ($(this).is(':checked')) {
-                    $('.review--text').show()
-                } else {
-                    $('.review--text').hide()
-                    if(!$('[name="rating"]').is(':checked')){
-                        $('.review-rating-demo').css('opacity', '0')
-                    }
-                }
-            })
-            $('[name="rating"]').each(function () {
-                if ($(this).is(':checked')) {
-                    $('.rating-text').show()
-                } else {
-                    $('.rating-text').hide()
-                    if(!$('[name="review"]').is(':checked')){
-                        $('.review-rating-demo').css('opacity', '0')
-                    }
-                }
-            })
-        })
-    </script>
-
-<script>
-            $(document).on('ready', function() {
-                    $('.js-data-example-ajax').select2({
-                        ajax: {
-                            url: '{{ route('admin.store.get-stores') }}',
-                            data: function(params) {
-                                return {
-                                    q: params.term, // search term
-                                    page: params.page,
-                                    module_id:{{ config('module')['current_module_id'] }}
-                                };
-                            },
-                            processResults: function(data) {
-                                return {
-                                    results: data
-                                };
-                            },
-                            __port: function(params, success, failure) {
-                                let $request = $.ajax(params);
-
-                                $request.then(success);
-                                $request.fail(failure);
-
-                                return $request;
-                            }
-                        }
-                    });
-
-
-                $('#create-add-form').on('submit', function (event) {
-                    event.preventDefault();
-                    let formData = new FormData(this);
-                    $.ajaxSetup({
-                        headers: {
-                            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-                        }
-                    });
-                    $.post({
-                        url: '{{ route('admin.advertisement.store') }}',
-                        data: $('#create-add-form').serialize(),
-                        data: formData,
-                        cache: false,
-                        contentType: false,
-                        processData: false,
-                        beforeSend: function () {
-                            $('#loading').show();
-                        },
-                        success: function (data) {
-                            $('#loading').hide();
-
-                            if (data.errors) {
-                                for (let i = 0; i < data.errors.length; i++) {
-                                    toastr.error(data.errors[i].message, {
-                                        CloseButton: true,
-                                        ProgressBar: true
-                                    });
-                                }
-                            } else {
-                                toastr.success(data.message, {
-                                    CloseButton: true,
-                                    ProgressBar: true
-                                });
-                                setTimeout(function () {
-                                    location.href = '{{route('admin.advertisement.index')}}';
-                                }, 2000);
-                            }
-                        }
-                    });
-                });
-            });
-
-
-
-            $(document).on('change', '.js-data-example-ajax', function () {
-                var store_id= $(this).val();
-                check_review_and_rating(store_id)
-            });
-            $(document).on('change', '#is_review_checked', function () {
-
-                if($(this).is(':checked') == true){
-                    var store_id= $('.js-data-example-ajax').val();
-                    if(store_id){
-                        check_review_and_rating(store_id)
-                    }
-                }
-
-            });
-            $(document).on('change', '#is_rating_checked', function () {
-
-                if($(this).is(':checked') == true){
-                    var store_id= $('.js-data-example-ajax').val();
-                    if(store_id){
-                        check_review_and_rating(store_id)
-                    }
-                }
-            });
-
-
-
-
-
-
-            function check_review_and_rating(store_id){
-                $.ajaxSetup({
-                    headers: {
-                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-                    }
-                });
-                $.ajax({
-                    url: "{{route('admin.store.get-store-ratings')}}",
-                    method: 'get',
-                    data: {
-                        store_id: store_id,
-                    },
-                    beforeSend: function () {
-
-                    },
-                    success: function (response) {
-                        $('#rating_data').html(response.rating);
-                        $('#review_data').html( ' (' + response.review +  '+)' ) ;
-
-                    },
-                    complete: function () {
-                    },
-                });
-            }
-
-</script>
 @endpush

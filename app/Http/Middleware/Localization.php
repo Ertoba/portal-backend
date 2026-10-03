@@ -20,6 +20,7 @@ class Localization
     {
         $lang = 'en';
         $direction = 'ltr';
+        $language = null;
         try {
             $language = Helpers::get_business_settings('system_language');
             if ($language) {

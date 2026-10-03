@@ -1,7 +1,7 @@
 @php
     $rootId = $rootId ?? 'multiple-image-uploader-' . uniqid();
-    $title = $title ?? translate('messages.Product Additional Images');
-    $description = $description ?? translate('messages.Upload additional images. JPG, JPEG, PNG Image size : Max 2 MB (1:1)');
+    $title = $title ?? translate('Product additional images');
+    $description = $description ?? translate('Upload additional images.') . ' ' . 'JPG, JPEG, PNG' . ' image, max ' . 2 . ' MB (ratio ' . '1:1' . ')';
     $containerId = $containerId ?? 'coba';
     $wrapperClass = $wrapperClass ?? 'tabs-inner pt-3 d-flex gap-3 identity_documnet_wrap';
     $fieldName = $fieldName ?? 'item_images[]';
@@ -13,8 +13,8 @@
     $placeholderImage = $placeholderImage ?? asset('public/assets/admin/img/400x400/coba-placeholder.png');
     $placeholderWidth = $placeholderWidth ?? '100%';
     $dropFileLabel = $dropFileLabel ?? 'Drop Here';
-    $extensionErrorMessage = $extensionErrorMessage ?? translate('messages.please_only_input_png_or_jpg_type_file');
-    $sizeErrorMessage = $sizeErrorMessage ?? translate('messages.file_size_too_big');
+    $extensionErrorMessage = $extensionErrorMessage ?? translate('Please upload a file in a supported format') . ': PNG, JPG';
+    $sizeErrorMessage = $sizeErrorMessage ?? translate('messages.File size too big');
     $resetButtonSelector = $resetButtonSelector ?? null;
 @endphp
 
@@ -32,7 +32,10 @@
             <div class="__bg-F8F9FC-card p-3">
                 <div class="flex-grow-1 mx-auto overflow-x-auto scrollbar-primary">
                     <div class="form-group m-0">
-                        <div class="identity_documnet_body multiple_coba-img tabs-slide-wrap position-relative">
+                        {{-- `data-tab-scroller="off"`: this gallery ships its own arrow handler below,
+                             so the shared tab-scroller.js leaves it alone (see CLAUDE.md §10g). --}}
+                        <div class="identity_documnet_body multiple_coba-img tabs-slide-wrap position-relative"
+                            data-tab-scroller="off">
                             <div class="{{ $wrapperClass }}" id="{{ $containerId }}"></div>
                             <div class="arrow-area">
                                 <div class="button-prev align-items-center">

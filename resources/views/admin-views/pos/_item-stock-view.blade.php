@@ -1,115 +1,97 @@
-<div class="modal-header p-0">
-    <h4 class="modal-title product-title">
-    </h4>
-    <button class="close call-when-done bg-modal-btn w-30px h-30 rounded-circle m-2 z-2" type="button" data-dismiss="modal" aria-label="Close">
+@use('App\Support\Settings\BusinessRules')
+<div class="modal-header">
+    <h4 class="modal-title text-break">{{ $product->name }}</h4>
+    <button class="close call-when-done" type="button" data-dismiss="modal"
+            aria-label="{{ translate('messages.Close') }}">
         <span aria-hidden="true">&times;</span>
     </button>
 </div>
 <div class="modal-body">
-    <div class="d-flex flex-row">
-        @if (config('toggle_veg_non_veg') && config('module.' . $product->store->module->module_type)['veg_non_veg'])
-        <span
-        class="badge badge-{{ $product->veg ? 'success' : 'danger' }} position-absolute">{{ $product->veg ? translate('messages.veg') : translate('messages.non_veg') }}</span>
-        @endif
-        <!-- Product gallery-->
-
-        @if (isset($stock) && $stock == 0)
-        <span class="badge badge-danger position-absolute">{{ translate('messages.Out_of_Stock') }}</span>
-        @endif
-
-        <div class="d-flex align-items-center justify-content-center active">
-            <img class="img-responsive initial--30 onerror-image"
-
-            src="{{ $product['image_full_url'] ?? asset('public/assets/admin/img/160x160/img2.jpg') }}"
-
-
-                data-onerror-image="{{ asset('public/assets/admin/img/160x160/img2.jpg') }}"
-                data-zoom="{{ asset('storage/app/public/product') }}/{{ $product['image'] }}" alt="Product image"
-                width="">
-            <div class="cz-image-zoom-pane"></div>
+    <div class="pos-pv-head">
+        <div class="pos-pv-media">
+            <img class="onerror-image"
+                 src="{{ $product['image_full_url'] ?? asset('public/assets/admin/img/160x160/img2.jpg') }}"
+                 data-onerror-image="{{ asset('public/assets/admin/img/160x160/img2.jpg') }}"
+                 width="96" height="96" alt="{{ $product->name }}">
         </div>
-        <!-- Product details-->
-        <div class="details pl-2">
-            <a href="{{ route('admin.item.view', $product->id) }}"
-                class="h3 mb-2 product-title text-capitalize text-break">{{ $product->name }}</a>
 
-                @if (isset($product->module_id) && $product->module->module_type == 'food')
-                <div class="mb-3 text-dark">
-                    <span class="h3 font-weight-normal text-accent mr-1">
-                        {{ \App\CentralLogics\Helpers::get_food_price_range($product, true) }}
+        <div class="pos-pv-details">
+            <div class="pos-pv-tags">
+                @if (BusinessRules::vegNonVegEnabled() && config('module.' . $product->store->module->module_type)['veg_non_veg'])
+                    <span class="badge badge-{{ $product->veg ? 'success' : 'danger' }}">
+                        {{ $product->veg ? translate('Veg') : translate('Non veg') }}
                     </span>
-                    @if ($product->discount > 0 || \App\CentralLogics\Helpers::get_store_discount($product->store))
-                        <strike class="initial--18">
-                            {{ \App\CentralLogics\Helpers::get_food_price_range($product) }}
-                        </strike>
-                    @endif
-                </div>
-                @else
-                <div class="mb-3 text-dark">
-                    <span class="h3 font-weight-normal text-accent mr-1">
-                        {{ \App\CentralLogics\Helpers::get_price_range($product, true) }}
-                    </span>
-                    @if ($product->discount > 0 || \App\CentralLogics\Helpers::get_store_discount($product->store))
-                        <strike class="initial--18">
-                            {{ \App\CentralLogics\Helpers::get_price_range($product) }}
-                        </strike>
-                    @endif
-                </div>
                 @endif
+                @if (isset($stock))
+                    @if ($stock == 0)
+                        <span class="badge badge-danger">{{ translate('Out of stock') }}</span>
+                    @else
+                        <span class="badge badge-soft-secondary">
+                            {{ translate('messages.In stock') }}: {{ $stock }}
+                        </span>
+                    @endif
+                @endif
+            </div>
+
+            <div class="pos-pv-price">
+                @if (isset($product->module_id) && $product->module->module_type == 'food')
+                    <span class="pos-pv-price-now">{{ \App\CentralLogics\Helpers::get_food_price_range($product, true) }}</span>
+                    @if ($product->discount > 0 || \App\CentralLogics\Helpers::get_store_discount($product->store))
+                        <span class="pos-pv-price-was">{{ \App\CentralLogics\Helpers::get_food_price_range($product) }}</span>
+                    @endif
+                @else
+                    <span class="pos-pv-price-now">{{ \App\CentralLogics\Helpers::get_price_range($product, true) }}</span>
+                    @if ($product->discount > 0 || \App\CentralLogics\Helpers::get_store_discount($product->store))
+                        <span class="pos-pv-price-was">{{ \App\CentralLogics\Helpers::get_price_range($product) }}</span>
+                    @endif
+                @endif
+            </div>
 
             @if ($product->discount > 0)
-                <div class="mb-3 text-dark">
-                    <strong>{{ translate('messages.discount') }} : </strong>
-                    <strong
-                        id="set-discount-amount">{{ \App\CentralLogics\Helpers::get_product_discount($product) }}</strong>
-                </div>
+                <p class="pos-pv-meta">
+                    {{ translate('Discount') }}:
+                    <strong id="set-discount-amount">{{ \App\CentralLogics\Helpers::get_product_discount($product) }}</strong>
+                </p>
             @endif
-            <!-- Product panels-->
+
+            <a href="{{ route('admin.item.view', $product->id) }}" class="pos-pv-link" target="_blank">
+                {{ translate('messages.View product details') }} <i class="tio-open-in-new"></i>
+            </a>
         </div>
     </div>
+
     <div class="row pt-2">
         <div class="col-12">
-            <?php
-            $cart = false;
-            if (session()->has('cart')) {
-                foreach (session()->get('cart') as $key => $cartItem) {
-                    if (is_array($cartItem) && $cartItem['id'] == $product['id']) {
-                        $cart = $cartItem;
-                    }
-                }
-            }
-
-            ?>
-            <h2>{{ translate('messages.description') }}</h2>
-            <span class="d-block text-dark text-break">
-                {!! $product->description !!}
-            </span>
+            @if (filled(strip_tags($product->description)))
+                <h5 class="pos-pv-section-title">{{ translate('messages.Description') }}</h5>
+                <div class="pos-pv-text text-break">{!! $product->description !!}</div>
+            @endif
 
             @if (in_array($product->module->module_type ,['food','grocery']))
                 @if (count($product->nutritions) )
-                    <h4 class="mt-2"> {{ translate('messages.Nutrition_Details') }}</h4>
-                    <span class="d-block text-dark text-break">
+                    <h5 class="pos-pv-section-title">{{ translate('Nutrition details') }}</h5>
+                    <div class="pos-pv-text text-break">
                         @foreach($product->nutritions as $nutrition)
                         {{$nutrition->nutrition}}{{ !$loop->last ? ',' : '.'}}
                         @endforeach
-                    </span>
+                    </div>
                 @endif
                 @if (count($product->allergies))
-                    <h4 class="mt-2"> {{ translate('messages.Allergie_Ingredients') }}</h4>
-                    <span class="d-block text-dark text-break">
+                    <h5 class="pos-pv-section-title">{{ translate('Allergen ingredients') }}</h5>
+                    <div class="pos-pv-text text-break">
                         @foreach($product->allergies as $allergy)
                         {{$allergy->allergy}}{{ !$loop->last ? ',' : '.'}}
                         @endforeach
-                    </span>
+                    </div>
                 @endif
             @endif
 
             @if (in_array($product->module->module_type ,['pharmacy']))
                 @if ($product->generic->pluck('generic_name')->first())
-                    <h4 class="mt-2"> {{ translate('generic_name') }}</h4>
-                    <span class="d-block text-dark text-break">
+                    <h5 class="pos-pv-section-title">{{ translate('Generic name') }}</h5>
+                    <div class="pos-pv-text text-break">
                         {{ $product->generic->pluck('generic_name')->first() }}
-                    </span>
+                    </div>
                 @endif
             @endif
 
@@ -121,14 +103,14 @@
 
                         @foreach (json_decode($product->food_variations) as $key => $choice)
                             @if (isset($choice->price) == false)
-                                <div class="h3 p-0 pt-2">{{ $choice->name }} <small  class="text-muted initial--18">
-                                        ({{ $choice->required == 'on' ? translate('messages.Required') : translate('messages.optional') }})
+                                <h5 class="pos-pv-section-title">{{ $choice->name }} <small class="pos-pv-optional">
+                                        ({{ $choice->required == 'on' ? translate('messages.Required.') : translate('Optional') }})
                                     </small>
-                                </div>
+                                </h5>
                                 @if ($choice->min != 0 && $choice->max != 0)
                                     <small class="d-block mb-3">
-                                        {{ translate('You_need_to_select_minimum_ ') }} {{ $choice->min }}
-                                        {{ translate('to_maximum_ ') }} {{ $choice->max }} {{ translate('options') }}
+                                        {{ translate('You need to select minimum') }}  {{ $choice->min }}
+                                        {{ translate('To maximum') }}  {{ $choice->max }} {{ translate('Options') }}
                                     </small>
                                 @endif
 
@@ -162,11 +144,9 @@
                 @else
 
                     @foreach (json_decode($product->choice_options) as $choice)
-                        <div class="h3 p-0 pt-2">{{ $choice->title }}
-                        </div>
+                        <h5 class="pos-pv-section-title">{{ $choice->title }}</h5>
                         <div class="d-flex justify-content-left flex-wrap">
                             @foreach ($choice->options as $key => $option)
-                            @php($stock_variations= json_decode($product->variations,true))
                                 <input class="btn-check check-stock" type="radio" id="{{ $choice->name }}-{{ $option }}"
                                     name="{{ $choice->name }}" value="{{ $option }}" {{ isset($selected_item) && array_key_exists($choice->name, $selected_item) && trim($option) == $selected_item[$choice?->name] ? 'checked' : ($key == 0 ? 'checked' : '') }}
                                     autocomplete="off" required>
@@ -177,7 +157,6 @@
                     @endforeach
                 @endif
 
-                <!-- Quantity + Add to cart -->
                 @if ((isset($stock) && $stock > 0) || !isset($stock) )
                 <div class="d-flex justify-content-between mt-3">
                     <div class="product-description-label mt-2 text-dark h3">{{ translate('messages.quantity') }}:
@@ -206,10 +185,10 @@
                 @endif
                 @php($add_ons = json_decode($product->add_ons))
                 @if (count($add_ons) > 0 && $add_ons[0])
-                    <div class="h3 p-0 pt-2">{{ translate('messages.addon') }}</div>
+                    <h5 class="pos-pv-section-title">{{ translate('Addon') }}</h5>
 
                     <div class="d-flex justify-content-left flex-wrap">
-                        @foreach (\App\Models\AddOn::withoutGlobalScope(\App\Scopes\StoreScope::class)->whereIn('id', $add_ons)->active()->get() as $key => $add_on)
+                        @foreach ($product_addons as $key => $add_on)
                             <div class="flex-column pb-2">
                                 <input type="hidden" name="addon-price{{ $add_on->id }}"
                                     value="{{ $add_on->price }}">
@@ -241,7 +220,7 @@
 
                 <div class="row no-gutters d-none mt-2 text-dark" id="chosen_price_div">
                     <div class="col-2">
-                        <div class="product-description-label">{{ translate('messages.Total Price') }}:</div>
+                        <div class="product-description-label">{{ translate('Total price') }}:</div>
                     </div>
                     <div class="col-10">
                         <div class="product-price">
@@ -256,21 +235,21 @@
                 <div class="d-flex justify-content-center mt-2">
                     <button class="btn btn--primary add-To-Cart" type="button" class="h--45px">
                         <i class="tio-shopping-cart"></i>
-                        {{ translate('messages.add_to_cart') }}
+                        {{ translate('messages.Add to cart') }}
                     </button>
                 </div>
                 @elseif(isset($stock) && $stock == 0 )
                 <div class="d-flex justify-content-center mt-2">
                     <button class="btn btn-secondary" type="button" class="h--45px">
                         <i class="tio-shopping-cart"></i>
-                        {{ translate('messages.Stock_Out') }}
+                        {{ translate('Stock out') }}
                     </button>
                 </div>
                 @else
                 <div class="d-flex justify-content-center mt-2">
                     <button class="btn btn-secondary" type="button" class="h--45px">
                         <i class="tio-shopping-cart"></i>
-                        {{ translate('messages.add_to_cart') }}
+                        {{ translate('messages.Add to cart') }}
                     </button>
                 </div>
                 @endif
@@ -279,11 +258,8 @@
     </div>
 </div>
 <script type="text/javascript">
-    // "use strict";
     getVariantPrice();
-    // cartQuantityInitialize();
     $('#add-to-cart-form input').on('change', function() {
-        // cartQuantityInitialize();
         getVariantPrice();
     });
 </script>

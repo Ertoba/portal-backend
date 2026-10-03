@@ -6,7 +6,6 @@
                 <p>Customize your overview page layout. Choose the one that best fits your needs.</p>
             </div>
 
-            <!-- Toggle Button -->
             <a class="js-hs-unfold-invoker btn btn-icon btn-xs btn-ghost-dark" href="javascript:;"
                data-hs-unfold-options='{
                   "target": "#styleSwitcherDropdown",
@@ -18,16 +17,13 @@
                  }'>
                 <i class="tio-clear tio-lg"></i>
             </a>
-            <!-- End Toggle Button -->
         </div>
 
-        <!-- Body -->
         <div class="card-body sidebar-scrollbar">
             <h4 class="mb-1">Layout skins <span id="js-builder-disabled" class="badge badge-soft-danger opacity-0">Disabled</span></h4>
             <p>3 kinds of layout skins to choose from.</p>
 
             <div class="row gx-2 mb-5">
-                <!-- Custom Radio -->
                 <div class="col-4 text-center">
                     <div class="text-center">
                         <div class="custom-checkbox-card mb-2">
@@ -42,9 +38,7 @@
                         </div>
                     </div>
                 </div>
-                <!-- End Custom Radio -->
 
-                <!-- Custom Radio -->
                 <div class="col-4 text-center">
                     <div class="text-center">
                         <div class="custom-checkbox-card mb-2">
@@ -59,9 +53,7 @@
                         </div>
                     </div>
                 </div>
-                <!-- End Custom Radio -->
 
-                <!-- Custom Radio -->
                 <div class="col-4 text-center">
                     <div class="text-center">
                         <div class="custom-checkbox-card mb-2">
@@ -76,15 +68,12 @@
                         </div>
                     </div>
                 </div>
-                <!-- End Custom Radio -->
             </div>
-            <!-- End Row -->
 
             <h4 class="mb-1">Sidebar layout options</h4>
             <p>Choose between standard navigation sizing, mini or even compact with icons.</p>
 
             <div class="row gx-2 mb-5">
-                <!-- Custom Radio -->
                 <div class="col-4 text-center">
                     <div class="text-center">
                         <div class="custom-checkbox-card mb-2">
@@ -99,9 +88,7 @@
                         </div>
                     </div>
                 </div>
-                <!-- End Custom Radio -->
 
-                <!-- Custom Radio -->
                 <div class="col-4 text-center">
                     <div class="text-center">
                         <div class="custom-checkbox-card mb-2">
@@ -116,9 +103,7 @@
                         </div>
                     </div>
                 </div>
-                <!-- End Custom Radio -->
 
-                <!-- Custom Radio -->
                 <div class="col-4 text-center">
                     <div class="text-center">
                         <div class="custom-checkbox-card mb-2">
@@ -133,15 +118,12 @@
                         </div>
                     </div>
                 </div>
-                <!-- End Custom Radio -->
             </div>
-            <!-- End Row -->
 
             <h4 class="mb-1">Header layout options</h4>
             <p>Choose the primary navigation of your header layout.</p>
 
             <div class="row gx-2">
-                <!-- Custom Radio -->
                 <div class="col-4 text-center">
                     <div class="text-center">
                         <div class="custom-checkbox-card mb-2">
@@ -156,9 +138,7 @@
                         </div>
                     </div>
                 </div>
-                <!-- End Custom Radio -->
 
-                <!-- Custom Radio -->
                 <div class="col-4 text-center">
                     <div class="text-center">
                         <div class="custom-checkbox-card mb-2">
@@ -173,9 +153,7 @@
                         </div>
                     </div>
                 </div>
-                <!-- End Custom Radio -->
 
-                <!-- Custom Radio -->
                 <div class="col-4 text-center">
                     <div class="text-center">
                         <div class="custom-checkbox-card mb-2">
@@ -190,9 +168,7 @@
                         </div>
                     </div>
                 </div>
-                <!-- End Custom Radio -->
 
-                <!-- Custom Radio -->
                 <div class="col-4 text-center mt-2">
                     <div class="text-center">
                         <div class="custom-checkbox-card mb-2">
@@ -207,13 +183,9 @@
                         </div>
                     </div>
                 </div>
-                <!-- End Custom Radio -->
             </div>
-            <!-- End Row -->
         </div>
-        <!-- End Body -->
 
-        <!-- Footer -->
         <div class="card-footer">
             <div class="row gx-2">
                 <div class="col">
@@ -227,8 +199,6 @@
                     </button>
                 </div>
             </div>
-            <!-- End Row -->
         </div>
-        <!-- End Footer -->
     </div>
 </div>

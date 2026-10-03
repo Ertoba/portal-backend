@@ -26,28 +26,42 @@ class DmReviewRepository implements DmReviewRepositoryInterface
 
     public function getFirstWhere(array $params, array $relations = []): ?Model
     {
-        return $this->review->where($params)->first();
+        return $this->review->with($relations)->where($params)->first();
     }
 
-    public function getList(array $orderBy = [], array $relations = [], int|string $dataLimit = DEFAULT_DATA_LIMIT, int $offset = null): Collection|LengthAwarePaginator
+    public function getList(array $orderBy = [], array $relations = [], int|string $dataLimit = DEFAULT_DATA_LIMIT, ?int $offset = null): Collection|LengthAwarePaginator
     {
-        return $this->review->paginate($dataLimit);
+        return $this->review->with($relations)->paginate($dataLimit);
     }
 
-    public function getListWhere(string $searchValue = null, array $filters = [], array $relations = [], int|string $dataLimit = DEFAULT_DATA_LIMIT, int $offset = null): Collection|LengthAwarePaginator
+    public function getListWhere(?string $searchValue = null, array $filters = [], array $relations = [], int|string $dataLimit = DEFAULT_DATA_LIMIT, ?int $offset = null): Collection|LengthAwarePaginator
     {
-        $key = explode(' ', $searchValue);
+        $key = explode(' ', $searchValue ?? '');
         $data = $this->review->with($relations)->where($filters)
             ->when($searchValue, function ($query) use ($key) {
-                $query->where(function ($q) use ($key) {
-                    $q->whereHas('delivery_man', function ($query) use ($key) {
-                        foreach ($key as $value) {
-                            $query->where('f_name', 'like', "%{$value}%")->orWhere('l_name', 'like', "%{$value}%");
-                        }
+                $query->where(function ($query) use ($key) {
+                    foreach ($key as $value) {
+                        $query->orWhere('order_id', 'like', "%{$value}%")
+                            ->orWhere('comment', 'like', "%{$value}%");
+                    }
+                    $query->orWhereHas('delivery_man', function ($query) use ($key) {
+                        $query->where(function ($query) use ($key) {
+                            foreach ($key as $value) {
+                                $query->orWhere('f_name', 'like', "%{$value}%")
+                                    ->orWhere('l_name', 'like', "%{$value}%")
+                                    ->orWhere('email', 'like', "%{$value}%")
+                                    ->orWhere('phone', 'like', "%{$value}%");
+                            }
+                        });
                     })->orWhereHas('customer', function ($query) use ($key) {
-                        foreach ($key as $value) {
-                            $query->where('f_name', 'like', "%{$value}%")->orWhere('l_name', 'like', "%{$value}%");
-                        }
+                        $query->where(function ($query) use ($key) {
+                            foreach ($key as $value) {
+                                $query->orWhere('f_name', 'like', "%{$value}%")
+                                    ->orWhere('l_name', 'like', "%{$value}%")
+                                    ->orWhere('email', 'like', "%{$value}%")
+                                    ->orWhere('phone', 'like', "%{$value}%");
+                            }
+                        });
                     });
                 });
             })
@@ -58,16 +72,36 @@ class DmReviewRepository implements DmReviewRepositoryInterface
         return $data->paginate($dataLimit);
     }
 
-    public function getListWhereOrder(string $searchValue = null, array $filters = [], array $relations = [], array $orderBy = [], int|string $dataLimit = DEFAULT_DATA_LIMIT, int $offset = null): Collection|LengthAwarePaginator
+    public function getListWhereOrder(?string $searchValue = null, array $filters = [], array $relations = [], array $orderBy = [], int|string $dataLimit = DEFAULT_DATA_LIMIT, ?int $offset = null): Collection|LengthAwarePaginator
     {
-        $key = explode(' ', $searchValue);
+        $key = explode(' ', $searchValue ?? '');
 
         $data = $this->review->with($relations)->where($filters)
-            ->when(isset($key), function ($query) use ($key) {
-                $query->whereHas('delivery_man', function ($query) use ($key) {
+            ->when($searchValue, function ($query) use ($key) {
+                $query->where(function ($query) use ($key) {
                     foreach ($key as $value) {
-                        $query->where('f_name', 'like', "%{$value}%")->orWhere('l_name', 'like', "%{$value}%");
+                        $query->orWhere('order_id', 'like', "%{$value}%")
+                            ->orWhere('comment', 'like', "%{$value}%");
                     }
+                    $query->orWhereHas('delivery_man', function ($query) use ($key) {
+                        $query->where(function ($query) use ($key) {
+                            foreach ($key as $value) {
+                                $query->orWhere('f_name', 'like', "%{$value}%")
+                                    ->orWhere('l_name', 'like', "%{$value}%")
+                                    ->orWhere('email', 'like', "%{$value}%")
+                                    ->orWhere('phone', 'like', "%{$value}%");
+                            }
+                        });
+                    })->orWhereHas('customer', function ($query) use ($key) {
+                        $query->where(function ($query) use ($key) {
+                            foreach ($key as $value) {
+                                $query->orWhere('f_name', 'like', "%{$value}%")
+                                    ->orWhere('l_name', 'like', "%{$value}%")
+                                    ->orWhere('email', 'like', "%{$value}%")
+                                    ->orWhere('phone', 'like', "%{$value}%");
+                            }
+                        });
+                    });
                 });
             });
 

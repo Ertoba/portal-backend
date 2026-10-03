@@ -29,19 +29,12 @@
         </label>
     </td>
     <td>
-        <label class="toggle-switch toggle-switch-sm ml-xl-4" for="stocksCheckbox{{ $customer->id }}">
-            <input type="checkbox" data-url="{{ route('admin.users.customer.status', [$customer->id, $customer->status ? 0 : 1]) }}" data-message="{{ $customer->status? translate('messages.you_want_to_block_this_customer'): translate('messages.you_want_to_unblock_this_customer') }}"
-                   class="toggle-switch-input status_change_alert" id="stocksCheckbox{{ $customer->id }}"
-                {{ $customer->status ? 'checked' : '' }}>
-            <span class="toggle-switch-label">
-                                                <span class="toggle-switch-indicator"></span>
-                                            </span>
-        </label>
+        @include('admin-views.customer.partials._status-toggle', ['customer' => $customer])
     </td>
     <td>
-        <a class="btn action-btn btn--warning btn-outline-warning"
+        <a class="btn action-btn action-btn--view"
             href="{{ route('admin.users.customer.view', [$customer['id']]) }}"
-            title="{{ translate('messages.view_customer') }}"><i
+            title="{{ translate('messages.View customer') }}"><i
                 class="tio-visible-outlined"></i>
         </a>
     </td>

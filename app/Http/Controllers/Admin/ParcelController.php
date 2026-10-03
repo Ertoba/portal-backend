@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Models\Order;
 use App\Scopes\ZoneScope;
+use App\Services\Order\EtaService;
 use App\Models\DeliveryMan;
 use App\Models\Translation;
 use Illuminate\Http\Request;
@@ -12,6 +13,7 @@ use App\Exports\ParcelCancellationReasonExport;
 use App\Models\BusinessSetting;
 use App\Exports\ParcelOrderExport;
 use App\Http\Controllers\Controller;
+use App\Traits\Api\OrderListTrait;
 use App\Models\ParcelCancellationReason;
 use Brian2694\Toastr\Facades\Toastr;
 use Maatwebsite\Excel\Facades\Excel;
@@ -21,115 +23,84 @@ use App\Models\ParcelDeliveryInstruction;
 
 class ParcelController extends Controller
 {
-    public function orders(Request $request, $status)
-    {
+    use OrderListTrait;
 
-        $key = isset($request->search) ? explode(' ', $request->search) : null;
+    private function resolveParcelFilters(Request $request): array
+    {
         if (session()->has('zone_filter') == false) {
             session()->put('zone_filter', 0);
         }
 
-        if (session()->has('order_filter')) {
-            $request = json_decode(session('order_filter'));
-        }
         Order::withOutGlobalScope(ZoneScope::class)->where(['checked' => 0, 'order_type' => 'parcel'])->update(['checked' => 1]);
 
-        $orders = Order::withOutGlobalScope(ZoneScope::class)->with(['customer', 'store'])
+        return [
+            isset($request->search) ? explode(' ', $request->search) : ($request['amp;search'] ? explode(' ', $request['amp;search']) : null),
+            session()->has('order_filter') ? json_decode(session('order_filter')) : $request,
+        ];
+    }
+
+    private function parcelOrderQuery($filters, $key, string $status)
+    {
+        $query = Order::withOutGlobalScope(ZoneScope::class)
             ->when(isset($key), function ($query) use ($key) {
-                return $query->where(function ($q) use ($key) {
-                    foreach ($key as $value) {
-                        $q->orWhere('id', 'like', "%{$value}%")
-                            ->orWhere('order_status', 'like', "%{$value}%")
-                            ->orWhere('transaction_reference', 'like', "%{$value}%");
-                    }
+                return $this->applyOrderKeywordSearch($query, $key);
+            })
+            ->when(isset($filters->zone), function ($query) use ($filters) {
+                return $query->whereIn('zone_id', (array) $filters->zone);
+            });
+
+        return $this->applyOrderStatusFilters($query, $status)
+            ->when(isset($filters->vendor), function ($query) use ($filters) {
+                return $query->whereHas('store', function ($query) use ($filters) {
+                    return $query->whereIn('id', (array) $filters->vendor);
                 });
             })
-            ->when(isset($request->zone), function ($query) use ($request) {
-                return $query->whereIn('zone_id', $request->zone);
+            ->when(isset($filters->orderStatus) && $status == 'all', function ($query) use ($filters) {
+                return $query->whereIn('order_status', $filters->orderStatus);
             })
-            ->when($status == 'scheduled', function ($query) {
-                return $query->whereRaw('created_at <> schedule_at');
-            })
-            ->when($status == 'searching_for_deliverymen', function ($query) {
-                return $query->SearchingForDeliveryman();
-            })
-            ->when($status == 'pending', function ($query) {
-                return $query->Pending();
-            })
-            ->when($status == 'accepted', function ($query) {
-                return $query->AccepteByDeliveryman();
-            })
-            ->when($status == 'processing', function ($query) {
-                return $query->Preparing();
-            })
-            ->when($status == 'item_on_the_way', function ($query) {
-                return $query->ItemOnTheWay();
-            })
-            ->when($status == 'delivered', function ($query) {
-                return $query->Delivered();
-            })
-            ->when($status == 'canceled', function ($query) {
-                return $query->Canceled();
-            })
-            ->when($status == 'failed', function ($query) {
-                return $query->failed();
-            })
-            ->when($status == 'refunded', function ($query) {
-                return $query->Refunded();
-            })
-            ->when($status == 'scheduled', function ($query) {
-                return $query->Scheduled();
-            })
-            ->when($status == 'on_going', function ($query) {
-                return $query->Ongoing();
-            })
-            ->when(($status != 'all' && $status != 'scheduled' && $status != 'canceled' && $status != 'refund_requested' && $status != 'refunded' && $status != 'delivered' && $status != 'failed'), function ($query) {
-                return $query->OrderScheduledIn(30);
-            })
-            ->when(isset($request->vendor), function ($query) use ($request) {
-                return $query->whereHas('store', function ($query) use ($request) {
-                    return $query->whereIn('id', $request->vendor);
-                });
-            })
-            ->when(isset($request->orderStatus) && $status == 'all', function ($query) use ($request) {
-                return $query->whereIn('order_status', $request->orderStatus);
-            })
-            ->when(isset($request->scheduled) && $status == 'all', function ($query) {
+            ->when(isset($filters->scheduled) && $status == 'all', function ($query) {
                 return $query->scheduled();
             })
-            ->when(isset($request->order_type), function ($query) use ($request) {
-                return $query->where('order_type', $request->order_type);
+            ->when(isset($filters->order_type), function ($query) use ($filters) {
+                return $query->where('order_type', $filters->order_type);
             })
-            ->when(isset($request->from_date) && isset($request->to_date) && $request->from_date != null && $request->to_date != null, function ($query) use ($request) {
-                return $query->whereBetween('created_at', [$request->from_date . " 00:00:00", $request->to_date . " 23:59:59"]);
+            ->when(isset($filters->from_date) && isset($filters->to_date) && $filters->from_date != null && $filters->to_date != null, function ($query) use ($filters) {
+                return $query->whereBetween('created_at', [$filters->from_date . " 00:00:00", $filters->to_date . " 23:59:59"]);
             })
-            ->when(isset($request->payment_status) && $request->payment_status == 'paid', function ($query) {
+            ->when(isset($filters->payment_status) && $filters->payment_status == 'paid', function ($query) {
                 return $query->where('payment_status', 'paid');
             })
-            ->when(isset($request->payment_status) && $request->payment_status == 'unpaid', function ($query) {
+            ->when(isset($filters->payment_status) && $filters->payment_status == 'unpaid', function ($query) {
                 return $query->where('payment_status', 'unpaid');
             })
-            ->when(isset($request->payment_by) && $request->payment_by == 'sender', function ($query) {
+            ->when(isset($filters->payment_by) && $filters->payment_by == 'sender', function ($query) {
                 return $query->where('charge_payer', 'sender');
             })
-            ->when(isset($request->payment_by) && $request->payment_by == 'receiver', function ($query) {
+            ->when(isset($filters->payment_by) && $filters->payment_by == 'receiver', function ($query) {
                 return $query->where('charge_payer', 'receiver');
             })
-            ->with('parcel_category')
             ->ParcelOrder()
             ->module(Config::get('module.current_module_id'))
-            ->orderBy('schedule_at', 'desc')
+            ->orderBy('schedule_at', 'desc');
+    }
+
+    public function orders(Request $request, $status)
+    {
+        [$key, $filters] = $this->resolveParcelFilters($request);
+
+        $orders = $this->parcelOrderQuery(filters: $filters, key: $key, status: $status)
+            ->with(['customer', 'store', 'parcel_category'])
             ->paginate(config('default_pagination'));
 
-        $orderstatus = isset($request->orderStatus) ? $request->orderStatus : [];
-        $scheduled = isset($request->scheduled) ? $request->scheduled : 0;
-        $vendor_ids = isset($request->vendor) ? $request->vendor : [];
-        $zone_ids = isset($request->zone) ? $request->zone : [];
-        $from_date = isset($request->from_date) ? $request->from_date : null;
-        $to_date = isset($request->to_date) ? $request->to_date : null;
-        $order_type = isset($request->order_type) ? $request->order_type : null;
-        $payment_status = isset($request->payment_status) ? $request->payment_status : null;
-        $payment_by = isset($request->payment_by) ? $request->payment_by : null;
+        $orderstatus = isset($filters->orderStatus) ? $filters->orderStatus : [];
+        $scheduled = isset($filters->scheduled) ? $filters->scheduled : 0;
+        $vendor_ids = isset($filters->vendor) ? $filters->vendor : [];
+        $zone_ids = isset($filters->zone) ? $filters->zone : [];
+        $from_date = isset($filters->from_date) ? $filters->from_date : null;
+        $to_date = isset($filters->to_date) ? $filters->to_date : null;
+        $order_type = isset($filters->order_type) ? $filters->order_type : null;
+        $payment_status = isset($filters->payment_status) ? $filters->payment_status : null;
+        $payment_by = isset($filters->payment_by) ? $filters->payment_by : null;
         $total = $orders->total();
 
         return view('admin-views.order.parcel-list', compact('orders', 'status', 'orderstatus', 'scheduled', 'vendor_ids', 'zone_ids', 'from_date', 'to_date', 'total', 'payment_by', 'payment_status', 'order_type'));
@@ -139,116 +110,21 @@ class ParcelController extends Controller
 
     public function parcel_orders_export(Request $request, $status, $file_type)
     {
+        [$key, $filters] = $this->resolveParcelFilters($request);
 
-        $key = isset($request->search) ? explode(' ', $request->search) : ($request['amp;search'] ? explode(' ', $request['amp;search']) : null);
-        if (session()->has('zone_filter') == false) {
-            session()->put('zone_filter', 0);
-        }
-
-        if (session()->has('order_filter')) {
-            $request = json_decode(session('order_filter'));
-        }
-
-        Order::withOutGlobalScope(ZoneScope::class)->where(['checked' => 0, 'order_type' => 'parcel'])->update(['checked' => 1]);
-
-        $orders = Order::withOutGlobalScope(ZoneScope::class)->with(['customer', 'store'])
-            ->when(isset($key), function ($query) use ($key) {
-                return $query->where(function ($q) use ($key) {
-                    foreach ($key as $value) {
-                        $q->orWhere('id', 'like', "%{$value}%")
-                            ->orWhere('order_status', 'like', "%{$value}%")
-                            ->orWhere('transaction_reference', 'like', "%{$value}%");
-                    }
-                });
-            })
-            ->when(isset($request->zone), function ($query) use ($request) {
-                return $query->where('zone_id', $request->zone);
-            })
-            ->when($status == 'scheduled', function ($query) {
-                return $query->whereRaw('created_at <> schedule_at');
-            })
-            ->when($status == 'searching_for_deliverymen', function ($query) {
-                return $query->SearchingForDeliveryman();
-            })
-            ->when($status == 'pending', function ($query) {
-                return $query->Pending();
-            })
-            ->when($status == 'accepted', function ($query) {
-                return $query->AccepteByDeliveryman();
-            })
-            ->when($status == 'processing', function ($query) {
-                return $query->Preparing();
-            })
-            ->when($status == 'item_on_the_way', function ($query) {
-                return $query->ItemOnTheWay();
-            })
-            ->when($status == 'delivered', function ($query) {
-                return $query->Delivered();
-            })
-            ->when($status == 'canceled', function ($query) {
-                return $query->Canceled();
-            })
-            ->when($status == 'failed', function ($query) {
-                return $query->failed();
-            })
-            ->when($status == 'refunded', function ($query) {
-                return $query->Refunded();
-            })
-            ->when($status == 'scheduled', function ($query) {
-                return $query->Scheduled();
-            })
-            ->when($status == 'on_going', function ($query) {
-                return $query->Ongoing();
-            })
-            ->when(($status != 'all' && $status != 'scheduled' && $status != 'canceled' && $status != 'refund_requested' && $status != 'refunded' && $status != 'delivered' && $status != 'failed'), function ($query) {
-                return $query->OrderScheduledIn(30);
-            })
-            ->when(isset($request->vendor), function ($query) use ($request) {
-                return $query->whereHas('store', function ($query) use ($request) {
-                    return $query->whereIn('id', $request->vendor);
-                });
-            })
-            ->when(isset($request->orderStatus) && $status == 'all', function ($query) use ($request) {
-                return $query->whereIn('order_status', $request->orderStatus);
-            })
-            ->when(isset($request->scheduled) && $status == 'all', function ($query) {
-                return $query->scheduled();
-            })
-            ->when(isset($request->order_type), function ($query) use ($request) {
-                return $query->where('order_type', $request->order_type);
-            })
-            ->when(isset($request->from_date) && isset($request->to_date) && $request->from_date != null && $request->to_date != null, function ($query) use ($request) {
-                return $query->whereBetween('created_at', [$request->from_date . " 00:00:00", $request->to_date . " 23:59:59"]);
-            })
-            ->when(isset($request->payment_status) && $request->payment_status == 'paid', function ($query) {
-                return $query->where('payment_status', 'paid');
-            })
-            ->when(isset($request->payment_status) && $request->payment_status == 'unpaid', function ($query) {
-                return $query->where('payment_status', 'unpaid');
-            })
-            ->when(isset($request->payment_by) && $request->payment_by == 'sender', function ($query) {
-                return $query->where('charge_payer', 'sender');
-            })
-            ->when(isset($request->payment_by) && $request->payment_by == 'receiver', function ($query) {
-                return $query->where('charge_payer', 'receiver');
-            })
-
-            ->ParcelOrder()
-            ->module(Config::get('module.current_module_id'))
-            ->orderBy('schedule_at', 'desc')
+        $orders = $this->parcelOrderQuery(filters: $filters, key: $key, status: $status)
+            ->with(['customer', 'store', 'parcel_category', 'weight', 'dimension'])
             ->get();
-
-
 
         $data = [
             'orders' => $orders,
             'type' => 'parcel',
             'status' => $status,
-            'order_status' => isset($request->orderStatus) ? implode(', ', $request->orderStatus) : null,
-            'search' => $request->search ?? null,
-            'from' => $request->from_date ?? null,
-            'to' => $request->to_date ?? null,
-            'zones' => isset($request->zone) ? Helpers::get_zones_name($request->zone) : null,
+            'order_status' => isset($filters->orderStatus) ? implode(', ', $filters->orderStatus) : null,
+            'search' => $filters->search ?? null,
+            'from' => $filters->from_date ?? null,
+            'to' => $filters->to_date ?? null,
+            'zones' => isset($filters->zone) ? Helpers::get_zones_name($filters->zone) : null,
         ];
 
         if ($file_type == 'excel') {
@@ -260,11 +136,20 @@ class ParcelController extends Controller
     public function order_details(Request $request, $id)
     {
         $order = Order::withOutGlobalScope(ZoneScope::class)->with(['customer' => function ($query) {
-            return $query->withCount('orders');
+            return $query->with('storage')->withCount('orders');
         }, 'delivery_man' => function ($query) {
             return $query->withCount('orders');
-        },'parcelCancellation'])->where(['id' => $id])->ParcelOrder()->first();
+        },'parcelCancellation','coupon','payments','offline_payments','orderProDiscount','parcel_category.storage','weight','dimension','zone','store','delivery_man.last_location'])->where(['id' => $id])->ParcelOrder()->first();
         if (isset($order)) {
+            // Order::dm_last_location() is `$this->delivery_man?->last_location()` -- not a real
+            // eager-loadable relation, since its return depends on instance state (null when
+            // delivery_man is null). Left unset, the view's `$order->dm_last_location` access
+            // makes Eloquent probe the method on a fresh empty Order to build the relation
+            // object, which returns null and crashes with "Call to a member function
+            // addEagerConstraints() on null". Setting it explicitly from the already-eager-loaded
+            // delivery_man.last_location above avoids that probe entirely -- the same fix already
+            // applied in OrderController::details()/view().
+            $order->setRelation('dm_last_location', $order->delivery_man?->last_location);
 
             $isUnpaid = false;
 
@@ -272,7 +157,6 @@ class ParcelController extends Controller
                 in_array($order->order_status, ['pending','failed']) &&
                 !in_array($order->payment_method, ['cash_on_delivery', 'wallet'])
             ) {
-                // CASE 1: partial payment
                 if ($order->payment_method == 'partial_payment') {
                     if ($order->payment_method === 'partial_payment') {
                         $isUnpaid = $order->payments()
@@ -283,7 +167,6 @@ class ParcelController extends Controller
 
                 }
 
-                // CASE 2: offline payment
                 elseif ($order->payment_method == 'offline_payment') {
                     if ($order?->offline_payments?->count() == 0) {
                         $isUnpaid = true;
@@ -299,9 +182,20 @@ class ParcelController extends Controller
 
 
 
-            $deliveryMen = DeliveryMan::withOutGlobalScope(ZoneScope::class)->where('zone_id', $order->zone_id)->where(function ($query) use ($order) {
-                $query->where('vehicle_id', $order->dm_vehicle_id)->orWhereNull('vehicle_id');
-            })->available()->active()->get();
+            // When the parcel doesn't require a specific vehicle, $order->dm_vehicle_id is null.
+            // Eloquent's where('vehicle_id', null) auto-converts to whereNull('vehicle_id'), which
+            // collapsed the intended "matching vehicle OR no vehicle set" OR-clause into just
+            // "vehicle_id IS NULL" -- silently excluding every zone-matching, available deliveryman
+            // who has any vehicle_id on file, even though this order places no vehicle requirement.
+            // Only apply the vehicle filter when the order actually requires one, matching the
+            // guarded pattern already used for non-parcel orders in OrderController::view().
+            $deliveryMen = DeliveryMan::withOutGlobalScope(ZoneScope::class)->where('zone_id', $order->zone_id)
+                ->when($order->dm_vehicle_id != null, function ($query) use ($order) {
+                    $query->where(function ($query) use ($order) {
+                        $query->where('vehicle_id', $order->dm_vehicle_id)->orWhereNull('vehicle_id');
+                    });
+                })
+                ->available()->active()->get();
             $category = $request->query('category_id', 0);
             $categories = [];
             $products = [];
@@ -309,9 +203,20 @@ class ParcelController extends Controller
             $deliveryMen = Helpers::deliverymen_list_formatting($deliveryMen);
             $keyword = null;
 
-            return view('admin-views.order.parcel-order-view', compact('order', 'deliveryMen', 'categories', 'products', 'category', 'keyword', 'editing'));
+            // parcel-order-view renders the Estimated Delivery row from these two. Admin\OrderController
+            // resolves them for the copy of this page it serves at /admin/order/details/{id}; this
+            // route is the other way into the same view, and without them the row's `@if (!empty($eta))`
+            // was simply never true -- an undefined variable reads as empty, so the ETA was missing
+            // here while showing on every other module's details page.
+            //
+            // Null for a finished order, or a (zone, module) with no live ETA configuration -- the
+            // view then omits the row (§11.2).
+            $eta = app(EtaService::class)->forOrder($order);
+            $etaWindow = app(EtaService::class)->panelWindow($eta);
+
+            return view('admin-views.order.parcel-order-view', compact('order', 'deliveryMen', 'categories', 'products', 'category', 'keyword', 'editing', 'eta', 'etaWindow'));
         } else {
-            Toastr::info(translate('messages.no_more_orders'));
+            Toastr::info(translate('messages.No more orders'));
             return back();
         }
     }
@@ -321,45 +226,31 @@ class ParcelController extends Controller
         $instructions = ParcelDeliveryInstruction::orderBy('id', 'desc')
             ->paginate(config('default_pagination'));
 
-        $settings = BusinessSetting::whereIn('key', [
-            'parcel_per_km_shipping_charge',
-            'parcel_minimum_shipping_charge',
-            'parcel_commission_dm'
-        ])->pluck('value', 'key');
+        // The two shipping-charge keys are gone from this screen (A14, 2026-09-03). A parcel is
+        // priced by its zone's delivery rule plus the category's own additional charge, so the
+        // deliveryman commission is the only setting left that still does anything here.
+        $settings = Helpers::get_business_settings_many(['parcel_commission_dm']);
 
-        $parcelPerKmShippingCharge = $settings['parcel_per_km_shipping_charge'] ?? null;
-        $parcelMinimumShippingCharge = $settings['parcel_minimum_shipping_charge'] ?? null;
         $parcelCommissionDm = $settings['parcel_commission_dm'] ?? [null];
 
         $language = Helpers::get_business_settings('language') ?? [];
 
-        return view('admin-views.parcel.settings', compact('instructions', 'parcelPerKmShippingCharge', 'parcelMinimumShippingCharge', 'parcelCommissionDm', 'language'));
+        return view('admin-views.parcel.settings', compact('instructions', 'parcelCommissionDm', 'language'));
     }
 
     public function update_settings(Request $request)
     {
         $request->validate([
-            'parcel_per_km_shipping_charge' => 'required|numeric|min:0',
-            'parcel_minimum_shipping_charge' => 'required|numeric|min:0',
             'parcel_commission_dm' => 'required|numeric|min:0',
         ], [
-            'parcel_commission_dm.required' => translate('validation.required', ['attribute' => translate('messages.deliveryman_commission')]),
-            'parcel_commission_dm.numeric' => translate('validation.numeric', ['attribute' => translate('messages.deliveryman_commission')]),
-            'parcel_commission_dm.min' => translate('validation.min', ['attribute' => translate('messages.deliveryman_commission')]),
-
-            'parcel_per_km_shipping_charge.required' => translate('validation.required', ['attribute' => translate('messages.per_km_shipping_charge')]),
-            'parcel_per_km_shipping_charge.numeric' => translate('validation.numeric', ['attribute' => translate('messages.per_km_shipping_charge')]),
-            'parcel_per_km_shipping_charge.min' => translate('validation.min', ['attribute' => translate('messages.per_km_shipping_charge')]),
-
-            'parcel_minimum_shipping_charge.required' => translate('validation.required', ['attribute' => translate('messages.minimum_shipping_charge')]),
-            'parcel_minimum_shipping_charge.numeric' => translate('validation.numeric', ['attribute' => translate('messages.minimum_shipping_charge')]),
-            'parcel_minimum_shipping_charge.min' => translate('validation.min', ['attribute' => translate('messages.minimum_shipping_charge')]),
+            'parcel_commission_dm.required' => translate('Deliveryman commission is required'),
+            'parcel_commission_dm.numeric' => translate('Deliveryman commission must be a number'),
+            'parcel_commission_dm.min' => translate('Deliveryman commission cannot be negative'),
         ]);
-        Helpers::businessUpdateOrInsert(['key' => 'parcel_per_km_shipping_charge'], ['value' => $request->parcel_per_km_shipping_charge]);
-        Helpers::businessUpdateOrInsert(['key' => 'parcel_minimum_shipping_charge'], ['value' => $request->parcel_minimum_shipping_charge]);
+
         Helpers::businessUpdateOrInsert(['key' => 'parcel_commission_dm'], ['value' => $request->parcel_commission_dm]);
 
-        Toastr::success(translate('messages.parcel_settings_updated'));
+        Toastr::success(translate('messages.Parcel settings updated'));
         return back();
     }
 
@@ -381,13 +272,7 @@ class ParcelController extends Controller
                 return $query->module($module_id);
             })
             ->when(isset($key), function ($query) use ($key) {
-                return $query->where(function ($q) use ($key) {
-                    foreach ($key as $value) {
-                        $q->orWhere('id', 'like', "%{$value}%")
-                            ->orWhere('order_status', 'like', "%{$value}%")
-                            ->orWhere('transaction_reference', 'like', "%{$value}%");
-                    }
-                });
+                return $this->applyOrderKeywordSearch($query, $key);
             })
             ->when(isset($request->zone), function ($query) use ($request) {
                 return $query->whereHas('store', function ($query) use ($request) {
@@ -442,13 +327,7 @@ class ParcelController extends Controller
                 $query->where('id', $module);
             })
             ->when(isset($key), function ($query) use ($key) {
-                return $query->where(function ($q) use ($key) {
-                    foreach ($key as $value) {
-                        $q->orWhere('id', 'like', "%{$value}%")
-                            ->orWhere('order_status', 'like', "%{$value}%")
-                            ->orWhere('transaction_reference', 'like', "%{$value}%");
-                    }
-                });
+                return $this->applyOrderKeywordSearch($query, $key);
             })
             ->when(isset($module_id), function ($query) use ($module_id) {
                 return $query->module($module_id);
@@ -492,7 +371,7 @@ class ParcelController extends Controller
             'instruction' => 'required|max:191',
             'instruction.0' => 'required',
         ], [
-            'instruction.0.required' => translate('default_instruction_is_required'),
+            'instruction.0.required' => translate('Default instruction is required'),
         ]);
 
         $instruction = new ParcelDeliveryInstruction();
@@ -524,7 +403,7 @@ class ParcelController extends Controller
             }
         }
         Translation::insert($data);
-        Toastr::success(translate('Delivery Instruction Added Successfully'));
+        Toastr::success(translate('Added successfully'));
         return back();
     }
     public function instruction_edit(Request $request)
@@ -533,7 +412,7 @@ class ParcelController extends Controller
             'instruction' => 'required|max:191',
             'instruction.0' => 'required',
         ], [
-            'instruction.0.required' => translate('default_instruction_is_required'),
+            'instruction.0.required' => translate('Default instruction is required'),
         ]);
         $instruction = ParcelDeliveryInstruction::findOrFail($request->instruction_id);
         $instruction->instruction = $request->instruction[array_search('default', $request->lang1)];
@@ -569,7 +448,7 @@ class ParcelController extends Controller
         }
 
 
-        Toastr::success(translate('Delivery Instruction Updated Successfully'));
+        Toastr::success(translate('Updated successfully'));
         return back();
     }
     public function instruction_delete(Request $request)
@@ -577,7 +456,7 @@ class ParcelController extends Controller
         $instruction = ParcelDeliveryInstruction::findOrFail($request->id);
         $instruction?->translations()?->delete();
         $instruction->delete();
-        Toastr::success(translate('Delivery Instruction Deleted Successfully'));
+        Toastr::success(translate('Deleted successfully'));
         return back();
     }
     public function instruction_status(Request $request)
@@ -585,7 +464,7 @@ class ParcelController extends Controller
         $instruction = ParcelDeliveryInstruction::findOrFail($request->id);
         $instruction->status = $request->status;
         $instruction->save();
-        Toastr::success(translate('messages.status_updated'));
+        Toastr::success(translate('messages.Status updated'));
         return back();
     }
 
@@ -620,7 +499,7 @@ class ParcelController extends Controller
             $status = $status == 1 ? 0 : 1;
             Helpers::businessUpdateOrInsert(['key' => 'parcel_cancellation_status'], ['value' => $status]);
         }
-        Toastr::success(translate('messages.parcel_cancellation_status_updated'));
+        Toastr::success(translate('messages.Parcel cancellation status updated'));
         return back();
     }
 
@@ -645,7 +524,7 @@ class ParcelController extends Controller
             $setting->value = json_encode($data);
             $setting->save();
         }
-        Toastr::success(translate('messages.parcel_cancellation_setup_updated'));
+        Toastr::success(translate('messages.Parcel cancellation setup updated'));
         return back();
     }
 
@@ -657,10 +536,10 @@ class ParcelController extends Controller
             'cancellation_type' => 'required|in:before_pickup,after_pickup',
             'user_type' => 'required|in:admin,deliveryman,vendor,customer',
         ], [
-            'reason.0.required' => translate('default_reason_is_required'),
-            'reason.*.max' => translate('reason_may_not_be_greater_than_150_characters'),
-            'cancellation_type.required' => translate('default_cancellation_type_is_required'),
-            'user_type.required' => translate('default_user_type_is_required'),
+            'reason.0.required' => translate('Default reason is required'),
+            'reason.*.max' => translate('Reason is too long.') . ' ' . translate('Character limit') . ': 150',
+            'cancellation_type.required' => translate('Default cancellation type is required'),
+            'user_type.required' => translate('Default user type is required'),
         ]);
 
         $cancellation_reason = new ParcelCancellationReason();
@@ -670,21 +549,21 @@ class ParcelController extends Controller
         $cancellation_reason->save();
 
         Helpers::add_or_update_translations(request: $request, key_data: 'reason', name_field: 'reason', model_name: ParcelCancellationReason::class, data_id: $cancellation_reason->id, data_value: $cancellation_reason->reason, model_class: true);
-        Toastr::success(translate('parcel_cancellation_reason_added_successfully'));
+        Toastr::success(translate('Added successfully'));
         return back();
     }
     public function cancellationReasonStatus(ParcelCancellationReason $reason)
     {
         $reason->status = !$reason->status;
         $reason->save();
-        Toastr::success(translate('messages.status_updated'));
+        Toastr::success(translate('messages.Status updated'));
         return back();
     }
     public function cancellationReasonDelete(ParcelCancellationReason $reason)
     {
         $reason->translations()->delete();
         $reason->delete();
-        Toastr::success(translate('messages.cancellation_reason_deleted_successfully'));
+        Toastr::success(translate('Deleted successfully'));
         return back();
     }
     public function cancellationReasonUpdate(ParcelCancellationReason $reason, Request $request)
@@ -695,7 +574,7 @@ class ParcelController extends Controller
         $reason->save();
         Helpers::add_or_update_translations(request: $request, key_data: 'reason', name_field: 'reason', model_name: ParcelCancellationReason::class, data_id: $reason->id, data_value: $reason->reason, model_class: true);
 
-        Toastr::success(translate('messages.cancellation_reason_updated_successfully'));
+        Toastr::success(translate('Updated successfully'));
         return back();
     }
 

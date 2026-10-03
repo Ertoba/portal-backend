@@ -3,17 +3,19 @@
 namespace App\Models;
 
 use App\Scopes\ZoneScope;
-use App\Traits\ReportFilter;
+use App\Traits\Report\ReportFilterTrait;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class OrderTransaction extends Model
 {
-    use HasFactory,ReportFilter;
+    use HasFactory, ReportFilterTrait;
 
     protected $casts = [
         'pro_discount' => 'float',
         'pro_delivery_discount' => 'float',
+        'delivery_type_charge' => 'float',
+        'surge_amount' => 'float',
     ];
 
     protected $fillable = array('delivery_man_id');

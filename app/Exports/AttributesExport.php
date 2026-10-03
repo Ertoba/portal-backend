@@ -18,7 +18,6 @@ class AttributesExport implements  FromView, ShouldAutoSize, WithStyles ,WithHea
 
     use Exportable;
     protected $data;
-    // protected $search;
 
     public function __construct($data) {
         $this->data = $data;
@@ -54,12 +53,11 @@ class AttributesExport implements  FromView, ShouldAutoSize, WithStyles ,WithHea
         ];
         $sheet->getStyle('A1:C1')->applyFromArray($styleArray);
         return [
-            // Define the style for cells with data
             'A1:C'.$this->data['data']->count() +3 => [
                 'borders' => [
                     'allBorders' => [
                         'borderStyle' => Border::BORDER_THIN,
-                        'color' => ['argb' => '000000'], // Specify the color of the border (optional)
+                        'color' => ['argb' => '000000'],
                     ],
                 ],
             ],
@@ -71,7 +69,7 @@ class AttributesExport implements  FromView, ShouldAutoSize, WithStyles ,WithHea
     {
         return [
             AfterSheet::class => function(AfterSheet $event) {
-                $event->sheet->getStyle('A1:C1') // Adjust the range as per your needs
+                $event->sheet->getStyle('A1:C1')
                     ->getAlignment()
                     ->setHorizontal(Alignment::HORIZONTAL_CENTER)
                     ->setVertical(Alignment::VERTICAL_CENTER);
@@ -96,7 +94,6 @@ class AttributesExport implements  FromView, ShouldAutoSize, WithStyles ,WithHea
 
                     $event->sheet->mergeCells('A1:C1');
                     $event->sheet->mergeCells('A2:B2');
-                    // $event->sheet->mergeCells('C2:C2');
 
 
                     $event->sheet->getDefaultRowDimension()->setRowHeight(30);

@@ -2,19 +2,20 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Rules\ImageFile;
 use App\CentralLogics\Helpers;
 use App\Exports\ProCustomerSubscriptionListExport;
 use App\Exports\ProCustomerTransactionListExport;
 use App\Http\Controllers\Controller;
 use App\Models\DataSetting;
-use App\Models\Module;
+use App\Models\Translation;
 use App\Models\ProCustomerBenefitSetting;
 use App\Models\ProCustomerFaq;
 use App\Models\ProCustomerSubscription;
 use App\Models\ProCustomerSubscriptionPlan;
 use App\Models\ProCustomerTransaction;
 use App\Models\User;
-use App\Traits\ManagesProCustomerSubscription;
+use App\Traits\Payment\ProCustomerSubscriptionTrait;
 use Brian2694\Toastr\Facades\Toastr;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -24,7 +25,7 @@ use Maatwebsite\Excel\Facades\Excel;
 
 class ProCustomerController extends Controller
 {
-    use ManagesProCustomerSubscription;
+    use ProCustomerSubscriptionTrait;
 
     private const SETTINGS_TYPE = 'pro_customer_benefits';
 
@@ -77,17 +78,19 @@ class ProCustomerController extends Controller
             'ecommerce'  => translate('messages.Shop'),
             'pharmacy'   => translate('messages.Pharmacy'),
             'parcel'     => translate('messages.Parcel'),
-            'ride-share' => translate('messages.Ride_Share'),
+            'ride-share' => translate('Ride share'),
             'rental'     => translate('messages.Rental'),
+            'service'    => translate('messages.Service'),
         ];
         $minOrderLabels  = [
-            'grocery'    => translate('messages.Minimum_order_amount'),
-            'food'       => translate('messages.Minimum_order_amount'),
-            'ecommerce'  => translate('messages.Minimum_order_amount'),
-            'pharmacy'   => translate('messages.Minimum_order_amount'),
-            'parcel'     => translate('messages.Minimum_delivery_amount'),
-            'ride-share' => translate('messages.Minimum_ride_amount'),
-            'rental'     => translate('messages.Minimum_trip_fare'),
+            'grocery'    => translate('messages.Minimum order amount'),
+            'food'       => translate('messages.Minimum order amount'),
+            'ecommerce'  => translate('messages.Minimum order amount'),
+            'pharmacy'   => translate('messages.Minimum order amount'),
+            'parcel'     => translate('messages.Minimum delivery amount'),
+            'ride-share' => translate('messages.Minimum ride amount'),
+            'rental'     => translate('messages.Minimum trip fare'),
+            'service'    => translate('messages.Minimum booking amount'),
         ];
         $minOrderTooltips = [
             'grocery'    => translate('messages.Minimum order total required to qualify for the discount in this module'),
@@ -97,6 +100,7 @@ class ProCustomerController extends Controller
             'parcel'     => translate('messages.Minimum delivery charge required to qualify for the discount'),
             'ride-share' => translate('messages.Minimum ride amount required to qualify for the discount'),
             'rental'     => translate('messages.Minimum trip fare required to qualify for the discount'),
+            'service'    => translate('messages.Minimum booking total required to qualify for the discount'),
         ];
 
         return view('admin-views.pro-customer.benefits-setup', compact(
@@ -109,27 +113,14 @@ class ProCustomerController extends Controller
     public function benefitsSetupUpdate(Request $request)
     {
         $minStep        = Helpers::getDecimalPlaces();
-        $discountStatus = (int) $request->input('discount_status', 0);
-        $deliveryStatus = (int) $request->input('delivery_fee_status', 0);
-        $couponStatus   = (int) $request->input('coupon_status', 0);
+        $activeBenefit  = $request->input('active_benefit');
+        $discountStatus = (int) ($activeBenefit === 'discount');
+        $deliveryStatus = (int) ($activeBenefit === 'delivery_fee');
+        $couponStatus   = (int) ($activeBenefit === 'coupon');
         $setupMode      = $request->input('discount_setup_mode', 'central');
 
-        $enabledBenefits = $discountStatus + $deliveryStatus + $couponStatus;
-
-        if ($enabledBenefits > 1) {
-            Toastr::error(translate('messages.only_one_pro_customer_benefit_can_be_enabled_at_a_time'));
-            return back()->withInput();
-        }
-
-        if ($enabledBenefits === 0) {
-            Toastr::error(translate('messages.at_least_one_pro_customer_benefit_must_be_enabled'));
-            return back()->withInput();
-        }
-
         $rules = [
-            'discount_status'     => 'nullable|in:0,1',
-            'delivery_fee_status' => 'nullable|in:0,1',
-            'coupon_status'       => 'nullable|in:0,1',
+            'active_benefit'      => 'required|in:discount,coupon,delivery_fee',
             'discount_setup_mode' => 'nullable|in:central,individual',
         ];
 
@@ -213,7 +204,7 @@ class ProCustomerController extends Controller
             }
         }
 
-        Toastr::success(translate('messages.pro_customer_benefits_updated_successfully'));
+        Toastr::success(translate('Updated successfully'));
         return back();
     }
 
@@ -238,10 +229,10 @@ class ProCustomerController extends Controller
             'price'       => 'required|numeric|min:0',
             'duration'    => 'required|integer|min:1|max:3650',
         ], [
-            'plan_name.0.required' => translate('messages.default_plan_name_is_required'),
-            'plan_name.0.max'      => translate('messages.plan_name_cannot_exceed_70_characters'),
-            'plan_name.*.max'      => translate('messages.plan_name_cannot_exceed_70_characters'),
-            'duration.max'         => translate('messages.duration_cannot_exceed_10_years'),
+            'plan_name.0.required' => translate('messages.Default plan name is required'),
+            'plan_name.0.max'      => translate('messages.Plan name is too long.') . ' ' . translate('messages.Character limit') . ': 70',
+            'plan_name.*.max'      => translate('messages.Plan name is too long.') . ' ' . translate('messages.Character limit') . ': 70',
+            'duration.max'         => translate('messages.Maximum duration') . ': ' . \Carbon\CarbonInterval::years(10)->forHumans(),
         ]);
 
         $defaultIndex       = array_search('default', $request->lang ?? ['default']);
@@ -264,7 +255,7 @@ class ProCustomerController extends Controller
             );
         }
 
-        Toastr::success(translate('messages.pro_customer_plan_added_successfully'));
+        Toastr::success(translate('Added successfully'));
         return back();
     }
 
@@ -289,10 +280,10 @@ class ProCustomerController extends Controller
             'price'       => 'required|numeric|min:0',
             'duration'    => 'required|integer|min:1|max:3650',
         ], [
-            'plan_name.0.required' => translate('messages.default_plan_name_is_required'),
-            'plan_name.0.max'      => translate('messages.plan_name_cannot_exceed_70_characters'),
-            'plan_name.*.max'      => translate('messages.plan_name_cannot_exceed_70_characters'),
-            'duration.max'         => translate('messages.duration_cannot_exceed_10_years'),
+            'plan_name.0.required' => translate('messages.Default plan name is required'),
+            'plan_name.0.max'      => translate('messages.Plan name is too long.') . ' ' . translate('messages.Character limit') . ': 70',
+            'plan_name.*.max'      => translate('messages.Plan name is too long.') . ' ' . translate('messages.Character limit') . ': 70',
+            'duration.max'         => translate('messages.Maximum duration') . ': ' . \Carbon\CarbonInterval::years(10)->forHumans(),
         ]);
 
         $defaultIndex    = array_search('default', $request->lang ?? ['default']);
@@ -313,7 +304,7 @@ class ProCustomerController extends Controller
             );
         }
 
-        Toastr::success(translate('messages.pro_customer_plan_updated_successfully'));
+        Toastr::success(translate('Updated successfully'));
         return back();
     }
 
@@ -323,7 +314,7 @@ class ProCustomerController extends Controller
         $plan->status = (int) $status;
         $plan->save();
 
-        Toastr::success(translate('messages.pro_customer_plan_status_updated_successfully'));
+        Toastr::success(translate('Updated successfully'));
         return back();
     }
 
@@ -333,7 +324,7 @@ class ProCustomerController extends Controller
         $plan->translations()->delete();
         $plan->delete();
 
-        Toastr::success(translate('messages.pro_customer_plan_deleted_successfully'));
+        Toastr::success(translate('Deleted successfully'));
         return back();
     }
 
@@ -364,7 +355,7 @@ class ProCustomerController extends Controller
 
             return (object) [
                 'id'        => $planId,
-                'plan_name' => $name . ' (' . translate('messages.Deleted') . ')',
+                'plan_name' => $name . ' (' . translate('messages.deleted') . ')',
             ];
         });
 
@@ -412,7 +403,7 @@ class ProCustomerController extends Controller
         $dates              = $request->input('dates');
 
         $query = ProCustomerSubscription::query()
-            ->with(['user', 'plan'])
+            ->with(['user.storage', 'plan'])
             ->withTotalOrders()
             ->when($search, fn($q) => $q->search($search, ['user' => 'f_name'], 'plan_name'))
             ->when($tab === 'active', fn($q) => $q->where('status', 'active'))
@@ -524,7 +515,22 @@ class ProCustomerController extends Controller
                 ->first()
             : null;
 
-        $plans = ProCustomerSubscriptionPlan::where('status', 1)->orderBy('duration')->get();
+        $activeFreeTrialPlanId = ($subscription && $subscription->status === 'active' && $subscription->plan_type === 'free_trial')
+            ? $subscription->plan_id
+            : null;
+        $hasUsedFreeTrial = $this->hasUsedFreeTrial((int) $userId);
+
+        $plans = ProCustomerSubscriptionPlan::where('status', 1)
+            ->when($hasUsedFreeTrial, function ($query) use ($activeFreeTrialPlanId) {
+                $query->where(function ($q) use ($activeFreeTrialPlanId) {
+                    $q->where('plan_type', '!=', 'free_trial');
+                    if ($activeFreeTrialPlanId) {
+                        $q->orWhere('id', $activeFreeTrialPlanId);
+                    }
+                });
+            })
+            ->orderBy('duration')
+            ->get();
 
         $statusFlags  = DataSetting::where('type', self::SETTINGS_TYPE)
             ->whereIn('key', self::STATUS_KEYS)
@@ -547,7 +553,7 @@ class ProCustomerController extends Controller
         $sub = ProCustomerSubscription::with('user')->findOrFail($id);
         $this->cancelProCustomerSubscription($sub);
 
-        Toastr::success(translate('messages.pro_customer_subscription_canceled_successfully'));
+        Toastr::success(translate('messages.Pro customer subscription canceled successfully'));
         return back();
     }
 
@@ -559,7 +565,7 @@ class ProCustomerController extends Controller
         $plan = ProCustomerSubscriptionPlan::findOrFail($request->plan_id);
 
         return $this->applyAndRedirect($user, $plan, $request, 'start',
-            translate('messages.pro_customer_subscription_started_successfully'));
+            translate('messages.Pro customer subscription started successfully'));
     }
 
     public function subscriptionRenew(Request $request, $id)
@@ -571,7 +577,7 @@ class ProCustomerController extends Controller
         $user    = $current->user ?? User::findOrFail($current->user_id);
 
         return $this->applyAndRedirect($user, $plan, $request, 'renew',
-            translate('messages.pro_customer_subscription_renewed_successfully'));
+            translate('messages.Pro customer subscription renewed successfully'));
     }
 
     public function subscriptionShift(Request $request, $id)
@@ -582,13 +588,13 @@ class ProCustomerController extends Controller
         $plan    = ProCustomerSubscriptionPlan::findOrFail($request->plan_id);
 
         if ((int) $current->plan_id === (int) $plan->id) {
-            Toastr::error(translate('messages.shift_requires_a_different_plan'));
+            Toastr::error(translate('messages.Shift requires a different plan'));
             return back();
         }
 
         $user = $current->user ?? User::findOrFail($current->user_id);
         return $this->applyAndRedirect($user, $plan, $request, 'shift',
-            translate('messages.pro_customer_subscription_shifted_successfully'));
+            translate('messages.Pro customer subscription shifted successfully'));
     }
 
     private function applyAndRedirect(User $user, ProCustomerSubscriptionPlan $plan, Request $request, string $mode, string $successMessage)
@@ -605,7 +611,11 @@ class ProCustomerController extends Controller
             $this->applyProCustomerPlan($user, $plan, $payment, $mode);
         } catch (\RuntimeException $e) {
             if ($e->getMessage() === 'insufficient_wallet_balance') {
-                Toastr::error(translate('messages.customer_wallet_balance_is_insufficient_for_this_plan'));
+                Toastr::error(translate('messages.Customer wallet balance is insufficient for this plan'));
+                return back()->withInput();
+            }
+            if ($e->getMessage() === 'free_trial_already_used') {
+                Toastr::error(translate('messages.Free trial already used'));
                 return back()->withInput();
             }
             throw $e;
@@ -661,7 +671,7 @@ class ProCustomerController extends Controller
         $dates    = $request->input('dates');
 
         $query = ProCustomerTransaction::query()
-            ->with(['user', 'plan', 'subscription'])
+            ->with(['user.storage', 'plan', 'subscription'])
             ->when($search, function ($q) use ($search) {
                 $needle = ltrim(trim($search), '#');
                 $q->where(function ($qq) use ($search, $needle) {
@@ -712,7 +722,7 @@ class ProCustomerController extends Controller
     {
         $language      = getWebConfig('language');
         $termsType     = 'pro_customer_terms';
-        $termsRows     = DataSetting::where('type', $termsType)->get();
+        $termsRows     = DataSetting::withStorage()->where('type', $termsType)->get();
         $termsTitleRow = $termsRows->firstWhere('key', 'page_title');
         $termsDescRow  = $termsRows->firstWhere('key', 'page_description');
         $termsStatus   = (int) ($termsRows->firstWhere('key', 'page_status')?->getRawOriginal('value') ?? 0);
@@ -722,8 +732,12 @@ class ProCustomerController extends Controller
             ? Helpers::get_full_url('pro_customer_terms', $imageValue, $termsImageRow->storage[0]?->value ?? 'public')
             : '';
 
+        $termsTranslations = Translation::where('translationable_type', DataSetting::class)
+            ->whereIn('translationable_id', array_filter([$termsTitleRow?->id, $termsDescRow?->id]))
+            ->get();
+
         return view('admin-views.pro-customer.terms-and-conditions', compact(
-            'language', 'termsTitleRow', 'termsDescRow', 'termsStatus', 'termsImageUrl'
+            'language', 'termsTitleRow', 'termsDescRow', 'termsStatus', 'termsImageUrl', 'termsTranslations'
         ));
     }
 
@@ -738,10 +752,10 @@ class ProCustomerController extends Controller
             'answer.*'   => 'nullable|string|max:500',
             'priority'   => 'required|integer|min:1',
         ], [
-            'question.0.required' => translate('messages.default_question_is_required'),
-            'answer.0.required'   => translate('messages.default_answer_is_required'),
-            'question.*.max'      => translate('messages.question_cannot_exceed_150_characters'),
-            'answer.*.max'        => translate('messages.answer_cannot_exceed_500_characters'),
+            'question.0.required' => translate('messages.Default question is required'),
+            'answer.0.required'   => translate('messages.Default answer is required'),
+            'question.*.max'      => translate('messages.Question is too long.') . ' ' . translate('messages.Character limit') . ': 150',
+            'answer.*.max'        => translate('messages.Answer is too long.') . ' ' . translate('messages.Character limit') . ': 500',
         ]);
 
         $validator->after(function ($validator) use ($request) {
@@ -764,10 +778,10 @@ class ProCustomerController extends Controller
                 $langName = Helpers::get_language_name($lang) . ' (' . strtoupper($lang) . ')';
 
                 if (! $hasQuestion) {
-                    $validator->errors()->add('question.' . $index, translate('messages.question_is_required_for') . ' ' . $langName);
+                    $validator->errors()->add('question.' . $index, translate('messages.Question is required for') . ' ' . $langName);
                 }
                 if (! $hasAnswer) {
-                    $validator->errors()->add('answer.' . $index, translate('messages.answer_is_required_for') . ' ' . $langName);
+                    $validator->errors()->add('answer.' . $index, translate('messages.Answer is required for') . ' ' . $langName);
                 }
             }
         });
@@ -799,7 +813,7 @@ class ProCustomerController extends Controller
             Helpers::add_or_update_translations(request: $request, key_data: 'pro_faq_answer', name_field: 'answer', model_name: 'ProCustomerFaq', data_id: $faq->id, data_value: $faq->getRawOriginal('answer'));
         });
 
-        Toastr::success(translate('messages.faq_added_successfully'));
+        Toastr::success(translate('Added successfully'));
         return redirect(route('admin.pro-customer.additional-setup') . '#pro-faq-list');
     }
 
@@ -849,7 +863,7 @@ class ProCustomerController extends Controller
             Helpers::add_or_update_translations(request: $request, key_data: 'pro_faq_answer', name_field: 'answer', model_name: 'ProCustomerFaq', data_id: $faq->id, data_value: $faq->getRawOriginal('answer'));
         });
 
-        Toastr::success(translate('messages.faq_updated_successfully'));
+        Toastr::success(translate('Updated successfully'));
         return redirect(url()->previous() . '#pro-faq-list');
     }
 
@@ -859,7 +873,7 @@ class ProCustomerController extends Controller
         $faq->status = (int) $status;
         $faq->save();
 
-        Toastr::success(translate('messages.faq_status_updated'));
+        Toastr::success(translate('messages.Faq status updated'));
         return redirect(url()->previous() . '#pro-faq-list');
     }
 
@@ -873,7 +887,7 @@ class ProCustomerController extends Controller
             ProCustomerFaq::where('priority', '>', $deletedPriority)->decrement('priority');
         });
 
-        Toastr::success(translate('messages.faq_deleted_successfully'));
+        Toastr::success(translate('Deleted successfully'));
         return redirect(url()->previous() . '#pro-faq-list');
     }
 
@@ -885,7 +899,7 @@ class ProCustomerController extends Controller
             'page_title.*'       => 'nullable|string|max:100',
             'page_description'   => 'required|array',
             'page_description.0' => 'required|string',
-            'page_image'         => 'nullable|image|mimes:' . IMAGE_FORMAT_FOR_VALIDATION . '|max:' . MAX_FILE_SIZE * 1024,
+            'page_image' => ImageFile::rules('nullable'),
         ]);
 
         $defaultIndex = array_search('default', $request->lang ?? ['default']);
@@ -915,25 +929,13 @@ class ProCustomerController extends Controller
             Helpers::add_or_update_translations(request: $request, key_data: 'pro_terms_page_description', name_field: 'page_description', model_name: DataSetting::class, data_id: $descRow->id, data_value: $descRow->getRawOriginal('value'), model_class: true);
         }
 
-        Toastr::success(translate('messages.pro_customer_terms_updated_successfully'));
+        Toastr::success(translate('Updated successfully'));
         return back();
-    }
-
-    private function activeModuleTypes(): array
-    {
-        return Module::where('status', 1)->distinct()->pluck('module_type')->all();
     }
 
     private function activeDiscountModules(): array
     {
-        return array_values(array_filter(
-            ProCustomerBenefitSetting::DISCOUNT_MODULE_TYPES,
-            fn($mod) => match ($mod) {
-                'ride-share' => (bool) addon_published_status('RideShare'),
-                'rental'     => (bool) addon_published_status('Rental'),
-                default      => true,
-            }
-        ));
+        return $this->proAddonEnabledDiscountModules();
     }
 
     private function moduleLabels(): array
@@ -944,8 +946,9 @@ class ProCustomerController extends Controller
             'ecommerce'  => translate('messages.Shop'),
             'pharmacy'   => translate('messages.Pharmacy'),
             'parcel'     => translate('messages.Parcel'),
-            'ride-share' => translate('messages.Ride_Share'),
+            'ride-share' => translate('Ride share'),
             'rental'     => translate('messages.Rental'),
+            'service'    => translate('messages.Service'),
         ];
     }
 
@@ -956,7 +959,6 @@ class ProCustomerController extends Controller
         $couponOn   = (int) ($statusFlags['coupon_status'] ?? 0) === 1;
         $setupMode  = $statusFlags['discount_setup_mode'] ?? 'central';
         $trim       = fn($v) => rtrim(rtrim((string) $v, '0'), '.');
-        $activeTypes = $this->activeModuleTypes();
         $items      = [];
 
         if ($discountOn) {
@@ -965,10 +967,7 @@ class ProCustomerController extends Controller
                 $labels = $this->moduleLabels();
                 $before = count($items);
 
-                foreach ($this->activeDiscountModules() as $mod) {
-                    if (!in_array($mod, $activeTypes, true)) {
-                        continue;
-                    }
+                foreach ($this->proVisibleDiscountModules() as $mod) {
                     $cfg = $rows->get($mod)?->settings ?? [];
                     $pct = $cfg['percentage'] ?? null;
                     if (!$pct) {
@@ -979,21 +978,21 @@ class ProCustomerController extends Controller
                     $minAmt  = $cfg['min_order_amount'] ?? null;
                     $details = [];
                     if ($maxAmt) {
-                        $details[] = translate('messages.Max_discount') . ': ' . Helpers::format_currency((float) $maxAmt);
+                        $details[] = translate('messages.Max discount') . ': ' . Helpers::format_currency((float) $maxAmt);
                     }
                     if ($minOn && $minAmt) {
-                        $details[] = translate('messages.On_orders_above') . ' ' . Helpers::format_currency((float) $minAmt);
+                        $details[] = translate('messages.Minimum order amount') . ': ' . Helpers::format_currency((float) $minAmt);
                     }
                     $items[] = [
-                        'title'    => translate('messages.Up_to') . ' ' . $trim($pct) . '% ' . translate('messages.off_on') . ' ' . ($labels[$mod] ?? ucfirst($mod)),
-                        'subtitle' => $details ? implode(' • ', $details) : translate('messages.Applied_automatically_at_checkout'),
+                        'title'    => translate('messages.Up to') . ' ' . $trim($pct) . '% ' . translate('messages.Off on') . ' ' . ($labels[$mod] ?? ucfirst($mod)),
+                        'subtitle' => $details ? implode(' • ', $details) : translate('messages.Applied automatically at checkout'),
                     ];
                 }
 
                 if (count($items) === $before) {
                     $items[] = [
-                        'title'    => translate('messages.Discount_on_every_order'),
-                        'subtitle' => translate('messages.Discount_rates_vary_by_module'),
+                        'title'    => translate('messages.Discount on every order'),
+                        'subtitle' => translate('messages.Discount rates vary by module'),
                     ];
                 }
             } else {
@@ -1003,18 +1002,18 @@ class ProCustomerController extends Controller
                 $minOn   = (int) ($cfg['min_order_status'] ?? 0) === 1;
                 $minAmt  = $cfg['min_order_amount'] ?? null;
                 $title   = $pct
-                    ? translate('messages.Up_to') . ' ' . $trim($pct) . '% ' . translate('messages.off_on_all_orders')
-                    : translate('messages.Discount_on_every_order');
+                    ? translate('messages.Up to') . ' ' . $trim($pct) . '% ' . translate('messages.Off on all orders')
+                    : translate('messages.Discount on every order');
                 $details = [];
                 if ($maxAmt) {
-                    $details[] = translate('messages.Max_discount') . ': ' . Helpers::format_currency((float) $maxAmt);
+                    $details[] = translate('messages.Max discount') . ': ' . Helpers::format_currency((float) $maxAmt);
                 }
                 if ($minOn && $minAmt) {
-                    $details[] = translate('messages.On_orders_above') . ' ' . Helpers::format_currency((float) $minAmt);
+                    $details[] = translate('messages.Minimum order amount') . ': ' . Helpers::format_currency((float) $minAmt);
                 }
                 $items[] = [
                     'title'    => $title,
-                    'subtitle' => $details ? implode(' • ', $details) : translate('messages.Applied_automatically_at_checkout'),
+                    'subtitle' => $details ? implode(' • ', $details) : translate('messages.Applied automatically at checkout'),
                 ];
             }
         }
@@ -1024,10 +1023,7 @@ class ProCustomerController extends Controller
             $labels = $this->moduleLabels();
             $before = count($items);
 
-            foreach (ProCustomerBenefitSetting::DELIVERY_FEE_MODULE_TYPES as $mod) {
-                if (!in_array($mod, $activeTypes, true)) {
-                    continue;
-                }
+            foreach ($this->proVisibleDeliveryFeeModules() as $mod) {
                 $cfg = $rows->get($mod)?->settings ?? [];
                 if (empty($cfg)) {
                     continue;
@@ -1042,31 +1038,31 @@ class ProCustomerController extends Controller
                     if (!$charge) {
                         continue;
                     }
-                    $title = translate('messages.Up_to') . ' ' . $trim($charge) . '% ' . translate('messages.off_delivery_on') . ' ' . $label;
+                    $title = translate('messages.Up to') . ' ' . $trim($charge) . '% ' . translate('messages.Off delivery on') . ' ' . $label;
                 } else {
-                    $title = translate('messages.Free_delivery_on') . ' ' . $label;
+                    $title = translate('messages.Free delivery on') . ' ' . $label;
                 }
 
                 $items[] = [
                     'title'    => $title,
                     'subtitle' => $minOn && $minAmt
-                        ? translate('messages.On_orders_above') . ' ' . Helpers::format_currency((float) $minAmt)
-                        : translate('messages.Reduced_delivery_fee_on_every_order'),
+                        ? translate('messages.Minimum order amount') . ': ' . Helpers::format_currency((float) $minAmt)
+                        : translate('messages.Reduced delivery fee on every order'),
                 ];
             }
 
             if (count($items) === $before) {
                 $items[] = [
-                    'title'    => translate('messages.Free_Delivery'),
-                    'subtitle' => translate('messages.Reduced_delivery_fee_on_every_order'),
+                    'title'    => translate('Free delivery'),
+                    'subtitle' => translate('messages.Reduced delivery fee on every order'),
                 ];
             }
         }
 
         if ($couponOn) {
             $items[] = [
-                'title'    => translate('messages.Exclusive_Coupons'),
-                'subtitle' => translate('messages.Pro_only_deals_and_early_access'),
+                'title'    => translate('messages.Exclusive Coupons'),
+                'subtitle' => translate('messages.Pro-only deals and early access'),
             ];
         }
 

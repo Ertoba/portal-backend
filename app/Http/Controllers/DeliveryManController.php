@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Rules\PhoneNumber;
+use App\Rules\EmailAddress;
+use App\Rules\StrongPassword;
 use App\Models\DeliveryMan;
-use DB;
 use Illuminate\Http\Request;
 use App\CentralLogics\Helpers;
 use App\Models\Admin;
@@ -12,8 +14,9 @@ use Gregwar\Captcha\CaptchaBuilder;
 use Brian2694\Toastr\Facades\Toastr;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Session;
-use Illuminate\Support\Facades\Mail;
-use Illuminate\Validation\Rules\Password;
+use App\Support\Notification\SendNotification;
+use App\Support\Storage\FileStorage;
+use Illuminate\Support\Facades\Log;
 
 class DeliveryManController extends Controller
 {
@@ -23,7 +26,7 @@ class DeliveryManController extends Controller
         $status = BusinessSetting::where('key', 'toggle_dm_registration')->first();
         if(!isset($status) || $status->value == '0')
         {
-            Toastr::error(translate('messages.not_found'));
+            Toastr::error(translate('No data found'));
             return back();
         }
 
@@ -39,7 +42,7 @@ class DeliveryManController extends Controller
         $status = BusinessSetting::where('key', 'toggle_dm_registration')->first();
         if(!isset($status) || $status->value == '0')
         {
-            Toastr::error(translate('messages.not_found'));
+            Toastr::error(translate('No data found'));
             return back();
         }
 
@@ -47,7 +50,7 @@ class DeliveryManController extends Controller
         if($request->referral_code){
             $referal_user = DeliveryMan::where('ref_code',$request->referral_code)->first();
             if (!$referal_user || !$referal_user->status) {
-                    Toastr::error(translate('referer_code_not_found'));
+                    Toastr::error(translate('Referer code not found'));
                     return back()->withInput();
             }
             Helpers::deliverymanReferralNotification($referal_user);
@@ -74,7 +77,7 @@ class DeliveryManController extends Controller
             ]);
         } else if(session('six_captcha') != $request->custome_recaptcha)
         {
-            Toastr::error(translate('messages.ReCAPTCHA Failed'));
+            Toastr::error(translate('reCAPTCHA failed'));
             return back()->withInput();
         }
 
@@ -82,21 +85,21 @@ class DeliveryManController extends Controller
             'f_name' => 'required|max:100',
             'l_name' => 'nullable|max:100',
             'identity_number' => 'required|max:30',
-            'email' => 'required|unique:delivery_men',
-            'phone' => 'required|regex:/^([0-9\s\-\+\(\)]*)$/|min:10|unique:delivery_men',
+            'email' => EmailAddress::rules('required', 'delivery_men'),
+            'phone' => PhoneNumber::rules('required', 'delivery_men'),
             'zone_id' => 'required',
             'vehicle_id' => 'required',
             'earning' => 'required',
-            'password' => ['required', Password::min(8)->mixedCase()->letters()->numbers()->symbols()->uncompromised()],
+            'password' => StrongPassword::rules('required'),
         ], [
-            'f_name.required' => translate('messages.first_name_is_required'),
-            'zone_id.required' => translate('messages.select_a_zone'),
-            'vehicle_id.required' => translate('messages.select_a_vehicle'),
-            'earning.required' => translate('messages.select_dm_type')
+            'f_name.required' => translate('messages.First name is required'),
+            'zone_id.required' => translate('messages.Select a zone'),
+            'vehicle_id.required' => translate('messages.Select a vehicle'),
+            'earning.required' => translate('Select deliveryman type')
         ]);
 
         if ($request->has('image')) {
-            $image_name = Helpers::upload('delivery-man/', 'png', $request->file('image'));
+            $image_name = FileStorage::upload('delivery-man/', $request->file('image'));
         } else {
             $image_name = 'def.png';
         }
@@ -104,8 +107,8 @@ class DeliveryManController extends Controller
         $id_img_names = [];
         if (!empty($request->file('identity_image'))) {
             foreach ($request->identity_image as $img) {
-                $identity_image = Helpers::upload('delivery-man/', 'png', $img);
-                array_push($id_img_names, ['img'=>$identity_image, 'storage'=> Helpers::getDisk()]);
+                $identity_image = FileStorage::upload('delivery-man/', $img);
+                array_push($id_img_names, ['img'=>$identity_image, 'storage'=> FileStorage::getDisk()]);
             }
             $identity_image = json_encode($id_img_names);
         } else {
@@ -134,16 +137,19 @@ class DeliveryManController extends Controller
         try{
             $admin= Admin::where('role_id', 1)->first();
 
-            if(config('mail.status') &&  Helpers::get_mail_status('registration_mail_status_dm') == '1' && Helpers::getNotificationStatusData('deliveryman','deliveryman_registration','mail_status')  ){
-                Mail::to($request->email)->send(new \App\Mail\DmSelfRegistration('pending', $dm));
+            if(SendNotification::canSendMail('registration_mail_status_dm', 'deliveryman', 'deliveryman_registration')  ){
+                SendNotification::mail($request->email, new \App\Mail\DmSelfRegistration('pending', $dm));
             }
-            if(config('mail.status') && Helpers::get_mail_status('dm_registration_mail_status_admin') == '1' && Helpers::getNotificationStatusData('admin','deliveryman_self_registration','mail_status')) {
-                Mail::to($admin?->getRawOriginal('email'))->send(new \App\Mail\DmRegistration('pending', $dm));
+            if(SendNotification::canSendMail('dm_registration_mail_status_admin', 'admin', 'deliveryman_self_registration')) {
+                SendNotification::mail($admin?->getRawOriginal('email'), new \App\Mail\DmRegistration('pending', $dm));
             }
         }catch(\Exception $ex){
-            info($ex->getMessage());
+            Log::error('delivery_man_controller.store_failed', [
+                'error' => $ex->getMessage(),
+                'file' => $ex->getFile().':'.$ex->getLine(),
+            ]);
         }
-        Toastr::success(translate('messages.application_placed_successfully'));
+        Toastr::success(translate('messages.Application placed successfully'));
         return redirect()->route('home');
     }
 }

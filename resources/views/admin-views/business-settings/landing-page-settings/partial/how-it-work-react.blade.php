@@ -13,7 +13,7 @@
                             <img src="{{asset('/public/assets/admin/img/landing-how.png')}}" alt="" class="mb-20">
                             <h5 class="modal-title">{{translate('Notice!')}}</h5>
                             <p>
-                                {{translate("If you want to disable or turn off any section please leave that section empty, don’t make any changes there!")}}
+                                {{translate("If you want to disable or turn off any section please leave that section empty, don't make any changes there!")}}
                             </p>
                         </div>
                     </div>
@@ -38,17 +38,10 @@
                     <div class="item">
                         <div class="max-349 mx-auto mb-20 text-center">
                             <img src="{{asset('/public/assets/admin/img/notice-3.png')}}" alt="" class="mb-20">
-                            <h5 class="modal-title">{{translate('Let’s See The Changes!')}}</h5>
+                            <h5 class="modal-title">{{translate('Let\'s See The Changes!')}}</h5>
                             <p>
                                 {{translate('Visit landing page to see the changes you made in the settings option!')}}
                             </p>
-                            @php($react = \App\CentralLogics\Helpers::get_business_settings('react_setup'))
-                            @if ($react)
-
-                            <div class="btn-wrap">
-                                <a href="https://{{ $react['react_domain'] }}" class="btn btn--primary w-100" target="_blank">{{ translate('Visit_Now') }}</a>
-                            </div>
-                            @endif
                         </div>
                     </div>
                 </div>

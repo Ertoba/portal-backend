@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\PaymentRequest;
 use App\Models\User;
-use App\Traits\Processor;
+use App\Traits\System\ProcessorTrait;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -18,7 +18,7 @@ use MercadoPago\MercadoPagoConfig;
 
 class MercadoPagoController extends Controller
 {
-    use Processor;
+    use ProcessorTrait;
 
     private PaymentRequest $paymentRequest;
     private $config;
@@ -26,7 +26,7 @@ class MercadoPagoController extends Controller
 
     public function __construct(PaymentRequest $paymentRequest, User $user)
     {
-        $config = $this->payment_config('mercadopago', 'payment_config');
+        $config = $this->paymentConfig('mercadopago', 'payment_config');
         if (!is_null($config) && $config->mode == 'live') {
             $this->config = json_decode($config->live_values);
         } elseif (!is_null($config) && $config->mode == 'test') {
@@ -43,12 +43,12 @@ class MercadoPagoController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return response()->json($this->response_formatter(GATEWAYS_DEFAULT_400, null, $this->error_processor($validator)), 400);
+            return response()->json($this->responseFormatter(GATEWAYS_DEFAULT_400, null, $this->errorProcessor($validator)), 400);
         }
 
         $data = $this->paymentRequest::where(['id' => $request['payment_id']])->where(['is_paid' => 0])->first();
         if (!isset($data)) {
-            return response()->json($this->response_formatter(GATEWAYS_DEFAULT_204), 200);
+            return response()->json($this->responseFormatter(GATEWAYS_DEFAULT_204), 200);
         }
         $config = $this->config;
         return view('payment-views.payment-view-marcedo-pogo', compact('config', 'data'));
@@ -71,7 +71,7 @@ class MercadoPagoController extends Controller
                 "payment_method_id" => $request['payment_method_id'],
                 "transaction_amount" => (float)$request['transaction_amount'],
                 "installments" => (int)($request['installments'] ?? 1),
-                "external_reference" => $paymentRequest->id, // important!
+                "external_reference" => $paymentRequest->id,
                 "payer" => [
                     "email" => $request['payer']['email'],
                     "identification" => [
@@ -108,12 +108,12 @@ class MercadoPagoController extends Controller
     {
         if ($request['status'] == 'success') {
             $data = $this->paymentRequest::where(['id' => $request['payment_id']])->first();
-            return $this->payment_response($data,'success');
+            return $this->paymentResponse($data,'success');
         }
         $payment_data = $this->paymentRequest::where(['id' => $request['payment_id']])->first();
         if (isset($payment_data) && function_exists($payment_data->failure_hook)) {
             call_user_func($payment_data->failure_hook, $payment_data);
         }
-        return $this->payment_response($payment_data,'fail');
+        return $this->paymentResponse($payment_data,'fail');
     }
 }

@@ -19,9 +19,6 @@ use Illuminate\Foundation\Http\FormRequest;
  */
 class ZoneModuleUpdateRequest extends FormRequest
 {
-    /**
-     * Determine if the user is authorized to make this request.
-     */
     public function authorize(): bool
     {
         return true;
@@ -35,10 +32,6 @@ class ZoneModuleUpdateRequest extends FormRequest
     public function rules(): array
     {
         return [
-            // 'cash_on_delivery' => 'required_without_all:digital_payment,offline_payment',
-            // 'digital_payment' => 'required_without_all:cash_on_delivery,offline_payment',
-            // 'offline_payment' => 'required_without_all:cash_on_delivery,digital_payment',
-            // 'increased_delivery_fee' => 'nullable|numeric|between:0,999.99|required_if:increased_delivery_fee_status,1',
             'module_data' => 'required'
         ];
     }
@@ -46,8 +39,7 @@ class ZoneModuleUpdateRequest extends FormRequest
     public function messages(): array
     {
         return [
-            // 'increased_delivery_fee.required_if' => translate('messages.increased_delivery_fee_is_required'),
-            'module_data.required' => translate('messages.business_module_data_is_required'),
+            'module_data.required' => translate('messages.Business module data is required'),
         ];
     }
 }

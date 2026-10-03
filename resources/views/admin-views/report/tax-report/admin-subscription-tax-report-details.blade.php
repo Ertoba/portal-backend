@@ -1,45 +1,47 @@
 @extends('layouts.admin.app')
 
-@section('title', translate('Admin Tax Report'))
+@section('title', translate('Admin tax report'))
 
 @section('tax_report')
     active
 @endsection
 
+@push('css_or_js')
+    <link rel="stylesheet" href="{{ asset('public/assets/admin/css/view-pages/tax.css') }}">
+@endpush
+
 @section('content')
-    <div class="content container-fluid">
+    <div class="content container-fluid txr">
 
 
-        <!--- Admin Tax Report -->
-        <h2 class="mb-20">{{ translate('messages.Admin Tax Report') }}</h3>
-            <!--- Tax Details Page -->
-            <h2 class="mb-20 mt-5">{{ translate('messages.Tax Details') }}</h2>
+        <h2 class="mb-20">{{ translate('Admin tax report') }}</h2>
+            <h2 class="mb-20 mt-5">{{ translate('Tax details') }}</h2>
             <div class="bg--secondary rounded p-20">
                 <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-15">
                     <div>
                         <h5 class="mb-1">{{ translate($taxSource) }} {{ translate('Taxes') }}</h5>
-                        <p class="fz-12px mb-0">{{ translate('Date:') }} {{ $startDate }} - {{ $endDate }}</p>
+                        <p class="fz-12px mb-0">{{ translate('Date') }}: {{ $startDate }} - {{ $endDate }}</p>
                     </div>
                     <div class="hs-unfold mr-2 hungar-export">
                         <a class="js-hs-unfold-invoker btn btn-sm btn-primary dropdown-toggle h--40px" href="javascript:;"
                             data-hs-unfold-options='{
                         "target": "#usersExportDropdown4", "type": "css-animation" }'>
-                            <i class="tio-download-to mr-1"></i> {{ translate('messages.export') }}
+                            <i class="tio-download-to mr-1"></i> {{ translate('messages.Export') }}
                         </a>
                         <div id="usersExportDropdown4"
                             class="hs-unfold-content dropdown-unfold dropdown-menu dropdown-menu-sm-right">
-                            <span class="dropdown-header">{{ translate('messages.download_options') }}</span>
-                            <a id="export-excel" class="dropdown-item" href="{{ route('admin.transactions.report.getTaxDetailsExport',['source'=> $taxSource ,'export_type' => 'excel', request()->getQueryString()]) }}">
+                            <span class="dropdown-header">{{ translate('messages.Download options') }}</span>
+                            <a id="export-excel" class="dropdown-item" href="{{ route('admin.transactions.report.getTaxDetailsExport',array_merge(request()->except(['page', 'export_type']), ['source' => $taxSource, 'export_type' => 'excel'])) }}">
                                 <img class="avatar avatar-xss avatar-4by3 mr-2"
                                     src="{{ asset('public/assets/admin') }}/svg/components/excel.svg"
                                     alt="Image Description">
-                                {{ translate('messages.excel') }}
+                                Excel
                             </a>
-                            <a id="export-csv" class="dropdown-item" href="{{ route('admin.transactions.report.getTaxDetailsExport',['source'=> $taxSource ,'export_type' => 'excel', request()->getQueryString()]) }}">
+                            <a id="export-csv" class="dropdown-item" href="{{ route('admin.transactions.report.getTaxDetailsExport',array_merge(request()->except(['page', 'export_type']), ['source' => $taxSource, 'export_type' => 'csv'])) }}">
                                 <img class="avatar avatar-xss avatar-4by3 mr-2"
                                     src="{{ asset('public/assets/admin') }}/svg/components/placeholder-csv-format.svg"
                                     alt="Image Description">
-                                {{ translate('messages.csv') }}
+                                CSV
                             </a>
                         </div>
                     </div>
@@ -47,25 +49,25 @@
                 <div class="row g-3">
                     <div class="col-md-6">
                         <div class="bg-white p-12 w-100 rounded d-flex align-items-center justify-content-between">
-                            {{ translate('Total_Transactions') }} <h4 class="theme-clr fw-bold mb-0">{{ $total_count }}
+                            {{ translate('Total transactions') }} <h4 class="theme-clr fw-bold mb-0">{{ $total_count }}
                             </h4>
                         </div>
                     </div>
                     <div class="col-md-6">
                         <div class="bg-white p-12 w-100 rounded d-flex align-items-center justify-content-between">
-                            {{ translate('Total_Amount') }} <h4 class="theme-clr fw-bold mb-0">
+                            {{ translate('Total amount') }} <h4 class="theme-clr fw-bold mb-0">
                                 {{ \App\CentralLogics\Helpers::format_currency($total_amount) }}</h4>
                         </div>
                     </div>
                     <div class="col-md-6">
                         <div class="bg-white p-12 w-100 rounded d-flex align-items-center justify-content-between">
-                            {{ translate('Total Tax Percentage') }} <h4 class="cus-warning-light-clr fw-bold mb-0">
+                            {{ translate('Total tax percentage') }} <h4 class="cus-warning-light-clr fw-bold mb-0">
                                 {{ $total_tax_rate }} %</h4>
                         </div>
                     </div>
                     <div class="col-md-6">
                         <div class="bg-white p-12 w-100 rounded d-flex align-items-center justify-content-between">
-                            {{ translate('Total Tax Amount') }} <h4 class="cus-warning-clr fw-bold mb-0">
+                            {{ translate('Total tax amount') }} <h4 class="cus-warning-clr fw-bold mb-0">
                                 {{ \App\CentralLogics\Helpers::format_currency($total_tax_amount) }}</h4>
                         </div>
                     </div>
@@ -77,10 +79,10 @@
                         class="table table-hover table-borderless table-thead-bordered table-nowrap table-align-middle card-table fz--14px">
                         <thead class="thead-light">
                             <tr>
-                                <th class="border-0">{{ translate('sl') }}</th>
+                                <th class="border-0">{{ translate('SL') }}</th>
                                 <th class="border-0">{{ translate('Transaction ID') }}</th>
                                 <th class="border-0">{{ translate('Amount') }}</th>
-                                <th class="border-0">{{ translate('Tax Amount') }}</th>
+                                <th class="border-0">{{ translate('Tax amount') }}</th>
                             </tr>
                         </thead>
 
@@ -138,11 +140,10 @@
                     <div class="empty--data">
                         <img src="{{ asset('/public/assets/admin/svg/illustrations/sorry.svg') }}" alt="public">
                         <h5>
-                            {{ translate('no_data_found') }}
+                            {{ translate('No data found') }}
                         </h5>
                     </div>
                 @endif
-                <!-- End Table -->
             </div>
     </div>
 

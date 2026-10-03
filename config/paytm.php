@@ -1,7 +1,7 @@
 <?php
 
 return [
-    'env' => env('PAYTM_ENVIRONMENT', 'production'), // values : (local | production)
+    'env' => env('PAYTM_ENVIRONMENT', 'production'),
     'merchant_id' => env('PAYTM_MERCHANT_ID', ''),
     'merchant_key' => env('PAYTM_MERCHANT_KEY', ''),
     'merchant_website' => env('PAYTM_MERCHANT_WEBSITE', ''),

@@ -4,19 +4,14 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <meta name="csrf-token" id="csrf-token" content="{{ csrf_token() }}">
-    <!-- Title -->
     <title></title>
-    <!-- Favicon -->
 
     <link rel="shortcut icon" href="">
     <link rel="icon" type="image/x-icon" href="">
-    <!-- Font -->
     <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600&amp;display=swap" rel="stylesheet">
-    <!-- CSS Implementing Plugins -->
     <link rel="stylesheet" href="{{asset('public/assets/admin/css/vendor.min.css')}}">
     <link rel="stylesheet" href="{{asset('public/assets/admin/vendor/icon-set/style.css')}}">
     <link rel="stylesheet" href="{{asset('public/assets/admin/css/custom.css')}}">
-    <!-- CSS Front Template -->
     <link rel="stylesheet" href="{{asset('public/assets/admin/css/bootstrap.min.css')}}">
     <link rel="stylesheet" href="{{asset('public/assets/admin/css/theme.minc619.css?v=1.0')}}">
     <link rel="stylesheet" href="{{asset('public/assets/admin/css/style.css')}}">
@@ -33,37 +28,24 @@
         <span></span>
     </div>
 
-<div class="container">
-    <div class="row">
-        <div class="col-md-12">
-            <div id="loading" class="initial-hidden">
-                <div class="loading-inner">
-                    <img width="200" src="{{asset('public/assets/admin/img/loader.gif')}}">
-                </div>
-            </div>
-        </div>
+{{-- Global blocking loader, toggled everywhere with $('#loading').show() / .hide() --}}
+<div id="loading" class="initial-hidden" role="status" aria-live="polite">
+    <div class="loader--inner">
+        <span class="app-loader__spinner" aria-hidden="true"></span>
+        <span class="sr-only">{{ translate('messages.loading') }}</span>
     </div>
 </div>
 
-<!-- Builder -->
 
-<!-- End Builder -->
 
-<!-- JS Preview mode only -->
 
-<!-- END ONLY DEV -->
 
 <main id="content" role="main" class="main pointer-event">
-    <!-- Content -->
 @yield('content')
-<!-- End Content -->
 
-<!-- ========== END SECONDARY CONTENTS ========== -->
 <script src="{{asset('public/assets/admin')}}/js/custom.js"></script>
-<!-- JS Implementing Plugins -->
 
 @stack('script')
-<!-- Toggle Direction Init -->
 <script>
     $(document).on('ready', function(){
 
@@ -93,7 +75,6 @@
 
     })
 </script>
-<!-- JS Front -->
 <script src="{{asset('public/assets/admin')}}/js/vendor.min.js"></script>
 <script src="{{asset('public/assets/admin')}}/js/theme.min.js"></script>
 <script>

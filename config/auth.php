@@ -68,6 +68,10 @@ return [
             'driver' => 'session',
             'provider' => 'delivery_men',
         ],
+        'serviceman' => [
+            'driver' => 'session',
+            'provider' => 'serviceman',
+        ],
     ],
 
     /*
@@ -111,6 +115,11 @@ return [
         'delivery_men' => [
             'driver' => 'database',
             'table' => 'delivery_men',
+        ],
+
+        'serviceman' => [
+            'driver' => 'eloquent',
+            'model' => Modules\Service\Entities\Serviceman::class,
         ],
     ],
 

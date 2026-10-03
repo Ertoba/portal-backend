@@ -8,7 +8,6 @@
     <title>@yield('title')</title>
 
     <style>
-        /*! normalize.css v8.0.1 | MIT License | github.com/necolas/normalize.css */
         html {
             line-height: 1.15;
             -webkit-text-size-adjust: 100%
@@ -583,10 +582,10 @@
                 <div class="text-center">
                     <img src="{{ asset('public/assets/admin/img/wellcome-maintainance.png') }}" alt="">
                     <h4 class="mb-2">
-                        {{ $selectedMaintenanceMessage['maintenance_message'] ?? translate('We are Working On Something Special!') }}
+                        {{ $selectedMaintenanceMessage['maintenance_message'] ?? translate('We are working on something special!') }}
                     </h4>
                     <p class="fs-15">
-                        {{ $selectedMaintenanceMessage['message_body'] ?? translate('We apologize for any inconvenience. For immediate assistance, please contact with our support team') }}
+                        {{ $selectedMaintenanceMessage['message_body'] ?? translate('We apologize for any inconvenience. For immediate assistance, please contact with our support team.') }}
                     </p>
                     @if ($selectedMaintenanceMessage['business_email'] || $selectedMaintenanceMessage['business_number'])
                         <br>

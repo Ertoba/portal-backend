@@ -2,6 +2,10 @@
 
 namespace App\Http\Controllers\Vendor;
 
+use App\Rules\ImageFile;
+use App\Rules\PhoneNumber;
+use App\Rules\EmailAddress;
+use App\Rules\StrongPassword;
 use App\Models\EmployeeRole;
 use Illuminate\Http\Request;
 use App\CentralLogics\Helpers;
@@ -12,15 +16,22 @@ use Brian2694\Toastr\Facades\Toastr;
 use Maatwebsite\Excel\Facades\Excel;
 use Rap2hpoutre\FastExcel\FastExcel;
 use App\Exports\StoreEmployeeListExport;
-use Illuminate\Validation\Rules\Password;
+use App\Models\DataSetting;
+use App\Navigation\VendorRolePermissionForm;
 
 class EmployeeController extends Controller
 {
 
     public function add_new()
     {
-        $rls = EmployeeRole::where('store_id',Helpers::get_store_id())->get();
-        return view('vendor-views.employee.add-new', compact('rls'));
+        $rls = EmployeeRole::where('store_id',Helpers::get_store_id())->orderBy('name')->get();
+        $permission_form = VendorRolePermissionForm::forCurrentStore();
+        $permission_labels = $permission_form->labels();
+        $permission_total = $permission_form->total();
+        $login_slug = DataSetting::where('key', 'store_employee_login_url')->value('value');
+        $login_url = $login_slug ? route('login', [$login_slug]) : null;
+
+        return view('vendor-views.employee.add-new', compact('rls', 'permission_labels', 'permission_total', 'login_url'));
     }
 
     public function store(Request $request)
@@ -29,10 +40,10 @@ class EmployeeController extends Controller
             'f_name' => 'required',
             'l_name' => 'nullable|max:100',
             'role_id' => 'required',
-            'image' => 'required',
-            'email' => 'required|unique:vendor_employees',
-            'phone' => 'required|regex:/^([0-9\s\-\+\(\)]*)$/|max:20|unique:vendor_employees',
-            'password' => ['required', Password::min(8)->mixedCase()->letters()->numbers()->symbols()->uncompromised()],
+            'image' => ImageFile::rules('required'),
+            'email' => EmailAddress::rules('required', 'vendor_employees'),
+            'phone' => PhoneNumber::rules('required', 'vendor_employees'),
+            'password' => StrongPassword::rules('required'),
         ]);
         $vendor = new VendorEmployee();
         $vendor->f_name = $request->f_name;
@@ -52,9 +63,9 @@ class EmployeeController extends Controller
 
     function list(Request $request)
     {
-        $key = explode(' ', $request['search']);
-        $em = VendorEmployee::where('store_id', Helpers::get_store_id())->with(['role'])
-        ->when(isset($key) , function($query) use($key) {
+        $key = explode(' ', $request['search'] ?? '');
+        $em = VendorEmployee::withStorage()->where('store_id', Helpers::get_store_id())->with(['role'])
+        ->when($request['search'] , function($query) use($key) {
             $query->where(function ($q) use ($key) {
                 foreach ($key as $value) {
                     $q->orWhere('f_name', 'like', "%{$value}%");
@@ -64,19 +75,20 @@ class EmployeeController extends Controller
                 }
             });
         })
-
         ->latest()->paginate(config('default_pagination'));
-        return view('vendor-views.employee.list', compact('em'));
+        $current_employee_id = auth('vendor_employee')->id();
+
+        return view('vendor-views.employee.list', compact('em', 'current_employee_id'));
     }
 
     public function edit($id)
     {
-        $e = VendorEmployee::where('store_id', Helpers::get_store_id())->where(['id' => $id])->first();
+        $e = VendorEmployee::withStorage()->where('store_id', Helpers::get_store_id())->where(['id' => $id])->firstOrFail();
         $rls = EmployeeRole::where('store_id',Helpers::get_store_id())->get();
         if (auth('vendor_employee')->id()  != $e['id']){
             return view('vendor-views.employee.edit', compact('rls', 'e'));
         }
-        Toastr::warning(translate('messages.access_denied'));
+        Toastr::warning(translate('messages.Access denied'));
         return back();
     }
 
@@ -86,11 +98,11 @@ class EmployeeController extends Controller
             'f_name' => 'required',
             'l_name' => 'nullable|max:100',
             'role_id' => 'required',
-            'email' => 'required|unique:vendor_employees,email,'.$id,
-            'phone' => 'required|regex:/^([0-9\s\-\+\(\)]*)$/|max:20|unique:vendor_employees,phone,'.$id,
-            'password' => ['nullable', Password::min(8)->mixedCase()->letters()->numbers()->symbols()->uncompromised()],
+            'email' => EmailAddress::rules('required', 'vendor_employees,email,'.$id),
+            'phone' => PhoneNumber::rules('required', 'vendor_employees,phone,'.$id),
+            'password' => StrongPassword::rules('nullable'),
         ], [
-            'f_name.required' => translate('messages.first_name_is_required'),
+            'f_name.required' => translate('messages.First name is required'),
         ]);
 
         $e = VendorEmployee::where('store_id', Helpers::get_store_id())->find($id);
@@ -98,7 +110,7 @@ class EmployeeController extends Controller
             $pass = $e['password'];
         } else {
             if (strlen($request['password']) < 7) {
-                Toastr::warning(translate('messages.password_length_warning',['length'=>'8']));
+                Toastr::warning(translate('messages.Password is too short.') . ' ' . translate('messages.Minimum characters') . ': 8');
                 return back();
             }
             $pass = bcrypt($request['password']);
@@ -129,33 +141,16 @@ class EmployeeController extends Controller
     public function distroy($id)
     {
         $role=VendorEmployee::where('store_id', Helpers::get_store_id())->where(['id'=>$id])->delete();
-        Toastr::info(translate('messages.employee_deleted_successfully'));
+        Toastr::info(translate('Deleted successfully'));
         return back();
     }
 
-    // public function search(Request $request){
-    //     $key = explode(' ', $request['search']);
-    //     $employees=VendorEmployee::where('store_id', Helpers::get_store_id())->
-    //     where(function ($q) use ($key) {
-    //         foreach ($key as $value) {
-    //             $q->orWhere('f_name', 'like', "%{$value}%");
-    //             $q->orWhere('l_name', 'like', "%{$value}%");
-    //             $q->orWhere('phone', 'like', "%{$value}%");
-    //             $q->orWhere('email', 'like', "%{$value}%");
-    //         }
-    //     })->limit(50)->get();
-    //     return response()->json([
-    //         'view'=>view('vendor-views.employee.partials._table',compact('employees'))->render(),
-    //         'count'=>$employees->count()
-    //     ]);
-    // }
 
     public function list_export(Request $request){
 
-        $key = explode(' ', $request['search']);
+        $key = explode(' ', $request['search'] ?? '');
         $em=VendorEmployee::where('store_id', Helpers::get_store_id())->with(['role'])
-
-        ->when(isset($key) , function($query) use($key) {
+        ->when($request['search'] , function($query) use($key) {
             $query->where(function ($q) use ($key) {
                 foreach ($key as $value) {
                     $q->orWhere('f_name', 'like', "%{$value}%");
@@ -178,10 +173,5 @@ class EmployeeController extends Controller
         }
 
 
-        // if($request->type == 'excel'){
-        //     return (new FastExcel($em))->download('Employee.xlsx');
-        // }elseif($request->type == 'csv'){
-        //     return (new FastExcel($em))->download('Employee.csv');
-        // }
     }
 }

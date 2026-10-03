@@ -1,13 +1,11 @@
 @extends('layouts.blank')
 
 @section('content')
-    <!-- Title -->
     <div class="text-center text-white mb-4">
         <h2>6amMart Software Installation</h2>
         <h6 class="fw-normal">Please proceed step by step with proper data according to instructions</h6>
     </div>
 
-    <!-- Progress -->
     <div class="pb-2">
         <div class="progress cursor-pointer" role="progressbar" aria-label="6amMart Software Installation"
              aria-valuenow="60" aria-valuemin="0" aria-valuemax="100" data-bs-toggle="tooltip"
@@ -17,7 +15,6 @@
         </div>
     </div>
 
-    <!-- Card -->
     <div class="card mt-4 position-relative">
         <div class="d-flex justify-content-end mb-2 position-absolute top-end">
             <a href="#" class="d-flex align-items-center gap-1">

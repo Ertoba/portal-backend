@@ -6,26 +6,20 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\MorphMany;
-use Illuminate\Database\Eloquent\Builder;
 
-use App\Traits\GeneratesSlug;
+use App\Traits\Model\SlugTrait;
 use Modules\TaxModule\Entities\Taxable;
+use App\Traits\Model\HasTranslationsTrait;
 
 class AddonCategory extends Model
 {
-    use HasFactory, GeneratesSlug;
+    use HasFactory, SlugTrait, HasTranslationsTrait;
 
     protected $guarded = ['id'];
      protected $casts = [
         'module_id' => 'integer',
         'status' => 'integer',
     ];
-
-    public function translations(): MorphMany
-    {
-        return $this->morphMany(Translation::class, 'translationable');
-    }
 
     public function module(): BelongsTo
     {
@@ -48,26 +42,9 @@ class AddonCategory extends Model
 
     public function getNameAttribute($value): string
     {
-        if (count($this->translations) > 0) {
-            foreach ($this->translations as $translation) {
-                if ($translation['key'] == 'name') {
-                    return $translation['value'];
-                }
-            }
-        }
-
-        return $value;
+        return $this->translatedAttribute('name', $value);
     }
 
-    protected static function booted(): Builder|null
-    {
-        static::addGlobalScope('translate', function (Builder $builder) {
-            $builder->with(['translations' => function ($query) {
-                return $query->where('locale', app()->getLocale());
-            }]);
-        });
-        return null;
-    }
     public function taxVats()
     {
         return $this->morphMany(Taxable::class, 'taxable');

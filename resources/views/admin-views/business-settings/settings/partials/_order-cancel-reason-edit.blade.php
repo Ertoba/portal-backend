@@ -3,7 +3,7 @@
     @method('put')
     <div>
         <div class="custom-offcanvas-header bg--secondary d-flex justify-content-between align-items-center px-3 py-3">
-            <h3 class="mb-0">{{ translate('messages.order_cancellation_reason') }} {{ translate('messages.Update') }}</h3>
+            <h3 class="mb-0">{{ translate('Order cancellation reason') }} {{ translate('Update') }}</h3>
             <button type="button"
                 class="btn-close w-25px h-25px border rounded-circle d-center bg--secondary offcanvas-close fz-15px p-0"
                 aria-label="Close">&times;</button>
@@ -11,16 +11,13 @@
         <div class="custom-offcanvas-body p-20">
             <div class="bg--secondary rounded p-20 mb-20">
 
-                @php($language = \App\Models\BusinessSetting::where('key', 'language')->first())
-                @php($language = $language->value ?? null)
-                @php($default_lang = 'en')
+                @php($language = \App\CentralLogics\Helpers::get_business_settings('language', false) ?? null)
 
                 @if ($language)
-                    @php($default_lang = json_decode($language)[0])
                     <ul class="nav nav-tabs mb-4 border-0">
                         <li class="nav-item">
                             <a class="nav-link lang_link1 active" href="#"
-                                id="default-link">{{ translate('messages.default') }}</a>
+                                id="default-link">{{ translate('Default') }}</a>
                         </li>
                         @foreach (json_decode($language) as $lang)
                             <li class="nav-item">
@@ -35,8 +32,8 @@
                 <div class="row">
                     <div class="col-12">
                         <div class="form-group lang_form1" id="default-form1">
-                            <label class="input-label" for="reason">{{ translate('Order Cancellation Reason') }}
-                                ({{ translate('messages.default') }}) </label>
+                            <label class="input-label" for="reason">{{ translate('Order cancellation reason') }}
+                                ({{ translate('Default') }}) </label>
                             <input id="reason" class="form-control" name='reason[]'
                                 value="{{ $reason?->getRawOriginal('reason') }}" type="text">
                         </div>
@@ -55,10 +52,10 @@
                                 }
                                 ?>
                                 <div class="form-group d-none lang_form1" id="{{ $lang }}-form1">
-                                    <label class="input-label" for="reason{{ $lang }}">{{ translate('Order Cancellation Reason') }}
+                                    <label class="input-label" for="reason{{ $lang }}">{{ translate('Order cancellation reason') }}
                                         ({{ strtoupper($lang) }})</label>
                                     <input id="reason{{ $lang }}" class="form-control" name='reason[]'
-                                        placeholder="{{ translate('Ex:_Item_is_Broken') }}"
+                                        placeholder="{{ translate('Ex') . ': ' . translate('Item is broken') }}"
                                         value="{{ $translate[$lang]['reason']['value'] ?? null }}" type="text">
                                 </div>
                                 <input type="hidden" name="lang[]" value="{{ $lang }}">
@@ -67,17 +64,17 @@
                         @endif
 
                         <div class="form-group">
-                            <label class="input-label" for="user_type">{{ translate('messages.user_type') }}</label>
+                            <label class="input-label" for="user_type">{{ translate('User type') }}</label>
                             <select name="user_type" id="user_type" class="form-control h--45px" required>
-                                <option value="">{{ translate('messages.select_user_type') }}</option>
+                                <option value="">{{ translate('messages.Select user type') }}</option>
                                 <option {{ $reason->user_type == 'admin' ? 'selected' : '' }} value="admin">
                                     {{ translate('messages.admin') }}</option>
                                 <option {{ $reason->user_type == 'store' ? 'selected' : '' }} value="store">
-                                    {{ translate('messages.store') }}</option>
+                                    {{ translate('messages.Store') }}</option>
                                 <option {{ $reason->user_type == 'customer' ? 'selected' : '' }} value="customer">
-                                    {{ translate('messages.customer') }}</option>
+                                    {{ translate('messages.Customer') }}</option>
                                 <option {{ $reason->user_type == 'deliveryman' ? 'selected' : '' }} value="deliveryman">
-                                    {{ translate('messages.deliveryman') }}</option>
+                                    {{ translate('Deliveryman') }}</option>
                             </select>
                         </div>
                     </div>
@@ -86,7 +83,7 @@
         </div>
     </div>
     <div class="align-items-center bg-white bottom-0 d-flex gap-3 justify-content-center mt-auto offcanvas-footer p-3 position-sticky">
-        <button type="button" class="btn w-100 btn--secondary offcanvas-close h--40px">{{ translate('Cancel') }}</button>
-        <button type="submit" class="btn w-100 btn--primary h--40px">{{ translate('Update') }}</button>
+        <button type="button" class="btn w-100 btn--secondary offcanvas-close h--40px"><i class="tio-clear-circle-outlined"></i> {{ translate('Cancel') }}</button>
+        <button type="submit" class="btn w-100 btn--primary h--40px"><i class="tio-save"></i> {{ translate('Update') }}</button>
     </div>
 </form>

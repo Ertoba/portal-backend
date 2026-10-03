@@ -1,19 +1,17 @@
 <div class="card-header border-0 order-header-shadow">
     <h5 class="card-title d-flex justify-content-between">
         <span>{{ translate('top selling') }} @if (Config::get('module.current_module_type') == 'food')
-                {{ translate('messages.foods') }}
+                {{ translate('Food') }}
             @else
-                {{ translate('messages.items') }}
+                {{ translate('messages.Items') }}
             @endif
         </span>
     </h5>
     @php($params = session('dash_params'))
     @if ($params['zone_id'] != 'all')
-        @php($zone_name = \App\Models\Zone::where('id', $params['zone_id'])->first()->name)
     @else
-        @php($zone_name = translate('messages.all'))
     @endif
-    <a href="{{ route('admin.item.list') }}" class="fz-12px font-medium text-006AE5">{{ translate('view_all') }}</a>
+    <a href="{{ route('admin.item.list') }}" class="fz-12px font-medium text-006AE5">{{ translate('View all') }}</a>
 </div>
 
 <div class="card-body">
@@ -38,12 +36,6 @@
             @endforeach
         </div>
     @else
-        <!-- <div class="empty--data">
-            <img src="{{ asset('/public/assets/admin/svg/illustrations/empty-state.svg') }}" alt="public">
-            <h5>
-                {{ translate('no_data_found') }}
-            </h5>
-        </div> -->
         <div class="empty--data d-flex flex-column align-items-center justify-content-center h-100 w-100">
             <img src="{{ asset('/public/assets/admin/img/no-items.png') }}" alt="public">
             <h5 class="secondary-clr">

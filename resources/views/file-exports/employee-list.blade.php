@@ -1,5 +1,5 @@
 <div class="row">
-    <div class="col-lg-12 text-center "><h1 >{{ translate('employee_list') }}</h1></div>
+    <div class="col-lg-12 text-center "><h1 >{{ translate('Employee list') }}</h1></div>
     <div class="col-lg-12">
 
 
@@ -11,11 +11,11 @@
                 <th></th>
                 <th></th>
                 <th>
-                    {{ translate('total_employee')  }}- {{ $data['employees']->count() }}
+                    {{ translate('Total employee')  }}- {{ $data['employees']->count() }}
                     <br>
-                    {{ translate('active_employee')  }}- {{ $data['employees']->where('status',1)->count() }}
+                    {{ translate('Active employee')  }}- {{ $data['employees']->where('status',1)->count() }}
                     <br>
-                    {{ translate('inactive_employee')  }}- {{ $data['employees']->where('status',0)->count() }}
+                    {{ translate('Inactive employee')  }}- {{ $data['employees']->where('status',0)->count() }}
                 </th>
                 <th> </th>
                 <th></th>
@@ -23,11 +23,11 @@
                 <th></th>
             </tr>
             <tr>
-                <th>{{ translate('Search_Criteria') }}</th>
+                <th>{{ translate('Search criteria') }}</th>
                 <th></th>
                 <th></th>
                 <th>
-                    {{ translate('Search_Bar_Content')  }}- {{ $data['search'] ??translate('N/A') }}
+                    {{ translate('Search bar content')  }}- {{ $data['search'] ??translate('N/A') }}
 
                 </th>
                 <th> </th>
@@ -36,15 +36,15 @@
                 <th></th>
                 </tr>
         <tr>
-            <th>{{ translate('sl') }}</th>
-            <th>{{translate('employee_image')}}</th>
-            <th>{{translate('first_name')}}</th>
-            <th>{{translate('last_name')}}</th>
-            <th>{{translate('phone')}}</th>
+            <th>{{ translate('SL') }}</th>
+            <th>{{translate('Employee image')}}</th>
+            <th>{{translate('First name')}}</th>
+            <th>{{translate('Last name')}}</th>
+            <th>{{translate('Phone')}}</th>
             <th>{{translate('email')}}</th>
-            <th>{{translate('role')}}</th>
-            <th>{{translate('zone')}}</th>
-            <th>{{translate('joining_date')}}</th>
+            <th>{{translate('Role')}}</th>
+            <th>{{translate('Zone')}}</th>
+            <th>{{translate('Joining date')}}</th>
         </thead>
         <tbody>
         @foreach($data['employees'] as $key => $employee)
@@ -55,8 +55,8 @@
             <td>{{  $employee['l_name']  }}</td>
             <td>{{  $employee['phone']  }}</td>
             <td>{{  $employee['email']  }}</td>
-            <td>{{  $employee->role?$employee->role['name']:translate('messages.role_deleted')  }}</td>
-            <td>{{  $employee->zones?$employee->zones->name:translate('messages.all')  }}</td>
+            <td>{{  $employee->role?$employee->role['name']:translate('messages.Role deleted')  }}</td>
+            <td>{{  $employee->zones?$employee->zones->name:translate('All')  }}</td>
             <td>
                 {{date('Y-m-d '.config('timeformat'),strtotime($employee->created_at))}}
             </td>

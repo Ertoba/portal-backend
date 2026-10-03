@@ -25,7 +25,7 @@
 
 return [
 
-    'version' => 'auto',
+    'version' => 'v2',
 
     'v2_modules' => [
         'grocery',
@@ -35,6 +35,7 @@ return [
         'parcel',
         'rental',
         'ride-share',
+        'service',
         'users',
         'transactions',
         'dispatch',

@@ -2,14 +2,14 @@
 
 namespace App\Models;
 
-use App\Traits\ReportFilter;
+use App\Traits\Report\ReportFilterTrait;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class OrderDetail extends Model
 {
-    use HasFactory , ReportFilter;
+    use HasFactory, ReportFilterTrait;
 
     protected $casts = [
         'price' => 'float',

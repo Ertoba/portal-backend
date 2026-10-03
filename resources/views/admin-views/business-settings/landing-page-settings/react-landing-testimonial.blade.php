@@ -1,22 +1,25 @@
 @extends('layouts.admin.app')
 
-@section('title', translate('messages.react_landing_page'))
+@section('title', translate('React landing page'))
 
 @section('content')
     <div class="content container-fluid">
         <div class="page-header pb-0">
             <div class="d-flex flex-wrap justify-content-between">
-                <h1 class="page-header-title">
-                <span class="page-header-icon">
-                    <img src="{{asset('public/assets/admin/img/landing.png')}}" class="w--20" alt="">
-                </span>
-                    <span>
-                    {{ translate('messages.react_landing_page') }}
-                </span>
-                </h1>
+                <div>
+                    <h1 class="page-header-title">
+                    <span class="page-header-icon">
+                        <img src="{{asset('public/assets/admin/img/outline/landing.svg')}}" class="w--26" alt="">
+                    </span>
+                        <span>
+                        {{ translate('React landing page') }}
+                    </span>
+                    </h1>
+                    <p class="page-header-desc">{{ translate('Customer quotes shown on the react landing page, and the order they rotate in.') }}</p>
+                </div>
                 <div class="text--primary-2 py-1 d-flex flex-wrap align-items-center" type="button" data-toggle="modal"
                      data-target="#how-it-works">
-                    <strong class="mr-2">{{translate('See_how_it_works!')}}</strong>
+                    <strong class="mr-2">{{translate('See how it works')}}</strong>
                     <div>
                         <i class="tio-info-outined"></i>
                     </div>
@@ -33,7 +36,7 @@
                 <div class="">
                     <h3 class="mb-1">{{ translate('Testimonial Section') }}</h3>
                     <p class="mb-0 gray-dark fs-12">
-                        {{ translate('See how your Testimonial Section will look to customers.') }}
+                        {{ translate('See how this section will look to customers.') }}
                     </p>
                 </div>
                 <div class="max-w-300px ml-sm-auto">
@@ -47,9 +50,7 @@
         @php($testimonial_title = \App\Models\DataSetting::withoutGlobalScope('translate')->where('type', 'react_landing_page')->where('key', 'testimonial_title')->first())
         @php($testimonial_sub_title = \App\Models\DataSetting::withoutGlobalScope('translate')->where('type', 'react_landing_page')->where('key', 'testimonial_sub_title')->first())
         @php($testimonial_button_title = \App\Models\DataSetting::withoutGlobalScope('translate')->where('type', 'react_landing_page')->where('key', 'testimonial_button_title')->first())
-        @php($language = \App\Models\BusinessSetting::where('key', 'language')->first())
-        @php($language = $language->value ?? null)
-        @php($defaultLang = str_replace('_', '-', app()->getLocale()))
+        @php($language = \App\CentralLogics\Helpers::get_business_settings('language', false) ?? null)
         @php($testimonial_section_status = \App\Models\DataSetting::where('type', 'react_landing_page')->where('key', "testimonial_section_status")->first())
         <div class="card py-3 px-xxl-4 px-3 mb-15 mt-4">
             <div class="row g-3 align-items-center justify-content-between">
@@ -57,7 +58,7 @@
                     <div class="">
                         <h3 class="mb-1">{{ translate('Show Testimonial Section') }}</h3>
                         <p class="mb-0 gray-dark fs-12">
-                            {{ translate('If you turn of the availability status, this section will not show in the website') }}
+                            {{ translate('If you turn off the availability status, this section will not show on the website') }}
                         </p>
                     </div>
                 </div>
@@ -73,10 +74,10 @@
                             <input type="checkbox" data-id="CheckboxStatus" data-type="status"
                                    data-image-on="{{ asset('/public/assets/admin/img/status-ons.png') }}"
                                    data-image-off="{{ asset('/public/assets/admin/img/off-danger.png') }}"
-                                   data-title-on="{{ translate('Do you want turn on this section ?') }}"
-                                   data-title-off="{{ translate('Do you want to turn off this section ?') }}"
-                                   data-text-on="<p>{{ translate('If you turn on this section will be show in react landing page.') }}"
-                                   data-text-off="<p>{{ translate('If you turn off this section will not be show in react landing page.') }}</p>"
+                                   data-title-on="{{ translate('Do you want to turn on this section?') }}"
+                                   data-title-off="{{ translate('Do you want to turn off this section?') }}"
+                                   data-text-on="<p>{{ translate('If you turn this on, the section will be shown on the React landing page.') }}"
+                                   data-text-off="<p>{{ translate('If you turn this off, the section will not be shown on the React landing page.') }}</p>"
                                    class="toggle-switch-input  status dynamic-checkbox" id="CheckboxStatus"
                                 {{ $testimonial_section_status?->value ? 'checked' : '' }}>
                             <span class="toggle-switch-label text">
@@ -105,7 +106,7 @@
                                     <ul class="nav nav-tabs mb-4 border-bottom">
                                         <li class="nav-item">
                                             <a class="nav-link lang_link active" href="#"
-                                               id="default-link">{{translate('messages.default')}}</a>
+                                               id="default-link">{{translate('Default')}}</a>
                                         </li>
                                         @foreach (json_decode($language) as $lang)
                                             <li class="nav-item">
@@ -119,10 +120,10 @@
                                     <div class="row g-1 lang_form" id="default-form">
                                         <div class="col-sm-12">
                                             <label for="testimonial_title" class="form-label">{{translate('Title')}}
-                                                ({{ translate('messages.default') }})<span class="form-label-secondary"
+                                                ({{ translate('Default') }})<span class="form-label-secondary"
                                                                                            data-toggle="tooltip"
                                                                                            data-placement="right"
-                                                                                           data-original-title="{{ translate('Write_the_title_within_50_characters') }}">
+                                                                                           data-original-title="{{ translate('Character limit') }}: 50">
                                                 <i class="tio-info color-A7A7A7"></i>
                                             </span>
                                                 <span class="form-label-secondary text-danger"
@@ -133,16 +134,16 @@
                                                    name="testimonial_title[]"
                                                    class="form-control"
                                                    value="{{$testimonial_title?->getRawOriginal('value') ?? ''}}"
-                                                   placeholder="{{translate('messages.title_here...')}}" required>
+                                                   placeholder="{{translate('Enter title')}}" required>
                                             <span class="text-right text-counting color-A7A7A7 d-block mt-1">0/50</span>
                                         </div>
                                         <div class="col-sm-12">
                                             <label for="testimonial_sub_title"
-                                                   class="form-label">{{translate('SubTitle')}}
-                                                ({{ translate('messages.default') }})<span class="form-label-secondary"
+                                                   class="form-label">{{translate('Subtitle')}}
+                                                ({{ translate('Default') }})<span class="form-label-secondary"
                                                                                            data-toggle="tooltip"
                                                                                            data-placement="right"
-                                                                                           data-original-title="{{ translate('Write_the_subtitle_within_20_characters') }}">
+                                                                                           data-original-title="{{ translate('Character limit') }}: 20">
                                                 <i class="tio-info color-A7A7A7"></i>
                                             </span>
                                                 <span class="form-label-secondary text-danger"
@@ -152,17 +153,17 @@
                                             <input id="testimonial_sub_title" type="text" maxlength="200"
                                                    name="testimonial_sub_title[]" class="form-control"
                                                    value="{{$testimonial_sub_title?->getRawOriginal('value') ?? ''}}"
-                                                   placeholder="{{translate('messages.title_here...')}}" required>
+                                                   placeholder="{{translate('Enter title')}}" required>
                                             <span
                                                 class="text-right text-counting color-A7A7A7 d-block mt-1">0/200</span>
                                         </div>
                                         <div class="col-sm-12">
                                             <label for="testimonial_button_title"
-                                                   class="form-label">{{translate('Button Name')}}
-                                                ({{ translate('messages.default') }})<span class="form-label-secondary"
+                                                   class="form-label">{{translate('Button name')}}
+                                                ({{ translate('Default') }})<span class="form-label-secondary"
                                                                                            data-toggle="tooltip"
                                                                                            data-placement="right"
-                                                                                           data-original-title="{{ translate('Write_the_button_name_within_20_characters') }}">
+                                                                                           data-original-title="{{ translate('Character limit') }}: 20">
                                                 <i class="tio-info color-A7A7A7"></i>
                                             </span>
                                                 <span class="form-label-secondary text-danger"
@@ -172,7 +173,7 @@
                                             <input id="testimonial_button_title" type="text" maxlength="20"
                                                    name="testimonial_button_title[]" class="form-control"
                                                    value="{{$testimonial_button_title?->getRawOriginal('value') ?? ''}}"
-                                                   placeholder="{{translate('messages.Start Selling...')}}" required>
+                                                   placeholder="{{ translate('Ex') }}: Start selling" required>
                                             <span class="text-right text-counting color-A7A7A7 d-block mt-1">0/20</span>
                                         </div>
                                     </div>
@@ -214,45 +215,45 @@
                                                     ({{strtoupper($lang)}})<span class="form-label-secondary"
                                                                                  data-toggle="tooltip"
                                                                                  data-placement="right"
-                                                                                 data-original-title="{{ translate('Write_the_title_within_50_characters') }}">
+                                                                                 data-original-title="{{ translate('Character limit') }}: 50">
                                                                         <i class="tio-info color-A7A7A7"></i>
                                                                     </span></label>
                                                 <input type="text" id="testimonial_title{{$lang}}" maxlength="50"
                                                        name="testimonial_title[]" class="form-control"
                                                        value="{{ $testimonial_title_translate[$lang]['value'] ?? '' }}"
-                                                       placeholder="{{translate('messages.title_here...')}}">
+                                                       placeholder="{{translate('Enter title')}}">
                                                 <span
                                                     class="text-right text-counting color-A7A7A7 d-block mt-1">0/50</span>
                                             </div>
                                             <div class="col-sm-12">
                                                 <label for="testimonial_sub_title"
-                                                       class="form-label">{{translate('SubTitle')}}
-                                                    ({{ translate('messages.default') }})<span
+                                                       class="form-label">{{translate('Subtitle')}}
+                                                    ({{ translate('Default') }})<span
                                                         class="form-label-secondary"
                                                         data-toggle="tooltip" data-placement="right"
-                                                        data-original-title="{{ translate('Write_the_subtitle_within_20_characters') }}">
+                                                        data-original-title="{{ translate('Character limit') }}: 20">
                                                                         <i class="tio-info color-A7A7A7"></i>
                                                                     </span></label>
                                                 <input id="testimonial_sub_title" type="text" maxlength="200"
                                                        name="testimonial_sub_title[]" class="form-control"
                                                        value="{{ $testimonial_sub_title_translate[$lang]['value'] ?? '' }}"
-                                                       placeholder="{{translate('messages.title_here...')}}">
+                                                       placeholder="{{translate('Enter title')}}">
                                                 <span
                                                     class="text-right text-counting color-A7A7A7 d-block mt-1">0/200</span>
                                             </div>
                                             <div class="col-sm-12">
                                                 <label for="testimonial_button_title"
-                                                       class="form-label">{{translate('Button Name')}}
-                                                    ({{ translate('messages.default') }})<span
+                                                       class="form-label">{{translate('Button name')}}
+                                                    ({{ translate('Default') }})<span
                                                         class="form-label-secondary"
                                                         data-toggle="tooltip" data-placement="right"
-                                                        data-original-title="{{ translate('Write_the_button_name_within_20_characters') }}">
+                                                        data-original-title="{{ translate('Character limit') }}: 20">
                                                                         <i class="tio-info color-A7A7A7"></i>
                                                                     </span></label>
                                                 <input id="testimonial_button_title" type="text" maxlength="20"
                                                        name="testimonial_button_title[]" class="form-control"
                                                        value="{{ $testimonial_button_title_translate[$lang]['value'] ?? '' }}"
-                                                       placeholder="{{translate('messages.Start Selling...')}}">
+                                                       placeholder="{{ translate('Ex') }}: Start selling">
                                                 <span
                                                     class="text-right text-counting color-A7A7A7 d-block mt-1">0/20</span>
                                             </div>
@@ -266,37 +267,37 @@
                                                    class="form-label">{{translate('Title')}}</label>
                                             <input id="testimonial_title" type="text" name="testimonial_title[]"
                                                    value="{{ $testimonial_title->getRawOriginal('value') ?? '' }}"
-                                            {{translate('messages.title_here...')}}">
+                                            {{translate('Enter title')}}">
                                         </div>
                                         <div class="col-sm-12">
                                             <label for="testimonial_subtitle"
-                                                   class="form-label">{{translate('SubTitle')}}
-                                                ({{ translate('messages.default') }})<span class="form-label-secondary"
+                                                   class="form-label">{{translate('Subtitle')}}
+                                                ({{ translate('Default') }})<span class="form-label-secondary"
                                                                                            data-toggle="tooltip"
                                                                                            data-placement="right"
-                                                                                           data-original-title="{{ translate('Write_the_subtitle_within_20_characters') }}">
+                                                                                           data-original-title="{{ translate('Character limit') }}: 20">
                                                 <i class="tio-info color-A7A7A7"></i>
                                             </span></label>
                                             <input id="testimonial_sub_title" type="text" maxlength="200"
                                                    name="testimonial_sub_title[]" class="form-control"
                                                    value="{{$testimonial_sub_title?->getRawOriginal('value') ?? ''}}"
-                                                   placeholder="{{translate('messages.title_here...')}}">
+                                                   placeholder="{{translate('Enter title')}}">
                                             <span
                                                 class="text-right text-counting color-A7A7A7 d-block mt-1">0/200</span>
                                         </div>
                                         <div class="col-sm-12">
                                             <label for="testimonial_button_title"
-                                                   class="form-label">{{translate('Button Name')}}
-                                                ({{ translate('messages.default') }})<span class="form-label-secondary"
+                                                   class="form-label">{{translate('Button name')}}
+                                                ({{ translate('Default') }})<span class="form-label-secondary"
                                                                                            data-toggle="tooltip"
                                                                                            data-placement="right"
-                                                                                           data-original-title="{{ translate('Write_the_button_name_within_20_characters') }}">
+                                                                                           data-original-title="{{ translate('Character limit') }}: 20">
                                                 <i class="tio-info color-A7A7A7"></i>
                                             </span></label>
                                             <input id="testimonial_button_title" type="text" maxlength="20"
                                                    name="testimonial_button_title[]" class="form-control"
                                                    value="{{$testimonial_button_title?->getRawOriginal('value') ?? ''}}"
-                                                   placeholder="{{translate('messages.Start Selling...')}}">
+                                                   placeholder="{{ translate('Ex') }}: Start selling">
                                             <span class="text-right text-counting color-A7A7A7 d-block mt-1">0/20</span>
                                         </div>
                                     </div>
@@ -304,8 +305,8 @@
                                 @endif
                             </div>
                             <div class="btn--container justify-content-end mt-20">
-                                <button type="reset" class="btn btn--reset mb-2">{{translate('Reset')}}</button>
-                                <button type="submit" class="btn btn--primary mb-2">{{translate('Save')}}</button>
+                                <button type="reset" class="btn btn--reset mb-2"><i class="tio-refresh"></i> {{translate('Reset')}}</button>
+                                <button type="submit" class="btn btn--primary mb-2"><i class="tio-save"></i> {{translate('Save')}}</button>
                             </div>
                         </div>
                     </div>
@@ -333,7 +334,7 @@
                                                 <ul class="nav nav-tabs mb-4 border-bottom">
                                                     <li class="nav-item">
                                                         <a class="nav-link lang_link active" href="#"
-                                                           id="testimonial-default-link">{{translate('messages.default')}}</a>
+                                                           id="testimonial-default-link">{{translate('Default')}}</a>
                                                     </li>
                                                     @foreach (json_decode($language) as $lang)
                                                         <li class="nav-item">
@@ -348,10 +349,10 @@
                                                     <div class="col-md-6">
                                                         <label for="name"
                                                                class="form-label">{{translate('Reviewer Name')}}
-                                                            ({{ translate('messages.default') }})
+                                                            ({{ translate('Default') }})
                                                             <span class="form-label-secondary" data-toggle="tooltip"
                                                                   data-placement="right"
-                                                                  data-original-title="{{ translate('Content...') }}">
+                                                                  data-original-title="{{ translate('Enter content') }}">
                                                 <i class="tio-info color-A7A7A7"></i>
                                             </span>
                                                             <span class="form-label-secondary text-danger"
@@ -360,31 +361,31 @@
                                                     </span>
                                                         </label>
                                                         <input id="name" type="text" name="name[]" class="form-control"
-                                                               placeholder="{{translate('Ex:  John Doe')}}" required>
+                                                               placeholder="{{ translate('Ex') }}: John Doe" required>
                                                     </div>
                                                     <div class="col-md-6">
                                                         <label for="designation"
                                                                class="form-label">{{translate('Designation')}}
-                                                            ({{ translate('messages.default') }})
+                                                            ({{ translate('Default') }})
                                                             <span class="form-label-secondary" data-toggle="tooltip"
                                                                   data-placement="right"
-                                                                  data-original-title="{{ translate('Content...') }}">
+                                                                  data-original-title="{{ translate('Enter content') }}">
                                                 <i class="tio-info color-A7A7A7"></i>
                                             </span>
 
                                                         </label>
                                                         <input id="designation" type="text" name="designation[]"
                                                                class="form-control"
-                                                               placeholder="{{translate('Ex:  CTO')}}">
+                                                               placeholder="{{translate('Ex') . ':  CTO'}}">
                                                     </div>
                                                     <div class="col-md-12">
                                                         <label for="review"
                                                                class="form-label">{{translate('messages.review')}}
-                                                            ({{ translate('messages.default') }})
+                                                            ({{ translate('Default') }})
                                                             <span
                                                                 class="form-label-secondary" data-toggle="tooltip"
                                                                 data-placement="right"
-                                                                data-original-title="{{ translate('Write_the_title_within_140_characters') }}">
+                                                                data-original-title="{{ translate('Character limit') }}: 140">
                                                 <i class="tio-info color-A7A7A7"></i>
                                             </span>
                                                             <span class="form-label-secondary text-danger"
@@ -409,13 +410,13 @@
                                                                 ({{strtoupper($lang)}})
                                                                 <span class="form-label-secondary" data-toggle="tooltip"
                                                                       data-placement="right"
-                                                                      data-original-title="{{ translate('Content...') }}">
+                                                                      data-original-title="{{ translate('Enter content') }}">
                                                     <i class="tio-info color-A7A7A7"></i>
                                                 </span>
                                                             </label>
                                                             <input id="name{{$lang}}" type="text" name="name[]"
                                                                    class="form-control"
-                                                                   placeholder="{{translate('Ex:  John Doe')}}">
+                                                                   placeholder="{{ translate('Ex') }}: John Doe">
                                                         </div>
                                                         <div class="col-md-6">
                                                             <label for="designation{{$lang}}"
@@ -423,14 +424,14 @@
                                                                 ({{strtoupper($lang)}})
                                                                 <span class="form-label-secondary" data-toggle="tooltip"
                                                                       data-placement="right"
-                                                                      data-original-title="{{ translate('Content...') }}">
+                                                                      data-original-title="{{ translate('Enter content') }}">
                                                     <i class="tio-info color-A7A7A7"></i>
                                                 </span>
                                                             </label>
                                                             <input id="designation{{$lang}}" type="text"
                                                                    name="designation[]"
                                                                    class="form-control"
-                                                                   placeholder="{{translate('Ex:  CTO')}}">
+                                                                   placeholder="{{translate('Ex') . ':  CTO'}}">
                                                         </div>
                                                         <div class="col-md-12">
                                                             <label for="review{{$lang}}"
@@ -439,7 +440,7 @@
                                                                 <span
                                                                     class="form-label-secondary" data-toggle="tooltip"
                                                                     data-placement="right"
-                                                                    data-original-title="{{ translate('Write_the_title_within_140_characters') }}">
+                                                                    data-original-title="{{ translate('Character limit') }}: 140">
                                                     <i class="tio-info color-A7A7A7"></i>
                                                 </span></label>
                                                             <textarea id="review{{$lang}}" name="review[]"
@@ -459,32 +460,32 @@
                                                                class="form-label">{{translate('Reviewer Name')}}
                                                             <span class="form-label-secondary" data-toggle="tooltip"
                                                                   data-placement="right"
-                                                                  data-original-title="{{ translate('Content...') }}">
+                                                                  data-original-title="{{ translate('Enter content') }}">
                                                 <i class="tio-info color-A7A7A7"></i>
                                             </span>
                                                         </label>
                                                         <input id="name" type="text" name="name[]" class="form-control"
-                                                               placeholder="{{translate('Ex:  John Doe')}}">
+                                                               placeholder="{{ translate('Ex') }}: John Doe">
                                                     </div>
                                                     <div class="col-md-6">
                                                         <label for="designation"
                                                                class="form-label">{{translate('Designation')}}
                                                             <span class="form-label-secondary" data-toggle="tooltip"
                                                                   data-placement="right"
-                                                                  data-original-title="{{ translate('Content...') }}">
+                                                                  data-original-title="{{ translate('Enter content') }}">
                                                 <i class="tio-info color-A7A7A7"></i>
                                             </span>
                                                         </label>
                                                         <input id="designation" type="text" name="designation[]"
                                                                class="form-control"
-                                                               placeholder="{{translate('Ex:  CTO')}}">
+                                                               placeholder="{{translate('Ex') . ':  CTO'}}">
                                                     </div>
                                                     <div class="col-md-12">
                                                         <label for="review"
                                                                class="form-label">{{translate('messages.review')}}<span
                                                                 class="form-label-secondary" data-toggle="tooltip"
                                                                 data-placement="right"
-                                                                data-original-title="{{ translate('Write_the_title_within_140_characters') }}">
+                                                                data-original-title="{{ translate('Character limit') }}: 140">
                                                 <i class="tio-info color-A7A7A7"></i>
                                             </span></label>
                                                         <textarea id="review" name="review[]" maxlength="200"
@@ -545,16 +546,16 @@
                                                     </div>
                                                 </div>
                                                 <p class="fs-10 text-center mb-0 mt-lg-4 mt-3">
-                                                    {{ translate('JPG, JPEG, PNG size : Max 2 MB')}} <span
-                                                        class="font-medium text-title">{{ translate('(2:1)')}}</span>
+                                                    {{ 'JPG, JPEG, PNG' . ' image, max ' . 2 . ' MB'}} <span
+                                                        class="font-medium text-title">(2:1)</span>
                                                 </p>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
                                 <div class="btn--container justify-content-end mt-20">
-                                    <button type="reset" class="btn btn--reset mb-2">{{translate('Reset')}}</button>
-                                    <button type="submit" class="btn btn--primary mb-2">{{translate('Add')}}</button>
+                                    <button type="reset" class="btn btn--reset mb-2"><i class="tio-refresh"></i> {{translate('Reset')}}</button>
+                                    <button type="submit" class="btn btn--primary mb-2"><i class="tio-add-circle"></i> {{translate('Add')}}</button>
                                 </div>
                             </div>
                         </form>
@@ -562,10 +563,14 @@
                         <div class="card">
                             <div class="card-header py-2 border-0">
                                 <div class="d-flex w-100 flex-wrap gap-2 align-items-center justify-content-between">
-                                    <h4 class="text-black m-0">Testimonial List</h4>
                                     <div class="search--button-wrapper flex-grow-0">
+                                        @include('partials._table-head', [
+                                            'title'    => translate('messages.Testimonial List'),
+                                            'subtitle' => translate('messages.Customer testimonials shown on the React landing page.'),
+                                            'count'    => null,
+                                        ])
+
                                         <form class="search-form min--270">
-                                            <!-- Search -->
                                             <div class="input-group input--group">
                                                 <input id="" type="search" name="search" value="{{request('search')}}" class="form-control"
                                                        placeholder="Search Keywords" aria-label="Search here"
@@ -573,7 +578,6 @@
                                                 <button type="submit" class="btn btn--secondary"><i
                                                         class="tio-search"></i></button>
                                             </div>
-                                            <!-- End Search -->
                                         </form>
                                     </div>
                                 </div>
@@ -581,7 +585,7 @@
                             @php($search = request('search', ''))
                             @php($key = explode(' ', $search))
                             @php(
-                                    $reviews = App\Models\ReactTestimonial::latest()
+                                    $reviews = App\Models\ReactTestimonial::withStorage()->latest()
                                     ->when($search, function($query) use($key) {
                                         $query->where(function($q) use($key) {
                                             foreach($key as $value) {
@@ -592,7 +596,6 @@
                                     })
                                     ->paginate(config('default_pagination')))
                             <div class="card-body p-0">
-                                <!-- Table -->
                                 <div class="table-responsive datatable-custom">
                                     <table
                                         class="table table-borderless table-thead-borderless table-align-middle table-nowrap card-table m-0">
@@ -640,10 +643,10 @@
                                                                data-type="status"
                                                                data-image-on="{{ asset('/public/assets/admin/img/modal/this-criteria-on.png') }}"
                                                                data-image-off="{{ asset('/public/assets/admin/img/modal/this-criteria-off.png') }}"
-                                                               data-title-on="{{ translate('by_turning_on_this_review') }} <strong>{{ translate('this_review') }}</strong>"
-                                                               data-title-off="{{ translate('by_turning_off_this_review') }} <strong>{{ translate('this_review') }}</strong>"
-                                                               data-text-on="<p>{{ translate('this_section_will_be_enabled_you_can_see_this_section_on_your_landing_page') }}</p>"
-                                                               data-text-off="<p>{{ translate('this_section_will_be_disabled_you_can_enable_it_in_the_settings') }}</p>"
+                                                               data-title-on="{{ translate('By turning on this review') }} <strong>{{ translate('This review') }}</strong>"
+                                                               data-title-off="{{ translate('By turning off this review') }} <strong>{{ translate('This review') }}</strong>"
+                                                               data-text-on="<p>{{ translate('This section will be enabled. You can see this section on your landing page.') }}</p>"
+                                                               data-text-off="<p>{{ translate('This section will be disabled. You can enable it in the settings') }}</p>"
                                                                class="status toggle-switch-input dynamic-checkbox"
                                                                id="status-{{$review->id}}"
                                                             {{$review->status ? 'checked' : ''}}>
@@ -659,14 +662,14 @@
 
                                                 <td>
                                                     <div class="btn--container justify-content-center">
-                                                        <a class="btn action-btn btn-outline-theme-light"
+                                                        <a class="btn action-btn action-btn--edit"
                                                            href="{{route('admin.business-settings.review-react-edit', [$review['id']])}}">
                                                             <i class="tio-edit"></i>
                                                         </a>
-                                                        <a class="btn action-btn btn--danger btn-outline-danger form-alert"
+                                                        <a class="btn action-btn action-btn--delete form-alert"
                                                            href="javascript:" data-id="review-{{$review['id']}}"
-                                                           data-message="{{ translate('Want to delete this review ?') }}"
-                                                           title="{{translate('messages.delete_review')}}"><i
+                                                           data-message="{{ translate('Want to delete this review?') }}"
+                                                           title="{{translate('messages.Delete review')}}"><i
                                                                 class="tio-delete-outlined"></i>
                                                         </a>
                                                         <form
@@ -685,7 +688,7 @@
                                             <img src="{{asset('/public/assets/admin/svg/illustrations/sorry.svg')}}"
                                                  alt="public">
                                             <h5>
-                                                {{translate('no_data_found')}}
+                                                {{translate('No data found')}}
                                             </h5>
                                         </div>
                                     @endif
@@ -697,7 +700,6 @@
                                         </div>
                                     </div>
                                 </div>
-                                <!-- End Table -->
                             </div>
                         </div>
                     </div>
@@ -707,7 +709,6 @@
         </div>
 
 
-        <!-- Section View Offcanvas here -->
         <div id="testimonialAdd_section"
              class="custom-offcanvas offcanvas-750 offcanvas-xxl-1120 d-flex flex-column justify-content-between">
             <form action="{{ route('taxvat.store') }}" method="post">
@@ -745,7 +746,7 @@
                                         <div class="col-xl-8">
                                             <div class="common-carousel-wrapper mx-xl-4 position-relative">
                                                 <div class="testimonial-preview-slide owl-theme owl-carousel">
-                                                    @php($reviews = App\Models\ReactTestimonial::latest()->take(10)->get())
+                                                    @php($reviews = \App\CentralLogics\Helpers::cached_list(\App\Models\ReactTestimonial::class))
                                                     @if(count($reviews)>0)
                                                         @foreach($reviews as $review)
                                                             <div class="items__">
@@ -777,7 +778,7 @@
                                                                 <img
                                                                     src="{{ asset('/public/assets/admin/img/icons/testimonial-quote.png') }}"
                                                                     alt="" class="mb-20 min-w-40 mx-auto">
-                                                                <p class="fs-14 mb-3">{{ translate('messages.Ordering through this platform has been a delight — quick delivery, accurate orders, and great support every time.') }}</p>
+                                                                <p class="fs-14 mb-3">Ordering through this platform has been a delight — quick delivery, accurate orders, and great support every time.</p>
                                                                 <div class="mx-auto w-60px border-bottom mb-3"></div>
                                                                 <div class="specialist text-center">
                                                                     <img wdith="42" height="42"
@@ -785,9 +786,9 @@
                                                                          alt=""
                                                                          class="rounded-pill w-42 mx-auto min-w-42 mb-2">
                                                                     <h2 class="mb-1 fs-14">
-                                                                        {{ translate('messages.Alamin Hasan') }}</h2>
+                                                                        Alamin Hasan</h2>
                                                                     <p class="mb-0 color-22232466 fs-12">
-                                                                        {{ translate('messages.Food Specialist') }}</p>
+                                                                        Food Specialist</p>
                                                                 </div>
                                                             </div>
                                                         </div>
@@ -797,7 +798,7 @@
                                                                 <img
                                                                     src="{{ asset('/public/assets/admin/img/icons/testimonial-quote.png') }}"
                                                                     alt="" class="mb-20 min-w-40 mx-auto">
-                                                                <p class="fs-14 mb-3">{{ translate('messages.A smooth experience from browsing to checkout. The variety of stores and the fast delivery keep me coming back.') }}</p>
+                                                                <p class="fs-14 mb-3">A smooth experience from browsing to checkout. The variety of stores and the fast delivery keep me coming back.</p>
                                                                 <div class="mx-auto w-60px border-bottom mb-3"></div>
                                                                 <div class="specialist text-center">
                                                                     <img wdith="42" height="42"
@@ -805,9 +806,9 @@
                                                                          alt=""
                                                                          class="rounded-pill w-42 mx-auto min-w-42 mb-2">
                                                                     <h2 class="mb-1 fs-14">
-                                                                        {{ translate('messages.Alamin Hasan') }}</h2>
+                                                                        Alamin Hasan</h2>
                                                                     <p class="mb-0 color-22232466 fs-12">
-                                                                        {{ translate('messages.Food Specialist') }}</p>
+                                                                        Food Specialist</p>
                                                                 </div>
                                                             </div>
                                                         </div>
@@ -817,7 +818,7 @@
                                                                 <img
                                                                     src="{{ asset('/public/assets/admin/img/icons/testimonial-quote.png') }}"
                                                                     alt="" class="mb-20 min-w-40 mx-auto">
-                                                                <p class="fs-14 mb-3">{{ translate('messages.I love how easy it is to find what I need, place an order, and track it in real time. Highly recommended.') }}</p>
+                                                                <p class="fs-14 mb-3">I love how easy it is to find what I need, place an order, and track it in real time. Highly recommended.</p>
                                                                 <div class="mx-auto w-60px border-bottom mb-3"></div>
                                                                 <div class="specialist text-center">
                                                                     <img wdith="42" height="42"
@@ -825,9 +826,9 @@
                                                                          alt=""
                                                                          class="rounded-pill w-42 mx-auto min-w-42 mb-2">
                                                                     <h2 class="mb-1 fs-14">
-                                                                        {{ translate('messages.Alamin Hasan') }}</h2>
+                                                                        Alamin Hasan</h2>
                                                                     <p class="mb-0 color-22232466 fs-12">
-                                                                        {{ translate('messages.Food Specialist') }}</p>
+                                                                        Food Specialist</p>
                                                                 </div>
                                                             </div>
                                                         </div>
@@ -852,8 +853,6 @@
             </form>
         </div>
         <div id="offcanvasOverlay" class="offcanvas-overlay"></div>
-        <!-- Section View Offcanvas end -->
 
-        <!-- How it Works -->
     @include('admin-views.business-settings.landing-page-settings.partial.how-it-work-react')
 @endsection

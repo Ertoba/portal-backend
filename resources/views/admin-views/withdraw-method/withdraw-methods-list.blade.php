@@ -1,197 +1,233 @@
 @extends('layouts.admin.app')
 
-@section('title', translate('messages.withdraw_method'))
+@section('title', translate('messages.Withdraw method'))
 
 @push('css_or_js')
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <link rel="stylesheet" href="{{ asset('public/assets/admin/css/view-pages/cash.css') }}">
 @endpush
 
 @section('content')
-    <div class="content container-fluid">
-        <!-- Page Title -->
-        <div class="mb-3">
-            <div class="page-title-wrap d-flex justify-content-between flex-wrap align-items-center gap-3 mb-3">
-                <h2 class="h1 mb-0 text-capitalize d-flex align-items-center gap-2">
-                    <img width="20" src="{{asset('/public/assets/admin/img/withdraw-icon.png')}}" alt="">
-                    {{ translate('messages.withdraw_method_list')}}
-                </h2>
+
+@php
+    /* Form control types, matching the options the edit screen offers. Mapped from
+       literal keys so 'string' does not become a translation key of its own. */
+    $input_type_labels = [
+        'string' => translate('Text'),
+        'number' => translate('Number'),
+        'date' => translate('Date'),
+        'email' => translate('Email'),
+        'phone' => translate('Phone'),
+    ];
+
+    $request_count = function ($n) {
+        return translate('Requests') . ': ' . $n;
+    };
+
+    $payee_count = function ($n) {
+        return translate('messages.Payees') . ': ' . $n;
+    };
+
+    $tiles = [
+        [
+            'icon' => 'tio-credit-card',
+            'value' => $summary['total'],
+            'label' => translate('messages.Methods set up'),
+        ],
+        [
+            'icon' => 'tio-checkmark-circle-outlined', 'tone' => 'in',
+            'value' => $summary['active'],
+            'label' => translate('messages.Offered to payees'),
+        ],
+        [
+            'icon' => 'tio-pause-circle-outlined', 'tone' => 'off',
+            'value' => $summary['inactive'],
+            'label' => translate('messages.Turned off'),
+        ],
+        [
+            'icon' => 'tio-star', 'tone' => 'info',
+            'value' => $summary['default'] ?: translate('messages.None'),
+            'label' => translate('messages.Default method'),
+        ],
+    ];
+@endphp
+
+<div class="content container-fluid csh">
+    <div class="page-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <div>
+            <h1 class="page-header-title">
+                <span class="page-header-icon">
+                    <img src="{{ asset('public/assets/admin/img/outline/wallet.svg') }}" class="w--26" alt="">
+                </span>
+                <span>
+                    {{ translate('messages.withdraw Method List') }}
+                    <span class="badge badge-soft-dark ml-2" id="itemCount">{{ $withdrawal_methods->total() }}</span>
+                </span>
+            </h1>
+            <p class="page-header-desc">{{ translate('The bank and mobile-money details stores and deliverymen can be paid through.') }}</p>
+        </div>
+        <div class="page-header-actions">
+            <a href="{{ route('admin.transactions.withdraw-method.create') }}" class="btn btn--primary">
+                <i class="tio-add-circle"></i> {{ translate('messages.Add new method') }}
+            </a>
+        </div>
+    </div>
+
+    @include('admin-views.cash.partials._summary-strip')
+
+    <div class="card">
+        <div class="card-header border-0 py-2">
+            <div class="search--button-wrapper">
+                @include('partials._table-head', [
+                    'subtitle' => translate('Ways a vendor, deliveryman or rider can be paid. each method declares the account details they must fill in.'),
+                    'count' => null,
+                ])
+
+                <form class="search-form theme-style">
+                    <div class="input-group input--group">
+                        <input id="datatableSearch" name="search" type="search" class="form-control h--40px"
+                               placeholder="{{ translate('Ex') }}: {{ translate('messages.method Name') }}"
+                               value="{{ request('search') }}" aria-label="{{ translate('Search') }}">
+                        <button type="submit" class="btn btn--secondary h--40px"><i class="tio-search"></i></button>
+                    </div>
+                </form>
+
+                @if(request()->filled('search'))
+                    <a href="{{ route('admin.transactions.withdraw-method.list') }}" class="btn btn--reset ml-2">
+                        <i class="tio-refresh"></i> {{ translate('messages.Reset') }}
+                    </a>
+                @endif
             </div>
         </div>
-        <!-- End Page Title -->
 
-        <div class="row">
-            <div class="col-md-12">
-                <div class="card">
-                    <div class="search--button-wrapper px-4 py-3 d-flex flex-wrap align-items-center justify-content-between">
-                        <span class="fs-16 font-semibold text-title">
-                            {{translate('Methods')}} <span class="badge badge-soft-dark rounded-circle ml-1">{{ $withdrawal_methods->total() }}</span>
-                        </span>
-                        <div class="d-flex align-items-center gap-2 flex-wrap">
-
-                            <form class="search-form theme-style">
-                            <div class="input-group input--group">
-                                <input id="datatableSearch" name="search" type="search" class="form-control h--40px" placeholder="{{translate('Ex:_reference,_Name')}}" value="{{ request()?->search ?? null}}" aria-label="{{translate('messages.search_here')}}">
-                                <button type="submit" class="btn bbtn btn--primary h--40px"><i class="tio-search"></i></button>
-                            </div>
-                        </form>
-
-                        @if(request()->input('search'))
-                            <button type="reset" class="btn btn--primary ml-2 location-reload-to-base" data-url="{{url()->full()}}">{{translate('messages.reset')}}</button>
-                        @endif
-
-
-                            <div class="">
-                                <a href="{{route('admin.transactions.withdraw-method.create')}}" class="btn btn--primary fs-12 h--40px">
-                                    <i class="tio-add"></i>
-                                    {{ translate('messages.add_new_method')}}
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="table-responsive">
-                        <table id="datatable" class="table table-hover table-borderless table-thead-bordered table-nowrap table-align-middle card-table w-100">
-                            <thead class="bg-table-head thead-50 text-capitalize">
-                                <tr>
-                                    <th class="fs-14 text-title font-semibold">{{ translate('messages.SL')}}</th>
-                                    <th class="fs-14 text-title font-semibold">{{ translate('messages.method_name')}}</th>
-                                    <th class="fs-14 text-title font-semibold">{{  translate('messages.method_fields') }}</th>
-                                    <th class="fs-14 text-title font-semibold text-center">{{ translate('messages.active_status')}}</th>
-                                    <th class="fs-14 text-title font-semibold text-center" >{{ translate('messages.default_method')}}</th>
-                                    <th class="text-center fs-14 text-title font-semibold">{{ translate('messages.action')}}</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                            @foreach($withdrawal_methods as $key=>$withdrawal_method)
-                                <tr>
-                                    <td class="p-3 fs-14 text-title">{{$withdrawal_methods->firstitem()+$key}}</td>
-                                    <td class="p-3 fs-14 text-title">{{$withdrawal_method['method_name']}}</td>
-                                    {{--<td>
-                                        <div class="max-text-2-line" style="--line-count: 4">
-                                            @foreach($withdrawal_method['method_fields'] as $key=>$method_field)
-                                                <b>{{ translate('messages.Name')}}:</b> {{ translate($method_field['input_name'])}} <br/>
-                                                <b>{{ translate('messages.Type')}}:</b> {{ translate($method_field['input_type']) }} <br/>
-                                                <b>{{ translate('messages.Placeholder')}}:</b> {{ $method_field['placeholder'] }} <br/>
-                                                {{ $method_field['is_required'] ? translate('messages.Required') :  translate('messages.Optional') }}
-                                                <br/>
-                                                @break
+        <div class="card-body p-0">
+            <div class="table-responsive datatable-custom">
+                <table id="datatable" class="table table-hover table-borderless table-thead-bordered table-nowrap table-align-middle card-table w-100">
+                    <thead class="thead-light">
+                        <tr>
+                            <th>{{ translate('messages.Method ID') }}</th>
+                            <th>{{ translate('messages.method Name') }}</th>
+                            <th>{{ translate('messages.Method fields') }}</th>
+                            <th>{{ translate('messages.In use') }}</th>
+                            <th class="text-center">{{ translate('Active status') }}</th>
+                            <th class="text-center">{{ translate('messages.Default method') }}</th>
+                            <th class="text-center">{{ translate('messages.Action') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($withdrawal_methods as $withdrawal_method)
+                            <tr>
+                                <td><span class="csh-id">#{{ $withdrawal_method->id }}</span></td>
+                                <td>
+                                    <span class="csh-method"><i class="tio-credit-card"></i> {{ $withdrawal_method['method_name'] }}</span>
+                                </td>
+                                <td>
+                                    {{-- One chip per field the payee has to fill in. The old markup
+                                         drew these as inline runs split by hand-built 1px divs. --}}
+                                    @if(filled($withdrawal_method['method_fields']))
+                                        <div class="csh-fields">
+                                            @foreach($withdrawal_method['method_fields'] as $method_field)
+                                                <span class="csh-field">
+                                                    <span class="csh-field__name">{{ $method_field['input_name'] }}</span>
+                                                    <span class="csh-field__type">{{ $input_type_labels[$method_field['input_type']] ?? ucfirst($method_field['input_type']) }}</span>
+                                                    @if(filled($method_field['placeholder']))
+                                                        <span class="csh-field__hint">{{ $method_field['placeholder'] }}</span>
+                                                    @endif
+                                                    @if($method_field['is_required'])
+                                                        <span class="csh-field__req">{{ translate('messages.Required.') }}</span>
+                                                    @endif
+                                                </span>
                                             @endforeach
                                         </div>
-                                        <a href="#" data-id="{{ $withdrawal_method->id }}" class="font-semibold d-flex gap-2 align-items-center text-capitalize mt-1 withdraw-info-show fs-12" >
-                                            {{ translate('messages.see_all')}}
-                                            <i class="tio-arrow-forward"></i>
+                                    @else
+                                        <span class="csh-fields--none">{{ translate('messages.No fields defined') }}</span>
+                                    @endif
+                                </td>
+                                <td>
+                                    @if($withdrawal_method->requests_count || $withdrawal_method->payees_count)
+                                        <span class="csh-usage">
+                                            <span class="csh-usage__line">{{ $request_count($withdrawal_method->requests_count) }}</span>
+                                            <span class="csh-usage__sub">{{ $payee_count($withdrawal_method->payees_count) }}</span>
+                                        </span>
+                                    @else
+                                        <span class="csh-usage__none">{{ translate('messages.Not used yet') }}</span>
+                                    @endif
+                                </td>
+                                <td class="text-center">
+                                    <label class="toggle-switch toggle-switch-sm">
+                                        <input class="toggle-switch-input status featured-status"
+                                               data-id="{{ $withdrawal_method->id }}"
+                                               type="checkbox" {{ $withdrawal_method->is_active ? 'checked' : '' }}
+                                               aria-label="{{ translate('Active status') }}">
+                                        <span class="toggle-switch-label mx-auto">
+                                            <span class="toggle-switch-indicator"></span>
+                                        </span>
+                                    </label>
+                                </td>
+                                <td class="text-center">
+                                    <label class="toggle-switch mx-auto toggle-switch-sm">
+                                        <input type="checkbox" class="default-method toggle-switch-input"
+                                               id="{{ $withdrawal_method->id }}" {{ $withdrawal_method->is_default == 1 ? 'checked' : '' }}
+                                               aria-label="{{ translate('messages.Default method') }}">
+                                        <span class="toggle-switch-label mx-auto">
+                                            <span class="toggle-switch-indicator"></span>
+                                        </span>
+                                    </label>
+                                </td>
+                                <td>
+                                    <div class="btn--container justify-content-center">
+                                        <a href="{{ route('admin.transactions.withdraw-method.edit', [$withdrawal_method->id]) }}"
+                                           class="btn btn-sm action-btn action-btn--edit" title="{{ translate('Edit') }}">
+                                            <i class="tio-edit"></i>
                                         </a>
-                                    </td>--}}
-                                    <td class="p-3">
-                                        <div class="d-flex gap-2 align-items-center  flex-wrap">
-                                            @foreach($withdrawal_method['method_fields'] as $key=>$method_field)
-                                            <div class="d-flex flex-wrap align-items-center __bg-FAFAFA py-1 px-2 rounded fs-12 gap-1">
-                                                    <div class="d-flex align-items-center gap-1 text-title">
-                                                        <b class="color-334257B2 font-regular">{{ translate('messages.Name')}}: </b> <span class="text--semititle">{{ translate($method_field['input_name'])}}</span>
-                                                    </div>
-                                                    <div class="line" style="width: 1px; height: 10px; background-color: #2223241A;"></div>
-                                                    <div class="d-flex align-items-center gap-1 text-title">
-                                                        <b class="color-334257B2 font-regular">{{ translate('messages.Type')}}:</b> <span class="text--semititle">{{ translate($method_field['input_type']) }}</span>
-                                                    </div>
-                                                    <div class="line" style="width: 1px; height: 10px; background-color: #2223241A;"></div>
-                                                    <div class="d-flex align-items-center gap-1 text-title">
-                                                        <b class="color-334257B2 font-regular">{{ translate('messages.Placeholder')}}:</b> <span class="text--semititle">{{ $method_field['placeholder'] }}</span>
-                                                    </div>
-                                                     <div class="line" style="width: 1px; height: 10px; background-color: #2223241A;"></div>
-                                                    <div class="d-flex align-items-center gap-1 text-title">
-                                                        <b class="color-334257B2 font-regular">{{ translate('Is_Required')}}:</b> <span class="text--semititle">{{ $method_field['is_required'] ? translate('Yes') :  translate('No') }}</span>
-                                                    </div>
 
-                                                    <br/>
-
-                                                </div>
-                                                @endforeach
-                                            {{-- <a href="#" data-id="{{ $withdrawal_method->id }}" class="font-semibold d-flex gap-2 align-items-center text-capitalize mt-1 withdraw-info-show fs-12" >
-                                                {{ translate('messages.see_all')}}
-                                                <i class="tio-arrow-forward"></i>
-                                            </a> --}}
-                                        </div>
-                                    </td>
-                                    <td class="p-3 text-center">
-                                        <label class="toggle-switch toggle-switch-sm">
-                                            <input class="toggle-switch-input status featured-status"
-                                                   data-id="{{$withdrawal_method->id}}"
-                                                   type="checkbox" {{$withdrawal_method->is_active?'checked':''}}>
-                                                   <span class="toggle-switch-label mx-auto">
-                                                    <span class="toggle-switch-indicator"></span>
-                                                </span>
-                                        </label>
-                                    </td>
-                                    <td class="p-3 text-center">
-                                        <label class="toggle-switch mx-auto toggle-switch-sm">
-                                            <input type="checkbox" class="default-method toggle-switch-input"
-                                            id="{{$withdrawal_method->id}}" {{$withdrawal_method->is_default == 1?'checked':''}}>
-                                                   <span class="toggle-switch-label mx-auto">
-                                                    <span class="toggle-switch-indicator"></span>
-                                                </span>
-                                        </label>
-                                    </td>
-                                    <td class="p-3">
-                                        <div class="btn--container justify-content-center">
-                                            <a href="{{route('admin.transactions.withdraw-method.edit',[$withdrawal_method->id])}}"
-                                               class="btn action-btn btn-outline-theme-dark">
-                                                <i class="tio-edit"></i>
+                                        @if(!$withdrawal_method->is_default)
+                                            <a class="btn btn-sm action-btn action-btn--delete form-alert" href="javascript:;"
+                                               title="{{ translate('messages.Delete') }}" data-id="delete-{{ $withdrawal_method->id }}"
+                                               data-message="{{ translate('Want to delete this item?') }}">
+                                                <i class="tio-delete-outlined"></i>
                                             </a>
+                                            <form action="{{ route('admin.transactions.withdraw-method.delete', [$withdrawal_method->id]) }}"
+                                                  method="post" id="delete-{{ $withdrawal_method->id }}">
+                                                @csrf @method('delete')
+                                            </form>
+                                        @endif
+                                    </div>
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
 
-                                            @if(!$withdrawal_method->is_default)
-                                                <a class="btn btn-sm btn--danger btn-outline-danger action-btn form-alert" href="javascript:"
-                                                   title="{{ translate('messages.Delete')}}" data-id="delete-{{$withdrawal_method->id}}" data-message="{{ translate('Want to delete this item ?') }}">
-                                                    <i class="tio-delete-outlined"></i>
-                                                </a>
-                                                <form action="{{route('admin.transactions.withdraw-method.delete',[$withdrawal_method->id])}}"
-                                                      method="post" id="delete-{{$withdrawal_method->id}}">
-                                                    @csrf @method('delete')
-                                                </form>
-                                            @endif
-                                        </div>
-                                    </td>
-                                </tr>
-                            @endforeach
-                            </tbody>
-                        </table>
-                        @if(count($withdrawal_methods)==0)
-                            <div class="empty--data">
-                                <img src="{{asset('/public/assets/admin/svg/illustrations/sorry.svg')}}" alt="public">
-                        <h5>
-                            {{translate('no_data_found')}}
-                        </h5>
-                            </div>
-                       @endif
-                    </div>
-
-                    <div class="table-responsive mt-4">
-                        <div class="px-4 d-flex justify-content-center justify-content-md-end">
-                            <!-- Pagination -->
-                            {{$withdrawal_methods->links()}}
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-        </div>
-    </div>
-{{-- {{ dd(1) }} --}}
-
-
-    <!-- Withdraw Method List Modal -->
-    <div class="modal fade" id="withdrawMethodList" tabindex="-1" role="dialog" aria-labelledby="withdrawMethodListLabel" aria-hidden="true">
-        <div class="modal-dialog" role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
-             <div id="data-view"> </div>
+                @if(count($withdrawal_methods) === 0)
+                    @include('admin-views.cash.partials._empty', [
+                        'empty_title' => translate('messages.No withdraw method found'),
+                        'empty_body' => request()->filled('search')
+                            ? translate('messages.Nothing matches this search. Try another method name.')
+                            : translate('Add a method so vendors, deliverymen and riders have somewhere to be paid.'),
+                    ])
+                @endif
             </div>
         </div>
-    </div>
 
+        <div class="page-area">
+            {!! $withdrawal_methods->links() !!}
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="withdrawMethodList" tabindex="-1" role="dialog" aria-labelledby="withdrawMethodListLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="{{ translate('Close') }}">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div id="data-view"></div>
+        </div>
+    </div>
+</div>
 
 @endsection
 
@@ -217,13 +253,13 @@
               },
               success: function (data) {
                   if(data.success == true) {
-                      toastr.success('{{ translate('messages.Default_Method_updated_successfully')}}');
+                      toastr.success('{{ translate('Updated successfully')}}');
                       setTimeout(function(){
                           location.reload();
                       }, 1000);
                   }
                   else if(data.success == false) {
-                      toastr.error('{{ translate('messages.Default_Method_updated_failed.')}}');
+                      toastr.error('{{ translate('Default method updated failed.')}}');
                       setTimeout(function(){
                           location.reload();
                       }, 1000);
@@ -246,7 +282,7 @@
                   id: id
               },
               success: function (data) {
-                  toastr.success('{{ translate('messages.status_updated_successfully')}}');
+                  toastr.success('{{ translate('Updated successfully')}}');
               }
           });
       })

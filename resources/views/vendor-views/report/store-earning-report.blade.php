@@ -1,26 +1,20 @@
 @extends('layouts.vendor.app')
 
-@section('title', translate('messages.Store_Earning_Report'))
+@section('title', translate('Store earning report'))
 
 @section('content')
-    @php
-        $activeTab = request()->tab ?: 'all';
-        $reportOverviewTitle = match ($activeTab) {
-            'parcel' => 'Comprehensive Financial Overview and Analytics for Store Parcel',
-            'rental' => 'Comprehensive Financial Overview and Analytics for Store Rental',
-            'ride-share' => 'Comprehensive Financial Overview and Analytics for Store Rides',
-            default => 'Comprehensive Financial Overview and Analytics for Store Orders',
-        };
-    @endphp
     <div class="content container-fluid">
-        <div class="page-header pb-0">
+        <div class="page-header">
             <div>
                 <h1 class="page-header-title text-capitalize">
-                    {{ translate('messages.Store_Earning_Report') }}
+                    <span class="page-header-icon">
+                        <img src="{{ asset('public/assets/admin/img/outline/report.svg') }}" class="w--26" alt="">
+                    </span>
+                    <span>
+                        {{ translate('Store earning report') }}
+                    </span>
                 </h1>
-                <p>
-                    {{ $reportOverviewTitle }}
-                </p>
+                <p class="page-header-desc">{{ translate('What you earned, and what was taken from it in commission.') }}</p>
             </div>
         </div>
 

@@ -20,25 +20,6 @@
                     <p class="fs-12 m-0 text-title">
                         {{ translate('Enable and configure cancellation rules that apply after parcel pickup.') }}</p>
                 </div>
-                {{-- <label class="toggle-switch toggle-switch-sm">
-                    <input type="checkbox" data-id="parcel_cancellation_status"
-                        {{ $parcel_cancellation_status == 1 ? 'checked' : '' }}
-                        data-image-off="{{ asset('public/assets/admin/img/off-danger.png') }}"
-                        data-image-on="{{ asset('public/assets/admin/img/on-theme.png') }}"
-                        data-title-on="<strong>{{ translate('Are you sure you want to enable the Parcel Cancellation feature?') }}</strong>"
-                        data-title-off="<strong>{{ translate('Are you sure you want to Disable the Parcel Cancellation feature?') }}</strong>"
-                        data-text-on="<p>{{ translate('If enabled, both customers and deliverymen can cancel delivery orders') }}</p>"
-                        data-text-off="<p>{{ translate('If disable, both customers and deliverymen can’t cancel delivery orders') }}</p>"
-                        class="status toggle-switch-input dynamic-checkbox" name="parcel_cancellation_status"
-                        id="parcel_cancellation_status">
-
-                    <span class="toggle-switch-label text mb-0">
-                        <span class="toggle-switch-indicator"></span>
-                    </span>
-                    <form id="parcel_cancellation_status_form"
-                        action="{{ route('admin.parcel.cancellationSettingsStatus') }}" method="get"> </form>
-
-                </label> --}}
             </div>
 
 
@@ -51,9 +32,9 @@
                             <div class="row align-items-center g-3">
                                 <div class="col-lg-4 col-md-5">
                                     <div class="max-w-353px">
-                                        <h4 class="mb-1 text-title">{{ translate('Basic Setup') }}</h4>
+                                        <h4 class="mb-1 text-title">{{ translate('Basic setup') }}</h4>
                                         <p class="fs-12 m-0 color-758590">
-                                            {{ translate('Setup additional delivery cancelation fee & return fee for customer and rider.') }}
+                                            {{ translate('Setup additional delivery cancellation fee & return fee for customer and rider.') }}
                                         </p>
                                     </div>
                                 </div>
@@ -89,7 +70,7 @@
                                             </div>
                                             <div class="col-sm-12">
                                                 <label for="" class="fs-14 color-222324 mb-2">
-                                                    {{ translate('If Delivery Man Cancels the Delivery After Pickup ') }}
+                                                    {{ translate('If Delivery Man Cancels the Delivery After Pickup') }} 
                                                 </label>
                                                 <div class="d-flex bg-white min-h-45px rounded border w-100 py-2 px-3 flex-wrap flex-sm-nowrap gap-2">
                                                     <div class="d-flex align-item-center cursor-pointer w-100">
@@ -101,22 +82,10 @@
                                                                 id="cancalation_address_">
                                                         </div>
                                                         <label class="form-check-label mb-0 ml-2 fs-14 lh-24" for="cancalation_address_">
-                                                            {{ translate('Do not charge any return fee to customer ') }}
+                                                            {{ translate('Do not charge any return fee to customer') }} 
                                                         </label>
                                                     </div>
 
-                                                    <!-- <div class="d-flex align-item-center justify-content-between cursor-pointer">
-                                                        <div class="form-check m-0">
-                                                            <input class="form-check-input checkbox-theme-16 single-select"
-                                                                {{ $parcel_cancellation_basic_setup['do_not_charge_return_fee_on_deliveryman_cancel'] ?? null ? 'checked' : '' }}
-                                                                type="checkbox" value="1"
-                                                                name="do_not_charge_return_fee_on_deliveryman_cancel"
-                                                                id="cancalation_address_">
-                                                        </div>
-                                                        <label class="form-check-label mt-1 mb-0 ml-2 fs-14 " for="cancalation_address_">
-                                                            {{ translate('Do not charge any return fee to customer if deliveryman cancel the order after pickup') }}
-                                                        </label>
-                                                    </div> -->
                                                 </div>
                                             </div>
                                         </div>
@@ -179,7 +148,7 @@
                                             <div class="col-sm-6 col-md-12 col-lg-6">
                                                 <div class="form-group m-0">
                                                     <label for="" class="fs-14 mb-2 color-222324">
-                                                        {{ translate('Return Fee for Driver if Time Exceeds ') }}
+                                                        {{ translate('Return Fee for Driver if Time Exceeds') }} 
                                                         ({{ \App\CentralLogics\Helpers::currency_symbol() }})
                                                         <span class="fs-12 color-A7A7A7" data-toggle="tooltip"
                                                             data-placement="top"
@@ -202,9 +171,9 @@
                         </div>
                         <div class="btn--container justify-content-end mt-4">
                             <button type="reset"
-                                class="btn min-w-120px btn--reset">{{ translate('messages.reset') }}</button>
+                                class="btn min-w-120px btn--reset"><i class="tio-refresh"></i> {{ translate('messages.Reset') }}</button>
                             <button type="submit"
-                                class="btn min-w-120px btn--primary">{{ translate('messages.save') }}</button>
+                                class="btn min-w-120px btn--primary"><i class="tio-save"></i> {{ translate('messages.Save') }}</button>
                         </div>
                     </div>
                 </form>
@@ -223,7 +192,7 @@
                     <ul class="nav nav-tabs border-0 mb-4">
                         <li class="nav-item">
                             <a class="nav-link lang_link active" href="#"
-                                id="default-link">{{ translate('messages.default') }}</a>
+                                id="default-link">{{ translate('Default') }}</a>
                         </li>
                         @foreach ($language as $lang)
                             <li class="nav-item">
@@ -279,22 +248,20 @@
                                 class="custom-select fs-12 title-clr">
                                 <option value="" selected disabled>{{ translate('Select Cancellation Type') }}
                                 </option>
-                                <option value="before_pickup">{{ translate('before_pickup') }}</option>
-                                <option value="after_pickup">{{ translate('after_pickup') }}</option>
+                                <option value="before_pickup">{{ translate('Before Pickup') }}</option>
+                                <option value="after_pickup">{{ translate('After pickup') }}</option>
                             </select>
                         </div>
                     </div>
                     <div class="col-sm-6 col-lg-3">
                         <div class="form-group m-0">
                             <label for="" class="fs-14 mb-2 color-222324">
-                                {{ translate('User Type') }}
+                                {{ translate('User type') }}
                                  <span class="text-danger">* </span>
                             </label>
                             <select name="user_type" required id="" class="custom-select fs-12 title-clr">
-                                <option value="" selected disabled>{{ translate('Select User Type') }}</option>
+                                <option value="" selected disabled>{{ translate('Select user type') }}</option>
                                 <option value="customer">{{ translate('Customer') }}</option>
-                                {{-- <option value="admin">{{ translate('Admin') }}</option> --}}
-                                {{-- <option value="vendor">{{ translate('Vendor') }}</option> --}}
                                 <option value="deliveryman">{{ translate('Deliveryman') }}</option>
                             </select>
                         </div>
@@ -302,16 +269,16 @@
 
                 </div>
                 <div class="btn--container justify-content-end mt-4">
-                    <button type="reset" class="btn min-w-120px btn--reset">{{ translate('messages.reset') }}</button>
+                    <button type="reset" class="btn min-w-120px btn--reset"><i class="tio-refresh"></i> {{ translate('messages.Reset') }}</button>
                     <button type="submit"
-                        class="btn min-w-120px btn--primary">{{ translate('messages.submit') }}</button>
+                        class="btn min-w-120px btn--primary"><i class="tio-checkmark-circle-outlined"></i> {{ translate('messages.Submit') }}</button>
                 </div>
             </div>
         </form>
 
         <div class="card border-0">
             <div class="card-header border-0 flex-wrap gap-2">
-                <h4 class="title-clr m-0">{{ translate('messages.parcel_cancellation_reason') }}</h4>
+                <h4 class="title-clr m-0">{{ translate('messages.Parcel cancellation reason') }}</h4>
                 <div class="d-flex align-items-center flex-wrap gap-3">
                     <form class="search-form w-340-lg">
                         <div class="input-group input--group">
@@ -327,24 +294,24 @@
                                 "target": "#usersExportDropdown",
                                 "type": "css-animation"
                             }'>
-                            <i class="tio-download-to mr-1 text-title"></i> {{ translate('messages.export') }}
+                            <i class="tio-download-to mr-1 text-title"></i> {{ translate('messages.Export') }}
                         </a>
                         <div id="usersExportDropdown"
                             class="hs-unfold-content dropdown-unfold dropdown-menu dropdown-menu-sm-right">
-                            <span class="dropdown-header">{{ translate('messages.download_options') }}</span>
+                            <span class="dropdown-header">{{ translate('messages.Download options') }}</span>
                             <a id="export-excel" class="dropdown-item"
                                 href="{{ route('admin.parcel.cancellationReasonExport', ['type' => 'excel', request()->getQueryString()]) }}">
                                 <img class="avatar avatar-xss avatar-4by3 mr-2"
                                     src="{{ asset('public/assets/admin') }}/svg/components/excel.svg"
                                     alt="Image Description">
-                                {{ translate('messages.excel') }}
+                                Excel
                             </a>
                             <a id="export-csv" class="dropdown-item"
                                 href="{{ route('admin.parcel.cancellationReasonExport', ['type' => 'csv', request()->getQueryString()]) }}">
                                 <img class="avatar avatar-xss avatar-4by3 mr-2"
                                     src="{{ asset('public/assets/admin') }}/svg/components/placeholder-csv-format.svg"
                                     alt="Image Description">
-                                {{ translate('messages.csv') }}
+                                CSV
                             </a>
                         </div>
                     </div>
@@ -358,19 +325,19 @@
                                 {{ translate('SL') }}
                             </th>
                             <th class="fs-14 text-title font-semibold top-border-table">
-                                {{ translate('messages.reason') }}
+                                {{ translate('messages.Reason') }}
                             </th>
                             <th class="fs-14 text-title font-semibold top-border-table">
-                                {{ translate('messages.cancellation_type') }}
+                                {{ translate('messages.Cancellation type') }}
                             </th>
                             <th class="fs-14 text-title font-semibold top-border-table">
-                                {{ translate('messages.user_type') }}
+                                {{ translate('User type') }}
                             </th>
                             <th class="fs-14 text-title font-semibold top-border-table">
-                                {{ translate('messages.status') }}
+                                {{ translate('messages.Status') }}
                             </th>
                             <th class="fs-14 text-center text-title font-semibold top-border-table">
-                                {{ translate('messages.action') }}
+                                {{ translate('messages.Action') }}
                             </th>
                         </tr>
                     </thead>
@@ -402,17 +369,17 @@
                                 <td class="p-3">
                                     <div class="btn--container justify-content-center">
 
-                                        <a class="btn btn-sm text-end action-btn btn-outline-theme-dark text--info info-hover offcanvas-trigger get_data data-info-show"
+                                        <a class="btn btn-sm action-btn action-btn--edit offcanvas-trigger get_data data-info-show"
                                             data-target="#offcanvas__customBtn3" data-id="{{ $item['id'] }}"
                                             data-url="{{ route('admin.parcel.cancellationReasonEdit', [$item['id']]) }}"
-                                            href="javascript:" title="{{ translate('messages.edit_reason') }}"><i
+                                            href="javascript:" title="{{ translate('messages.Edit Reason') }}"><i
                                                 class="tio-edit"></i></a>
 
 
-                                        <a class="btn action-btn btn--danger btn-outline-danger form-alert"
+                                        <a class="btn action-btn action-btn--delete form-alert"
                                             href="javascript:" data-id="reason-{{ $item['id'] }}"
                                             data-message="{{ translate('Want to delete this cancellation reason?') }}"
-                                            title="{{ translate('messages.delete_cancellation_reason') }}"><i
+                                            title="{{ translate('messages.Delete cancellation reason') }}"><i
                                                 class="tio-delete-outlined"></i>
                                         </a>
 
@@ -439,7 +406,7 @@
                 <div class="empty--data">
                     <img src="{{ asset('/public/assets/admin/svg/illustrations/sorry.svg') }}" alt="public">
                     <h5>
-                        {{ translate('no_data_found') }}
+                        {{ translate('No data found') }}
                     </h5>
                 </div>
             @endif
@@ -448,61 +415,7 @@
 
 
 
-    {{-- <!-- Confiramtion Modal -->
-    <div class="modal shedule-modal fade" id="confirmation-modal-btn" tabindex="-1" aria-labelledby="exampleModalLabel"
-        aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content pb-2 max-w-500">
-                <div class="modal-header">
-                    <button type="button"
-                        class="close bg-modal-btn w-30px h-30 rounded-circle position-absolute right-0 top-0 m-2 z-2"
-                        data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
-                <div class="modal-body">
-                    <div class="text-center">
-                        <img src="{{ asset('public/assets/admin/img/delete-confirmation.png') }}" alt="icon"
-                            class="mb-3">
-                        <h3 class="mb-2">Are you sure?</h3>
-                        <p class="mb-0">You ....................</p>
-                    </div>
-                </div>
-                <div class="modal-footer justify-content-center border-0 pt-0 gap-2">
-                    <button type="button" class="btn min-w-120px btn--reset" data-dismiss="modal">No</button>
-                    <button type="button" class="btn min-w-120px btn--primary">Yes</button>
-                </div>
-            </div>
-        </div>
-    </div> --}}
 
-    <!-- Parcel Cancellation Modal -->
-    {{-- <div class="modal shedule-modal fade" id="cancellation__permission" tabindex="-1"
-        aria-labelledby="exampleModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content pb-2 max-w-500">
-                <div class="modal-header">
-                    <button type="button"
-                        class="close bg-modal-btn w-30px h-30 rounded-circle position-absolute right-0 top-0 m-2 z-2"
-                        data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
-                <div class="modal-body">
-                    <div class="text-center ">
-                        <img src="{{ asset('public/assets/admin/img/off-danger.png') }}" alt="icon" class="mb-3">
-                        <h3 class="mb-2 px-xl-4">Are you sure you want to Disable the Parcel Cancellation feature</h3>
-                        <p class="mb-0 fs-12 max-w-320 mx-auto">If disable, both customers and deliverymen can’t cancel
-                            delivery orders</p>
-                    </div>
-                </div>
-                <div class="modal-footer justify-content-center border-0 pt-0 gap-2">
-                    <button type="button" class="btn min-w-120px btn--reset" data-dismiss="modal">No</button>
-                    <button type="button" class="btn min-w-120px btn--primary">Yes</button>
-                </div>
-            </div>
-        </div>
-    </div> --}}
 
     <div id="offcanvas__customBtn3" class="custom-offcanvas d-flex flex-column justify-content-between">
         <div id="data-view" class="h-100">

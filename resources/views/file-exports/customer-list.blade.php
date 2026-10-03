@@ -1,5 +1,5 @@
 <div class="row">
-    <div class="col-lg-12 text-center "><h1 >{{ translate('customer_list') }}</h1></div>
+    <div class="col-lg-12 text-center "><h1 >{{ translate('Customer list') }}</h1></div>
     <div class="col-lg-12">
 
 
@@ -7,15 +7,15 @@
     <table>
         <thead>
             <tr>
-                <th>{{ translate('Customer_Analytics') }}</th>
+                <th>{{ translate('Customer analytics') }}</th>
                 <th></th>
                 <th></th>
                 <th>
-                    {{ translate('Total_Customer')  }}: {{ $data['customers']->count() }}
+                    {{ translate('Total customer')  }}: {{ $data['customers']->count() }}
                     <br>
-                    {{ translate('Active_Customer')  }}: {{ $data['customers']->where('status',1)->count() }}
+                    {{ translate('Active customer')  }}: {{ $data['customers']->where('status',1)->count() }}
                     <br>
-                    {{ translate('Inactive_Customer')  }}: {{ $data['customers']->where('status',0)->count() }}
+                    {{ translate('Inactive customer')  }}: {{ $data['customers']->where('status',0)->count() }}
 
                 </th>
                 <th> </th>
@@ -24,11 +24,11 @@
                 <th></th>
                 </tr>
             <tr>
-                <th>{{ translate('Search_Criteria') }}</th>
+                <th>{{ translate('Search criteria') }}</th>
                 <th></th>
                 <th></th>
                 <th>
-                    {{ translate('Search_Bar_Content')  }}: {{ $data['search'] ??translate('N/A') }}
+                    {{ translate('Search bar content')  }}: {{ $data['search'] ??translate('N/A') }}
                 </th>
                 <th> </th>
                 <th></th>
@@ -36,19 +36,19 @@
                 <th></th>
             </tr>
             <tr>
-                <th>{{ translate('Filter_Criteria') }}</th>
+                <th>{{ translate('Filter criteria') }}</th>
                 <th></th>
                 <th></th>
                 <th>
-                    {{ translate('Customer_Status')  }}: {{ $data['filter'] ?translate($data['filter']):translate('all') }}
+                    {{ translate('Customer status')  }}: {{ $data['filter'] ?translate($data['filter']):translate('All') }}
                     <br>
-                    {{ translate('Sort_by')  }}: {{ $data['order_wise'] ??translate('N/A') }}
+                    {{ translate('Sort by')  }}: {{ $data['order_wise'] ??translate('N/A') }}
                     <br>
-                    {{ translate('Show_Limit')  }}: {{ $data['show_limit'] ??translate('N/A') }}
+                    {{ translate('Show limit')  }}: {{ $data['show_limit'] ??translate('N/A') }}
                     <br>
-                    {{ translate('Order_Date_Range')  }}: {{ $data['order_date'] ??translate('N/A') }}
+                    {{ translate('Order date range')  }}: {{ $data['order_date'] ??translate('N/A') }}
                     <br>
-                    {{ translate('Join_Date_Range')  }}: {{ $data['join_date'] ??translate('N/A') }}
+                    {{ translate('Join date range')  }}: {{ $data['join_date'] ??translate('N/A') }}
                 </th>
                 <th> </th>
                 <th></th>
@@ -56,16 +56,16 @@
                 <th></th>
             </tr>
         <tr>
-            <th>{{ translate('sl') }}</th>
-            <th>{{ translate('first_name') }}</th>
-            <th>{{ translate('last_name') }}</th>
-            <th>{{ translate('phone') }}</th>
+            <th>{{ translate('SL') }}</th>
+            <th>{{ translate('First name') }}</th>
+            <th>{{ translate('Last name') }}</th>
+            <th>{{ translate('Phone') }}</th>
             <th>{{ translate('email') }}</th>
-            <th>{{ translate('saved_address') }}</th>
-            <th>{{ translate('total_orders') }}</th>
-            <th>{{ translate('total_wallet_amount') }} </th>
-            <th>{{ translate('total_loyality_points') }} </th>
-            <th>{{ translate('status') }} </th>
+            <th>{{ translate('Saved address') }}</th>
+            <th>{{ translate('Total orders') }}</th>
+            <th>{{ translate('Total wallet amount') }} </th>
+            <th>{{ translate('Total loyalty points') }} </th>
+            <th>{{ translate('Status') }} </th>
         </thead>
         <tbody>
         @foreach($data['customers'] as $key => $customer)

@@ -1,180 +1,81 @@
 @extends('layouts.admin.app')
 
-@section('title',translate('messages.banner'))
+@section('title',translate('Banner'))
+
+@php($isServiceModule = \Illuminate\Support\Facades\Config::get('module.current_module_type') == 'service' && service_addon_active())
+@php($banner_type_labels = [
+    'store_wise' => $isServiceModule ? translate('Provider wise') : translate('messages.store_wise'),
+    'item_wise' => $isServiceModule ? translate('Service wise') : translate('messages.item_wise'),
+    'default' => translate('Default'),
+])
 
 @push('css_or_js')
-
+    <link rel="stylesheet" href="{{asset('public/assets/admin/css/third-party-setup.css')}}">
+    <link rel="stylesheet" href="{{asset('public/assets/admin/css/view-pages/banner-form.css')}}">
 @endpush
 
 @section('content')
-    <div class="content container-fluid">
-        <!-- Page Header -->
-        <div class="page-header">
-            <h1 class="page-header-title">
-                <span class="page-header-icon">
-                    <img src="{{asset('public/assets/admin/img/banner.png')}}" class="w--26" alt="">
-                </span>
-                <span>
-                    {{translate('messages.add_new_banner')}}
-                </span>
-            </h1>
+    <div class="content container-fluid tps bnr">
+        <div class="page-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <div>
+                <h1 class="page-header-title">
+                    <span class="page-header-icon">
+                        <img src="{{asset('public/assets/admin/img/banner.png')}}" class="w--26" alt="">
+                    </span>
+                    <span>
+                        {{translate('Add new banner')}}
+                    </span>
+                </h1>
+                <p class="page-header-desc">{{ translate('Artwork shown at the top of the customer app, linking to a store, an item or a campaign.') }}</p>
+            </div>
+            <button type="button" class="tps-help" data-toggle="modal" data-target="#banner-how-it-works">
+                <i class="tio-help-outlined"></i>
+                <span>{{ translate('How it works') }}</span>
+            </button>
         </div>
-        <!-- End Page Header -->
-        <div class="row gx-2 gx-lg-3">
-            <div class="col-sm-12 col-lg-12 mb-3 mb-lg-2">
-                <div class="card">
-                    <div class="card-body">
-                        <form id="banner_form" class="custom-validation" data-ajax="true">
-
-                            <div class="row g-3">
-                                <div class="col-lg-6">
-                                    @if ($language)
-                                    <ul class="nav nav-tabs mb-3 border-0">
-                                        <li class="nav-item">
-                                            <a class="nav-link lang_link active"
-                                            href="#"
-                                            id="default-link">{{translate('messages.default')}}</a>
-                                        </li>
-                                        @foreach ($language as $lang)
-                                            <li class="nav-item">
-                                                <a class="nav-link lang_link"
-                                                    href="#"
-                                                    id="{{ $lang }}-link">{{ \App\CentralLogics\Helpers::get_language_name($lang) . '(' . strtoupper($lang) . ')' }}</a>
-                                            </li>
-                                        @endforeach
-                                    </ul>
-                                    <div class="lang_form" id="default-form">
-                                        <div class="form-group error-wrapper">
-                                            <label class="input-label"
-                                                for="default_title">{{ translate('messages.title') }}
-                                                (Default)
-                                            </label>
-                                            <input type="text" name="title[]" id="default_title"
-                                                class="form-control" placeholder="{{ translate('messages.new_banner') }}" required
-                                            >
-                                        </div>
-                                        <input type="hidden" name="lang[]" value="default">
-                                    </div>
-                                        @foreach ($language as $lang)
-                                            <div class="d-none lang_form"
-                                                id="{{ $lang }}-form">
-                                                <div class="form-group error-wrapper">
-                                                    <label class="input-label"
-                                                        for="{{ $lang }}_title">{{ translate('messages.title') }}
-                                                        ({{ strtoupper($lang) }})
-                                                    </label>
-                                                    <input type="text" name="title[]" id="{{ $lang }}_title"
-                                                        class="form-control" placeholder="{{ translate('messages.new_banner') }}">
-                                                </div>
-                                                <input type="hidden" name="lang[]" value="{{ $lang }}">
-                                            </div>
-                                        @endforeach
-                                    @else
-                                        <div id="default-form">
-                                            <div class="form-group error-wrapper">
-                                                <label class="input-label"
-                                                    for="exampleFormControlInput1">{{ translate('messages.title') }} ({{ translate('messages.default') }})</label>
-                                                <input type="text" name="title[]" class="form-control"
-                                                    placeholder="{{ translate('messages.new_banner') }}" required>
-                                            </div>
-                                            <input type="hidden" name="lang[]" value="default">
-                                        </div>
-                                    @endif
-                                    <div class="form-group error-wrapper">
-                                        <label class="input-label" for="title">{{translate('messages.zone')}}</label>
-                                        <select name="zone_id" id="zone" class="form-control js-select2-custom" required>
-                                            <option disabled selected>---{{translate('messages.select')}}---</option>
-                                            @foreach($zones as $zone)
-                                                @if(auth('admin')?->user()?->zone_id)
-                                                    @if(auth('admin')->user()->zone_id == $zone->id)
-                                                        <option value="{{$zone->id}}" selected>{{$zone->name}}</option>
-                                                    @endif
-                                                @else
-                                                    <option value="{{$zone['id']}}">{{$zone['name']}}</option>
-                                                @endif
-                                            @endforeach
-                                        </select>
-                                    </div>
-                                    <div class="form-group error-wrapper">
-                                        <label class="input-label" for="exampleFormControlInput1">{{translate('messages.banner_type')}}</label>
-                                        <select name="banner_type" id="banner_type" class="form-control">
-                                            <option value="store_wise">{{translate('messages.store_wise')}}</option>
-                                            <option value="item_wise">{{translate('messages.item_wise')}}</option>
-                                            <option value="default">{{translate('messages.default')}}</option>
-                                        </select>
-                                    </div>
-                                    <div class="form-group mb-0 error-wrapper" id="store_wise">
-                                        <label class="input-label" for="exampleFormControlSelect1">{{translate('messages.store')}}<span
-                                                class="input-label-secondary"></span></label>
-                                        <select name="store_id" id="store_id" class="js-data-example-ajax form-control"  title="{{translate('messages.select_store')}}">
-                                            <option disabled selected>---{{translate('messages.select_store')}}---</option>
-                                        </select>
-                                    </div>
-                                    <div class="form-group mb-0 error-wrapper" id="item_wise">
-                                        <label class="input-label" for="exampleFormControlInput1">{{translate('messages.select_item')}}</label>
-                                        <select name="item_id" id="choice_item" class="form-control js-select2-custom" placeholder="{{translate('messages.select_item')}}">
-
-                                        </select>
-                                    </div>
-                                    <div class="form-group mb-0 error-wrapper" id="default">
-                                        <label class="input-label" for="exampleFormControlInput1">{{translate('messages.default_link')}}({{ translate('messages.optional') }})</label>
-                                        <input type="text" name="default_link" class="form-control" placeholder="{{translate('messages.default_link')}}">
-                                    </div>
-                                </div>
-                                <div class="col-lg-6">
-                                    <div class="error-wrapper">
-                                        <div class="h-100 d-flex flex-column">
-                                            <label class="mt-auto mb-0 d-block text-center">{{translate('messages.banner_image')}} <small class="text-danger">* ( {{translate('messages.ratio')}} 3:1 )</small></label>
-                                            <div class="text-center py-3 my-auto">
-                                                <img class="img--vertical" id="viewer"
-                                                    src="{{asset('public/assets/admin/img/900x400/img1.jpg')}}" alt="banner image"/>
-                                            </div>
-                                            <div class="custom-file">
-                                                <input type="file" name="image" id="customFileEg1" class="custom-file-input"
-                                                    accept=".webp, .jpg, .png, .jpeg, .gif, .bmp, .tif, .tiff|image/*" required>
-                                                <label class="custom-file-label" for="customFileEg1">{{translate('messages.choose_file')}}</label>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-12 mt-4">
-                                    <div class="btn--container justify-content-end">
-                                        <button type="reset" id="reset_btn" class="btn btn--reset">{{translate('messages.reset')}}</button>
-                                        <button type="submit" class="btn btn--primary">{{translate('messages.submit')}}</button>
-                                    </div>
-                                </div>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-
+        <div class="row g-3 mb-3">
+            <div class="col-xl-8">
+                <form id="banner_form" class="custom-validation" data-ajax="true">
+                    @include('admin-views.banner.partials._form', [
+                        'banner' => null,
+                        'isServiceModule' => $isServiceModule,
+                        'submitLabel' => translate('messages.Submit'),
+                        'submitIcon' => 'tio-checkmark-circle-outlined',
+                    ])
+                </form>
             </div>
 
+            <div class="col-xl-4">
+                @include('admin-views.banner.partials._preview', ['banner' => null])
+            </div>
+        </div>
+
+        <div class="row gx-2 gx-lg-3">
             <div class="col-sm-12 col-lg-12 mb-3 mb-lg-2">
                 <div class="card">
                     <div class="card-header py-2 border-0">
                         <div class="search--button-wrapper">
-                            <h5 class="card-title">
-                                {{translate('messages.banner_list')}}<span class="badge badge-soft-dark ml-2" id="itemCount">{{$banners->count()}}</span>
-                            </h5>
+                            @include('partials._table-head', [
+                                'title'    => translate('Banner list'),
+                                'subtitle' => translate('messages.Promotional banners shown across the customer app and website.'),
+                                'count'    => $banners->total(),
+                                'count_id' => 'itemCount',
+                            ])
                             <form  class="search-form">
-                                <!-- Search -->
                                 <div class="input-group input--group">
-                                    <input id="datatableSearch" type="search" value="{{ request()->input('search')?? '' }}" name="search" class="form-control" placeholder="{{translate('messages.search_by_title')}}" aria-label="{{translate('messages.search_here')}}">
+                                    <input id="datatableSearch" type="search" value="{{ request()->input('search')?? '' }}" name="search" class="form-control" placeholder="{{translate('messages.Search by title')}}" aria-label="{{translate('Search')}}">
                                     <button type="submit" class="btn btn--secondary"><i class="tio-search"></i></button>
                                 </div>
-                                <!-- End Search -->
                             </form>
                             @if(request()->input('search'))
-                            <button type="reset" class="btn btn--primary ml-2 location-reload-to-base" data-url="{{url()->full()}}">{{translate('messages.reset')}}</button>
+                            <button type="reset" class="btn btn--primary ml-2 location-reload-to-base" data-url="{{url()->full()}}"><i class="tio-refresh"></i> {{translate('messages.Reset')}}</button>
                             @endif
 
                         </div>
                     </div>
-                    <!-- Table -->
                     <div class="table-responsive datatable-custom">
                         <table id="columnSearchDatatable"
-                                class="table table-borderless table-thead-bordered table-nowrap table-align-middle card-table"
+                                class="table table-hover table-borderless table-thead-bordered table-nowrap table-align-middle card-table"
                                 data-hs-datatables-options='{
                                     "order": [],
                                     "orderCellsTop": true,
@@ -187,86 +88,102 @@
                                 >
                             <thead class="thead-light">
                                 <tr>
-                                    <th class="border-0">{{ translate('messages.SL') }}</th>
-                                    <th class="border-0">{{translate('messages.title')}}</th>
-                                    <th class="border-0">{{translate('messages.type')}}</th>
+                                    <th class="border-0">{{translate('messages.Title')}}</th>
+                                    <th class="border-0">{{translate('Type')}}</th>
+                                    <th class="border-0">{{translate('messages.Zone')}}</th>
+                                    <th class="border-0">{{translate('messages.Added')}}</th>
                                     <th class="border-0 text-center">{{translate('messages.featured')}} <span class="input-label-secondary"
-                                        data-toggle="tooltip" data-placement="right" data-original-title="{{translate('If the feature status is turned ON/OFF, the banner will be displayed on the module homepage on the website and in the user app')}}"><img src="{{asset('public/assets/admin/img/info-circle.svg')}}"
+                                        data-toggle="tooltip" data-placement="right" data-original-title="{{translate('Controls whether the banner shows on the module homepage in the website and app.')}}"><img src="{{asset('public/assets/admin/img/info-circle.svg')}}"
                                             alt="public/img"></span></th>
-                                    <th class="border-0 text-center">{{translate('messages.status')}}</th>
-                                    <th class="border-0 text-center">{{translate('messages.action')}}</th>
+                                    <th class="border-0 text-center">{{translate('messages.Status')}}</th>
+                                    <th class="border-0 text-center">{{translate('messages.Action')}}</th>
                                 </tr>
                             </thead>
 
                             <tbody id="set-rows">
-                            @foreach($banners as $key=>$banner)
+                            @foreach($banners as $banner)
                                 <tr>
-                                    <td>{{$key+$banners->firstItem()}}</td>
                                     <td>
                                         <span class="media align-items-center">
                                             <img class="img--ratio-3 w-auto h--50px rounded mr-2 onerror-image" src="{{ $banner['image_full_url'] }}"
-                                                data-onerror-image="{{asset('/public/assets/admin/img/900x400/img1.jpg')}}" alt="{{$banner->name}} image">
-                                            <div class="media-body">
+                                                data-onerror-image="{{asset('/public/assets/admin/img/900x400/img1.jpg')}}" alt="{{$banner->title}}">
+                                            <div class="media-body max-w-200px">
                                                 <h5 title="{{ $banner['title'] }}" class="text-hover-primary mb-0">{{Str::limit($banner['title'], 25, '...')}}</h5>
+                                                <span class="d-block fs-12 text-muted">ID:{{$banner->id}}</span>
                                             </div>
                                         </span>
-                                    <span class="d-block font-size-sm text-body">
-
-                                    </span>
                                     </td>
-                                    <td>{{translate('messages.'.$banner['type'])}}</td>
-
-                                    <td  >
-                                        <div class="d-flex justify-content-center">
+                                    <td>
+                                        <span class="d-block text-title">{{ $banner_type_labels[$banner['type']] ?? $banner['type'] }}</span>
+                                        @if($banner['type'] === 'store_wise' && $banner->store)
+                                            <span class="d-block fs-12 text-muted" title="{{ $banner->store->name }}">{{ Str::limit($banner->store->name, 22, '...') }}</span>
+                                        @elseif($banner['type'] === 'default' && $banner->default_link)
+                                            <span class="d-block fs-12 text-muted" title="{{ $banner->default_link }}">{{ Str::limit($banner->default_link, 28, '...') }}</span>
+                                        @endif
+                                    </td>
+                                    <td>
+                                        {{ $banner->zone ? $banner->zone->name : translate('messages.Zone deleted') }}
+                                    </td>
+                                    <td data-order="{{ $banner->created_at }}">
+                                        <span class="table-when">
+                                            <span class="table-when__day">{{\App\CentralLogics\Helpers::date_format($banner->created_at)}}</span>
+                                            <span class="table-when__ago" title="{{\App\CentralLogics\Helpers::time_date_format($banner->created_at)}}">
+                                                {{ $banner->created_at?->diffForHumans() }}
+                                            </span>
+                                        </span>
+                                    </td>
+                                    <td class="text-center">
+                                        <div class="status-toggle">
                                             <label class="toggle-switch toggle-switch-sm" for="featuredCheckbox{{$banner->id}}">
                                             <input type="checkbox"
                                             data-id="featuredCheckbox{{$banner->id}}"
                                             data-type="status"
                                             data-image-on="{{ asset('/public/assets/admin/img/modal/basic_campaign_on.png') }}"
                                             data-image-off="{{ asset('/public/assets/admin/img/modal/basic_campaign_off.png') }}"
-                                            data-title-on="{{ translate('By_Turning_ON_As_Featured!') }}"
-                                            data-title-off="{{ translate('By_Turning_OFF_As_Featured!') }}"
-                                            data-text-on="<p>{{ translate('If the feature status is turned ON, the banner will be displayed on the module homepage on the website and in the user app.') }}</p>"
-                                            data-text-off="<p>{{ translate('If the feature status is turned OFF, the banner won’t be displayed on the module homepage on the website and in the user app') }}</p>"
+                                            data-title-on="{{ translate('By turning ON as featured!') }}"
+                                            data-title-off="{{ translate('By turning OFF as featured!') }}"
+                                            data-text-on="<p>{{ translate('When on, the banner shows on the module homepage in the website and app.') }}</p>"
+                                            data-text-off="<p>{{ translate('If turned OFF, the banner is hidden on the module homepage in the website and user app.') }}</p>"
                                             class="toggle-switch-input  dynamic-checkbox" id="featuredCheckbox{{$banner->id}}" {{$banner->featured?'checked':''}}>
                                             <span class="toggle-switch-label">
                                                 <span class="toggle-switch-indicator"></span>
                                             </span>
                                         </label>
                                         </div>
-                                    </td>
-                                    <form action="{{route('admin.banner.featured',[$banner['id'],$banner->featured?0:1])}}"
-                                        method="get" id="featuredCheckbox{{$banner->id}}_form">
+                                        <form action="{{route('admin.banner.featured',[$banner['id'],$banner->featured?0:1])}}"
+                                            method="get" id="featuredCheckbox{{$banner->id}}_form">
                                         </form>
-
-                                    <td  >
-                                        <div class="d-flex justify-content-center">
+                                    </td>
+                                    <td class="text-center">
+                                        <div class="status-toggle" data-status="{{$banner->status?1:0}}">
                                             <label class="toggle-switch toggle-switch-sm" for="statusCheckbox{{$banner->id}}">
                                             <input type="checkbox"
                                             data-id="statusCheckbox{{$banner->id}}"
                                             data-type="status"
                                             data-image-on="{{ asset('/public/assets/admin/img/modal/basic_campaign_on.png') }}"
                                             data-image-off="{{ asset('/public/assets/admin/img/modal/basic_campaign_off.png') }}"
-                                            data-title-on="{{ translate('By_Turning_ON_Banner!') }}"
-                                            data-title-off="{{ translate('By_Turning_OFF_Banner!') }}"
-                                            data-text-on="<p>{{ translate('If_you_turn_on_this_status,_it_will_show_on_user_website_and_app.') }}</p>"
-                                            data-text-off="<p>{{ translate('If_you_turn_off_this_status,_it_won’t_show_on_user_website_and_app') }}</p>"
+                                            data-title-on="{{ translate('By turning ON banner!') }}"
+                                            data-title-off="{{ translate('By turning OFF banner!') }}"
+                                            data-text-on="<p>{{ translate('If you turn on this status, it will show on user website and app.') }}</p>"
+                                            data-text-off="<p>{{ translate('If you turn off this status, it won\'t show on user website and app') }}</p>"
                                             class="toggle-switch-input  dynamic-checkbox" id="statusCheckbox{{$banner->id}}" {{$banner->status?'checked':''}}>
                                             <span class="toggle-switch-label">
                                                 <span class="toggle-switch-indicator"></span>
                                             </span>
                                         </label>
+                                            <span class="status-toggle__text" aria-live="polite">
+                                                {{$banner->status ? translate('messages.Active') : translate('messages.Inactive')}}
+                                            </span>
                                         </div>
-                                    </td>
-
-                                    <form action="{{route('admin.banner.status',[$banner['id'],$banner->status?0:1])}}"
-                                        method="get" id="statusCheckbox{{$banner->id}}_form">
+                                        <form action="{{route('admin.banner.status',[$banner['id'],$banner->status?0:1])}}"
+                                            method="get" id="statusCheckbox{{$banner->id}}_form">
                                         </form>
+                                    </td>
                                     <td>
                                         <div class="btn--container justify-content-center">
-                                            <a class="btn action-btn btn--primary btn-outline-primary" href="{{route('admin.banner.edit',[$banner['id']])}}" title="{{translate('messages.edit_banner')}}"><i class="tio-edit"></i>
+                                            <a class="btn action-btn action-btn--edit" href="{{route('admin.banner.edit',[$banner['id']])}}" title="{{translate('Edit banner')}}"><i class="tio-edit"></i>
                                             </a>
-                                            <a class="btn action-btn btn--danger btn-outline-danger form-alert" href="javascript:" data-id="banner-{{$banner['id']}}" data-message="{{ translate('Want to delete this banner ?') }}"><i class="tio-delete-outlined"></i>
+                                            <a class="btn action-btn action-btn--delete form-alert" href="javascript:" data-id="banner-{{$banner['id']}}" data-message="{{ translate('Want to delete this banner?') }}" title="{{translate('Delete banner')}}"><i class="tio-delete-outlined"></i>
                                             </a>
                                             <form action="{{route('admin.banner.delete',[$banner['id']])}}"
                                                         method="post" id="banner-{{$banner['id']}}">
@@ -290,125 +207,63 @@
                     <div class="empty--data">
                         <img src="{{asset('/public/assets/admin/svg/illustrations/sorry.svg')}}" alt="public">
                         <h5>
-                            {{translate('no_data_found')}}
+                            {{translate('No data found')}}
                         </h5>
                     </div>
                     @endif
                 </div>
             </div>
-            <!-- End Table -->
+        </div>
+    </div>
+
+    <div class="modal fade" id="banner-how-it-works" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">{{ translate('Add new banner') }}</h5>
+                    <button type="button" class="close btn btn--reset btn-circle" data-dismiss="modal"
+                        aria-label="{{ translate('messages.Close') }}">
+                        <span aria-hidden="true" class="tio-clear fs-20 opacity-70"></span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <ol class="tps-steps mb-3">
+                        <li>{{ translate('A banner is artwork customers see near the top of the module home screen.') }}</li>
+                        <li>{{ translate('The zone decides who sees it, and it is what the store and item pickers are filtered by.') }}</li>
+                        <li>{{ translate('Store and item banners open that page when tapped. A default banner opens the link you paste, or nothing at all.') }}</li>
+                        <li>{{ translate('Switch a banner off in the list to take it down without deleting it.') }}</li>
+                    </ol>
+                    <div class="tps-note tps-note--info">
+                        <i class="tio-info-outined"></i>
+                        <div>{{ translate('Only featured banners run on the module home screen. The rest show where the app asks for that zone\'s banners.') }}</div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
 @endsection
 
 @push('script_2')
-    <script src="{{asset('public/assets/admin')}}/js/view-pages/banner-index.js"></script>
+    @php($bannerFormConfig = [
+        'moduleId' => (int) Config::get('module.current_module_id'),
+        'isEdit' => false,
+        'itemSourceUrl' => $isServiceModule ? route('admin.service.get-services') : url('/') . '/admin/item/get-items',
+        'storeSourceUrl' => route('admin.store.get-stores'),
+        'submitUrl' => route('admin.banner.store'),
+        'redirectUrl' => route('admin.banner.add-new'),
+        'successMessage' => translate('Added successfully'),
+        'ownerPlaceholder' => $isServiceModule ? translate('Select provider') : translate('Select store'),
+        'lang' => [
+            'notSet' => translate('messages.Not set'),
+            'selectStore' => $isServiceModule ? translate('Please select a provider') : translate('Please select a store'),
+            'selectItem' => $isServiceModule ? translate('Please select a service') : translate('Please select an item'),
+        ],
+    ])
     <script>
         "use strict";
-        var module_id = {{Config::get('module.current_module_id')}};
 
-        function get_items()
-        {
-            var nurl = '{{url('/')}}/admin/item/get-items?module_id='+module_id;
-
-            if(!Array.isArray(zone_id))
-            {
-                nurl += '&zone_id='+zone_id;
-            }
-
-            $.get({
-                url: nurl,
-                dataType: 'json',
-                success: function (data) {
-                    $('#choice_item').empty().append(data.options);
-                }
-            });
-        }
-
-        $(document).on('ready', function () {
-
-            module_id = {{Config::get('module.current_module_id')}};
-            get_items();
-
-            $('.js-data-example-ajax').select2({
-                ajax: {
-                    url: '{{ route('admin.store.get-stores') }}',
-                    data: function (params) {
-                        return {
-                            q: params.term, // search term
-                            zone_ids: [zone_id],
-                            page: params.page,
-                            module_id: module_id
-                        };
-                    },
-                    processResults: function (data) {
-                        return {
-                        results: data
-                        };
-                    },
-                    __port: function (params, success, failure) {
-                        var $request = $.ajax(params);
-
-                        $request.then(success);
-                        $request.fail(failure);
-
-                        return $request;
-                    }
-                }
-            });
-
-        });
-
-        $('#banner_form').on('submit', function (e) {
-            e.preventDefault();
-
-            let $form = $(this);
-            if (!$form.valid()) {
-                return false;
-            }
-
-            var formData = new FormData(this);
-            $.ajaxSetup({
-                headers: {
-                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-                }
-            });
-            $.post({
-                url: "{{route('admin.banner.store')}}",
-                data: formData,
-                cache: false,
-                contentType: false,
-                processData: false,
-                success: function (data) {
-                    if (data.errors) {
-                        for (var i = 0; i < data.errors.length; i++) {
-                            toastr.error(data.errors[i].message, {
-                                CloseButton: true,
-                                ProgressBar: true
-                            });
-                        }
-                    } else {
-                        toastr.success('{{translate("messages.banner_added_successfully")}}', {
-                            CloseButton: true,
-                            ProgressBar: true
-                        });
-                        setTimeout(function () {
-                            location.href = '{{route("admin.banner.add-new")}}';
-                        }, 2000);
-                    }
-                }
-            });
-        });
-
-
-
-        $('#reset_btn').click(function(){
-        $('#module_select').val(null).trigger('change');
-        $('#zone').val(null).trigger('change');
-        $('#store_id').val(null).trigger('change');
-        $('#choice_item').val(null).trigger('change');
-        $('#viewer').attr('src','{{asset('public/assets/admin/img/900x400/img1.jpg')}}');
-    })
+        window.bannerFormConfig = @json($bannerFormConfig);
     </script>
+    <script src="{{asset('public/assets/admin')}}/js/view-pages/banner-form.js"></script>
 @endpush

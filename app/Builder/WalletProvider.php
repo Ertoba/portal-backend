@@ -11,7 +11,8 @@ use App\Models\Order;
 use App\Models\User;
 use App\Models\WalletPayment;
 use App\Models\WalletTransaction;
-use App\Traits\Payment;
+use App\Services\Payment\PaymentLinkService;
+use App\Traits\Payment\PaymentTrait;
 use Carbon\Carbon;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Modules\Builder\Contracts\PaymentMethodProvider;
@@ -270,7 +271,7 @@ class WalletProvider implements WalletProviderContract
 
             $receiver = new Receiver('receiver_name', 'example.png');
 
-            $link = Payment::generate_link($payer, $paymentInfo, $receiver);
+            $link = PaymentLinkService::generateLink($payer, $paymentInfo, $receiver);
             $redirectUrl = \is_string($link) ? $link : null;
             if ($redirectUrl === null || $redirectUrl === '') {
                 return $this->addFundError('gateway_error', 'Could not start the transaction. Please try again.');

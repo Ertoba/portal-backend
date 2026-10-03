@@ -27,6 +27,11 @@ class ItemListExport implements FromView, ShouldAutoSize, WithStyles, WithColumn
         $this->data = $data;
     }
 
+    private function rowCount(): int
+    {
+        return (int) ($this->data['data_count'] ?? $this->data['data']->count());
+    }
+
     public function view(): View
     {
         return view('file-exports.item-list', [
@@ -47,7 +52,7 @@ class ItemListExport implements FromView, ShouldAutoSize, WithStyles, WithColumn
 
     public function styles(Worksheet $sheet)
     {
-        $count = $this->data['data']->count();
+        $count = $this->rowCount();
         $lastRow = $count + 3;
 
         $sheet->getStyle('A2:R2')->getFont()->setBold(true);
@@ -120,7 +125,6 @@ class ItemListExport implements FromView, ShouldAutoSize, WithStyles, WithColumn
                 $worksheet = $sheet->getDelegate();
                 $highestRow = $worksheet->getHighestRow();
 
-                // Alignment
                 $sheet->getStyle("A1:R{$highestRow}")
                     ->getAlignment()
                     ->setHorizontal(Alignment::HORIZONTAL_CENTER)
@@ -131,21 +135,17 @@ class ItemListExport implements FromView, ShouldAutoSize, WithStyles, WithColumn
                     ->setHorizontal(Alignment::HORIZONTAL_LEFT)
                     ->setVertical(Alignment::VERTICAL_CENTER);
 
-                // Merge cells
                 $sheet->mergeCells('A1:R1');
                 $sheet->mergeCells('A2:C2');
                 $sheet->mergeCells('D2:R2');
 
-                // Row heights
                 $worksheet->getRowDimension(1)->setRowHeight(50);
                 $worksheet->getRowDimension(2)->setRowHeight(100);
 
-                // Apply row height to data rows
                 for ($i = 4; $i <= $highestRow; $i++) {
                     $worksheet->getRowDimension($i)->setRowHeight(30);
                 }
 
-                // Insert images
                 $this->setImage($worksheet);
             },
         ];

@@ -1,5 +1,5 @@
 <div class="row">
-    <div class="col-lg-12 text-center "><h1 >{{ translate('Wallet_transaction_history') }}</h1></div>
+    <div class="col-lg-12 text-center "><h1 >{{ translate('Wallet transaction history') }}</h1></div>
     <div class="col-lg-12">
 
 
@@ -7,7 +7,7 @@
     <table>
         <thead>
             <tr>
-                <th>{{ translate('Search_Criteria') }}</th>
+                <th>{{ translate('Search criteria') }}</th>
                 <th></th>
                 <th>
                     @if ($data['from'])
@@ -19,9 +19,9 @@
                     {{ translate('to' )}} - {{ $data['to']?Carbon\Carbon::parse($data['to'])->format('d M Y'):'' }}
                     @endif
                     <br>
-                    {{ translate('transaction_type')  }}- {{  $data['transaction_type']?translate($data['transaction_type']):translate('messages.All') }}
+                    {{ translate('Transaction type')  }}- {{  $data['transaction_type']?translate($data['transaction_type']):translate('All') }}
                     <br>
-                    {{ translate('customers')  }}- {{  $data['customer']??translate('messages.All') }}
+                    {{ translate('customers')  }}- {{  $data['customer']??translate('All') }}
 
                 </th>
                 <th> </th>
@@ -50,14 +50,14 @@
                 <th></th>
             </tr>
         <tr>
-            <th>{{ translate('sl') }}</th>
-            <th>{{translate('messages.transaction_id')}}</th>
-            <th>{{translate('messages.transaction_date')}}</th>
-            <th>{{translate('messages.customer')}}</th>
+            <th>{{ translate('SL') }}</th>
+            <th>{{translate('messages.Transaction ID')}}</th>
+            <th>{{translate('Transaction date')}}</th>
+            <th>{{translate('messages.Customer')}}</th>
             <th>{{translate('messages.credit')}}</th>
             <th>{{translate('messages.debit')}}</th>
             <th>{{translate('messages.balance')}}</th>
-            <th>{{translate('messages.transaction_type')}}</th>
+            <th>{{translate('Transaction type')}}</th>
             <th>{{translate('messages.reference')}}</th>
         </thead>
         <tbody>
@@ -68,7 +68,7 @@
             <td>
                 {{date('d-m-Y',strtotime($wt['created_at']))}}
             </td>
-            <td>{{ $wt->user?$wt->user->f_name.' '.$wt->user->l_name:translate('messages.not_found') }}</td>
+            <td>{{ $wt->user?$wt->user->f_name.' '.$wt->user->l_name:translate('No data found') }}</td>
             <td>{{$wt->credit}}</td>
             <td>{{$wt->debit}}</td>
             <td>{{$wt->balance}}</td>

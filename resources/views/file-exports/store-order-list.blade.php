@@ -1,20 +1,20 @@
 
 <div class="row">
-    <div class="col-lg-12 text-center "><h1 > {{translate('Store_Order_List')}}
+    <div class="col-lg-12 text-center "><h1 > {{translate('Store order list')}}
     </h1></div>
     <div class="col-lg-12">
 
     <table>
         <thead>
             <tr>
-                <th>{{ translate('Store_Details') }}</th>
+                <th>{{ translate('Store details') }}</th>
                 <th></th>
                 <th>
-                    {{ translate('Store_Name')  }}: {{ $data['store'] ?? translate('N/A') }}
+                    {{ translate('Store name')  }}: {{ $data['store'] ?? translate('N/A') }}
                     <br>
                     {{ translate('Zone')  }}: {{ $data['zone'] ?? translate('N/A') }}
                     <br>
-                    {{ translate('Total_Order')  }}: {{ $data['data']->count() ?? translate('N/A') }}
+                    {{ translate('Total order')  }}: {{ $data['data']->count() ?? translate('N/A') }}
 
                   @isset($data['filter'])
                     <br>
@@ -29,19 +29,19 @@
                 <th></th>
                 @if (!isset($data['filter']))
                     <th>
-                        {{ translate('Scheduled_Order')  }}: {{ $data['data']->where('scheduled', '1')->count() ?? translate('N/A') }}
+                        {{ translate('Scheduled order')  }}: {{ $data['data']->where('scheduled', '1')->count() ?? translate('N/A') }}
                     </th>
                     <th>
-                        {{ translate('Pending_Order')  }}: {{ $data['data']->where('order_status' ,'pending')->count() ?? translate('N/A') }}
+                        {{ translate('Pending order')  }}: {{ $data['data']->where('order_status' ,'pending')->count() ?? translate('N/A') }}
                     </th>
                     <th>
-                        {{ translate('Delivered_Order')  }}: {{ $data['data']->where('order_status' ,'delivered')->count() ?? translate('N/A') }}
+                        {{ translate('Delivered order')  }}: {{ $data['data']->where('order_status' ,'delivered')->count() ?? translate('N/A') }}
                     </th>
                     <th>
-                        {{ translate('Canceled_Order')  }}: {{ $data['data']->where('order_status' ,'canceled')->count() ?? translate('N/A') }}
+                        {{ translate('Canceled order')  }}: {{ $data['data']->where('order_status' ,'canceled')->count() ?? translate('N/A') }}
                     </th>
                     <th>
-                        {{ translate('Refunded_Order')  }}: {{ $data['data']->where('order_status' ,'refunded')->count() ?? translate('N/A') }}
+                        {{ translate('Refunded order')  }}: {{ $data['data']->where('order_status' ,'refunded')->count() ?? translate('N/A') }}
                     </th>
                 @endif
                 <th> </th>
@@ -49,21 +49,21 @@
 
 
         <tr>
-            <th>{{ translate('sl') }}</th>
-            <th>{{ translate('Order_ID') }}</th>
-            <th>{{ translate('Order_Date') }}</th>
-            <th>{{ translate('Customer_Name') }}</th>
-            <th>{{ translate('Store_Name') }}</th>
-            <th>{{ translate('Total_Items') }}</th>
-            <th>{{ translate('Item_Price') }}</th>
-            <th>{{ translate('Item_Discount') }}</th>
-            <th>{{ translate('Coupon_Discount') }}</th>
-            <th>{{ translate('Discounted_Amount') }}</th>
-            <th>{{ translate('Vat/Tax') }}</th>
-            <th>{{ translate('Total_Amount') }}</th>
-            <th>{{ translate('Payment_Status') }}</th>
-            <th>{{ translate('Order_Status') }}</th>
-            <th>{{ translate('Order_Type') }}</th>
+            <th>{{ translate('SL') }}</th>
+            <th>{{ translate('Order ID') }}</th>
+            <th>{{ translate('Order date') }}</th>
+            <th>{{ translate('Customer name') }}</th>
+            <th>{{ translate('Store name') }}</th>
+            <th>{{ translate('Total items') }}</th>
+            <th>{{ translate('Item price') }}</th>
+            <th>{{ translate('Item discount') }}</th>
+            <th>{{ translate('Coupon discount') }}</th>
+            <th>{{ translate('Discounted amount') }}</th>
+            <th>{{ translate('VAT/tax') }}</th>
+            <th>{{ translate('Total amount') }}</th>
+            <th>{{ translate('Payment status') }}</th>
+            <th>{{ translate('Order status') }}</th>
+            <th>{{ translate('Order type') }}</th>
 
         </thead>
         <tbody>
@@ -73,10 +73,10 @@
                 <td>{{ $order->id}}</td>
                 <td>{{ \Carbon\Carbon::parse($order->created_at)->format('Y-m-d '.config('timeformat')) ??  translate('N/A') }}</td>
                 @php($delivery_address = is_array($order->delivery_address) ? $order->delivery_address : json_decode($order->delivery_address, true))
-                <td>{{  $order?->customer ?  $order?->customer?->f_name.' '.$order?->customer?->l_name  : (!empty($delivery_address['contact_person_name']) ? $delivery_address['contact_person_name'] : translate('not_found'))  }}</td>
+                <td>{{  $order?->customer ?  $order?->customer?->f_name.' '.$order?->customer?->l_name  : (!empty($delivery_address['contact_person_name']) ? $delivery_address['contact_person_name'] : translate('No data found'))  }}</td>
                 <td>{{ $order?->store?->name }}</td>
                 <td>{{$order->details->count() }}</td>
-                <td> {{ \App\CentralLogics\Helpers::number_format_short($order['order_amount']-$order['dm_tips']-$order['total_tax_amount']-\App\CentralLogics\DeliveryFeeLogic::adjustedFeeForOrder($order)['adjusted']+$order['coupon_discount_amount'] + $order['store_discount_amount']) }}
+                <td> {{ \App\CentralLogics\Helpers::number_format_short($order['order_amount']-$order['dm_tips']-$order['total_tax_amount']-app(\App\Services\Order\OrderService::class)->adjustedFeeForOrder($order)['adjusted']+$order['coupon_discount_amount'] + $order['store_discount_amount']) }}
                 </td>
                 <td> {{ \App\CentralLogics\Helpers::number_format_short($order->details->sum('discount_on_item')) }} </td>
                 <td> {{ \App\CentralLogics\Helpers::number_format_short($order['coupon_discount_amount']) }}</td>

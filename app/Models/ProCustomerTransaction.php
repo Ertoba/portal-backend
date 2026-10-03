@@ -2,13 +2,13 @@
 
 namespace App\Models;
 
-use App\Traits\ReportFilter;
+use App\Traits\Report\ReportFilterTrait;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class ProCustomerTransaction extends Model
 {
-    use HasFactory, ReportFilter;
+    use HasFactory, ReportFilterTrait;
 
     protected $guarded = ['id'];
 

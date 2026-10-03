@@ -20,33 +20,33 @@
                                     </div>
                                     <div class="text-dark mb-3">
                                         <h3 class="lh-base">
-                                            {{ translate('how_to_get_the_snapchat_pixel_id') }}
+                                            {{ translate('How to get the Snapchat pixel id') }}
                                         </h3>
                                         <p class="opacity-75">
-                                            {{ translate('to_get_your_snapchat_pixel_id,_log_in_to_your_snapchat_ads_manager.') }}
-                                            {{ translate('click_on_business_in_the_top_bar_and_select_business_details_from_the_dropdown_menu.') }}
-                                            {{ translate('from_the_left_hand_menu,_go_to_the_pixels_section.') }}
-                                            {{ translate('if_you_have_already_created_a_pixel,_select_it_from_the_available_list') }}
-                                            {{ translate('your_pixel_id_will_be_displayed_at_the_top_of_the_page,_copy_it_by_clicking_on_it.') }}
+                                            {{ translate('to get your Snapchat pixel id, log in to your Snapchat Ads manager.') }}
+                                            {{ translate('Click on business in the top bar and select business details from the dropdown menu.') }}
+                                            {{ translate('from the left hand menu, go to the pixels section.') }}
+                                            {{ translate('If you have already created a pixel, select it from the available list') }}
+                                            {{ translate('Your pixel id will be displayed at the top of the page, copy it by clicking on it.') }}
                                         </p>
                                     </div>
 
                                     <div class="text-dark mb-3">
                                         <h3 class="lh-base">
-                                            {{ translate('where_to_use_the_snapchat_pixel_id') }}
+                                            {{ translate('Where to use the Snapchat pixel id') }}
                                         </h3>
                                         <p class="opacity-75">
-                                            {{ translate('open_the_marketing_tools_feature_in_your_admin_panel_and_follow_the_steps:') }}
+                                            {{ translate('Open the marketing tools feature in your admin panel and follow the steps') }}:
                                         </p>
                                         <ol class="d-flex flex-column gap-2 opacity-75">
                                             <li>
-                                                {{ translate('go_to_the_snapchat_pixel_id_section_under_marketing_tools.') }}
+                                                {{ translate('Go to the Snapchat pixel id section under marketing tools.') }}
                                             </li>
                                             <li>
-                                                {{ translate('turn_on_the_toggle_button.') }}
+                                                {{ translate('Turn on the toggle button.') }}
                                             </li>
                                             <li>
-                                                {{ translate('paste_your_snapchat_pixel_id_into_the_input_box_and_click_submit.') }}
+                                                {{ translate('Paste your Snapchat pixel id into the input box and click submit.') }}
                                             </li>
                                         </ol>
                                     </div>

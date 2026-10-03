@@ -1,282 +1,271 @@
 @extends('layouts.vendor.app')
 
-@section('title',translate('messages.profile_settings'))
+@section('title', translate('messages.Profile settings'))
 
 @push('css_or_js')
-
+    <link rel="stylesheet" href="{{ asset('public/assets/admin/css/third-party-setup.css') }}">
+    <link rel="stylesheet" href="{{ asset('public/assets/admin/css/view-pages/vendor-profile.css') }}">
 @endpush
 
+@php($is_demo = getEnvMode() == 'demo')
+@php($full_name = trim($profile_user->f_name . ' ' . $profile_user->l_name))
+@php($role_name = $is_employee ? ($profile_user->role?->name ?? translate('messages.Employee')) : translate('Store owner'))
+@php($placeholder_image = asset('public/assets/admin/img/160x160/img1.jpg'))
+@php($password_rules = [
+    'length' => translate('Minimum characters') . ': 8',
+    'lower' => translate('Lowercase letter'),
+    'upper' => translate('Uppercase letter'),
+    'number' => translate('Number'),
+    'symbol' => translate('Symbol'),
+])
+
 @section('content')
-    <!-- Content -->
     <div class="content container-fluid">
-        <!-- Page Header -->
         <div class="page-header">
-            <div class="row align-items-end">
-                <div class="col-sm mb-2 mb-sm-0">
-                    <h1 class="page-header-title">{{translate('messages.settings')}}</h1>
-                </div>
-
-                <div class="col-sm-auto">
-                    <a class="btn btn--primary" href="{{route('vendor.dashboard')}}">
-                        <i class="tio-home mr-1"></i> {{translate('messages.dashboard')}}
-                    </a>
-                </div>
-            </div>
-            <!-- End Row -->
+            <h1 class="page-header-title">
+                <i class="tio-user-outlined"></i>
+                <span>{{ translate('messages.Profile settings') }}</span>
+            </h1>
+            <p class="page-header-desc">{{ translate('Your own name, photograph, email and password.') }}</p>
         </div>
-        <!-- End Page Header -->
 
-        <div class="row">
-            <div class="col-lg-3">
-                <!-- Navbar -->
-                <div class="navbar-vertical navbar-expand-lg mb-3 mb-lg-5">
-                    <!-- Navbar Toggle -->
-                    <button type="button" class="navbar-toggler btn btn-block btn-white mb-3"
-                            aria-label="Toggle navigation" aria-expanded="false" aria-controls="navbarVerticalNavMenu"
-                            data-toggle="collapse" data-target="#navbarVerticalNavMenu">
-                <span class="d-flex justify-content-between align-items-center">
-                  <span class="h5 mb-0">{{translate('messages.nav_menu')}}</span>
+        <div class="tps vpf">
+            <div class="row g-3">
+                <div class="col-xl-4">
+                    <div class="vpf-aside">
+                        <div class="tps-card vpf-identity" data-empty-value="{{ translate('Not set yet') }}">
+                            <div class="vpf-cover"></div>
+                            <div class="vpf-identity__body">
+                                <div class="vpf-avatar">
+                                    <img class="vpf-avatar__img onerror-image" id="vpf_avatar"
+                                        src="{{ $profile_user->image_full_url ?? $placeholder_image }}"
+                                        data-onerror-image="{{ $placeholder_image }}" alt="">
+                                    <input type="file" name="image" id="vpf_image" class="vpf-avatar__input"
+                                        form="vendor-profile-form"
+                                        accept=".webp, .jpg, .png, .jpeg, .gif, .bmp, .tif, .tiff|image/*"
+                                        data-max-size="{{ MAX_FILE_SIZE }}"
+                                        data-invalid-type="{{ translate('messages.Image must be a valid image file') }}"
+                                        data-invalid-size="{{ translate('messages.Image must be less than') }} {{ MAX_FILE_SIZE }}mb">
+                                    <label for="vpf_image" class="vpf-avatar__trigger" title="{{ translate('Change photo') }}">
+                                        <i class="tio-photo-camera"></i>
+                                        <span class="sr-only">{{ translate('Change photo') }}</span>
+                                    </label>
+                                </div>
 
-                  <span class="navbar-toggle-default">
-                    <i class="tio-menu-hamburger"></i>
-                  </span>
+                                <p class="vpf-name {{ $full_name === '' ? 'is-empty' : '' }}" data-preview="name">{{ $full_name ?: translate('Not set yet') }}</p>
+                                <span class="vpf-role">
+                                    <i class="{{ $is_employee ? 'tio-user-outlined' : 'tio-shop-outlined' }}"></i>
+                                    {{ $role_name }}
+                                </span>
 
-                  <span class="navbar-toggle-toggled">
-                    <i class="tio-clear"></i>
-                  </span>
-                </span>
-                    </button>
-                    <!-- End Navbar Toggle -->
+                                <p class="vpf-photo-note" id="vpf_photo_note" hidden>
+                                    <i class="tio-info-outined"></i>
+                                    {{ translate('Photo selected. Save changes to apply it.') }}
+                                </p>
+                                <small class="vpf-photo-hint">
+                                    {{ translate('A square photo works best.') }}<br>
+                                    JPG, PNG, WEBP · ≤ {{ MAX_FILE_SIZE }} MB
+                                </small>
+                            </div>
 
-                    <div id="navbarVerticalNavMenu" class="collapse navbar-collapse">
-                        <!-- Navbar Nav -->
-                        <ul id="navbarSettings"
-                            class="js-sticky-block js-scrollspy navbar-nav navbar-nav-lg nav-tabs card card-navbar-nav">
-                            <li class="nav-item">
-                                <a class="nav-link active text-dark" href="javascript:" id="generalSection">
-                                    <i class="tio-user-outlined nav-icon"></i> {{translate('messages.basic_information')}}
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link text-dark" href="javascript:" id="passwordSection">
-                                    <i class="tio-lock-outlined nav-icon"></i> {{translate('messages.password')}}
-                                </a>
-                            </li>
-                        </ul>
-                        <!-- End Navbar Nav -->
+                            <ul class="vpf-facts">
+                                <li>
+                                    <i class="tio-email-outlined"></i>
+                                    <span class="vpf-facts__key">{{ translate('messages.email') }}</span>
+                                    <span class="vpf-facts__value" data-preview="email">{{ $profile_user->email }}</span>
+                                </li>
+                                <li>
+                                    <i class="tio-call"></i>
+                                    <span class="vpf-facts__key">{{ translate('Phone') }}</span>
+                                    <span class="vpf-facts__value" data-preview="phone">{{ $profile_user->phone }}</span>
+                                </li>
+                                @if ($store)
+                                    <li>
+                                        <i class="tio-shop-outlined"></i>
+                                        <span class="vpf-facts__key">{{ translate('messages.Store') }}</span>
+                                        <span class="vpf-facts__value" title="{{ $store->name }}">{{ $store->name }}</span>
+                                    </li>
+                                @endif
+                                <li>
+                                    <i class="tio-calendar-month"></i>
+                                    <span class="vpf-facts__key">{{ translate('messages.Joined') }}</span>
+                                    <span class="vpf-facts__value">{{ $profile_user->created_at?->translatedFormat('d M Y') ?? '—' }}</span>
+                                </li>
+                            </ul>
+                        </div>
                     </div>
                 </div>
-                <!-- End Navbar -->
-            </div>
 
-            <div class="col-lg-9">
-                <form action="{{getEnvMode()!='demo'?route('vendor.profile.update'):'javascript:'}}" method="post" enctype="multipart/form-data" id="vendor-settings-form">
-                @csrf
-                <!-- Card -->
-                    <div class="card mb-3 mb-lg-5" id="generalDiv">
-                        <!-- Profile Cover -->
-                        <div class="profile-cover">
-                            <div class="profile-cover-img-wrapper"></div>
-                        </div>
-                        <!-- End Profile Cover -->
-
-                        <!-- Avatar -->
-                        <label
-                            class="avatar avatar-xxl avatar-circle avatar-border-lg avatar-uploader profile-cover-avatar"
-                            for="avatarUploader">
-                            <img id="viewer"
-                                 data-onerror-image="{{asset('public/assets/admin/img/160x160/img1.jpg')}}"
-                                 class="avatar-img onerror-image w-100"
-                                 src="{{ \App\CentralLogics\Helpers::get_loggedin_user()?->image_full_url ?? asset('public/assets/admin/img/160x160/img1.jpg') }}"
-                                 alt="Image">
-
-                            <input type="file" name="image" class="js-file-attach avatar-uploader-input"
-                                   id="customFileEg1"
-                                   accept=".webp, .jpg, .png, .jpeg, .gif, .bmp, .tif, .tiff|image/*">
-                            <label class="avatar-uploader-trigger" for="customFileEg1">
-                                <i class="tio-edit avatar-uploader-icon shadow-soft"></i>
-                            </label>
-                        </label>
-                        <!-- End Avatar -->
-                    </div>
-                    <!-- End Card -->
-
-                    <!-- Card -->
-                    <div class="card mb-3 mb-lg-5">
-                        <div class="card-header">
-                            <h2 class="card-title h4"><i class="tio-info"></i> {{translate('messages.basic_information')}}</h2>
-                        </div>
-
-                        <!-- Body -->
-                        <div class="card-body">
-                            <!-- Form -->
-                            <!-- Form Group -->
-                            <div class="row form-group">
-                                <label for="firstNameLabel" class="col-sm-3 col-form-label input-label">{{translate('messages.full_name')}} <i
-                                        class="tio-help-outlined text-body ml-1" data-toggle="tooltip"
-                                        data-placement="top"
-                                        title="Display name"></i></label>
-
-                                <div class="col-sm-9">
-                                    <div class="input-group input-group-sm-down-break">
-                                        <input type="text" class="form-control" name="f_name" id="firstNameLabel"
-                                               placeholder="{{translate('messages.your_first_name')}}" aria-label="{{translate('messages.your_first_name')}}"
-                                               value="{{auth('vendor')->check()?auth('vendor')->user()->f_name:auth('vendor_employee')->user()->f_name}}">
-                                        <input type="text" class="form-control" name="l_name" id="lastNameLabel"
-                                               placeholder="{{translate('messages.your_last_name')}}" aria-label="{{translate('messages.your_last_name')}}"
-                                               value="{{auth('vendor')->check()?auth('vendor')->user()->l_name:auth('vendor_employee')->user()->l_name}}">
-                                    </div>
-                                </div>
-                            </div>
-                            <!-- End Form Group -->
-
-                            <!-- Form Group -->
-                            <div class="row form-group">
-                                <label for="phoneLabel" class="col-sm-3 col-form-label input-label">{{translate('messages.phone')}}
-                                    {{-- <span class="input-label-secondary">({{translate('messages.optional')}})</span> --}}
-                                    </label>
-
-                                <div class="col-sm-9">
-                                    <input type="tel" class="js-masked-input form-control" name="phone" id="phoneLabel"
-                                           placeholder="+x(xxx)xxx-xx-xx" aria-label="+(xxx)xx-xxx-xxxxx"
-                                           value="{{auth('vendor')->check()?auth('vendor')->user()->phone:auth('vendor_employee')->user()->phone}}"
-                                           data-hs-mask-options='{
-                                           "template": "+(880)00-000-00000"
-                                         }'>
-                                </div>
-                            </div>
-                            <!-- End Form Group -->
-
-                            <div class="row form-group">
-                                <label for="newEmailLabel" class="col-sm-3 col-form-label input-label">{{translate('messages.email')}}</label>
-
-                                <div class="col-sm-9">
-                                    <input type="email" class="form-control" name="email" id="newEmailLabel"
-                                           value="{{auth('vendor')->check()?auth('vendor')->user()->email:auth('vendor_employee')->user()->email}}"
-                                           placeholder="{{translate('messages.enter_new_email_address')}}" aria-label="{{translate('messages.enter_new_email_address')}}">
-                                </div>
-                            </div>
-
-                            <div class="d-flex justify-content-end">
-                                <button type="button" data-id="vendor-settings-form" data-message="{{ translate('you_want_to_update_user_info') }}" class="btn btn-primary {{getEnvMode()!='demo'?'form-alert':'call-demo'}}">{{ translate('messages.Save_changes') }}</button>
-                            </div>
-
-                            <!-- End Form -->
-                        </div>
-                        <!-- End Body -->
-                    </div>
-                    <!-- End Card -->
-                </form>
-
-                <!-- Card -->
-                <div id="passwordDiv" class="card mb-3 mb-lg-5">
-                    <div class="card-header">
-                        <h4 class="card-title">{{ translate('messages.change_your_password') }}</h4>
-                    </div>
-
-                    <!-- Body -->
-                    <div class="card-body">
-                        <!-- Form -->
-                        <form id="changePasswordForm"
-                            action="{{ getEnvMode() != 'demo' ? route('vendor.profile.settings-password') : 'javascript:' }}"
-                            method="post" enctype="multipart/form-data">
+                <div class="col-xl-8">
+                    <div class="vpf-main">
+                        <form action="{{ $is_demo ? 'javascript:' : route('vendor.profile.update') }}" method="post"
+                            enctype="multipart/form-data" id="vendor-profile-form" class="tps-card custom-validation">
                             @csrf
+                            <div class="tps-card__head">
+                                <span class="tps-card__brand"><i class="tio-user-outlined"></i></span>
+                                <div class="tps-card__titles">
+                                    <h2 class="tps-card__title">{{ translate('Basic information') }}</h2>
+                                    <p class="tps-card__subtitle">{{ translate('How your name and contact details appear across the panel.') }}</p>
+                                </div>
+                            </div>
 
-                            <!-- Form Group -->
-                            <div class="row form-group">
-                                <label for="newPassword"
-                                    class="col-sm-3 col-form-label input-label">{{ translate('messages.new_password') }}<span
-                                        class="form-label-secondary" data-toggle="tooltip" data-placement="right"
-                                        data-original-title="{{ translate('messages.Must_contain_at_least_one_number_and_one_uppercase_and_lowercase_letter_and_symbol,_and_at_least_8_or_more_characters') }}"><img
-                                            src="{{ asset('/public/assets/admin/img/info-circle.svg') }}"
-                                            alt="{{ translate('messages.Must_contain_at_least_one_number_and_one_uppercase_and_lowercase_letter_and_symbol,_and_at_least_8_or_more_characters') }}"></span></label>
-
-                                <div class="col-sm-9">
-
-
-
-                                    <div class="js-form-message form-group mb-0">
-
-                                        <div class="input-group input-group-merge">
-                                            <input type="password" class="js-toggle-password form-control"
-                                                name="password" id="signupSrPassword"
-                                                pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}"
-                                                title="{{ translate('messages.Must_contain_at_least_one_number_and_one_uppercase_and_lowercase_letter_and_symbol,_and_at_least_8_or_more_characters') }}"
-                                                placeholder="{{ translate('Minimum 8 characters') }}"
-                                                aria-label="8+ characters required" required
-                                                data-msg="Your password is invalid. Please try again."
-                                                data-hs-toggle-password-options='{
-                                            "target": [".js-toggle-password-target-1", ".js-toggle-password-target-2"],
-                                            "defaultClass": "tio-hidden-outlined",
-                                            "showClass": "tio-visible-outlined",
-                                            "classChangeTarget": ".js-toggle-passowrd-show-icon-1"
-                                            }'>
-                                            <div class="js-toggle-password-target-1 input-group-append">
-                                                <a class="input-group-text" href="javascript:">
-                                                    <i class="js-toggle-passowrd-show-icon-1 tio-visible-outlined"></i>
-                                                </a>
+                            <div class="tps-card__body">
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <div class="tps-field">
+                                            <div class="error-wrapper">
+                                                <label class="tps-field__label" for="f_name">
+                                                    {{ translate('First name') }}
+                                                    <span class="tps-req" data-toggle="tooltip" data-placement="right"
+                                                        data-original-title="{{ translate('messages.Required.') }}">*</span>
+                                                </label>
+                                                <input type="text" name="f_name" id="f_name" class="form-control"
+                                                    value="{{ old('f_name', $profile_user->f_name) }}" maxlength="100"
+                                                    autocomplete="given-name"
+                                                    placeholder="{{ translate('messages.Ex') }}: John" required>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="tps-field">
+                                            <div class="error-wrapper">
+                                                <label class="tps-field__label" for="l_name">
+                                                    {{ translate('Last name') }}
+                                                    <span class="tps-opt">{{ translate('Optional') }}</span>
+                                                </label>
+                                                <input type="text" name="l_name" id="l_name" class="form-control"
+                                                    value="{{ old('l_name', $profile_user->l_name) }}" maxlength="100"
+                                                    autocomplete="family-name"
+                                                    placeholder="{{ translate('messages.Ex') }}: Doe">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="tps-field">
+                                            <div class="error-wrapper">
+                                                <label class="tps-field__label" for="email">
+                                                    {{ translate('messages.email') }}
+                                                    <span class="tps-req" data-toggle="tooltip" data-placement="right"
+                                                        data-original-title="{{ translate('messages.Required.') }}">*</span>
+                                                </label>
+                                                <input type="email" name="email" id="email" class="form-control"
+                                                    value="{{ old('email', $profile_user->email) }}" maxlength="100"
+                                                    autocomplete="email"
+                                                    placeholder="{{ translate('messages.Ex') }}: ex@gmail.com" required>
+                                            </div>
+                                            @unless ($is_employee)
+                                                <small class="tps-field__hint">{{ translate('Your store email changes with it.') }}</small>
+                                            @endunless
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="tps-field">
+                                            <div class="error-wrapper">
+                                                <label class="tps-field__label" for="phone">
+                                                    {{ translate('Phone') }}
+                                                    <span class="tps-req" data-toggle="tooltip" data-placement="right"
+                                                        data-original-title="{{ translate('messages.Required.') }}">*</span>
+                                                </label>
+                                                <input type="tel" name="phone" id="phone" class="form-control"
+                                                    value="{{ old('phone', $profile_user->phone) }}" autocomplete="tel"
+                                                    placeholder="{{ translate('messages.Ex') }}: +88017********" required>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                            <!-- End Form Group -->
 
-                            <!-- Form Group -->
-                            <div class="row form-group">
-                                <label for="confirmNewPasswordLabel"
-                                    class="col-sm-3 col-form-label input-label">{{ translate('messages.confirm_password') }}</label>
+                            <div class="tps-card__foot">
+                                <button type="reset" class="btn btn--reset"><i class="tio-refresh"></i> {{ translate('messages.Reset') }}</button>
+                                <button type="{{ $is_demo ? 'button' : 'submit' }}" class="btn btn--primary {{ $is_demo ? 'call-demo' : '' }}">
+                                    <i class="tio-save"></i> {{ translate('messages.Save changes') }}
+                                </button>
+                            </div>
+                        </form>
 
-                                <div class="col-sm-9">
-                                    <div class="mb-3">
-                                        <div class="js-form-message form-group mb-0">
-                                            <div class="input-group input-group-merge">
-                                                <input type="password" class="js-toggle-password form-control"
-                                                    name="confirm_password" id="signupSrConfirmPassword"
-                                                    pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}"
-                                                    title="{{ translate('messages.Must_contain_at_least_one_number_and_one_uppercase_and_lowercase_letter_and_symbol,_and_at_least_8_or_more_characters') }}"
-                                                    placeholder="{{ translate('Minimum 8 characters') }}"
-                                                    aria-label="8+ characters required" required
-                                                    data-msg="Password does not match the confirm password."
-                                                    data-hs-toggle-password-options='{
-                                                "target": [".js-toggle-password-target-1", ".js-toggle-password-target-2"],
-                                                "defaultClass": "tio-hidden-outlined",
-                                                "showClass": "tio-visible-outlined",
-                                                "classChangeTarget": ".js-toggle-passowrd-show-icon-2"
-                                                }'>
-                                                <div class="js-toggle-password-target-2 input-group-append">
-                                                    <a class="input-group-text" href="javascript:">
-                                                        <i class="js-toggle-passowrd-show-icon-2 tio-visible-outlined"></i>
-                                                    </a>
+                        <form action="{{ $is_demo ? 'javascript:' : route('vendor.profile.settings-password') }}" method="post"
+                            id="vendor-password-form" class="tps-card custom-validation"
+                            @unless ($is_demo) data-ajax-form data-ajax-reset @endunless>
+                            @csrf
+                            <div class="tps-card__head">
+                                <span class="tps-card__brand"><i class="tio-lock-outlined"></i></span>
+                                <div class="tps-card__titles">
+                                    <h2 class="tps-card__title">{{ translate('messages.Change your password') }}</h2>
+                                    <p class="tps-card__subtitle">{{ translate('Choose a strong password and type it twice to confirm.') }}</p>
+                                </div>
+                            </div>
+
+                            <div class="tps-card__body">
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <div class="tps-field">
+                                            <div class="error-wrapper">
+                                                <label class="tps-field__label" for="password">
+                                                    {{ translate('New password') }}
+                                                    <span class="tps-req" data-toggle="tooltip" data-placement="right"
+                                                        data-original-title="{{ translate('messages.Required.') }}">*</span>
+                                                </label>
+                                                <div class="tps-input-wrap">
+                                                    <input type="password" name="password" id="password" class="form-control"
+                                                        autocomplete="new-password"
+                                                        placeholder="{{ translate('Minimum characters') }}: 8" required>
+                                                    <button type="button" class="tps-input-action tps-toggle-secret" data-target="#password"
+                                                        aria-label="{{ translate('Show value') }}"><i class="tio-visible"></i></button>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
+                                    <div class="col-md-6">
+                                        <div class="tps-field">
+                                            <div class="error-wrapper">
+                                                <label class="tps-field__label" for="confirm_password">
+                                                    {{ translate('Confirm password') }}
+                                                    <span class="tps-req" data-toggle="tooltip" data-placement="right"
+                                                        data-original-title="{{ translate('messages.Required.') }}">*</span>
+                                                </label>
+                                                <div class="tps-input-wrap">
+                                                    <input type="password" name="confirm_password" id="confirm_password" class="form-control"
+                                                        autocomplete="new-password"
+                                                        data-mismatch="{{ translate('Passwords do not match') }}"
+                                                        placeholder="{{ translate('Minimum characters') }}: 8" required>
+                                                    <button type="button" class="tps-input-action tps-toggle-secret" data-target="#confirm_password"
+                                                        aria-label="{{ translate('Show value') }}"><i class="tio-visible"></i></button>
+                                                </div>
+                                            </div>
+                                            <small class="vpf-match" id="vpf_match" aria-live="polite" hidden>
+                                                <i class="tio-checkmark-circle"></i> {{ translate('Passwords match') }}
+                                            </small>
+                                        </div>
+                                    </div>
+                                    <div class="col-12">
+                                        <ul class="vpf-rules" id="vpf_password_rules">
+                                            @foreach ($password_rules as $rule => $label)
+                                                <li data-rule="{{ $rule }}">
+                                                    <i class="tio-checkmark-circle vpf-rules__met"></i>
+                                                    <i class="tio-circle-outlined vpf-rules__unmet"></i>
+                                                    {{ $label }}
+                                                </li>
+                                            @endforeach
+                                        </ul>
+                                    </div>
                                 </div>
                             </div>
-                            <!-- End Form Group -->
 
-                            <div class="d-flex justify-content-end">
-                                <button type="button" data-id="changePasswordForm"
-                                    data-message="{{ translate('messages.want_to_update_admin_password') }}"
-                                    class="btn btn-primary {{ getEnvMode() != 'demo' ? 'form-alert' : 'call-demo' }}">{{ translate('messages.save') }}</button>
+                            <div class="tps-card__foot">
+                                <span class="tps-foot-note">{{ translate('Use a password you do not use anywhere else.') }}</span>
+                                <button type="{{ $is_demo ? 'button' : 'submit' }}" class="btn btn--primary {{ $is_demo ? 'call-demo' : '' }}">
+                                    <i class="tio-lock-outlined"></i> {{ translate('Update password') }}
+                                </button>
                             </div>
                         </form>
-                        <!-- End Form -->
                     </div>
-                    <!-- End Body -->
                 </div>
-                <!-- End Card -->
-
-                <!-- Sticky Block End Point -->
-                <div id="stickyBlockEndPoint"></div>
             </div>
         </div>
-        <!-- End Row -->
     </div>
-    <!-- End Content -->
 @endsection
 
 @push('script_2')
-    <script src="{{asset('public/assets/admin')}}/js/view-pages/vendor/profile-index.js"></script>
+    @include('admin-views.business-settings.partials.third-party-scripts')
+    <script src="{{ asset('public/assets/admin/js/view-pages/vendor/profile-index.js') }}"></script>
 @endpush

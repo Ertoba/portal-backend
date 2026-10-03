@@ -7,9 +7,6 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 
-/**
- *
- */
 interface DeliveryManRepositoryInterface extends RepositoryInterface
 {
     /**
@@ -28,7 +25,7 @@ interface DeliveryManRepositoryInterface extends RepositoryInterface
      * @param int|null $offset
      * @return Collection|LengthAwarePaginator
      */
-    public function getZoneWiseListWhere(string $zoneId = 'all', string $searchValue = null, array $filters = [], array $relations = [], int|string $dataLimit = DEFAULT_DATA_LIMIT, int $offset = null): Collection|LengthAwarePaginator;
+    public function getZoneWiseListWhere(string $zoneId = 'all', ?string $searchValue = null, array $filters = [], array $relations = [], int|string $dataLimit = DEFAULT_DATA_LIMIT, ?int $offset = null): Collection|LengthAwarePaginator;
 
     /**
      * @param Request $request
@@ -42,7 +39,7 @@ interface DeliveryManRepositoryInterface extends RepositoryInterface
      * @param array $relations
      * @return Model|null
      */
-    public function getActiveFirstWhere(string $searchValue = null, array $filters = [], array $relations = []): ?Model;
+    public function getActiveFirstWhere(?string $searchValue = null, array $filters = [], array $relations = []): ?Model;
 
         /**
      * @param string $zoneId
@@ -54,7 +51,14 @@ interface DeliveryManRepositoryInterface extends RepositoryInterface
      * @param int|null $offset
      * @return Collection|LengthAwarePaginator
      */
-    public function getFilterWiseListWhere(string $zoneId = 'all', string $searchValue = null, array $filters = [],  string $additionalFilter = null ,string $jobType = null ,array $relations = [], int|string $dataLimit = DEFAULT_DATA_LIMIT, int $offset = null): Collection|LengthAwarePaginator;
+    public function getFilterWiseListWhere(string $zoneId = 'all', ?string $searchValue = null, array $filters = [],  ?string $additionalFilter = null ,?string $jobType = null ,array $relations = [], int|string $dataLimit = DEFAULT_DATA_LIMIT, ?int $offset = null): Collection|LengthAwarePaginator;
 
+    /**
+     * Approved delivery men as lightweight {id, f_name, l_name} rows for a filter
+     * dropdown -- no relations, no appended image URLs.
+     *
+     * @return Collection
+     */
+    public function getApprovedFilterOptions(): Collection;
 
 }

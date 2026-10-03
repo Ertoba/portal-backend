@@ -23,7 +23,6 @@
 </div>
 <div class="modal-body">
     <div class="d-flex flex-row">
-        <!-- Product gallery-->
         <div class="d-flex align-items-center justify-content-center active">
             <img class="img-responsive initial--20 onerror-image"
             src="{{ $product['image_full_url']}}"
@@ -32,7 +31,6 @@
                 width="">
             <div class="cz-image-zoom-pane"></div>
         </div>
-        <!-- Product details-->
         <div class="details pl-2 w-0 flex-grow">
             @if ($item_type == 'item')
                 <a href="{{ route('admin.item.view', $product->id) }}"
@@ -66,25 +64,23 @@
 
             @if ($product->discount > 0)
                 <div class="mb-3 text-dark">
-                    <strong>{{ translate('messages.discount') }} : </strong>
+                    <strong>{{ translate('Discount') }} : </strong>
                     <strong
                         id="set-discount-amount">{{ \App\CentralLogics\Helpers::get_product_discount($product) }}</strong>
                 </div>
             @endif
-            <!-- Product panels-->
-            {{-- <div class="sharethis-inline-share-buttons"></div> --}}
         </div>
     </div>
     <div class="row pt-2">
         <div class="col-12">
-            <h2>{{ translate('messages.description') }}</h2>
+            <h2>{{ translate('messages.Description') }}</h2>
             <span class="d-block text-dark">
                 {!! $product->description !!}
             </span>
 
             @if (in_array($product->module->module_type ,['food','grocery']))
             @if (count($product->nutritions) )
-                <h4 class="mt-2"> {{ translate('messages.Nutrition_Details') }}</h4>
+                <h4 class="mt-2"> {{ translate('Nutrition details') }}</h4>
                 <span class="d-block text-dark text-break">
                     @foreach($product->nutritions as $nutrition)
                     {{$nutrition->nutrition}}{{ !$loop->last ? ',' : '.'}}
@@ -92,7 +88,7 @@
                 </span>
             @endif
             @if (count($product->allergies))
-                <h4 class="mt-2"> {{ translate('messages.Allergie_Ingredients') }}</h4>
+                <h4 class="mt-2"> {{ translate('Allergen ingredients') }}</h4>
                 <span class="d-block text-dark text-break">
                     @foreach($product->allergies as $allergy)
                     {{$allergy->allergy}}{{ !$loop->last ? ',' : '.'}}
@@ -103,7 +99,7 @@
 
         @if (in_array($product->module->module_type ,['pharmacy']))
             @if ($product->generic->pluck('generic_name')->first())
-                <h4 class="mt-2"> {{ translate('generic_name') }}</h4>
+                <h4 class="mt-2"> {{ translate('Generic name') }}</h4>
                 <span class="d-block text-dark text-break">
                     {{ $product->generic->pluck('generic_name')->first() }}
                 </span>
@@ -123,15 +119,11 @@
 
                 @if (isset($product->module_id) && $product->module->module_type == 'food')
                     @if ($product->food_variations)
-                        @php($singleArray = [])
-                        @php($singleArray_name = [])
                         @php($values = [])
 
                         @php($selected_variations = json_decode($cart_item['variation'], true))
                         @if (is_array($selected_variations))
 
-                            @php($singleArray = array_column($selected_variations, 'values'))
-                            @php($singleArray_name = array_column($selected_variations, 'name'))
 
                             @php($names = [])
                             @php($values = [])
@@ -154,14 +146,14 @@
                             @if (isset($choice->name) && isset($choice->values))
                                 <div class="h3 p-0 pt-2">{{ $choice->name }} <small style="font-size: 12px"
                                         class="text-muted">
-                                        ({{ $choice->required == 'on' ? translate('messages.Required') : translate('messages.optional') }})
+                                        ({{ $choice->required == 'on' ? translate('messages.Required.') : translate('Optional') }})
                                     </small>
                                 </div>
                                 @if ($choice->min != 0 && $choice->max != 0)
                                     <small class="d-block mb-3">
-                                        {{ translate('You_need_to_select_minimum_ ') }} {{ $choice->min }}
-                                        {{ translate('to_maximum_ ') }} {{ $choice->max }}
-                                        {{ translate('options') }}
+                                        {{ translate('You need to select minimum') }}  {{ $choice->min }}
+                                        {{ translate('To maximum') }}  {{ $choice->max }}
+                                        {{ translate('Options') }}
                                     </small>
                                 @endif
 
@@ -196,7 +188,6 @@
                         @endforeach
                     @endif
                 @else
-{{--                    @php($variations = count($temp) > 0 ? explode('-', $temp[0]['type']) : [])--}}
                         <?php
                         $variations = [];
                         $itemType = null;
@@ -227,10 +218,6 @@
 
                         <div class="d-flex justify-content-left flex-wrap">
                             @foreach ($choice->options as $option)
-{{--                                <input class="btn-check" type="radio" id="{{ $choice->name }}-{{ $option }}"--}}
-{{--                                    name="{{ $choice->name }}" value="{{ $option }}"--}}
-{{--                                    {{ count($temp) > 0 && str_replace(' ', '', $option) == $variations[$key] ? 'checked' : '' }}--}}
-{{--                                       autocomplete="off">--}}
                                 @php($option_id = Str::slug($choice->name . '-' . $option, '_'))
 
                                 <input class="btn-check" type="radio"
@@ -249,7 +236,6 @@
                     @endforeach
                 @endif
 
-                <!-- Quantity + Add to cart -->
                 <div class="d-flex justify-content-between">
                     <div class="product-description-label mt-2 text-dark h3">{{ translate('messages.quantity') }}:
                     </div>
@@ -276,12 +262,12 @@
                 </div>
                 @php($add_ons = json_decode($product->add_ons))
                 @if (count($add_ons) > 0 && $add_ons[0])
-                    <div class="h3 p-0 pt-2">{{ translate('messages.addon') }}
+                    <div class="h3 p-0 pt-2">{{ translate('Addon') }}
                     </div>
 
                     <div class="d-flex justify-content-left flex-wrap">
                             @php($addons = array_column(json_decode($cart_item['add_ons'], true), 'quantity', 'id'))
-                        @foreach (\App\Models\AddOn::withoutGlobalScope(\App\Scopes\StoreScope::class)->whereIn('id', $add_ons)->active()->get() as $key => $add_on)
+                        @foreach ($product_addons as $key => $add_on)
                             @php($checked = array_key_exists($add_on->id, $addons))
                             <div class="flex-column pb-2">
                                 <input type="hidden" name="addon-price{{ $add_on->id }}"
@@ -309,7 +295,7 @@
                 @endif
                 <div class="row no-gutters d-none mt-2 text-dark" id="chosen_price_div">
                     <div class="col-2">
-                        <div class="product-description-label">{{ translate('Total Price') }}:</div>
+                        <div class="product-description-label">{{ translate('Total price') }}:</div>
                     </div>
                     <div class="col-10">
                         <div class="product-price">
@@ -321,11 +307,11 @@
                 <div class="btn--container justify-content-end mt-2">
                     <button class="btn btn--danger removeFromCart" data-key="{{ $item_key }}" type="button">
                         <i class="tio-delete"></i>
-                        {{ translate('messages.delete') }}
+                        {{ translate('messages.Delete') }}
                     </button>
                     <button class="btn btn--primary update_order_item" type="button">
                         <i class="tio-edit"></i>
-                        {{ translate('messages.update') }}
+                        {{ translate('Update') }}
                     </button>
 
                 </div>
@@ -339,21 +325,19 @@
   cartQuantityInitialize();
     getVariantPrice();
 
-    // Update price when input changes (like variant selection)
     $('#add-to-cart-form input').on('change', function () {
         getVariantPrice();
     });
 
-    // Handle "plus" (step up)
     $('.addon-stepup').on('click', function () {
         const input = this.parentNode.querySelector('input[type=number]');
         input.stepUp();
-        input.dispatchEvent(new Event('change')); // manually trigger change
+        input.dispatchEvent(new Event('change'));
         getVariantPrice();
     });
      document.querySelectorAll('.addon-chek').forEach(checkbox => {
         checkbox.addEventListener('change', function () {
-            const id = this.getAttribute('id'); // e.g., addon3
+            const id = this.getAttribute('id');
             const qtyLabel = document.querySelector(`label.addon-quantity-input[for="${id}"]`);
             if (qtyLabel) {
                 qtyLabel.classList.toggle('d-none', !this.checked);
@@ -362,7 +346,6 @@
          getVariantPrice();
     });
 
-    // Handle "minus" (step down)
     $('.addon-stepdown').on('click', function () {
         const input = this.parentNode.querySelector('input[type=number]');
         input.stepDown();

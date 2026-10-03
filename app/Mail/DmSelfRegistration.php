@@ -2,26 +2,30 @@
 
 namespace App\Mail;
 
-use App\CentralLogics\Helpers;
-use App\Models\BusinessSetting;
 use App\Models\DeliveryMan;
 use App\Models\EmailTemplate;
+use App\Mail\Concerns\BuildsTemplatedMail;
+use App\Mail\Concerns\QueueableMailable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Queue\SerializesModels;
+use App\Support\Notification\NotificationText;
+use App\Services\System\BusinessSettingService;
 
-class DmSelfRegistration extends Mailable
+class DmSelfRegistration extends Mailable implements ShouldQueue
 {
-    use Queueable, SerializesModels;
+    use BuildsTemplatedMail, Queueable, QueueableMailable, SerializesModels;
 
     /**
      * Create a new message instance.
      *
      * @return void
      */
-
     protected $status;
+
     protected $name;
+
     protected $deliveryMan;
 
     public function __construct($status, $deliveryMan)
@@ -38,31 +42,27 @@ class DmSelfRegistration extends Mailable
      */
     public function build()
     {
-        $company_name = BusinessSetting::where('key', 'business_name')->first()->value;
         $status = $this->status;
-        if($status == 'approved'){
-            $data=EmailTemplate::where('type','dm')->where('email_type', 'approve')->first();
-        }elseif($status == 'denied'){
-            $data=EmailTemplate::where('type','dm')->where('email_type', 'deny')->first();
-        }else{
-            $data=EmailTemplate::where('type','dm')->where('email_type', 'registration')->first();
+        if ($status == 'approved') {
+            $data = EmailTemplate::where('type', 'dm')->where('email_type', 'approve')->first();
+        } elseif ($status == 'denied') {
+            $data = EmailTemplate::where('type', 'dm')->where('email_type', 'deny')->first();
+        } else {
+            $data = EmailTemplate::where('type', 'dm')->where('email_type', 'registration')->first();
         }
-        $template=$data?$data->email_template:5;
         $url = '';
         $dm_name = $this->name;
-        $title = Helpers::text_variable_data_format( value:$data['title']??'',delivery_man_name:$dm_name??'');
-        $body = Helpers::text_variable_data_format( value:$data['body']??'',delivery_man_name:$dm_name??'');
-        $footer_text = Helpers::text_variable_data_format( value:$data['footer_text']??'',delivery_man_name:$dm_name??'');
-        $copyright_text = Helpers::text_variable_data_format( value:$data['copyright_text']??'',delivery_man_name:$dm_name??'');
-        $subject = Helpers::formatDeliverymanText(translate('Deliveryman_Registration'), $this->deliveryMan);
-        return $this->subject($subject)->view('email-templates.new-email-format-'.$template, [
-            'company_name'=>$company_name,
-            'data'=>$data,
-            'title'=>Helpers::formatDeliverymanText($title, $this->deliveryMan),
-            'body'=>Helpers::formatDeliverymanText($body, $this->deliveryMan),
-            'footer_text'=>Helpers::formatDeliverymanText($footer_text, $this->deliveryMan),
-            'copyright_text'=>Helpers::formatDeliverymanText($copyright_text, $this->deliveryMan),
-            'url'=>$url
-        ]);
+        $subject = NotificationText::forDeliveryman(translate('Deliveryman registration'), $this->deliveryMan);
+
+        return $this->templatedMail(
+            template: $data,
+            fallbackTemplate: 5,
+            subject: $subject,
+            placeholders: [
+                'delivery_man_name' => $dm_name ?? '',
+            ],
+            viewData: ['url' => $url],
+            textFilter: fn ($value) => NotificationText::forDeliveryman($value, $this->deliveryMan),
+        );
     }
 }

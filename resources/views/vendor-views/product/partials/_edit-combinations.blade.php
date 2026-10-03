@@ -6,7 +6,7 @@
                 <span class="control-label m-0">{{translate('messages.Variant')}}</span>
             </th>
             <th class="text-center border-0">
-                <span class="control-label">{{translate('messages.Variant Price')}}</span>
+                <span class="control-label">{{translate('Variant price')}}</span>
             </th>
             @if ($stock)
                 <th class="text-center border-0">

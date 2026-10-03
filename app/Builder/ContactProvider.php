@@ -7,20 +7,6 @@ use App\Models\Contact;
 use Illuminate\Support\Facades\Http;
 use Modules\Builder\Contracts\ContactProvider as ContactProviderContract;
 
-/**
- * 6amMart host adapter for ContactProvider.
- *
- * Writes storefront contact messages into the same `contacts` table
- * the admin landing's `HomeController::send_message` uses, so admins
- * see all enquiries in one place (Inbox → Contact Messages).
- *
- * Captcha behaviour mirrors the admin landing: when the host has
- * Google reCAPTCHA v3 enabled in business settings, the v3 token
- * sent from the storefront is verified against Google. When the
- * feature is off, the storefront skips the check entirely (we do
- * NOT port the Gregwar/session captcha — it's blade-only and
- * inappropriate for an SPA).
- */
 class ContactProvider implements ContactProviderContract
 {
     public function submit(array $payload): array
@@ -33,9 +19,6 @@ class ContactProvider implements ContactProviderContract
             return ['success' => false, 'errors' => [$recaptchaError]];
         }
 
-        // Property-assignment write mirrors `HomeController::send_message`
-        // (the admin-landing path). The Contact model has no `$fillable`,
-        // so `Contact::create([...])` would silently drop the values.
         try {
             $contact = new Contact();
             $contact->setAttribute('name',    (string) ($payload['name']    ?? ''));
@@ -46,7 +29,7 @@ class ContactProvider implements ContactProviderContract
         } catch (\Throwable) {
             return ['success' => false, 'errors' => [[
                 'code'    => 'persist',
-                'message' => translate('messages.failed_to_send_message') ?: 'Could not send your message.',
+                'message' => translate('messages.Failed to send message') ?: 'Could not send your message.',
             ]]];
         }
 
@@ -63,22 +46,6 @@ class ContactProvider implements ContactProviderContract
         return $key !== '' ? $key : null;
     }
 
-    /**
-     * Returns null when reCAPTCHA is disabled OR verification passes.
-     * Returns an `errors[]` entry shape when it fails.
-     *
-     * Behavior intentionally mirrors the host's `HomeController::
-     * send_message` + auth `LoginController` — both treat any HTTP 2xx
-     * response from Google's verifier as a pass, even when Google
-     * returns `success: false` (e.g. `browser-error` from a hostname
-     * not on the site_key's domain allow-list). Going stricter here
-     * would block users that the rest of the host happily lets
-     * through, with no real security gain — captcha across this app
-     * is a spam deterrent / network-error guard, not a hard gate.
-     *
-     * Soft `report()` on a rejection so the admin can still see what
-     * Google said in laravel.log without surfacing it to the user.
-     */
     private function verifyRecaptcha(?string $token, ?string $ip): ?array
     {
         $settings = Helpers::get_business_settings('recaptcha');
@@ -86,7 +53,7 @@ class ContactProvider implements ContactProviderContract
             return null;
         }
 
-        $base = translate('messages.ReCAPTCHA Failed') ?: 'ReCAPTCHA failed.';
+        $base = translate('reCAPTCHA failed') ?: 'ReCAPTCHA failed.';
 
         if (!$token) {
             return ['code' => 'recaptcha', 'message' => $base];

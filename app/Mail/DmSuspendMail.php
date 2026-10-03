@@ -2,34 +2,38 @@
 
 namespace App\Mail;
 
-use App\CentralLogics\Helpers;
-use App\Models\BusinessSetting;
 use App\Models\DeliveryMan;
 use App\Models\EmailTemplate;
+use App\Mail\Concerns\BuildsTemplatedMail;
+use App\Mail\Concerns\QueueableMailable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Queue\SerializesModels;
+use App\Support\Notification\NotificationText;
+use App\Services\System\BusinessSettingService;
 
-class DmSuspendMail extends Mailable
+class DmSuspendMail extends Mailable implements ShouldQueue
 {
-    use Queueable, SerializesModels;
+    use BuildsTemplatedMail, Queueable, QueueableMailable, SerializesModels;
 
     /**
      * Create a new message instance.
      *
      * @return void
      */
+    protected $status;
 
-     protected $status;
-     protected $name;
-     protected $deliveryMan;
+    protected $name;
 
-     public function __construct($status, $deliveryMan)
-     {
-         $this->status = $status;
-         $this->deliveryMan = $deliveryMan instanceof DeliveryMan ? $deliveryMan : null;
-         $this->name = $deliveryMan instanceof DeliveryMan ? $deliveryMan->full_name : $deliveryMan;
-     }
+    protected $deliveryMan;
+
+    public function __construct($status, $deliveryMan)
+    {
+        $this->status = $status;
+        $this->deliveryMan = $deliveryMan instanceof DeliveryMan ? $deliveryMan : null;
+        $this->name = $deliveryMan instanceof DeliveryMan ? $deliveryMan->full_name : $deliveryMan;
+    }
 
     /**
      * Build the message.
@@ -38,32 +42,24 @@ class DmSuspendMail extends Mailable
      */
     public function build()
     {
-        $company_name = BusinessSetting::where('key', 'business_name')->first()->value;
-
         $status = $this->status;
-        if($status == 'suspend'){
-            $data=EmailTemplate::where('type','dm')->where('email_type', 'suspend')->first();
-            $subject=translate('messages.your_account_has_been_suspended');
-
-        }else{
-            $data=EmailTemplate::where('type','dm')->where('email_type', 'unsuspend')->first();
-            $subject=translate('messages.your_account_has_been_Open_Again');
-
+        if ($status == 'suspend') {
+            $data = EmailTemplate::where('type', 'dm')->where('email_type', 'suspend')->first();
+            $subject = translate('messages.Your account has been suspended');
+        } else {
+            $data = EmailTemplate::where('type', 'dm')->where('email_type', 'unsuspend')->first();
+            $subject = translate('Your account has been open again');
         }
-
-        $template=$data?$data->email_template:7;
         $delivery_man_name = $this->name;
-        $title = Helpers::text_variable_data_format( value:$data['title']??'',delivery_man_name:$delivery_man_name??'',transaction_id:$transaction_id??'');
-        $body = Helpers::text_variable_data_format( value:$data['body']??'',delivery_man_name:$delivery_man_name??'',transaction_id:$transaction_id??'');
-        $footer_text = Helpers::text_variable_data_format( value:$data['footer_text']??'',delivery_man_name:$delivery_man_name??'',transaction_id:$transaction_id??'');
-        $copyright_text = Helpers::text_variable_data_format( value:$data['copyright_text']??'',delivery_man_name:$delivery_man_name??'',transaction_id:$transaction_id??'');
-        return $this->subject(Helpers::formatDeliverymanText($subject, $this->deliveryMan))->view('email-templates.new-email-format-'.$template, [
-            'company_name'=>$company_name,
-            'data'=>$data,
-            'title'=>Helpers::formatDeliverymanText($title, $this->deliveryMan),
-            'body'=>Helpers::formatDeliverymanText($body, $this->deliveryMan),
-            'footer_text'=>Helpers::formatDeliverymanText($footer_text, $this->deliveryMan),
-            'copyright_text'=>Helpers::formatDeliverymanText($copyright_text, $this->deliveryMan)
-        ]);
+
+        return $this->templatedMail(
+            template: $data,
+            fallbackTemplate: 7,
+            subject: NotificationText::forDeliveryman($subject, $this->deliveryMan),
+            placeholders: [
+                'delivery_man_name' => $delivery_man_name ?? '',
+            ],
+            textFilter: fn ($value) => NotificationText::forDeliveryman($value, $this->deliveryMan),
+        );
     }
 }

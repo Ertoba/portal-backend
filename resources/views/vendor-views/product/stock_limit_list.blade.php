@@ -1,139 +1,121 @@
+@use('App\Support\Settings\BusinessRules')
 
 @extends('layouts.vendor.app')
 
-@section('title',translate('messages.Low_Stock_List'))
+@section('title',translate('Low stock list'))
 
 @push('css_or_js')
     <meta name="csrf-token" content="{{ csrf_token() }}">
 @endpush
 
 @section('content')
-@php($store_data=\App\CentralLogics\Helpers::get_store_data())
     <div class="content container-fluid">
-        <!-- Page Header -->
         <div class="page-header">
             <div class="row align-items-center">
                 <div class="col-sm mb-2 mb-sm-0">
-                    <h1 class="page-header-title"><i class="tio-filter-list"></i> {{translate('messages.Low_Stock_List')}}<span class="badge badge-soft-dark ml-2" id="itemCount">{{$items->total()}}</span></h1>
+                    <h1 class="page-header-title"><i class="tio-filter-list"></i> {{translate('Low stock list')}}<span class="badge badge-soft-dark ml-2" id="itemCount">{{$items->total()}}</span></h1>
+                    <p class="page-header-desc">{{ translate('Items running low, so you can restock before customers find out.') }}</p>
                 </div>
             </div>
         </div>
-        <!-- End Page Header -->
-        <!-- Card -->
         <div class="card">
-            <!-- Header -->
             <div class="card-header py-2  border-0">
                 <div class="search--button-wrapper justify-content-end">
+                    @include('partials._table-head', [
+                        'subtitle' => translate('messages.Your items at or below their stock alert level.'),
+                    ])
+
                     <form id="search-form" class="search-form">
                         @csrf
-                        <!-- Search -->
                         <div class="input-group input--group">
-                            <input id="datatableSearch" type="search" name="search" class="form-control" placeholder="{{translate('messages.ex_search_name')}}" aria-label="{{translate('messages.search_here')}}">
+                            <input id="datatableSearch" type="search" name="search" class="form-control" placeholder="{{translate('messages.Ex search name')}}" aria-label="{{translate('Search')}}">
                             <button type="submit" class="btn btn--secondary"><i class="tio-search"></i></button>
                         </div>
-                        <!-- End Search -->
                     </form>
-                    <!-- Unfold -->
-                    @if ($store_data->module->module_type == 'food' && $toggle_veg_non_veg)
+                    @if ($store_data->module->module_type == 'food' && BusinessRules::vegNonVegEnabled())
                     <div class="col-sm-auto mb-1 mb-sm-0">
-                        <select name="type" data-url="{{url()->full()}}" data-filter="type" data-placeholder="{{translate('messages.all')}}" class="form-control h--37px set-filter">
-                            <option value="all" {{$type=='all'?'selected':''}}>{{translate('messages.all')}}</option>
-                            <option value="veg" {{$type=='veg'?'selected':''}}>{{translate('messages.veg')}}</option>
-                            <option value="non_veg" {{$type=='non_veg'?'selected':''}}>{{translate('messages.non_veg')}}</option>
+                        <select name="type" data-url="{{url()->full()}}" data-filter="type" data-placeholder="{{translate('All')}}" class="form-control h--37px set-filter">
+                            <option value="all" {{$type=='all'?'selected':''}}>{{translate('All')}}</option>
+                            <option value="veg" {{$type=='veg'?'selected':''}}>{{translate('Veg')}}</option>
+                            <option value="non_veg" {{$type=='non_veg'?'selected':''}}>{{translate('Non veg')}}</option>
                         </select>
                     </div>
-                    <!-- End Veg/NonVeg filter -->
                     @endif
 
                     <div class="hs-unfold  min--250">
-                        <select name="category_id" id="category" data-url="{{url()->full()}}" data-filter="category_id" data-placeholder="{{translate('messages.select_category')}}" class="js-data-example-ajax form-control set-filter">
+                        <select name="category_id" id="category" data-url="{{url()->full()}}" data-filter="category_id" data-placeholder="{{translate('Select category')}}" class="js-data-example-ajax form-control set-filter">
                             @if($category)
                                 <option value="{{$category->id}}" selected>{{$category->name}} ({{$category->position == 0?translate('messages.main'):translate('messages.sub')}})</option>
                             @else
-                                <option value="all" selected>{{translate('messages.all_categories')}}</option>
+                                <option value="all" selected>{{translate('All categories')}}</option>
                             @endif
                         </select>
                     </div>
 
-                    <!-- End Unfold -->
 
-                    <!-- Unfold -->
                     <div class="hs-unfold d-none">
                         <div id="showHideDropdown" class="hs-unfold-content dropdown-unfold dropdown-menu dropdown-menu-right dropdown-card">
                             <div class="card card-sm">
                                 <div class="card-body">
                                     <div class="d-flex justify-content-between align-items-center mb-3">
-                                        <span class="mr-2">{{translate('messages.name')}}</span>
-                                        <!-- Checkbox Switch -->
+                                        <span class="mr-2">{{translate('Name')}}</span>
                                         <label class="toggle-switch toggle-switch-sm" for="toggleColumn_name">
                                             <input type="checkbox" class="toggle-switch-input" id="toggleColumn_name" checked>
                                             <span class="toggle-switch-label">
                                             <span class="toggle-switch-indicator"></span>
                                             </span>
                                         </label>
-                                    <!-- End Checkbox Switch -->
                                     </div>
 
                                     <div class="d-flex justify-content-between align-items-center mb-3">
-                                        <span class="mr-2">{{translate('messages.category')}}</span>
+                                        <span class="mr-2">{{translate('messages.Category')}}</span>
 
-                                        <!-- Checkbox Switch -->
                                         <label class="toggle-switch toggle-switch-sm" for="toggleColumn_type">
                                             <input type="checkbox" class="toggle-switch-input" id="toggleColumn_type" checked>
                                             <span class="toggle-switch-label">
                                             <span class="toggle-switch-indicator"></span>
                                             </span>
                                         </label>
-                                    <!-- End Checkbox Switch -->
                                     </div>
 
                                     <div class="d-flex justify-content-between align-items-center mb-3">
                                         <span class="mr-2">{{translate('messages.price')}}</span>
 
-                                        <!-- Checkbox Switch -->
                                         <label class="toggle-switch toggle-switch-sm" for="toggleColumn_status">
                                             <input type="checkbox" class="toggle-switch-input" id="toggleColumn_status" checked>
                                             <span class="toggle-switch-label">
                                             <span class="toggle-switch-indicator"></span>
                                             </span>
                                         </label>
-                                        <!-- End Checkbox Switch -->
                                     </div>
                                     <div class="d-flex justify-content-between align-items-center mb-3">
                                         <span class="mr-2">{{translate('messages.stock')}}</span>
 
-                                        <!-- Checkbox Switch -->
                                         <label class="toggle-switch toggle-switch-sm" for="toggleColumn_price">
                                             <input type="checkbox" class="toggle-switch-input" id="toggleColumn_price" checked>
                                             <span class="toggle-switch-label">
                                             <span class="toggle-switch-indicator"></span>
                                             </span>
                                         </label>
-                                        <!-- End Checkbox Switch -->
                                     </div>
                                     <div class="d-flex justify-content-between align-items-center mb-3">
-                                        <span class="mr-2">{{translate('messages.action')}}</span>
+                                        <span class="mr-2">{{translate('messages.Action')}}</span>
 
-                                        <!-- Checkbox Switch -->
                                         <label class="toggle-switch toggle-switch-sm" for="toggleColumn_action">
                                             <input type="checkbox" class="toggle-switch-input" id="toggleColumn_action" checked>
                                             <span class="toggle-switch-label">
                                             <span class="toggle-switch-indicator"></span>
                                             </span>
                                         </label>
-                                        <!-- End Checkbox Switch -->
                                     </div>
                             </div>
                             </div>
                         </div>
                     </div>
-                    <!-- End Unfold -->
                 </div>
             </div>
-            <!-- End Header -->
 
 
-            <!-- Table -->
             <div class="table-responsive datatable-custom">
                 <table id="datatable" class="table table-borderless table-thead-bordered table-nowrap table-align-middle card-table"
                     data-hs-datatables-options='{
@@ -154,12 +136,12 @@
                     }'>
                     <thead class="thead-light">
                     <tr>
-                        <th class="border-0">{{translate('messages.#')}}</th>
-                        <th class="border-0 w-20p">{{translate('messages.name')}}</th>
-                        <th class="border-0 w-20p">{{translate('messages.category')}}</th>
+                        <th class="border-0">#</th>
+                        <th class="border-0 w-20p">{{translate('Name')}}</th>
+                        <th class="border-0 w-20p">{{translate('messages.Category')}}</th>
                         <th class="border-0">{{translate('messages.price')}}</th>
                         <th class="border-0 text-center">{{translate('messages.stock')}}</th>
-                        <th class="border-0 text-center">{{translate('messages.action')}}</th>
+                        <th class="border-0 text-center">{{translate('messages.Action')}}</th>
                     </tr>
                     </thead>
 
@@ -177,7 +159,7 @@
                                 </a>
                             </td>
                             <td>
-                            {{Str::limit($item->category?$item->category->name:translate('messages.category_deleted'),20,'...')}}
+                            {{Str::limit($item->category?$item->category->name:translate('messages.Category deleted'),20,'...')}}
                             </td>
                             <td>
                                 {{\App\CentralLogics\Helpers::format_currency($item['price'])}}
@@ -189,8 +171,8 @@
                             </td>
                             <td>
                                 <div class="btn--container justify-content-center">
-                                    <a class="btn btn-sm btn--primary btn-outline-primary action-btn update_quantity"
-                                        href="javascript:" title="{{translate('messages.edit_quantity')}}" data-id="{{ $item->id }}" data-toggle="modal" data-target="#update-quantity"><i class="tio-edit"></i>
+                                    <a class="btn btn-sm action-btn action-btn--edit update_quantity"
+                                        href="javascript:" title="{{translate('messages.Edit quantity')}}" data-id="{{ $item->id }}" data-toggle="modal" data-target="#update-quantity"><i class="tio-edit"></i>
                                     </a>
                                 </div>
                             </td>
@@ -198,26 +180,24 @@
                     @endforeach
                     </tbody>
                 </table>
-                <hr>
-                <div class="page-area">
-                    <table>
-                        <tfoot class="border-top">
-                        {!! $items->links() !!}
-                        </tfoot>
-                    </table>
-                </div>
                 @if(count($items) === 0)
                 <div class="empty--data">
                     <img src="{{asset('/public/assets/admin/svg/illustrations/sorry.svg')}}" alt="public">
                     <h5>
-                        {{translate('no_data_found')}}
+                        {{translate('No data found')}}
                     </h5>
                 </div>
                 @endif
             </div>
-            <!-- End Table -->
+            <hr>
+            <div class="page-area">
+                <table>
+                    <tfoot class="border-top">
+                    {!! $items->links() !!}
+                    </tfoot>
+                </table>
+            </div>
         </div>
-        <!-- End Card -->
     </div>
 
 @endsection
@@ -237,8 +217,8 @@
                     @csrf
                     <div class="mt-2 rest-part w-100"></div>
                     <div class="btn--container justify-content-end">
-                        <button type="reset" data-dismiss="modal" aria-label="Close" class="btn btn--reset">{{translate('cancel')}}</button>
-                        <button type="submit" id="submit_new_customer" class="btn btn--primary">{{translate('update_stock')}}</button>
+                        <button type="reset" data-dismiss="modal" aria-label="Close" class="btn btn--reset"><i class="tio-clear-circle-outlined"></i> {{translate('Cancel')}}</button>
+                        <button type="submit" id="submit_new_customer" class="btn btn--primary"><i class="tio-save"></i> {{translate('Update stock')}}</button>
                     </div>
                 </form>
             </div>

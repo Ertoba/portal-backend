@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Http\Middleware;
+use App\Support\ApiEnvelope;
 use Closure;
 use Illuminate\Support\Facades\Config;
 use App\Models\Module;
@@ -28,25 +29,20 @@ class ModuleCheckMiddleware
             }
         }
 
-        // Check header request and determine localizaton
         if(!$request->hasHeader('moduleId'))
         {
             $errors = [];
-            array_push($errors, ['code' => 'moduleId', 'message' => translate('messages.module_id_required')]);
-            return response()->json([
-                'errors' => $errors
-            ], 403);
+            array_push($errors, ['code' => 'moduleId', 'message' => translate('Module ID required')]);
+            return response()->json(ApiEnvelope::make(config('response.forbidden_403'), null, $errors), 403);
         }
         $value = $request->header('moduleId');
         $module = is_numeric($value)
-            ? Module::where('id', $value)->first()
-            : Module::where('slug', $value)->first();
+            ? Module::withStorage()->where('id', $value)->first()
+            : Module::withStorage()->where('slug', $value)->first();
         if(!$module) {
             $errors = [];
-            array_push($errors, ['code' => 'moduleId', 'message' => translate('messages.not_found')]);
-            return response()->json([
-                'errors' => $errors
-            ], 403);
+            array_push($errors, ['code' => 'moduleId', 'message' => translate('No data found')]);
+            return response()->json(ApiEnvelope::make(config('response.forbidden_403'), null, $errors), 403);
         }
         Config::set('module.current_module_data', $module);
         return $next($request);

@@ -2,40 +2,23 @@
 
 namespace App\Builder;
 
-use App\CentralLogics\Helpers;
-use App\CentralLogics\ProductLogic;
-use App\CentralLogics\StoreLogic;
+use App\Traits\Item\ItemRatingTrait;
 use App\Models\DeliveryMan;
 use App\Models\DMReview;
 use App\Models\Item;
 use App\Models\Order;
 use App\Models\Review;
+use App\Services\Store\StoreService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Modules\Builder\Contracts\ReviewProvider as ReviewProviderContract;
 use Modules\Builder\ValueObjects\StorefrontScope;
+use App\Support\Storage\FileStorage;
 
-/**
- * Customer review submission against delivered orders.
- *
- * Mirrors the host's existing `Api\V1\ItemController::submit_product_review`
- * and `Api\V1\DeliveryManReviewController::submit_review` exactly — same
- * Review / DMReview models, same denorm chain (Item.rating + avg_rating +
- * rating_count; Store.rating with the host's reversed bucket order;
- * OrderReference.is_reviewed). Reviews submitted from the storefront
- * propagate to every read surface (item detail avg, store rating, mobile
- * review reminder) identically to mobile-side submissions.
- *
- * Key differences from host:
- *   - Ownership-checks the order (host's `Order::find()` accepts any id
- *     from any user — security gap we don't propagate).
- *   - Wraps the side-effect chain in DB::transaction so a Review insert
- *     plus partial denorm update can't leave the row set inconsistent.
- *   - Returns structured errors instead of 403/200 responses; controller
- *     translates to flash.
- */
 class ReviewProvider implements ReviewProviderContract
 {
+    use ItemRatingTrait;
+
     /* ─── reviewContext ─────────────────────────────────────── */
 
     public function reviewContext(?StorefrontScope $scope, int $orderId, int $customerId): ?array
@@ -45,9 +28,6 @@ class ReviewProvider implements ReviewProviderContract
             return null;
         }
 
-        // Pull already-reviewed item ids in a single query rather than
-        // N+1 per detail. Same shape the host uses for the
-        // app-level uniqueness check, just batched.
         $reviewedItemIds = Review::query()
             ->where('user_id', $customerId)
             ->where('order_id', $orderId)
@@ -55,20 +35,12 @@ class ReviewProvider implements ReviewProviderContract
             ->map(fn ($id) => (int) $id)
             ->all();
 
-        // Slug lookup for already-reviewed entries so the frontend
-        // could deep-link to "see your review" in a future iteration.
         $reviewSlugs = Review::query()
             ->where('user_id', $customerId)
             ->where('order_id', $orderId)
             ->pluck('review_id', 'item_id')
             ->all();
 
-        // Dedupe details by item_id — an order can carry multiple
-        // detail rows for the same item (different variants). The
-        // Review uniqueness is (item_id, user_id, order_id), so one
-        // review covers all variants. Showing one card per item is
-        // less confusing than per-variant cards that all complete at
-        // once.
         $itemsById = [];
         foreach ($order->details as $detail) {
             $itemId = (int) ($detail->item_id ?? 0);
@@ -120,9 +92,6 @@ class ReviewProvider implements ReviewProviderContract
             return ['success' => false, 'error' => 'Order not found.'];
         }
 
-        // Pre-check duplicate so the user sees a friendly message instead
-        // of catching a DB-side error mid-transaction. The host has no
-        // unique index — protection is app-level via this check.
         $existing = Review::query()
             ->where('item_id', $itemId)
             ->where('user_id', $customerId)
@@ -132,9 +101,6 @@ class ReviewProvider implements ReviewProviderContract
             return ['success' => false, 'error' => 'You have already reviewed this item.'];
         }
 
-        // Verify the item belongs to this order — prevents reviewing an
-        // arbitrary item id with a delivered-order id from a different
-        // store.
         $orderItemIds = $order->details->pluck('item_id')->map(fn ($v) => (int) $v)->all();
         if (!in_array($itemId, $orderItemIds, true)) {
             return ['success' => false, 'error' => 'This item is not part of the order.'];
@@ -145,11 +111,6 @@ class ReviewProvider implements ReviewProviderContract
             return ['success' => false, 'error' => 'Item not found.'];
         }
 
-        // Image upload BEFORE the transaction — uploads aren't transactional
-        // anyway (they hit external storage) and we don't want to roll back
-        // a DB write while leaving uploaded files orphaned. If any upload
-        // fails we collect what succeeded; an empty result is fine (review
-        // can submit without attachments).
         $attachmentPaths = $this->uploadAttachments($imageFiles, 'item review');
 
         try {
@@ -164,33 +125,21 @@ class ReviewProvider implements ReviewProviderContract
                 $review->rating      = $rating;
                 $review->attachment  = json_encode($attachmentPaths);
                 $review->save();
-                // Note: Review::boot() `saved` hook generates `review_id`
-                // slug and re-saves. By the time we read $review->review_id
-                // below it's populated.
 
-                // OrderReference.is_reviewed flag — used by the mobile
-                // review reminder pipeline. Mirror the host's defensive
-                // optional chain: legacy orders predating the observer
-                // have no OrderReference row.
                 if ($order->OrderReference) {
                     $order->OrderReference->update(['is_reviewed' => 1]);
                 }
 
-                // Store rating bucket — passes the EXISTING rating array
-                // into StoreLogic which applies its own reversed-bucket
-                // convention internally. Do NOT pre-decode or transpose.
                 if ($item->store) {
-                    $item->store->rating = StoreLogic::update_store_rating(
+                    $item->store->rating = app(StoreService::class)->updateRating(
                         $item->store->rating,
                         (int) $rating,
                     );
                     $item->store->save();
                 }
 
-                // Item rating denorm — JSON bucket + weighted average +
-                // count. Matches the host's chain verbatim.
-                $item->rating     = ProductLogic::update_rating($item->rating, (int) $rating);
-                $item->avg_rating = ProductLogic::get_avg_rating(json_decode($item->rating, true));
+                $item->rating     = self::updateRatingHistogram($item->rating, (int) $rating);
+                $item->avg_rating = self::averageRating(json_decode($item->rating, true));
                 $item->save();
                 $item->increment('rating_count');
 
@@ -261,8 +210,6 @@ class ReviewProvider implements ReviewProviderContract
                 $review->rating          = $rating;
                 $review->attachment      = json_encode($attachmentPaths);
                 $review->save();
-                // DM aggregate avg/count denorms aren't stored — DeliveryMan::rating()
-                // is a HasMany with SQL aggregation. Next read picks up the new row.
             });
         } catch (\Throwable $e) {
             Log::warning('DM review submit failed', [
@@ -278,12 +225,6 @@ class ReviewProvider implements ReviewProviderContract
 
     /* ─── helpers ───────────────────────────────────────────── */
 
-    /**
-     * Order load with ownership + delivery + scope predicates. Returns
-     * null for "ineligible" regardless of reason (not owned, not
-     * delivered, scope mismatch) — caller surfaces a neutral message
-     * so we don't leak which check failed.
-     */
     private function loadOrder(?StorefrontScope $scope, int $orderId, int $customerId): ?Order
     {
         return Order::query()
@@ -299,12 +240,6 @@ class ReviewProvider implements ReviewProviderContract
             ->first();
     }
 
-    /**
-     * Map an order detail row into the review-card shape. Falls back to
-     * the order_details.item_details JSON snapshot when the live item
-     * has been deleted from the catalog — the customer still gets a
-     * card to review against the historical record.
-     */
     private function mapItemForReview($detail, array $reviewedItemIds, array $reviewSlugs): array
     {
         $itemId = (int) ($detail->item_id ?? 0);
@@ -334,9 +269,6 @@ class ReviewProvider implements ReviewProviderContract
 
     private function mapDeliveryManForReview(DeliveryMan $dm, bool $reviewed): array
     {
-        // Live aggregation via DeliveryMan::rating() — same path the
-        // order-tracking DM card uses. relationLoaded check avoids a
-        // second query when the caller eager-loaded the relation.
         $ratingRow = $dm->relationLoaded('rating')
             ? $dm->getRelation('rating')->first()
             : $dm->rating()->first();
@@ -365,25 +297,13 @@ class ReviewProvider implements ReviewProviderContract
         }
     }
 
-    /**
-     * Upload each file via the host's `Helpers::upload` — same helper
-     * that powers the refund + inbox + cart-add image flows. Per-file
-     * try/catch so a single corrupt file doesn't drop the entire
-     * review. The 'png' extension hint is overridden inside the
-     * helper by the file's actual extension.
-     */
     private function uploadAttachments(array $imageFiles, string $logContext): array
     {
         $paths = [];
         foreach ($imageFiles as $file) {
             if (!$file) continue;
             try {
-                $name = Helpers::upload('review/', 'png', $file);
-                // Mirror the host's shape — flat array of relative
-                // paths is what `submit_product_review` writes. Some
-                // host read paths expect `['img' => …, 'storage' => …]`
-                // (refund), but Review.attachment uses flat strings.
-                // Keep parity with `submit_product_review`'s storage.
+                $name = FileStorage::upload('review/', $file);
                 $paths[] = $name;
             } catch (\Throwable $e) {
                 Log::warning("{$logContext} attachment upload failed", [

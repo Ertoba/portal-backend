@@ -24,6 +24,11 @@ class OrderReportExport implements FromView, ShouldAutoSize, WithStyles,WithColu
         $this->data = $data;
     }
 
+    private function rowCount(): int
+    {
+        return (int) ($this->data['orders_count'] ?? $this->data['orders']->count());
+    }
+
     public function view(): View
     {
         return view('file-exports.order-report', [
@@ -34,9 +39,6 @@ class OrderReportExport implements FromView, ShouldAutoSize, WithStyles,WithColu
     public function columnWidths(): array
     {
         return [
-            // 'A' => 55,
-            // 'B' => 45,
-            // 'C' => 45,
         ];
     }
 
@@ -63,12 +65,11 @@ class OrderReportExport implements FromView, ShouldAutoSize, WithStyles,WithColu
         ];
         $sheet->getStyle('A1:C1')->applyFromArray($styleArray);
         return [
-            // Define the style for cells with data
-            'A1:O'.$this->data['orders']->count() + 3 => [
+            'A1:O'.$this->rowCount() + 3 => [
                 'borders' => [
                     'allBorders' => [
                         'borderStyle' => Border::BORDER_THIN,
-                        'color' => ['argb' => '000000'], // Specify the color of the border (optional)
+                        'color' => ['argb' => '000000'],
                     ],
                 ],
             ],
@@ -79,20 +80,20 @@ class OrderReportExport implements FromView, ShouldAutoSize, WithStyles,WithColu
     {
         return [
             AfterSheet::class => function(AfterSheet $event) {
-                $event->sheet->getStyle('A1:O1') // Adjust the range as per your needs
+                $event->sheet->getStyle('A1:O1')
                     ->getAlignment()
                     ->setHorizontal(Alignment::HORIZONTAL_CENTER)
                     ->setVertical(Alignment::VERTICAL_CENTER);
-                $event->sheet->getStyle('A2:C2') // Adjust the range as per your needs
+                $event->sheet->getStyle('A2:C2')
                     ->getAlignment()
                     ->setHorizontal(Alignment::HORIZONTAL_CENTER)
                     ->setVertical(Alignment::VERTICAL_CENTER);
 
-                $event->sheet->getStyle('A3:O'.$this->data['orders']->count() + 3) // Adjust the range as per your needs
+                $event->sheet->getStyle('A3:O'.$this->rowCount() + 3)
                     ->getAlignment()
                     ->setHorizontal(Alignment::HORIZONTAL_CENTER)
                     ->setVertical(Alignment::VERTICAL_CENTER);
-                $event->sheet->getStyle('D2:O2') // Adjust the range as per your needs
+                $event->sheet->getStyle('D2:O2')
                     ->getAlignment()
                     ->setHorizontal(Alignment::HORIZONTAL_LEFT)
                     ->setVertical(Alignment::VERTICAL_CENTER);

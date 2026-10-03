@@ -7,7 +7,7 @@
 
 
             id="iconViewer" alt="">
-            <h3  class="mt-2 email-template-table-td-title-style" id="mail-title">{{ $data['title']?? translate('Main_Title_or_Subject_of_the_Mail') }}</h3>
+            <h3  class="mt-2 email-template-table-td-title-style" id="mail-title">{{ $data['title']?? translate('Main title or subject of the mail') }}</h3>
 
         </td>
     </tr>
@@ -17,27 +17,26 @@
 
             @if (strpos(Request::url(), '/suspend') == false)
             <span class="email-template-table-td-span-2">
-                <a href="#" class="email-template-table-td-span-h-ref">{{ translate('generated_link') }}</a>
+                <a href="#" class="email-template-table-td-span-h-ref">{{ translate('Generated link') }}</a>
             </span>
 
 
             @endif
             <span class="border-top"></span>
-            <span class="d-block" id="mail-footer" class="email-template-table-td-span-3  mail-footer">{{ $data['footer_text'] ?? translate('Please_contact_us_for_any_queries,_we’re_always_happy_to_help.') }}</span>
-            <span class="d-block">{{ translate('Thanks_&_Regards') }},</span>
+            <span class="d-block" id="mail-footer" class="email-template-table-td-span-3  mail-footer">{{ $data['footer_text'] ?? translate('Please contact us for any queries; we\'re always happy to help.') }}</span>
+            <span class="d-block">{{ translate('Thanks & regards') }},</span>
             <span class="d-block" class="email-template-table-td-span-4">{{ \App\CentralLogics\Helpers::get_business_settings('business_name', false) }}</span>
-            @php($store_logo = \App\Models\BusinessSetting::where(['key' => 'logo'])->first())
             <img class="email-template-img onerror-image"
-            src="{{ $data?->logo ? $data->logo_full_url : \App\CentralLogics\Helpers::get_full_url('business',$store_logo?->value,$store_logo?->storage[0]?->value ?? 'public', 'favicon') }}"
+            src="{{ $data?->logo ? $data->logo_full_url : \App\CentralLogics\Helpers::logoFullUrl() }}"
 
 
             alt="public/img">
 
             <span class="privacy">
-                <a href="#" id="privacy-check" style="{{ (isset($data['privacy']) && $data['privacy'] == 1)?'':'display:none;' }}"><span class="dot"></span>{{ translate('Privacy_Policy')}}</a>
-                <a href="#" id="refund-check" style="{{ (isset($data['refund']) && $data['refund'] == 1)?'':'display:none;' }}"><span class="dot"></span>{{ translate('Refund_Policy') }}</a>
-                <a href="#" id="cancelation-check" style="{{ (isset($data['cancelation']) && $data['cancelation'] == 1)?'':'display:none;' }}"><span class="dot"></span>{{ translate('Cancelation_Policy') }}</a>
-                <a href="#" id="contact-check" style="{{ (isset($data['contact']) && $data['contact'] == 1)?'':'display:none;' }}"><span class="dot"></span>{{ translate('Contact_us') }}</a>
+                <a href="#" id="privacy-check" style="{{ (isset($data['privacy']) && $data['privacy'] == 1)?'':'display:none;' }}"><span class="dot"></span>{{ translate('Privacy policy')}}</a>
+                <a href="#" id="refund-check" style="{{ (isset($data['refund']) && $data['refund'] == 1)?'':'display:none;' }}"><span class="dot"></span>{{ translate('Refund policy') }}</a>
+                <a href="#" id="cancelation-check" style="{{ (isset($data['cancelation']) && $data['cancelation'] == 1)?'':'display:none;' }}"><span class="dot"></span>{{ translate('Cancellation policy') }}</a>
+                <a href="#" id="contact-check" style="{{ (isset($data['contact']) && $data['contact'] == 1)?'':'display:none;' }}"><span class="dot"></span>{{ translate('Contact us') }}</a>
             </span>
 
             <span class="social email-template-social-span">

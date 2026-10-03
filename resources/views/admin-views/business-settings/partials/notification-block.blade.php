@@ -31,8 +31,8 @@
                            data-image-off="{{ asset('/public/assets/admin/img/modal/pending-order-off.png') }}"
                            data-title-on="{{ translate('By Turning ON') }} <strong>{{ translate($userNotification['key'].' Message') }}</strong>"
                            data-title-off="{{ translate('By Turning OFF') }} <strong>{{ translate($userNotification['key'].' Message') }}</strong>"
-                           data-text-on='{!! "<p>" . translate("messages.user_will_get_message_key_" . $userNotification["key"]) . "</p>" !!}'
-                           data-text-off='{!! "<p>" . translate("messages.user_will_not_get_message_key_" . $userNotification["key"]) . "</p>" !!}'
+                           data-text-on='{!! "<p>" . translate("messages.User will get message key" . $userNotification["key"]) . "</p>" !!}'
+                           data-text-off='{!! "<p>" . translate("messages.User will not get message key" . $userNotification["key"]) . "</p>" !!}'
                            class="status toggle-switch-input add-required-attribute dynamic-checkbox-toggle"
                            name="{{$user_type .'_'. $userNotification['key'] }}_status"
                            data-textarea-name="{{ $user_type .'_'. $userNotification['key'] }}_messages"

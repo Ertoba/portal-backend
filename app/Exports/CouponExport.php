@@ -18,7 +18,6 @@ class CouponExport implements  FromView, ShouldAutoSize, WithStyles ,WithHeading
 
     use Exportable;
     protected $data;
-    // protected $search;
 
     public function __construct($data) {
         $this->data = $data;
@@ -55,12 +54,11 @@ class CouponExport implements  FromView, ShouldAutoSize, WithStyles ,WithHeading
         ];
         $sheet->getStyle('A1:C1')->applyFromArray($styleArray);
         return [
-            // Define the style for cells with data
             'A1:L'.$this->data['data']->count() +3 => [
                 'borders' => [
                     'allBorders' => [
                         'borderStyle' => Border::BORDER_THIN,
-                        'color' => ['argb' => '000000'], // Specify the color of the border (optional)
+                        'color' => ['argb' => '000000'],
                     ],
                 ],
             ],
@@ -72,7 +70,7 @@ class CouponExport implements  FromView, ShouldAutoSize, WithStyles ,WithHeading
     {
         return [
             AfterSheet::class => function(AfterSheet $event) {
-                $event->sheet->getStyle('A1:L1') // Adjust the range as per your needs
+                $event->sheet->getStyle('A1:L1')
                     ->getAlignment()
                     ->setHorizontal(Alignment::HORIZONTAL_CENTER)
                     ->setVertical(Alignment::VERTICAL_CENTER);

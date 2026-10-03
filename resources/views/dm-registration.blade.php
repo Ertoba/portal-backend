@@ -1,5 +1,5 @@
 @extends('layouts.landing.app')
-@section('title', translate('messages.deliveryman_registration'))
+@section('title', translate('Deliveryman registration'))
 @push('css_or_js')
 @endpush
 @section('content')
@@ -9,12 +9,11 @@
 $countryCode= strtolower($country?$country->value:'auto');
 
 ?>
-    <!-- Page Hero Banner -->
     <section class="page-hero">
         <div class="container">
-            <h1>{{ translate('messages.Deliveryman') }} {{ translate('messages.registration') }}</h1>
+            <h1>{{ translate('Deliveryman') }} {{ translate('messages.registration') }}</h1>
             <div class="breadcrumb">
-                <a href="{{ route('home') }}">{{ translate('messages.home') }}</a> / {{ translate('messages.Deliveryman') }} {{ translate('messages.registration') }}
+                <a href="{{ route('home') }}">{{ translate('messages.home') }}</a> / {{ translate('Deliveryman') }} {{ translate('messages.registration') }}
             </div>
         </div>
     </section>
@@ -24,34 +23,32 @@ $countryCode= strtolower($country?$country->value:'auto');
             <div class="reg-card">
                 <form class="validate-form" action="{{ route('deliveryman.store') }}" method="post" enctype="multipart/form-data" id="form-id">
                     @csrf
-                    <!-- Section 1: Deliveryman Info -->
                     <h3 class="sec-head">
                         <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                        {{ translate('messages.deliveryman_info') }}
+                        {{ translate('Deliveryman information') }}
                     </h3>
 
-                    <!-- Left: First + Last name | Right: DM image -->
                     <div class="row-2">
                         <div>
                             <div class="form-group">
-                                <label>{{ translate('messages.first_name') }} <span class="req">*</span></label>
-                                <input type="text" name="f_name" placeholder="{{ translate('messages.first_name') }}" required value="{{ old('f_name') }}">
+                                <label>{{ translate('First name') }} <span class="req">*</span></label>
+                                <input type="text" name="f_name" placeholder="{{ translate('First name') }}" required value="{{ old('f_name') }}">
                             </div>
                             <div class="form-group">
-                                <label>{{ translate('messages.last_name') }} <span class="req">*</span></label>
-                                <input type="text" name="l_name" placeholder="{{ translate('messages.last_name') }}" required value="{{ old('l_name') }}">
+                                <label>{{ translate('Last name') }} <span class="req">*</span></label>
+                                <input type="text" name="l_name" placeholder="{{ translate('Last name') }}" required value="{{ old('l_name') }}">
                             </div>
                         </div>
                         <div class="form-group">
-                            <label>{{ translate('messages.deliveryman_image') }} <span class="req">*</span> <span style="font-weight:400;color:var(--text);font-size:.75rem">({{ translate('messages.ratio') }} 1:1)</span></label>
+                            <label>{{ translate('messages.Deliveryman image') }} <span class="req">*</span> <span style="font-weight:400;color:var(--text);font-size:.75rem">({{ translate('messages.Ratio') }} 1:1)</span></label>
                             <div class="upload-area" id="dmImageArea" onclick="document.getElementById('customFileEg1').click()">
                                 <img id="viewer" class="preview-img" src="" alt="" style="display:none">
                                 <div class="upload-placeholder">
                                     <div class="upload-icon">
                                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
                                     </div>
-                                    <p><strong>{{ translate('Drop Here') }}</strong></p>
-                                    <div class="upload-note">{{ translate('Drag & Drop or Click to upload') }} &middot; JPG, PNG ({{ translate('Max') }} 2MB)</div>
+                                    <p><strong>{{ translate('Drop here') }}</strong></p>
+                                    <div class="upload-note">{{ translate('Drag & drop or click to upload') }} &middot; JPG, PNG ({{ translate('Max') }} 2MB)</div>
                                 </div>
                                 <div class="upload-change">{{ translate('Click to change image') }}</div>
                                 <input type="file" name="image" id="customFileEg1" class="single_file_input" accept=".webp, .jpg, .png, .jpeg, .gif, .bmp, .tif, .tiff|image/*" required>
@@ -59,32 +56,30 @@ $countryCode= strtolower($country?$country->value:'auto');
                         </div>
                     </div>
 
-                    <!-- Email | DM Type | Referral Code -->
                     <div class="row-3">
                         <div class="form-group">
                             <label>{{ translate('messages.email') }} <span class="req">*</span></label>
-                            <input type="email" name="email" placeholder="{{ translate('messages.Ex:') }} ex@example.com" value="{{ old('email') }}" required>
+                            <input type="email" name="email" placeholder="{{ translate('messages.Ex') }}: ex@example.com" value="{{ old('email') }}" required>
                         </div>
                         <div class="form-group" id="earning">
-                            <label>{{ translate('messages.deliveryman_type') }} <span class="req">*</span></label>
+                            <label>{{ translate('Deliveryman type') }} <span class="req">*</span></label>
                             <select name="earning">
-                                <option value="1" {{ old('earning', '1') == '1' ? 'selected' : '' }}>{{ translate('messages.freelancer') }}</option>
-                                <option value="0" {{ old('earning') == '0' ? 'selected' : '' }}>{{ translate('messages.salary_based') }}</option>
+                                <option value="1" {{ old('earning', '1') == '1' ? 'selected' : '' }}>{{ translate('Freelancer') }}</option>
+                                <option value="0" {{ old('earning') == '0' ? 'selected' : '' }}>{{ translate('Salary based') }}</option>
                             </select>
                         </div>
                         <div class="form-group" id="ref_code" style="display: none;">
-                            <label>{{ translate('messages.referral_code') }}</label>
-                            <input type="text" id="referral_code" name="referral_code" placeholder="{{ translate('messages.Ex: STAKXPFIDK') }}" value="{{ old('referral_code') }}">
+                            <label>{{ translate('Referral code') }}</label>
+                            <input type="text" id="referral_code" name="referral_code" placeholder="{{ translate('messages.Ex') . ': ' . translate('messages.STAKXPFIDK') }}" value="{{ old('referral_code') }}">
                         </div>
                     </div>
 
-                    <!-- Zone | Vehicle -->
                     <div class="row-2">
                         <div class="form-group">
-                            <label>{{ translate('messages.zone') }} <span class="req">*</span></label>
+                            <label>{{ translate('messages.Zone') }} <span class="req">*</span></label>
                             <select name="zone_id" required>
-                                <option value="" hidden>{{ translate('messages.select_zone') }}</option>
-                                @foreach (\App\Models\Zone::active()->get() as $zone)
+                                <option value="" hidden>{{ translate('Select zone') }}</option>
+                                @foreach (\App\CentralLogics\Helpers::zones_dropdown(activeOnly: true) as $zone)
                                     @if (auth('admin')?->user()?->zone_id)
                                         @if (auth('admin')->user()->zone_id == $zone->id)
                                             <option value="{{ $zone->id }}" selected>{{ $zone->name }}</option>
@@ -98,73 +93,67 @@ $countryCode= strtolower($country?$country->value:'auto');
                         <div class="form-group">
                             <label>{{ translate('messages.Vehicle') }} <span class="req">*</span></label>
                             <select name="vehicle_id" required>
-                                <option value="" hidden>{{ translate('messages.select_vehicle') }}</option>
-                                @foreach (\App\Models\DMVehicle::where('status',1)->get(['id','type']) as $v)
+                                <option value="" hidden>{{ translate('Select vehicle') }}</option>
+                                @foreach (\App\CentralLogics\Helpers::cached_list(\App\Models\DMVehicle::class, ['status' => 1]) as $v)
                                     <option value="{{ $v->id }}" {{ old('vehicle_id') == $v->id ? 'selected' : '' }}>{{ $v->type }}</option>
                                 @endforeach
                             </select>
                         </div>
                     </div>
 
-                    <!-- Section 2: Identity Verification -->
                     <h3 class="sec-head section-gap">
                         <svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M6 12h4M6 16h8M14 8h4"/><circle cx="9" cy="8" r="2"/></svg>
-                        {{ translate('messages.identity_verification') }}
+                        {{ translate('messages.Identity verification') }}
                     </h3>
 
-                    <!-- Identity type | Identity number -->
                     <div class="row-2">
                         <div class="form-group">
-                            <label>{{ translate('messages.identity_type') }} <span class="req">*</span></label>
+                            <label>{{ translate('Identity type') }} <span class="req">*</span></label>
                             <select name="identity_type">
-                                <option value="passport" {{ old('identity_type', 'passport') == 'passport' ? 'selected' : '' }}>{{ translate('messages.passport') }}</option>
-                                <option value="driving_license" {{ old('identity_type') == 'driving_license' ? 'selected' : '' }}>{{ translate('messages.driving_license') }}</option>
-                                <option value="nid" {{ old('identity_type') == 'nid' ? 'selected' : '' }}>{{ translate('messages.nid') }}</option>
-                                <option value="restaurant_id">{{ translate('messages.store_id') }}</option>
+                                <option value="passport" {{ old('identity_type', 'passport') == 'passport' ? 'selected' : '' }}>{{ translate('Passport') }}</option>
+                                <option value="driving_license" {{ old('identity_type') == 'driving_license' ? 'selected' : '' }}>{{ translate('messages.Driving license') }}</option>
+                                <option value="nid" {{ old('identity_type') == 'nid' ? 'selected' : '' }}>NID</option>
+                                <option value="restaurant_id">{{ translate('messages.Store ID') }}</option>
                             </select>
                         </div>
                         <div class="form-group">
-                            <label>{{ translate('messages.identity_number') }} <span class="req">*</span></label>
-                            <input type="text" name="identity_number" value="{{ old('identity_number') }}" placeholder="{{ translate('messages.Ex:') }} DH-23434-LS" required>
+                            <label>{{ translate('Identity number') }} <span class="req">*</span></label>
+                            <input type="text" name="identity_number" value="{{ old('identity_number') }}" placeholder="{{ translate('messages.Ex') }}: DH-23434-LS" required>
                         </div>
                     </div>
 
-                    <!-- Identity images -->
                     <div class="form-group">
-                        <label>{{ translate('messages.identity_image') }} <span class="req">*</span></label>
+                        <label>{{ translate('Identity image') }} <span class="req">*</span></label>
                         <div class="row" id="coba"></div>
                     </div>
 
-                    <!-- Section 3: Login Info -->
                     <h3 class="sec-head section-gap">
                         <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
-                        {{ translate('messages.login_info') }}
+                        {{ translate('Login information') }}
                     </h3>
 
-                    <!-- Phone | Password -->
                     <div class="row-2">
                         <div class="form-group">
-                            <label>{{ translate('messages.phone') }} <span class="req">*</span></label>
-                            <input type="tel" name="phone" id="phone" placeholder="{{ translate('messages.Ex:') }} 017********" value="{{ old('phone') }}" required>
+                            <label>{{ translate('Phone') }} <span class="req">*</span></label>
+                            <input type="tel" name="phone" id="phone" placeholder="{{ translate('messages.Ex') }}: 017********" value="{{ old('phone') }}" required>
                         </div>
                         <div class="form-group">
                             <label>{{ translate('messages.password') }} <span class="req">*</span></label>
                             <div class="pw-wrap">
-                                <input type="password" name="password" id="dm-password" pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}" title="{{ translate('messages.Must_contain_at_least_one_number_and_one_uppercase_and_lowercase_letter_and_symbol,_and_at_least_8_or_more_characters') }}" placeholder="{{ translate('messages.password_length_placeholder', ['length' => '8+']) }}" value="{{ old('password') }}" required>
+                                <input type="password" name="password" id="dm-password" pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}" title="{{ translate('Use at least one uppercase letter, one lowercase letter, one number and one symbol.') }} {{ translate('Minimum characters') }}: 8" placeholder="{{ translate('Minimum characters') }}: 8+" value="{{ old('password') }}" required>
                                 <button type="button" class="eye-btn"><svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Confirm Password -->
                     <div class="row-2">
                         <div class="form-group">
-                            <label>{{ translate('messages.confirm_password') }} <span class="req">*</span></label>
+                            <label>{{ translate('Confirm password') }} <span class="req">*</span></label>
                             <div class="pw-wrap">
-                                <input type="password" id="dm-confirm-password" placeholder="{{ translate('messages.password_length_placeholder', ['length' => '8+']) }}" required>
+                                <input type="password" id="dm-confirm-password" placeholder="{{ translate('Minimum characters') }}: 8+" required>
                                 <button type="button" class="eye-btn"><svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
                             </div>
-                            <div id="pw-match-error" class="form-hint" style="color:#e74c3c;display:none">{{ translate('messages.password_does_not_match') }}</div>
+                            <div id="pw-match-error" class="form-hint" style="color:#e74c3c;display:none">{{ translate('messages.Password does not match.') }}</div>
                         </div>
                         <div></div>
                     </div>
@@ -172,9 +161,9 @@ $countryCode= strtolower($country?$country->value:'auto');
                     @include('admin-views.partials._recaptcha')
                     <div class="terms-check">
                         <input type="checkbox" id="dmTerms" />
-                        <label for="dmTerms">{{ translate('messages.i_agree_to_the') }} <a href="{{ route('privacy-policy') }}" target="_blank">{{ translate('messages.privacy_policy') }}</a> {{ translate('messages.and') }} <a href="{{ route('terms-and-conditions') }}" target="_blank">{{ translate('messages.terms_and_condition') }}</a></label>
+                        <label for="dmTerms">{{ translate('messages.I agree to the') }} <a href="{{ route('privacy-policy') }}" target="_blank">{{ translate('Privacy policy') }}</a> {{ translate('messages.and') }} <a href="{{ route('terms-and-conditions') }}" target="_blank">{{ translate('messages.Terms and condition') }}</a></label>
                     </div>
-                    <button type="submit" class="submit-btn" id="signInBtn" disabled>{{ translate('messages.submit') }}</button>
+                    <button type="submit" class="submit-btn" id="signInBtn" disabled>{{ translate('messages.Submit') }}</button>
                 </form>
             </div>
         </div>
@@ -232,7 +221,7 @@ $countryCode= strtolower($country?$country->value:'auto');
                             if (!existingErr && cobaGroup) {
                                 var errDiv = document.createElement('div');
                                 errDiv.className = 'form-validation-error text-danger mt-1 small';
-                                errDiv.textContent = '{{ translate("Please upload at least one identity image.") }}';
+                                errDiv.textContent = '{{ translate('Please upload at least one identity image') }}';
                                 cobaEl.insertAdjacentElement('afterend', errDiv);
                             }
                         }
@@ -548,7 +537,7 @@ $countryCode= strtolower($country?$country->value:'auto');
 
                     if (!this.input.files || this.input.files.length === 0) {
                         if (this.config.required) {
-                            return this.showError('{{ translate('messages.please_select_image') }}');
+                            return this.showError('{{ translate('messages.Please select image') }}');
                         }
                         return true;
                     }
@@ -557,12 +546,12 @@ $countryCode= strtolower($country?$country->value:'auto');
 
                     const fileExtension = file.name.split('.').pop().toLowerCase();
                     if (!this.config.allowedTypes.includes(fileExtension)) {
-                        return this.showError(`{{ translate('messages.invalid_file_type') }} ${this.config.allowedTypes.join(', ')}`);
+                        return this.showError(`{{ translate('messages.Invalid file type') }} ${this.config.allowedTypes.join(', ')}`);
                     }
 
                     const fileSizeMB = file.size / (1024 * 1024);
                     if (fileSizeMB > this.config.maxSize) {
-                        return this.showError(`{{ translate('messages.file_size_too_big. ') }}{{ translate('messages.max_file_size_is') }} ${this.config.maxSize}MB.`);
+                        return this.showError(`{{ translate('messages.File size too big') }} {{ translate('messages.Max file size is') }} ${this.config.maxSize}MB.`);
                     }
 
                     return true;
@@ -752,13 +741,13 @@ $countryCode= strtolower($country?$country->value:'auto');
 
                 },
                 onExtensionErr: function(index, file) {
-                    toastr.error('{{ translate('messages.please_only_input_png_or_jpg_type_file') }}', {
+                    toastr.error('{{ translate('Please upload a file in a supported format') . ': PNG, JPG' }}', {
                         CloseButton: true,
                         ProgressBar: true
                     });
                 },
                 onSizeErr: function(index, file) {
-                    toastr.error('{{ translate('messages.file_size_too_big') }}', {
+                    toastr.error('{{ translate('messages.File size too big') }}', {
                         CloseButton: true,
                         ProgressBar: true
                     });
@@ -832,5 +821,4 @@ $countryCode= strtolower($country?$country->value:'auto');
         });
     </script>
 @endif
-{{-- recaptcha scripts end --}}
 @endpush

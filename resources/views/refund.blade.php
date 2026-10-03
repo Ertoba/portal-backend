@@ -1,13 +1,13 @@
 @extends('layouts.landing.app')
 
-@section('title',translate('messages.Refund Policy'))
+@section('title',translate('Refund policy'))
 
 @section('content')
     <section class="page-hero">
         <div class="container">
-            <h1>{{ translate('messages.Refund Policy') }}</h1>
+            <h1>{{ translate('Refund policy') }}</h1>
             <div class="breadcrumb">
-                <a href="{{route('home')}}">{{ translate('messages.home') }}</a> / {{ translate('messages.Refund Policy') }}
+                <a href="{{route('home')}}">{{ translate('messages.home') }}</a> / {{ translate('Refund policy') }}
             </div>
         </div>
     </section>

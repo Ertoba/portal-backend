@@ -2,11 +2,11 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Support\Carbon;
+use App\Traits\Model\HasTranslationsTrait;
 
 /**
  * Class WalletBonus
@@ -27,7 +27,7 @@ use Illuminate\Support\Carbon;
  */
 class WalletBonus extends Model
 {
-    use HasFactory;
+    use HasFactory, HasTranslationsTrait;
 
     /**
      * The attributes that are mass assignable.
@@ -61,26 +61,13 @@ class WalletBonus extends Model
     /**
      * @return MorphMany
      */
-    public function translations(): MorphMany
-    {
-        return $this->morphMany(Translation::class, 'translationable');
-    }
-
     /**
      * @param $value
      * @return mixed
      */
     public function getTitleAttribute($value): mixed
     {
-        if (count($this->translations) > 0) {
-            foreach ($this->translations as $translation) {
-                if ($translation['key'] == 'title') {
-                    return $translation['value'];
-                }
-            }
-        }
-
-        return $value;
+        return $this->translatedAttribute('title', $value);
     }
 
     /**
@@ -89,15 +76,7 @@ class WalletBonus extends Model
      */
     public function getDescriptionAttribute($value): mixed
     {
-        if (count($this->translations) > 0) {
-            foreach ($this->translations as $translation) {
-                if ($translation['key'] == 'description') {
-                    return $translation['value'];
-                }
-            }
-        }
-
-        return $value;
+        return $this->translatedAttribute('description', $value);
     }
 
     /**
@@ -125,12 +104,4 @@ class WalletBonus extends Model
     /**
      * @return void
      */
-    protected static function booted(): void
-    {
-        static::addGlobalScope('translate', function (Builder $builder) {
-            $builder->with(['translations' => function ($query) {
-                return $query->where('locale', app()->getLocale());
-            }]);
-        });
-    }
 }

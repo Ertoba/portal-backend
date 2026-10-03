@@ -15,4 +15,18 @@ class CurrencyProvider implements CurrencyProviderContract
             'decimals' => (int) (Helpers::get_business_settings('digit_after_decimal_point') ?? 2),
         ];
     }
+
+    public function availableCurrencies(): array
+    {
+        return [];
+    }
+
+    public function currentCurrencyCode(): ?string
+    {
+        return null;
+    }
+
+    public function setCurrentCurrency(string $code): void
+    {
+    }
 }

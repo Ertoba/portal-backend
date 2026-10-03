@@ -2,17 +2,17 @@
 
 namespace App\Models;
 
-use App\CentralLogics\Helpers;
-use App\Models\DataSetting;
 use App\Scopes\HostScope;
 use App\Scopes\StoreScope;
 use App\Scopes\ZoneScope;
-use App\Traits\DemoMaskable;
+use App\Traits\Model\DemoMaskableTrait;
+use App\Traits\Payment\ProCustomerSubscriptionTrait;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Laravel\Passport\HasApiTokens;
 use Modules\Rental\Entities\Trips;
@@ -20,10 +20,11 @@ use Modules\RideShare\Entities\PromotionManagement\AppliedCoupon;
 use Modules\RideShare\Entities\TripManagement\RideRequest;
 use App\Models\UserAccount;
 use Modules\RideShare\Entities\UserManagement\UserLastLocation;
+use App\Traits\Model\HasStorageTrait;
 
 class User extends Authenticatable
 {
-    use HasFactory, Notifiable, HasApiTokens, DemoMaskable;
+    use HasFactory, Notifiable, HasApiTokens, DemoMaskableTrait, HasStorageTrait;
 
     /**
      * The attributes that are mass assignable.
@@ -60,17 +61,9 @@ class User extends Authenticatable
         'pro_status' => 'boolean',
     ];
     protected $appends = ['image_full_url'];
-    public function getImageFullUrlAttribute(){
-        $value = $this->image;
-        if (count($this->storage) > 0) {
-            foreach ($this->storage as $storage) {
-                if ($storage['key'] == 'image') {
-                    return Helpers::get_full_url('profile',$value,$storage['value']);
-                }
-            }
-        }
-
-        return Helpers::get_full_url('profile',$value,'public');
+    public function getImageFullUrlAttribute()
+    {
+        return $this->storageFullUrl('profile', 'image', $this->image);
     }
 
     public function getFullNameAttribute(): string
@@ -107,10 +100,6 @@ class User extends Authenticatable
         return $this->hasOne(AppliedCoupon::class);
     }
 
-    // public function userAccount()
-    // {
-    //     return $this->hasOne(UserAccount::class, 'user_id');
-    // }
 
     public function addresses(){
         return $this->hasMany(CustomerAddress::class);
@@ -127,41 +116,31 @@ class User extends Authenticatable
         });
     }
 
-    public function storage()
-    {
-        return $this->morphMany(Storage::class, 'data');
-    }
-
     protected static function booted()
     {
-        static::addGlobalScope('storage', function ($builder) {
-            $builder->with('storage');
-        });
-
-        // Per-storefront identity scoping. Default-filters User queries to
-        // host rows (`tenant_id = 0 AND sub_tenant_id = 0`). Backend
-        // operators (admin/vendor/vendor_employee guards) auto-bypass.
-        // Storefront adapter applies its own scope via withoutGlobalScope.
         static::addGlobalScope(new HostScope());
 
         static::retrieved(function () {
-            static $checked = false;
-            if ($checked) {
+            static $checkedDate = null;
+
+            $today = date('Y-m-d');
+            if ($checkedDate === $today) {
                 return;
             }
-            $checked = true;
+            $checkedDate = $today;
 
-            $lastRun = DataSetting::where([
-                'key' => 'subscription_expiry_last_run_at',
-                'type' => 'notification_settings',
-            ])->first()?->value;
+            $lastRun = DB::table('data_settings')
+                ->where('key', 'subscription_expiry_last_run_at')
+                ->where('type', 'notification_settings')
+                ->value('value');
 
-            if ($lastRun && \Illuminate\Support\Carbon::parse($lastRun)->isAfter(now()->subDay())) {
+            if ($lastRun && Carbon::parse($lastRun)->isAfter(now()->subDay())) {
                 return;
             }
 
             try {
-                (new class { use \App\Traits\ManagesProCustomerSubscription; })->expireDueSubscriptions();
+                (new class { use ProCustomerSubscriptionTrait; })
+                    ->expireDueSubscriptions(limit: 25, timeBudget: 3.0);
             } catch (\Throwable $e) {
                 info('subscription_expiry_user_booted: ' . $e->getMessage());
             }
@@ -171,19 +150,7 @@ class User extends Authenticatable
     {
         parent::boot();
         static::saved(function ($model) {
-            if($model->isDirty('image')){
-                $value = Helpers::getDisk();
-
-                DB::table('storages')->updateOrInsert([
-                    'data_type' => get_class($model),
-                    'data_id' => $model->id,
-                    'key' => 'image',
-                ], [
-                    'value' => $value,
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
-            }
+            self::recordStorageDisk($model, 'image', 'image');
         });
 
     }

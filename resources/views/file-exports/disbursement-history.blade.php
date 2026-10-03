@@ -1,12 +1,11 @@
 
 <div class="row">
-    @php($address = \App\Models\BusinessSetting::where(['key' => 'address'])->first()->value)
     <table>
         <thead>
             <tr>
 
                 <th>
-                    {{ translate('Disbursement_List') }}
+                    {{ translate('Disbursement list') }}
                 </th>
                 <th></th>
                 <th></th>
@@ -14,7 +13,7 @@
                     @if($data['type'] == 'store')
                         {{ translate($data['is_provider'] ? 'Provider' : 'Store') }} - {{ $data['store'] }}
                     @else
-                        {{ translate('Delivery_man') }} - {{ $data['delivery_man'] }}
+                        {{ translate('Deliveryman') }} - {{ $data['delivery_man'] }}
                     @endif
                 </th>
                 <th></th>
@@ -23,12 +22,12 @@
                 </th>
             </tr>
         <tr>
-            <th>{{ translate('sl') }}</th>
-            <th>{{ translate('id') }}</th>
-            <th>{{ translate('created_at') }}</th>
-            <th>{{ translate('amount') }}</th>
-            <th>{{ translate('Payment_method') }}</th>
-            <th>{{ translate('status') }}</th>
+            <th>{{ translate('SL') }}</th>
+            <th>ID</th>
+            <th>{{ translate('Created at') }}</th>
+            <th>{{ translate('Amount') }}</th>
+            <th>{{ translate('Payment method') }}</th>
+            <th>{{ translate('Status') }}</th>
 
         </thead>
         <tbody>
@@ -41,11 +40,11 @@
             {{\App\CentralLogics\Helpers::format_currency($disb['disbursement_amount'])}}
         </td>
         <td>
-            <div class="name">{{translate('payment_method')}} : {{$disb->withdraw_method->method_name}}</div>
-            @forelse(json_decode($disb->withdraw_method->method_fields, true) as $key=> $item)
+            <div class="name">{{translate('Payment method')}} : {{ $disb->withdraw_method?->method_name ?? translate('messages.Payment method removed') }}</div>
+            @forelse((is_array($disb->withdraw_method?->method_fields) ? $disb->withdraw_method->method_fields : (json_decode($disb->withdraw_method?->method_fields ?? '', true) ?: [])) as $key=> $item)
             <br>
                 <div>
-                    <span>{{  translate($key) }}</span>
+                    <span>{{ ucfirst(str_replace('_', ' ', $key)) }}</span>
                     <span>:</span>
                     <span class="name">{{$item}}</span>
                 </div>

@@ -9,7 +9,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('pharmacy_item_details', function (Blueprint $table) {
-            $table->string('unit_value')->nullable()->after('is_prescription_required');
+            $table->string('unit_value')->nullable();
         });
     }
 

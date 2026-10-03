@@ -24,7 +24,7 @@ class OrderCancelReasonController extends Controller
             'user_type' =>'required|max:50',
             'reason.0' => 'required',
         ],[
-            'reason.0.required'=>translate('default_reason_is_required'),
+            'reason.0.required'=>translate('Default reason is required'),
         ]);
         $cancelReason = new OrderCancelReason();
         $cancelReason->reason = $request->reason[array_search('default', $request->lang)];
@@ -35,7 +35,7 @@ class OrderCancelReasonController extends Controller
 
         Helpers::add_or_update_translations(request: $request, key_data: 'reason', name_field: 'reason', model_name: 'OrderCancelReason', data_id: $cancelReason->id, data_value: $cancelReason->reason);
 
-        Toastr::success(translate('messages.order_cancellation_reason_added_successfully'));
+        Toastr::success(translate('Added successfully'));
          return redirect()->back()->withFragment('order_cancellation_section');
     }
     public function destroy($cancelReason)
@@ -43,7 +43,7 @@ class OrderCancelReasonController extends Controller
         $cancelReason = OrderCancelReason::findOrFail($cancelReason);
         $cancelReason?->translations()?->delete();
         $cancelReason?->delete();
-        Toastr::success(translate('messages.order_cancellation_reason_deleted_successfully'));
+        Toastr::success(translate('Deleted successfully'));
          return redirect()->back()->withFragment('order_cancellation_section');
     }
 
@@ -52,7 +52,7 @@ class OrderCancelReasonController extends Controller
         $cancelReason = OrderCancelReason::findOrFail($request->id);
         $cancelReason->status = $request->status;
         $cancelReason->save();
-        Toastr::success(translate('messages.status_updated'));
+        Toastr::success(translate('messages.Status updated'));
          return redirect()->back()->withFragment('order_cancellation_section');
     }
     public function update(Request $request)
@@ -62,7 +62,7 @@ class OrderCancelReasonController extends Controller
             'user_type' =>'required|max:50',
             'reason.0' => 'required',
         ],[
-            'reason.0.required'=>translate('default_reason_is_required'),
+            'reason.0.required'=>translate('Default reason is required'),
         ]);
         $cancelReason = OrderCancelReason::findOrFail($request->reason_id);
         $cancelReason->reason = $request->reason[array_search('default', $request->lang)];
@@ -70,7 +70,7 @@ class OrderCancelReasonController extends Controller
         $cancelReason?->save();
         Helpers::add_or_update_translations(request: $request, key_data: 'reason', name_field: 'reason', model_name: 'OrderCancelReason', data_id: $cancelReason->id, data_value: $cancelReason->reason);
 
-        Toastr::success(translate('order_cancellation_reason_updated_successfully'));
+        Toastr::success(translate('Updated successfully'));
         return redirect()->back()->withFragment('order_cancellation_section');
     }
 }

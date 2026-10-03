@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('store_categories', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('store_id')->nullable()->constrained('stores')->nullOnDelete();
+            $table->unsignedBigInteger('store_id')->nullable()->index();
             $table->string('name', 255);
             $table->string('slug')->nullable()->unique();
             $table->string('image')->nullable();

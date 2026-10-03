@@ -1,6 +1,6 @@
 @extends('layouts.admin.app')
 
-@section('title',translate('FCM Settings'))
+@section('title',translate('Firebase Push Notification Setup'))
 
 @push('css_or_js')
 
@@ -8,17 +8,16 @@
 
 @section('content')
     <div class="content container-fluid">
-        <!-- Page Header -->
         <div class="page-header">
             <h1 class="page-header-title">
                 <span class="page-header-icon">
-                    <img src="{{asset('public/assets/admin/img/firebase.png')}}" class="w--26" alt="">
+                    <img src="{{asset('public/assets/admin/img/outline/firebase.svg')}}" class="w--26" alt="">
                 </span>
-                <span>{{translate('messages.firebase_push_notification_setup')}}
+                <span>{{translate('messages.Firebase push notification setup')}}
                 </span>
             </h1>
+            <p class="page-header-desc">{{ translate('The Firebase credentials that let your apps receive push notifications.') }}</p>
         </div>
-        <!-- End Page Header -->
         <?php
         $mod_type = 'grocery';
         if(request('module_type')){
@@ -32,7 +31,7 @@
                         <li class="nav-item mr-2 mr-md-4">
                             <a href="{{ route('admin.business-settings.fcm-index') }}" class="nav-link pb-2 px-0 pb-sm-3" data-slide="1">
                                 <img src="{{asset('/public/assets/admin/img/notify.png')}}" alt="">
-                                <span>{{translate('Push Notification')}}</span>
+                                <span>{{translate('Push notification')}}</span>
                             </a>
                         </li>
                         <li class="nav-item">
@@ -60,16 +59,9 @@
                         <form action="{{getEnvMode()!='demo'?route('admin.business-settings.update-fcm'):'javascript:'}}" method="post"
                                 enctype="multipart/form-data">
                             @csrf
-{{--                            @php($key=\App\Models\BusinessSetting::where('key','push_notification_key')->first())--}}
-{{--                            <div class="form-group">--}}
-{{--                                <label class="input-label"--}}
-{{--                                        for="push_notification_key">{{translate('messages.server_key')}}</label>--}}
-{{--                                <textarea id="push_notification_key" name="push_notification_key" class="form-control" placeholder="{{translate('Ex: AAAAaBcDeFgHiJkLmNoPqRsTuVwXyZ0123456789')}}"--}}
-{{--                                            required>{{getEnvMode()!='demo'?$key->value??'':''}}</textarea>--}}
-{{--                            </div>--}}
                             @php($serviceFileContent = \App\CentralLogics\Helpers::get_business_settings('push_notification_service_file_content'))
                             <div class="form-group">
-                                <label class="input-label">{{translate('service_file_content')}}
+                                <label class="input-label">{{translate('Service file content')}}
                                     <i class="tio-info cursor-pointer" data-toggle="tooltip" data-placement="top"
                                        title="{{ translate('select and copy all the service file content and add here') }}">
                                     </i>
@@ -78,10 +70,10 @@
                                           required>{{getEnvMode()!='demo'?($serviceFileContent?json_encode($serviceFileContent):''):''}}</textarea>
                             </div>
                             <div class="form-group">
-                                <label class="input-label" for="apiKey">{{translate('messages.api_key')}}</label>
+                                <label class="input-label" for="apiKey">{{translate('messages.Api key')}}</label>
                                 <div class="d-flex">
                                     <input type="text" id="apiKey" value="{{$fcm_credentials['apiKey']??''}}"
-                                        name="apiKey" class="form-control" placeholder="{{ translate('Ex: abcd1234efgh5678ijklmnop90qrstuvwxYZ') }}">
+                                        name="apiKey" class="form-control" placeholder="{{ translate('Ex') . ': ' . 'abcd1234efgh5678ijklmnop90qrstuvwxYZ' }}">
                                 </div>
                             </div>
                             <div class="row">
@@ -91,52 +83,52 @@
                                         <label class="input-label" for="projectId">{{translate('FCM Project ID')}}</label>
                                         <div class="d-flex">
                                             <input id="projectId" type="text" value="{{$project_id->value??''}}"
-                                                name="projectId" class="form-control" placeholder="{{ translate('Ex: my-awesome-app-12345') }}">
+                                                name="projectId" class="form-control" placeholder="{{ translate('Ex') . ': ' . 'my-awesome-app-12345' }}">
                                         </div>
                                     </div>
                                 </div>
                                 <div class="col-lg-4 col-sm-6">
                                     <div class="form-group">
-                                        <label  class="input-label" for="authDomain">{{translate('messages.auth_domain')}}</label>
+                                        <label  class="input-label" for="authDomain">{{translate('messages.Auth domain')}}</label>
                                         <div class="d-flex">
                                             <input id="authDomain" type="text" value="{{$fcm_credentials['authDomain']??''}}"
-                                                name="authDomain" class="form-control" placeholder="{{ translate('Ex: my-awesome-app.firebase.com') }}">
+                                                name="authDomain" class="form-control" placeholder="{{ translate('Ex') . ': ' . 'my-awesome-app.firebase.com' }}">
                                         </div>
                                     </div>
                                 </div>
                                 <div class="col-lg-4 col-sm-6">
                                     <div class="form-group">
-                                        <label class="input-label" for="storageBucket">{{translate('messages.storage_bucket')}}</label>
+                                        <label class="input-label" for="storageBucket">{{translate('messages.Storage bucket')}}</label>
                                         <div class="d-flex">
                                             <input id="storageBucket" type="text" value="{{$fcm_credentials['storageBucket']??''}}"
-                                                name="storageBucket" class="form-control" placeholder="{{ translate('Ex: my-awesome-app.apps.com') }}">
+                                                name="storageBucket" class="form-control" placeholder="{{ translate('Ex') . ': ' . 'my-awesome-app.apps.com' }}">
                                         </div>
                                     </div>
                                 </div>
                                 <div class="col-lg-4 col-sm-6">
                                     <div class="form-group">
-                                        <label class="input-label" for="messagingSenderId">{{translate('messages.messaging_sender_id')}}</label>
+                                        <label class="input-label" for="messagingSenderId">{{translate('messages.Messaging sender id')}}</label>
                                         <div class="d-flex">
                                             <input id="messagingSenderId" type="text" value="{{$fcm_credentials['messagingSenderId'] ?? ''}}"
-                                                name="messagingSenderId" class="form-control" placeholder="{{ translate('Ex: 1234567890') }}">
+                                                name="messagingSenderId" class="form-control" placeholder="{{ translate('Ex') . ': 1234567890' }}">
                                         </div>
                                     </div>
                                 </div>
                                 <div class="col-lg-4 col-sm-6">
                                     <div class="form-group">
-                                        <label class="input-label" for="appId">{{translate('messages.app_id')}}</label>
+                                        <label class="input-label" for="appId">{{translate('messages.App id')}}</label>
                                         <div class="d-flex">
                                             <input id="appId" type="text" value="{{$fcm_credentials['appId']??''}}"
-                                                name="appId" class="form-control" placeholder="{{ translate('Ex: 9876543210') }}">
+                                                name="appId" class="form-control" placeholder="{{ translate('Ex') . ': 9876543210' }}">
                                         </div>
                                     </div>
                                 </div>
                                 <div class="col-lg-4 col-sm-6">
                                     <div class="form-group">
-                                        <label class="input-label" for="measurementId">{{translate('messages.measurement_id')}}</label>
+                                        <label class="input-label" for="measurementId">{{translate('messages.Measurement ID')}}</label>
                                         <div class="d-flex">
                                             <input id="measurementId" type="text" value="{{$fcm_credentials['measurementId']??''}}"
-                                                name="measurementId" class="form-control" placeholder="{{ translate('Ex: F-12345678') }}">
+                                                name="measurementId" class="form-control" placeholder="{{ translate('Ex') . ': ' . 'F-12345678' }}">
                                         </div>
                                     </div>
                                 </div>
@@ -144,20 +136,20 @@
                                     <div class="form-group">
                                         <label class="input-label" for="vapidKey">{{translate('Web Push VAPID Key')}}
                                             <i class="tio-info cursor-pointer" data-toggle="tooltip" data-placement="top"
-                                               title="{{ translate('Firebase Console → Project Settings → Cloud Messaging → Web configuration → Web Push certificates → Key pair') }}">
+                                               title="{{ 'Firebase Console → Project Settings → Cloud Messaging → Web configuration → Web Push certificates → Key pair' }}">
                                             </i>
                                         </label>
                                         <div class="d-flex">
                                             <input id="vapidKey" type="text" value="{{$fcm_credentials['vapidKey']??''}}"
-                                                name="vapidKey" class="form-control" placeholder="{{ translate('Required for storefront web push (e.g. BIYqKZ2ZlXRJ...)') }}">
+                                                name="vapidKey" class="form-control" placeholder="{{ translate('Required for storefront web push') }} ({{ translate('Ex') }}: BIYqKZ2ZlXRJ...)">
                                         </div>
                                     </div>
                                 </div>
                             </div>
 
                             <div class="btn--container justify-content-end">
-                                <button type="reset" class="btn btn--reset">{{translate('messages.reset')}}</button>
-                                <button type="{{getEnvMode()!='demo'?'submit':'button'}}" class="btn btn--primary call-demo">{{translate('messages.submit')}}</button>
+                                <button type="reset" class="btn btn--reset"><i class="tio-refresh"></i> {{translate('messages.Reset')}}</button>
+                                <button type="{{getEnvMode()!='demo'?'submit':'button'}}" class="btn btn--primary call-demo"><i class="tio-checkmark-circle-outlined"></i> {{translate('messages.Submit')}}</button>
                             </div>
                         </form>
                     </div>
@@ -165,7 +157,6 @@
             </div>
         </div>
 
-        <!-- Firebase Modal -->
         <div class="modal fade" id="firebase-modal">
             <div class="modal-dialog status-warning-modal">
                 <div class="modal-content">
@@ -186,7 +177,7 @@
                                         <li>
                                             {{translate('Open your web browser and go to the Firebase Console')}}
                                             <a href="#" class="text--underline">
-                                                {{translate('(https://console.firebase.google.com/)')}}
+                                                (https://console.firebase.google.com/)
                                             </a>
                                         </li>
                                         <li>
@@ -229,10 +220,10 @@
                                         </li>
                                     </ul>
                                     <p>
-                                        {{translate('Note: Please make sure to use the obtained information securely and in accordance with Firebase and FCM documentation, terms of service, and any applicable laws and regulations.')}}
+                                        {{translate('Keep these credentials secure and follow the Firebase and FCM terms.')}}
                                     </p>
                                     <div class="btn-wrap">
-                                        <button type="submit" class="btn btn--primary w-100" data-dismiss="modal" data-toggle="modal" data-target="#firebase-modal-2">{{translate('Got It')}}</button>
+                                        <button type="submit" class="btn btn--primary w-100" data-dismiss="modal" data-toggle="modal" data-target="#firebase-modal-2"><i class="tio-checkmark-circle-outlined"></i> {{translate('Got it')}}</button>
                                     </div>
                                 </div>
                             </div>

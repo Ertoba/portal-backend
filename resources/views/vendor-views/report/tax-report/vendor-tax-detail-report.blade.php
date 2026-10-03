@@ -1,406 +1,332 @@
 @extends('layouts.vendor.app')
 
-@section('title', translate('Vendor Tax Report'))
+@section('title', translate('Tax report'))
 
 @section('vendor_tax_report')
     active
 @endsection
+
+@push('css_or_js')
+    <link rel="stylesheet" href="{{ asset('public/assets/admin/css/view-pages/tax.css') }}">
+@endpush
+
 @section('content')
-    <div class="content container-fluid">
+    @php
+        $tax_type_labels = [
+            'order_wise' => translate('messages.order_wise'),
+            'category_wise' => translate('Category wise'),
+            'product_wise' => translate('messages.product_wise'),
+        ];
+        $basic_labels = [
+            'order_wise' => translate('Order tax'),
+            'category_wise' => translate('messages.Category tax'),
+            'product_wise' => translate('messages.product_tax'),
+        ];
+        $tax_on_labels = [
+            'tax_on_additional_charge' => translate('Additional charge'),
+            'tax_on_packaging_charge' => translate('Packaging charge'),
+            'tax_on_delivery_charge' => translate('Delivery charge'),
+        ];
+        $order_status_labels = [
+            'delivered' => [translate('Delivered'), 'success'],
+            'refund_requested' => [translate('Refund requested'), 'warning'],
+            'refund_request_canceled' => [translate('Refund request canceled'), 'info'],
+        ];
+        $payment_status_labels = [
+            'paid' => [translate('messages.paid'), 'success'],
+            'partially_paid' => [translate('Partially paid'), 'warning'],
+            'unpaid' => [translate('messages.unpaid'), 'danger'],
+        ];
+    @endphp
 
+    <div class="content container-fluid txr">
+        <div class="page-header">
+            <h1 class="page-header-title">
+                <span class="page-header-icon">
+                    <img src="{{ asset('public/assets/admin/img/outline/report.svg') }}" class="w--26" alt="">
+                </span>
+                <span>{{ translate('Tax report') }}</span>
+            </h1>
+            <p class="page-header-desc">{{ translate('The tax charged on your delivered orders, ready for your return.') }}</p>
+        </div>
 
-        <!--- Tax Report -->
-        <h2 class="mb-20">{{ translate('Tax Report') }}</h3>
-            <div class="card p-20 mb-20">
-                <form action="" method="get">
-
-                    <div class="row g-lg-4 g-3 align-items-end justify-content-between">
-                        <div class="col-lg-4 col-md-6">
-                            <label class="form-label">{{ translate('Date Range') }}</label>
-                            <div class="position-relative">
-
-                                <i class="tio-calendar-month icon-absolute-on-right"></i>
-                                <input type="text" data-title="{{ translate('Select_Date_Range') }}" name="dates"
-                                    value="{{ $dataRange ?? null }}" class="form-control">
-                            </div>
-                        </div>
-
-                        <div class="col-lg-4 col-md-6">
-                            <div class="d-flex justify-content-end">
-                                <button type="submit"
-                                    class="btn min-w-135px btn--primary">{{ translate('Filter') }}</button>
-                            </div>
+        <div class="txr-query">
+            <form action="{{ route('vendor.report.vendorTax') }}" method="get" id="txr-filter" class="txr-query__body">
+                @if (request()->filled('search'))
+                    <input type="hidden" name="search" value="{{ request('search') }}">
+                @endif
+                <div class="txr-fields">
+                    <div class="txr-field">
+                        <label class="form-label" for="dates">{{ translate('Date range') }}</label>
+                        <div class="txr-field__control txr-field__control--icon">
+                            <i class="tio-calendar-month"></i>
+                            <input type="text" id="dates" name="dates" value="{{ $dateRange }}" class="form-control" autocomplete="off" data-no-global-daterangepicker>
                         </div>
                     </div>
-                </form>
+                </div>
+            </form>
+            <div class="txr-query__foot">
+                <button type="submit" form="txr-filter" class="btn btn--primary"><i class="tio-filter-list"></i> {{ translate('messages.Filter') }}</button>
             </div>
-            <div class="card p-20 mb-20">
-                <div class="row g-lg-4 g-3">
-                    <div class="col-md-6 col-xl-3">
-                        <div class="bg-opacity-warning-5 h-100 rounded p-24">
-                            <img src="{{ asset('/public/assets/admin/img/tax/1.png') }}" alt="img" class="mb-20">
-                            <h2 class="cus-warning-clr mb-1">{{ $totalOrders }}</h2>
-                            <span class="font-medium mb-0">{{ translate('Total Orders') }}</span>
-                        </div>
-                    </div>
-                    <div class="col-md-6 col-xl-3">
-                        <div class="bg-opacity-primary-5 h-100 rounded p-24">
-                            <img src="{{ asset('/public/assets/admin/img/tax/2.png') }}" alt="img" class="mb-20">
-                            <h2 class="theme-clr mb-1"> {{ \App\CentralLogics\Helpers::format_currency($totalOrderAmount) }}
-                            </h2>
-                            <span class="font-medium mb-0">{{ translate('Total Order Amount') }}</span>
-                        </div>
-                    </div>
-                    <div class="col-lg-12 col-xl-6">
-                        <div class="bg-opacity-warning-5 h-100 rounded p-24 d-flex flex-sm-nowrap flex-wrap gap-3">
-                            <div class="w-xxl-100 w-sm-50">
-                                <img src="{{ asset('/public/assets/admin/img/tax/3.png') }}" alt="img" class="mb-20">
-                                <h2 class="text-success mb-1">{{ \App\CentralLogics\Helpers::format_currency($totalTax) }}
-                                </h2>
-                                <span class="font-medium mb-0">{{ translate('Total Tax Amount') }}</span>
-                            </div>
-                            <div class="tax-report-vat w-100">
-                                <div class="d-flex flex-column gap-1">
-                                    @foreach ($taxSummary as $taxdata)
-                                        <div
-                                            class="d-content-between gap-2 bg-white-n rounded py-2 px-2 fz-12px font-semibold">
-                                            {{ $taxdata->tax_name }} <span
-                                                class="title-clr">{{ \App\CentralLogics\Helpers::format_currency($taxdata->total_tax) }}</span>
-                                        </div>
-                                    @endforeach
+        </div>
 
+        @include('admin-views.report.tax-report.partials._summary-strip', ['tiles' => [
+            [
+                'icon' => 'tio-receipt-outlined',
+                'value' => number_format($totalOrders),
+                'label' => translate('messages.Total orders'),
+            ],
+            [
+                'icon' => 'tio-money', 'tone' => 'income',
+                'value' => \App\CentralLogics\Helpers::format_currency($totalOrderAmount),
+                'label' => translate('messages.Total order amount'),
+            ],
+            [
+                'icon' => 'tio-dollar-outlined', 'tone' => 'tax',
+                'value' => \App\CentralLogics\Helpers::format_currency($totalTax),
+                'label' => translate('Total tax amount'),
+            ],
+        ]])
+
+        @if (count($taxSummary))
+            <div class="card mb-3">
+                <div class="card-body">
+                    <span class="d-block fs-12 text-muted text-uppercase mb-2">{{ translate('messages.Tax by rate') }}</span>
+                    <div class="row g-2">
+                        @foreach ($taxSummary as $tax_row)
+                            <div class="col-sm-6 col-lg-4 col-xl-3">
+                                <div class="txr-tax__rate border rounded px-3 py-2 h-100">
+                                    <div class="txr-tax__name" title="{{ $tax_row->tax_name }}">{{ $tax_row->tax_name }}</div>
+                                    <span>{{ \App\CentralLogics\Helpers::format_currency($tax_row->total_tax) }}</span>
                                 </div>
                             </div>
-                        </div>
+                        @endforeach
                     </div>
                 </div>
             </div>
-            <div class="card p-20">
-                <div class="d-flex align-items-center justify-content-between gap-2 flex-wrap mb-20">
-                    <h4 class="mb-0">{{ translate('All Taxes') }}
+        @endif
 
-                    </h4>
-                    <div class="search--button-wrapper justify-content-end">
-                        <form class="search-form min--260">
-                            <div class="input-group input--group">
-                                <input id="datatableSearch_" type="search" name="search" class="form-control h--40px"
-                                    placeholder="{{ translate('messages.Ex:') }} 10010"
-                                    value="{{ request()?->search ?? null }}"
-                                    aria-label="{{ translate('messages.search') }}">
-
-                                <button type="submit" class="btn btn--secondary"><i class="tio-search"></i></button>
-                            </div>
-                        </form>
-
-                        <!-- Datatable Info -->
-                        <div id="datatableCounterInfo" class="mr-2 mb-2 mb-sm-0 initial-hidden">
-                            <div class="d-flex align-items-center">
-                                <span class="font-size-sm mr-3">
-                                    <span id="datatableCounter">0</span>
-                                    {{ translate('messages.selected') }}
-                                </span>
-                            </div>
+        <div class="card">
+            <div class="card-header border-0 py-2">
+                <div class="search--button-wrapper">
+                    @include('partials._table-head', [
+                        'title' => translate('messages.Taxed orders'),
+                        'subtitle' => translate('messages.Tax collected on your orders over the selected period.'),
+                        'count' => $orders->total(),
+                    ])
+                    <form class="search-form min--260" action="{{ route('vendor.report.vendorTax') }}" method="get">
+                        <input type="hidden" name="dates" value="{{ $dateRange }}" data-no-global-daterangepicker>
+                        <div class="input-group input--group">
+                            <input type="search" name="search" class="form-control h--40px"
+                                   placeholder="{{ translate('Search by order ID') }}"
+                                   value="{{ request('search') }}" aria-label="{{ translate('messages.Search') }}">
+                            <button type="submit" class="btn btn--secondary"><i class="tio-search"></i></button>
                         </div>
-                        <div class="hs-unfold mr-2">
-                            <a class="js-hs-unfold-invoker btn btn-sm btn-white dropdown-toggle h--40px" href="javascript:;"
-                                data-hs-unfold-options='{
-                            "target": "#usersExportDropdown", "type": "css-animation" }'>
-                                <i class="tio-download-to mr-1"></i> {{ translate('messages.export') }}
-                            </a>
-                            <div id="usersExportDropdown"
-                                class="hs-unfold-content dropdown-unfold dropdown-menu dropdown-menu-sm-right">
-                                <span class="dropdown-header">{{ translate('messages.download_options') }}</span>
-                                <a id="export-excel" class="dropdown-item"
-                                    href="{{ route('vendor.report.vendorTaxExport', ['export_type' => 'excel', request()->getQueryString()]) }}">
-                                    <img class="avatar avatar-xss avatar-4by3 mr-2"
-                                        src="{{ asset('public/assets/admin') }}/svg/components/excel.svg"
-                                        alt="Image Description">
-                                    {{ translate('messages.excel') }}
-                                </a>
-                                <a id="export-csv" class="dropdown-item"
-                                    href="{{ route('vendor.report.vendorTaxExport', ['export_type' => 'csv', request()->getQueryString()]) }}">
-                                    <img class="avatar avatar-xss avatar-4by3 mr-2"
-                                        src="{{ asset('public/assets/admin') }}/svg/components/placeholder-csv-format.svg"
-                                        alt="Image Description">
-                                    {{ translate('messages.csv') }}
-                                </a>
-                            </div>
-                        </div>
-                    </div>
+                    </form>
+                    @include('admin-views.report.tax-report.partials._export-dropdown', [
+                        'export_route' => 'vendor.report.vendorTaxExport',
+                    ])
                 </div>
-                <!-- Table -->
+            </div>
+
+            <div class="card-body p-0">
                 <div class="table-responsive datatable-custom">
-                    <table id="datatable"
-                        class="table table-hover table-borderless table-thead-bordered table-nowrap table-align-middle card-table fz--14px">
+                    <table class="table table-hover table-borderless table-thead-bordered table-nowrap table-align-middle card-table">
                         <thead class="thead-light">
                             <tr>
-                                <th class="border-0">{{ translate('sl') }}</th>
-                                <th class="border-0">{{ translate('messages.Order_Id') }}</th>
-                                <th class="border-0">{{ translate('messages.Order_Date') }}</th>
-                                <th class="border-0">{{ translate('messages.Order_Amount') }}</th>
-                                <th class="border-0">{{ translate('messages.Tax_Type') }}</th>
-                                <th class="border-0">{{ translate('messages.Tax_Amount') }}</th>
-                                <th class="border-0 text-center">{{ translate('messages.Action') }}</th>
+                                <th>{{ translate('messages.Order ID') }}</th>
+                                <th>{{ translate('Order date') }}</th>
+                                <th>{{ translate('Tax type') }}</th>
+                                <th class="col--numeric">{{ translate('Order amount') }}</th>
+                                <th>{{ translate('Tax amount') }}</th>
+                                <th class="text-center">{{ translate('messages.Action') }}</th>
                             </tr>
                         </thead>
-
                         <tbody>
-                            @foreach ($orders as $key => $order)
+                            @foreach ($orders as $order)
+                                @php
+                                    $on_labels = ['basic' => $basic_labels[$order->tax_type] ?? $basic_labels['order_wise']] + $tax_on_labels;
+                                    $tax_lines = $order->orderTaxes
+                                        ->groupBy(fn ($tax) => $tax->tax_on.'|'.$tax->tax_name)
+                                        ->map(fn ($group) => [
+                                            'basic' => $group->first()->tax_on === 'basic',
+                                            'on' => $on_labels[$group->first()->tax_on] ?? ucfirst(str_replace('_', ' ', $group->first()->tax_on)),
+                                            'name' => $group->first()->tax_name,
+                                            'amount' => \App\CentralLogics\Helpers::format_currency($group->sum('tax_amount')),
+                                        ])
+                                        ->values();
+                                    $tax_total = $tax_lines->isNotEmpty() ? $order->orderTaxes->sum('tax_amount') : $order->total_tax_amount;
+                                    $order_status = $order_status_labels[$order->order_status] ?? [ucfirst(str_replace('_', ' ', $order->order_status)), 'info'];
+                                    $payment_status = $payment_status_labels[$order->payment_status] ?? [ucfirst(str_replace('_', ' ', $order->payment_status)), 'info'];
+                                    $detail = [
+                                        'id' => '#'.$order->id,
+                                        'date' => \App\CentralLogics\Helpers::date_format($order->created_at).' · '.\App\CentralLogics\Helpers::time_format($order->created_at),
+                                        'order_status' => $order_status[0],
+                                        'order_tone' => $order_status[1],
+                                        'payment_status' => $payment_status[0],
+                                        'payment_tone' => $payment_status[1],
+                                        'order_amount' => \App\CentralLogics\Helpers::format_currency($order->order_amount),
+                                        'tax_total' => \App\CentralLogics\Helpers::format_currency($tax_total),
+                                        'lines' => $tax_lines,
+                                    ];
+                                @endphp
                                 <tr>
                                     <td>
-                                        {{ $key + $orders->firstItem() }}
+                                        <a class="font-weight-bold" href="{{ route('vendor.order.details', ['id' => $order->id]) }}">#{{ $order->id }}</a>
                                     </td>
                                     <td>
-
-                                        <a href="{{ route('vendor.order.details', ['id' => $order['id']]) }}">
-                                            #{{ $order->id }}</a>
-
+                                        <span class="table-when">
+                                            <span class="table-when__day">{{ \App\CentralLogics\Helpers::date_format($order->created_at) }}</span>
+                                            <span class="table-when__ago text-uppercase">{{ \App\CentralLogics\Helpers::time_format($order->created_at) }}</span>
+                                        </span>
+                                    </td>
+                                    <td>{{ $tax_type_labels[$order->tax_type] ?? $tax_type_labels['order_wise'] }}</td>
+                                    <td class="col--numeric">
+                                        <span class="txr-amount">{{ \App\CentralLogics\Helpers::format_currency($order->order_amount) }}</span>
                                     </td>
                                     <td>
-                                        {{ \App\CentralLogics\Helpers::date_format($order->created_at) }}
-                                    </td>
-                                    <td>
-                                        {{ \App\CentralLogics\Helpers::format_currency($order->order_amount) }}
-                                    </td>
-                                    <td>
-                                        {{ translate($order?->tax_type ?? 'order_wise') }}
-                                    </td>
-                                    <td>
-                                        <?php
-                                        if ($order?->tax_type == 'category_wise') {
-                                            $tax_type = 'category_tax';
-                                        } elseif ($order?->tax_type == 'product_wise') {
-                                            $tax_type = 'product_tax';
-                                        } else {
-                                            $tax_type = 'order_wise';
-                                        }
-
-                                        $taxLabels = [
-                                            'basic' => translate($tax_type),
-                                            'tax_on_packaging_charge' => translate('Packaging Charge'),
-                                        ];
-
-                                        $groupedByTaxOn = $order->orderTaxes->groupBy('tax_on');
-                                        $totalTaxAmount = $order->orderTaxes->sum('tax_amount');
-                                        ?>
-
-                                        <div class="d-flex flex-column gap-1">
-                                            @if (count($order->orderTaxes) > 0)
-                                                <div class="fw-bold">
-                                                    {{ translate('Total Tax') }}:
-                                                    {{ \App\CentralLogics\Helpers::format_currency($totalTaxAmount) }}
+                                        <div class="txr-tax">
+                                            <span class="txr-tax__total">{{ \App\CentralLogics\Helpers::format_currency($tax_total) }}</span>
+                                            @foreach ($tax_lines as $line)
+                                                <div class="d-flex align-items-baseline gap-2 fs-12" title="{{ $line['on'] }} · {{ $line['name'] }}">
+                                                    <span class="text-muted">{{ $line['basic'] ? $line['name'] : $line['on'] }}</span>
+                                                    <span class="text--title font-weight-bold">{{ $line['amount'] }}</span>
                                                 </div>
-
-                                                @foreach ($groupedByTaxOn as $taxOn => $taxGroup)
-                                                    @if (isset($taxLabels[$taxOn]))
-                                                        <div class="mt-2 text-capitalize fw-semibold">
-                                                            {{ $taxLabels[$taxOn] }}:</div>
-
-                                                        @php
-
-                                                            $taxByName = $taxGroup
-                                                                ->groupBy('tax_name')
-                                                                ->map(function ($group) {
-                                                                    return $group->sum('tax_amount');
-                                                                });
-                                                        @endphp
-
-                                                        @foreach ($taxByName as $name => $amount)
-                                                            <div class="d-flex fz-11 gap-3 align-items-center">
-                                                                <span>{{ $name }}</span>
-                                                                <span>{{ \App\CentralLogics\Helpers::format_currency($amount) }}</span>
-                                                            </div>
-                                                        @endforeach
-                                                    @endif
-                                                @endforeach
-                                            @else
-                                                <div class="d-flex fz-14 gap-3 align-items-center title-clr">
-                                                    {{ translate('Tax Amount:') }} <span>
-                                                        {{ \App\CentralLogics\Helpers::format_currency($order->total_tax_amount) }}</span>
-                                                </div>
-                                            @endif
+                                            @endforeach
                                         </div>
                                     </td>
                                     <td class="text-center">
-
-                                        <a class="btn btn-sm mx-auto btn--primary action-btn btn-outline-primary offcanvas-trigger"
-                                            data-order_id="{{ $order['id'] }}"
-                                            data-order_status="{{ translate($order['order_status']) }}"
-                                            data-payment_status="{{ translate($order['payment_status']) }}"
-                                            data-order_date="{{ \App\CentralLogics\Helpers::date_format($order['created_at']) }}"
-                                            data-order_amount="{{ \App\CentralLogics\Helpers::format_currency($order['order_amount']) }}"
-                                            data-order_tax_amount="{{ \App\CentralLogics\Helpers::format_currency($order['total_tax_amount']) }}"
-                                            data-tax_type="{{ $order['tax_type'] }}"
-                                            data-order_taxes='@json($order->orderTaxes)' href="#0"
-                                            data-target="#offcanvas__customBtn__adminDetails">
-                                            <i class="tio-invisible"></i>
+                                        <a class="btn btn-sm mx-auto action-btn action-btn--view offcanvas-trigger" href="#0"
+                                           data-target="#txr-order-drawer" data-tax-detail="{{ json_encode($detail) }}"
+                                           title="{{ translate('View details') }}">
+                                            <i class="tio-visible-outlined"></i>
                                         </a>
                                     </td>
                                 </tr>
                             @endforeach
-
                         </tbody>
                     </table>
                 </div>
-                @if (count($orders) !== 0)
-                    <hr>
-                @endif
-                <div class="page-area">
-                    {!! $orders->links() !!}
-                </div>
-                @if (count($orders) === 0)
+                @if ($orders->isEmpty())
                     <div class="empty--data">
-                        <img src="{{ asset('/public/assets/admin/svg/illustrations/sorry.svg') }}" alt="public">
-                        <h5>
-                            {{ translate('no_data_found') }}
-                        </h5>
+                        <img src="{{ asset('public/assets/admin/svg/illustrations/sorry.svg') }}" alt="">
+                        <h5>{{ translate('messages.No tax found') }}</h5>
+                        @if (request()->filled('search'))
+                            <p>{{ translate('messages.Nothing matches this search. Try another order ID.') }}</p>
+                        @else
+                            <p>{{ translate('messages.No taxed orders fall inside this date range. Widen it and filter again.') }}</p>
+                        @endif
                     </div>
                 @endif
             </div>
+
+            @if ($orders->isNotEmpty())
+                <hr>
+            @endif
+            <div class="page-area">
+                {!! $orders->links() !!}
+            </div>
+        </div>
     </div>
 
-
-    <div id="offcanvas__customBtn__adminDetails" class="custom-offcanvas d-flex flex-column justify-content-between">
-        <div>
-            <div class="custom-offcanvas-header bg--secondary d-flex justify-content-between align-items-center px-3 py-3">
-                <h3 class="mb-0">{{ translate('Details') }}</h2>
-                    <button type="button"
-                        class="btn-close w-25px h-25px border rounded-circle d-center bg--secondary text-dark offcanvas-close fz-15px p-0"
-                        aria-label="Close">&times;</button>
-            </div>
-            <div class="custom-offcanvas-body p-20">
-                <div class="bg--secondary rounded p-20 mb-20 w-100">
-                    <div class="mb-15">
-                        <div class="d-flex align-items-center gap-3 mb-xl-3 mb-3">
-                            <h4 class="mb-0" id="order_id"></h4> <span
-                                class="bg-opacity-info-10 rounded py-2 px-3 font-semibold fz-12px theme-clr"
-                                id="order_status"></span>
-                        </div>
-                        <span class="fz--14px title-clr d-block mb-1" id="order_date"></span>
-                        <div class="d-flex align-items-center gap-3">
-                            <span class="fz--14px title-clr">{{ translate('Payment Status') }}: </span> <span
-                                class="bg-opacity-success-10 rounded py-2 px-3 font-semibold fz-12px text-success"
-                                id="payment_status"></span>
-                        </div>
-                    </div>
-                    <div
-                        class="border d-flex align-items-center bg-white-n justify-content-between rounded p-12 mb-20 fz--14px">
-                        {{ translate('Order Amount') }}
-                        <span class="title-clr font-semibold" id="order_amount"></span>
-                    </div>
-                    <div class="bg-white-n rounded p-12">
-                        <div id="order_taxes">
-                        </div>
-
-                        <div class="d-flex align-items-center fz--14px border-top pt-2 justify-content-between">
-                            {{ translate('messages.Total_Tax_Amount') }}
-                            <span class="title-clr font-semibold" id="order_tax_amount"></span>
-                        </div>
+    <div id="txr-order-drawer" class="custom-offcanvas d-flex flex-column" role="dialog" aria-modal="true" aria-labelledby="txr-drawer-title">
+        <div class="custom-offcanvas-header bg--secondary d-flex justify-content-between align-items-center px-3 py-3">
+            <h3 class="mb-0" id="txr-drawer-title">{{ translate('Tax details') }}</h3>
+            <button type="button" class="btn-close w-25px h-25px border rounded-circle d-center bg--secondary text-dark offcanvas-close fz-15px p-0"
+                    aria-label="{{ translate('messages.Close') }}">&times;</button>
+        </div>
+        <div class="custom-offcanvas-body p-20 overflow-auto">
+            <div class="bg--secondary rounded p-20">
+                <div class="d-flex align-items-center flex-wrap gap-2 mb-2">
+                    <h4 class="mb-0">{{ translate('messages.Order ID') }} <span data-detail="id"></span></h4>
+                    <span class="badge" data-detail="order_status" data-detail-tone="order_tone"></span>
+                </div>
+                <div class="fz--14px title-clr mb-2">{{ translate('messages.Date') }}: <span data-detail="date"></span></div>
+                <div class="d-flex align-items-center gap-2 fz--14px title-clr mb-20">
+                    {{ translate('Payment status') }}: <span class="badge" data-detail="payment_status" data-detail-tone="payment_tone"></span>
+                </div>
+                <div class="border d-flex align-items-center bg-white-n justify-content-between rounded p-12 mb-20 fz--14px">
+                    {{ translate('Order amount') }}
+                    <span class="title-clr font-semibold" data-detail="order_amount"></span>
+                </div>
+                <div class="bg-white-n rounded p-12">
+                    <div data-detail-lines></div>
+                    <div class="d-flex align-items-center fz--14px border-top pt-2 justify-content-between">
+                        {{ translate('Total tax amount') }}
+                        <span class="title-clr font-semibold" data-detail="tax_total"></span>
                     </div>
                 </div>
             </div>
         </div>
     </div>
     <div id="offcanvasOverlay" class="offcanvas-overlay"></div>
-
 @endsection
 
 @push('script_2')
-    <script src="{{ asset('public/assets/admin') }}/js/offcanvas.js"></script>
+    @php
+        $range_labels = [
+            'today' => translate('messages.today'),
+            'yesterday' => translate('messages.Yesterday'),
+            'last_7_days' => translate('messages.Last') . ' ' . \Carbon\CarbonInterval::days(7)->forHumans(['skip' => ['week']]),
+            'last_30_days' => translate('messages.Last') . ' ' . \Carbon\CarbonInterval::days(30)->forHumans(['skip' => ['week']]),
+            'this_month' => translate('This month'),
+            'last_month' => translate('messages.Last month'),
+            'custom' => translate('Custom range'),
+            'apply' => translate('messages.Apply'),
+            'cancel' => translate('messages.Cancel'),
+        ];
+    @endphp
     <script>
         "use strict";
 
-        $(function() {
-            $('input[name="dates"]').daterangepicker({
-                startDate: moment('{{ $startDate }}'),
-                endDate: moment('{{ $endDate }}'),
+        $(function () {
+            const labels = @json($range_labels);
+            const ranges = {};
+            ranges[labels.today] = [moment(), moment()];
+            ranges[labels.yesterday] = [moment().subtract(1, 'days'), moment().subtract(1, 'days')];
+            ranges[labels.last_7_days] = [moment().subtract(6, 'days'), moment()];
+            ranges[labels.last_30_days] = [moment().subtract(29, 'days'), moment()];
+            ranges[labels.this_month] = [moment().startOf('month'), moment().endOf('month')];
+            ranges[labels.last_month] = [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')];
+
+            $('#dates').daterangepicker({
+                startDate: moment('{{ $startDate->format('Y-m-d') }}'),
+                endDate: moment('{{ $endDate->format('Y-m-d') }}'),
                 maxDate: moment(),
+                ranges: ranges,
                 locale: {
-                    format: 'MM/DD/YYYY'
-                },
-                ranges: {
-                    'Today': [moment(), moment()],
-                    'Yesterday': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
-                    'Last 7 Days': [moment().subtract(6, 'days'), moment()],
-                    'Last 30 Days': [moment().subtract(29, 'days'), moment()],
-                    'This Month': [moment().startOf('month'), moment().endOf('month')],
-                    'Last Month': [
-                        moment().subtract(1, 'month').startOf('month'),
-                        moment().subtract(1, 'month').endOf('month')
-                    ]
+                    format: 'MM/DD/YYYY',
+                    customRangeLabel: labels.custom,
+                    applyLabel: labels.apply,
+                    cancelLabel: labels.cancel
                 }
             });
-        });
 
+            $(document).on('click', '[data-tax-detail]', function () {
+                const detail = $(this).data('tax-detail');
+                const $drawer = $('#txr-order-drawer');
 
-        document.querySelectorAll('[data-order_id]').forEach(button => {
-            button.addEventListener('click', function() {
-                const orderId = this.dataset.order_id;
-                const orderStatus = this.dataset.order_status;
-                const paymentStatus = this.dataset.payment_status;
-                const orderDate = this.dataset.order_date;
-                const orderAmount = this.dataset.order_amount;
-                const orderTaxAmount = this.dataset.order_tax_amount;
-                const orderTaxes = JSON.parse(this.dataset.order_taxes || '[]');
-
-                document.getElementById('order_id').textContent = `Order ID #${orderId}`;
-                document.getElementById('payment_status').textContent = paymentStatus;
-                document.getElementById('order_status').textContent = orderStatus;
-                document.getElementById('order_date').textContent = `Date: ${orderDate}`;
-                document.getElementById('order_amount').textContent = orderAmount;
-                document.getElementById('order_tax_amount').textContent = orderTaxAmount;
-
-                const taxContainer = document.getElementById('order_taxes');
-                taxContainer.innerHTML = '';
-
-                const taxType = this.dataset.tax_type;
-
-                let basicLabel;
-                switch (taxType) {
-                    case 'category_wise':
-                        basicLabel = 'Category Tax';
-                        break;
-                    case 'product_wise':
-                        basicLabel = 'Product Tax';
-                        break;
-                    default:
-                        basicLabel = 'Order Tax';
-                }
-
-                const taxLabels = {
-                    basic: basicLabel,
-                    tax_on_packaging_charge: 'Packaging Charge',
-                };
-
-                const grouped = {};
-
-                orderTaxes.forEach(tax => {
-                    if (!grouped[tax.tax_on]) grouped[tax.tax_on] = {};
-                    if (!grouped[tax.tax_on][tax.tax_name]) grouped[tax.tax_on][tax.tax_name] = 0;
-                    grouped[tax.tax_on][tax.tax_name] += parseFloat(tax.tax_amount);
+                $drawer.find('[data-detail]').each(function () {
+                    $(this).text(detail[$(this).data('detail')] ?? '');
+                });
+                $drawer.find('[data-detail-tone]').each(function () {
+                    $(this).attr('class', 'badge badge-soft-' + detail[$(this).data('detail-tone')]);
                 });
 
-                Object.keys(grouped).forEach(taxOn => {
-                    if (!taxLabels[taxOn]) return;
-
-                    const sectionTitle = document.createElement('div');
-                    sectionTitle.className = 'fw-semibold mt-2';
-                    sectionTitle.textContent = taxLabels[taxOn];
-                    taxContainer.appendChild(sectionTitle);
-
-                    Object.entries(grouped[taxOn]).forEach(([name, amount]) => {
-                        const taxRow = document.createElement('div');
-                        taxRow.className =
-                            'd-flex align-items-center fz-12px justify-content-between mb-2';
-                        taxRow.innerHTML = `
-                    ${name}
-                    <span class="title-clr font-semibold">${amount.toFixed(2)}</span>
-                `;
-                        taxContainer.appendChild(taxRow);
+                const $lines = $drawer.find('[data-detail-lines]').empty();
+                const groups = {};
+                detail.lines.forEach(function (line) {
+                    (groups[line.on] = groups[line.on] || []).push(line);
+                });
+                Object.keys(groups).forEach(function (on) {
+                    $('<div class="fz-12px font-semibold text-muted mb-1"></div>').text(on).appendTo($lines);
+                    groups[on].forEach(function (line) {
+                        $('<div class="d-flex align-items-center justify-content-between gap-3 fz-12px mb-2"></div>')
+                            .append($('<span></span>').text(line.name))
+                            .append($('<span class="title-clr font-semibold"></span>').text(line.amount))
+                            .appendTo($lines);
                     });
                 });
-
-                document.getElementById('offcanvas__customBtn__adminDetails').classList.add('show');
             });
         });
     </script>

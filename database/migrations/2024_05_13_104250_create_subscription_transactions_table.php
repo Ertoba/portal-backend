@@ -7,9 +7,6 @@ use Illuminate\Database\Migrations\Migration;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::create('subscription_transactions', function (Blueprint $table) {
@@ -35,9 +32,6 @@ return new class extends Migration
         DB::statement('ALTER TABLE subscription_transactions AUTO_INCREMENT = 1000000;');
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('subscription_transactions');

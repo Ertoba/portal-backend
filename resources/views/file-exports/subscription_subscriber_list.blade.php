@@ -1,5 +1,5 @@
 <div class="row">
-    <div class="col-lg-12 text-center "><h1 >{{ translate('messages.Subscriber_list') }}</h1></div>
+    <div class="col-lg-12 text-center "><h1 >{{ translate('Subscriber list') }}</h1></div>
     <div class="col-lg-12">
 
 
@@ -7,19 +7,19 @@
     <table>
         <thead>
             <tr>
-                <th>{{ translate('filter_criteria') }} -</th>
+                <th>{{ translate('Filter criteria') }} -</th>
                 <th></th>
                 <th></th>
                 <th>
 
-                    {{ translate('zone' )}} - {{ $data['zone'] }}
+                    {{ translate('Zone' )}} - {{ $data['zone'] }}
 
 
                     <br>
-                    {{ translate('filter')  }}- {{  translate($data['filter']) }}
+                    {{ translate('Filter')  }}- {{  translate($data['filter']) }}
 
                     <br>
-                    {{ translate('Search_Bar_Content')  }}- {{ $data['search'] ??translate('N/A') }}
+                    {{ translate('Search bar content')  }}- {{ $data['search'] ??translate('N/A') }}
 
                 </th>
                 <th></th>
@@ -28,14 +28,14 @@
                 <th></th>
             </tr>
             <tr>
-                <th class="border-top px-4 border-bottom text-center">{{ translate('sl') }}</th>
-                <th class="border-top px-4 border-bottom"> {{ translate('Store Info') }}  </th>
-                <th class="border-top px-4 border-bottom"> {{ translate('Current Package Name') }} </th>
-                <th class="border-top px-4 border-bottom"> {{ translate('Package Price') }}  </th>
-                <th class="border-top px-4 border-bottom"> {{ translate('Exp Date') }}  </th>
-                <th class="border-top px-4 border-bottom text-center"> {{ translate('Total Subscription Used') }}  </th>
-                <th class="border-top px-4 border-bottom text-center"> {{ translate('is_trial') }}  </th>
-                <th class="border-top px-4 border-bottom text-center"> {{ translate('is_cancel') }}  </th>
+                <th class="border-top px-4 border-bottom text-center">{{ translate('SL') }}</th>
+                <th class="border-top px-4 border-bottom"> {{ translate('Store information') }}  </th>
+                <th class="border-top px-4 border-bottom"> {{ translate('Current package name') }} </th>
+                <th class="border-top px-4 border-bottom"> {{ translate('Package price') }}  </th>
+                <th class="border-top px-4 border-bottom"> {{ translate('Exp date') }}  </th>
+                <th class="border-top px-4 border-bottom text-center"> {{ translate('Total subscription used') }}  </th>
+                <th class="border-top px-4 border-bottom text-center"> {{ translate('Is trial') }}  </th>
+                <th class="border-top px-4 border-bottom text-center"> {{ translate('Is cancel') }}  </th>
                 <th class="border-top px-4 border-bottom text-center">{{ translate('Status') }} </th>
             </tr>
         </thead>
@@ -82,9 +82,7 @@
                     <td class=" text-center">
                         <div>
                             @if($subscriber?->status == 0 &&  $subscriber?->vendor?->status == 0)
-                            <span class="badge badge-soft-info">{{ translate('Approval_Pending') }}</span>
-                            {{-- @elseif ($subscriber?->store_sub_update_application?->is_canceled == 1)
-                            <span class="badge badge-soft-warning">{{ translate('canceled') }}</span> --}}
+                            <span class="badge badge-soft-info">{{ translate('Approval pending') }}</span>
                             @elseif($subscriber?->store_sub_update_application?->status == 0)
                             <span class="badge badge-soft-danger">{{ translate('Expired') }}</span>
                             @elseif($subscriber?->store_sub_update_application?->status == 1)

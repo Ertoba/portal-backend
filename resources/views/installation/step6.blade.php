@@ -1,13 +1,11 @@
 @extends('layouts.blank')
 
 @section('content')
-    <!-- Title -->
     <div class="text-center text-white mb-4">
         <h2>6amMart Software Installation</h2>
         <h6 class="fw-normal">All Done, Great Job. Your software is ready to run.</h6>
     </div>
 
-    <!-- Card -->
     <div class="card mt-4">
         <div class="p-4 mb-md-3 mx-xl-4 px-md-5">
             <div class="p-4 rounded mb-4 text-center">

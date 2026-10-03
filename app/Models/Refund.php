@@ -3,15 +3,15 @@
 namespace App\Models;
 
 use App\CentralLogics\Helpers;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Illuminate\Support\Facades\DB;
+use App\Traits\Model\HasStorageTrait;
 
 class Refund extends Model
 {
-    use HasFactory;
+    use HasFactory, HasStorageTrait;
     protected $guarded = ['id'];
 
 
@@ -23,7 +23,6 @@ class Refund extends Model
         'updated_at' => 'datetime',
 
     ];
-    protected $appends = ['image_full_url'];
 
     public function order()
     {
@@ -53,16 +52,6 @@ class Refund extends Model
         return (json_last_error() === JSON_ERROR_NONE);
     }
 
-    public function storage()
-    {
-        return $this->morphMany(Storage::class, 'data');
-    }
-    protected static function booted()
-    {
-        static::addGlobalScope('storage', function ($builder) {
-            $builder->with('storage');
-        });
-    }
     protected static function boot()
     {
         parent::boot();

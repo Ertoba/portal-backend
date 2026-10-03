@@ -21,7 +21,7 @@
             @elseif (!empty($delivery_address['contact_person_name']))
             {{ $delivery_address['contact_person_name'] }}
             @else
-            <label class="badge badge-danger">{{translate('messages.invalid_customer_data')}}</label>
+            <label class="badge badge-danger">{{translate('messages.Invalid customer data')}}</label>
 
             @endif
         </td>

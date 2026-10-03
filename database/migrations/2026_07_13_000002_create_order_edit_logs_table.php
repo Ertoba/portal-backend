@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('order_edit_logs', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('order_id')->index()->constrained('orders')->cascadeOnDelete();
+            $table->unsignedBigInteger('order_id')->index();
             $table->string('log')->nullable();
             $table->enum('edited_by', ['customer', 'admin', 'vendor', 'delivery_man'])->nullable();
             $table->timestamps();

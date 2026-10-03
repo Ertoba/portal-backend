@@ -2,14 +2,14 @@
 
 namespace App\Models;
 
-use App\Traits\ReportFilter;
-use Illuminate\Database\Eloquent\Builder;
+use App\Traits\Report\ReportFilterTrait;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Traits\Model\HasTranslationsTrait;
 
 class ProCustomerFaq extends Model
 {
-    use HasFactory, ReportFilter;
+    use HasFactory, ReportFilterTrait, HasTranslationsTrait;
 
     protected $guarded = ['id'];
 
@@ -18,37 +18,14 @@ class ProCustomerFaq extends Model
         'status'   => 'integer',
     ];
 
-    public function translations()
-    {
-        return $this->morphMany(Translation::class, 'translationable');
-    }
-
     public function getQuestionAttribute($value)
     {
-        foreach ($this->translations as $translation) {
-            if ($translation['key'] === 'pro_faq_question') {
-                return $translation['value'];
-            }
-        }
-        return $value;
+        return $this->translatedAttribute('pro_faq_question', $value);
     }
 
     public function getAnswerAttribute($value)
     {
-        foreach ($this->translations as $translation) {
-            if ($translation['key'] === 'pro_faq_answer') {
-                return $translation['value'];
-            }
-        }
-        return $value;
+        return $this->translatedAttribute('pro_faq_answer', $value);
     }
 
-    protected static function booted()
-    {
-        static::addGlobalScope('translate', function (Builder $builder) {
-            $builder->with(['translations' => function ($query) {
-                $query->where('locale', app()->getLocale());
-            }]);
-        });
-    }
 }

@@ -8,7 +8,7 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ translate('Email_Template') }}</title>
+    <title>{{ translate('Email template') }}</title>
 
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,400;0,500;0,700;1,400&display=swap');
@@ -153,8 +153,8 @@
                     alt="image">
 
 
-                    <h2 id="mail-title" class="mt-2">{{ $title?? translate('Main_Title_or_Subject_of_the_Mail') }}</h2>
-                    <div class="mb-1" id="mail-body">{!! $body?? translate('Hi_Sabrina,') !!}</div>
+                    <h2 id="mail-title" class="mt-2">{{ $title?? translate('Main title or subject of the mail') }}</h2>
+                    <div class="mb-1" id="mail-body">{!! $body?? translate('Hi sabrina,') !!}</div>
 
                     <img class="mb-2 mail-img-3" id="bannerViewer"
                     src="{{ $data['image_full_url'] ?? asset('/public/assets/admin/img/blank2.png') }}"
@@ -167,12 +167,12 @@
                     @endif
 
                     <div class="mb-1" >
-                        {{ translate('Your_account_credential:') }}
+                        {{ translate('Your account credential') }}:
                         <h6>
-                            {{ translate('messages.Email') }} : {{ $email }}
+                            {{ translate('messages.email') }} : {{ $email }}
                         </h6>
                         <h6>
-                            {{ translate('messages.Password') }} : {{ $password }}
+                            {{ translate('messages.password') }} : {{ $password }}
                         </h6>
 
 
@@ -180,10 +180,10 @@
                     <div class="mb-1" id="mail-body2">{!! $body_2  !!}</div>
                     <hr>
                     <div class="mb-2" id="mail-footer">
-                        {{ $footer_text?? translate('Please_contact_us_for_any_queries,_we’re_always_happy_to_help.') }}
+                        {{ $footer_text?? translate('Please contact us for any queries; we\'re always happy to help.') }}
                     </div>
                     <div>
-                        {{ translate('Thanks_&_Regards') }},
+                        {{ translate('Thanks & regards') }},
                     </div>
                     <div class="mb-4">
                         {{ $company_name }}
@@ -192,30 +192,7 @@
             </tr>
             <tr>
                 <td>
-                    <span class="privacy">
-                        @php($landing_data =\App\Models\DataSetting::where('type', 'admin_landing_page')->whereIn('key', ['shipping_policy_status','refund_policy_status','cancellation_policy_status'])->pluck('value','key')->toArray())
-                        <a href="{{ route('privacy-policy') }}" id="privacy-check" style="{{ (isset($data['privacy']) && $data['privacy'] == 1)?'':'display:none;' }}">{{ translate('Privacy_Policy')}}</a>
-                        @if (isset($landing_data['refund_policy_status']) && $landing_data['refund_policy_status']  == 1)
-                            <a href="{{ route('refund') }}" id="refund-check" style="{{ (isset($data['refund']) && $data['refund'] == 1)?'':'display:none;' }}"><span class="dot"></span>{{ translate('Refund_Policy') }}</a>
-                        @endif
-                        @if (isset($landing_data['cancellation_policy_status']) && $landing_data['cancellation_policy_status']  == 1)
-                            <a href="{{ route('cancelation') }}" id="cancelation-check" style="{{ (isset($data['cancelation']) && $data['cancelation'] == 1)?'':'display:none;' }}"><span class="dot"></span>{{ translate('Cancelation_Policy') }}</a>
-                        @endif
-                        <a href="{{ route('contact-us') }}" id="contact-check" style="{{ (isset($data['contact']) && $data['contact'] == 1)?'':'display:none;' }}"><span class="dot"></span>{{ translate('Contact_us') }}</a>
-                    </span>
-                    <span class="social" style="text-align:center">
-                        @php($social_media = \App\Models\SocialMedia::active()->get())
-                        @if (isset($social_media))
-                            @foreach ($social_media as $social)
-                                <a href="{{ $social->link }}" target=”_blank” id="{{ $social->name  }}-check" style="margin: 0 5px;text-decoration:none;{{ (isset($data[$social->name]) && $data[$social->name] == 1)?'':'display:none;' }}">
-                                    <img src="{{asset('/public/assets/admin/img/img/')}}/{{ $social->name }}.png" alt="">
-                                </a>
-                            @endforeach
-                        @endif
-                    </span>
-                    <span class="copyright" id="mail-copyright">
-                        {{ $copyright_text ?? translate('Copyright 2023 6ammart. All right reserved') }}
-                    </span>
+                    @include('email-templates.partials._footer')
                 </td>
             </tr>
         </tbody>

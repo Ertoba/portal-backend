@@ -1,228 +1,210 @@
 @extends('layouts.vendor.app')
 
-@section('title', translate('messages.Disbursement_Report'))
+@section('title', translate('Disbursement report'))
 
 @push('css_or_js')
+    <link rel="stylesheet" href="{{ asset('public/assets/admin/css/view-pages/disbursement.css') }}">
 @endpush
 
 @section('content')
-    <div class="content container-fluid">
+    @php($is_custom = ($filter ?? 'all_time') === 'custom')
+    @php($is_filtered = $status !== 'all' || $payment_method_id !== 'all' || ($filter ?? 'all_time') !== 'all_time' || request('search'))
+    @php($payout_count = fn ($count) => translate('messages.Payouts') . ': ' . number_format((int) $count))
+    <div class="content container-fluid sdb">
         <div class="page-header">
             <h1 class="page-header-title">
-            <span class="page-header-icon">
-                <img src="{{asset('/public/assets/admin/img/report/new/disburstment.png')}}" class="w--22" alt="">
-            </span>
-                <span>{{ translate('Disbursement_Report') }}</span>
+                <span class="page-header-icon">
+                    <img src="{{ asset('public/assets/admin/img/report/new/disburstment.png') }}" class="w--22" alt="">
+                </span>
+                <span>{{ translate('Disbursement report') }}</span>
             </h1>
+            <p class="page-header-desc">{{ translate('Every payout you have received, and when it cleared.') }}</p>
         </div>
-        <!-- Reports -->
-        <div class="disbursement-report mb-20">
-            <div class="__card-3 rebursement-item">
-                <img src="{{asset('public/assets/admin/img/report/new/trx1.png')}}" class="icon" alt="report/new">
-                <h3 class="title text-008958">{{\App\CentralLogics\Helpers::format_currency($pending)}}
-                </h3>
-                <h6 class="subtitle">{{ translate('Pending_Disbursements') }}</h6>
-                <div class="info-icon" data-toggle="tooltip" data-placement="top" data-original-title="{{ translate('When_the_disbursement_is_pending_full_order_amount_goes_to_this_section.') }}">
-                    <img src="{{asset('public/assets/admin/img/report/new/info1.png')}}" alt="report/new">
-                </div>
-            </div>
 
-            <div class="__card-3 rebursement-item">
-                <img src="{{asset('public/assets/admin/img/report/new/trx5.png')}}" class="icon" alt="report/new">
-                <h3 class="title text-FF7E0D">{{\App\CentralLogics\Helpers::format_currency($completed)}}
-                </h3>
-                <h6 class="subtitle">{{ translate('Completed_Disbursements') }}</h6>
-                <div class="info-icon" data-toggle="tooltip" data-placement="top" data-original-title="{{ translate('When_the_disbursement_is_completed_full_order_amount_goes_to_this_section.') }}">
-                    <img src="{{asset('public/assets/admin/img/report/new/info5.png')}}" alt="report/new">
-                </div>
-            </div>
-
-            <div class="__card-3 rebursement-item">
-                <img src="{{asset('public/assets/admin/img/report/new/trx3.png')}}" class="icon" alt="report/new">
-                <h3 class="title text-FF5A54">{{\App\CentralLogics\Helpers::format_currency($canceled)}}
-                </h3>
-                <h6 class="subtitle">{{ translate('Canceled_Transactions') }}</h6>
-                <div class="info-icon" data-toggle="tooltip" data-placement="top" data-original-title="{{ translate('When_the_disbursement_is_canceled_full_order_amount_goes_to_this_section.') }}">
-                    <img src="{{asset('public/assets/admin/img/report/new/info3.png')}}" alt="report/new">
-                </div>
-            </div>
+        <div class="mb-20">
+            @include('admin-views.disbursement.partials._summary-strip', [
+                'payout_summary' => $payout_summary,
+                'lead_value' => number_format((int) $payout_summary->sum('payouts')),
+                'lead_label' => translate('messages.Payouts in this period'),
+                'released_label' => translate('messages.Received'),
+                'payout_count' => $payout_count,
+            ])
         </div>
 
         <div class="card mb-20">
             <div class="card-body">
-                <h4 class="">{{ translate('Search_Data') }}</h4>
-                <form method="get">
-                    <div class="row g-3">
-                        <div class="col-sm-6 col-md-3">
-                            <select name="payment_method_id" data-url="{{ url()->full() }}" data-filter="payment_method_id"
-                                    data-placeholder="{{ translate('messages.select_payment_method') }}"
-                                    class="form-control js-select2-custom set-filter">
-                                <option value="all">{{translate('All_Payment_Method')}}</option>
-                                @foreach($withdrawal_methods as $item)
-                                    <option value="{{$item['id']}}" {{ isset($payment_method_id) && $payment_method_id == $item['id'] ? 'selected' : '' }}>{{$item['method_name']}}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div class="col-sm-6 col-md-3">
-                            <select name="status" data-url="{{ url()->full() }}" data-filter="status"
-                                    data-placeholder="{{ translate('messages.select_status') }}"
-                                    class="form-control js-select2-custom set-filter">
-                                <option value="all" {{ isset($status) && $status == 'all' ? 'selected' : '' }}>{{translate('All_status')}}</option>
-                                <option value="pending" {{ isset($status) && $status == 'pending' ? 'selected' : '' }}>{{ translate('pending') }}</option>
-                                <option value="completed" {{ isset($status) && $status == 'completed' ? 'selected' : '' }}>{{ translate('completed') }}</option>
-                                <option value="canceled" {{ isset($status) && $status == 'canceled' ? 'selected' : '' }}>{{ translate('canceled') }}</option>
-                            </select>
-                        </div>
-                        <div class="col-sm-6 col-md-3">
-                            <select class="form-control set-filter" name="filter"
-                                    data-url="{{ url()->full() }}" data-filter="filter">
-                                <option value="all_time" {{ isset($filter) && $filter == 'all_time' ? 'selected' : '' }}>
-                                    {{ translate('messages.All_Time') }}</option>
-                                <option value="this_year" {{ isset($filter) && $filter == 'this_year' ? 'selected' : '' }}>
-                                    {{ translate('messages.This_Year') }}</option>
-                                <option value="previous_year"
-                                    {{ isset($filter) && $filter == 'previous_year' ? 'selected' : '' }}>
-                                    {{ translate('messages.Previous_Year') }}</option>
-                                <option value="this_month"
-                                    {{ isset($filter) && $filter == 'this_month' ? 'selected' : '' }}>
-                                    {{ translate('messages.This_Month') }}</option>
-                                <option value="this_week" {{ isset($filter) && $filter == 'this_week' ? 'selected' : '' }}>
-                                    {{ translate('messages.This_Week') }}</option>
-                                <option value="custom" {{ isset($filter) && $filter == 'custom' ? 'selected' : '' }}>
-                                    {{ translate('messages.Custom') }}</option>
-                            </select>
-                        </div>
-                        @if (isset($filter) && $filter == 'custom')
-                            <div class="col-sm-6 col-md-3">
-                                <input type="date" name="from" id="from_date" class="form-control"
-                                       placeholder="{{ translate('Start_Date') }}"
-                                       value={{ $from ? $from  : '' }} required>
+                <div class="mb-3">
+                    <h4 class="mb-1">{{ translate('Filter data') }}</h4>
+                    <p class="fs-12 text-muted mb-0">{{ translate('Narrow the payout list down by status, payment method and date.') }}</p>
+                </div>
+                <form method="get" action="{{ route('vendor.report.disbursement-report') }}">
+                    @if (request('search'))
+                        <input type="hidden" name="search" value="{{ request('search') }}">
+                    @endif
+                    <div class="__bg-F8F9FC-card">
+                        <div class="row g-3 align-items-end" data-date-range>
+                            <div class="col-sm-6 col-xl-3">
+                                <label class="input-label" for="payment_method_id">{{ translate('messages.Payment method') }}</label>
+                                <select name="payment_method_id" id="payment_method_id" class="form-control custom-select h--45px">
+                                    <option value="all">{{ translate('All payment method') }}</option>
+                                    @foreach ($withdrawal_methods as $item)
+                                        <option value="{{ $item['id'] }}" @selected((string) $payment_method_id === (string) $item['id'])>{{ $item['method_name'] }}</option>
+                                    @endforeach
+                                </select>
                             </div>
-                            <div class="col-sm-6 col-md-3">
-                                <input type="date" name="to" id="to_date" class="form-control"
-                                       placeholder="{{ translate('End_Date') }}"
-                                       value={{ $to ? $to  : '' }}  required>
+                            <div class="col-sm-6 col-xl-3">
+                                <label class="input-label" for="payout_status">{{ translate('messages.Status') }}</label>
+                                <select name="status" id="payout_status" class="form-control custom-select h--45px">
+                                    <option value="all" @selected($status === 'all')>{{ translate('All status') }}</option>
+                                    <option value="pending" @selected($status === 'pending')>{{ translate('messages.Pending') }}</option>
+                                    <option value="completed" @selected($status === 'completed')>{{ translate('messages.Completed') }}</option>
+                                    <option value="canceled" @selected($status === 'canceled')>{{ translate('messages.Canceled') }}</option>
+                                </select>
                             </div>
-                        @endif
-                        <div class="col-sm-6 col-md-3 ml-auto">
-                            <button type="submit"
-                                    class="btn btn-primary btn-block">{{ translate('Filter') }}</button>
+                            <div class="col-sm-6 col-xl-3">
+                                <label class="input-label" for="payout_filter">{{ translate('Date range') }}</label>
+                                <select name="filter" id="payout_filter" class="form-control custom-select h--45px" data-date-range-select>
+                                    <option value="all_time" @selected(($filter ?? 'all_time') === 'all_time')>{{ translate('All time') }}</option>
+                                    <option value="this_week" @selected($filter === 'this_week')>{{ translate('This week') }}</option>
+                                    <option value="this_month" @selected($filter === 'this_month')>{{ translate('This month') }}</option>
+                                    <option value="this_year" @selected($filter === 'this_year')>{{ translate('This year') }}</option>
+                                    <option value="previous_year" @selected($filter === 'previous_year')>{{ translate('Previous year') }}</option>
+                                    <option value="custom" @selected($is_custom)>{{ translate('Custom range') }}</option>
+                                </select>
+                            </div>
+                            <div class="col-sm-6 col-xl-3">
+                                <div class="d-flex gap-2">
+                                    <a href="{{ route('vendor.report.disbursement-report') }}" class="btn btn--reset h--45px flex-grow-1 d-inline-flex align-items-center justify-content-center"><i class="tio-refresh"></i> {{ translate('messages.Reset') }}</a>
+                                    <button type="submit" class="btn btn--primary h--45px flex-grow-1"><i class="tio-filter-list"></i> {{ translate('messages.Filter') }}</button>
+                                </div>
+                            </div>
+                            <div class="col-sm-6 col-xl-3" data-custom-date @if (!$is_custom) hidden @endif>
+                                <label class="input-label" for="from_date">{{ translate('Start date') }} <span class="text-danger">*</span></label>
+                                <input type="date" name="from" id="from_date" class="form-control h--45px" value="{{ $from }}" @required($is_custom) @disabled(!$is_custom)>
+                            </div>
+                            <div class="col-sm-6 col-xl-3" data-custom-date @if (!$is_custom) hidden @endif>
+                                <label class="input-label" for="to_date">{{ translate('End date') }} <span class="text-danger">*</span></label>
+                                <input type="date" name="to" id="to_date" class="form-control h--45px" value="{{ $to }}" @required($is_custom) @disabled(!$is_custom)>
+                            </div>
                         </div>
                     </div>
                 </form>
             </div>
         </div>
 
-        <div class="card-header border-0 py-2">
-            <div class="search--button-wrapper">
-                <h2 class="card-title">
-                    {{ translate('Total_Disbursements') }} <span class="badge badge-soft-secondary ml-2" id="countItems">{{ $disbursements->total() }}</span>
-                </h2>
-                <form class="search-form">
-                    <!-- Search -->
-                    <div class="input--group input-group input-group-merge input-group-flush">
-                        <input class="form-control" value="{{ request()?->search  ?? null }}" placeholder="{{ translate('search_by_id') }}" name="search">
-                        <button type="submit" class="btn btn--secondary"><i class="tio-search"></i></button>
-                    </div>
-                    <!-- End Search -->
-                </form>
-                <!-- Static Export Button -->
-                <div class="hs-unfold ml-3">
-                    <a class="js-hs-unfold-invoker btn btn-sm btn-white dropdown-toggle btn export-btn btn-outline-primary btn--primary font--sm" href="javascript:;"
-                       data-hs-unfold-options='{
-                            "target": "#usersExportDropdown",
-                            "type": "css-animation"
-                        }'>
-                        <i class="tio-download-to mr-1"></i> {{translate('messages.export')}}
-                    </a>
-                    <div id="usersExportDropdown"
-                         class="hs-unfold-content dropdown-unfold dropdown-menu dropdown-menu-sm-right">
-                        <span class="dropdown-header">{{translate('messages.download_options')}}</span>
-                        <a id="export-excel" class="dropdown-item" href="{{route('vendor.report.disbursement-report-export', ['type'=>'excel',request()->getQueryString()])}}">
-                            <img class="avatar avatar-xss avatar-4by3 mr-2" src="{{asset('public/assets/admin')}}/svg/components/excel.svg" alt="Image Description">
-                            {{translate('messages.excel')}}
+        <div class="card">
+            <div class="card-header border-0 py-2">
+                <div class="search--button-wrapper">
+                    @include('partials._table-head', [
+                        'title' => translate('Total disbursements'),
+                        'count' => $disbursements->total(),
+                        'count_id' => 'countItems',
+                        'subtitle' => translate('messages.Each payout the admin has run for your store, newest first.'),
+                    ])
+                    <form class="search-form">
+                        @foreach (request()->only(['filter', 'from', 'to', 'status', 'payment_method_id']) as $param => $param_value)
+                            <input type="hidden" name="{{ $param }}" value="{{ $param_value }}">
+                        @endforeach
+                        <div class="input--group input-group input-group-merge input-group-flush">
+                            <input type="search" class="form-control" value="{{ request('search') }}" placeholder="{{ translate('messages.Search by payout ID') }}" name="search">
+                            <button type="submit" class="btn btn--secondary"><i class="tio-search"></i></button>
+                        </div>
+                    </form>
+                    <div class="hs-unfold">
+                        <a class="js-hs-unfold-invoker btn btn-sm btn-white dropdown-toggle h--40px" href="javascript:;"
+                           data-hs-unfold-options='{"target": "#usersExportDropdown", "type": "css-animation"}'>
+                            <i class="tio-download-to mr-1"></i> {{ translate('messages.Export') }}
                         </a>
-                        <a id="export-csv" class="dropdown-item" href="{{route('vendor.report.disbursement-report-export', ['type'=>'excel',request()->getQueryString()])}}">
-                            <img class="avatar avatar-xss avatar-4by3 mr-2" src="{{asset('public/assets/admin')}}/svg/components/placeholder-csv-format.svg" alt="Image Description">
-                            {{translate('messages.csv')}}
-                        </a>
+                        <div id="usersExportDropdown" class="hs-unfold-content dropdown-unfold dropdown-menu dropdown-menu-sm-right">
+                            <span class="dropdown-header">{{ translate('messages.Download options') }}</span>
+                            <a id="export-excel" class="dropdown-item" href="{{ route('vendor.report.disbursement-report-export', ['type' => 'excel', request()->getQueryString()]) }}">
+                                <img class="avatar avatar-xss avatar-4by3 mr-2" src="{{ asset('public/assets/admin/svg/components/excel.svg') }}" alt="">
+                                Excel
+                            </a>
+                            <a id="export-csv" class="dropdown-item" href="{{ route('vendor.report.disbursement-report-export', ['type' => 'csv', request()->getQueryString()]) }}">
+                                <img class="avatar avatar-xss avatar-4by3 mr-2" src="{{ asset('public/assets/admin/svg/components/placeholder-csv-format.svg') }}" alt="">
+                                CSV
+                            </a>
+                        </div>
                     </div>
                 </div>
-                <!-- Static Export Button -->
             </div>
-        </div>
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-thead-bordered table-align-middle card-table">
-                    <thead>
-                    <tr>
-                        <th>{{ translate('sl') }}</th>
-                        <th>{{ translate('id') }}</th>
-                        <th>{{ translate('created_at') }}</th>
-                        <th>{{ translate('Disburse_Amount') }}</th>
-                        <th>{{ translate('Payment_method') }}</th>
-                        <th>{{ translate('status') }}</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    @foreach($disbursements as $key => $disbursement)
-                        <tr>
-                            <td>
-                                <span class="font-weight-bold">{{ $key+1 }}</span>
-                            </td>
-                            <td>
-                                #{{ $disbursement->disbursement_id }}
-                            </td>
-                            <td>
-                                {{ \App\CentralLogics\Helpers::time_date_format($disbursement->created_at)  }}
-                            </td>
-                            <td>
-                                {{\App\CentralLogics\Helpers::format_currency($disbursement['disbursement_amount'])}}
-                            </td>
-                            <td>
-                                <div>
-                                    {{$disbursement->withdraw_method->method_name}}
-                                </div>
-                            </td>
-                            <td>
-                                @if($disbursement->status=='pending')
-                                    <label class="badge badge-soft-primary">{{ translate('pending') }}</label>
-                                @elseif($disbursement->status=='completed')
-                                    <label class="badge badge-soft-success">{{ translate('Completed') }}</label>
-                                @else
-                                    <label class="badge badge-soft-danger">{{ translate('canceled') }}</label>
-                                @endif
-                            </td>
-                        </tr>
-                    @endforeach
-                    </tbody>
-                </table>
-                @if (count($disbursements) === 0)
 
-                    <div class="empty--data">
-                         <img src="{{ asset('/public/assets/admin/svg/illustrations/sorry.svg') }}" alt="public">
-                        <h5>
-                            {{translate('no_data_found')}}
-                        </h5>
+            <div class="card-body p-0">
+                <div class="table-responsive datatable-custom">
+                    <table class="table table-hover table-borderless table-thead-bordered table-nowrap table-align-middle card-table">
+                        <thead class="thead-light">
+                            <tr>
+                                <th>{{ translate('messages.Payout ID') }}</th>
+                                <th>{{ translate('messages.Created at') }}</th>
+                                <th class="col--numeric">{{ translate('Disburse amount') }}</th>
+                                <th>{{ translate('messages.Payment method') }}</th>
+                                <th>{{ translate('messages.Status') }}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach ($disbursements as $disbursement)
+                                @php($method_fields = json_decode($disbursement->withdraw_method?->method_fields ?? '', true) ?: [])
+                                @php($account_number = $method_fields['account_number'] ?? null)
+                                @php($account_name = $method_fields['account_name'] ?? null)
+                                @php($account = is_scalar($account_number) && trim((string) $account_number) !== '' ? '•••• '.substr((string) $account_number, -4) : (is_scalar($account_name) ? $account_name : null))
+                                <tr>
+                                    <td><span class="sdb-id">#{{ $disbursement->disbursement_id }}</span></td>
+                                    <td>
+                                        <span class="table-when">
+                                            <span class="table-when__day">{{ \App\CentralLogics\Helpers::date_format($disbursement->created_at) }}</span>
+                                            <span class="table-when__ago text-uppercase">{{ \App\CentralLogics\Helpers::time_format($disbursement->created_at) }}</span>
+                                        </span>
+                                    </td>
+                                    <td class="col--numeric">
+                                        <span class="sdb-amount">{{ \App\CentralLogics\Helpers::format_currency($disbursement->disbursement_amount) }}</span>
+                                    </td>
+                                    <td>
+                                        <span class="sdb-method">
+                                            <i class="tio-credit-card"></i>
+                                            <span class="sdb-method__text">
+                                                @if ($disbursement->withdraw_method)
+                                                    <span class="sdb-method__name">{{ $disbursement->withdraw_method->method_name }}</span>
+                                                    @if ($account)
+                                                        <span class="sdb-method__acc">{{ $account }}</span>
+                                                    @endif
+                                                @else
+                                                    <span class="sdb-method__name">{{ translate('messages.Payment method removed') }}</span>
+                                                @endif
+                                            </span>
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="sdb-status">
+                                            @include('admin-views.disbursement.partials._status-pill', ['status' => $disbursement->status])
+                                            @if ($disbursement->status !== 'pending' && $disbursement->updated_at)
+                                                <span class="sdb-status__when">{{ translate('messages.Processed') }}: {{ \App\CentralLogics\Helpers::time_date_format($disbursement->updated_at) }}</span>
+                                            @endif
+                                        </span>
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+
+                @if (count($disbursements) === 0)
+                    @include('admin-views.disbursement.partials._empty', [
+                        'empty_title' => translate('messages.No payout found'),
+                        'empty_body' => $is_filtered
+                            ? translate('messages.Nothing matches this filter. Try another status, payment method or date range.')
+                            : translate('messages.Your payouts appear here once the admin runs a disbursement.'),
+                    ])
+                @else
+                    <div class="page-area px-4 pb-3">
+                        {!! $disbursements->links() !!}
                     </div>
                 @endif
             </div>
         </div>
-        <div class="page-area px-4 pb-3">
-            <div class="d-flex align-items-center justify-content-end">
-                <div>
-                    {!!$disbursements->links()!!}
-                </div>
-            </div>
-        </div>
-
     </div>
 @endsection
 
-@push('script')
-@endpush
-
 @push('script_2')
-    <script src="{{asset('public/assets/admin')}}/js/view-pages/vendor/report.js"></script>
+    <script src="{{ asset('public/assets/admin/js/view-pages/vendor/report.js') }}"></script>
 @endpush
-

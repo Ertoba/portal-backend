@@ -22,7 +22,7 @@ interface AddonRepositoryInterface extends RepositoryInterface
      * @param int|string $dataLimit
      * @return Collection|LengthAwarePaginator
      */
-    public function getStoreWiseList(int|string $moduleId , string $searchValue = null, int|string $storeId = 'all', int|string $dataLimit = DEFAULT_DATA_LIMIT): Collection|LengthAwarePaginator;
+    public function getStoreWiseList(int|string $moduleId , ?string $searchValue = null, int|string $storeId = 'all', int|string $dataLimit = DEFAULT_DATA_LIMIT): Collection|LengthAwarePaginator;
 
     /**
      * @param int|string $moduleId
@@ -30,7 +30,7 @@ interface AddonRepositoryInterface extends RepositoryInterface
      * @param int|string $storeId
      * @return Collection
      */
-    public function getExportList(int|string $moduleId , string $searchValue = null, int|string $storeId = 'all'): Collection;
+    public function getExportList(int|string $moduleId , ?string $searchValue = null, int|string $storeId = 'all'): Collection;
 
     /**
      * @param array $data

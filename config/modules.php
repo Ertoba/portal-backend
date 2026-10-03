@@ -126,7 +126,6 @@ return [
         | Setting the generate key to false will not generate that folder
         */
         'generator' => [
-            // app/
             'actions' => ['path' => 'app/Actions', 'generate' => false],
             'casts' => ['path' => 'app/Casts', 'generate' => false],
             'channels' => ['path' => 'app/Broadcasting', 'generate' => false],
@@ -154,31 +153,24 @@ return [
             'scopes' => ['path' => 'app/Models/Scopes', 'generate' => false],
             'traits' => ['path' => 'app/Traits', 'generate' => false],
 
-            // app/Http/
             'controller' => ['path' => 'app/Http/Controllers', 'generate' => true],
             'filter' => ['path' => 'app/Http/Middleware', 'generate' => false],
             'request' => ['path' => 'app/Http/Requests', 'generate' => false],
 
-            // config/
             'config' => ['path' => 'config', 'generate' => true],
 
-            // database/
             'factory' => ['path' => 'database/factories', 'generate' => true],
             'migration' => ['path' => 'database/migrations', 'generate' => true],
             'seeder' => ['path' => 'database/seeders', 'generate' => true],
 
-            // lang/
             'lang' => ['path' => 'lang', 'generate' => false],
 
-            // resource/
             'assets' => ['path' => 'resources/assets', 'generate' => true],
             'component-view' => ['path' => 'resources/views/components', 'generate' => false],
             'views' => ['path' => 'resources/views', 'generate' => true],
 
-            // routes/
             'routes' => ['path' => 'routes', 'generate' => true],
 
-            // tests/
             'test-feature' => ['path' => 'tests/Feature', 'generate' => true],
             'test-unit' => ['path' => 'tests/Unit', 'generate' => true],
         ],
@@ -227,7 +219,6 @@ return [
     */
     'commands' => ConsoleServiceProvider::defaultCommands()
         ->merge([
-            // New commands go here
         ])->toArray(),
 
     /*

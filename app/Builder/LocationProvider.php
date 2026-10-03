@@ -5,7 +5,7 @@ namespace App\Builder;
 use App\CentralLogics\Helpers;
 use App\Models\CustomerAddress;
 use App\Models\Zone;
-use App\Services\ZoneService;
+use App\Services\Zone\ZoneService;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Validation\ValidationException;
 use MatanYadaev\EloquentSpatial\Objects\Point;
@@ -29,15 +29,10 @@ class LocationProvider implements LocationProviderContract
         $stored = Session::get(self::SESSION_KEY);
         $zoneId = $this->context->getZoneId();
 
-        // Validate the stored selection still belongs in this storefront's
-        // zone — covers the case where the user navigated to a different
-        // storefront with a stale session entry.
         if ($stored && (int) ($stored['zone_id'] ?? 0) === (int) $zoneId) {
             return $stored;
         }
 
-        // No valid stored selection — try to auto-resolve from the
-        // logged-in customer's addresses (first one in the current zone).
         return $this->autoResolveFromSavedAddresses();
     }
 
@@ -46,21 +41,14 @@ class LocationProvider implements LocationProviderContract
         $zoneId = $this->context->getZoneId();
 
         if ($addressId) {
-            // Saved-address path: the row IS the source of truth — load
-            // its lat/lng/address rather than trusting whatever the client
-            // sent. Verify the row still belongs to the active store's
-            // zone (covers the case where the polygon was redrawn after
-            // the row was saved).
             $row = $this->ownedAddress($addressId);
             if ((int) $row->zone_id !== (int) $zoneId) {
                 throw ValidationException::withMessages([
-                    'coordinates' => __('messages.service_not_available_in_this_area'),
+                    'coordinates' => __('messages.Service not available in this area'),
                 ]);
             }
             $payload = $this->savedSelectionPayload($row, $zoneId);
         } else {
-            // Ad-hoc path (geolocation / map pick): validate the point
-            // actually lies inside the polygon before persisting.
             $this->assertPointInStorefrontZone($lat, $lng, $zoneId);
             $payload = [
                 'id'      => null,
@@ -91,8 +79,6 @@ class LocationProvider implements LocationProviderContract
             return [];
         }
 
-        // Cheap index lookup on (user_id, zone_id) — addresses outside
-        // this storefront's zone never reach the frontend.
         return CustomerAddress::query()
             ->where('user_id', $userId)
             ->where('zone_id', $zoneId)
@@ -146,7 +132,7 @@ class LocationProvider implements LocationProviderContract
         $address->floor                = \array_key_exists('floor', $payload) ? $payload['floor'] : $address->floor;
         $address->road                 = \array_key_exists('road',  $payload) ? $payload['road']  : $address->road;
         $address->house                = \array_key_exists('house', $payload) ? $payload['house'] : $address->house;
-        $address->zone_id              = $zoneId; // re-anchor to the current zone
+        $address->zone_id              = $zoneId;
         $address->save();
 
         return $this->formatAddress($address);
@@ -156,7 +142,6 @@ class LocationProvider implements LocationProviderContract
     {
         $this->ownedAddress($addressId)->delete();
 
-        // If the deleted row was the currently selected location, clear it.
         $stored = Session::get(self::SESSION_KEY);
         if ($stored && (int) ($stored['id'] ?? 0) === $addressId) {
             $this->clear();
@@ -175,9 +160,6 @@ class LocationProvider implements LocationProviderContract
             return null;
         }
 
-        // Polygon stores [LineString[Point...]]; the outer ring is at [0].
-        // toJson() emits [[lng, lat], ...] (GeoJSON convention) — flip to
-        // {lat, lng} for the frontend.
         $area = \json_decode($zone->coordinates[0]->toJson(), true);
         $points = $area['coordinates'] ?? [];
 
@@ -193,7 +175,7 @@ class LocationProvider implements LocationProviderContract
     {
         if (!$zoneId) {
             throw ValidationException::withMessages([
-                'coordinates' => __('messages.service_not_available_in_this_area'),
+                'coordinates' => __('messages.Service not available in this area'),
             ]);
         }
 
@@ -205,7 +187,7 @@ class LocationProvider implements LocationProviderContract
 
         if (!$hit) {
             throw ValidationException::withMessages([
-                'coordinates' => __('messages.service_not_available_in_this_area'),
+                'coordinates' => __('messages.Service not available in this area'),
             ]);
         }
     }
@@ -256,22 +238,11 @@ class LocationProvider implements LocationProviderContract
             return null;
         }
 
-        // Persist so subsequent requests are cheap.
         $payload = $this->savedSelectionPayload($address, $zoneId);
         Session::put(self::SESSION_KEY, $payload);
         return $payload;
     }
 
-    /**
-     * Shape used as `selectedLocation` Inertia prop. Carries every field
-     * the checkout's "Delivery Info" card renders — including the optional
-     * second-line details (street/road, house, floor) and the per-address
-     * contact (which may differ from the auth profile when the customer
-     * saved this address with a different recipient).
-     *
-     * Keep this in sync with `formatAddress()` (the My Addresses list
-     * shape) and with `CheckoutAddressDisplay.jsx`'s field reads.
-     */
     private function savedSelectionPayload(CustomerAddress $row, int $zoneId): array
     {
         return [

@@ -2,7 +2,6 @@
 
 namespace App\Repositories;
 
-use App\CentralLogics\Helpers;
 use App\Contracts\Repositories\BannerRepositoryInterface;
 use App\Models\Banner;
 use Illuminate\Database\Eloquent\Collection;
@@ -10,6 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Storage;
+use App\Support\Storage\FileStorage;
 
 class BannerRepository implements BannerRepositoryInterface
 {
@@ -29,19 +29,19 @@ class BannerRepository implements BannerRepositoryInterface
 
     public function getFirstWhere(array $params, array $relations = []): ?Model
     {
-        return $this->banner->where($params)->first();
+        return $this->banner->with($relations)->where($params)->first();
     }
 
-    public function getList(array $orderBy = [], array $relations = [], int|string $dataLimit = DEFAULT_DATA_LIMIT, int $offset = null): Collection|LengthAwarePaginator
+    public function getList(array $orderBy = [], array $relations = [], int|string $dataLimit = DEFAULT_DATA_LIMIT, ?int $offset = null): Collection|LengthAwarePaginator
     {
-        return $this->banner->paginate($dataLimit);
+        return $this->banner->with($relations)->paginate($dataLimit);
     }
 
-    public function getListWhere(string $searchValue = null, array $filters = [], array $relations = [], int|string $dataLimit = DEFAULT_DATA_LIMIT, int $offset = null): Collection|LengthAwarePaginator
+    public function getListWhere(?string $searchValue = null, array $filters = [], array $relations = [], int|string $dataLimit = DEFAULT_DATA_LIMIT, ?int $offset = null): Collection|LengthAwarePaginator
     {
-        $key = explode(' ', $searchValue);
+        $key = explode(' ', $searchValue ?? '');
         return $this->banner->with($relations)->where($filters)
-        ->when(isset($key) , function($q) use($key){
+        ->when($searchValue , function($q) use($key){
             $q->where(function ($q) use ($key) {
                 foreach ($key as $value) {
                     $q->orWhere('title', 'like', "%{$value}%");
@@ -64,7 +64,10 @@ class BannerRepository implements BannerRepositoryInterface
     public function delete(string $id): bool
     {
         $banner = $this->banner->find($id);
-        Helpers::check_and_delete('banner/' , $banner['image']);
+        if (! $banner) {
+            return false;
+        }
+        FileStorage::delete('banner/' , $banner['image']);
         $banner->translations()->delete();
         $banner->delete();
 
@@ -73,12 +76,12 @@ class BannerRepository implements BannerRepositoryInterface
 
     public function getFirstWithoutGlobalScopeWhere(array $params, array $relations = []): ?Model
     {
-        return $this->banner->withoutGlobalScope('translate')->where($params)->first();
+        return $this->banner->with($relations)->withoutGlobalScope('translate')->with(['translations', 'storage'])->where($params)->first();
     }
 
-    public function getSearchedList(string $searchValue = null, int|string $dataLimit = DEFAULT_DATA_LIMIT): Collection
+    public function getSearchedList(?string $searchValue = null, int|string $dataLimit = DEFAULT_DATA_LIMIT): Collection
     {
-        $key = explode(' ', $searchValue);
+        $key = explode(' ', $searchValue ?? '');
         return $this->banner->where('module_id', Config::get('module.current_module_id'))->where(function ($q) use ($key) {
             foreach ($key as $value) {
                 $q->orWhere('title', 'like', "%{$value}%");

@@ -13,6 +13,5 @@ class SocialMediaSeeder extends Seeder
      */
     public function run()
     {
-        //
     }
 }

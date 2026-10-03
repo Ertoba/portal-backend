@@ -1,51 +1,70 @@
 @extends('layouts.vendor.app')
 
-@section('title',translate('messages.store_wallet'))
+@section('title',translate('messages.Store wallet'))
+
+@php
+    $wmLang = [
+        'hint' => translate('Choose a method above and the details it needs will appear here.'),
+        'loading' => translate('Loading method details'),
+        'failed' => translate('Could not load the details for this method. Please try again.'),
+        'optional' => translate('Optional'),
+        'details' => translate('Account details'),
+    ];
+@endphp
 
 @push('css_or_js')
-
+    <style>
+        .wm-modal .modal-header { align-items: flex-start; }
+        .wm-modal__sub { margin: .15rem 0 0; font-size: .8rem; color: #7a879b; }
+        .wm-fields { margin-top: 1.25rem; }
+        .wm-fields__label { display: block; margin-bottom: .55rem; font-size: .68rem; font-weight: 600; letter-spacing: .07em; text-transform: uppercase; color: #7a879b; }
+        .wm-note { display: flex; gap: .6rem; align-items: flex-start; padding: .85rem 1rem; border: 1px dashed #dfe4ec; border-radius: var(--field-radius, 8px); background: #f7f9fb; color: #7a879b; font-size: .82rem; line-height: 1.5; }
+        .wm-note i { flex-shrink: 0; font-size: 1rem; }
+        .wm-note--error { border-style: solid; border-color: #f3d0d0; background: #fdf5f5; color: #b64b4b; }
+        .wm-loading { display: flex; gap: .6rem; align-items: center; justify-content: center; padding: 1.5rem; color: #7a879b; font-size: .82rem; }
+        .wm-loading__spinner { width: 18px; height: 18px; border: 2px solid #dfe4ec; border-top-color: var(--primary-clr, #107980); border-radius: 50%; animation: wm-spin .7s linear infinite; }
+        @keyframes wm-spin { to { transform: rotate(360deg); } }
+        @media (prefers-reduced-motion: reduce) { .wm-loading__spinner { animation-duration: 2s; } }
+    </style>
 @endpush
 
 @section('content')
     <div class="content container-fluid">
-        <!-- Page Header -->
         <div class="page-header">
             <div class="row align-items-center">
                 <div class="col-sm mb-2 mb-sm-0">
-                    <h2 class="page-header-title text-capitalize">
-                        <div class="card-header-icon d-inline-flex mr-2 img">
-                            <img src="{{asset('/public/assets/admin/img/image_90.png')}}" alt="public">
-                        </div>
-                        <span>
-                            {{translate('messages.disbursement_method_setup')}}
+                    <h1 class="page-header-title">
+                        <span class="page-header-icon">
+                            <img src="{{ asset('public/assets/admin/img/outline/wallet.svg') }}" class="w--26" alt="">
                         </span>
-                    </h2>
+                        <span>
+                            {{translate('messages.Disbursement method setup')}}
+                        </span>
+                    </h1>
+                    <p class="page-header-desc">{{ translate('The bank or mobile-money account your payouts are sent to.') }}</p>
                 </div>
             </div>
         </div>
-        <!-- End Page Header -->
-        <!-- Card -->
-        <div class="card">
+        <div class="card" data-ajax-region data-ajax-url="{{ url()->full() }}"
+             data-ajax-links=".page-link" data-ajax-forms=".search-form">
             <div class="card-header py-2">
                 <div class="search--button-wrapper">
                     <h3 class="card-title">
-                        {{ translate('disbursement_methods') }}<span class="badge badge-soft-secondary"  id="countfoods">{{ $vendor_withdrawal_methods->total() }}</span>
+                        {{ translate('Disbursement methods') }}<span class="badge badge-soft-secondary"  id="countfoods">{{ $vendor_withdrawal_methods->total() }}</span>
                     </h3>
-                    <form >
-                        <!-- Search -->
+                    <form class="search-form">
                         <div class="input-group input--group">
-                            <input id="datatableSearch_" type="search" name="search" class="form-control" placeholder="{{ translate('Ex : Search by name') }}"  value="{{ request()?->search ?? null }}" aria-label="Search">
+                            <input id="datatableSearch_" type="search" name="search" class="form-control" placeholder="{{ translate('Ex') . ' : ' . translate('Search by name') }}"  value="{{ request()?->search ?? null }}" aria-label="Search">
 
                             <button type="submit" class="btn btn--secondary">
                                 <i class="tio-search"></i>
                             </button>
                         </div>
-                        <!-- End Search -->
                     </form>
                 </div>
                 &nbsp;
                 <div class="p--10px">
-                    <a class="btn btn--primary btn-outline-primary w-100" href="javascript:" data-toggle="modal" data-target="#balance-modal">{{translate('messages.add_new_method')}}</a>
+                    <a class="btn btn--primary btn-outline-primary w-100" href="javascript:" data-toggle="modal" data-target="#balance-modal"><i class="tio-add-circle"></i> {{translate('messages.Add new method')}}</a>
                 </div>
             </div>
             <div class="card-body p-0">
@@ -58,11 +77,11 @@
                         }'>
                         <thead class="thead-light">
                         <tr>
-                            <th>{{ translate('messages.sl') }}</th>
-                            <th>{{translate('messages.payment_method_name')}}</th>
-                            <th>{{translate('messages.payment_info')}}</th>
-                            <th>{{translate('messages.default')}}</th>
-                            <th class="w-100px text-center">{{translate('messages.action')}}</th>
+                            <th>{{ translate('messages.SL') }}</th>
+                            <th>{{translate('messages.Payment method name')}}</th>
+                            <th>{{translate('Payment information')}}</th>
+                            <th>{{translate('Default')}}</th>
+                            <th class="w-100px text-center">{{translate('messages.Action')}}</th>
                         </tr>
                         </thead>
                         <tbody id="set-rows">
@@ -75,14 +94,14 @@
                                         @forelse(json_decode($e->method_fields, true) as $key=> $item)
                                             <h5 class="text-capitalize "> {{  translate($key) }}: {{$item}}</h5>
                                         @empty
-                                            <h5 class="text-capitalize"> {{translate('messages.No_Data_found')}}</h5>
+                                            <h5 class="text-capitalize"> {{translate('No data found')}}</h5>
                                         @endforelse
                                     </div>
                                 </td>
                                 <td>
                                     <div class="d-flex">
                                         <div>
-                                            <label class="toggle-switch toggle-switch-sm mr-2" data-toggle="tooltip" data-placement="top" title="{{ translate('messages.make_default_method') }}" for="statusCheckbox{{$e->id}}">
+                                            <label class="toggle-switch toggle-switch-sm mr-2" data-toggle="tooltip" data-placement="top" title="{{ translate('messages.Make default method') }}" for="statusCheckbox{{$e->id}}">
                                                 <input type="checkbox" data-url="{{route('vendor.wallet-method.default',[$e['id'],$e->is_default?0:1])}}" class="toggle-switch-input redirect-url" id="statusCheckbox{{$e->id}}" {{$e->is_default?'checked':''}}>
                                                 <span class="toggle-switch-label">
                                                 <span class="toggle-switch-indicator"></span>
@@ -93,10 +112,10 @@
                                 </td>
                                 <td>
 
-                                    @if (auth('vendor_employee')->id()  != $e['id'])
+                                    @if ($current_employee_id != $e['id'])
                                         <div class="btn--container justify-content-center">
-                                            <a class="btn btn-sm btn--danger btn-outline-danger action-btn form-alert" href="javascript:"
-                                               data-id="employee-{{$e['id']}}" data-message="{{translate('messages.Want_to_delete_this_method_info')}}" title="{{translate('messages.delete_method')}}"><i class="tio-delete-outlined"></i>
+                                            <a class="btn btn-sm action-btn action-btn--delete form-alert" href="javascript:"
+                                               data-id="employee-{{$e['id']}}" data-message="{{translate('Want to delete this method information?')}}" title="{{translate('messages.Delete method')}}"><i class="tio-delete-outlined"></i>
                                             </a>
                                             <form action="{{route('vendor.wallet-method.delete',[$e['id']])}}"
                                                   method="post" id="employee-{{$e['id']}}">
@@ -113,7 +132,7 @@
                         <div class="empty--data">
                             <img src="{{asset('public/assets/admin/svg/illustrations/sorry.svg')}}" alt="public">
                             <h5>
-                                {{translate('no_data_found')}}
+                                {{translate('No data found')}}
                             </h5>
                         </div>
                     @endif
@@ -129,37 +148,53 @@
                 </div>
             </div>
         </div>
-        <!-- Card -->
 
 
-        <div class="modal fade" id="balance-modal" tabindex="-1" role="dialog" aria-hidden="true">
-            <div class="modal-dialog" role="document">
+        <div class="modal fade wm-modal" id="balance-modal" tabindex="-1" role="dialog"
+             aria-labelledby="balanceModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered" role="document">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h5 class="modal-title" id="exampleModalLabel">
-                            {{translate('messages.add_method')}}
-                        </h5>
-                        <button type="button" class="close" data-dismiss="modal">
-                            <span aria-hidden="true" class="btn btn--circle btn-soft-danger text-danger"><ti class="tio-clear"></ti></span>
+                        <div>
+                            <h5 class="modal-title" id="balanceModalLabel">{{ translate('messages.Add method') }}</h5>
+                            <p class="wm-modal__sub">{{ translate('Pick how you want to be paid, then fill in the account details.') }}</p>
+                        </div>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="{{ translate('messages.Close') }}">
+                            <span aria-hidden="true" class="btn btn--circle btn-soft-danger text-danger"><i class="tio-clear"></i></span>
                         </button>
                     </div>
-                    <form action="{{route('vendor.wallet-method.store')}}" method="post">
+                    <form action="{{ route('vendor.wallet-method.store') }}" method="post"
+                          id="add-method-form"
+                          data-ajax-form
+                          data-ajax-refresh="[data-ajax-region]"
+                          data-ajax-close="#balance-modal"
+                          data-ajax-reset
+                          data-ajax-busy-text="{{ translate('Saving') }}">
+                        @csrf
                         <div class="modal-body">
-                            @csrf
-                            <div class="">
+                            <div class="form-group mb-0">
+                                <label class="form-label" for="withdraw_method">
+                                    {{ translate('Disbursement method') }}
+                                    <span class="text-danger">*</span>
+                                </label>
                                 <select class="form-control" id="withdraw_method" name="withdraw_method" required>
-                                    <option value="" selected disabled>{{translate('Select_Disburse_Method')}}</option>
+                                    <option value="" selected disabled>{{ translate('Select disburse method') }}</option>
                                     @foreach($withdrawal_methods as $item)
-                                        <option value="{{$item['id']}}">{{$item['method_name']}}</option>
+                                        <option value="{{ $item['id'] }}">{{ $item['method_name'] }}</option>
                                     @endforeach
                                 </select>
                             </div>
-                            <div class="" id="method-filed__div">
+
+                            <div class="wm-fields" id="method-fields">
+                                <div class="wm-note">
+                                    <i class="tio-info-outined"></i>
+                                    <span>{{ $wmLang['hint'] }}</span>
+                                </div>
                             </div>
                         </div>
                         <div class="modal-footer pt-0 border-0">
-                            <button type="button" class="btn btn--reset" data-dismiss="modal">{{translate('messages.cancel')}}</button>
-                            <button type="submit" id="submit_button" disabled class="btn btn--primary">{{translate('messages.Submit')}}</button>
+                            <button type="button" class="btn btn--reset" data-dismiss="modal"><i class="tio-clear-circle-outlined"></i> {{ translate('messages.Cancel') }}</button>
+                            <button type="submit" id="submit_button" disabled class="btn btn--primary"><i class="tio-checkmark-circle-outlined"></i> {{ translate('messages.Submit') }}</button>
                         </div>
                     </form>
                 </div>
@@ -171,45 +206,88 @@
 @push('script_2')
     <script>
         "use strict";
-        $('#withdraw_method').on('change', function () {
-            $('#submit_button').attr("disabled","true");
-            let method_id = this.value;
 
-            // Set header if need any otherwise remove setup part
-            $.ajaxSetup({
-                headers: {
-                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-                }
+        const wmFieldsUrl = "{{ route('vendor.wallet.method-list') }}";
+        const wmLang = @json($wmLang);
+
+        const wmInputTypes = { string: 'text', phone: 'tel' };
+
+        function wmLabel(name) {
+            return name.replace(/[_-]+/g, ' ').replace(/\S+/g, function (word) {
+                return word.charAt(0).toUpperCase() + word.slice(1);
             });
+        }
+
+        function wmNote(text, isError) {
+            $('#method-fields').html(
+                '<div class="wm-note' + (isError ? ' wm-note--error' : '') + '">'
+                + '<i class="' + (isError ? 'tio-error-outlined' : 'tio-info-outined') + '"></i>'
+                + '<span></span></div>'
+            ).find('.wm-note span').text(text);
+        }
+
+        function wmLoading() {
+            $('#method-fields').html(
+                '<div class="wm-loading"><span class="wm-loading__spinner"></span><span></span></div>'
+            ).find('.wm-loading span').last().text(wmLang.loading);
+        }
+
+        function wmFields(fields) {
+            const $box = $('#method-fields').empty();
+
+            $box.append($('<span class="wm-fields__label"></span>').text(wmLang.details));
+
+            fields.forEach(function (field) {
+                const required = Number(field.is_required) === 1;
+                const inputId = 'wm-field-' + field.input_name;
+                const $label = $('<label class="form-label"></label>')
+                    .attr('for', inputId)
+                    .text(wmLabel(field.input_name));
+
+                if (required) {
+                    $label.append(' ', $('<span class="text-danger">*</span>'));
+                } else {
+                    $label.append(' ', $('<span class="form-label-secondary"></span>').text('(' + wmLang.optional + ')'));
+                }
+
+                const $input = $('<input class="form-control">')
+                    .attr({
+                        type: wmInputTypes[field.input_type] || field.input_type,
+                        id: inputId,
+                        name: field.input_name,
+                        placeholder: field.placeholder || ''
+                    })
+                    .prop('required', required);
+
+                $box.append($('<div class="form-group"></div>').append($label, $input));
+            });
+        }
+
+        $('#withdraw_method').on('change', function () {
+            const methodId = this.value;
+
+            $('#submit_button').prop('disabled', true);
+            wmLoading();
+
             $.ajax({
-                url: "{{route('vendor.wallet.method-list')}}" + "?method_id=" + method_id,
-                data: {},
-                processData: false,
-                contentType: false,
+                url: wmFieldsUrl,
+                data: { method_id: methodId },
                 type: 'get',
                 success: function (response) {
-                    $('#submit_button').removeAttr('disabled');
-                    let method_fields = response.content.method_fields;
-                    $("#method-filed__div").html("");
-                    method_fields.forEach((element, index) => {
-                        $("#method-filed__div").append(`
-                    <div class="form-group mt-2">
-                        <label for="wr_num" class="fz-16 c1 mb-2">${element.input_name.replaceAll('_', ' ').toUpperCase()}</label>
-                        <input type="${element.input_type == 'phone' ? 'number' : element.input_type  }" class="form-control" name="${element.input_name}" placeholder="${element.placeholder}" ${element.is_required === 1 ? 'required' : ''}>
-                    </div>
-                `);
-                    })
-
+                    const fields = (response.content && response.content.method_fields) || [];
+                    wmFields(fields);
+                    $('#submit_button').prop('disabled', false);
                 },
                 error: function () {
-
+                    wmNote(wmLang.failed, true);
                 }
             });
         });
-        function showMyModal(data) {
-            $(".modal-body #hiddenValue").html(data);
-            $('#exampleModal').modal('show');
-        }
 
+        $('#balance-modal').on('hidden.bs.modal', function () {
+            $('#add-method-form')[0].reset();
+            wmNote(wmLang.hint, false);
+            $('#submit_button').prop('disabled', true);
+        });
     </script>
 @endpush

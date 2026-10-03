@@ -1,20 +1,5 @@
 <!DOCTYPE html>
-<?php
-if (getEnvMode() == 'demo') {
-    $site_direction = session()->get('site_direction_vendor');
-} else {
-    $site_direction = session()->has('vendor_site_direction') ? session()->get('vendor_site_direction') : 'ltr';
-}
-
-
-$countryCode = \App\CentralLogics\Helpers::get_business_settings('country') ?? 'auto';
-$moduleType = \App\CentralLogics\Helpers::get_store_data()->module_type;
-$storeDataForBadge = \App\CentralLogics\Helpers::get_store_data();
-$verifiedBadgePopupShow = (bool) ($storeDataForBadge?->storeConfig?->verified_seller && !($storeDataForBadge?->storeConfig?->has_seen_verified_badge_popup));
-$verifiedBadgePopupLabel = isset($moduleType) && $moduleType == 'rental' ? translate('messages.provider') : translate('messages.store');
-
-?>
-{{-- {{ dd($countryCode) }} --}}
+{{-- View data supplied by App\Services\VendorLayoutService (composed in AppServiceProvider). --}}
 <html dir="{{ $site_direction }}" lang="{{ str_replace('_', '-', app()->getLocale()) }}"
     class="{{ $site_direction === 'rtl' ? 'active' : '' }}">
 
@@ -23,52 +8,96 @@ $verifiedBadgePopupLabel = isset($moduleType) && $moduleType == 'rental' ? trans
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <meta name="csrf-token" id="csrf-token" content="{{ csrf_token() }}">
 
-    <!-- Title -->
     <title>@yield('title')</title>
-    <!-- Favicon -->
-    @php $logo = \App\Models\BusinessSetting::where(['key' => 'icon'])->first(); @endphp
     <link rel="shortcut icon" href="">
     <link rel="icon" type="image/x-icon"
-        href="{{\App\CentralLogics\Helpers::get_full_url('business', $logo?->value ?? '', $logo?->storage[0]?->value ?? 'public', 'favicon')}}">
-    <!-- Font -->
+        href="{{\App\CentralLogics\Helpers::iconFullUrl()}}">
+    <link rel="preload" as="font" type="font/woff2" crossorigin
+        href="{{ asset('public/assets/admin/vendor/icon-set/fonts/The-Icon-of9a76.woff2') }}?ww946b">
     <link href="{{asset('public/assets/admin/css/fonts.css')}}" rel="stylesheet">
-    <!-- CSS Implementing Plugins -->
     <link rel="stylesheet" href="{{asset('public/assets/admin')}}/css/vendor.min.css">
     <link rel="stylesheet" href="{{asset('public/assets/admin')}}/vendor/icon-set/style.css">
-    <!-- CSS Front Template -->
     <link rel="stylesheet" href="{{asset('public/assets/admin')}}/css/bootstrap.min.css">
     <link rel="stylesheet" href="{{asset('public/assets/admin')}}/css/theme.minc619.css?v=1.0">
     <link rel="stylesheet" href="{{asset('public/assets/admin/css/emogi-area.css')}}">
+    @if(addon_published_status('Service'))
+        <link rel="stylesheet" href="{{ asset('Modules/Service/public/assets/css/service.css') }}">
+    @endif
     <link rel="stylesheet" href="{{asset('public/assets/admin/css/style.css')}}">
     <link rel="stylesheet" href="{{asset('public/assets/admin/css/app-toast.css')}}">
     <link rel="stylesheet" href="{{asset('public/assets/admin/intltelinput/css/intlTelInput.css')}}">
     <link rel="stylesheet" href="{{asset('public/assets/admin/css/owl.min.css')}}">
     <link rel="stylesheet" href="{{asset('public/assets/admin/css/upload-single-image.css')}}">
-
-    {{-- Layout version + feature toggles come from config/layout.php (central switch). --}}
     @php
-        $layout_version  = config('layout.version', 'auto');
-        $layout_features = config('layout.features', []);
-        $use_v2_chrome   = match ($layout_version) {
-            'v1'    => false,
-            'v2'    => isset($moduleType),
-            default => isset($moduleType),
-        };
+        $fcmEnabled = ! empty($fcmCredentials['apiKey'])
+            && ! empty($fcmCredentials['projectId'])
+            && ! empty($fcmCredentials['messagingSenderId'])
+            && ! empty($fcmCredentials['appId']);
     @endphp
-    @if($use_v2_chrome)
+
+        @if($use_v2_chrome)
         <link rel="stylesheet" href="{{ asset('public/assets/admin/css/admin-v2.css') }}">
     @endif
     @if(addon_published_status('ReelsModule'))
         <link rel="stylesheet" href="{{ asset('Modules/ReelsModule/public/assets/css/reels.css') }}">
     @endif
+    {{-- After admin-v2.css: the search palette adapts to whichever chrome is active. --}}
+    <link rel="stylesheet" href="{{ asset('public/assets/admin/css/global-search.css') }}">
+    {{-- Same reason: the new-order alert picks up the v2 tokens when they exist. --}}
+    <link rel="stylesheet" href="{{ asset('public/assets/admin/css/new-order-alert.css') }}">
+    {{-- Last of the base sheets, and after the module ones: it gives every
+         `.nav-tabs` the third-party-setup tab strip look, and several module
+         stylesheets restyle tabs at the same specificity. Still ahead of
+         `css_or_js` so a page can opt out with `.nav-tabs--plain`. --}}
+    <link rel="stylesheet" href="{{ asset('public/assets/admin/css/admin-tabs.css') }}">
+    {{-- Same placement rule: it restyles the theme's own list-table classes
+         (`.datatable-custom`, `.card-table`, `.thead-light`), so it has to come
+         after style.css / theme.min / bootstrap.min but stay ahead of
+         `css_or_js` so a page can still override a column. --}}
+    <link rel="stylesheet" href="{{ asset('public/assets/admin/css/admin-tables.css') }}">
+    <link rel="stylesheet" href="{{ asset('public/assets/admin/css/ajax-framework.css') }}">
+    <link rel="stylesheet" href="{{ asset('public/assets/admin/css/filter-drawer.css') }}">
+    {{-- Pairs a tio glyph with a button label (`<i class="tio-save"></i> Save`).
+         Scoped under `.btn`, and after style.css so its alignment and RTL
+         mirroring win on equal specificity. --}}
+    <link rel="stylesheet" href="{{ asset('public/assets/admin/css/button-icons.css') }}">
+    {{-- The page trail above every screen. After button-icons.css and the v2
+         sheet so it can read the `--v2-*` tokens, and after style.css so
+         `.bcx ~ .content` reclaims that container's top padding on equal
+         specificity. --}}
+    <link rel="stylesheet" href="{{ asset('public/assets/admin/css/breadcrumb.css') }}">
+    {{-- Restyles the theme's own `.page-header-icon` into the tinted badge and
+         adds the `.page-header-desc` summary line. After style.css and
+         breadcrumb.css so it wins on equal specificity, and ahead of
+         `css_or_js` so a page can still override its own header. --}}
+    <link rel="stylesheet" href="{{ asset('public/assets/admin/css/page-head.css') }}">
+    {{-- The one field shape every screen shares. Last of the framework sheets so
+         it outranks bootstrap.min / theme.min / style.css on equal specificity,
+         and ahead of `css_or_js` so a page sheet still owns its own fields. --}}
+    <link rel="stylesheet" href="{{ asset('public/assets/admin/css/form-controls.css') }}">
+    {{-- The one button shape, state and focus ring every screen shares. Directly
+         after form-controls.css: a button and the field beside it are one
+         control pair, and both have to outrank bootstrap.min / theme.min /
+         style.css while staying ahead of `css_or_js`. --}}
+    <link rel="stylesheet" href="{{ asset('public/assets/admin/css/buttons.css') }}">
     @stack('css_or_js')
 
-    <script
-        src="{{asset('public/assets/admin')}}/vendor/hs-navbar-vertical-aside/hs-navbar-vertical-aside-mini-cache.js"></script>
     <link rel="stylesheet" href="{{asset('public/assets/admin')}}/css/toastr.css">
+    <link rel="stylesheet" href="{{asset('public/assets/admin/css/page-transition.css')}}">
 </head>
 
-<body class="footer-offset @if($use_v2_chrome ?? false) v2-chrome @endif @if(($use_v2_chrome ?? false) && (($layout_features['pin'] ?? true) === false)) layout-no-pin @endif">
+<body class="{{ $layoutBodyClass }}">
+    <script>
+        (function () {
+            if (window.localStorage.getItem('hs-navbar-vertical-aside-mini')) {
+                document.body.classList.add('navbar-vertical-aside-mini-mode');
+            }
+        })();
+    </script>
+
+
+    <div id="page-progress-bar"></div>
+
     @if (getEnvMode() == 'demo')
         <div class="direction-toggle">
             <i class="tio-settings"></i>
@@ -76,31 +105,22 @@ $verifiedBadgePopupLabel = isset($moduleType) && $moduleType == 'rental' ? trans
         </div>
     @endif
 
-    {{-- Global toast container: new_tostar(type, title, description) --}}
     <div id="app-toast-container" class="app-toast-container"></div>
 
-    <div class="container">
-        <div class="row">
-            <div class="col-md-12">
-                <div id="loading" class="initial-hidden">
-                    <div class="loading-inner">
-                        <img width="200" src="{{asset('public/assets/admin/img/loader.gif')}}">
-                    </div>
-                </div>
-            </div>
+    {{-- Global blocking loader, toggled everywhere with $('#loading').show() / .hide() --}}
+    <div id="loading" class="initial-hidden" role="status" aria-live="polite">
+        <div class="loader--inner">
+            <span class="app-loader__spinner" aria-hidden="true"></span>
+            <span class="sr-only">{{ translate('messages.loading') }}</span>
         </div>
     </div>
-    {{--loader--}}
 
-    <!-- Builder -->
-    @include('layouts.vendor.partials._front-settings')
-    <!-- End Builder -->
-
-    <!-- JS Preview mode only -->
     @include('layouts.vendor.partials._header')
 
     @if(isset($moduleType) && $moduleType == 'rental')
         @include("rental::provider.partials._sidebar_{$moduleType}")
+    @elseif(isset($moduleType) && $moduleType == 'service')
+        @include('service::vendor.partials._sidebar_service')
     @else
         @include('layouts.vendor.partials._sidebar')
     @endif
@@ -109,29 +129,37 @@ $verifiedBadgePopupLabel = isset($moduleType) && $moduleType == 'rental' ? trans
         @include('layouts.vendor.partials._header_v2')
         @if($moduleType === 'rental')
             @include('rental::provider.partials._sidebar_v2_rental')
+        @elseif($moduleType === 'service')
+            @include('service::vendor.partials._sidebar_v2_service')
         @else
             @include('layouts.vendor.partials._sidebar_v2')
         @endif
     @endif
-    <!-- END ONLY DEV -->
 
     <main id="content" role="main" class="main pointer-event">
-        <!-- Content -->
+    {{-- Rendered here, not per page: the trail is derived from the route,
+         so a new screen is covered the moment it is routed. --}}
+    @include('partials._breadcrumb')
+
         @yield('content')
 
-        <!-- End Content -->
 
-        <!-- Footer -->
         @include('layouts.vendor.partials._footer')
-        <!-- End Footer -->
 
-        <div class="d-none" id="text-validate-translate" data-required="{{ translate('this_field_is_required') }}"
-            data-something-went-wrong="{{ translate('something_went_wrong!') }}"
-            data-max-limit-crossed="{{ translate('max_limit_crossed') }}"
-            data-file-size-larger="{{ translate('file_size_is_larger') }}"
-            data-passwords-do-not-match="{{ translate('passwords_do_not_match') }}"
-            data-valid-email="{{ translate('please_enter_a_valid_email') }}"
-            data-password-validation="{{ translate('password_must_be_8+_chars_with_upper,_lower,_number_&_symbol') }}">
+        {{-- Dashboard only, and only for an invitation the store has not opened yet. It used to
+             render on every vendor page, so answering it was a race against the next page load
+             putting it back up. --}}
+        @if(request()->routeIs('vendor.dashboard'))
+            @include('layouts.vendor.partials._promotion_invitations')
+        @endif
+
+        <div class="d-none" id="text-validate-translate" data-required="{{ translate('This field is required.') }}"
+            data-something-went-wrong="{{ translate('Something went wrong') }}"
+            data-max-limit-crossed="{{ translate('Max limit crossed') }}"
+            data-file-size-larger="{{ translate('File size is larger') }}"
+            data-passwords-do-not-match="{{ translate('Passwords do not match') }}"
+            data-valid-email="{{ translate('Please enter a valid email') }}"
+            data-password-validation="{{ translate('Use at least one uppercase letter, one lowercase letter, one number and one symbol.') }} {{ translate('Minimum characters') }}: 8">
         </div>
 
 
@@ -156,10 +184,10 @@ $verifiedBadgePopupLabel = isset($moduleType) && $moduleType == 'rental' ? trans
                             <div class="btn--container justify-content-center">
                                 <button type="button" id="toggle-ok-button"
                                     class="btn btn--primary min-w-120 confirm-Toggle"
-                                    data-dismiss="modal">{{translate('Ok')}}</button>
+                                    data-dismiss="modal"><i class="tio-checkmark-circle-outlined"></i> {{translate('OK')}}</button>
                                 <button id="reset_btn" type="reset" class="btn btn--cancel min-w-120"
                                     data-dismiss="modal">
-                                    {{translate("Cancel")}}
+                                    <i class="tio-clear-circle-outlined"></i> {{translate("Cancel")}}
                                 </button>
                             </div>
                         </div>
@@ -189,10 +217,10 @@ $verifiedBadgePopupLabel = isset($moduleType) && $moduleType == 'rental' ? trans
                             <div class="btn--container justify-content-center">
                                 <button type="button" id="toggle-status-ok-button"
                                     class="btn btn--primary min-w-120 confirm-Status-Toggle"
-                                    data-dismiss="modal">{{translate('Ok')}}</button>
+                                    data-dismiss="modal"><i class="tio-checkmark-circle-outlined"></i> {{translate('OK')}}</button>
                                 <button id="reset_btn" type="reset" class="btn btn--cancel min-w-120"
                                     data-dismiss="modal">
-                                    {{translate("Cancel")}}
+                                    <i class="tio-clear-circle-outlined"></i> {{translate("Cancel")}}
                                 </button>
                             </div>
                         </div>
@@ -200,24 +228,34 @@ $verifiedBadgePopupLabel = isset($moduleType) && $moduleType == 'rental' ? trans
                 </div>
             </div>
         </div>
-        <div class="modal fade" id="popup-modal">
-            <div class="modal-dialog modal-dialog-centered" role="document">
-                <div class="modal-content">
-                    <div class="modal-body">
-                        <div class="row">
-                            <div class="col-12">
-                                <div class="text-center">
-
-                                    <h2 class="update_notification_text">
-                                        <i class="tio-shopping-cart-outlined"></i>
-                                        {{translate('messages.You have new order, Check Please.')}}
-                                    </h2>
-                                    <hr>
-                                    <button
-                                        class="btn btn-primary check-order">{{translate('messages.Ok, let me check')}}</button>
-                                </div>
-                            </div>
+        {{-- The heading text is swapped by the notification handlers below
+             (order / trip / booking / approved bid), so it stays a bare text
+             node — the icon lives outside it and survives the swap. --}}
+        <div class="modal fade noa-modal" id="popup-modal" tabindex="-1" role="dialog"
+            aria-labelledby="popup-modal-title" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered noa-dialog" role="document">
+                <div class="modal-content noa">
+                    <button type="button" class="noa-close" data-dismiss="modal"
+                        aria-label="{{ translate('Close') }}">
+                        <i class="tio-clear" aria-hidden="true"></i>
+                    </button>
+                    <div class="modal-body noa-body">
+                        <div class="noa-icon" aria-hidden="true">
+                            <span class="noa-ping"></span>
+                            <span class="noa-ping noa-ping--slow"></span>
+                            <span class="noa-icon-core"><i class="tio-shopping-cart-outlined"></i></span>
                         </div>
+                        <span class="noa-eyebrow">{{ translate('New notification') }}</span>
+                        <h2 class="noa-title update_notification_text" id="popup-modal-title">
+                            {{ translate('You have new order, check please.') }}
+                        </h2>
+                        <p class="noa-text">
+                            {{ translate('messages.Review the details and take action right away.') }}
+                        </p>
+                        <button type="button" class="btn noa-btn check-order">
+                            {{ translate('Ok, let me check') }}
+                            <i class="tio-chevron-right noa-btn-arrow" aria-hidden="true"></i>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -241,13 +279,13 @@ $verifiedBadgePopupLabel = isset($moduleType) && $moduleType == 'rental' ? trans
                                 <h3 class="mb-2">{{ translate('Congratulations!') }}</h3>
                                 <p class="mb-0">{{ translate('You have received a verified badge.') }}
                                     {{ translate('It will appear next to your') }} {{ $verifiedBadgePopupLabel }}
-                                    {{ translate('name to build customer trust.') }}
+                                    {{ translate('Name to build customer trust.') }}
                                 </p>
                             </div>
                         </div>
                         <div class="modal-footer justify-content-center border-0 pt-0 pb-4">
                             <button type="button" class="btn btn--primary min-w-120px"
-                                data-dismiss="modal">{{ translate('Okay') }}</button>
+                                data-dismiss="modal"><i class="tio-checkmark-circle-outlined"></i> {{ translate('Okay') }}</button>
                         </div>
                     </div>
                 </div>
@@ -281,21 +319,21 @@ $verifiedBadgePopupLabel = isset($moduleType) && $moduleType == 'rental' ? trans
 
                             </div>
                             <div class="mb-4 d-none" id="note-data">
-                                <textarea class="form-control" placeholder="{{ translate('your_note_here') }}"
+                                <textarea class="form-control" placeholder="{{ translate('Enter a note') }}"
                                     id="get-text-note" cols="5"></textarea>
                             </div>
                             <div class="btn--container justify-content-center">
                                 <div id="hide-buttons">
                                     <div class="d-flex justify-content-center flex-wrap gap-3">
                                         <button data-dismiss="modal" id="cancel_btn_text"
-                                            class="btn btn--cancel min-w-120">{{translate("Not_Now")}}</button>
+                                            class="btn btn--cancel min-w-120"><i class="tio-time"></i> {{translate('Not now')}}</button>
                                         <button type="button" id="new-dynamic-ok-button"
-                                            class="btn btn-primary confirm-model min-w-120">{{translate('Yes')}}</button>
+                                            class="btn btn-primary confirm-model min-w-120"><i class="tio-checkmark-circle-outlined"></i> {{translate('Yes')}}</button>
                                     </div>
                                 </div>
 
                                 <button data-dismiss="modal" type="button" id="new-dynamic-ok-button-show"
-                                    class="btn btn--primary  d-none min-w-120">{{translate('Okay')}}</button>
+                                    class="btn btn--primary  d-none min-w-120"><i class="tio-checkmark-circle-outlined"></i> {{translate('Okay')}}</button>
 
                             </div>
                         </div>
@@ -304,7 +342,6 @@ $verifiedBadgePopupLabel = isset($moduleType) && $moduleType == 'rental' ? trans
             </div>
         </div>
 
-        <!--- Global Image -->
         <div id="imageModal" class="imageModal modal fade" tabindex="-1" aria-hidden="true">
             <div class="modal-dialog modal-xl modal-dialog-centered">
                 <div class="modal-content">
@@ -317,7 +354,7 @@ $verifiedBadgePopupLabel = isset($moduleType) && $moduleType == 'rental' ? trans
                     </div>
                     <div class="modal-body text-center p-3 pt-0">
                         <div class="imageModal_img_wrapper">
-                            <img src="" class="img-fluid imageModal_img" alt="{{ translate('Preview_Image') }}">
+                            <img src="" class="img-fluid imageModal_img" alt="{{ translate('Preview image') }}">
                             <div class="imageModal_btn_wrapper m-1">
                                 <a href="javascript:" class="btn icon-btn px-1 py-1 download_btn"
                                     title="{{ translate('Download') }}" download>
@@ -333,21 +370,27 @@ $verifiedBadgePopupLabel = isset($moduleType) && $moduleType == 'rental' ? trans
         <div class="d-none" id="default-text-data"
             data-default-image-src="{{ asset('public/assets/admin/img/upload-img.png') }}"></div>
     </main>
-    <!-- ========== END MAIN CONTENT ========== -->
 
-    <!-- ========== END SECONDARY CONTENTS ========== -->
     <script src="{{asset('public/assets/admin')}}/js/custom.js"></script>
-    <script src="{{asset('public/assets/admin')}}/js/firebase.min.js"></script>
-    <!-- JS Implementing Plugins -->
+    @if($fcmEnabled)
+        <script src="{{asset('public/assets/admin')}}/js/firebase.min.js"></script>
+    @endif
 
     @stack('script')
 
-    <!-- JS Front -->
     <script src="{{asset('public/assets/admin')}}/js/vendor.min.js"></script>
     <script src="{{asset('public/assets/admin')}}/js/theme.min.js"></script>
-    {{-- Centralized verified-store badge for every select2 dropdown (must load right after select2/theme). --}}
     <script src="{{asset('public/assets/admin')}}/js/verified-select2.js"></script>
     <script src="{{asset('public/assets/admin')}}/js/sweet_alert.js"></script>
+    <script>
+        window.APP_TOAST_I18N = {
+            success: "{{ translate('messages.success') }}",
+            info: "{{ translate('Information') }}",
+            warning: "{{ translate('messages.warning') }}",
+            danger: "{{ translate('messages.error') }}",
+            close: "{{ translate('messages.Close') }}"
+        };
+    </script>
     <script src="{{asset('public/assets/admin')}}/js/toastr.js"></script>
     <script src="{{asset('public/assets/admin/js/app-toast.js')}}"></script>
     <script src="{{asset('public/assets/admin/js/field-error-toast.js')}}"></script>
@@ -378,61 +421,28 @@ $verifiedBadgePopupLabel = isset($moduleType) && $moduleType == 'rental' ? trans
         <source src="{{asset('public/assets/admin/sound/notification.mp3')}}" type="audio/mpeg">
     </audio>
     <script src="{{asset('public/assets/admin/js/view-pages/common.js')}}"></script>
+    @include('partials._status-toggle-lang')
+    {{-- After common.js: it hands `window.StatusToggle` to the two handlers
+         there (`.redirect-url`, `.confirm-Status-Toggle`). --}}
+    <script src="{{asset('public/assets/admin/js/status-toggle.js')}}"></script>
+    {{-- The row priority selects, alongside status-toggle.js: same shared
+         layer, same `StatusToggleResponse` round trip. --}}
+    @include('partials._priority-select-lang')
+    <script src="{{asset('public/assets/admin/js/priority-select.js')}}"></script>
+    @include('partials._ajax-framework-lang')
+    <script src="{{asset('public/assets/admin/js/ajax-framework.js')}}"></script>
+    <script src="{{asset('public/assets/admin/js/filter-drawer.js')}}"></script>
+    {{-- After the v2 header script, which owns the rail buttons a section
+         crumb clicks and the `v2-drawer-open` body class it checks. --}}
+    <script src="{{asset('public/assets/admin/js/breadcrumb.js')}}"></script>
+    {{-- The horizontal tab strips — see the note in layouts/admin/app.blade.php. --}}
+    <script src="{{asset('public/assets/admin/js/tab-scroller.js')}}"></script>
     <script src="{{asset('public/assets/admin/js/keyword-highlighted.js')}}"></script>
+    <script src="{{asset('public/assets/admin/js/global-search.js')}}"></script>
     <script src="{{ asset('public/assets/admin') }}/js/offcanvas.js"></script>
+    <script src="{{ asset('public/assets/admin/js/page-transition.js') }}"></script>
 
 
-    <script>
-        const container = document.querySelector('.tabs-inner');
-        const btnPrevWrap = document.querySelector('.button-prev');
-        const btnNextWrap = document.querySelector('.button-next');
-        const item = document.querySelector('.tabs-slide_items');
-
-        document.querySelectorAll('.tabs-slide_items').forEach(el => {
-            el.style.flex = '0 0 auto';
-        });
-        function updateArrows() {
-            if (!container || !btnPrevWrap || !btnNextWrap) return;
-
-            const hasOverflow = container.scrollWidth > container.clientWidth;
-            if (!hasOverflow) {
-                btnPrevWrap.style.display = 'none';
-                btnNextWrap.style.display = 'none';
-                return;
-            }
-            const scrollLeft = container.scrollLeft;
-            const maxScroll = container.scrollWidth - container.clientWidth;
-
-            if (scrollLeft > 2) {
-                btnPrevWrap.style.display = 'flex';
-            } else {
-                btnPrevWrap.style.display = 'none';
-            }
-
-            if (scrollLeft < maxScroll - 2) {
-                btnNextWrap.style.display = 'flex';
-            } else {
-                btnNextWrap.style.display = 'none';
-            }
-        }
-        document.querySelector('.btn-click-prev')?.addEventListener('click', () => {
-            const itemWidth = item?.offsetWidth || 100;
-            container.scrollBy({ left: -itemWidth, behavior: 'smooth' });
-        });
-        document.querySelector('.btn-click-next')?.addEventListener('click', () => {
-            const itemWidth = item?.offsetWidth || 100;
-            container.scrollBy({ left: itemWidth, behavior: 'smooth' });
-        });
-        if (container) {
-            container.addEventListener('scroll', updateArrows);
-            ['load', 'resize'].forEach(evt => window.addEventListener(evt, updateArrows));
-            new MutationObserver(updateArrows).observe(container, { childList: true, subtree: true });
-            new ResizeObserver(updateArrows).observe(container);
-        }
-        // Initial update
-        updateArrows();
-
-    </script>
 
     <script>
         var audio = document.getElementById("myAudio");
@@ -500,7 +510,7 @@ $verifiedBadgePopupLabel = isset($moduleType) && $moduleType == 'rental' ? trans
                 showCancelButton: true,
                 cancelButtonColor: 'default',
                 confirmButtonColor: '#FC6A57',
-                cancelButtonText: '{{ translate('messages.no') }}',
+                cancelButtonText: '{{ translate('messages.No') }}',
                 confirmButtonText: '{{ translate('messages.Yes') }}',
                 reverseButtons: true
             }).then((result) => {
@@ -510,7 +520,7 @@ $verifiedBadgePopupLabel = isset($moduleType) && $moduleType == 'rental' ? trans
             })
         }
 
-        $('.form-alert').on('click', function () {
+        $(document).on('click', '.form-alert', function () {
             let id = $(this).data('id')
             let message = $(this).data('message')
             Swal.fire({
@@ -520,7 +530,7 @@ $verifiedBadgePopupLabel = isset($moduleType) && $moduleType == 'rental' ? trans
                 showCancelButton: true,
                 cancelButtonColor: 'default',
                 confirmButtonColor: '#FC6A57',
-                cancelButtonText: '{{ translate('messages.no') }}',
+                cancelButtonText: '{{ translate('messages.No') }}',
                 confirmButtonText: '{{ translate('messages.Yes') }}',
                 reverseButtons: true
             }).then((result) => {
@@ -537,15 +547,15 @@ $verifiedBadgePopupLabel = isset($moduleType) && $moduleType == 'rental' ? trans
             location.href = nurl;
         }
 
-        @php $fcm_credentials = \App\CentralLogics\Helpers::get_business_settings('fcm_credentials'); @endphp
-        let firebaseConfig = {
-            apiKey: "{{isset($fcm_credentials['apiKey']) ? $fcm_credentials['apiKey'] : ''}}",
-            authDomain: "{{isset($fcm_credentials['authDomain']) ? $fcm_credentials['authDomain'] : ''}}",
-            projectId: "{{isset($fcm_credentials['projectId']) ? $fcm_credentials['projectId'] : ''}}",
-            storageBucket: "{{isset($fcm_credentials['storageBucket']) ? $fcm_credentials['storageBucket'] : ''}}",
-            messagingSenderId: "{{isset($fcm_credentials['messagingSenderId']) ? $fcm_credentials['messagingSenderId'] : ''}}",
-            appId: "{{isset($fcm_credentials['appId']) ? $fcm_credentials['appId'] : ''}}",
-            measurementId: "{{isset($fcm_credentials['measurementId']) ? $fcm_credentials['measurementId'] : ''}}"
+        @if($fcmEnabled)
+                let firebaseConfig = {
+            apiKey: "{{isset($fcmCredentials['apiKey']) ? $fcmCredentials['apiKey'] : ''}}",
+            authDomain: "{{isset($fcmCredentials['authDomain']) ? $fcmCredentials['authDomain'] : ''}}",
+            projectId: "{{isset($fcmCredentials['projectId']) ? $fcmCredentials['projectId'] : ''}}",
+            storageBucket: "{{isset($fcmCredentials['storageBucket']) ? $fcmCredentials['storageBucket'] : ''}}",
+            messagingSenderId: "{{isset($fcmCredentials['messagingSenderId']) ? $fcmCredentials['messagingSenderId'] : ''}}",
+            appId: "{{isset($fcmCredentials['appId']) ? $fcmCredentials['appId'] : ''}}",
+            measurementId: "{{isset($fcmCredentials['measurementId']) ? $fcmCredentials['measurementId'] : ''}}"
         };
         firebase.initializeApp(firebaseConfig);
         const messaging = firebase.messaging();
@@ -557,19 +567,37 @@ $verifiedBadgePopupLabel = isset($moduleType) && $moduleType == 'rental' ? trans
                     return messaging.getToken();
                 })
                 .then(function (token) {
-                    @php $store_id = \App\CentralLogics\Helpers::get_store_id(); @endphp
-                    // Send the token to your backend to subscribe to topic
-                    subscribeTokenToBackend(token, 'store_panel_{{$store_id}}_message');
+                                        // Send the token to your backend to subscribe to topic
+                    subscribeTokenToBackend(token, 'store_panel_{{$storeId}}_message');
                 }).catch(function (error) {
                     console.error('Error getting permission or token:', error);
                 });
         }
+        @endif
+
+        // FCM topic subscriptions are persistent on Google's side, so re-sending an
+        // unchanged token on every page load just burns two Google API round trips
+        // per request. Re-assert weekly to cover token rotation.
+        const FCM_SUB_TTL = 7 * 24 * 60 * 60 * 1000;
+
+        function fcmAlreadySubscribed(token, topic) {
+            try {
+                let cached = JSON.parse(localStorage.getItem(`fcm_sub_${topic}`) || 'null');
+                return cached && cached.token === token && (Date.now() - cached.at) < FCM_SUB_TTL;
+            } catch (e) {
+                return false;
+            }
+        }
 
         function subscribeTokenToBackend(token, topic) {
+            if (fcmAlreadySubscribed(token, topic)) {
+                return;
+            }
             fetch('{{url('/')}}/subscribeToTopic', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    'Accept': 'application/json',
                     'X-CSRF-TOKEN': '{{ csrf_token() }}'
                 },
                 body: JSON.stringify({ token: token, topic: topic })
@@ -579,7 +607,9 @@ $verifiedBadgePopupLabel = isset($moduleType) && $moduleType == 'rental' ? trans
                         throw new Error(`Error subscribing to topic: ${response.status} - ${text}`);
                     });
                 }
-                console.log(`Subscribed to "${topic}"`);
+                try {
+                    localStorage.setItem(`fcm_sub_${topic}`, JSON.stringify({ token: token, at: Date.now() }));
+                } catch (e) {}
             }).catch(error => {
                 console.error('Subscription error:', error);
             });
@@ -620,29 +650,42 @@ $verifiedBadgePopupLabel = isset($moduleType) && $moduleType == 'rental' ? trans
             })
         }
 
-        @php $order_notification_type = \App\CentralLogics\Helpers::get_business_settings('order_notification_type') ?? 'firebase'; @endphp
         let order_type = 'all';
         let is_trip = false;
+        let is_service = false;
+        let is_bid_approved = false;
+        @if($fcmEnabled)
         messaging.onMessage(function (payload) {
             if (payload.data.order_id && payload.data.type === 'new_order') {
-                @if(\App\CentralLogics\Helpers::employee_module_permission_check('order') && $order_notification_type == 'firebase')
+                @if(\App\CentralLogics\Helpers::employee_module_permission_check('order') && $admin_order_notification && $order_notification_type == 'firebase')
                     order_type = payload.data.order_type
+                    is_trip = false;
+                    is_service = false;
+                    is_bid_approved = false;
                     if (order_type === 'trip') {
-                        document.querySelector('.update_notification_text').textContent = "{{translate('messages.You have new trip, Check Please.')}}";
+                        document.querySelector('.update_notification_text').textContent = "{{translate('You have new trip, check please.')}}";
                         is_trip = true;
+                    }
+                    if (order_type === 'service_booking') {
+                        document.querySelector('.update_notification_text').textContent = "{{translate('You have new booking, check please.')}}";
+                        is_service = true;
+                    }
+                    if (order_type === 'bid_approved') {
+                        document.querySelector('.update_notification_text').textContent = "{{translate('Your bid was approved, check please.')}}";
+                        is_bid_approved = true;
                     }
                     playAudio();
                     $('#popup-modal').appendTo("body").modal('show');
                 @endif
             } else if (payload.data.type === 'message') {
-                if (window.location.href.includes('message/list?conversation')) {
+                if (window.location.pathname.includes('message/list') && getUrlParameter('conversation')) {
                     let conversation_id = getUrlParameter('conversation');
                     let user_id = getUrlParameter('user');
                     let url = '{{url('/')}}/vendor-panel/message/view/' + conversation_id + '/' + user_id;
                     $.ajax({
                         url: url,
                         success: function (data) {
-                            $('#view-conversation').html(data.view);
+                            $('#vendor-view-conversation').html(data.view);
                         }
                     })
                 }
@@ -653,10 +696,20 @@ $verifiedBadgePopupLabel = isset($moduleType) && $moduleType == 'rental' ? trans
                 if ($('#conversation-list').scrollTop() === 0) {
                     conversationList();
                 }
+            } else if (payload.data.type === 'custom_service_request') {
+                // Firebase route for the new-service-request popup. The handler itself lives
+                // in the service module's poller partial, which registers window.serviceCsrPoll;
+                // it is absent outside the service context, hence the guard. Routed through
+                // this existing observer rather than a second messaging.onMessage(), which
+                // would replace it.
+                if (typeof window.serviceCsrPoll === 'function') {
+                    window.serviceCsrPoll();
+                }
             }
         });
+        @endif
 
-        @if(\App\CentralLogics\Helpers::employee_module_permission_check('order') && $order_notification_type == 'manual')
+        @if(\App\CentralLogics\Helpers::employee_module_permission_check('order') && $admin_order_notification && $order_notification_type == 'manual')
             setInterval(function () {
                 $.get({
                     url: '{{route('vendor.get-store-data')}}',
@@ -665,8 +718,12 @@ $verifiedBadgePopupLabel = isset($moduleType) && $moduleType == 'rental' ? trans
                         let data = response.data;
 
                         if (data.order_type === 'trip') {
-                            document.querySelector('.update_notification_text').textContent = "{{translate('messages.You have new trip, Check Please.')}}";
+                            document.querySelector('.update_notification_text').textContent = "{{translate('You have new trip, check please.')}}";
                             is_trip = true;
+                        }
+                        if (data.order_type === 'service_booking') {
+                            document.querySelector('.update_notification_text').textContent = "{{translate('You have new booking, check please.')}}";
+                            is_service = true;
                         }
 
                         if (data.new_pending_order > 0) {
@@ -708,13 +765,19 @@ $verifiedBadgePopupLabel = isset($moduleType) && $moduleType == 'rental' ? trans
             if (order_type) {
                 if (is_trip === true) {
                     location.href = '{{url('/')}}/vendor-panel/trip?status=all';
+                } else if (is_service === true) {
+                    location.href = '{{url('/')}}/vendor-panel/service/booking/list';
+                } else if (is_bid_approved === true) {
+                    location.href = '{{url('/')}}/vendor-panel/service/custom-request/my-bids';
                 } else {
                     location.href = '{{url('/')}}/vendor-panel/order/list/' + order_type;
 
                 }
             }
         });
+        @if($fcmEnabled)
         startFCM();
+        @endif
         @if(\App\CentralLogics\Helpers::employee_module_permission_check('chat'))
         conversationList();
         @endif
@@ -771,159 +834,194 @@ $verifiedBadgePopupLabel = isset($moduleType) && $moduleType == 'rental' ? trans
 
 
         initTelInputs();
+    </script>
+    
+    <script>
+        /* ----------------------------------------------------------------------
+           Global search palette. Markup lives in
+           layouts/partials/_global_search_modal.blade.php; the shared rendering
+           + keyboard behaviour in js/global-search.js. Only the routes and
+           translations are panel-specific, so they stay here.
+           ---------------------------------------------------------------------- */
+        @php
+            // Grouped into one array on purpose: @json() splits its argument on
+            // commas, so a translated string containing one cannot be passed to
+            // the directive directly.
+            $gs_labels = [
+                'pages' => translate('Pages & actions'),
+                'records' => translate('Records'),
+                'recent' => translate('Recent searches'),
+                'page' => translate('Page'),
+                'record' => translate('Record'),
+                'noResultTitle' => translate('No data found'),
+                'noResultText' => translate('Try another keyword, or search by ID, name, phone or email.'),
+                'idleTitle' => translate('Search anything'),
+                'idleText' => translate('Jump to any page, or look up an order, item, customer and more.'),
+                'errorTitle' => translate('Something went wrong'),
+                'errorText' => translate('We could not load the results. Please try again.'),
+            ];
 
-        //search option
+            $gs_notes = [
+                'limit' => translate('Showing the closest matches only. Refine your keyword to narrow the list.'),
+            ];
+        @endphp
+
+        GlobalSearch.configure({
+            labels: @json($gs_labels),
+            images: {
+                noResult: @json(asset('/public/assets/admin/img/no-search-found.png'))
+            }
+        });
+
         $(document).ready(function () {
-            $('#searchForm input[name="search"]').keyup(function () {
+            var $modal = $('#staticBackdrop');
+            var $form = $('#searchForm');
+            var $input = $('#searchInput');
+            var $results = $('#searchResults');
+
+            var searchDebounce = null;
+            var searchRequest = null;
+            var recentRequest = null;
+
+            var resultLimit = {{ config('search.result_limit', 50) }};
+            var limitNote = @json($gs_notes)['limit'];
+
+            // Delegated: the result list is re-rendered on every keystroke.
+            $results.on('click', '.search-list-item', function () {
+                $.ajax({
+                    type: 'POST',
+                    url: '{{ route('vendor.store.clicked.route') }}',
+                    data: {
+                        routeName: $(this).data('route-name'),
+                        routeUri: $(this).data('route-uri'),
+                        routeFullUrl: $(this).data('route-full-url'),
+                        searchKeyword: $input.val().trim(),
+                        _token: $form.find('input[name="_token"]').val()
+                    },
+                    error: function (xhr) {
+                        console.error(xhr.responseText);
+                    }
+                });
+            });
+
+            function abortPending() {
+                clearTimeout(searchDebounce);
+
+                if (searchRequest) {
+                    searchRequest.abort();
+                    searchRequest = null;
+                }
+
+                if (recentRequest) {
+                    recentRequest.abort();
+                    recentRequest = null;
+                }
+            }
+
+            // Keep the previous rows on screen while retyping; the progress bar
+            // already signals that a request is in flight.
+            function showPlaceholder(rows) {
+                if (!$results.find('.gsearch-item').length) {
+                    $results.html(GlobalSearch.skeleton(rows));
+                }
+            }
+
+            function runGlobalSearch(searchKeyword) {
+                searchRequest = $.ajax({
+                    type: 'POST',
+                    url: $form.attr('action'),
+                    data: { search: searchKeyword, _token: $form.find('input[name="_token"]').val() },
+                    success: function (response) {
+                        if (!response.length) {
+                            $results.html(GlobalSearch.noResult());
+                            return;
+                        }
+
+                        $results.html(GlobalSearch.results(response, searchKeyword, {
+                            footnote: response.length >= resultLimit ? limitNote : null
+                        }));
+                    },
+                    error: function (xhr, status) {
+                        if (status !== 'abort') {
+                            console.error(xhr.responseText);
+                            $results.html(GlobalSearch.error());
+                        }
+                    },
+                    complete: function (xhr, status) {
+                        if (status !== 'abort') {
+                            GlobalSearch.loading(false);
+                        }
+                    }
+                });
+            }
+
+            function getRecentSearch() {
+                GlobalSearch.loading(true);
+                showPlaceholder(5);
+
+                recentRequest = $.ajax({
+                    type: 'GET',
+                    url: '{{ route('vendor.recent.search') }}',
+                    success: function (response) {
+                        $results.html(response.length ? GlobalSearch.recent(response) : GlobalSearch.idle());
+                    },
+                    error: function (xhr, status) {
+                        if (status !== 'abort') {
+                            console.error(xhr.responseText);
+                            $results.html(GlobalSearch.error());
+                        }
+                    },
+                    complete: function (xhr, status) {
+                        if (status !== 'abort') {
+                            GlobalSearch.loading(false);
+                        }
+                    }
+                });
+            }
+
+            $form.find('input[name="search"]').on('input', function () {
                 var searchKeyword = $(this).val().trim();
 
-                if (searchKeyword.length >= 1) {
-                    $.ajax({
-                        type: 'POST',
-                        url: $('#searchForm').attr('action'),
-                        data: { search: searchKeyword, _token: $('input[name="_token"]').val() },
-                        success: function (response) {
-                            if (response.length === 0) {
-                                $('#searchResults').html('<div class="fs-16 fw-500 mb-2">' + @json(translate('Search Result')) + '</div>' +
-                                    '<div class="search-list h-300 d-flex flex-column gap-2 justify-content-center align-items-center fs-16">' +
-                                    '<img width="30" src="' + @json(asset('/public/assets/admin/img/no-search-found.png')) + '" alt="">' + ' ' +
-                                    @json(translate('No result found')) +
-                                    '</div>');
+                abortPending();
 
-                            } else {
-                                var resultHtml = '';
-                                response.forEach(function (route) {
-                                    var separator = route.fullRoute.includes('?') ? '&' : '?';
-                                    var fullRouteWithKeyword = route.fullRoute + separator + 'keyword=' + encodeURIComponent(searchKeyword);
-
-                                    var keywordRegex = searchKeyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-                                    keywordRegex = new RegExp('(' + keywordRegex + ')', 'gi');
-                                    var highlightedRouteName = route.routeName.replace(keywordRegex, '<mark  class="p-0">$1</mark>');
-                                    var highlightedURI = route.URI.replace(keywordRegex, '<mark  class="p-0">$1</mark>');
-                                    resultHtml += '<a href="' + fullRouteWithKeyword + '" class="search-list-item d-flex flex-column" data-route-name="' + route.routeName + '" data-route-uri="' + route.URI + '" data-route-full-url="' + route.fullRoute + '" aria-current="true">';
-                                    resultHtml += '<h5>' + highlightedRouteName + '</h5>';
-                                    resultHtml += '<p class="text-muted fs-12 mb-0">' + highlightedURI + '</p>';
-                                    resultHtml += '</a>';
-                                });
-                                $('#searchResults').html('<div class="fs-16 fw-500 mb-2">' + @json(translate('Search Result')) + '</div>' + '<div class="search-list d-flex flex-column">' + resultHtml + '</div>');
-
-                                $('.search-list-item').click(function () {
-                                    var routeName = $(this).data('route-name');
-                                    var routeUri = $(this).data('route-uri');
-                                    var routeFullUrl = $(this).data('route-full-url');
-
-                                    $.ajax({
-                                        type: 'POST',
-                                        url: '{{ route('vendor.store.clicked.route') }}',
-                                        data: {
-                                            routeName: routeName,
-                                            routeUri: routeUri,
-                                            routeFullUrl: routeFullUrl,
-                                            searchKeyword: searchKeyword,
-                                            _token: $('input[name="_token"]').val()
-                                        },
-                                        success: function (response) {
-                                            console.log(response.message);
-                                        },
-                                        error: function (xhr, status, error) {
-                                            console.error(xhr.responseText);
-                                        }
-                                    });
-                                });
-                            }
-                        },
-                        error: function (xhr, status, error) {
-                            console.error(xhr.responseText);
-                        }
-                    });
-                } else {
-                    $('#searchResults').html('<div class="text-center text-muted py-5">{{translate('Write something to search.')}}.</div>');
+                if (searchKeyword.length < 1) {
+                    getRecentSearch();
+                    return;
                 }
+
+                GlobalSearch.loading(true);
+                showPlaceholder(4);
+
+                searchDebounce = setTimeout(function () {
+                    runGlobalSearch(searchKeyword);
+                }, 300);
+            });
+
+            $form.on('submit', function (event) {
+                event.preventDefault();
+            });
+
+            $modal.on('shown.bs.modal', function () {
+                getRecentSearch();
+            });
+
+            $modal.on('hidden.bs.modal', function () {
+                abortPending();
+                $results.empty();
             });
         });
 
         document.addEventListener('keydown', function (event) {
-            if (event.ctrlKey && event.key === 'k') {
+            if ((event.ctrlKey || event.metaKey) && (event.key === 'k' || event.key === 'K')) {
                 event.preventDefault();
                 document.getElementById('modalOpener').click();
             }
         });
 
-        $(document).ready(function () {
-            $("#staticBackdrop").on("shown.bs.modal", function () {
-                $(this).find("#searchForm input[type=search]").val('');
-                $('#searchResults').html('<div class="text-center text-muted py-5">{{translate('Loading recent searches')}}...</div>');
-                $(this).find("#searchForm input[type=search]").focus();
-
-                $.ajax({
-                    type: 'GET',
-                    url: '{{ route('vendor.recent.search') }}',
-                    success: function (response) {
-                        if (response.length === 0) {
-                            $('#searchResults').html('<div class="text-center text-muted py-5">{{translate('It appears that you have not yet searched.')}}.</div>');
-                        } else {
-                            var resultHtml = '';
-                            response.forEach(function (route) {
-                                resultHtml += '<a href="' + route.route_full_url + '" class="search-list-item d-flex flex-column" data-route-name="' + route.route_name + '" data-route-uri="' + route.route_uri + '" data-route-full-url="' + route.route_full_url + '" aria-current="true">';
-                                resultHtml += '<h5>' + route.route_name + '</h5>';
-                                resultHtml += '<p class="text-muted fs-12  mb-0">' + route.route_uri + '</p>';
-                                resultHtml += '</a>';
-                            });
-                            $('#searchResults').html('<div class="recent-search fs-16 fw-500 animate">' +
-                                @json(translate('Recent Search')) + '<div class="search-list d-flex flex-column mt-2">' + resultHtml + '</div></div>');
-
-                            $('.search-list-item').click(function () {
-                                var routeName = $(this).data('route-name');
-                                var routeUri = $(this).data('route-uri');
-                                var routeFullUrl = $(this).data('route-full-url');
-                                var searchKeyword = $('input[type=search]').val().trim();
-
-                                $.ajax({
-                                    type: 'POST',
-                                    url: '{{ route('vendor.store.clicked.route') }}',
-                                    data: {
-                                        routeName: routeName,
-                                        routeUri: routeUri,
-                                        routeFullUrl: routeFullUrl,
-                                        searchKeyword: searchKeyword,
-                                        _token: $('input[name="_token"]').val()
-                                    },
-                                    success: function (response) {
-                                        console.log(response.message);
-                                    },
-                                    error: function (xhr, status, error) {
-                                        console.error(xhr.responseText);
-                                    }
-                                });
-                            });
-                        }
-                    },
-                    error: function (xhr, status, error) {
-                        console.error(xhr.responseText);
-                        $('#searchResults').html('<div class="text-center text-muted py-5">{{translate('Error loading recent searches')}}.</div>');
-                    }
-                });
-            });
-        });
-
-        $("#staticBackdrop").on("hidden.bs.modal", function () {
-            $('#searchResults').empty();
-        });
-
-        const searchInput = document.getElementById('searchInput');
-        searchInput.addEventListener('search', function () {
-            if (!this.value.trim()) {
-                $('#searchResults').html('<div class="text-center text-muted py-5"></div>');
-            }
-        });
-
-        $('#searchForm').submit(function (event) {
-            event.preventDefault();
-        });
-
 
     </script>
 
+    @include('layouts.partials._logout_confirm')
 
 </body>
 

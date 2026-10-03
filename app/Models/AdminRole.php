@@ -3,10 +3,11 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Support\Carbon;
+use App\Traits\Model\HasTranslationsTrait;
 
 /**
  * Class AdminRole
@@ -20,7 +21,7 @@ use Illuminate\Support\Carbon;
  */
 class AdminRole extends Model
 {
-    use HasFactory;
+    use HasFactory, HasTranslationsTrait;
 
     /**
      * The attributes that are mass assignable.
@@ -45,9 +46,9 @@ class AdminRole extends Model
     /**
      * @return MorphMany
      */
-    public function translations(): MorphMany
+    public function employees(): HasMany
     {
-        return $this->morphMany(Translation::class, 'translationable');
+        return $this->hasMany(Admin::class, 'role_id');
     }
 
     /**
@@ -56,26 +57,10 @@ class AdminRole extends Model
      */
     public function getNameAttribute($value): mixed
     {
-        if (count($this->translations) > 0) {
-            foreach ($this->translations as $translation) {
-                if ($translation['key'] == 'name') {
-                    return $translation['value'];
-                }
-            }
-        }
-
-        return $value;
+        return $this->translatedAttribute('name', $value);
     }
 
     /**
      * @return void
      */
-    protected static function booted(): void
-    {
-        static::addGlobalScope('translate', function (Builder $builder) {
-            $builder->with(['translations' => function($query){
-                return $query->where('locale', app()->getLocale());
-            }]);
-        });
-    }
 }

@@ -1,24 +1,27 @@
 @php use App\Models\DataSetting;use App\Models\ReactPromotionalBanner; @endphp
 @extends('layouts.admin.app')
 
-@section('title',translate('messages.react_landing_page'))
+@section('title',translate('React landing page'))
 
 @section('content')
     @php($banner=null)
     <div class="content container-fluid">
         <div class="page-header pb-0">
             <div class="d-flex flex-wrap justify-content-between">
-                <h1 class="page-header-title">
-                <span class="page-header-icon">
-                    <img src="{{asset('public/assets/admin/img/landing.png')}}" class="w--20" alt="">
-                </span>
-                    <span>
-                    {{ translate('messages.react_landing_page') }}
-                </span>
-                </h1>
+                <div>
+                    <h1 class="page-header-title">
+                    <span class="page-header-icon">
+                        <img src="{{asset('public/assets/admin/img/outline/landing.svg')}}" class="w--26" alt="">
+                    </span>
+                        <span>
+                        {{ translate('React landing page') }}
+                    </span>
+                    </h1>
+                    <p class="page-header-desc">{{ translate('The promotional banners on the react landing page and where each one links.') }}</p>
+                </div>
                 <div class="text--primary-2 py-1 d-flex flex-wrap align-items-center" type="button" data-toggle="modal"
                      data-target="#how-it-works">
-                    <strong class="mr-2">{{translate('See_how_it_works!')}}</strong>
+                    <strong class="mr-2">{{translate('See how it works')}}</strong>
                     <div>
                         <i class="tio-info-outined"></i>
                     </div>
@@ -35,7 +38,7 @@
                 <div class="">
                     <h3 class="mb-1">{{ translate('Promotional Banners Section') }}</h3>
                     <p class="mb-0 gray-dark fs-12">
-                        {{ translate('See how your Promotional Banners  Section will look to customers.') }}
+                        {{ translate('See how this section will look to customers.') }}
                     </p>
                 </div>
                 <div class="max-w-300px ml-sm-auto">
@@ -53,7 +56,7 @@
                     <div class="">
                         <h3 class="mb-1">{{ translate('Show Promotional Banner Section') }}</h3>
                         <p class="mb-0 gray-dark fs-12">
-                            {{ translate('If you turn of the availability status, this section will not show in the website') }}
+                            {{ translate('If you turn off the availability status, this section will not show on the website') }}
                         </p>
                     </div>
                 </div>
@@ -69,10 +72,10 @@
                             <input type="checkbox" data-id="CheckboxStatus" data-type="status"
                                    data-image-on="{{ asset('/public/assets/admin/img/status-ons.png') }}"
                                    data-image-off="{{ asset('/public/assets/admin/img/off-danger.png') }}"
-                                   data-title-on="{{ translate('Do you want turn on this section ?') }}"
-                                   data-title-off="{{ translate('Do you want to turn off this section ?') }}"
-                                   data-text-on="<p>{{ translate('If you turn on this section will be show in react landing page.') }}"
-                                   data-text-off="<p>{{ translate('If you turn off this section will not be show in react landing page.') }}</p>"
+                                   data-title-on="{{ translate('Do you want to turn on this section?') }}"
+                                   data-title-off="{{ translate('Do you want to turn off this section?') }}"
+                                   data-text-on="<p>{{ translate('If you turn this on, the section will be shown on the React landing page.') }}"
+                                   data-text-off="<p>{{ translate('If you turn this off, the section will not be shown on the React landing page.') }}</p>"
                                    class="toggle-switch-input  status dynamic-checkbox" id="CheckboxStatus"
                                 {{ $promotional_banner_section_status?->value ? 'checked' : '' }}>
                             <span class="toggle-switch-label text">
@@ -86,9 +89,6 @@
 
         <div class="tab-content">
             <div class="tab-pane fade show active">
-                <!-- <h5 class="card-title mb-3 mt-3">
-                    <span class="card-header-icon mr-2"><i class="tio-settings-outlined"></i></span> <span>{{translate('Banner Section')}}</span>
-                </h5> -->
                 <div class="card mb-20">
                     <div class="card-header">
                         <div class="">
@@ -111,7 +111,7 @@
                                             <div class="text-center py-2">
                                                 <div class="mb-4">
                                                     <h5 class="mb-1">{{ translate('Upload Promotional Image') }}</h5>
-                                                    <p class="mb-0 fs-12 gray-dark">{{ translate('Upload your Promotional Image') }}</p>
+                                                    <p class="mb-0 fs-12 gray-dark">{{ translate('Upload Promotional Image') }}</p>
                                                 </div>
                                                 <div class="mx-auto text-center error-wrapper">
                                                     <div class="upload-file_custom">
@@ -126,7 +126,7 @@
                                                                 <h6 class="mt-1 color-656566 fw-medium fs-10 lh-base text-center">
                                                                     <span class="theme-clr">{{ translate('Click to upload') }}</span>
                                                                     <br>
-                                                                   {{ translate(' Or drag and drop') }}
+                                                                    {{ translate('or drag and drop') }}
                                                                 </h6>
                                                             </div>
                                                             <img class="upload-file-img" loading="lazy" src=""
@@ -151,22 +151,22 @@
                                                     </div>
                                                 </div>
                                                 <p class="fs-10 text-center mb-0 mt-lg-4 mt-3">
-                                                    {{ translate('JPG, JPEG, PNG, Gif Image size : Max 2 MB')}} <span
-                                                        class="font-medium text-title">{{ translate('(3:1)')}}</span>
+                                                    {{ 'JPG, JPEG, PNG, GIF' . ' image, max ' . 2 . ' MB'}} <span
+                                                        class="font-medium text-title">(3:1)</span>
                                                 </p>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
                                 <div class="btn--container justify-content-end mt-20">
-                                    <button type="reset" class="btn btn--reset mb-2">{{translate('Reset')}}</button>
-                                    <button type="submit" class="btn btn--primary mb-2">{{translate('Add')}}</button>
+                                    <button type="reset" class="btn btn--reset mb-2"><i class="tio-refresh"></i> {{translate('Reset')}}</button>
+                                    <button type="submit" class="btn btn--primary mb-2"><i class="tio-add-circle"></i> {{translate('Add')}}</button>
                                 </div>
                             </div>
                         </form>
 
                         <div class="card mt-20">
-                            @php($banners = \App\Models\ReactPromotionalBanner::get())
+                            @php($banners = \App\CentralLogics\Helpers::cached_list(\App\Models\ReactPromotionalBanner::class))
                             <div class="card-header py-2 border-0">
                                 <div
                                     class="d-flex w-100 flex-wrap gap-2 align-items-center justify-content-between">
@@ -174,14 +174,13 @@
                                 </div>
                             </div>
                             <div class="card-body p-0">
-                                <!-- Table -->
                                 <div class="table-responsive datatable-custom">
                                     <table
                                         class="table table-borderless table-thead-borderless table-align-middle table-nowrap card-table m-0">
                                         <thead class="thead-light">
                                         <tr>
                                             <th class="border-top-0">{{translate('SL')}}</th>
-                                            <th class="border-top-0">{{translate('banner Image')}}</th>
+                                            <th class="border-top-0">{{translate('Banner image')}}</th>
                                             <th class="border-top-0 text-center">{{translate('Status')}}</th>
                                             <th class="text-center border-top-0">{{translate('Action')}}</th>
                                         </tr>
@@ -204,10 +203,10 @@
                                                                data-type="status"
                                                                data-image-on="{{ asset('/public/assets/admin/img/modal/testimonial-on.png') }}"
                                                                data-image-off="{{ asset('/public/assets/admin/img/modal/testimonial-off.png') }}"
-                                                               data-title-on="{{translate('Want_to_Enable_this')}} <strong>{{translate('Promotional_Banner')}}</strong>"
-                                                               data-title-off="{{translate('Want_to_Disable_this')}} <strong>{{translate('Promotional_Banner')}}</strong>"
-                                                               data-text-on="<p>{{translate('If_enabled,_it_will_be_available_on_the_React_Landing_page')}}</p>"
-                                                               data-text-off="<p>{{translate('If_disabled,_it_will_be_hidden_from_the_React_Landing_page')}}</p>"
+                                                               data-title-on="{{translate('Want to Enable this')}} <strong>{{translate('Promotional Banner')}}</strong>"
+                                                               data-title-off="{{translate('Want to Disable this')}} <strong>{{translate('Promotional Banner')}}</strong>"
+                                                               data-text-on="<p>{{translate('If enabled, it will be available on the React Landing page')}}</p>"
+                                                               data-text-off="<p>{{translate('If disabled, it will be hidden from the React Landing page')}}</p>"
                                                                class="status toggle-switch-input dynamic-checkbox"
                                                                id="react_promotional_banner_status_{{$banner->id}}" {{$banner->status?'checked':''}}>
                                                         <span class="toggle-switch-label mx-auto">
@@ -222,7 +221,7 @@
                                                 </td>
                                                 <td>
                                                     <div class="btn--container justify-content-center">
-                                                        <a class="btn action-btn btn-outline-theme-light editBannerBtn"
+                                                        <a class="btn action-btn action-btn--edit editBannerBtn"
                                                            data-toggle="modal"
                                                            data-target="#updateBanner"
                                                            data-id="{{ $banner->id }}"
@@ -231,12 +230,12 @@
                                                            href="#0">
                                                             <i class="tio-edit"></i>
                                                         </a>
-                                                        <a class="btn action-btn btn--danger btn-outline-danger form-alert"
+                                                        <a class="btn action-btn action-btn--delete form-alert"
                                                            href="javascript:"
                                                            data-id="react_promotional_banner-{{$banner['id']}}"
-                                                           data-message="{{ translate('Want_to_Delete_this_Promotional_Banner') }}"
-                                                           data-message-2="{{ translate('If_yes,_the_banner_will_be_removed_from_this_list') }}"
-                                                           title="{{translate('messages.delete_react_promotional_banner')}}"><i
+                                                           data-message="{{ translate('Want to delete this promotional banner?') }}"
+                                                           data-message-2="{{ translate('If yes, the banner will be removed from this list') }}"
+                                                           title="{{translate('messages.Delete react promotional banner')}}"><i
                                                                 class="tio-delete-outlined"></i>
                                                         </a>
                                                     </div>
@@ -253,14 +252,13 @@
                                     </table>
 
                                 </div>
-                                <!-- End Table -->
                             </div>
                             @if(count($banners) === 0)
                                 <div class="empty--data">
                                     <img src="{{asset('/public/assets/admin/svg/illustrations/sorry.svg')}}"
                                          alt="public">
                                     <h5>
-                                        {{translate('no_data_found')}}
+                                        {{translate('No data found')}}
                                     </h5>
                                 </div>
                             @endif
@@ -271,7 +269,6 @@
         </div>
 
 
-        <!-- Section View Offcanvas here -->
         <div id="promotional-banner_section"
              class="custom-offcanvas offcanvas-750 d-flex flex-column justify-content-between">
             <form action="{{ route('taxvat.store') }}" method="post">
@@ -308,8 +305,6 @@
             </form>
         </div>
         <div id="offcanvasOverlay" class="offcanvas-overlay"></div>
-        <!-- Section View Offcanvas end -->
-        <!-- Modal -->
         <div class="modal fade" id="updateBanner" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
             <div class="modal-dialog modal-lg modal-dialog-centered">
                 <div class="modal-content">
@@ -364,14 +359,14 @@
                                                 </div>
                                             </div>
                                             <p class="fs-10 text-center mb-0 mt-lg-4 mt-3">
-                                                {{ translate('JPG, JPEG, PNG, Gif Image Less Than 2MB')}} <span
-                                                    class="font-medium text-title">{{ translate('(3:1)')}}</span>
+                                                {{ 'JPG, JPEG, PNG, GIF' . ' image, max ' . 2 . ' MB'}} <span
+                                                    class="font-medium text-title">(3:1)</span>
                                             </p>
                                         </div>
                                     </div>
                                     <div class="btn--container justify-content-end mt-4">
-                                        <button type="reset" class="btn btn--reset">{{translate('Reset')}}</button>
-                                        <button type="submit" class="btn btn--primary">{{translate('Update')}}</button>
+                                        <button type="reset" class="btn btn--reset"><i class="tio-refresh"></i> {{translate('Reset')}}</button>
+                                        <button type="submit" class="btn btn--primary"><i class="tio-save"></i> {{translate('Update')}}</button>
                                     </div>
                                 </div>
                             </form>
@@ -380,7 +375,6 @@
                 </div>
             </div>
         </div>
-        <!-- How it Works -->
         @include('admin-views.business-settings.landing-page-settings.partial.how-it-work-react')
         @endsection
 

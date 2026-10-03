@@ -2,7 +2,7 @@
 
 namespace App\Support;
 
-use App\Models\BusinessSetting;
+use App\CentralLogics\Helpers;
 
 class DisbursementScheduleResolver
 {
@@ -18,11 +18,11 @@ class DisbursementScheduleResolver
 
     private static function build(string $prefix): string
     {
-        $settings = BusinessSetting::whereIn('key', [
+        $settings = Helpers::get_business_settings_many([
             "{$prefix}_disbursement_time_period",
             "{$prefix}_disbursement_week_start",
             "{$prefix}_disbursement_create_time",
-        ])->pluck('value', 'key')->all();
+        ]);
 
         $frequency = $settings["{$prefix}_disbursement_time_period"] ?? 'daily';
         $weekStart = $settings["{$prefix}_disbursement_week_start"] ?? 'sunday';

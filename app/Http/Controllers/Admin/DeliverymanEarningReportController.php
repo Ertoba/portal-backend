@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\DeliveryMan;
-use App\Traits\ReportGeneratorTrait;
+use App\Traits\Report\ReportGeneratorTrait;
 use Illuminate\Http\Request;
 
 class DeliverymanEarningReportController extends Controller
@@ -26,7 +26,7 @@ class DeliverymanEarningReportController extends Controller
         $from = $filter === 'custom' ? $request->from : null;
         $to   = $filter === 'custom' ? $request->to : null;
 
-        $summary = $this->get_deliveryman_earning_summary_data(
+        $summary = $this->getDeliveryManEarningSummaryData(
             delivery_man_id: $delivery_man_id,
             filter: $filter,
             from: $from,
@@ -45,7 +45,7 @@ class DeliverymanEarningReportController extends Controller
         $from = $filter === 'custom' ? $request->from : null;
         $to   = $filter === 'custom' ? $request->to : null;
 
-        $summary = $this->get_deliveryman_earning_summary_data(
+        $summary = $this->getDeliveryManEarningSummaryData(
             delivery_man_id: $delivery_man_id,
             filter: $filter,
             from: $from,
@@ -64,7 +64,7 @@ class DeliverymanEarningReportController extends Controller
         $from = $filter === 'custom' ? $request->from : null;
         $to   = $filter === 'custom' ? $request->to : null;
 
-        $summary = $this->get_deliveryman_earning_summary_data(
+        $summary = $this->getDeliveryManEarningSummaryData(
             delivery_man_id: $delivery_man_id,
             filter: $filter,
             from: $from,
@@ -83,7 +83,7 @@ class DeliverymanEarningReportController extends Controller
         $from = $filter === 'custom' ? $request->from : null;
         $to   = $request->to;
 
-        $trends = $this->get_deliveryman_earning_trend_data(
+        $trends = $this->getDeliveryManEarningTrendData(
             delivery_man_id: $delivery_man_id,
             filter: $filter,
             from: $from,

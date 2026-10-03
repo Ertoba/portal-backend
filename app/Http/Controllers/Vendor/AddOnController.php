@@ -13,17 +13,16 @@ class AddOnController extends Controller
 {
     public function index(Request $request)
     {
-        $key = explode(' ', $request['search']);
+        $key = explode(' ', $request['search'] ?? '');
         $language = getWebConfig('language');
         $addons = AddOn::orderBy('name')
-            ->when(isset($key), function ($q) use ($key) {
+            ->when($request['search'], function ($q) use ($key) {
                 $q->where(function ($q) use ($key) {
                     foreach ($key as $value) {
                         $q->orWhere('name', 'like', "%{$value}%");
                     }
                 });
             })
-
             ->paginate(config('default_pagination'));
 
         $addonCategories = AddonCategory::where(function ($query) {
@@ -40,7 +39,7 @@ class AddOnController extends Controller
     public function store(Request $request)
     {
         if (!Helpers::get_store_data()->item_section) {
-            Toastr::warning(translate('messages.permission_denied'));
+            Toastr::warning(translate('messages.Permission denied'));
             return back();
         }
         $request->validate([
@@ -50,8 +49,8 @@ class AddOnController extends Controller
             'name.0' => 'required',
             'category_id' => 'required',
         ], [
-            'name.required' => translate('messages.Name is required!'),
-            'name.0.required' => translate('default_name_is_required'),
+            'name.required' => translate('messages.Name is required'),
+            'name.0.required' => translate('Default name is required'),
         ]);
 
         $addon = new AddOn();
@@ -79,14 +78,14 @@ class AddOnController extends Controller
 
         Helpers::add_or_update_translations(request: $request, key_data: 'name', name_field: 'name', model_name: 'AddOn', data_id: $addon->id, data_value: $addon->name);
 
-        Toastr::success(translate('messages.addon_added_successfully'));
+        Toastr::success(translate('Added successfully'));
         return back();
     }
 
     public function edit($id)
     {
         if (!Helpers::get_store_data()->item_section) {
-            Toastr::warning(translate('messages.permission_denied'));
+            Toastr::warning(translate('messages.Permission denied'));
             return back();
         }
         $addon = AddOn::withoutGlobalScope('translate')->with('translations')->findOrFail($id);
@@ -110,7 +109,7 @@ class AddOnController extends Controller
     public function update(Request $request, $id)
     {
         if (!Helpers::get_store_data()->item_section) {
-            Toastr::warning(translate('messages.permission_denied'));
+            Toastr::warning(translate('messages.Permission denied'));
             return back();
         }
         $request->validate([
@@ -118,8 +117,8 @@ class AddOnController extends Controller
             'price' => 'required|numeric|between:0,999999999999.99',
             'name.0' => 'required',
         ], [
-            'name.required' => translate('messages.Name is required!'),
-            'name.0.required' => translate('default_name_is_required'),
+            'name.required' => translate('messages.Name is required'),
+            'name.0.required' => translate('Default name is required'),
         ]);
 
         $addon = AddOn::find($id);
@@ -145,21 +144,21 @@ class AddOnController extends Controller
             }
         }
         Helpers::add_or_update_translations(request: $request, key_data: 'name', name_field: 'name', model_name: 'AddOn', data_id: $addon->id, data_value: $addon->name);
-        Toastr::success(translate('messages.addon_updated_successfully'));
+        Toastr::success(translate('Updated successfully'));
         return redirect(route('vendor.addon.add-new'));
     }
 
     public function delete(Request $request)
     {
         if (!Helpers::get_store_data()->item_section) {
-            Toastr::warning(translate('messages.permission_denied'));
+            Toastr::warning(translate('messages.Permission denied'));
             return back();
         }
         $addon = AddOn::find($request->id);
         $addon?->translations()->delete();
         $addon?->taxVats()->delete();
         $addon->delete();
-        Toastr::success(translate('messages.addon_deleted_successfully'));
+        Toastr::success(translate('Deleted successfully'));
         return back();
     }
 }

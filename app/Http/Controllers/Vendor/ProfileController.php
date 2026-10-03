@@ -2,18 +2,26 @@
 
 namespace App\Http\Controllers\Vendor;
 
+use App\Rules\EmailAddress;
+use App\Rules\ImageFile;
+use App\Rules\PhoneNumber;
+use App\Rules\StrongPassword;
 use App\CentralLogics\Helpers;
 use App\Http\Controllers\Controller;
 use App\Models\Vendor;
 use Brian2694\Toastr\Facades\Toastr;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rules\Password;
 
 class ProfileController extends Controller
 {
     public function view()
     {
-        return view('vendor-views.profile.index');
+        $is_employee = !auth('vendor')->check();
+        $profile_user = $is_employee ? auth('vendor_employee')->user() : auth('vendor')->user();
+        $profile_user?->loadMissing($is_employee ? ['storage', 'role'] : ['storage']);
+        $store = Helpers::get_store_data();
+
+        return view('vendor-views.profile.index', compact('profile_user', 'is_employee', 'store'));
     }
 
 
@@ -24,12 +32,12 @@ class ProfileController extends Controller
         $request->validate([
             'f_name' => 'required|max:100',
             'l_name' => 'nullable|max:100',
-            'email' => 'required|email|unique:'.$table.',email,'.$seller->id,
-            'phone' => 'required|regex:/^([0-9\s\-\+\(\)]*)$/|min:10|max:20|unique:'.$table.',phone,'.$seller->id,
+            'email' => EmailAddress::rules('required', $table.',email,'.$seller->id),
+            'phone' => PhoneNumber::rules('required', ''.$table.',phone,'.$seller->id),
+            'image' => ImageFile::rules('nullable'),
         ], [
-            'f_name.required' => translate('messages.first_name_is_required'),
+            'f_name.required' => translate('messages.First name is required'),
         ]);
-        $seller = auth('vendor')->check()?auth('vendor')->user():auth('vendor_employee')->user();
         $seller->f_name = $request->f_name;
         $seller->l_name = $request->l_name;
         $seller->phone = $request->phone;
@@ -43,25 +51,21 @@ class ProfileController extends Controller
         }
         $seller->save();
 
-        Toastr::success(translate('messages.profile_updated_successfully'));
+        Toastr::success(translate('Updated successfully'));
         return back();
     }
 
     public function settings_password_update(Request $request)
     {
         $request->validate([
-            'password' => ['required', 'same:confirm_password', Password::min(8)->mixedCase()->letters()->numbers()->symbols()->uncompromised()],
+            'password' => StrongPassword::rules('required', ['same:confirm_password']),
             'confirm_password' => 'required',
         ]);
 
         $seller = auth('vendor')->check()?Helpers::get_vendor_data():auth('vendor_employee')->user();
         $seller->password = bcrypt($request['password']);
         $seller->save();
-        Toastr::success(translate('messages.vendor_pasword_updated_successfully'));
+        Toastr::success(translate('Updated successfully'));
         return back();
     }
-
-
-
-
 }

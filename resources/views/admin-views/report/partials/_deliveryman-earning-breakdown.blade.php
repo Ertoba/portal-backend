@@ -5,10 +5,10 @@
                  <div class="flex-shrink-0 purple rounded-10 w-40px aspect-1-1 d-flex justify-content-center align-items-center mb-3">
                     <img src="{{asset('public/assets/admin/img/report/earning-breakdown/total-delivery-charge.svg')}}" alt="earning">
                 </div>
-                <div class="mb-2">{{ translate('messages.Total Delivery Charge') }}</div>
+                <div class="mb-2">{{ translate('Total delivery charge') }}</div>
                 <h2 class="font-medium fs-24 fs-18-mobile mb-2">{{ \App\CentralLogics\Helpers::format_currency($summary['breakdown']['delivery_charge'] ?? 0) }}</h2>
                 <div class="fs-12 bg-light px-2 py-1 rounded-lg w-max-content">
-                    {{ $summary['breakdown']['delivery_charge_percentage'] ?? ($summary['total_earnings'] > 0 ? round(($summary['breakdown']['delivery_charge'] / $summary['total_earnings']) * 100, 1) : 0) }}% {{ translate('messages.of Total') }}
+                    {{ $summary['breakdown']['delivery_charge_percentage'] ?? ($summary['total_earnings'] > 0 ? round(($summary['breakdown']['delivery_charge'] / $summary['total_earnings']) * 100, 1) : 0) }}% {{ translate('Of total') }}
                 </div>
             </div>
         </div>
@@ -17,10 +17,10 @@
                  <div class="flex-shrink-0 success rounded-10 w-40px aspect-1-1 d-flex justify-content-center align-items-center mb-3">
                     <img src="{{asset('public/assets/admin/img/report/earning-breakdown/total-tips.svg')}}" alt="earning">
                 </div>
-                <div class="mb-2">{{ translate('messages.Total Tips') }}</div>
+                <div class="mb-2">{{ translate('Total tips') }}</div>
                 <h2 class="font-medium fs-24 fs-18-mobile mb-2">{{ \App\CentralLogics\Helpers::format_currency($summary['breakdown']['dm_tips'] ?? 0) }}</h2>
                 <div class="fs-12 bg-light px-2 py-1 rounded-lg w-max-content">
-                    {{ $summary['breakdown']['dm_tips_percentage'] ?? ($summary['total_earnings'] > 0 ? round(($summary['breakdown']['dm_tips'] / $summary['total_earnings']) * 100, 1) : 0) }}% {{ translate('messages.of Total') }}
+                    {{ $summary['breakdown']['dm_tips_percentage'] ?? ($summary['total_earnings'] > 0 ? round(($summary['breakdown']['dm_tips'] / $summary['total_earnings']) * 100, 1) : 0) }}% {{ translate('Of total') }}
                 </div>
             </div>
         </div>

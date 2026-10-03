@@ -2,18 +2,20 @@
 
 namespace App\Models;
 
+use App\Traits\Model\InvalidatesCacheTrait;
 use App\CentralLogics\Helpers;
 use App\Scopes\ZoneScope;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\MorphMany;
-use Illuminate\Support\Facades\DB;
+use App\Traits\Model\HasTranslationsTrait;
+use App\Traits\Model\HasStorageTrait;
 
 class SmartBanner extends Model
 {
-    use HasFactory;
+    use HasFactory, HasTranslationsTrait, HasStorageTrait, InvalidatesCacheTrait;
+
+    protected static array $cacheTags = ['smart_banner'];
 
     protected $fillable = [
         'zone_id',
@@ -40,17 +42,7 @@ class SmartBanner extends Model
         'end_date' => 'date',
     ];
 
-    protected $appends = ['image_full_url'];
-
-    public function translations(): MorphMany
-    {
-        return $this->morphMany(Translation::class, 'translationable');
-    }
-
-    public function storage(): MorphMany
-    {
-        return $this->morphMany(Storage::class, 'data');
-    }
+    protected $appends = [];
 
     public function zone(): BelongsTo
     {
@@ -64,26 +56,17 @@ class SmartBanner extends Model
 
     public function getTitleAttribute(): ?string
     {
-        return $this->translationValue('title') ?? null;
+        return $this->translatedAttribute('title', null);
     }
 
     public function getSubtitleAttribute(): ?string
     {
-        return $this->translationValue('subtitle') ?? null;
+        return $this->translatedAttribute('subtitle', null);
     }
 
     public function getImageFullUrlAttribute(): ?string
     {
-        $disk = 'public';
-        if ($this->relationLoaded('storage') && $this->storage) {
-            foreach ($this->storage as $row) {
-                if ($row->key === 'image') {
-                    $disk = $row->value;
-                    break;
-                }
-            }
-        }
-        return Helpers::get_full_url('smart-banner', $this->image, $disk);
+        return $this->storageFullUrl('smart-banner', 'image', $this->image);
     }
 
     public function scopeActive($query)
@@ -130,36 +113,9 @@ class SmartBanner extends Model
         return !($aEnd->lt($bStart) || $aStart->gt($bEnd));
     }
 
-    protected function translationValue(string $key): ?string
-    {
-        if (!$this->relationLoaded('translations')) {
-            return null;
-        }
-        $locale = app()->getLocale();
-        foreach ($this->translations as $row) {
-            if ($row->key === $key && $row->locale === $locale) {
-                return $row->value;
-            }
-        }
-        foreach ($this->translations as $row) {
-            if ($row->key === $key) {
-                return $row->value;
-            }
-        }
-        return null;
-    }
-
     protected static function booted(): void
     {
         static::addGlobalScope(new ZoneScope);
-        static::addGlobalScope('storage', function (Builder $builder) {
-            $builder->with('storage');
-        });
-        static::addGlobalScope('translate', function (Builder $builder) {
-            $builder->with(['translations' => function ($q) {
-                $q->where('locale', app()->getLocale());
-            }]);
-        });
     }
 
     protected static function boot()
@@ -167,34 +123,13 @@ class SmartBanner extends Model
         parent::boot();
 
         static::saved(function ($model) {
-            Helpers::deleteCacheData('smart_banners_');
 
-            if ($model->isDirty('image') && $model->image) {
-                DB::table('storages')->updateOrInsert(
-                    [
-                        'data_type' => get_class($model),
-                        'data_id' => $model->id,
-                        'key' => 'image',
-                    ],
-                    [
-                        'value' => Helpers::getDisk(),
-                        'created_at' => now(),
-                        'updated_at' => now(),
-                    ]
-                );
+            if ($model->image) {
+                self::recordStorageDisk($model, 'image', 'image');
             }
         });
 
-        static::created(function () {
-            Helpers::deleteCacheData('smart_banners_');
-        });
 
-        static::updated(function () {
-            Helpers::deleteCacheData('smart_banners_');
-        });
 
-        static::deleted(function () {
-            Helpers::deleteCacheData('smart_banners_');
-        });
     }
 }

@@ -11,10 +11,18 @@ class StoreConfig extends Model
     use HasFactory;
 
     protected $table;
+
+    /**
+     * Resolved once per process. The constructor runs on every hydration of a
+     * row, so calling Schema::hasTable() here fired an information_schema query
+     * for each model instance.
+     */
+    private static ?string $resolvedTable = null;
+
     public function __construct(array $attributes = [])
     {
         parent::__construct($attributes);
-        $this->table = Schema::hasTable('storeConfigs') ? 'storeConfigs' : 'store_configs';
+        $this->table = self::$resolvedTable ??= (Schema::hasTable('storeConfigs') ? 'storeConfigs' : 'store_configs');
     }
 
     protected $guarded = ['id'];
@@ -33,6 +41,15 @@ class StoreConfig extends Model
         'verified_seller' => 'boolean',
         'has_seen_verified_badge_popup' => 'boolean',
         'can_edit_order' => 'boolean',
+        'can_edit_booking' => 'boolean',
+        'manage_service_setup' => 'boolean',
+        'show_reviews_provider_panel' => 'boolean',
+        'minimum_booking' => 'float',
+        'instant_booking' => 'boolean',
+        'repeat_booking' => 'boolean',
+        'schedule_booking' => 'boolean',
+        'choose_service_location' => 'array',
+        'serviceman_can_cancel_booking' => 'boolean',
     ];
 
     public function Store()

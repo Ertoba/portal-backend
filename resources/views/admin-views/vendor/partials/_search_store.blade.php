@@ -1,31 +1,27 @@
-@forelse ($stores as $key => $store)
-    <div  class="select-product-item media gap-3 cursor-pointer">
-        <img class="avatar avatar-xl border onerror-image" width="75"
-        data-onerror-image="{{asset('public/assets/admin/img/160x160/img1.jpg')}}"
-        src="{{ $store['logo_full_url'] ?? asset('public/assets/admin/img/160x160/img1.jpg') }}"
-
-            alt="">
-        <div class="media-body d-flex flex-column gap-1 ">
-            <a href="#"  class="d-flex flex-column gap-1"  onclick="selected_stores({{ $store->id }})">
-                <h6 class="fs-13 mb-1 text-truncate custom-width product-name">{{$store['name']}}</h6>
-                <div class="d-flex gap-1 flex-wrap align-items-center lh--1">
-                    <i class=" fs-13 tio-star"></i>
-                    <div class="fs-10 text-dark" > {{ $store->ratings['rating'] }}</div>
-                    <div class="fs-10 text-muted" >  ({{ $store->ratings['total'] }})</div>
-                </div>
-                <div class="fs-10 text-muted" >{{ $store->address }}</div>
-                <div class="d-flex gap-3 flex-wrap align-items-center text-primary "  >
-                    <div class="fs-10  " >{{ $store->items_count }} {{ translate('messages.items') }}+</div>
-                    <div class=" bg-primary" style="width: 1px;height: 10px;">
-
-                    </div>
-                    <div class="fs-10 " >{{ $store->orders_count }} {{ translate('messages.Orders') }}</div>
-                </div>
-
-            </a>
-
-        </div>
-    </div>
-    @empty
-    <p class="text-center">{{ translate('messages.No Data found') }}</p>
+@forelse ($stores as $store)
+    <button type="button" class="rcs-result" onclick="selected_stores({{ $store->id }})">
+        <img class="rcs-result__img onerror-image" alt=""
+             data-onerror-image="{{asset('public/assets/admin/img/160x160/img1.jpg')}}"
+             src="{{ $store['logo_full_url'] ?? asset('public/assets/admin/img/160x160/img1.jpg') }}">
+        <span class="rcs-result__body">
+            <span class="rcs-result__name" title="{{ $store['name'] }}">{{ $store['name'] }}</span>
+            <span class="rcs-result__meta">
+                @if($store->ratings['total'])
+                    <span><i class="tio-star"></i> {{ number_format($store->ratings['rating'], 1) }} ({{ $store->ratings['total'] }})</span>
+                @else
+                    <span>{{ translate('messages.Not rated yet') }}</span>
+                @endif
+                <span class="rcs-result__dot"></span>
+                <span>{{ $store->items_count }} {{ translate('messages.Items') }}</span>
+                <span class="rcs-result__dot"></span>
+                <span>{{ $store->orders_count }} {{ translate('messages.Orders') }}</span>
+            </span>
+            @if($store->address)
+                <span class="rcs-result__address" title="{{ $store->address }}">{{ Str::limit($store->address, 42, '...') }}</span>
+            @endif
+        </span>
+        <span class="rcs-result__add"><i class="tio-add"></i></span>
+    </button>
+@empty
+    <p class="rcs-results__status">{{ translate('No store matches this search') }}</p>
 @endforelse

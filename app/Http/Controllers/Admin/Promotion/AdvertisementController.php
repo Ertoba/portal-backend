@@ -7,29 +7,25 @@ use Illuminate\Http\Request;
 use App\Models\Advertisement;
 use App\Rules\WordValidation;
 use App\CentralLogics\Helpers;
-use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 use Brian2694\Toastr\Facades\Toastr;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use App\Http\Requests\Admin\AdvertisementStoreRequest;
 use App\Http\Requests\Admin\AdvertisementUpdateRequest;
+use App\Support\Notification\SendNotification;
+use App\Support\Notification\NotificationMessages;
+use Illuminate\Support\Facades\Log;
 
 class AdvertisementController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
     public function index(Request $request)
     {
-        $key = explode(' ', $request['search']);
-        $adds=Advertisement::where('is_updated',0)
+        $key = explode(' ', $request['search'] ?? '');
+        $adds=Advertisement::withStorage()->with('store.storage')->where('is_updated',0)
         ->when(is_numeric(config('module')['current_module_id']), function($query){
             $query->where('module_id', config('module')['current_module_id']);
         })
-
         ->whereNotIn('status' ,['pending','denied' ])
-
         ->when($request?->ads_type === 'running',function($query){
             $query->valid();
         })
@@ -63,7 +59,6 @@ class AdvertisementController extends Controller
         $ads_count= Advertisement::when(is_numeric(config('module')['current_module_id']), function($query){
             $query->where('module_id', config('module')['current_module_id']);
         })
-
         ->count();
 
 
@@ -72,13 +67,12 @@ class AdvertisementController extends Controller
 
     public function requestList(Request $request)
     {
-        $key = explode(' ', $request['search']);
+        $key = explode(' ', $request['search'] ?? '');
 
-        $adds=Advertisement::
+        $adds=Advertisement::withStorage()->with('store.storage')->
         when(is_numeric(config('module')['current_module_id']), function($query){
             $query->where('module_id', config('module')['current_module_id']);
         })
-
         ->when(!$request?->type ,function($query)use($request,$key){
             $query->where('is_updated' ,0)->whereIn('status' ,['pending'])->when($request?->search ,function($query)use($key) {
                 foreach ($key as $value) {
@@ -90,9 +84,6 @@ class AdvertisementController extends Controller
                 };
             });
         })
-
-
-
         ->when($request?->type === 'update-requests',function($query)use($request,$key){
             $query->where('is_updated' ,1)->whereIn('status' ,['pending'])      ->when($request?->search ,function($query)use($key) {
                 foreach ($key as $value) {
@@ -115,8 +106,6 @@ class AdvertisementController extends Controller
                 };
             });
         })
-
-
         ->paginate(config('default_pagination'));
         $type= $request?->type;
         $count=Advertisement::whereIn('status' ,['pending','denied' ])
@@ -127,9 +116,6 @@ class AdvertisementController extends Controller
         return view("admin-views.advertisement.request-list",compact('adds','count','type'));
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
     public function create()
     {
         $language = getWebConfig('language');
@@ -143,9 +129,6 @@ class AdvertisementController extends Controller
     }
 
 
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(AdvertisementStoreRequest $request)
     {
         $dateRange = $request->dates;
@@ -194,40 +177,27 @@ class AdvertisementController extends Controller
         Helpers::add_or_update_translations(request: $request, key_data:'description' , name_field:'description' , model_name: 'Advertisement' ,data_id: $advertisement->id,data_value: $advertisement->description);
         try {
 
-            if( Helpers::getNotificationStatusData('store','store_advertisement_create_by_admin','push_notification_status' ,$advertisement?->store?->id) && $advertisement?->store?->vendor?->firebase_token ){
+            if( SendNotification::channelEnabled('store','store_advertisement_create_by_admin','push_notification_status' ,$advertisement?->store?->id) && $advertisement?->store?->vendor?->firebase_token ){
 
-                $data = [
-                    'title' => translate('New_Advertisement'),
-                    'description' => translate('Admin_has_added_a_new_advertisement_for_your_store'),
-                    'order_id' => '',
-                    'image' => '',
-                    'type' => 'advertisement',
-                    'advertisement_id' => $advertisement->id,
-                    'order_status' => '',
-                ];
-                Helpers::send_push_notif_to_device($advertisement->store->vendor->firebase_token, $data);
-                DB::table('user_notifications')->insert([
-                    'data' => json_encode($data),
-                    'vendor_id' => $advertisement->store->vendor_id,
-                    'created_at' => now(),
-                    'updated_at' => now()
-                ]);
+                $data = NotificationMessages::advertisementCreatedByAdmin($advertisement);
+                SendNotification::pushToVendor($advertisement->store->vendor_id, $advertisement->store->vendor->firebase_token, $data);
             }
 
-            if(Helpers::getNotificationStatusData('store','store_advertisement_create_by_admin','mail_status',$advertisement?->store?->id) &&  config('mail.status') && Helpers::get_mail_status('advertisement_create_mail_status_store') == '1'){
-                Mail::to($advertisement?->store?->getRawOriginal('email'))->send(new \App\Mail\AdversitementStatusMail($advertisement?->store?->name,'advertisement_create' ,$advertisement->id));
+            if(SendNotification::canSendMail('advertisement_create_mail_status_store', 'store', 'store_advertisement_create_by_admin', $advertisement?->store?->id)){
+                SendNotification::mail($advertisement?->store?->getRawOriginal('email'), new \App\Mail\AdversitementStatusMail($advertisement?->store?->name,'advertisement_create' ,$advertisement->id));
             }
         } catch (\Throwable $th) {
+            Log::warning('promotion.advertisement_controller.store_failed', [
+                'error' => $th->getMessage(),
+                'file' => $th->getFile().':'.$th->getLine(),
+            ]);
         }
 
-        return response()->json(['type'=> 'admin' ,'message'=>translate('messages.Advertisement_Added_Successfully') ], 200);
+        return response()->json(['type'=> 'admin' ,'message'=>translate('Added successfully') ], 200);
 
     }
 
 
-    /**
-     * Display the specified resource.
-     */
     public function show($advertisement,Request $request)
     {
         $request_page_type=$request?->request_page_type ?? null;
@@ -235,7 +205,6 @@ class AdvertisementController extends Controller
         ->when(is_numeric(config('module')['current_module_id']), function($query){
             $query->where('module_id', config('module')['current_module_id']);
         })
-
         ->when($request_page_type == 'update-requests' , function($query){
             $query->where('is_updated',1)->whereNotIn('status' ,['pending']);
         })
@@ -250,7 +219,6 @@ class AdvertisementController extends Controller
         ->when(is_numeric(config('module')['current_module_id']), function($query){
             $query->where('module_id', config('module')['current_module_id']);
         })
-
         ->when($request_page_type == 'update-requests' , function($query){
             $query->where('is_updated',1)->whereNotIn('status' ,['pending']);
         })
@@ -264,19 +232,18 @@ class AdvertisementController extends Controller
         $language = getWebConfig('language');
         $defaultLang = str_replace('_', '-', app()->getLocale());
 
-        $advertisement= Advertisement::where('id',$advertisement)->with('store')->withoutGlobalScope('translate')->with('translations')->firstOrFail();
+        $advertisement= Advertisement::where('id',$advertisement)->withStorage()->with('store.storage')->withoutGlobalScope('translate')->with('translations')->firstOrFail();
         return view("admin-views.advertisement.details",compact('advertisement','nextId','previousId','request_page_type','language','defaultLang'));
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
     public function edit(Request $request,Advertisement $advertisement)
     {
+        $advertisement->loadMissing(['storage', 'store.storage']);
+
         $language = getWebConfig('language');
         $defaultLang = str_replace('_', '-', app()->getLocale());
         $request_page_type=$request?->request_page_type ;
-        $advertisement->withoutGlobalScope('translate');
+        $advertisement->withoutGlobalScope('translate')->with('translations');
         $advertisement->load('translations');
         $total_adds=Advertisement::whereNotNull('priority')
         ->when(is_numeric(config('module')['current_module_id']), function($query){
@@ -300,85 +267,79 @@ class AdvertisementController extends Controller
         $reataurant_push_notification_title='';
         $reataurant_push_notification_description='';
         $advertisement =Advertisement::where('id',$request->id)->with('store')->first();
+        if (!$advertisement) {
+            Toastr::error(translate('No data found'));
+            return back();
+        }
+
         $advertisement->status = in_array($request->status,['paused','approved','denied']) ? $request->status : $advertisement->status;
         $advertisement->pause_note = $request?->pause_note ?? null;
         $advertisement->cancellation_note = $request?->cancellation_note ?? null;
         $advertisement->is_updated =0;
         $advertisement?->save();
         if( $request->status == 'paused'){
-            $reataurant_push_notification_title=translate('Advertisement_Paused');
-            $reataurant_push_notification_description=translate('Admin_has_paused_your_advertisement');
+            $reataurant_push_notification_title=translate('Advertisement paused');
+            $reataurant_push_notification_description=translate('Admin has paused your advertisement');
             $email_type='advertisement_pause';
-            Toastr::success( translate('messages.Advertisement_Paused_Successfully'));
-            $push_notification_status=Helpers::getNotificationStatusData('store','store_advertisement_pause','push_notification_status' ,$advertisement?->store?->id);
+            Toastr::success( translate('Updated successfully'));
+            $push_notification_status=SendNotification::channelEnabled('store','store_advertisement_pause','push_notification_status' ,$advertisement?->store?->id);
             }
         elseif($request->status == 'approved' && $request?->approved == null){
-            $reataurant_push_notification_title=translate('Advertisement_Resumed');
-            $reataurant_push_notification_description=translate('Admin_has_resumed_your_advertisement');
+            $reataurant_push_notification_title=translate('Advertisement resumed');
+            $reataurant_push_notification_description=translate('Admin has resumed your advertisement');
             $email_type='advertisement_resume';
-            Toastr::success(translate('messages.Advertisement_Resumed_Successfully'));
-            $push_notification_status=Helpers::getNotificationStatusData('store','store_advertisement_resume','push_notification_status' ,$advertisement?->store?->id);
+            Toastr::success(translate('Updated successfully'));
+            $push_notification_status=SendNotification::channelEnabled('store','store_advertisement_resume','push_notification_status' ,$advertisement?->store?->id);
         }elseif($request->status == 'denied'){
             $email_type='advertisement_deny';
-            $reataurant_push_notification_title=translate('Advertisement_Denied');
-            $reataurant_push_notification_description=translate('Admin_has_denied_your_advertisement');
-            $push_notification_status=Helpers::getNotificationStatusData('store','store_advertisement_deny','push_notification_status' ,$advertisement?->store?->id);
-            Toastr::success(translate('messages.Advertisement_Denied_Successfully'));
+            $reataurant_push_notification_title=translate('Advertisement denied');
+            $reataurant_push_notification_description=translate('Admin has denied your advertisement');
+            $push_notification_status=SendNotification::channelEnabled('store','store_advertisement_deny','push_notification_status' ,$advertisement?->store?->id);
+            Toastr::success(translate('Updated successfully'));
             }
         else{
-            $reataurant_push_notification_title=translate('Advertisement_Approved');
-            $reataurant_push_notification_description=translate('Admin_has_approved_your_advertisement');
-            $push_notification_status=Helpers::getNotificationStatusData('store','store_advertisement_approval','push_notification_status' ,$advertisement?->store?->id);
+            $reataurant_push_notification_title=translate('Advertisement approved');
+            $reataurant_push_notification_description=translate('Admin has approved your advertisement');
+            $push_notification_status=SendNotification::channelEnabled('store','store_advertisement_approval','push_notification_status' ,$advertisement?->store?->id);
             $email_type='advertisement_approved';
-            Toastr::success(translate('messages.Advertisement_approved_Successfully'));
+            Toastr::success(translate('Updated successfully'));
         }
 
         try {
             if( $push_notification_status  && $advertisement?->store?->vendor?->firebase_token ){
 
-                $data = [
-                    'title' => $reataurant_push_notification_title,
-                    'description' => $reataurant_push_notification_description,
-                    'order_id' => '',
-                    'image' => '',
-                    'type' => 'advertisement',
-                    'advertisement_id' => $advertisement->id,
-                    'order_status' => '',
-                ];
-                Helpers::send_push_notif_to_device($advertisement->store->vendor->firebase_token, $data);
-                DB::table('user_notifications')->insert([
-                    'data' => json_encode($data),
-                    'vendor_id' => $advertisement->store->vendor_id,
-                    'created_at' => now(),
-                    'updated_at' => now()
-                ]);
+                $data = NotificationMessages::advertisementNotice($advertisement, $reataurant_push_notification_title, $reataurant_push_notification_description);
+                SendNotification::pushToVendor($advertisement->store->vendor_id, $advertisement->store->vendor->firebase_token, $data);
             }
 
 
             if (config('mail.status') ) {
 
 
-                if(Helpers::getNotificationStatusData('store','store_advertisement_approval','mail_status',$advertisement?->store?->id) &&  $email_type == 'advertisement_approved' &&  Helpers::get_mail_status('advertisement_approved_mail_status_store') == '1'){
-                    Mail::to($advertisement?->store?->getRawOriginal('email'))->send(new \App\Mail\AdversitementStatusMail($advertisement?->store?->name,$email_type ,$advertisement->id));
+                if(SendNotification::canSendMail('advertisement_approved_mail_status_store', 'store', 'store_advertisement_approval', $advertisement?->store?->id) && $email_type == 'advertisement_approved'){
+                    SendNotification::mail($advertisement?->store?->getRawOriginal('email'), new \App\Mail\AdversitementStatusMail($advertisement?->store?->name,$email_type ,$advertisement->id));
                 }
 
 
-                if(Helpers::getNotificationStatusData('store','store_advertisement_pause','mail_status',$advertisement?->store?->id)  &&  $email_type == 'advertisement_pause' &&  Helpers::get_mail_status('advertisement_pause_mail_status_store') == '1'){
-                    Mail::to($advertisement?->store?->getRawOriginal('email'))->send(new \App\Mail\AdversitementStatusMail($advertisement?->store?->name,$email_type ,$advertisement->id));
+                if(SendNotification::canSendMail('advertisement_pause_mail_status_store', 'store', 'store_advertisement_pause', $advertisement?->store?->id) && $email_type == 'advertisement_pause'){
+                    SendNotification::mail($advertisement?->store?->getRawOriginal('email'), new \App\Mail\AdversitementStatusMail($advertisement?->store?->name,$email_type ,$advertisement->id));
                 }
 
 
-                if(Helpers::getNotificationStatusData('store','store_advertisement_deny','mail_status',$advertisement?->store?->id)  &&  $email_type == 'advertisement_deny' &&  Helpers::get_mail_status('advertisement_deny_mail_status_store') == '1'){
-                    Mail::to($advertisement?->store?->getRawOriginal('email'))->send(new \App\Mail\AdversitementStatusMail($advertisement?->store?->name,$email_type ,$advertisement->id));
+                if(SendNotification::canSendMail('advertisement_deny_mail_status_store', 'store', 'store_advertisement_deny', $advertisement?->store?->id) && $email_type == 'advertisement_deny'){
+                    SendNotification::mail($advertisement?->store?->getRawOriginal('email'), new \App\Mail\AdversitementStatusMail($advertisement?->store?->name,$email_type ,$advertisement->id));
                 }
 
 
-                if(Helpers::getNotificationStatusData('store','store_advertisement_resume','mail_status',$advertisement?->store?->id)  &&  $email_type == 'advertisement_resume' &&  Helpers::get_mail_status('advertisement_resume_mail_status_store') == '1'){
-                    Mail::to($advertisement?->store?->getRawOriginal('email'))->send(new \App\Mail\AdversitementStatusMail($advertisement?->store?->name,$email_type ,$advertisement->id));
+                if(SendNotification::canSendMail('advertisement_resume_mail_status_store', 'store', 'store_advertisement_resume', $advertisement?->store?->id) && $email_type == 'advertisement_resume'){
+                    SendNotification::mail($advertisement?->store?->getRawOriginal('email'), new \App\Mail\AdversitementStatusMail($advertisement?->store?->name,$email_type ,$advertisement->id));
                 }
             }
         } catch (\Throwable $th) {
-            //throw $th;
+            Log::warning('promotion.advertisement_controller.status_failed', [
+                'error' => $th->getMessage(),
+                'file' => $th->getFile().':'.$th->getLine(),
+            ]);
         }
 
 
@@ -388,15 +349,25 @@ class AdvertisementController extends Controller
     public function paidStatus(Request $request)
     {
         $advertisement =Advertisement::where('id',$request->add_id)->first();
+        if (!$advertisement) {
+            Toastr::error(translate('No data found'));
+            return back();
+        }
+
         $advertisement->is_paid =$advertisement->is_paid  == 1 ? 0 :1 ;
         $advertisement?->save();
-        Toastr::success(translate('messages.Payment_status_updated_Successfully'));
+        Toastr::success(translate('Updated successfully'));
         return back();
     }
     public function priority(Request $request)
     {
 
         $advertisement =Advertisement::where('id',$request->priority_id)->first();
+        if (!$advertisement) {
+            Toastr::error(translate('No data found'));
+            return back();
+        }
+
         $oldPriority = $advertisement['priority'];
         $newPriority = $request['priority_value'] ?? null;
         if ($oldPriority != $newPriority) {
@@ -406,7 +377,7 @@ class AdvertisementController extends Controller
                 ->when(is_numeric(config('module')['current_module_id']), function($query){
                     $query->where('module_id', config('module')['current_module_id']);
                 })
-                    ->lockForUpdate() // Lock rows for update
+                    ->lockForUpdate()
                     ->increment('priority');
 
             } else if ($newPriority !== null) {
@@ -437,7 +408,6 @@ class AdvertisementController extends Controller
         ->when(is_numeric(config('module')['current_module_id']), function($query){
             $query->where('module_id', config('module')['current_module_id']);
         })
-
         ->orderByRaw('ISNULL(priority), priority ASC')->get();
 
         $newPriority = 1;
@@ -448,13 +418,10 @@ class AdvertisementController extends Controller
 
 
 
-        Toastr::success(  translate('messages.Advertisement_priority_updated_Successfully'));
+        Toastr::success(  translate('Updated successfully'));
         return back();
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
     public function update(AdvertisementUpdateRequest $request, Advertisement $advertisement)
     {
         $dateRange = $request->dates;
@@ -468,11 +435,11 @@ class AdvertisementController extends Controller
         if( $advertisement->add_type != $request->advertisement_type){
 
             if($request->advertisement_type == 'video_promotion' &&  !$request->has('video_attachment')){
-                return response([ 'file_required' => 1 , 'message' => translate('You_must_need_to_add_a_promotional_video_file')], 200);
+                return response([ 'file_required' => 1 , 'message' => translate('You must need to add a promotional video file')], 200);
             }
 
             if($request->advertisement_type == 'store_promotion' &&  (!$request->has('cover_image') || !$request->has('profile_image'))  ){
-                return response([ 'file_required' => 1 , 'message' => translate('You_must_need_to_add_cover_&_profile_image')], 200);
+                return response([ 'file_required' => 1 , 'message' => translate('You must need to add cover & profile image')], 200);
             }
 
             if($advertisement->cover_image && $request->advertisement_type == 'video_promotion')
@@ -501,7 +468,7 @@ class AdvertisementController extends Controller
                 ->when(is_numeric(config('module')['current_module_id']), function($query){
                     $query->where('module_id', config('module')['current_module_id']);
                 })
-                    ->lockForUpdate() // Lock rows for update
+                    ->lockForUpdate()
                     ->increment('priority');
 
             } else if ($newPriority !== null) {
@@ -547,39 +514,30 @@ class AdvertisementController extends Controller
         Helpers::add_or_update_translations(request: $request, key_data:'description' , name_field:'description' , model_name: 'Advertisement' ,data_id: $advertisement->id,data_value: $advertisement->description);
 
         try {
-            if(  Helpers::getNotificationStatusData('store','store_advertisement_approval','push_notification_status' ,$advertisement?->store?->id)  && $advertisement?->store?->vendor?->firebase_token && $request?->request_page_type ){
+            if(  SendNotification::channelEnabled('store','store_advertisement_approval','push_notification_status' ,$advertisement?->store?->id)  && $advertisement?->store?->vendor?->firebase_token && $request?->request_page_type ){
 
-                $data = [
-                    'title' => translate('Advertisement_Approved'),
-                    'description' => translate('Admin_has_approved_your_advertisement'),
-                    'order_id' => '',
-                    'image' => '',
-                    'type' => 'advertisement',
-                    'advertisement_id' => $advertisement->id,
-                    'order_status' => '',
-                ];
-                Helpers::send_push_notif_to_device($advertisement->store->vendor->firebase_token, $data);
-                DB::table('user_notifications')->insert([
-                    'data' => json_encode($data),
-                    'vendor_id' => $advertisement->store->vendor_id,
-                    'created_at' => now(),
-                    'updated_at' => now()
-                ]);
+                $data = NotificationMessages::advertisementApproved($advertisement);
+                SendNotification::pushToVendor($advertisement->store->vendor_id, $advertisement->store->vendor->firebase_token, $data);
             }
 
 
-                if( Helpers::getNotificationStatusData('store','store_advertisement_approval','mail_status' ,$advertisement?->store?->id)  && config('mail.status') && Helpers::get_mail_status('advertisement_approved_mail_status_store') == '1' && $request?->request_page_type){
-                    Mail::to($advertisement?->store?->getRawOriginal('email'))->send(new \App\Mail\AdversitementStatusMail($advertisement?->store?->name,'advertisement_approved' ,$advertisement->id));
+                if( SendNotification::canSendMail('advertisement_approved_mail_status_store', 'store', 'store_advertisement_approval', $advertisement?->store?->id) && $request?->request_page_type){
+                    SendNotification::mail($advertisement?->store?->getRawOriginal('email'), new \App\Mail\AdversitementStatusMail($advertisement?->store?->name,'advertisement_approved' ,$advertisement->id));
             }
         } catch (\Throwable $th) {
-            //throw $th;
+            Log::warning('promotion.advertisement_controller.update_failed', [
+                'error' => $th->getMessage(),
+                'file' => $th->getFile().':'.$th->getLine(),
+            ]);
         }
-        return response()->json(['message' => translate('messages.Advertisement_Updated_Successfully')], 200);
+        return response()->json(['message' => translate('Updated successfully')], 200);
     }
 
 
     public function copyAdd(Advertisement $advertisement)
     {
+        $advertisement->loadMissing(['storage', 'store.storage']);
+
         $language = getWebConfig('language');
         $defaultLang = str_replace('_', '-', app()->getLocale());
         $total_adds=Advertisement::whereNotNull('priority')
@@ -606,7 +564,7 @@ class AdvertisementController extends Controller
         $advertisement->end_date = $endDate;
 
         $advertisement->save();
-        Toastr::success(translate('Validity_updated'));
+        Toastr::success(translate('Validity updated'));
         return back();
     }
 
@@ -623,11 +581,9 @@ class AdvertisementController extends Controller
 
             $newPriority = $request['priority'];
             $request['priority'] > 0 ? Advertisement::where('priority', '>=', $newPriority)
-
             ->when(is_numeric(config('module')['current_module_id']), function($query){
                 $query->where('module_id', config('module')['current_module_id']);
             })
-
             ->increment('priority') : null;
 
             $newAdvertisement = New Advertisement();
@@ -680,39 +636,25 @@ class AdvertisementController extends Controller
 
             try {
 
-                if( Helpers::getNotificationStatusData('store','store_advertisement_create_by_admin','push_notification_status',$newAdvertisement?->store?->id ) && $newAdvertisement?->store?->vendor?->firebase_token ){
+                if( SendNotification::channelEnabled('store','store_advertisement_create_by_admin','push_notification_status',$newAdvertisement?->store?->id ) && $newAdvertisement?->store?->vendor?->firebase_token ){
 
-                    $data = [
-                        'title' => translate('New_Advertisement'),
-                        'description' => translate('Admin_has_added_a_new_advertisement_for_your_store'),
-                        'order_id' => '',
-                        'image' => '',
-                        'type' => 'advertisement',
-                        'advertisement_id' => $newAdvertisement->id,
-                        'order_status' => '',
-                    ];
-                    Helpers::send_push_notif_to_device($newAdvertisement->store->vendor->firebase_token, $data);
-                    DB::table('user_notifications')->insert([
-                        'data' => json_encode($data),
-                        'vendor_id' => $newAdvertisement->store->vendor_id,
-                        'created_at' => now(),
-                        'updated_at' => now()
-                    ]);
+                    $data = NotificationMessages::advertisementCreatedByAdmin($newAdvertisement);
+                    SendNotification::pushToVendor($newAdvertisement->store->vendor_id, $newAdvertisement->store->vendor->firebase_token, $data);
                 }
 
-                if(Helpers::getNotificationStatusData('store','store_advertisement_create_by_admin','mail_status',$newAdvertisement?->store?->id ) && config('mail.status') && Helpers::get_mail_status('advertisement_create_mail_status_store') == '1'){
-                    Mail::to($newAdvertisement?->store?->getRawOriginal('email'))->send(new \App\Mail\AdversitementStatusMail($newAdvertisement?->store?->name,'advertisement_create' ,$newAdvertisement->id));
+                if(SendNotification::canSendMail('advertisement_create_mail_status_store', 'store', 'store_advertisement_create_by_admin', $newAdvertisement?->store?->id)){
+                    SendNotification::mail($newAdvertisement?->store?->getRawOriginal('email'), new \App\Mail\AdversitementStatusMail($newAdvertisement?->store?->name,'advertisement_create' ,$newAdvertisement->id));
             }
             } catch (\Throwable $th) {
-                //throw $th;
+                Log::warning('promotion.advertisement_controller.copy_add_post_failed', [
+                    'error' => $th->getMessage(),
+                    'file' => $th->getFile().':'.$th->getLine(),
+                ]);
             }
-            return response()->json(['message' => translate('messages.Advertisement_Added_Successfully')], 200);
+            return response()->json(['message' => translate('Added successfully')], 200);
 
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
     public function destroy(string $id)
     {
         $advertisement =Advertisement::where('id',$id)->first();
@@ -742,7 +684,7 @@ class AdvertisementController extends Controller
             $advertisement->save();
         }
 
-        Toastr::success(translate('messages.Advertisement_deleted_successfully'));
+        Toastr::success(translate('Deleted successfully'));
         return back();
     }
     private function copyAttachment($attachment , $fileKeyName)
@@ -771,6 +713,10 @@ class AdvertisementController extends Controller
                     Storage::disk($newDisk)->put($newPath, $fileContents);
                 }
             } catch (\Exception $e) {
+                Log::warning('promotion.advertisement_controller.copy_attachment_failed', [
+                    'error' => $e->getMessage(),
+                    'file' => $e->getFile().':'.$e->getLine(),
+                ]);
             }
 
             return $newFileName ?? null;

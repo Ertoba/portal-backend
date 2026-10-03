@@ -1,10 +1,12 @@
 
-<form action="{{route('admin.brand.update',[$brand['id']])}}" method="post" enctype="multipart/form-data">
+<form action="{{route('admin.brand.update',[$brand['id']])}}" method="post" enctype="multipart/form-data"
+      data-ajax-form
+      data-ajax-refresh="[data-ajax-region]">
     @csrf
 
             <div class="d-flex flex-column h-100">
                 <div class="d-flex p-3 justify-content-between mb-3 bg-light">
-                    <h4 class="mb-0">{{translate('Update_Brand')}}</h4>
+                    <h4 class="mb-0">{{translate('Update brand')}}</h4>
                     <span class="circle bg-light withdraw-info-hide2 cursor-pointer">
                         <i class="tio-clear"></i>
                     </span>
@@ -13,8 +15,8 @@
 
                 <div class="p-3">
                     <div class="bg-light p-3 rounded">
-                        <h4>{{translate('messages.status')}}</h4>
-                        <p class="fs-12">{{ translate('messages.If you turn off the switch the brand will not active or visible in customer app & website.') }}</p>
+                        <h4>{{translate('messages.Status')}}</h4>
+                        <p class="fs-12">{{ translate('messages.If you turn off the switch, the brand will not be active or visible in the customer app and website.') }}</p>
 
                         <div class="maintenance-mode-toggle-bar d-flex flex-wrap justify-content-between border rounded align-items-center py-2 px-3">
                             <h5 class="text-capitalize m-0 text--primary">{{translate('messages.Status')}}</h5>
@@ -32,7 +34,7 @@
                         @if($language)
                             <ul class="nav nav-tabs mb-4">
                                 <li class="nav-item">
-                                    <a class="nav-link lang_link1 active" href="#" id="default-link1">{{translate('messages.default')}}</a>
+                                    <a class="nav-link lang_link1 active" href="#" id="default-link1">{{translate('Default')}}</a>
                                 </li>
                                 @foreach ($language as $lang)
                                     <li class="nav-item">
@@ -45,11 +47,10 @@
                         @if($language)
                             <div class="form-group lang_form1" id="default-form1">
                                 <label class="input-label">
-                                    {{translate('messages.name')}} ({{ translate('messages.default') }})
+                                    {{translate('Name')}} ({{ translate('Default') }})
                                     <small class="text-danger">*</small>
-                                    {{-- <i class="tio-info text-muted" data-toggle="tooltip" title="hello title"></i> --}}
                                 </label>
-                                <input type="text" name="name[]" value="{{$brand?->getRawOriginal('name')}}"  class="form-control" placeholder="{{translate('messages.new_brand')}}" maxlength="191">
+                                <input type="text" name="name[]" value="{{$brand?->getRawOriginal('name')}}"  class="form-control" placeholder="{{translate('messages.New brand')}}" maxlength="191">
                             </div>
                             <input type="hidden" name="lang[]" value="default">
                             @foreach($language as $key => $lang)
@@ -68,20 +69,18 @@
 
                                 <div class="form-group d-none lang_form1" id="{{$lang}}-form1">
                                     <label class="input-label">
-                                        {{translate('messages.name')}} ({{strtoupper($lang)}})
+                                        {{translate('Name')}} ({{strtoupper($lang)}})
                                         <small class="text-danger">*</small>
-                                        {{-- <i class="tio-info text-muted" data-toggle="tooltip" title="hello title"></i> --}}
                                     </label>
-                                    <input type="text" name="name[]" value="{{$translate[$lang]['name']??''}}"  class="form-control" placeholder="{{translate('messages.new_brand')}}" maxlength="191">
+                                    <input type="text" name="name[]" value="{{$translate[$lang]['name']??''}}"  class="form-control" placeholder="{{translate('messages.New brand')}}" maxlength="191">
                                 </div>
                                 <input type="hidden" name="lang[]" value="{{$lang}}">
                             @endforeach
                         @else
                             <div class="form-group">
                                 <label class="input-label">
-                                    {{translate('messages.name')}}
+                                    {{translate('Name')}}
                                     <small class="text-danger">*</small>
-                                    {{-- <i class="tio-info text-muted" data-toggle="tooltip" title="hello title"></i> --}}
                                 </label>
                                 <input type="text" name="name" class="form-control" placeholder="{{translate('messages.type_brand_name')}}" value="{{$brand['name']}}" maxlength="191">
                             </div>
@@ -90,7 +89,7 @@
                     </div>
 
                     <div class="bg-light p-3 rounded my-4">
-                        <h4>{{translate('messages.Brand Logo')}} <small class="text-danger">*</small></h4>
+                        <h4>{{translate('Brand logo')}} <small class="text-danger">*</small></h4>
                         <p class="fs-12">{{ translate('messages.It will show in website & app.') }}</p>
                         <div class="d-flex justify-content-center">
                             <label class="text-center position-relative d-inline-block mb-3">
@@ -110,14 +109,14 @@
                                 </div>
                             </label>
                         </div>
-                        <p class="text-center fs-12">{{translate('messages.JPG, JPEG, PNG Less Than 1MB (Ratio 1 : 1)')}}</p>
+                        <p class="text-center fs-12">{{'JPG, JPEG, PNG' . ' image, max ' . 1 . ' MB (ratio ' . '1:1' . ')'}}</p>
                     </div>
 
                 </div>
 
                 <div class="bg-white bottom-0 d-flex gap-3 mt-auto p-3 position-sticky shadow-lg">
-                    <button  type="reset" id="reset_btn2" class="btn btn-secondary btn-block withdraw-info-hide2">{{translate('messages.reset')}}</button>
-                    <button type="submit" class="btn btn-primary btn-block mt-0" >{{ translate('messages.save') }}</button>
+                    <button  type="reset" id="reset_btn2" class="btn btn-secondary btn-block withdraw-info-hide2"><i class="tio-refresh"></i> {{translate('messages.Reset')}}</button>
+                    <button type="submit" class="btn btn-primary btn-block mt-0" ><i class="tio-save"></i> {{ translate('messages.Save') }}</button>
                 </div>
             </div>
         </form>

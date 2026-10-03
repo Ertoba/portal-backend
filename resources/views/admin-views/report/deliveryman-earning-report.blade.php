@@ -1,44 +1,37 @@
 @extends('layouts.admin.app')
 
-@section('title', translate('messages.Delivery_Man_Earning_Report'))
+@section('title', translate('Deliveryman earning report'))
 
 @section('deliveryman_earning_report')
     active
 @endsection
 @section('content')
-    @php
-        $reportOverviewTitle = match (true) {
-            request()->routeIs('admin.transactions.ride-share.report.rider-earning-report') => 'Comprehensive Financial Overview and Analytics for Deliveryman Rides',
-            request()->tab === 'rental' => 'Comprehensive Financial Overview and Analytics for Deliveryman Rental',
-            request()->tab === 'parcel' => 'Comprehensive Financial Overview and Analytics for Deliveryman Parcel',
-            default => 'Comprehensive Financial Overview and Analytics for Deliveryman Orders',
-        };
-    @endphp
     <div class="content container-fluid">
-        <!-- Page Header -->
-        <div class="page-header pb-0">
+        <div class="page-header">
             <div>
                 <h1 class="page-header-title text-capitalize">
-                    {{translate('messages.Delivery_Man_Earning_Report') }}
+                    <span class="page-header-icon">
+                        <img src="{{ asset('public/assets/admin/img/outline/report.svg') }}" class="w--26" alt="">
+                    </span>
+                    <span>
+                        {{ translate('Deliveryman earning report') }}
+                    </span>
                 </h1>
-                <p>
-                    {{ $reportOverviewTitle }}
-                </p>
+                <p class="page-header-desc">{{ translate('What each deliveryman earned, from delivery charges to tips.') }}</p>
             </div>
         </div>
-        <!-- End Page Header -->
 
-        <div class="js-nav-scroller hs-nav-scroller-horizontal mb-20">
+        <div class="js-nav-scroller hs-nav-scroller-horizontal mb-20 mt-2">
             <ul class="nav mb-0 nav-tabs border-0 nav--tabs nav--pills">
                 <li class="nav-item">
                     <a class="nav-link active" href="{{ route('admin.transactions.report.deliveryman-earning-report') }}" aria-disabled="true">
-                        {{ translate('messages.Delivery_Man') }}
+                        {{ translate('Deliveryman') }}
                     </a>
                 </li>
                 @if (addon_published_status('RideShare'))
                     <li class="nav-item">
                         <a class="nav-link" href="{{ route('admin.transactions.ride-share.report.rider-earning-report') }}" aria-disabled="true">
-                            {{ translate('messages.Ride Share') }} {{ translate('messages.Rider') }}
+                            {{ translate('Ride share') }} {{ translate('Rider') }}
                         </a>
                     </li>
                 @endif

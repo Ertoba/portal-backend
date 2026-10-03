@@ -24,7 +24,7 @@
         @elseif($order->customer)
         <div>
             <a class="text-body text-capitalize"
-            href="{{route('admin.customer.view',[$order['user_id']])}}">
+            href="{{route('admin.users.customer.view',[$order['user_id']])}}">
                 <div>
                     {{$order->customer['f_name'].' '.$order->customer['l_name']}}
                 </div>
@@ -52,7 +52,7 @@
     <td class="text-capitalize text-center">
         @if($order['order_status']=='pending')
             <span class="badge badge-soft-info">
-            {{translate('messages.pending')}}
+            {{translate('Pending')}}
             </span>
         @elseif($order['order_status']=='confirmed')
             <span class="badge badge-soft-info">
@@ -60,7 +60,7 @@
             </span>
         @elseif($order['order_status']=='processing')
             <span class="badge badge-soft-warning">
-            {{translate('messages.processing')}}
+            {{translate('Processing')}}
             </span>
         @elseif($order['order_status']=='out_for_delivery')
             <span class="badge badge-soft-warning">
@@ -68,7 +68,7 @@
             </span>
         @elseif($order['order_status']=='delivered')
             <span class="badge badge-soft-success">
-            {{translate('messages.delivered')}}
+            {{translate('Delivered')}}
             </span>
         @else
             <span class="badge badge-soft-danger">
@@ -78,7 +78,7 @@
     </td>
     <td>
         <div class="btn--container justify-content-center">
-            <a class="btn action-btn btn--warning btn-outline-warning" href="{{route('admin.order.details',['id'=>$order['id']])}}"><i class="tio-visible"></i></a>
+            <a class="btn action-btn action-btn--view" href="{{route('admin.order.details',['id'=>$order['id']])}}"><i class="tio-visible-outlined"></i></a>
             <a class="btn action-btn btn--primary btn-outline-primary" href="{{route('admin.order.generate-invoice',['id'=>$order['id']])}}"><i class="tio-print"></i></a>
         </div>
     </td>

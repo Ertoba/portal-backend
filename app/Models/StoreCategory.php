@@ -2,22 +2,25 @@
 
 namespace App\Models;
 
+use App\Traits\Model\InvalidatesCacheTrait;
 use App\CentralLogics\Helpers;
-use App\Traits\ReportFilter;
-use Illuminate\Database\Eloquent\Builder;
+use App\Traits\Item\MissingAddonRelationsTrait;
+use App\Traits\Report\ReportFilterTrait;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Support\Facades\DB;
-use App\Traits\GeneratesSlug;
+use App\Traits\Model\SlugTrait;
+use App\Traits\Model\HasStorageTrait;
+use App\Traits\Model\HasTranslationsTrait;
+use Modules\Service\Entities\Service;
 
 class StoreCategory extends Model
 {
-    use HasFactory, ReportFilter, GeneratesSlug;
+    use HasFactory, ReportFilterTrait, SlugTrait, MissingAddonRelationsTrait, HasStorageTrait, HasTranslationsTrait, InvalidatesCacheTrait;
 
-    protected $with = ['translations', 'storage'];
+    protected static array $cacheTags = ['store_category'];
 
     protected $fillable = [
         'store_id',
@@ -53,14 +56,13 @@ class StoreCategory extends Model
         return $this->hasMany(Item::class, 'store_category_id');
     }
 
-    public function storage(): MorphMany
+    public function services(): HasMany
     {
-        return $this->morphMany(Storage::class, 'data');
-    }
+        if (! service_addon_active()) {
+            return $this->missingAddonHasMany();
+        }
 
-    public function translations(): MorphMany
-    {
-        return $this->morphMany(Translation::class, 'translationable');
+        return $this->hasMany(Service::class, 'store_category_id');
     }
 
     public function scopeActive($query)
@@ -75,29 +77,12 @@ class StoreCategory extends Model
 
     public function getImageFullUrlAttribute()
     {
-        $value = $this->image;
-        if (count($this->storage) > 0) {
-            foreach ($this->storage as $storage) {
-                if ($storage['key'] == 'image') {
-                    return Helpers::get_full_url('category', $value, $storage['value']);
-                }
-            }
-        }
-
-        return Helpers::get_full_url('category', $value, 'public');
+        return $this->storageFullUrl('category', 'image', $this->image);
     }
 
     public function getNameAttribute($value): string
     {
-        if (count($this->translations) > 0) {
-            foreach ($this->translations as $translation) {
-                if ($translation['key'] == 'name') {
-                    return $translation['value'];
-                }
-            }
-        }
-
-        return $value;
+        return $this->translatedAttribute('name', $value);
     }
 
     protected static function boot()
@@ -110,31 +95,12 @@ class StoreCategory extends Model
         });
 
         static::saved(function ($model) {
-            if ($model->isDirty('image')) {
-                $value = Helpers::getDisk();
-
-                DB::table('storages')->updateOrInsert([
-                    'data_type' => get_class($model),
-                    'data_id' => $model->id,
-                    'key' => 'image',
-                ], [
-                    'value' => $value,
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
-            }
+            self::recordStorageDisk($model, 'image', 'image');
         });
     }
 
     protected static function booted()
     {
-        static::addGlobalScope('storage', function (Builder $builder) {
-            $builder->with('storage');
-        });
-        static::addGlobalScope('translate', function (Builder $builder) {
-            $builder->with(['translations' => function ($query) {
-                return $query->where('locale', app()->getLocale());
-            }]);
-        });
+
     }
 }

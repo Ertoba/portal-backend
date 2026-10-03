@@ -126,7 +126,6 @@ class DeliveryManListExport implements FromView, ShouldAutoSize, WithStyles, Wit
 
                 $highestRow = $worksheet->getHighestRow();
 
-                // Alignment
                 $sheet->getStyle("A1:N{$highestRow}")
                     ->getAlignment()
                     ->setHorizontal(Alignment::HORIZONTAL_CENTER)
@@ -137,14 +136,12 @@ class DeliveryManListExport implements FromView, ShouldAutoSize, WithStyles, Wit
                     ->setHorizontal(Alignment::HORIZONTAL_LEFT)
                     ->setVertical(Alignment::VERTICAL_CENTER);
 
-                // Merge cells
                 $sheet->mergeCells('A1:N1');
                 $sheet->mergeCells('A2:C2');
                 $sheet->mergeCells('D2:N2');
                 $sheet->mergeCells('A3:C3');
                 $sheet->mergeCells('D3:N3');
 
-                // Row heights
                 $worksheet->getRowDimension(1)->setRowHeight(50);
                 $worksheet->getRowDimension(2)->setRowHeight(100);
                 $worksheet->getRowDimension(3)->setRowHeight(80);
@@ -153,7 +150,6 @@ class DeliveryManListExport implements FromView, ShouldAutoSize, WithStyles, Wit
                     $worksheet->getRowDimension($i)->setRowHeight(40);
                 }
 
-                // Insert images
                 $this->setImage($worksheet);
             },
         ];

@@ -1,21 +1,20 @@
 @extends('layouts.admin.app')
 
-@section('title',translate('messages.Delivery Man Preview'))
+@section('title',translate('Deliveryman preview'))
 
 @section('content')
 <div class="content container-fluid">
-    <!-- Page Header -->
     <div class="page-header">
         <h1 class="page-header-title text-break">
             <span class="page-header-icon">
-                <img src="{{asset('public/assets/admin/img/delivery-man.png')}}" class="w--26" alt="">
+                <img src="{{asset('public/assets/admin/img/outline/delivery-man.svg')}}" class="w--26" alt="">
             </span>
             <span>Deliveryman Preview</span>
         </h1>
+        <p class="page-header-desc">{{ translate('Points this deliveryman has earned, and what they have been spent on.') }}</p>
 
         <div class="">
             <div class="js-nav-scroller hs-nav-scroller-horizontal mt-3">
-                <!-- Nav -->
                 <ul class="nav nav-tabs nav--pills mb-3 border-0 nav--tabs">
                     <li class="nav-item">
                         <a class="nav-link " href="http://localhost/Backend-6amMart/admin/users/delivery-man/preview/6/info" aria-disabled="true">Info</a>
@@ -39,11 +38,9 @@
                         <a class="nav-link" href="http://localhost/Backend-6amMart/admin/users/delivery-man/preview/6/disbursement" aria-disabled="true">Refer & Earn</a>
                     </li>
                 </ul>
-                <!-- End Nav -->
             </div>
         </div>
     </div>
-    <!-- End Page Header -->
 
 
     <div class="card mb-20">
@@ -56,8 +53,8 @@
                                 <img src="{{asset('public/assets/admin/img/t-earning.png')}}" class="w--26" alt="">
                             </div>
                             <div>
-                                <h3 class="text-006AB4 mb-1 fs-26">{{ translate('messages.1,000') }}</h3>
-                                <p class="text-dark fs-14 mb-0">{{ translate('messages.Total Earned') }}</p>
+                                <h3 class="text-006AB4 mb-1 fs-26">1,000</h3>
+                                <p class="text-dark fs-14 mb-0">{{ translate('Total earned') }}</p>
                             </div>
                         </div>
                     </div>
@@ -69,8 +66,8 @@
                                 <img src="{{asset('public/assets/admin/img/t-points.png')}}" class="w--26" alt="">
                             </div>
                             <div>
-                                <h3 class="text-00AA6D mb-1 fs-26">{{ translate('messages.2,000') }}</h3>
-                                <p class="text-dark fs-14 mb-0">{{ translate('messages.2,000') }}</p>
+                                <h3 class="text-00AA6D mb-1 fs-26">2,000</h3>
+                                <p class="text-dark fs-14 mb-0">2,000</p>
                             </div>
                         </div>
                     </div>
@@ -82,7 +79,7 @@
                                 <img src="{{asset('public/assets/admin/img/Create_Cashback_Offer.png')}}" class="w--26" alt="">
                             </div>
                             <div>
-                                <h3 class="title mb-1 fs-26">{{ translate('messages.200') }}</h3>
+                                <h3 class="title mb-1 fs-26">200</h3>
                                 <p class="text-dark fs-14 mb-0">{{ translate('messages.Current Points in Wallet') }}</p>
                             </div>
                         </div>
@@ -108,37 +105,34 @@
                     {{ translate('messages.Filter') }}
                 </button>
             </div>
-            <!-- Unfold -->
             <div class="hs-unfold">
                 <a class="js-hs-unfold-invoker btn btn-sm btn-white dropdown-toggle min-height-40" href="javascript:;"
                     data-hs-unfold-options='{
                             "target": "#usersExportDropdown",
                             "type": "css-animation"
                         }'>
-                    <i class="tio-download-to mr-1"></i> {{ translate('messages.export') }}
+                    <i class="tio-download-to mr-1"></i> {{ translate('messages.Export') }}
                 </a>
 
                 <div id="usersExportDropdown"
                     class="hs-unfold-content dropdown-unfold dropdown-menu dropdown-menu-sm-right">
-                    <span class="dropdown-header">{{ translate('messages.download_options') }}</span>
+                    <span class="dropdown-header">{{ translate('messages.Download options') }}</span>
                     <a id="export-excel" class="dropdown-item" href="">
                         <img class="avatar avatar-xss avatar-4by3 mr-2"
                             src="{{ asset('public/assets/admin') }}/svg/components/excel.svg"
                             alt="Image Description">
-                        {{ translate('messages.excel') }}
+                        Excel
                     </a>
                     <a id="export-csv" class="dropdown-item" href="">
                         <img class="avatar avatar-xss avatar-4by3 mr-2"
                             src="{{ asset('public/assets/admin') }}/svg/components/placeholder-csv-format.svg"
                             alt="Image Description">
-                        {{ translate('messages.csv') }}
+                        CSV
                     </a>
                 </div>
             </div>
-            <!-- End Unfold -->
         </div>
         <div class="card-body p-0">
-            <!-- Table -->
             <div class="table-responsive datatable-custom">
                 <table class="table table-border table-thead-borderless table-align-middle table-nowrap card-table m-0">
                     <thead class="thead-light">
@@ -171,7 +165,7 @@
                             <td>
                                 <div class="text-dark text-right pr-6">
                                      - 448 <br>
-                                     <button type="button" class="btn px-3 fs-12 py-1 badge-soft-danger">Debit</button>
+                                     <button type="button" class="btn px-3 fs-12 py-1 badge-soft-danger"><i class="tio-dollar-outlined"></i> Debit</button>
                                 </div>
                             </td>
                         </tr>
@@ -195,7 +189,7 @@
                             <td>
                                 <div class="text-dark text-right pr-6">
                                      - 448 <br>
-                                     <button type="button" class="btn px-3 fs-12 py-1 text-primary badge-soft-success">Debit</button>
+                                     <button type="button" class="btn px-3 fs-12 py-1 text-primary badge-soft-success"><i class="tio-dollar-outlined"></i> Debit</button>
                                 </div>
                             </td>
                         </tr>
@@ -219,7 +213,7 @@
                             <td>
                                 <div class="text-dark text-right pr-6">
                                      - 448 <br>
-                                     <button type="button" class="btn px-3 fs-12 py-1 badge-soft-danger">Debit</button>
+                                     <button type="button" class="btn px-3 fs-12 py-1 badge-soft-danger"><i class="tio-dollar-outlined"></i> Debit</button>
                                 </div>
                             </td>
                         </tr>
@@ -243,7 +237,7 @@
                             <td>
                                 <div class="text-dark text-right pr-6">
                                      - 448 <br>
-                                     <button type="button" class="btn px-3 fs-12 py-1 badge-soft-danger">Debit</button>
+                                     <button type="button" class="btn px-3 fs-12 py-1 badge-soft-danger"><i class="tio-dollar-outlined"></i> Debit</button>
                                 </div>
                             </td>
                         </tr>
@@ -267,7 +261,7 @@
                             <td>
                                 <div class="text-dark text-right pr-6">
                                      - 448 <br>
-                                     <button type="button" class="btn px-3 fs-12 py-1 badge-soft-danger">Debit</button>
+                                     <button type="button" class="btn px-3 fs-12 py-1 badge-soft-danger"><i class="tio-dollar-outlined"></i> Debit</button>
                                 </div>
                             </td>
                         </tr>
@@ -295,7 +289,6 @@
                     </ul>
                 </div>
             </div>
-            <!-- End Table -->
         </div>
     </div>
 
@@ -353,8 +346,8 @@
             </div>
     </div>
     <div class="offcanvas-footer p-3 d-flex align-items-center justify-content-center gap-3">
-        <button type="reset" class="btn w-100 btn--reset h--40px">{{ translate('messages.reset') }}</button>
-        <button type="submit" class="btn w-100 btn--primary h--40px">{{ translate('messages.Filter') }}</button>
+        <button type="reset" class="btn w-100 btn--reset h--40px"><i class="tio-refresh"></i> {{ translate('messages.Reset') }}</button>
+        <button type="submit" class="btn w-100 btn--primary h--40px"><i class="tio-filter-list"></i> {{ translate('messages.Filter') }}</button>
     </div>
     </form>
 </div>

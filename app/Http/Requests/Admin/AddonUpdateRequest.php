@@ -13,9 +13,6 @@ use Illuminate\Foundation\Http\FormRequest;
  */
 class AddonUpdateRequest extends FormRequest
 {
-    /**
-     * Determine if the user is authorized to make this request.
-     */
     public function authorize(): bool
     {
         return true;
@@ -39,9 +36,9 @@ class AddonUpdateRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'name.required' => translate('messages.Name is required!'),
-            'store_id.required' => translate('messages.please_select_store'),
-            'name.0.required'=>translate('default_data_is_required'),
+            'name.required' => translate('messages.Name is required'),
+            'store_id.required' => translate('messages.Please select store'),
+            'name.0.required'=>translate('Default data is required'),
         ];
     }
 }

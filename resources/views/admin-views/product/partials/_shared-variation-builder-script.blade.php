@@ -13,7 +13,7 @@ function add_new_option_button() {
                     <div class="d-flex align-items-center justify-content-between mb-3">
                         <label class="form-check form--check">
                             <input id="options[` + count + `][required]" name="options[` + count + `][required]" class="form-check-input" type="checkbox">
-                            <span class="form-check-label">{{ translate('Required') }}</span>
+                            <span class="form-check-label">{{ translate('Required.') }}</span>
                         </label>
                         <div>
                             <button type="button" class="btn btn-danger btn-sm delete_input_button"
@@ -24,20 +24,20 @@ function add_new_option_button() {
                     </div>
                     <div class="row g-2">
                         <div class="col-xl-4 col-lg-6">
-                            <label for="">{{ translate('name') }}</label>
+                            <label for="">{{ translate('Name') }}</label>
                             <input required name=options[` + count + `][name] class="form-control new_option_name" type="text" data-count="` + count + `">
                         </div>
 
                         <div class="col-xl-4 col-lg-6">
                             <div>
-                                <label class="input-label text-capitalize d-flex align-items-center"><span class="line--limit-1">{{ translate('messages.selcetion_type') }} </span>
+                                <label class="input-label text-capitalize d-flex align-items-center"><span class="line--limit-1">{{ translate('messages.Selection type') }} </span>
                                 </label>
                                 <div class="resturant-type-group px-0">
                                     <label class="form-check form--check mr-2 mr-md-4">
                                         <input class="form-check-input show_min_max" data-count="` + count + `" type="radio" value="multi"
                                         name="options[` + count + `][type]" id="type` + count + `" checked>
                                         <span class="form-check-label">
-                                            {{ translate('Multiple Selection') }}
+                                            {{ translate('Multiple selection') }}
                                         </span>
                                     </label>
 
@@ -45,7 +45,7 @@ function add_new_option_button() {
                                         <input class="form-check-input hide_min_max" data-count="` + count + `" type="radio" value="single"
                                         name="options[` + count + `][type]" id="type` + count + `">
                                         <span class="form-check-label">
-                                            {{ translate('Single Selection') }}
+                                            {{ translate('Single selection') }}
                                         </span>
                                     </label>
                                 </div>
@@ -70,17 +70,17 @@ function add_new_option_button() {
                             <div id="option_price_view_` + count + `">
                                 <div class="row g-3 add_new_view_row_class mb-3">
                                     <div class="col-md-4 col-sm-6">
-                                        <label for="">{{ translate('Option_name') }}</label>
+                                        <label for="">{{ translate('Option name') }}</label>
                                         <input class="form-control" required type="text" name="options[` + count + `][values][0][label]" id="">
                                     </div>
                                     <div class="col-md-4 col-sm-6">
-                                        <label for="">{{ translate('Additional_price') }}</label>
+                                        <label for="">{{ translate('Additional price') }}</label>
                                         <input class="form-control" required type="number" min="0" step="{{ \App\CentralLogics\Helpers::getDecimalPlaces() }}" max="999999999999.999" name="options[` + count + `][values][0][optionPrice]" id="">
                                     </div>
                                 </div>
                             </div>
                             <div class="row mt-3 p-3 mr-1 d-flex" id="add_new_button_` + count + `">
-                                <button type="button" class="btn btn--primary btn-outline-primary add_new_row_button" data-count="` + count + `">{{ translate('Add_New_Option') }}</button>
+                                <button type="button" class="btn btn--primary btn-outline-primary add_new_row_button" data-count="` + count + `"><i class="tio-add-circle"></i> {{ translate('Add new option') }}</button>
                             </div>
                         </div>
                     </div>
@@ -95,11 +95,11 @@ function add_new_row_button(data) {
     let add_new_row_view = `
             <div class="row add_new_view_row_class mb-3 position-relative pt-3 pt-sm-0">
                 <div class="col-md-4 col-sm-5">
-                    <label for="">{{ translate('Option_name') }}</label>
+                    <label for="">{{ translate('Option name') }}</label>
                     <input class="form-control" required type="text" name="options[` + data + `][values][` + countRow + `][label]" id="">
                 </div>
                 <div class="col-md-4 col-sm-5">
-                    <label for="">{{ translate('Additional_price') }}</label>
+                    <label for="">{{ translate('Additional price') }}</label>
                     <input class="form-control" required type="number" min="0" step="{{ \App\CentralLogics\Helpers::getDecimalPlaces() }}" max="999999999999.999" name="options[` + data + `][values][` + countRow + `][optionPrice]" id="">
                 </div>
                 <div class="col-sm-2 max-sm-absolute">
@@ -119,7 +119,7 @@ function add_more_customer_choice_option(i, name) {
     let n = name;
 
     $('#customer_choice_options').append(
-        `<div class="__choos-item"><div><input type="hidden" name="choice_no[]" value="${i}"><input type="text" class="form-control d-none" name="choice[]" value="${n}" placeholder="{{ translate('messages.choice_title') }}" readonly> <label class="form-label">${n}</label> </div><div><input type="text" class="form-control combination_update" name="choice_options_${i}[]" placeholder="{{ translate('messages.enter_choice_values') }}" data-role="tagsinput"></div></div>`
+        `<div class="__choos-item"><div><input type="hidden" name="choice_no[]" value="${i}"><input type="text" class="form-control d-none" name="choice[]" value="${n}" placeholder="{{ translate('messages.Choice title') }}" readonly> <label class="form-label">${n}</label> </div><div><input type="text" class="form-control combination_update" name="choice_options_${i}[]" placeholder="{{ translate('messages.Enter choice values') }}" data-role="tagsinput"></div></div>`
     );
     $("input[data-role=tagsinput], select[multiple][data-role=tagsinput]").tagsinput();
 }

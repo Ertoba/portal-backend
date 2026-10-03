@@ -23,9 +23,6 @@ use Illuminate\Support\Carbon;
  */
 class ModuleUpdateRequest extends FormRequest
 {
-    /**
-     * Determine if the user is authorized to make this request.
-     */
     public function authorize(): bool
     {
         return true;
@@ -49,9 +46,9 @@ class ModuleUpdateRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'module_name.required' => translate('messages.Name is required!'),
-            'module_name.0.required'=>translate('default_name_is_required'),
-            'description.0.required'=>translate('default_description_is_required'),
+            'module_name.required' => translate('messages.Name is required'),
+            'module_name.0.required'=>translate('Default name is required'),
+            'description.0.required'=>translate('Default description is required'),
         ];
     }
 }

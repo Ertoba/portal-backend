@@ -8,34 +8,28 @@
         </div>
         <div class="">
             <div class="d-flex justify-content-end">
-                <!-- List Dot -->
                 <ul class="list-inline list-separator list-separator-before text-left">
+                    @if(\App\CentralLogics\Helpers::module_permission_check('settings'))
                     <li class="list-inline-item">
-                        <a class="list-separator-link" href="{{route('admin.business-settings.business-setup')}}">{{translate('messages.business_setup')}}</a>
+                        <a class="list-separator-link" href="{{route('admin.business-settings.business-setup')}}">{{translate('Business setup')}}</a>
                     </li>
+                    @endif
+
+                    @if(\App\CentralLogics\Helpers::module_permission_check('profile'))
+                    <li class="list-inline-item">
+                        <a class="list-separator-link" href="{{route('admin.settings')}}">{{translate('messages.Profile')}}</a>
+                    </li>
+                    @endif
 
                     <li class="list-inline-item">
-                        <a class="list-separator-link" href="{{route('admin.settings')}}">{{translate('messages.profile')}}</a>
-                    </li>
-
-                    <li class="list-inline-item">
-                        <!-- Keyboard Shortcuts Toggle -->
-                        {{-- <div class="hs-unfold">
-                            <a class="js-hs-unfold-invoker h-unset btn btn-icon btn-ghost-secondary rounded-circle"
-                               href="{{route('admin.dashboard')}}">
-                                {{translate('messages.home')}}
-                            </a>
-                        </div> --}}
-                        <!-- End Keyboard Shortcuts Toggle -->
                         <a class="list-separator-link" href="{{route('admin.dashboard')}}">{{translate('messages.home')}}</a>
                     </li>
                     <li class="list-inline-item d-inline-block">
                         <label class="badge badge-soft-primary m-0">
-                            {{translate('messages.software_version')}} : {{env('SOFTWARE_VERSION')}}
+                            {{translate('messages.Software version')}} : {{env('SOFTWARE_VERSION')}}
                         </label>
                     </li>
                 </ul>
-                <!-- End List Dot -->
             </div>
         </div>
     </div>

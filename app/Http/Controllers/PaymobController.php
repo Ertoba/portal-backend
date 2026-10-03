@@ -9,12 +9,12 @@ use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Validator;
 use App\Models\Payment;
-use App\Traits\Processor;
+use App\Traits\System\ProcessorTrait;
 use App\Models\PaymentRequest;
 
 class PaymobController extends Controller
 {
-    use Processor;
+    use ProcessorTrait;
 
     private $config_values;
 
@@ -23,7 +23,7 @@ class PaymobController extends Controller
 
     public function __construct(PaymentRequest $payment, User $user)
     {
-        $config = $this->payment_config('paymob_accept', 'payment_config');
+        $config = $this->paymentConfig('paymob_accept', 'payment_config');
         if (!is_null($config) && $config->mode == 'live') {
             $this->config_values = json_decode($config->live_values);
         } elseif (!is_null($config) && $config->mode == 'test') {
@@ -35,44 +35,34 @@ class PaymobController extends Controller
 
     protected function cURL($url, $json)
     {
-        // Create curl resource
         $ch = curl_init($url);
 
-        // Request headers
         $headers = array();
         $headers[] = 'Content-Type: application/json';
 
-        // Return the transfer as a string
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
         curl_setopt($ch, CURLOPT_POST, 1);
         curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($json));
         curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
 
-        // $output contains the output string
         $output = curl_exec($ch);
 
-        // Close curl resource to free up system resources
         curl_close($ch);
         return json_decode($output);
     }
 
     protected function GETcURL($url)
     {
-        // Create curl resource
         $ch = curl_init($url);
 
-        // Request headers
         $headers = array();
         $headers[] = 'Content-Type: application/json';
 
-        // Return the transfer as a string
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
         curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
 
-        // $output contains the output string
         $output = curl_exec($ch);
 
-        // Close curl resource to free up system resources
         curl_close($ch);
         return json_decode($output);
     }
@@ -84,12 +74,12 @@ class PaymobController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return response()->json($this->response_formatter(GATEWAYS_DEFAULT_400, null, $this->error_processor($validator)), 400);
+            return response()->json($this->responseFormatter(GATEWAYS_DEFAULT_400, null, $this->errorProcessor($validator)), 400);
         }
 
         $data = $this->payment::where(['id' => $request['payment_id']])->where(['is_paid' => 0])->first();
         if (!isset($data)) {
-            return response()->json($this->response_formatter(GATEWAYS_DEFAULT_204), 200);
+            return response()->json($this->responseFormatter(GATEWAYS_DEFAULT_204), 200);
         }
 
         session()->put('payment_id', $data->id);
@@ -108,7 +98,7 @@ class PaymobController extends Controller
             $order = $this->createOrder($token, $data, $business_name);
             $paymentToken = $this->getPaymentToken($order, $token, $data, $payer);
         } catch (\Exception $exception) {
-            return response()->json($this->response_formatter(GATEWAYS_DEFAULT_404), 200);
+            return response()->json($this->responseFormatter(GATEWAYS_DEFAULT_404), 200);
         }
         return Redirect::away('https://accept.paymobsolutions.com/api/acceptance/iframes/' . $this->config_values->iframe_id . '?payment_token=' . $paymentToken);
     }
@@ -234,12 +224,12 @@ class PaymobController extends Controller
             if (isset($payment_data) && function_exists($payment_data->success_hook)) {
                 call_user_func($payment_data->success_hook, $payment_data);
             }
-            return $this->payment_response($payment_data,'success');
+            return $this->paymentResponse($payment_data,'success');
         }
         $payment_data = $this->payment::where(['id' => session('payment_id')])->first();
         if (isset($payment_data) && function_exists($payment_data->failure_hook)) {
             call_user_func($payment_data->failure_hook, $payment_data);
         }
-        return $this->payment_response($payment_data,'fail');
+        return $this->paymentResponse($payment_data,'fail');
     }
 }

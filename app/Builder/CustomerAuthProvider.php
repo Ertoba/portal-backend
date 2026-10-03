@@ -3,14 +3,12 @@
 namespace App\Builder;
 
 use App\CentralLogics\Helpers;
-use App\CentralLogics\SMS_module;
 use App\Mail\EmailVerification;
 use App\Mail\UserPasswordResetMail;
 use App\Models\BusinessSetting;
 use App\Models\Cart;
 use App\Models\Guest;
 use App\Models\PasswordReset;
-use App\Models\Setting;
 use App\Models\User;
 use App\Models\WalletTransaction;
 use Carbon\CarbonInterval;
@@ -20,45 +18,32 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Modules\Builder\Contracts\CustomerAuthProvider as CustomerAuthProviderContract;
 use Modules\Builder\Services\StorefrontContext;
 use Modules\Builder\ValueObjects\StorefrontCustomer;
-use Modules\Gateways\Traits\SmsGateway;
 use App\Scopes\HostScope;
+use App\Support\Notification\SendNotification;
+use App\Support\Notification\NotificationMessages;
+use App\Support\Notification\Sms;
+use App\Services\Payment\SettingService;
+use App\Support\Storage\FileStorage;
 
 class CustomerAuthProvider implements CustomerAuthProviderContract
 {
+
     private const OTP_INTERVAL_SECONDS = 60;
     private const OTP_MAX_HITS         = 5;
     private const OTP_BLOCK_SECONDS    = 600;
     private const PASSPORT_TOKEN_NAME  = 'RestaurantCustomerAuth';
 
-    /**
-     * Session key holding the user id of an OTP/social-authenticated
-     * customer who still owes mandatory profile fields. While this key
-     * is set we deliberately do NOT call `Auth::guard('customer')->login*`
-     * — the storefront treats them as un-authenticated until
-     * `completeProfile()` finishes.
-     */
     private const PENDING_PROFILE_SESSION_KEY = 'pending_profile_user_id';
 
     public function __construct(private StorefrontContext $context)
     {
     }
 
-    /**
-     * Current storefront's (tenant_id, sub_tenant_id) — used to filter
-     * every User / PasswordReset / OTP query and to stamp new rows on
-     * insert. Host requests don't set a scope, so this returns (0, 0)
-     * and the adapter naturally points at host rows.
-     *
-     * Returned as an associative array so callers can chain it via
-     * `->where($this->scopeFilter())` or merge it with insert payloads
-     * via `array + $this->scopeFilter()`.
-     */
     private function scopeFilter(): array
     {
         $scope = $this->context->getScope();
@@ -68,23 +53,11 @@ class CustomerAuthProvider implements CustomerAuthProviderContract
         ];
     }
 
-    /**
-     * Build a fresh User query with the HostScope global scope removed,
-     * so the adapter can apply its own explicit storefront scope. Host
-     * code that doesn't go through the adapter continues to auto-filter
-     * to host rows via the global scope (see App\Scopes\HostScope).
-     */
     private function userQuery()
     {
         return User::withoutGlobalScope(HostScope::class);
     }
 
-    /**
-     * Mandatory profile fields a customer must provide before Laravel's
-     * customer guard is allowed to log them in. Used to decide whether
-     * OTP/social authentication can finalize the login or has to defer
-     * to `completeProfile()`.
-     */
     private function isProfileComplete(User $user): bool
     {
         return (string) ($user->f_name ?? '') !== ''
@@ -92,12 +65,6 @@ class CustomerAuthProvider implements CustomerAuthProviderContract
             && (string) ($user->email  ?? '') !== '';
     }
 
-    /**
-     * Resolve the pending-profile user (if any) for the CURRENT storefront
-     * scope. Clears the session pointer when it's stale (user deleted,
-     * scope mismatch). Returns null when no pending user is set, i.e. the
-     * visitor is either fully authenticated or fully anonymous.
-     */
     public function pendingProfileUser(): ?StorefrontCustomer
     {
         $id = \session(self::PENDING_PROFILE_SESSION_KEY);
@@ -119,11 +86,6 @@ class CustomerAuthProvider implements CustomerAuthProviderContract
         return $this->toCustomer($user);
     }
 
-    /**
-     * Finalize a deferred login: write the customer guard, merge any
-     * guest cart, and clear the pending-profile pointer. Called once
-     * `completeProfile()` has saved the missing fields.
-     */
     private function promotePendingProfileLogin(User $user): void
     {
         Auth::guard('customer')->loginUsingId($user->id);
@@ -138,12 +100,6 @@ class CustomerAuthProvider implements CustomerAuthProviderContract
             return null;
         }
 
-        // Session-bleed defense: if the authenticated user's stored scope
-        // doesn't match the current storefront, treat them as not-logged-in.
-        // Cookies are typically domain-scoped so cross-storefront bleed is
-        // rare, but a customer's session must NEVER unlock data at another
-        // scope. Auth::user() bypasses our scope filters because it loads
-        // by primary key — so this check is the last line of defense.
         $scope = $this->scopeFilter();
         if ((int) $user->tenant_id !== $scope['tenant_id']
             || (int) $user->sub_tenant_id !== $scope['sub_tenant_id']) {
@@ -160,14 +116,9 @@ class CustomerAuthProvider implements CustomerAuthProviderContract
             ? ['email' => $emailOrPhone, 'password' => $password]
             : ['phone' => $this->normalizePhone($emailOrPhone), 'password' => $password];
 
-        // Auth::attempt treats every non-`password` key as a WHERE clause
-        // on the user lookup. Scope keys narrow it to the current storefront.
-        // The HostScope global scope ALSO applies the current-scope filter
-        // during this lookup (via StorefrontContext), but passing the keys
-        // explicitly is defensive — it works even if HostScope is bypassed.
         if (!Auth::guard('customer')->attempt($credentials + $this->scopeFilter())) {
             throw ValidationException::withMessages([
-                'email_or_phone' => __('messages.User_credential_does_not_match'),
+                'email_or_phone' => __('messages.User credential does not match'),
             ]);
         }
 
@@ -189,7 +140,7 @@ class CustomerAuthProvider implements CustomerAuthProviderContract
         $user = $this->userQuery()->where('phone', $phone)->where($this->scopeFilter())->first();
         if ($user && !$user->status) {
             throw ValidationException::withMessages([
-                '_form' => __('messages.your_account_is_blocked'),
+                '_form' => __('messages.Your account is blocked'),
             ]);
         }
 
@@ -205,7 +156,7 @@ class CustomerAuthProvider implements CustomerAuthProviderContract
             ->where(['phone' => $phone, 'token' => $otp] + $scope)
             ->first();
 
-        if (!$row && !(in_array(getEnvMode(), ['test', 'demo'], true) && $otp === '123456')) {
+        if (!$row && !(isStaticOtpMode() && $otp === STATIC_OTP_CODE)) {
             throw ValidationException::withMessages([
                 'otp' => __('OTP does not match'),
             ]);
@@ -234,11 +185,6 @@ class CustomerAuthProvider implements CustomerAuthProviderContract
             ->where(['phone' => $phone] + $scope)
             ->delete();
 
-        // OTP-only signup leaves the user without a name/email — defer
-        // the customer-guard login until `completeProfile()` fills those
-        // in. ShareStorefrontProps will surface them via `pendingProfile`
-        // so the frontend can force-open the completion modal; until then
-        // `current()` returns null and protected routes 401.
         if (! $this->isProfileComplete($user)) {
             \session([self::PENDING_PROFILE_SESSION_KEY => $user->id]);
             return $this->toCustomer($user);
@@ -256,9 +202,6 @@ class CustomerAuthProvider implements CustomerAuthProviderContract
         $email     = $data['email']    ?? null;
         $phone     = $this->normalizePhone($data['phone'] ?? null);
         $password  = $data['password'] ?? null;
-        // Referral crediting rides on the wallet-features master switch.
-        // The signup form hides the field when off, but a stale page or
-        // crafted request could still submit a code — silently drop it.
         $refCode   = \config('builder.wallet_features_enabled', true)
             ? ($data['ref_code'] ?? null)
             : null;
@@ -307,11 +250,8 @@ class CustomerAuthProvider implements CustomerAuthProviderContract
         }
 
         try {
-            if (\config('mail.status')
-                && Helpers::getNotificationStatusData('customer', 'customer_registration', 'mail_status')
-                && Helpers::get_mail_status('registration_mail_status_user') == '1'
-            ) {
-                Mail::to($email)->send(new \App\Mail\CustomerRegistration($name));
+            if (SendNotification::canSendMail('registration_mail_status_user', 'customer', 'customer_registration')) {
+                SendNotification::mail($email, new \App\Mail\CustomerRegistration($name));
             }
         } catch (\Throwable $e) {
             \info($e->getMessage());
@@ -343,16 +283,16 @@ class CustomerAuthProvider implements CustomerAuthProviderContract
 
         if ($type === 'phone' && $user->is_phone_verified) {
             throw ValidationException::withMessages([
-                'otp' => __('messages.phone_number_is_already_verified'),
+                'otp' => __('messages.Phone number is already verified'),
             ]);
         }
         if ($type === 'email' && $user->is_email_verified) {
             throw ValidationException::withMessages([
-                'otp' => __('messages.email_number_is_already_verified'),
+                'otp' => __('messages.Email number is already verified'),
             ]);
         }
 
-        if (in_array(getEnvMode(), ['test', 'demo'], true) && $otp === '123456') {
+        if (isStaticOtpMode() && $otp === STATIC_OTP_CODE) {
             $this->markVerified($user, $type);
         } else {
             $table  = $type === 'phone' ? 'phone_verifications' : 'email_verifications';
@@ -410,11 +350,11 @@ class CustomerAuthProvider implements CustomerAuthProviderContract
         if ($existing && Carbon::parse($existing->created_at)->diffInSeconds() < self::OTP_INTERVAL_SECONDS) {
             $remaining = round(self::OTP_INTERVAL_SECONDS - Carbon::parse($existing->created_at)->diffInSeconds());
             throw ValidationException::withMessages([
-                'otp' => __('messages.please_try_again_after_') . $remaining . ' ' . __('messages.seconds'),
+                'otp' => __('messages.Please try again after') . $remaining . ' ' . __('messages.seconds'),
             ]);
         }
 
-        $token = in_array(getEnvMode(), ['test', 'demo'], true) ? '123456' : (string) \rand(100000, 999999);
+        $token = generateOtpCode();
 
         DB::table('password_resets')->updateOrInsert(
             [$type => $value] + $scope,
@@ -425,14 +365,13 @@ class CustomerAuthProvider implements CustomerAuthProviderContract
             return;
         }
 
-        $smsActive = Setting::whereJsonContains('live_values->status', '1')
-            ->where('settings_type', 'sms_config')->exists();
+        $smsActive = app(SettingService::class)->hasActiveSmsGateway();
 
         if ($type === 'phone' && $smsActive) {
             $sent = $this->sendSms($value, $token);
             if ($sent !== 'success') {
                 throw ValidationException::withMessages([
-                    'otp' => __('messages.failed_to_send_sms'),
+                    'otp' => __('messages.Failed to send SMS'),
                 ]);
             }
             return;
@@ -440,9 +379,8 @@ class CustomerAuthProvider implements CustomerAuthProviderContract
 
         if ($type === 'email' && \config('mail.status')) {
             try {
-                if (Helpers::get_mail_status('forget_password_mail_status_user') == '1') {
-                    Mail::to($user->getRawOriginal('email'))
-                        ->send(new UserPasswordResetMail($token, $user->f_name));
+                if (SendNotification::mailTemplateEnabled('forget_password_mail_status_user')) {
+                    SendNotification::mail($user->getRawOriginal('email'), new UserPasswordResetMail($token, $user->f_name));
                     return;
                 }
             } catch (\Throwable $e) {
@@ -451,7 +389,7 @@ class CustomerAuthProvider implements CustomerAuthProviderContract
         }
 
         throw ValidationException::withMessages([
-            'otp' => __('messages.failed_to_send_otp'),
+            'otp' => __('messages.Failed to send otp'),
         ]);
     }
 
@@ -461,7 +399,7 @@ class CustomerAuthProvider implements CustomerAuthProviderContract
             $value = $this->normalizePhone($value);
         }
 
-        if (in_array(getEnvMode(), ['test', 'demo'], true) && $otp === '123456') {
+        if (isStaticOtpMode() && $otp === STATIC_OTP_CODE) {
             return true;
         }
 
@@ -503,7 +441,7 @@ class CustomerAuthProvider implements CustomerAuthProviderContract
             ]);
         }
 
-        $isTestOk = in_array(getEnvMode(), ['test', 'demo'], true) && $otp === '123456';
+        $isTestOk = isStaticOtpMode() && $otp === STATIC_OTP_CODE;
         $row      = $isTestOk ? null : PasswordReset::withoutGlobalScope(HostScope::class)
             ->where(['token' => $otp])
             ->where($type, $value)
@@ -512,7 +450,7 @@ class CustomerAuthProvider implements CustomerAuthProviderContract
 
         if (!$isTestOk && !$row) {
             throw ValidationException::withMessages([
-                'otp' => __('messages.invalid_otp'),
+                'otp' => __('messages.Invalid OTP.'),
             ]);
         }
 
@@ -547,16 +485,13 @@ class CustomerAuthProvider implements CustomerAuthProviderContract
 
         if (!isset($data['email'])) {
             throw ValidationException::withMessages([
-                '_form' => __('messages.email_does_not_match'),
+                '_form' => __('messages.Email does not match'),
             ]);
         }
 
         $providerEmail = $data['email'];
         $scope = $this->scopeFilter();
 
-        // Find-or-create at this scope. Same Google account at storefront A
-        // and storefront B produces two independent user rows — matching
-        // the "completely standalone storefront" feel.
         $user = $this->userQuery()->where('email', $providerEmail)->where($scope)->first();
         $needsCompletion = false;
 
@@ -587,11 +522,6 @@ class CustomerAuthProvider implements CustomerAuthProviderContract
             $needsCompletion = $user->phone === null;
         }
 
-        // Social authentication may land on a row without a phone (and
-        // possibly without a first name) — defer Laravel's customer-guard
-        // login until `completeProfile()` fills the missing fields. The
-        // pending pointer is what ShareStorefrontProps reads to keep the
-        // completion modal open.
         if (! $this->isProfileComplete($user)) {
             \session([self::PENDING_PROFILE_SESSION_KEY => $user->id]);
 
@@ -619,13 +549,6 @@ class CustomerAuthProvider implements CustomerAuthProviderContract
 
     public function completeProfile(array $data): StorefrontCustomer
     {
-        // Two ways to land here:
-        //   1) Fully authenticated user (e.g. classic register flow that
-        //      logged them in immediately) returning later to fix missing
-        //      fields. `Auth::guard('customer')->user()` resolves them.
-        //   2) OTP/social user whose login was deferred — they are NOT in
-        //      the customer guard yet, and we need to look them up via
-        //      the pending-profile session pointer.
         $user      = Auth::guard('customer')->user();
         $isPending = false;
         if (! $user) {
@@ -647,7 +570,6 @@ class CustomerAuthProvider implements CustomerAuthProviderContract
         $name    = \trim((string) ($data['name']     ?? ''));
         $phone   = $this->normalizePhone($data['phone'] ?? null);
         $email   = $data['email']    ?? null;
-        // Referral crediting rides on the wallet-features master switch.
         $refCode = \config('builder.wallet_features_enabled', true)
             ? ($data['ref_code'] ?? null)
             : null;
@@ -699,10 +621,6 @@ class CustomerAuthProvider implements CustomerAuthProviderContract
         $user->save();
         $this->ensureRefCode($user);
 
-        // Pending users had their login deferred at OTP/social time — now
-        // that the mandatory fields are saved, promote them into the
-        // customer guard for real (and merge any guest cart they built
-        // up while in the half-authenticated state).
         if ($isPending) {
             $this->promotePendingProfileLogin($user);
         }
@@ -727,14 +645,17 @@ class CustomerAuthProvider implements CustomerAuthProviderContract
 
         $scope = $this->scopeFilter();
 
+        $phoneEditable = (bool) config('builder.capabilities.profile.phoneEditable', true);
+        $emailEditable = (bool) config('builder.capabilities.profile.emailEditable', true);
+
         $errors = [];
         if ($fName === '') {
             $errors['f_name'] = [__('The first name field is required.')];
         }
-        if ($phone !== null && $phone !== '' && $this->userQuery()->where('phone', $phone)->where($scope)->where('id', '!=', $user->id)->exists()) {
+        if ($phoneEditable && $phone !== null && $phone !== '' && $this->userQuery()->where('phone', $phone)->where($scope)->where('id', '!=', $user->id)->exists()) {
             $errors['phone'] = [__('The phone has already been taken.')];
         }
-        if ($email !== null && $email !== '' && $this->userQuery()->where('email', $email)->where($scope)->where('id', '!=', $user->id)->exists()) {
+        if ($emailEditable && $email !== null && $email !== '' && $this->userQuery()->where('email', $email)->where($scope)->where('id', '!=', $user->id)->exists()) {
             $errors['email'] = [__('The email has already been taken.')];
         }
         if ($password !== null && $password !== '' && \strlen($password) < 6) {
@@ -750,10 +671,10 @@ class CustomerAuthProvider implements CustomerAuthProviderContract
         if ($lName !== null) {
             $user->l_name = $lName;
         }
-        if ($phone !== null && $phone !== '' && $phone !== $user->phone) {
+        if ($phoneEditable && $phone !== null && $phone !== '' && $phone !== $user->phone) {
             $user->phone = $phone;
         }
-        if ($email !== null && $email !== '' && $email !== $user->email) {
+        if ($emailEditable && $email !== null && $email !== '' && $email !== $user->email) {
             $user->email = $email;
             $user->is_email_verified = 0;
         }
@@ -761,12 +682,7 @@ class CustomerAuthProvider implements CustomerAuthProviderContract
             $user->password = \bcrypt($password);
         }
         if ($image) {
-            $user->image = Helpers::update(
-                dir: 'profile/',
-                old_image: $user->image,
-                format: 'png',
-                image: $image,
-            );
+            $user->image = FileStorage::update(dir: 'profile/', old_image: $user->image,image: $image);
         }
 
         $user->save();
@@ -902,7 +818,7 @@ class CustomerAuthProvider implements CustomerAuthProviderContract
         if (!$user || !$user->status) {
             Auth::guard('customer')->logout();
             throw ValidationException::withMessages([
-                '_form' => __('messages.your_account_is_blocked'),
+                '_form' => __('messages.Your account is blocked'),
             ]);
         }
     }
@@ -933,10 +849,6 @@ class CustomerAuthProvider implements CustomerAuthProviderContract
     {
         $s = $this->loginSettings();
 
-        // Reflect admin toggles. If the manual-login key was never seeded
-        // (fresh / un-migrated install) default it to enabled so the
-        // storefront isn't locked out; an explicit 0 is respected. OTP is
-        // opt-in.
         return [
             'manual' => \array_key_exists('manual_login_status', $s)
                 ? (int) $s['manual_login_status'] === 1
@@ -947,15 +859,11 @@ class CustomerAuthProvider implements CustomerAuthProviderContract
 
     private function loginSettings(): array
     {
-        return \array_column(
-            BusinessSetting::whereIn('key', [
+        return Helpers::get_business_settings_many([
                 'manual_login_status', 'otp_login_status', 'social_login_status',
                 'google_login_status', 'facebook_login_status', 'apple_login_status',
                 'email_verification_status', 'phone_verification_status',
-            ])->get(['key', 'value'])->toArray(),
-            'value',
-            'key',
-        );
+            ]);
     }
 
     private function markVerified(User $user, string $type): void
@@ -975,11 +883,11 @@ class CustomerAuthProvider implements CustomerAuthProviderContract
         if ($existing && Carbon::parse($existing->updated_at)->diffInSeconds() < self::OTP_INTERVAL_SECONDS) {
             $remaining = round(self::OTP_INTERVAL_SECONDS - Carbon::parse($existing->updated_at)->diffInSeconds());
             throw ValidationException::withMessages([
-                'otp' => __('messages.please_try_again_after_') . $remaining . ' ' . __('messages.seconds'),
+                'otp' => __('messages.Please try again after') . $remaining . ' ' . __('messages.seconds'),
             ]);
         }
 
-        $otp = in_array(getEnvMode(), ['test', 'demo'], true) ? '123456' : (string) \rand(100000, 999999);
+        $otp = generateOtpCode();
 
         DB::table('phone_verifications')->updateOrInsert(
             ['phone' => $phone] + $scope,
@@ -997,14 +905,14 @@ class CustomerAuthProvider implements CustomerAuthProviderContract
 
         if ($this->sendSms($phone, $otp) !== 'success') {
             throw ValidationException::withMessages([
-                'otp' => __('messages.failed_to_send_sms'),
+                'otp' => __('messages.Failed to send SMS'),
             ]);
         }
     }
 
     private function issueEmailOtp(string $email, string $name): void
     {
-        $otp = in_array(getEnvMode(), ['test', 'demo'], true) ? '123456' : (string) \rand(100000, 999999);
+        $otp = generateOtpCode();
 
         DB::table('email_verifications')->updateOrInsert(
             ['email' => $email] + $this->scopeFilter(),
@@ -1016,8 +924,8 @@ class CustomerAuthProvider implements CustomerAuthProviderContract
         }
 
         try {
-            if (\config('mail.status') && Helpers::get_mail_status('registration_otp_mail_status_user') == '1') {
-                Mail::to($email)->send(new EmailVerification($otp, $name));
+            if (SendNotification::canSendMail('registration_otp_mail_status_user')) {
+                SendNotification::mail($email, new EmailVerification($otp, $name));
                 return;
             }
         } catch (\Throwable $e) {
@@ -1025,7 +933,7 @@ class CustomerAuthProvider implements CustomerAuthProviderContract
         }
 
         throw ValidationException::withMessages([
-            'otp' => __('messages.failed_to_send_mail'),
+            'otp' => __('messages.Failed to send mail'),
         ]);
     }
 
@@ -1041,7 +949,7 @@ class CustomerAuthProvider implements CustomerAuthProviderContract
             && Carbon::parse($row->temp_block_time)->diffInSeconds() <= self::OTP_BLOCK_SECONDS) {
             $time = round(self::OTP_BLOCK_SECONDS - Carbon::parse($row->temp_block_time)->diffInSeconds());
             throw ValidationException::withMessages([
-                'otp' => __('messages.please_try_again_after_') . CarbonInterval::seconds($time)->cascade()->forHumans(),
+                'otp' => __('messages.Please try again after') . CarbonInterval::seconds($time)->cascade()->forHumans(),
             ]);
         }
 
@@ -1064,7 +972,7 @@ class CustomerAuthProvider implements CustomerAuthProviderContract
                 'updated_at'      => now(),
             ]);
             throw ValidationException::withMessages([
-                'otp' => __('messages.Too_many_attemps'),
+                'otp' => __('messages.Too many attempts'),
             ]);
         }
 
@@ -1087,7 +995,7 @@ class CustomerAuthProvider implements CustomerAuthProviderContract
             && Carbon::parse($row->temp_block_time)->diffInSeconds() <= self::OTP_BLOCK_SECONDS) {
             $time = round(self::OTP_BLOCK_SECONDS - Carbon::parse($row->temp_block_time)->diffInSeconds());
             throw ValidationException::withMessages([
-                'otp' => __('messages.please_try_again_after_') . CarbonInterval::seconds($time)->cascade()->forHumans(),
+                'otp' => __('messages.Please try again after') . CarbonInterval::seconds($time)->cascade()->forHumans(),
             ]);
         }
 
@@ -1110,7 +1018,7 @@ class CustomerAuthProvider implements CustomerAuthProviderContract
                 'created_at'      => now(),
             ]);
             throw ValidationException::withMessages([
-                'otp' => __('messages.Too_many_attemps'),
+                'otp' => __('messages.Too many attempts'),
             ]);
         }
 
@@ -1123,42 +1031,25 @@ class CustomerAuthProvider implements CustomerAuthProviderContract
 
     private function sendSms(string $phone, string $token): ?string
     {
-        $publishedStatus = 0;
-        $paymentPublished = \config('get_payment_publish_status');
-        if (isset($paymentPublished[0]['is_published'])) {
-            $publishedStatus = $paymentPublished[0]['is_published'];
-        }
-
-        return $publishedStatus == 1
-            ? SmsGateway::send($phone, $token)
-            : SMS_module::send($phone, $token);
+        return Sms::deliver($phone, $token);
     }
 
     private function resolveReferrer(string $refCode, string $newPhone, string $firstName, string $lastName): ?int
     {
-        $refStatus = BusinessSetting::where('key', 'ref_earning_status')->first()?->value;
+        $refStatus = Helpers::get_business_settings('ref_earning_status', false);
         if ($refStatus != '1') {
             throw ValidationException::withMessages([
                 'ref_code' => __('messages.referer_disable'),
             ]);
         }
 
-        // Ref codes are per-storefront (composite UNIQUE on ref_code +
-        // tenant_id + sub_tenant_id). A code from storefront A is not
-        // valid at storefront B and vice versa.
         $referrer = $this->userQuery()->where('ref_code', $refCode)->where($this->scopeFilter())->first();
         if (!$referrer || !$referrer->status) {
             throw ValidationException::withMessages([
-                'ref_code' => __('messages.referer_code_not_found'),
+                'ref_code' => __('messages.Referer code not found'),
             ]);
         }
 
-        // "Has this phone already claimed a referral here?" — scope via the
-        // user relation so a phone used at storefront A doesn't block its
-        // independent use at storefront B. WalletTransaction has no scope
-        // column of its own; the User model's HostScope is bypassed via
-        // withoutGlobalScopes() so the join can see other-scope users too,
-        // then we explicitly narrow to the current scope.
         if (WalletTransaction::where('reference', $newPhone)
                 ->whereHas('user', fn ($q) => $q->withoutGlobalScope(HostScope::class)->where($this->scopeFilter()))
                 ->exists()) {
@@ -1167,22 +1058,10 @@ class CustomerAuthProvider implements CustomerAuthProviderContract
             ]);
         }
 
-        if (Helpers::getNotificationStatusData('customer', 'customer_new_referral_join', 'push_notification_status')
+        if (SendNotification::channelEnabled('customer', 'customer_new_referral_join', 'push_notification_status')
             && $referrer->cm_firebase_token) {
-            $notif = [
-                'title'       => __('messages.Your_referral_code_is_used_by') . ' ' . $firstName . ' ' . $lastName,
-                'description' => __('Be prepare to receive when they complete there first purchase'),
-                'order_id'    => 1,
-                'image'       => '',
-                'type'        => 'referral_code',
-            ];
-            Helpers::send_push_notif_to_device($referrer->cm_firebase_token, $notif);
-            DB::table('user_notifications')->insert([
-                'data'       => \json_encode($notif),
-                'user_id'    => $referrer->id,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
+            $notif = NotificationMessages::referralCodeUsed($firstName, $lastName);
+            SendNotification::pushToCustomer($referrer->id, $referrer->cm_firebase_token, $notif);
         }
 
         return $referrer->id;

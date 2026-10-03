@@ -14,29 +14,27 @@ class ReviewController extends Controller
 {
     public function index(Request $request)
     {
-        $key = explode(' ', $request['search']);
-        $reviews = Review::whereHas('item', function($query) use($key){
-            return $query->where('store_id', Helpers::get_store_id())->when(isset($key) , function($query) use($key){
+        $key = explode(' ', $request['search'] ?? '');
+        $reviews = Review::with(['storage', 'item.storage', 'customer.storage'])->whereHas('item', function($query) use($key){
+            return $query->where('store_id', Helpers::get_store_id())->when($key[0] ?? false, function($query) use($key){
                 foreach ($key as $value) {
                     $query->Where('name', 'like', "%{$value}%");
                 }
             });
         })
-
         ->latest()->paginate(config('default_pagination'));
         return view('vendor-views.review.index', compact('reviews'));
     }
     public function reviewsExport(Request $request)
     {
-        $key = explode(' ', $request['search']);
+        $key = explode(' ', $request['search'] ?? '');
         $reviews = Review::whereHas('item', function($query) use($key){
-            return $query->where('store_id', Helpers::get_store_id())->when(isset($key) , function($query) use($key){
+            return $query->where('store_id', Helpers::get_store_id())->when($key[0] ?? false, function($query) use($key){
                 foreach ($key as $value) {
                     $query->Where('name', 'like', "%{$value}%");
                 }
             });
         })
-
         ->latest()->get();
 
         $data = [
@@ -63,7 +61,7 @@ class ReviewController extends Controller
         $review->store_id = Helpers::get_store_id();
         $review->save();
 
-        Toastr::success(translate('messages.review_reply_updated'));
+        Toastr::success(translate('messages.Review reply updated'));
         return to_route('vendor.reviews');
     }
 }

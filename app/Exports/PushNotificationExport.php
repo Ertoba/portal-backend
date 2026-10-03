@@ -3,7 +3,6 @@
 namespace App\Exports;
 
 use Illuminate\Contracts\View\View;
-use Illuminate\Support\Facades\Config;
 use Maatwebsite\Excel\Concerns\FromView;
 use Maatwebsite\Excel\Events\AfterSheet;
 use Maatwebsite\Excel\Concerns\Exportable;
@@ -14,14 +13,12 @@ use Maatwebsite\Excel\Concerns\WithHeadings;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
-use App\CentralLogics\Helpers;
 use PhpOffice\PhpSpreadsheet\Worksheet\Drawing;
 class PushNotificationExport implements  FromView, ShouldAutoSize, WithStyles ,WithHeadings, WithEvents
 {
 
     use Exportable;
     protected $data;
-    // protected $search;
 
     public function __construct($data) {
         $this->data = $data;
@@ -59,12 +56,11 @@ class PushNotificationExport implements  FromView, ShouldAutoSize, WithStyles ,W
         ];
         $sheet->getStyle('A1:C1')->applyFromArray($styleArray);
         return [
-            // Define the style for cells with data
             'A1:G'.$this->data['data']->count() +3 => [
                 'borders' => [
                     'allBorders' => [
                         'borderStyle' => Border::BORDER_THIN,
-                        'color' => ['argb' => '000000'], // Specify the color of the border (optional)
+                        'color' => ['argb' => '000000'],
                     ],
                 ],
             ],
@@ -89,7 +85,7 @@ class PushNotificationExport implements  FromView, ShouldAutoSize, WithStyles ,W
     {
         return [
             AfterSheet::class => function(AfterSheet $event) {
-                $event->sheet->getStyle('A1:G1') // Adjust the range as per your needs
+                $event->sheet->getStyle('A1:G1')
                     ->getAlignment()
                     ->setHorizontal(Alignment::HORIZONTAL_CENTER)
                     ->setVertical(Alignment::VERTICAL_CENTER);

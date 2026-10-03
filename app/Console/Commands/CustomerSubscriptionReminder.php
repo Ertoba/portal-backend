@@ -2,12 +2,12 @@
 
 namespace App\Console\Commands;
 
-use App\Traits\ManagesProCustomerSubscription;
+use App\Traits\Payment\ProCustomerSubscriptionTrait;
 use Illuminate\Console\Command;
 
 class CustomerSubscriptionReminder extends Command
 {
-    use ManagesProCustomerSubscription;
+    use ProCustomerSubscriptionTrait;
 
     protected $signature   = 'customer-subscription:reminder';
     protected $description = 'Send notification to Pro customers whose subscription is nearing expiration';

@@ -1,6 +1,6 @@
 @extends('layouts.admin.app')
 
-@section('title', translate('email_template'))
+@section('title', translate('Email template'))
 @push('css_or_js')
 <link rel="stylesheet" href="{{asset('public/assets/admin/css/view-pages/email-templates.css')}}">
 @endpush
@@ -8,7 +8,6 @@
 
 @section('content')
     <div class="content container-fluid">
-        <!-- Page Header -->
         <div class="page-header">
             @include('admin-views.business-settings.email-format-setting.partials.email-template-header')
             @include('admin-views.business-settings.email-format-setting.partials.dm-email-template-setting-links')
@@ -17,13 +16,13 @@
         <div class="tab-content">
             <div class="tab-pane fade show active">
                 <div class="card mb-3">
-                    @php($mail_status=\App\Models\BusinessSetting::where('key','withdraw_approve_mail_status_dm')->first()?->value ?? '0')
+                    @php($mail_status=\App\CentralLogics\Helpers::get_business_settings('withdraw_approve_mail_status_dm', false) ?? '0')
 
                     <div class="card-body">
                         <div class="maintenance-mode-toggle-bar d-flex flex-wrap justify-content-between border rounded align-items-center p-2">
                             <h5 class="text-capitalize m-0 text--primary pl-2">
-                                {{translate('Send_Mail_On_Withdraw_approve?')}}
-                        <span class="form-label-secondary text--primary" data-toggle="tooltip" data-placement="right" data-original-title="{{ translate('If_a_Delivery_man_requests_for_a_withdrawal_and_Admin_approves_it,_the_Delivery_man_will_get_an_automated_Withdraw_Approval_email_from_the_system') }}">
+                                {{translate('Send Mail On Withdraw approve?')}}
+                        <span class="form-label-secondary text--primary" data-toggle="tooltip" data-placement="right" data-original-title="{{ translate('Deliverymen get an automated email when a withdrawal request is approved.') }}">
                                     <img src="{{asset('public/assets/admin/img/info-circle.svg')}}" alt="">
                                 </span>
                             </h5>
@@ -33,10 +32,10 @@
                                        data-type="status"
                                        data-image-on='{{asset('/public/assets/admin/img/modal')}}/place-order-on.png'
                                        data-image-off="{{asset('/public/assets/admin/img/modal')}}/place-order-off.png"
-                                       data-title-on="{{translate('Want_to_enable_Withdraw_approve_mail?')}}"
-                                       data-title-off="{{translate('Want_to_disable_Withdraw_approve_mail?')}}"
-                                       data-text-on="<p>{{translate('If_enabled,_Delivery_men_will_receive_an_approval_mail_for_requesting_a_withdrawal.')}}</p>"
-                                       data-text-off="<p>{{translate('If_disabled,_Delivery_men_will_not_receive_any_Withdraw_Approval_mail.')}}</p>"
+                                       data-title-on="{{translate('Want to enable withdraw approve mail?')}}"
+                                       data-title-off="{{translate('Want to disable withdraw approve mail?')}}"
+                                       data-text-on="<p>{{translate('If enabled, Delivery men will receive an approval mail for requesting a withdrawal.')}}</p>"
+                                       data-text-off="<p>{{translate('If disabled, Delivery men will not receive any Withdraw Approval mail.')}}</p>"
                                        id="mail-status" {{$mail_status == '1'?'checked':''}}>
 
                                 <span class="toggle-switch-label text mb-0">
@@ -68,15 +67,13 @@
                                 <div class="right-content">
                                     <div class="d-flex flex-wrap justify-content-between __gap-15px mt-2 mb-5">
                                         @php($data=\App\Models\EmailTemplate::withoutGlobalScope('translate')->where('type','dm')->where('email_type', 'withdraw_approve')->first())
-                                        @php($language=\App\Models\BusinessSetting::where('key','language')->first())
-                                        @php($language = $language->value ?? null)
-                                        @php($defaultLang = str_replace('_', '-', app()->getLocale()))
+                                        @php($language = \App\CentralLogics\Helpers::get_business_settings('language', false) ?? null)
                                         @if($language)
                                             <ul class="nav nav-tabs m-0 border-0">
                                                 <li class="nav-item">
                                                     <a class="nav-link lang_link active"
                                                     href="#"
-                                                    id="default-link">{{translate('messages.default')}}</a>
+                                                    id="default-link">{{translate('Default')}}</a>
                                                 </li>
                                                 @foreach (json_decode($language) as $lang)
                                                     <li class="nav-item">
@@ -102,7 +99,7 @@
                                         </h5>
                                         <label class="custom-file">
                                             <input type="file" name="icon" id="mail-icon" class="custom-file-input" accept=".webp, .jpg, .png, .jpeg, .gif, .bmp, .tif, .tiff|image/*">
-                                            <span class="custom-file-label">{{ translate('messages.Choose File') }}</span>
+                                            <span class="custom-file-label">{{ translate('Choose file') }}</span>
                                         </label>
                                     </div>
                                     <br>
@@ -114,12 +111,12 @@
                                         @if ($language)
                                             <div class="__bg-F8F9FC-card default-form lang_form" id="default-form">
                                                 <div class="form-group">
-                                                    <label class="form-label">{{translate('Main Title')}}({{ translate('messages.default') }})</label>
+                                                    <label class="form-label">{{translate('Main Title')}}({{ translate('Default') }})</label>
                                                     <input type="text" name="title[]" value="{{ $data?->getRawOriginal('title') }}" data-id="mail-title" placeholder="Order has been placed successfully !" class="form-control">
                                                 </div>
                                                 <div class="form-group mb-0">
                                                     <label class="form-label">
-                                                        {{ translate('Mail Body Message') }}({{ translate('messages.default') }})
+                                                        {{ translate('Mail Body Message') }}({{ translate('Default') }})
 
                                                     </label>
                                                     <textarea class="form-control" id="ckeditor" data-id="mail-body" name="body[]">
@@ -172,7 +169,7 @@
 
                                                     </label>
                                                     <textarea class="ckeditor form-control" name="body[]">
-                                                      {{ translate('Hi_Sabrina') }},
+                                                      {{ translate('Hi Sabrina') }},
                                                     </textarea>
                                                 </div>
                                             </div>
@@ -184,7 +181,7 @@
                                     <div>
                                         <h5 class="card-title mb-3">
                                             <img src="{{asset('public/assets/admin/img/pointer.png')}}" class="mr-2" alt="">
-                                            {{translate('Button Content')}}
+                                            {{translate('Button content')}}
                                         </h5>
                                         <div class="__bg-F8F9FC-card">
                                             <div class="row g-3">
@@ -192,10 +189,10 @@
                                                     @if ($language)
                                                         <div class="form-group m-0 lang_form default-form">
                                                             <label class="form-label text-capitalize">
-                                                                {{translate('Button Name')}}({{ translate('messages.default') }})
+                                                                {{translate('Button name')}}({{ translate('Default') }})
 
                                                             </label>
-                                                            <input type="text" data-id="mail-button" name="button_name[]"  placeholder="{{translate('Ex: Order now')}}" class="form-control h--45px" value="{{ $data?->getRawOriginal('button_name') }}">
+                                                            <input type="text" data-id="mail-button" name="button_name[]"  placeholder="{{translate('Ex') . ': ' . translate('Order now')}}" class="form-control h--45px" value="{{ $data?->getRawOriginal('button_name') }}">
                                                         </div>
                                                     @foreach(json_decode($language) as $lang)
                                                     <?php
@@ -211,19 +208,19 @@
                                                         ?>
                                                         <div class="form-group m-0 d-none lang_form" id="{{$lang}}-form1">
                                                             <label class="form-label text-capitalize">
-                                                                {{translate('Button Name')}}({{strtoupper($lang)}})
+                                                                {{translate('Button name')}}({{strtoupper($lang)}})
 
                                                             </label>
-                                                            <input type="text" name="button_name[]"  placeholder="{{translate('Ex: Order now')}}" class="form-control h--45px" value="{{ $translate[$lang]['button_name']??'' }}">
+                                                            <input type="text" name="button_name[]"  placeholder="{{translate('Ex') . ': ' . translate('Order now')}}" class="form-control h--45px" value="{{ $translate[$lang]['button_name']??'' }}">
                                                         </div>
                                                     @endforeach
                                                 @else
                                                 <div class="form-group m-0">
                                                     <label class="form-label text-capitalize">
-                                                        {{translate('Button Name')}}
+                                                        {{translate('Button name')}}
 
                                                     </label>
-                                                    <input type="text" placeholder="{{translate('Ex: Order now')}}" class="form-control h--45px" name="button_name[]" value="">
+                                                    <input type="text" placeholder="{{translate('Ex') . ': ' . translate('Order now')}}" class="form-control h--45px" name="button_name[]" value="">
                                                 </div>
                                                 @endif
                                                 </div>
@@ -233,7 +230,7 @@
                                                             {{translate('Redirect Link')}}
 
                                                         </label>
-                                                        <input type="text" name="button_url" placeholder="{{ translate('Please_contact_us_for_any_queries;_we’re_always_happy_to_help.') }}"class="form-control" value="{{ $data['button_url']??'' }}">
+                                                        <input type="text" name="button_url" placeholder="{{ translate('Please contact us for any queries; we\'re always happy to help.') }}"class="form-control" value="{{ $data['button_url']??'' }}">
                                                     </div>
                                                 </div>
                                             </div>
@@ -250,9 +247,9 @@
                                                 @if ($language)
                                                         <div class="form-group lang_form default-form">
                                                             <label class="form-label">
-                                                                {{translate('Section Text')}}({{ translate('messages.default') }})
+                                                                {{translate('Section Text')}}({{ translate('Default') }})
                                                             </label>
-                                                            <input type="text" data-id="mail-footer" name="footer_text[]"  placeholder="{{ translate('Please_contact_us_for_any_queries;_we’re_always_happy_to_help.') }}"class="form-control" value="{{ $data?->getRawOriginal('footer_text') }}">
+                                                            <input type="text" data-id="mail-footer" name="footer_text[]"  placeholder="{{ translate('Please contact us for any queries; we\'re always happy to help.') }}"class="form-control" value="{{ $data?->getRawOriginal('footer_text') }}">
                                                         </div>
                                                     @foreach(json_decode($language) as $lang)
                                                     <?php
@@ -270,7 +267,7 @@
                                                             <label class="form-label">
                                                                 {{translate('Section Text')}}({{strtoupper($lang)}})
                                                             </label>
-                                                            <input type="text" name="footer_text[]"  placeholder="{{ translate('Please_contact_us_for_any_queries;_we’re_always_happy_to_help.') }}"class="form-control" value="{{ $translate[$lang]['footer_text']??'' }}">
+                                                            <input type="text" name="footer_text[]"  placeholder="{{ translate('Please contact us for any queries; we\'re always happy to help.') }}"class="form-control" value="{{ $translate[$lang]['footer_text']??'' }}">
                                                         </div>
                                                     @endforeach
                                                 @else
@@ -279,7 +276,7 @@
                                                         {{translate('Section Text')}}
 
                                                     </label>
-                                                    <input type="text" placeholder="{{ translate('Please_contact_us_for_any_queries;_we’re_always_happy_to_help.') }}"class="form-control" name="footer_text[]" value="">
+                                                    <input type="text" placeholder="{{ translate('Please contact us for any queries; we\'re always happy to help.') }}"class="form-control" name="footer_text[]" value="">
                                                 </div>
                                                 @endif
                                                     @include('admin-views.business-settings.email-format-setting.partials.social-media-and-footer-section')
@@ -287,7 +284,7 @@
                                                 @if ($language)
                                                         <div class="form-group lang_form default-form">
                                                             <label class="form-label">
-                                                                {{translate('Copyright Content')}}({{ translate('messages.default') }})
+                                                                {{translate('Copyright Content')}}({{ translate('Default') }})
                                                             </label>
                                                             <input type="text" data-id="mail-copyright" name="copyright_text[]"  placeholder="{{ \App\CentralLogics\Helpers::copyright_placeholder() }}" class="form-control" value="{{ $data?->getRawOriginal('copyright_text') }}">
                                                         </div>
@@ -323,8 +320,8 @@
                                         </div>
                                     </div>
                                     <div class="btn--container justify-content-end mt-20">
-                                        <button type="reset" id="reset_btn" class="btn btn--reset">{{translate('Reset')}}</button>
-                                        <button type="submit" class="btn btn--primary">{{translate('Save')}}</button>
+                                        <button type="reset" id="reset_btn" class="btn btn--reset"><i class="tio-refresh"></i> {{translate('Reset')}}</button>
+                                        <button type="submit" class="btn btn--primary"><i class="tio-save"></i> {{translate('Save')}}</button>
                                     </div>
                                 </div>
                             </div>
@@ -336,15 +333,12 @@
         </div>
 
 
-        <!-- Instructions Modal -->
 @include('admin-views.business-settings.email-format-setting.partials.email-template-instructions')
 
     </div>
 
 @endsection
 @push('script_2')
-    <!-- Email Template-->
     <script src="{{asset('public/assets/admin/ckeditor/ckeditor.js')}}"></script>
     <script src="{{asset('public/assets/admin/js/view-pages/email-templates.js')}}"></script>
-    <!-- Email Template End-->
 @endpush

@@ -1,6 +1,6 @@
 <div class="row">
     <div class="col-lg-12 text-center ">
-        <h3>{{ translate('delivery_man_referral_and_earn_history') }}</h3>
+        <h3>{{ translate('Deliveryman referral and earn history') }}</h3>
     </div>
     <div class="col-lg-12">
 
@@ -10,15 +10,15 @@
             <thead>
                 <tr>
                     <th>
-                        {{ translate('name')  }}- {{ $data['dm']->f_name . ' ' . $data['dm']->l_name}}
+                        {{ translate('Name')  }}- {{ $data['dm']->f_name . ' ' . $data['dm']->l_name}}
                         <br>
-                        {{ translate('phone')  }}- {{ $data['dm']->phone}}
+                        {{ translate('Phone')  }}- {{ $data['dm']->phone}}
                         <br>
                         {{ translate('email')  }}- {{ $data['dm']->email}}
                         <br>
-                        {{ translate('total_rating')  }}- {{ count($data['dm']->rating)}}
+                        {{ translate('Total rating')  }}- {{ count($data['dm']->rating)}}
                         <br>
-                        {{ translate('average_review')  }}-
+                        {{ translate('Average review')  }}-
                         {{count($data['dm']->rating) > 0 ? number_format($data['dm']->rating[0]->average, 1, '.', ' ') : 0}}
 
                     </th>
@@ -32,8 +32,8 @@
                     <th>{{ translate('SL') }}</th>
                     <th>{{translate('messages.Transaction ID')}}</th>
                     <th>{{translate('messages.Date')}}</th>
-                    <th>{{translate('messages.Amount')}}</th>
-                    <th>{{translate('messages.Reference')}}</th>
+                    <th>{{translate('Amount')}}</th>
+                    <th>{{translate('messages.reference')}}</th>
 
             </thead>
             <tbody>
@@ -51,7 +51,7 @@
                                         </div>
                                          @if ($referralEarning->refer_type == 'referrerBonus')
                                             <div>
-                                                <span class="text--title">({{ translate('messages.Referral_Bonus') }})</span>
+                                                <span class="text--title">({{ translate('Referral bonus') }})</span>
                                             </div>
                                             @endif
                                     </td>

@@ -1,6 +1,6 @@
 @extends('layouts.admin.app')
 
-@section('title',translate('messages.Reels_List'))
+@section('title',translate('Reels list'))
 
 @push('css_or_js')
 <meta name="csrf-token" content="{{ csrf_token() }}">
@@ -14,14 +14,14 @@
     <div class="row g-3">
         <div class="col-12">
             <div class="card card-body">
-                <h4 class="mb-3">{{ translate('Reels_Overview') }}</h4>
+                <h4 class="mb-3">{{ translate('Reels overview') }}</h4>
                 <div class="row g-3">
                     <div class="col-sm-6 col-xl-3">
                         <a href="#" class="h-100">
                             <div class="p-3 rounded-10 d-flex justify-content-between align-items-start gap-2 flex-wrap overflow-wrap-anywhere h-100 bg-purple bg-opacity-10">
                                 <div class="flex-grow-1">
                                    <h3 class="fs-20 mb-1">37</h3>
-                                   <p class="text-muted mb-0">{{ translate('Total_Reels') }}</p>
+                                   <p class="text-muted mb-0">{{ translate('Total reels') }}</p>
                                </div>
                                <div class="flex-shrink-0 bg-white p-2 rounded-10 lh--1">
                                     <i class="tio-video-camera-outlined text-purple fs-20"></i>
@@ -34,7 +34,7 @@
                             <div class="p-3 rounded-10 d-flex justify-content-between align-items-start gap-2 flex-wrap overflow-wrap-anywhere h-100 bg-info bg-opacity-10">
                                 <div class="flex-grow-1">
                                    <h3 class="fs-20 mb-1">719.2K</h3>
-                                   <p class="text-muted mb-0">{{ translate('Total_Views') }}</p>
+                                   <p class="text-muted mb-0">{{ translate('Total views') }}</p>
                                    <small class="text-muted fs-12">+12.5% this week</small>
                                </div>
                                <div class="flex-shrink-0 bg-white p-2 rounded-10 lh--1">
@@ -48,7 +48,7 @@
                             <div class="p-3 rounded-10 d-flex justify-content-between align-items-start gap-2 flex-wrap overflow-wrap-anywhere h-100 bg-danger bg-opacity-10">
                                 <div class="flex-grow-1">
                                    <h3 class="fs-20 mb-1">719.2K</h3>
-                                   <p class="text-muted mb-0">{{ translate('Total_Likes') }}</p>
+                                   <p class="text-muted mb-0">{{ translate('Total likes') }}</p>
                                    <small class="text-muted fs-12">+12.5% this week</small>
                                </div>
                                <div class="flex-shrink-0 bg-white p-2 rounded-10 lh--1">
@@ -62,7 +62,7 @@
                             <div class="p-3 rounded-10 d-flex justify-content-between align-items-start gap-2 flex-wrap overflow-wrap-anywhere h-100 bg-success bg-opacity-10">
                                 <div class="flex-grow-1">
                                    <h3 class="fs-20 mb-1">719.2K</h3>
-                                   <p class="text-muted mb-0">{{ translate('Store_Visits') }}</p>
+                                   <p class="text-muted mb-0">{{ translate('Store visits') }}</p>
                                    <small class="text-muted fs-12">+12.5% this week</small>
                                </div>
                                <div class="flex-shrink-0 bg-white p-2 rounded-10 lh--1">
@@ -77,7 +77,7 @@
         <div class="col-lg-6">
             <div class="card h-100">
                 <div class="card-header border-0 pb-0">
-                    <h4 class="mb-0">{{ translate('Views_Trend') }}</h4>
+                    <h4 class="mb-0">{{ translate('Views Trend') }}</h4>
                 </div>
                 <div class="card-body px-1 px-sm-2 py-0">
                     <div id="view-trend-chart"></div>
@@ -87,7 +87,7 @@
         <div class="col-lg-6">
             <div class="card h-100">
                 <div class="card-header border-0 pb-0">
-                    <h4 class="mb-0">{{ translate('Customer_Engagement') }}</h4>
+                    <h4 class="mb-0">{{ translate('Customer engagement') }}</h4>
                 </div>
                 <div class="card-body px-0 py-0">
                     <div id="customer-engagement-pie-chart" class="chartjs-custom mx-auto" style="max-width:400px;"></div>
@@ -100,56 +100,50 @@
                     <i class="tio-filter-list fs-24"></i>
                 </span>
                 <span>
-                    {{ translate('Reels_list') }}
+                    {{ translate('Reels list') }}
                 </span>
                 <span class="badge badge-soft-dark">15</span>
             </h2>
             <div class="card">
-                <!-- Header -->
                 <div class="card-header py-1 border-0">
                     <div class="search--button-wrapper justify-content-end flex-wrap">
                         <h4 class="flex-grow-1 mb-0">{{ translate('All Store Reels List') }}</h4>
                         <form class="search-form min--260">
-                            <!-- Search -->
                             <div class="input-group input--group">
                                 <input id="datatableSearch_" type="search" name="search" class="form-control h--40px"
-                                    placeholder="{{ translate('messages.Search_here') }}" value="" aria-label="Search" tabindex="1">
+                                    placeholder="{{ translate('Search') }}" value="" aria-label="Search" tabindex="1">
                                 <button type="submit" class="btn btn--secondary"><i class="tio-search"></i></button>
                             </div>
-                            <!-- End Search -->
                         </form>
         
                         <div class="hs-unfold mr-2">
-                            <a class="btn btn-outline-primary btn-white filter-button-show h--40px js-hs-unfold-invoker px-4 w-max-content" href="javascript:;"
-                                data-hs-unfold-invoker="">
+                            <a class="btn btn-outline-primary btn-white filter-button-show h--40px px-4 w-max-content" href="javascript:;"
+                                role="button" aria-expanded="false" aria-controls="datatableFilterSidebar">
                                 <i class="tio-filter-list mr-1"></i> {{ translate('Filter') }} <span class="badge badge-success badge-pill ml-1"
                                     id="filter_count"></span>
                             </a>
                         </div>
         
         
-                        <!-- End Unfold -->
                     </div>
                 </div>
-                <!-- End Header -->
         
-                <!-- Table -->
                 <div class="table-responsive datatable-custom">
                     <table
                         class="table table-hover table-borderless table-thead-bordered table-nowrap table-align-middle card-table fz--14px text-title">
                         <thead class="thead-light">
                             <tr>
                                 <th class="border-0">
-                                    {{ translate('Sl') }}
+                                    {{ translate('SL') }}
                                 </th>
-                                <th class="table-column-pl-0 border-0">{{ translate('Reel Id') }}</th>
+                                <th class="table-column-pl-0 border-0">{{ translate('Reel ID') }}</th>
                                 <th class="border-0">{{ translate('Reel information') }}</th>
                                 <th class="border-0">{{ translate('Store information') }}</th>
-                                <th class="text-center border-0">{{ translate('Total Views') }}</th>
-                                <th class="text-center border-0">{{ translate('Total Likes') }}</th>
-                                <th class="text-center border-0">{{ translate('Total Store visit') }}</th>
-                                <th class="border-0">{{ translate('Reel Duration') }}</th>
-                                <th class="text-center border-0">{{ translate('Reels Status') }}</th>
+                                <th class="text-center border-0">{{ translate('Total views') }}</th>
+                                <th class="text-center border-0">{{ translate('Total likes') }}</th>
+                                <th class="text-center border-0">{{ translate('Total store visit') }}</th>
+                                <th class="border-0">{{ translate('Reel duration') }}</th>
+                                <th class="text-center border-0">{{ translate('Reels status') }}</th>
                                 <th class="text-center border-0">{{ translate('Status') }}</th>
                                 <th class="text-center border-0">{{ translate('Action') }}</th>
                             </tr>
@@ -199,7 +193,7 @@
                                         {{ translate('Expired') }}
                                     </span>
                                     <span class="text-warning bg-warning bg-opacity-10 px-2 py-1 rounded-20 w-max-content mx-auto">
-                                        {{ translate('Deactivated') }}
+                                        {{ translate('Inactive') }}
                                     </span>
                                 </td>
                                 <td>
@@ -209,10 +203,10 @@
                                         data-type="status"
                                         data-image-on="{{ asset('/public/assets/admin/img/modal/reel-stratus-on.png') }}"
                                         data-image-off="{{ asset('/public/assets/admin/img/modal/reel-stratus-off.png') }}"
-                                        data-title-on="{{ translate('want_to_turn_on_the_reel?') }}"
-                                        data-title-off="{{ translate('want_to_turn_off_the_reel?') }}"
-                                        data-text-on="<p>{{ translate('if_you_turn_on_the_reel,_it_will_be_visible_to_customers.') }}</p>"
-                                        data-text-off="<p>{{ translate('if_you_turn_off_the_reel,_it_will_no_longer_be_visible_to_customers.') }}</p>"
+                                        data-title-on="{{ translate('Want to turn on the reel?') }}"
+                                        data-title-off="{{ translate('Want to turn off the reel?') }}"
+                                        data-text-on="<p>{{ translate('If you turn on the reel, it will be visible to customers.') }}</p>"
+                                        data-text-off="<p>{{ translate('If you turn off the reel, it will no longer be visible to customers.') }}</p>"
                                         class="toggle-switch-input dynamic-checkbox" id="stocksCheckbox1">
                                         <span class="toggle-switch-label">
                                             <span class="toggle-switch-indicator"></span>
@@ -221,19 +215,19 @@
                                 </td>
                                 <td>
                                     <div class="btn--container justify-content-center">
-                                        <a class="btn action-btn btn--warning btn-outline-warning action-btn offcanvas-trigger"
+                                        <a class="btn action-btn action-btn--view offcanvas-trigger"
                                             href="javascript:;" data-toggle="offcanvas"
                                                     data-target="#reelsDetailsOffcanvas" title="View details">
-                                            <i class="tio-invisible"></i>
+                                            <i class="tio-visible-outlined"></i>
                                         </a>
-                                        <a class="btn action-btn btn--primary btn-outline-primary" 
+                                        <a class="btn action-btn action-btn--edit" 
                                             href="#" title="Edit item">
                                             <i class="tio-edit"></i>
                                         </a>
-                                        <a class="btn action-btn btn-outline-danger btn--danger" data-toggle="modal"
+                                        <a class="btn action-btn action-btn--delete" data-toggle="modal"
                                                 data-target="#confirmation-deletes-1" data-id="campaign-1"
-                                                data-message="{{translate('messages.Want_to_delete_this_item')}}"
-                                                title="{{translate('messages.delete_campaign')}}"><i class="tio-delete-outlined"></i>
+                                                data-message="{{translate('Want to delete this item?')}}"
+                                                title="{{translate('messages.Delete campaign')}}"><i class="tio-delete-outlined"></i>
                                         </a>
                                         <div class="modal fade" id="confirmation-deletes-1" tabindex="-1" aria-labelledby="exampleModalLabel"
                                                     aria-hidden="true">
@@ -251,15 +245,15 @@
                                                         <div class="modal-body">
                                                             <div class="text-center">
                                                                 <img src="{{asset('public/assets/admin/img/delete.png')}}" alt="icon" class="mb-20">
-                                                                <h3 class="mb-2 fs-18">{{ translate('Want to delete this Reel?') }}</h3>
+                                                                <h3 class="mb-2 fs-18">{{ translate('Want to delete this reel?') }}</h3>
                                                                 <p class="text-wrap mb-0">
                                                                     {{ translate('This reel is currently live and has engagement. If you delete it, it will no longer be visible to customers.') }}
                                                                 </p>
                                                             </div>
                                                         </div>
                                                         <div class="modal-footer justify-content-center border-0 pt-0 mb-1 gap-2">
-                                                            <button type="submit" class="btn min-w-120px btn-danger min-h-45px">{{ translate('messages.Yes, Delete') }}</button>
-                                                            <button type="button" class="btn min-w-120px btn--reset min-h-45px" data-dismiss="modal">{{ translate('messages.cancel') }}</button>
+                                                            <button type="submit" class="btn min-w-120px btn-danger min-h-45px"><i class="tio-delete-outlined"></i> {{ translate('Yes, delete') }}</button>
+                                                            <button type="button" class="btn min-w-120px btn--reset min-h-45px" data-dismiss="modal"><i class="tio-clear-circle-outlined"></i> {{ translate('messages.Cancel') }}</button>
                                                         </div>
                                                     </div>
                                                 </form>
@@ -275,7 +269,6 @@
                         </tbody>
                     </table>
                 </div>
-                <!-- End Table -->
         
         
                 <hr>
@@ -321,19 +314,12 @@
     </div>
 </div>
 
-<!-- Reels Filter sidebar -->
-<div id="datatableFilterSidebar" class="hs-unfold-content_ sidebar sidebar-bordered sidebar-box-shadow initial-hidden w-500px max-w-100">
+<div id="datatableFilterSidebar" class="filter-drawer filter-drawer--wide sidebar sidebar-bordered sidebar-box-shadow">
     <div class="card card-lg sidebar-card sidebar-footer-fixed">
-        <div class="card-header">
-            <h4 class="card-header-title">{{translate('Filter')}}</h4>
-
-            <!-- Toggle Button -->
-            <a class="js-hs-unfold-invoker_ p-1 rounded-circle btn-sm btn-ghost-dark ml-2 filter-button-hide" href="javascript:;">
-                <i class="tio-clear tio-lg"></i>
-            </a>
-            <!-- End Toggle Button -->
-        </div>
-        <!-- Body -->
+        @include('partials._filter-drawer-head', [
+            'fd_title'    => translate('messages.Filter'),
+            'fd_subtitle' => translate('messages.Narrow the reel list down by status, store and date range.'),
+        ])
         <form class="card-body sidebar-body sidebar-scrollbar" action=" method="POST" id="">
             @csrf
 
@@ -345,7 +331,7 @@
                             <label class="custom-control custom-radio mb-0">
                                 <input type="radio" class="custom-control-input" value="active" id="active" name="filter_status[]" checked>
                                 <span class="custom-control-label fs-12 text-capitalize">
-                                    {{ translate('active') }}
+                                    {{ translate('Active') }}
                                 </span>
                             </label>
                         </div>
@@ -353,7 +339,7 @@
                             <label class="custom-control custom-radio mb-0">
                                 <input type="radio" class="custom-control-input" value="inactive" id="inactive" name="filter_status[]">
                                 <span class="custom-control-label fs-12 text-capitalize">
-                                    {{ translate('inactive') }}
+                                    {{ translate('Inactive') }}
                                 </span>
                             </label>
                         </div>
@@ -364,20 +350,20 @@
             <div class="bg-light rounded p-xxl-20 p-3 mb-3 mb-sm-4">
                 <label for="" class="form-label">{{translate('Store')}}</label>
                 <select name="store[]" id="store_ids" class="form-control js-select2-custom" multiple="multiple">
-                    <option value="" disabled selected>{{translate('messages.select_store')}}</option>
+                    <option value="" disabled selected>{{translate('Select store')}}</option>
                     <option value="demo">Demo Store</option>
                 </select>
             </div>
 
             <div class="bg-light rounded p-xxl-20 p-3 mb-3 mb-sm-4">
-                <label for="" class="form-label">{{translate('Reel_Status')}}</label>
+                <label for="" class="form-label">{{translate('Reel Status')}}</label>
                 <div class="py-2 px-3 rounded min-h-45px bg-white">
                     <div class="row g-1">
                         <div class="col-sm-6">
                             <label class="custom_checkbox d-flex align-items-center gap-1 flex-grow-1 m-0 pt-2px">
                                 <input type="checkbox" value="" id="all" name="reel_status[]" checked>
                                 <span class="label-text">
-                                    {{ translate('all') }}
+                                    {{ translate('All') }}
                                 </span>
                             </label>
                         </div>
@@ -385,7 +371,7 @@
                             <label class="custom_checkbox d-flex align-items-center gap-1 flex-grow-1 m-0 pt-2px">
                                 <input type="checkbox" value="" id="upcoming" name="reel_status[]">
                                 <span class="label-text">
-                                    {{ translate('upcoming') }}
+                                    {{ translate('Upcoming') }}
                                 </span>
                             </label>
                         </div>
@@ -393,7 +379,7 @@
                             <label class="custom_checkbox d-flex align-items-center gap-1 flex-grow-1 m-0 pt-2px">
                                 <input type="checkbox" value="" id="live" name="reel_status[]">
                                 <span class="label-text">
-                                    {{ translate('live') }}
+                                    {{ translate('Live') }}
                                 </span>
                             </label>
                         </div>
@@ -401,7 +387,7 @@
                             <label class="custom_checkbox d-flex align-items-center gap-1 flex-grow-1 m-0 pt-2px">
                                 <input type="checkbox" value="" id="expired" name="reel_status[]">
                                 <span class="label-text">
-                                    {{ translate('expired') }}
+                                    {{ translate('Expired') }}
                                 </span>
                             </label>
                         </div>
@@ -409,7 +395,7 @@
                             <label class="custom_checkbox d-flex align-items-center gap-1 flex-grow-1 m-0 pt-2px">
                                 <input type="checkbox" value="" id="deactivated" name="reel_status[]">
                                 <span class="label-text">
-                                    {{ translate('deactivated') }}
+                                    {{ translate('Inactive') }}
                                 </span>
                             </label>
                         </div>
@@ -418,14 +404,14 @@
             </div>
 
             <div class="bg-light rounded p-xxl-20 p-3 mb-3 mb-sm-4">
-                <label for="" class="form-label">{{translate('Sort_By')}}</label>
+                <label for="" class="form-label">{{translate('Sort by')}}</label>
                 <div class="py-2 px-3 rounded min-h-45px bg-white">
                     <div class="row g-1">
                         <div class="col-sm-6">
                             <label class="custom-control custom-radio mb-0">
                                 <input type="radio" class="custom-control-input" value="" id="all" name="sort_by[]" checked>
                                 <span class="custom-control-label fs-12 text-capitalize">
-                                    {{ translate('all') }}
+                                    {{ translate('All') }}
                                 </span>
                             </label>
                         </div>
@@ -433,7 +419,7 @@
                             <label class="custom-control custom-radio mb-0">
                                 <input type="radio" class="custom-control-input" value="" id="most_viewed" name="sort_by[]">
                                 <span class="custom-control-label fs-12 text-capitalize">
-                                    {{ translate('most_viewed') }}
+                                    {{ translate('Most viewed') }}
                                 </span>
                             </label>
                         </div>
@@ -441,7 +427,7 @@
                             <label class="custom-control custom-radio mb-0">
                                 <input type="radio" class="custom-control-input" value="" id="most_liked" name="sort_by[]">
                                 <span class="custom-control-label fs-12 text-capitalize">
-                                    {{ translate('most_liked') }}
+                                    {{ translate('Most liked') }}
                                 </span>
                             </label>
                         </div>
@@ -449,7 +435,7 @@
                             <label class="custom-control custom-radio mb-0">
                                 <input type="radio" class="custom-control-input" value="" id="most_store_visit" name="sort_by[]">
                                 <span class="custom-control-label fs-12 text-capitalize">
-                                    {{ translate('most_store_visit') }}
+                                    {{ translate('Most store visit') }}
                                 </span>
                             </label>
                         </div>
@@ -460,48 +446,44 @@
             <div class="bg-light rounded p-xxl-20 p-3 mb-3 mb-sm-4">
                 <div class="d-flex flex-column gap-3 gap-sm-4">
                     <div class="">
-                        <label for="" class="form-label">{{translate('Reel_Upload_Date')}}</label>
+                        <label for="" class="form-label">{{translate('Reel Upload Date')}}</label>
                         <select name="" id="" class="form-control custom-select">
-                            <option value="all_time">{{translate('All_Time')}}</option>
-                            <option value="this_week">{{translate('This_Week')}}</option>
-                            <option value="this_month">{{translate('This_Month')}}</option>
+                            <option value="all_time">{{translate('All time')}}</option>
+                            <option value="this_week">{{translate('This week')}}</option>
+                            <option value="this_month">{{translate('This month')}}</option>
                             <option value="custom">{{translate('Custom')}}</option>
                         </select>
                     </div>
                     <div class="">
-                        <label for="" class="form-label">{{translate('Start_Date')}}</label>
+                        <label for="" class="form-label">{{translate('Start date')}}</label>
                         <input type="date" class="form-control">
                     </div>
                     <div class="">
-                        <label for="" class="form-label">{{translate('End_Date')}}</label>
+                        <label for="" class="form-label">{{translate('End date')}}</label>
                         <input type="date" class="form-control">
                     </div>
                 </div>
             </div>
 
-            <!-- Footer -->
             <div class="card-footer sidebar-footer">
                 <div class="row gx-2">
                     <div class="col">
-                        <button type="reset" class="btn btn-block btn--reset" id="reset">{{ translate('Reset') }}</button>
+                        <button type="reset" class="btn btn-block btn--reset" id="reset"><i class="tio-clear-circle-outlined"></i> {{ translate('Clear all') }}</button>
                     </div>
                     <div class="col">
-                        <button type="submit" class="btn btn-block btn-primary">{{ translate('messages.Filter') }}</button>
+                        <button type="submit" class="btn btn-block btn-primary"><i class="tio-filter-list"></i> {{ translate('Apply filters') }}</button>
                     </div>
                 </div>
             </div>
-            <!-- End Footer -->
         </form>
     </div>
 </div>
-<!-- End Reels Filter sidebar -->
 
-{{-- Reels Details Offcanvas --}}
 <div id="reelsDetailsOffcanvas" style="overflow-y: auto;"
         class="custom-offcanvas d-flex flex-column justify-content-between global_guideline_offcanvas">
     <div>
         <div class="custom-offcanvas-header bg--secondary d-flex justify-content-between align-items-center px-3 py-3">
-            <h3 class="mb-0">{{ translate('Reels_Details') }}</h3>
+            <h3 class="mb-0">{{ translate('Reels details') }}</h3>
             <button type="button"
                     class="btn-close w-25px h-25px border rounded-circle d-center bg--secondary offcanvas-close fz-15px p-0"
                     aria-label="Close">&times;</button>
@@ -536,14 +518,14 @@
                         {{ translate('Live') }}
                     </span>
                 </div>
-                <h4 class="mb-2">{{ translate('Short Description') }}</h4>
+                <h4 class="mb-2">{{ translate('Short description') }}</h4>
                 <p class="fw-medium mb-0">
                     Authentic Mutton Biryani made with love and traditional spices. Order now! 👌
                 </p>
             </div>
     
             <div class="bg-light p-3 rounded mb-3">
-                <h4 class="mb-2">{{ translate('Reel Validity') }}</h4>
+                <h4 class="mb-2">{{ translate('Reel validity') }}</h4>
                 <div class="d-flex gap-2 align-items-center justify-content-between flex-wrap">
                     <div>
                         Upload Date: <span class="text-title">31 Jul 2025</span>
@@ -555,7 +537,7 @@
             </div>
 
             <div class="bg-light p-3 rounded mb-3">
-                <h4 class="d-flex gap-1 mb-2"><i class="tio-shop"></i> {{ translate('Vendor Information') }}</h4>
+                <h4 class="d-flex gap-1 mb-2"><i class="tio-shop"></i> {{ translate('Vendor information') }}</h4>
                 <div class="d-flex gap-2 align-items-center">
                     <img class="avatar avatar-70 border onerror-image" 
                         src="{{ asset('public/assets/admin/img/160x160/img2.jpg') }}">
@@ -587,7 +569,7 @@
 
                 <div class="flex-grow-1 text-center stat-item">
                     <div class="fs-12">
-                        <i class="tio-shop-outlined fs-16"></i> {{ translate('Store_Visits') }}
+                        <i class="tio-shop-outlined fs-16"></i> {{ translate('Store visits') }}
                     </div>
                     <h5 class="text-info">125.4K</h5>
                 </div>
@@ -599,7 +581,6 @@
     </div>
 </div>
 <div id="offcanvasOverlay" class="offcanvas-overlay"></div>
-<!-- End Reels Details Offcanvas -->
 @endsection
 
 @push('script')
@@ -615,15 +596,7 @@
             let select2 = $.HSCore.components.HSSelect2.init($(this));
         });
 
-        $('.filter-button-show').on('click', function(){
-            $('#datatableFilterSidebar,.hs-unfold-overlay').show(500);
-            $('body').addClass('modal-open');
-        });
-
-        $('.filter-button-hide').on('click', function(){
-            $('#datatableFilterSidebar,.hs-unfold-overlay').hide(500);
-            $('body').removeClass('modal-open');
-        });
+        // Opening/closing the filter panel is handled globally by filter-drawer.js.
 
     });
 

@@ -1,23 +1,21 @@
 @extends('layouts.admin.app')
-@section('title', translate('messages.social_media'))
+@section('title', translate('messages.Social Media'))
 @push('css_or_js')
-    <!-- Custom styles for this page -->
     <link href="{{ asset('public/assets/admin/css/croppie.css') }}" rel="stylesheet">
 @endpush
 @section('content')
     <div class="content container-fluid">
-        <!-- Page Header -->
         <div class="page-header">
             <h1 class="page-header-title mr-3">
                 <span class="page-header-icon">
-                    <img src="{{asset('/public/assets/admin/img/social.png')}}" class="w--26" alt="">
+                    <img src="{{asset('/public/assets/admin/img/outline/social.svg')}}" class="w--26" alt="">
                 </span>
                 <span>
-                     {{translate('social_media')}}
+                     {{translate('Social Media')}}
                 </span>
             </h1>
+            <p class="page-header-desc">{{ translate('The social accounts linked from your apps and the footer of your website.') }}</p>
         </div>
-        <!-- End Page Header -->
         <div class="card mb-3">
             <div class="card-body">
                 <form class="text-left" action="javascript:">
@@ -25,22 +23,22 @@
                     <div class="form-group">
                         <div class="row">
                             <div class="col-md-6">
-                                <label for="name" class="form-label">{{ translate('messages.name') }}</label>
+                                <label for="name" class="form-label">{{ translate('Name') }}</label>
                                 <select class="form-control w-100" name="name" id="name">
-                                    <option>---{{ translate('messages.select') }}---</option>
-                                    <option value="instagram">{{ translate('messages.Instagram') }}</option>
-                                    <option value="facebook">{{ translate('messages.Facebook') }}</option>
-                                    <option value="twitter">{{ translate('messages.Twitter') }}</option>
-                                    <option value="linkedin">{{ translate('messages.LinkedIn') }}</option>
-                                    <option value="pinterest">{{ translate('messages.Pinterest') }}</option>
+                                    <option>{{ translate('Select') }}</option>
+                                    <option value="instagram">Instagram</option>
+                                    <option value="facebook">Facebook</option>
+                                    <option value="twitter">Twitter</option>
+                                    <option value="linkedin">LinkedIn</option>
+                                    <option value="pinterest">Pinterest</option>
                                 </select>
                             </div>
                             <div class="col-md-6">
                                 <input type="hidden" id="id">
                                 <label for="link"
-                                    class="form-label {{ Session::get('direction') === 'rtl' ? 'mr-1' : '' }}">{{ translate('messages.social_media_link') }}</label>
+                                    class="form-label {{ Session::get('direction') === 'rtl' ? 'mr-1' : '' }}">{{ translate('messages.Social Media Link') }}</label>
                                 <input type="text" name="link" class="form-control" id="link"
-                                    placeholder="{{ translate('messages.social_media_link') }}" required>
+                                    placeholder="{{ translate('messages.Social Media Link') }}" required>
                             </div>
                             <div class="col-md-12">
                                 <input type="hidden" id="id">
@@ -49,9 +47,9 @@
                         </div>
                     </div>
                     <div class="btn--container justify-content-end">
-                        <button type="reset" class="btn btn--reset">{{ translate('messages.reset') }}</button>
-                        <button id="add" class="btn btn--primary">{{ translate('messages.save') }}</button>
-                        <a href="javascript:" id="update" class="initial-hidden btn btn--primary">{{ translate('messages.update') }}</a>
+                        <button type="reset" class="btn btn--reset"><i class="tio-refresh"></i> {{ translate('messages.Reset') }}</button>
+                        <button id="add" class="btn btn--primary"><i class="tio-save"></i> {{ translate('messages.Save') }}</button>
+                        <a href="javascript:" id="update" class="initial-hidden btn btn--primary"><i class="tio-save"></i> {{ translate('Update') }}</a>
                     </div>
                 </form>
             </div>
@@ -62,11 +60,11 @@
                     <table class="table table-borderless table-thead-bordered table-nowrap table-align-middle card-table">
                         <thead class="thead-light">
                             <tr>
-                                <th class="border-0" scope="col">{{ translate('messages.sl') }}</th>
-                                <th class="border-0" scope="col">{{ translate('messages.name') }}</th>
+                                <th class="border-0" scope="col">{{ translate('messages.SL') }}</th>
+                                <th class="border-0" scope="col">{{ translate('Name') }}</th>
                                 <th class="border-0" scope="col">{{ translate('messages.link') }}</th>
-                                <th class="border-0" scope="col">{{ translate('messages.status') }}</th>
-                                <th class="border-0" scope="col">{{ translate('messages.action') }}</th>
+                                <th class="border-0" scope="col">{{ translate('messages.Status') }}</th>
+                                <th class="border-0" scope="col">{{ translate('messages.Action') }}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -107,7 +105,7 @@
                                     </span>
                                 </label>
                         </td>`;
-                            html += '<td><a type="button" class="btn btn--primary btn-outline-primary edit action-btn" id="' + data[
+                            html += '<td><a type="button" class="btn edit action-btn action-btn--edit" id="' + data[
                                 count].id + '"><i class="tio-edit"></i></a> </td></tr>';
                         }
                         $('tbody').html(html);
@@ -121,11 +119,11 @@
             let name = $('#name').val();
             let link = $('#link').val();
             if (name === "") {
-                toastr.error('{{ translate('messages.social_media_required') }}.');
+                toastr.error('{{ translate('messages.Social media required') }}.');
                 return false;
             }
             if (link === "") {
-                toastr.error('{{ translate('messages.social_media_required') }}.');
+                toastr.error('{{ translate('messages.Social media required') }}.');
                 return false;
             }
             $.ajaxSetup({
@@ -143,9 +141,9 @@
                 },
                 success: function(response) {
                     if (response.error === 1) {
-                        toastr.error('{{ translate('messages.social_media_exist') }}');
+                        toastr.error('{{ translate('messages.Social media exist') }}');
                     } else {
-                        toastr.success('{{ translate('messages.social_media_inserted') }}.');
+                        toastr.success('{{ translate('messages.Social media inserted') }}.');
                     }
                     $('#name').val('');
                     $('#link').val('');
@@ -198,7 +196,7 @@
                     $('#name').val('');
                     $('#link').val('');
 
-                    toastr.success('{{ translate('messages.social_media_updated') }}');
+                    toastr.success('{{ translate('messages.Social media updated') }}');
                     $('#update').hide();
                     $('#add').show();
                     fetch_social_media();
@@ -209,7 +207,7 @@
         });
         $(document).on('click', '.delete', function() {
             let id = $(this).attr("id");
-            if (confirm("{{ translate('messages.are_u_sure_want_to_delete') }}?")) {
+            if (confirm("{{ translate('Are you sure you want to delete?') }}")) {
                 $.ajaxSetup({
                     headers: {
                         'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
@@ -223,7 +221,7 @@
                     },
                     success: function() {
                         fetch_social_media();
-                        toastr.success('{{ translate('messages.social_media_deleted') }}.');
+                        toastr.success('{{ translate('messages.Social media deleted') }}.');
                     }
                 });
             }
@@ -251,7 +249,7 @@
                     status: status
                 },
                 success: function() {
-                    toastr.success('{{ translate('messages.status_updated') }}');
+                    toastr.success('{{ translate('messages.Status updated') }}');
                 }
             });
         });

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Vendor;
 
+use App\Support\Settings\BusinessRules;
 use Carbon\Carbon;
 use App\Models\Item;
 use App\Models\Order;
@@ -9,8 +10,10 @@ use App\Models\Vendor;
 use Illuminate\Http\Request;
 use App\CentralLogics\Helpers;
 use App\Models\OrderTransaction;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Support\Facades\DB;
 use Modules\Rental\Entities\Trips;
+use Modules\Service\Entities\ServiceBooking;
 use App\Http\Controllers\Controller;
 
 class DashboardController extends Controller
@@ -24,6 +27,9 @@ class DashboardController extends Controller
         if(Helpers::get_store_data()->module_type == 'rental'){
             return to_route('vendor.providerDashboard');
 
+        }
+        if(Helpers::get_store_data()->module_type == 'service' && service_addon_active()){
+            return to_route('vendor.service.dashboard');
         }
         $params = [
             'statistics_type' => $request['statistics_type'] ?? 'overall'
@@ -51,15 +57,33 @@ class DashboardController extends Controller
             }
         }
 
-        $top_sell = Item::orderBy("order_count", 'desc')
+        // Both lists used to ->get() Items, and Item carries the translate and storage
+        // global scopes, so each list paid its own translations + storages eager load —
+        // four statements, and on a small catalogue the two lists are the same rows, which
+        // is why they showed up as exact duplicates. Resolve the ids first (pluck does not
+        // hydrate models, so no eager load), then hydrate the union once and re-apply each
+        // list's order from its own id list.
+        $top_sell_ids = Item::orderBy("order_count", 'desc')
             ->take(6)
-            ->get();
-        $most_rated_items = Item::where('avg_rating' ,'>' ,0)
+            ->pluck('id')
+            ->all();
+        $most_rated_ids = Item::where('avg_rating' ,'>' ,0)
         ->orderBy('avg_rating','desc')
         ->take(6)
-        ->get();
-        $data['top_sell'] = $top_sell;
-        $data['most_rated_items'] = $most_rated_items;
+        ->pluck('id')
+        ->all();
+
+        $dashboard_item_ids = array_values(array_unique(array_merge($top_sell_ids, $most_rated_ids)));
+        $dashboard_items = $dashboard_item_ids
+            ? Item::withStorage()->whereIn('id', $dashboard_item_ids)->get()->keyBy('id')
+            : collect();
+
+        $in_listed_order = fn (array $ids) => new EloquentCollection(
+            array_values(array_filter(array_map(fn ($id) => $dashboard_items->get($id), $ids)))
+        );
+
+        $data['top_sell'] = $in_listed_order($top_sell_ids);
+        $data['most_rated_items'] = $in_listed_order($most_rated_ids);
 
         if( Helpers::get_store_data()?->storeConfig?->show_low_stock_count && Helpers::get_store_data()?->storeConfig?->minimum_stock_for_warning > 0){
             $items=  Item::where('stock' ,'<=' , Helpers::get_store_data()->storeConfig->minimum_stock_for_warning );
@@ -71,10 +95,12 @@ class DashboardController extends Controller
 
         $item = null;
         if($out_of_stock_count == 1 ){
-            $item= $items->orderby('stock')->latest()->first();
+            $item= $items->withStorage()->orderby('stock')->latest()->first();
         }
 
-        return view('vendor-views.dashboard', compact('data', 'earning', 'commission', 'params','out_of_stock_count','item'));
+        $employee_first_name = auth('vendor_employee')->user()?->f_name;
+
+        return view('vendor-views.dashboard', compact('data', 'earning', 'commission', 'params','out_of_stock_count','item','employee_first_name'));
     }
 
     public function store_data()
@@ -85,9 +111,13 @@ class DashboardController extends Controller
             $type='trip';
             $new_pending_order=Trips::where(['checked' => 0])->where('provider_id', $store->id)->count();
 
+        } elseif($store->module_type == 'service' && service_addon_active()){
+            $type='service_booking';
+            $new_pending_order=ServiceBooking::where(['notification_checked' => 0])->where('provider_id', $store->id)->count();
+
         } else{
             $new_pending_order = DB::table('orders')->where(['checked' => 0])->where('store_id', $store->id)->where('order_status','pending');
-            if(config('order_confirmation_model') != 'store' && !$store->sub_self_delivery)
+            if(! BusinessRules::storeConfirmsOrder() && !$store->sub_self_delivery)
             {
                 $new_pending_order = $new_pending_order->where('order_type', 'take_away');
             }
@@ -124,72 +154,56 @@ class DashboardController extends Controller
         $today = $params['statistics_type'] == 'today' ? 1 : 0;
         $this_month = $params['statistics_type'] == 'this_month' ? 1 : 0;
 
-        $confirmed = Order::when($today, function ($query) {
-            return $query->whereDate('created_at', Carbon::today());
-        })->when($this_month, function ($query) {
-            return $query->whereMonth('created_at', Carbon::now());
-        })->where(['store_id' => Helpers::get_store_id()])->whereIn('order_status',['confirmed', 'accepted'])->whereNotNull('confirmed')->StoreOrder()->NotDigitalOrder()->OrderScheduledIn(30)->count();
+        // These were eight separate COUNT(*) queries over one shared base. They are
+        // collapsed into conditional aggregates below; the base filter and every
+        // per-status condition are unchanged.
+        $now = Carbon::now()->toDateTimeString();
+        $window_end = Carbon::now()->addMinutes(30)->toDateTimeString();
 
-        $cooking = Order::when($today, function ($query) {
-            return $query->whereDate('created_at', Carbon::today());
-        })->when($this_month, function ($query) {
-            return $query->whereMonth('created_at', Carbon::now());
-        })->where(['order_status' => 'processing', 'store_id' => Helpers::get_store_id()])->StoreOrder()->NotDigitalOrder()->count();
+        // Mirrors Order::scopeOrderScheduledIn(30).
+        $scheduled_in = '((((created_at <> schedule_at) and (schedule_at between ? and ?)) or schedule_at < ?) or created_at = schedule_at)';
 
-        $ready_for_delivery = Order::when($today, function ($query) {
-            return $query->whereDate('created_at', Carbon::today());
-        })->when($this_month, function ($query) {
-            return $query->whereMonth('created_at', Carbon::now());
-        })->where(['order_status' => 'handover', 'store_id' => Helpers::get_store_id()])->StoreOrder()->NotDigitalOrder()->count();
+        // Mirrors Order::scopeScheduled().
+        $is_scheduled = "(created_at <> schedule_at and scheduled = '1')";
 
-        $item_on_the_way = Order::when($today, function ($query) {
-            return $query->whereDate('created_at', Carbon::today());
-        })->when($this_month, function ($query) {
-            return $query->whereMonth('created_at', Carbon::now());
-        })->ItemOnTheWay()->where(['store_id' => Helpers::get_store_id()])->StoreOrder()->NotDigitalOrder()->count();
+        $store_confirms = BusinessRules::storeConfirmsOrder();
+        $store_confirms_or_self_delivery = $store_confirms || Helpers::get_store_data()->sub_self_delivery;
 
-        $delivered = Order::when($today, function ($query) {
-            return $query->whereDate('created_at', Carbon::today());
-        })->when($this_month, function ($query) {
-            return $query->whereMonth('created_at', Carbon::now());
-        })->where(['order_status' => 'delivered', 'store_id' => Helpers::get_store_id()])->StoreOrder()->NotDigitalOrder()->count();
+        $active_for = function (bool $store_side) {
+            return $store_side
+                ? "(order_status not in ('failed','canceled','refund_requested','refunded'))"
+                : "(order_status not in ('pending','failed','canceled','refund_requested','refunded') or (order_status = 'pending' and order_type = 'take_away'))";
+        };
 
-        $refunded = Order::when($today, function ($query) {
-            return $query->whereDate('created_at', Carbon::today());
-        })->when($this_month, function ($query) {
-            return $query->whereMonth('created_at', Carbon::now());
-        })->where(['order_status' => 'refunded', 'store_id' => Helpers::get_store_id()])->StoreOrder()->NotDigitalOrder()->count();
+        $select = implode(', ', [
+            "coalesce(sum(order_status in ('confirmed','accepted') and confirmed is not null and {$scheduled_in}), 0) as confirmed",
+            "coalesce(sum(order_status = 'processing'), 0) as cooking",
+            "coalesce(sum(order_status = 'handover'), 0) as ready_for_delivery",
+            "coalesce(sum(order_status = 'picked_up'), 0) as item_on_the_way",
+            "coalesce(sum(order_status = 'delivered'), 0) as delivered",
+            "coalesce(sum(order_status = 'refunded'), 0) as refunded",
+            "coalesce(sum({$is_scheduled} and {$active_for($store_confirms)}), 0) as scheduled",
+            "coalesce(sum({$active_for($store_confirms_or_self_delivery)}), 0) as `all`",
+        ]);
 
-        $scheduled = Order::when($today, function ($query) {
-            return $query->whereDate('created_at', Carbon::today());
-        })->when($this_month, function ($query) {
-            return $query->whereMonth('created_at', Carbon::now());
-        })->Scheduled()->where(['store_id' => Helpers::get_store_id()])->where(function($q){
-            if(config('order_confirmation_model') == 'store')
-            {
-                $q->whereNotIn('order_status',['failed','canceled', 'refund_requested', 'refunded']);
-            }
-            else
-            {
-                $q->whereNotIn('order_status',['pending','failed','canceled', 'refund_requested', 'refunded'])->orWhere(function($query){
-                    $query->where('order_status','pending')->where('order_type', 'take_away');
-                });
-            }
-
-        })->StoreOrder()->NotDigitalOrder()->count();
-
-        $all = Order::when($today, function ($query) {
+        $row = Order::when($today, function ($query) {
             return $query->whereDate('created_at', Carbon::today());
         })->when($this_month, function ($query) {
             return $query->whereMonth('created_at', Carbon::now());
         })->where(['store_id' => Helpers::get_store_id()])
-        ->where(function($query){
-            return $query->whereNotIn('order_status',(config('order_confirmation_model') == 'store'|| \App\CentralLogics\Helpers::get_store_data()->sub_self_delivery)?['failed','canceled', 'refund_requested', 'refunded']:['pending','failed','canceled', 'refund_requested', 'refunded'])
-            ->orWhere(function($query){
-                return $query->where('order_status','pending')->where('order_type', 'take_away');
-            });
-        })
-        ->StoreOrder()->NotDigitalOrder()->count();
+            ->StoreOrder()->NotDigitalOrder()
+            ->toBase()
+            ->selectRaw($select, [$now, $window_end, $now])
+            ->first();
+
+        $confirmed = (int) ($row->confirmed ?? 0);
+        $cooking = (int) ($row->cooking ?? 0);
+        $ready_for_delivery = (int) ($row->ready_for_delivery ?? 0);
+        $item_on_the_way = (int) ($row->item_on_the_way ?? 0);
+        $delivered = (int) ($row->delivered ?? 0);
+        $refunded = (int) ($row->refunded ?? 0);
+        $scheduled = (int) ($row->scheduled ?? 0);
+        $all = (int) ($row->all ?? 0);
 
         $data = [
             'confirmed' => $confirmed,

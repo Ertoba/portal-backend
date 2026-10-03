@@ -7,9 +7,6 @@ use Illuminate\Foundation\Http\FormRequest;
 
 class AddonBulkImportRequest extends FormRequest
 {
-    /**
-     * Determine if the user is authorized to make this request.
-     */
     public function authorize(): bool
     {
         return true;
@@ -23,7 +20,7 @@ class AddonBulkImportRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'products_file' => 'required|max:2048'
+            'products_file' => 'required|max:'.(MAX_FILE_SIZE * 1024)
         ];
     }
 }

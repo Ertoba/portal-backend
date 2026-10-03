@@ -42,24 +42,22 @@ class ParcelOrderExport implements FromView, ShouldAutoSize, WithStyles,WithColu
     public function columnWidths(): array
     {
         return [
-            // 'A' => 55,
-            // 'B' => 45,
             'C' => 45,
         ];
     }
 
     public function styles(Worksheet $sheet) {
-        $sheet->getStyle('A2:N3')->getFont()->setBold(true);
-        $sheet->getStyle('A3:N3')->getFont()->setBold(true)->getColor()
+        $sheet->getStyle('A2:P3')->getFont()->setBold(true);
+        $sheet->getStyle('A3:P3')->getFont()->setBold(true)->getColor()
         ->setARGB('FFFFFF');
 
-        $sheet->getStyle('A3:N3')->getFill()->applyFromArray([
+        $sheet->getStyle('A3:P3')->getFill()->applyFromArray([
             'fillType' => 'solid',
             'rotation' => 0,
             'color' => ['rgb' => '005D5F'],
         ]);
 
-        $sheet->getStyle('K4:N'.$this->data['orders']->count() + 3)->getFill()->applyFromArray([
+        $sheet->getStyle('M4:P'.$this->data['orders']->count() + 3)->getFill()->applyFromArray([
             'fillType' => 'solid',
             'rotation' => 0,
             'color' => ['rgb' => 'FFE599'],
@@ -80,12 +78,11 @@ class ParcelOrderExport implements FromView, ShouldAutoSize, WithStyles,WithColu
         ];
         $sheet->getStyle('A1:C1')->applyFromArray($styleArray);
         return [
-            // Define the style for cells with data
-            'A1:N'.$this->data['orders']->count() + 3 => [
+            'A1:P'.$this->data['orders']->count() + 3 => [
                 'borders' => [
                     'allBorders' => [
                         'borderStyle' => Border::BORDER_THIN,
-                        'color' => ['argb' => '000000'], // Specify the color of the border (optional)
+                        'color' => ['argb' => '000000'],
                     ],
                 ],
             ],
@@ -96,27 +93,27 @@ class ParcelOrderExport implements FromView, ShouldAutoSize, WithStyles,WithColu
     {
         return [
             AfterSheet::class => function(AfterSheet $event) {
-                $event->sheet->getStyle('A1:N1') // Adjust the range as per your needs
+                $event->sheet->getStyle('A1:P1')
                     ->getAlignment()
                     ->setHorizontal(Alignment::HORIZONTAL_CENTER)
                     ->setVertical(Alignment::VERTICAL_CENTER);
-                $event->sheet->getStyle('A2:C2') // Adjust the range as per your needs
+                $event->sheet->getStyle('A2:C2')
                     ->getAlignment()
                     ->setHorizontal(Alignment::HORIZONTAL_CENTER)
                     ->setVertical(Alignment::VERTICAL_CENTER);
 
-                $event->sheet->getStyle('A3:N'.$this->data['orders']->count() + 3) // Adjust the range as per your needs
+                $event->sheet->getStyle('A3:P'.$this->data['orders']->count() + 3)
                     ->getAlignment()
                     ->setHorizontal(Alignment::HORIZONTAL_CENTER)
                     ->setVertical(Alignment::VERTICAL_CENTER);
-                $event->sheet->getStyle('D2:N2') // Adjust the range as per your needs
+                $event->sheet->getStyle('D2:P2')
                     ->getAlignment()
                     ->setHorizontal(Alignment::HORIZONTAL_LEFT)
                     ->setVertical(Alignment::VERTICAL_CENTER);
 
-                    $event->sheet->mergeCells('A1:N1');
+                    $event->sheet->mergeCells('A1:P1');
                     $event->sheet->mergeCells('A2:C2');
-                    $event->sheet->mergeCells('D2:N2');
+                    $event->sheet->mergeCells('D2:P2');
                     $event->sheet->getRowDimension(2)->setRowHeight(100);
                     $event->sheet->getDefaultRowDimension()->setRowHeight(30);
                     $workSheet = $event->sheet->getDelegate();

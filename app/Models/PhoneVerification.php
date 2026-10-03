@@ -13,8 +13,6 @@ class PhoneVerification extends Model
 
     protected static function booted(): void
     {
-        // Default-filters OTP rows to the host scope. Storefront adapter
-        // bypasses with withoutGlobalScope + explicit scope filter.
         static::addGlobalScope(new HostScope());
     }
 }

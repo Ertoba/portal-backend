@@ -15,17 +15,16 @@ class FlashSaleController extends Controller
 {
     function index(Request $request)
     {
-        $key = explode(' ', $request['search']);
+        $key = explode(' ', $request['search'] ?? '');
 
-        $flash_sales = FlashSale::where('module_id', Config::get('module.current_module_id'))->orderBy('title')
-        ->when(isset($key) , function($q) use($key){
+        $flash_sales = FlashSale::withCount('activeProducts')->where('module_id', Config::get('module.current_module_id'))->orderBy('title')
+        ->when($request['search'] , function($q) use($key){
             $q->where(function ($q) use ($key) {
                 foreach ($key as $value) {
                     $q->orWhere('title', 'like', "%{$value}%");
                 }
             });
         })
-
         ->paginate(config('default_pagination'));
         return view('admin-views.flash-sale.index', compact('flash_sales'));
     }
@@ -40,12 +39,12 @@ class FlashSaleController extends Controller
             'admin_discount_percentage' => 'required|min:0.01|max:100',
             'vendor_discount_percentage' => 'required|min:0.01|max:100',
         ], [
-            'title.required' => translate('messages.title is required!'),
-            'title.0.required'=>translate('default_data_is_required'),
+            'title.required' => translate('messages.Title is required'),
+            'title.0.required'=>translate('Default data is required'),
         ]);
 
         if(($request->admin_discount_percentage+$request->vendor_discount_percentage) != 100){
-            Toastr::error(translate('messages.invalid_distribution_of_discount'));
+            Toastr::error(translate('messages.Invalid distribution of discount'));
             return back();
         }
 
@@ -66,13 +65,13 @@ class FlashSaleController extends Controller
         $flash_sale->vendor_discount_percentage = $request->vendor_discount_percentage;
         $flash_sale->save();
         Helpers::add_or_update_translations(request: $request, key_data: 'title', name_field: 'title', model_name: 'FlashSale', data_id: $flash_sale->id, data_value: $flash_sale->title);
-        Toastr::success(translate('messages.flash_sale_added_successfully'));
+        Toastr::success(translate('Added successfully'));
         return back();
     }
 
     public function edit($id)
     {
-        $flash_sale = FlashSale::withoutGlobalScope('translate')->findOrFail($id);
+        $flash_sale = FlashSale::withoutGlobalScope('translate')->with('translations')->findOrFail($id);
         return view('admin-views.flash-sale.edit', compact('flash_sale'));
     }
 
@@ -86,12 +85,12 @@ class FlashSaleController extends Controller
             'admin_discount_percentage' => 'required|min:0.01|max:100',
             'vendor_discount_percentage' => 'required|min:0.01|max:100',
         ], [
-            'title.required' => translate('messages.title is required!'),
-            'title.0.required'=>translate('default_data_is_required'),
+            'title.required' => translate('messages.Title is required'),
+            'title.0.required'=>translate('Default data is required'),
         ]);
 
         if(($request->admin_discount_percentage+$request->vendor_discount_percentage) != 100){
-            Toastr::error(translate('messages.invalid_distribution_of_discount'));
+            Toastr::error(translate('messages.Invalid distribution of discount'));
             return back();
         }
 
@@ -110,7 +109,7 @@ class FlashSaleController extends Controller
         $flash_sale->vendor_discount_percentage = $request->vendor_discount_percentage;
         $flash_sale->save();
         Helpers::add_or_update_translations(request: $request, key_data: 'title', name_field: 'title', model_name: 'FlashSale', data_id: $flash_sale->id, data_value: $flash_sale->title);
-        Toastr::success(translate('messages.flash_sale_updated_successfully'));
+        Toastr::success(translate('Updated successfully'));
         return back();
     }
 
@@ -121,7 +120,7 @@ class FlashSaleController extends Controller
         $flash_sale->translations()->delete();
 
         $flash_sale->delete();
-        Toastr::success(translate('messages.flash_sale_deleted_successfully'));
+        Toastr::success(translate('Deleted successfully'));
         return back();
     }
 
@@ -135,7 +134,7 @@ class FlashSaleController extends Controller
             FlashSale::whereNot('id', $request->id)->where('module_id', Config::get('module.current_module_id'))->update(['is_publish' => 0]);
 
         }
-        Toastr::success(translate('messages.flash_sale_publish_updated'));
+        Toastr::success(translate('messages.Flash sale publish updated'));
         return back();
     }
 
@@ -143,10 +142,11 @@ class FlashSaleController extends Controller
     {
         $flash_sale = FlashSale::findOrFail($id);
 
-        $key = explode(' ', $request['search']);
+        $key = explode(' ', $request['search'] ?? '');
 
-        $items = FlashSaleItem::where('flash_sale_id', $flash_sale->id)
-        ->when(isset($key) , function($q) use($key){
+        $items = FlashSaleItem::with(['item.storage', 'item.store.storage'])
+        ->where('flash_sale_id', $flash_sale->id)
+        ->when($request['search'] , function($q) use($key){
             $q->whereHas('item', function($q) use ($key){
                 $q->where(function ($q) use ($key) {
                     foreach ($key as $value) {
@@ -155,7 +155,6 @@ class FlashSaleController extends Controller
                 });
             });
         })
-
         ->paginate(config('default_pagination'));
 
         return view('admin-views.flash-sale.product-index', compact('flash_sale','items'));
@@ -169,19 +168,19 @@ class FlashSaleController extends Controller
             'discount_type' => 'required',
             'discount' => 'required_if:discount_type,percent,amount',
         ], [
-            'item_id.required' => translate('messages.product is required!'),
+            'item_id.required' => translate('messages.Product is required'),
         ]);
 
         $item = FlashSaleItem::where('flash_sale_id', $request->flash_sale_id)->where('item_id',$request->item_id)->first();
         if($item){
-            Toastr::error(translate('messages.Item_already_exists'));
+            Toastr::error(translate('messages.Item already exists'));
             return back();
         }
 
         $item = Item::find($request->item_id);
 
         if($request->stock>$item->stock){
-            Toastr::error(translate('messages.Item_stock_exceeded'));
+            Toastr::error(translate('messages.Item stock exceeded'));
             return back();
         }
 
@@ -205,14 +204,14 @@ class FlashSaleController extends Controller
 
         $flash_sale->discount_amount = $discount_amount;
         if($discount_amount >= $item->price) {
-            Toastr::error(translate('messages.Item_discount_amount_exceeded'));
+            Toastr::error(translate('messages.Item discount amount exceeded'));
             return back();
         }
         $flash_sale->price = $item->price-$discount_amount;
 
         $flash_sale->save();
 
-        Toastr::success(translate('messages.Item_added_successfully'));
+        Toastr::success(translate('Added successfully'));
         return back();
     }
 
@@ -220,7 +219,7 @@ class FlashSaleController extends Controller
     {
         $flash_sale = FlashSaleItem::findOrFail($request->id);
         $flash_sale->delete();
-        Toastr::success(translate('messages.item_deleted_successfully'));
+        Toastr::success(translate('Deleted successfully'));
         return back();
     }
 
@@ -229,7 +228,7 @@ class FlashSaleController extends Controller
         $flash_sale = FlashSaleItem::find($request->id);
         $flash_sale->status = $request->status;
         $flash_sale->save();
-        Toastr::success(translate('messages.flash_sale_publish_updated'));
+        Toastr::success(translate('messages.Flash sale publish updated'));
         return back();
     }
 }

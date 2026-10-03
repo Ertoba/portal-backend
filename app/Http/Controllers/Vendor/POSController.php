@@ -2,31 +2,45 @@
 
 namespace App\Http\Controllers\Vendor;
 
+use App\Rules\PhoneNumber;
+use App\Rules\EmailAddress;
+use App\Traits\Item\ItemStockTrait;
 use App\Models\Item;
 use App\Models\User;
 use App\Models\Order;
-use App\Models\Store;
 use App\Mail\PlaceOrder;
+use App\Models\AddOn;
 use App\Models\Category;
 use App\Models\DMVehicle;
 use App\Scopes\StoreScope;
 use App\Models\OrderDetail;
-use App\Traits\PlaceNewOrder;
-use App\Traits\POSDeliveryTypeTrait;
+use App\Traits\Order\PlaceNewOrderTrait;
+use App\Traits\Order\POSDeliveryTypeTrait;
 use Illuminate\Http\Request;
 use App\CentralLogics\Helpers;
-use App\Models\BusinessSetting;
 use Illuminate\Support\Facades\DB;
-use App\CentralLogics\ProductLogic;
 use App\Http\Controllers\Controller;
 use Brian2694\Toastr\Facades\Toastr;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
 use  Illuminate\Support\Facades\Session;
+use App\Support\Notification\SendNotification;
+use Illuminate\Support\Facades\Log;
+use App\Services\Zone\DeliveryRuleService;
 class POSController extends Controller
 {
-    use PlaceNewOrder;
+    use ItemStockTrait;
+
+    use PlaceNewOrderTrait;
     use POSDeliveryTypeTrait;
+
+    private const ITEM_DETAIL_RELATIONS = [
+        'module',
+        'nutritions',
+        'allergies',
+        'generic',
+        'storage',
+    ];
 
     public function getDeliveryTypes(Request $request)
     {
@@ -39,7 +53,7 @@ class POSController extends Controller
             ? (float) $request->query('delivery_fee')
             : (float) (session('address.delivery_fee') ?? 0);
 
-        return response()->json($this->loadDeliveryTypes($moduleId, $zoneId, $deliveryFee, $selfDelivery));
+        return response()->json($this->loadDeliveryTypes($moduleId, $zoneId, $deliveryFee, $selfDelivery, $store?->delivery_time));
     }
 
     public function setDeliveryType(Request $request)
@@ -49,18 +63,20 @@ class POSController extends Controller
     }
     public function index(Request $request)
     {
+        if (Helpers::get_store_data()?->module_type == 'service') {
+            abort(404);
+        }
         $category = $request->query('category_id', 0);
         $categories = Category::active()->module(Helpers::get_store_data()->module_id)->get();
-        $keyword = $request->query('keyword', false);
-        $store = Store::find(Helpers::get_store_data()->module_id);
-        $key = explode(' ', $keyword);
-        $products = Item::active()
+        $search = $request->query('search', false);
+        $key = explode(' ', $search ?? '');
+        $products = Item::active()->withStorage()->where('store_id', Helpers::get_store_id())
         ->when($category, function($query)use($category){
             $query->whereHas('category',function($q)use($category){
                 return $q->whereId($category)->orWhere('parent_id', $category);
             });
         })
-        ->when($keyword, function($query)use($key){
+        ->when($search, function($query)use($key){
             return $query->where(function ($q) use ($key) {
                 foreach ($key as $value) {
                     $q->orWhere('name', 'like', "%{$value}%");
@@ -69,7 +85,18 @@ class POSController extends Controller
         })
         ->latest()->paginate(10);
 
-        $hasNavParams = $request->filled('keyword')
+        if ($request->session()->has('cart') && $this->cartHasOtherStoreItems($request->session()->get('cart'))) {
+            session()->forget([
+                'cart',
+                'tax_amount',
+                'tax_included',
+                'address',
+                'cart_product_ids',
+                'customer_id',
+            ]);
+        }
+
+        $hasNavParams = $request->filled('search')
             || $request->filled('category_id')
             || $request->filled('page');
 
@@ -92,37 +119,165 @@ class POSController extends Controller
 
         $customer = null;
         if (Session::get('customer_id')) {
-            $customer = User::find(Session::get('customer_id'));
+            $customer = User::withStorage()->find(Session::get('customer_id'));
         }
 
-        return view('vendor-views.pos.index', compact('categories', 'products','store','category', 'keyword', 'customer'));
+        $last_order = session('last_order') ? Order::find(session('last_order')) : null;
+        if ($last_order) {
+            session(['last_order' => false]);
+        }
+
+        $address_view = $this->pos_address_view_data(Session::get('address'));
+
+        return view('vendor-views.pos.index', compact('categories', 'products', 'category', 'search', 'customer', 'last_order', 'address_view'));
+    }
+
+    public function single_items(Request $request)
+    {
+        $category = $request->category_id ?? 0;
+        $search = $request->input('search', $request->input('keyword')) ?: false;
+        $key = explode(' ', (string) $search);
+        $per_page = min(max((int) $request->input('per_page', 10), 10), 200);
+
+        $products = Item::active()->withStorage()->where('store_id', Helpers::get_store_id())
+        ->when($category, function($query)use($category){
+            $query->whereHas('category',function($q)use($category){
+                return $q->whereId($category)->orWhere('parent_id', $category);
+            });
+        })
+        ->when($search, function($query)use($key){
+            return $query->where(function ($q) use ($key) {
+                foreach ($key as $value) {
+                    $q->orWhere('name', 'like', "%{$value}%");
+                }
+            });
+        })
+        ->latest()->paginate($per_page);
+
+        return view('vendor-views.pos._single_product_list', compact('products'));
     }
 
     public function quick_view(Request $request)
     {
-        $product = Item::findOrFail($request->product_id);
+        $product = $this->storeItem($request->product_id, self::ITEM_DETAIL_RELATIONS);
+        $selected_item = ['id' => $product->id];
+
+        if ($product->module->module_type != 'food') {
+            foreach (json_decode($product->choice_options) ?: [] as $choice) {
+                $selected_item[$choice->name] = $choice->options[0] ?? null;
+            }
+        }
+
+        $stock = $this->get_stocks($product, $selected_item);
+        $addons = AddOn::whereIn('id', json_decode($product->add_ons) ?: [])->active()->get();
+        $store_discount = Helpers::get_store_discount($product->store);
 
         return response()->json([
             'success' => 1,
-            'view' => view('vendor-views.pos._quick-view-data', compact('product'))->render(),
+            'view' => view('vendor-views.pos._item-stock-view', compact('product', 'selected_item', 'stock', 'addons', 'store_discount'))->render(),
         ]);
     }
 
     public function quick_view_card_item(Request $request)
     {
-        $product = Item::findOrFail($request->product_id);
+        $product = $this->storeItem($request->product_id, self::ITEM_DETAIL_RELATIONS);
         $item_key = $request->item_key;
-        $cart_item = session()->get('cart')[$item_key];
+        $cart_item = $this->cartLine($item_key);
+
+        if (!$cart_item) {
+            return response()->json([
+                'success' => 0,
+                'message' => translate('messages.This item is no longer in the cart'),
+            ]);
+        }
+
+        $addons = AddOn::whereIn('id', json_decode($product->add_ons) ?: [])->active()->get();
+        $store_discount = Helpers::get_store_discount($product->store);
 
         return response()->json([
             'success' => 1,
-            'view' => view('vendor-views.pos._quick-view-cart-item', compact('product', 'cart_item', 'item_key'))->render(),
+            'view' => view('vendor-views.pos._quick-view-cart-item', compact('product', 'cart_item', 'item_key', 'addons', 'store_discount'))->render(),
         ]);
+    }
+
+    public function item_stock_view(Request $request)
+    {
+        $product = $this->storeItem($request->id, self::ITEM_DETAIL_RELATIONS);
+        $selected_item = $request->all();
+        $stock = $this->get_stocks($product, $selected_item);
+        $addons = AddOn::whereIn('id', json_decode($product->add_ons) ?: [])->active()->get();
+        $store_discount = Helpers::get_store_discount($product->store);
+
+        return response()->json([
+            'view' => view('vendor-views.pos._item-stock-view', compact('product', 'selected_item', 'stock', 'addons', 'store_discount'))->render(),
+        ]);
+    }
+
+    public function item_stock_view_update(Request $request)
+    {
+        $product = $this->storeItem($request->id, self::ITEM_DETAIL_RELATIONS);
+        $selected_item = $request->all();
+        $item_key = $request->cart_item_key;
+        $cart_item = $this->cartLine($item_key);
+
+        if (!$cart_item) {
+            return response()->json([
+                'success' => 0,
+                'message' => translate('messages.This item is no longer in the cart'),
+            ]);
+        }
+
+        $stock = $this->get_stocks($product, $selected_item);
+        $addons = AddOn::whereIn('id', json_decode($product->add_ons) ?: [])->active()->get();
+        $store_discount = Helpers::get_store_discount($product->store);
+
+        return response()->json([
+            'success' => 1,
+            'view' => view('vendor-views.pos._quick-view-cart-item', compact('product', 'cart_item', 'item_key', 'stock', 'selected_item', 'addons', 'store_discount'))->render(),
+        ]);
+    }
+
+    private function cartLine($item_key): ?array
+    {
+        if ($item_key === null || $item_key === '') {
+            return null;
+        }
+
+        $cart = session()->get('cart');
+        $line = $cart instanceof \Illuminate\Support\Collection
+            ? $cart->get($item_key)
+            : ($cart[$item_key] ?? null);
+
+        return is_array($line) ? $line : null;
+    }
+
+    private function storeItem($id, array $relations = []): Item
+    {
+        $store = Helpers::get_store_data();
+
+        $product = Item::with($relations)->where('store_id', $store?->id)->findOrFail($id);
+        $product->setRelation('store', $store);
+
+        return $product;
+    }
+
+    private function cartHasOtherStoreItems($cart): bool
+    {
+        $cart_item_ids = collect($cart)
+            ->filter(fn ($cart_item) => is_array($cart_item))
+            ->pluck('id')
+            ->filter()
+            ->unique();
+
+        return $cart_item_ids->isNotEmpty()
+            && Item::whereIn('id', $cart_item_ids)
+                ->where('store_id', '!=', Helpers::get_store_id())
+                ->exists();
     }
 
     public function variant_price(Request $request)
     {
-        $product = Item::find($request->id);
+        $product = $this->storeItem($request->id);
         if($product->module->module_type == 'food' && $product->food_variations){
             $price = $product->price;
             $addon_price = 0;
@@ -181,13 +336,31 @@ class POSController extends Controller
     {
         $validator = Validator::make($request->all(),[
             'contact_person_name' => 'required',
-            'contact_person_number' => 'required',
+            'contact_person_number' => PhoneNumber::rules(),
             'longitude' => 'required',
             'latitude' => 'required',
         ]);
 
         if ($validator->fails()) {
             return response()->json(['errors' => Helpers::error_processor($validator)]);
+        }
+
+        // The one thing the map cannot price: refuse the save outright when the zone's active
+        // delivery rule prices by area or zip code and neither was posted. A client that skipped
+        // the picker (or bypassed it entirely) must not be able to save an address the engine
+        // can only price at the rule's bare floor.
+        $storeForAddress = Helpers::get_store_data();
+
+        if ($storeForAddress && !$request->area_id && !$request->zip_code_id) {
+            $coverage = app(DeliveryRuleService::class)->coverageForZone($storeForAddress->zone_id, $storeForAddress->module_id);
+            if (!empty($coverage['coverage'])) {
+                return response()->json(['errors' => [[
+                    'code' => $coverage['type'] === 'zip_code_wise' ? 'zip_code_id' : 'area_id',
+                    'message' => $coverage['type'] === 'zip_code_wise'
+                        ? translate('messages.Please select a zip code to calculate the delivery fee')
+                        : translate('messages.Please select an area to calculate the delivery fee'),
+                ]]]);
+            }
         }
 
         $address = [
@@ -202,15 +375,42 @@ class POSController extends Controller
             'delivery_fee' => $request->delivery_fee?:0,
             'longitude' => (string)$request->longitude,
             'latitude' => (string)$request->latitude,
+            // Only meaningful for a zone whose active delivery rule prices by area or zip code;
+            // DeliveryChargeService ignores whichever one doesn't match the active rule.
+            'area_id' => $request->area_id ?: null,
+            'zip_code_id' => $request->zip_code_id ?: null,
         ];
 
         $request->session()->put('address', $address);
 
+        // Re-price server-side against the store's zone/module now that a delivery address
+        // exists, so a surge active on this zone is reflected in the fee and its tooltip note
+        // rather than only appearing after the next customer-change recompute.
+        if ($storeForAddress) {
+            $this->refreshPosAddressDeliveryFee($storeForAddress, $request->user_id ?: Session::get('customer_id'));
+            $address = Session::get('address');
+        }
+
         return response()->json([
             'data' => $address,
-            'view' => view('vendor-views.pos._address', compact('address'))->render(),
+            'view' => view('vendor-views.pos._address', $this->pos_address_view_data($address))->render(),
         ]);
     }
+
+    private function pos_address_view_data($address): array
+    {
+        $address = is_array($address) ? $address : null;
+
+        return [
+            'address' => $address,
+            'address_extra' => collect([
+                translate('messages.House') => $address['house'] ?? null,
+                translate('messages.Road') => $address['road'] ?? null,
+                translate('messages.Floor') => $address['floor'] ?? null,
+            ])->filter(fn ($value) => filled($value))->all(),
+        ];
+    }
+
     private function get_stocks($product,$selected_item){
         try {
             if($product->module->module_type == 'food'){
@@ -236,14 +436,23 @@ class POSController extends Controller
                 }
             }
         } catch (\Throwable $th) {
-            info($th->getMessage());
+            Log::error('vendor.pos_controller.get_stocks_failed', [
+                'error' => $th->getMessage(),
+                'file' => $th->getFile().':'.$th->getLine(),
+            ]);
         }
 
         return $stock ?? null ;
     }
     public function addToCart(Request $request)
     {
-        $product = Item::find($request->id);
+        $product = $this->storeItem($request->id);
+
+        if ($request->session()->has('cart') && $this->cartHasOtherStoreItems($request->session()->get('cart'))) {
+            return response()->json([
+                'data' => -1
+            ]);
+        }
 
         if($product->module->module_type == 'food' && $product->food_variations){
         $data = array();
@@ -261,19 +470,19 @@ class POSController extends Controller
                 if($value['required'] == 'on' &&  isset($value['values']) == false){
                     return response()->json([
                         'data' => 'variation_error',
-                        'message' => translate('Please select items from') . ' ' . $value['name'],
+                        'message' => translate('Selection required') . ': ' . $value['name'],
                     ]);
                 }
                 if(isset($value['values'])  && $value['min'] != 0 && $value['min'] > count($value['values']['label'])){
                     return response()->json([
                         'data' => 'variation_error',
-                        'message' => translate('Please select minimum ').$value['min'].translate(' For ').$value['name'].'.',
+                        'message' => translate('Please select minimum').' '.$value['min'].' '.translate('For').' '.$value['name'].'.',
                     ]);
                 }
                 if(isset($value['values']) && $value['max'] != 0 && $value['max'] < count($value['values']['label'])){
                     return response()->json([
                         'data' => 'variation_error',
-                        'message' => translate('Please select maximum ').$value['max'].translate(' For ').$value['name'].'.',
+                        'message' => translate('Please select maximum').' '.$value['max'].' '.translate('For').' '.$value['name'].'.',
                     ]);
                 }
             }
@@ -348,7 +557,6 @@ class POSController extends Controller
             }
 
 
-        //Gets all the choice values of customer choice option and generate a string like Black-S-Cotton
         foreach (json_decode($product->choice_options) as $key => $choice) {
             $data[$choice->name] = $request[$choice->name];
             $variations[$choice->title] = $request[$choice->name];
@@ -372,7 +580,6 @@ class POSController extends Controller
 
             }
         }
-        //Check the string and decreases quantity for the stock
         if ($str != null) {
             $count = count(json_decode($product->variations));
             for ($i = 0; $i < $count; $i++) {
@@ -437,7 +644,6 @@ class POSController extends Controller
         return view('vendor-views.pos._cart');
     }
 
-    //removes from Cart
     public function removeFromCart(Request $request)
     {
         if ($request->session()->has('cart')) {
@@ -455,7 +661,6 @@ class POSController extends Controller
         return response()->json([],200);
     }
 
-    //updated the quantity for a cart item
     public function updateQuantity(Request $request)
     {
         $cart = $request->session()->get('cart', collect([]));
@@ -481,7 +686,6 @@ class POSController extends Controller
         return response()->json([],200);
     }
 
-    //empty Cart
     public function emptyCart(Request $request)
     {
         session()->forget([
@@ -513,7 +717,7 @@ class POSController extends Controller
             return response()->json([], 200);
         }
 
-        $user = User::where('id', $request->customer_id)->first();
+        $user = User::withStorage()->where('id', $request->customer_id)->first();
         if (!$user) {
             return response()->json([], 200);
         }
@@ -566,25 +770,16 @@ class POSController extends Controller
             $this->refreshPosAddressDeliveryFee($store, $newCustomerId);
         }
 
-        $address = Session::get('address');
-
         return response()->json([
             'id'              => $user->id,
             'customer_name'   => $user->f_name . ' ' . $user->l_name,
             'customer_phone'  => $user->phone,
             'customer_wallet' => Helpers::format_currency($user->wallet_balance),
             'customer_image'  => $user->image_full_url,
-            'view'            => view('vendor-views.pos._address', compact('address'))->render(),
+            'view'            => view('vendor-views.pos._address', $this->pos_address_view_data(Session::get('address')))->render(),
         ], 200);
     }
 
-    // public function update_tax(Request $request)
-    // {
-    //     $cart = $request->session()->get('cart', collect([]));
-    //     $cart['tax'] = $request->tax;
-    //     $request->session()->put('cart', $cart);
-    //     return back();
-    // }
 
     public function update_discount(Request $request)
     {
@@ -604,14 +799,11 @@ class POSController extends Controller
             }
         }
 
-        // Base total (items + addons - product discount)
         $total = ($subtotal + $addon_price) - $discount_on_product;
 
-        // Add delivery fee
         $delivery_fee = session()->get('address')['delivery_fee'] ?? 0;
         $total += $delivery_fee;
 
-        // Add tax if not included
         $tax_amount = session()->get('tax_amount') ?? 0;
         $tax_included = session()->get('tax_included') ?? 0;
 
@@ -637,9 +829,9 @@ class POSController extends Controller
     }
 
     public function get_customers(Request $request){
-        $key = explode(' ', $request['q']);
-        $data = User::
-        where(function ($q) use ($key) {
+        $key = explode(' ', $request['q'] ?? '');
+        $data = User::query()
+        ->where(function ($q) use ($key) {
             foreach ($key as $value) {
                 $q->orWhere('f_name', 'like', "%{$value}%")
                 ->orWhere('l_name', 'like', "%{$value}%")
@@ -647,9 +839,10 @@ class POSController extends Controller
             }
         })
         ->limit(8)
-        ->get([DB::raw('id, CONCAT(f_name, " ", l_name, " (", phone ,")") as text')]);
+        ->get([DB::raw('id, CONCAT(f_name, " ", l_name, " (", phone ,")") as text')])
+        ->makeHidden('image_full_url');
 
-        $data[]=(object)['id'=>false, 'text'=>translate('messages.walk_in_customer')];
+        $data[]=(object)['id'=>false, 'text'=>translate('messages.Walk in customer')];
 
         $reversed = $data->toArray();
 
@@ -670,23 +863,28 @@ class POSController extends Controller
         {
             if(count($request->session()->get('cart')) < 1)
             {
-                Toastr::error(translate('messages.cart_empty_warning'));
+                Toastr::error(translate('messages.Cart empty warning'));
                 return back();
             }
         }
         else
         {
-            Toastr::error(translate('messages.cart_empty_warning'));
+            Toastr::error(translate('messages.Cart empty warning'));
             return back();
         }
         if ($request->session()->has('address')) {
             if(!$request->user_id){
-                Toastr::error(translate('messages.no_customer_selected'));
+                Toastr::error(translate('messages.No customer selected'));
                 return back();
             }
             $address = $request->session()->get('address');
         }
-        $distance_data = isset($address) ? $address['distance'] : 0;
+
+        $hasDeliveryAddress = isset($address)
+            && !empty($address['latitude'])
+            && !empty($address['longitude']);
+
+        $distance_data = $hasDeliveryAddress ? $address['distance'] : 0;
 
         $store = Helpers::get_store_data();
 
@@ -697,11 +895,11 @@ class POSController extends Controller
             $self_delivery_status = $store_sub->self_delivery;
 
             if($store_sub->max_order != "unlimited" && $store_sub->max_order <= 0){
-                Toastr::error(translate('messages.you_have_reached_the_maximum_number_of_orders'));
+                Toastr::error(translate('messages.You have reached the maximum number of orders'));
                 return back();
             }
         } elseif($store->store_business_model == 'unsubscribed'){
-            Toastr::error(translate('messages.you_are_not_subscribed_or_subscription_has_expired'));
+            Toastr::error(translate('messages.You are not subscribed or subscription has expired'));
             return back();
         }
 
@@ -735,24 +933,23 @@ class POSController extends Controller
         $order_details = [];
         $product_data = [];
 
+        $lastId = Order::max('id') ?? 99999;
         $order = new Order();
-        $order->id = 100000 + Order::count() + 1;
-        if (Order::find($order->id)) {
-            $order->id = Order::latest()->first()->id + 1;
-        }
-        $order->payment_status = isset($address)?'unpaid':'paid';
-        if($request->user_id){
+        $order->id = $lastId + 1;
+        $order->payment_status = $hasDeliveryAddress?'unpaid':'paid';
+        if($request->user_id && $hasDeliveryAddress){
 
-            $order->order_status = isset($address)?'confirmed':'delivered';
-            $order->order_type = isset($address)?'delivery':'take_away';
+            $order->order_status = 'confirmed';
+            $order->order_type = 'delivery';
         }else{
             $order->order_status = 'delivered';
             $order->order_type = 'take_away';
         }
+        $order->is_pos = 1;
         if($order->order_type == 'take_away'){
             $order->delivered = now();
         }
-        $order->distance = isset($address) ? $address['distance'] : 0;
+        $order->distance = $hasDeliveryAddress ? $address['distance'] : 0;
         $order->payment_method = $request->type;
         $order->store_id = $store->id;
         $order->module_id = Helpers::get_store_data()->module_id;
@@ -770,18 +967,15 @@ class POSController extends Controller
         $order->otp = rand(1000, 9999);
 
         $additionalCharges = [];
-        $settings = BusinessSetting::whereIn('key', [
+        $settings = Helpers::get_business_settings_many([
             'additional_charge_status',
             'additional_charge',
             'extra_packaging_data',
-        ])->pluck('value', 'key');
+        ]);
 
         $additional_charge_status  = $settings['additional_charge_status'] ?? null;
         $additional_charge         = $settings['additional_charge'] ?? null;
 
-        // if ($additional_charge_status == 1) {
-        //     $additionalCharges['tax_on_additional_charge'] = $additional_charge ?? 0;
-        // }
 
         $order_details = $this->makePosOrderDetails($cart, null, $store);
 
@@ -830,17 +1024,25 @@ class POSController extends Controller
         }
 
 
-        $pos_delivery_calc = $this->calculatePosDeliveryFee(
-            $store->id,
-            $order->distance,
-            $request->user_id,
-            (float) $total_price,
-        );
-        $order->delivery_charge          = $pos_delivery_calc['delivery_fee'];
-        $order->original_delivery_charge = $pos_delivery_calc['original_delivery_charge'];
-        $pro_delivery_savings            = (float) ($pos_delivery_calc['original_delivery_charge'] - $pos_delivery_calc['delivery_fee']);
-        if (!empty($pos_delivery_calc['free_delivery_by'])) {
-            $order->free_delivery_by = $pos_delivery_calc['free_delivery_by'];
+        // Undiscounted base+surge -- a Pro customer's delivery-fee benefit is applied later,
+        // after applySaverToOrder(), as the last step against whatever the charge has become by
+        // then. See calculatePosDeliveryFee()'s own docblock for why: applying it here, before
+        // Express/Slightly Delay's own adjustment, composed the two in the wrong order.
+        $pro_delivery_savings = 0.0;
+        if ($hasDeliveryAddress) {
+            $pos_delivery_calc = $this->calculatePosDeliveryFee(
+                $store,
+                $order->distance,
+                $address['area_id'] ?? null,
+                $address['zip_code_id'] ?? null,
+            );
+            $order->delivery_charge          = $pos_delivery_calc['original_delivery_charge'];
+            $order->original_delivery_charge = $pos_delivery_calc['original_delivery_charge'];
+            $order->surge_amount             = round((float) $pos_delivery_calc['surge_amount'], config('round_up_to_digit'));
+        } else {
+            $order->delivery_charge          = 0;
+            $order->original_delivery_charge = 0;
+            $order->surge_amount             = 0;
         }
 
         $finalCalculatedTax =  Helpers::getFinalCalculatedTax($order_details, $additionalCharges, $totalDiscount, $total_price, $store->id);
@@ -859,22 +1061,57 @@ class POSController extends Controller
             $order->store_discount_amount= $store_discount_amount;
             $order->tax_percentage = 0;
             $order->total_tax_amount = $tax_amount;
-            $pos_eligible_amount = max(0, $product_price + $total_addon_price - $store_discount_amount - ($flash_sale_admin_discount_amount ?? 0) - ($flash_sale_vendor_discount_amount ?? 0));
-            $pos_effective_delivery = \App\CentralLogics\DeliveryFeeLogic::effectiveFee(
-                (float) $order->delivery_charge,
-                $store,
-                $pos_eligible_amount,
-                \App\CentralLogics\DeliveryFeeLogic::resolveCouponCodeFromSession(),
-            );
-            if ($pos_effective_delivery['is_free']) {
+            if ($hasDeliveryAddress) {
+                $pos_eligible_amount = max(0, $product_price + $total_addon_price - $store_discount_amount - ($flash_sale_admin_discount_amount ?? 0) - ($flash_sale_vendor_discount_amount ?? 0) - $extra_discount_amount);
+                $pos_effective_delivery = $this->effectiveFee(
+                    (float) $order->delivery_charge,
+                    $store,
+                    $pos_eligible_amount,
+                    $this->resolveCouponCodeFromSession(),
+                );
+                if ($pos_effective_delivery['is_free']) {
 
-                $order->delivery_charge  = 0;
-                $order->free_delivery_by = $pos_effective_delivery['free_by'];
-                $pro_delivery_savings    = 0.0;
+                    $order->delivery_charge  = 0;
+                    $order->surge_amount     = 0;
+                    $order->free_delivery_by = $pos_effective_delivery['free_by'];
+                    $pro_delivery_savings    = 0.0;
+                }
             }
 
             $order->order_amount = $total_price + $tax_amount + $order->delivery_charge;
-            $this->applySaverToOrder($order, (int) $order->module_id, (int) $order->zone_id, (float) $order->delivery_charge);
+            $this->applySaverToOrder($order, (int) $order->module_id, (int) $order->zone_id, (float) $order->delivery_charge, (bool) $self_delivery_status);
+
+            // Pro customer's delivery-fee benefit, applied last: against the delivery fee as the
+            // vendor actually set it up -- Express premium or Slightly Delay reduction already
+            // folded in, not the pre-saver base -- so a Slightly Delay order isn't discounted as
+            // if the customer were still being charged the undiscounted fee, matching what the
+            // address modal and delivery-type picker showed the vendor. applyProCustomerDeliveryFee()
+            // itself no-ops when the benefit type isn't 'delivery_fee' or the charge is already 0.
+            if ($isProCustomer) {
+                $netDeliveryFee = (float) $order->delivery_charge + match ($order->delivery_type) {
+                    \App\Models\ModuleZoneDeliveryOption::TYPE_EXPRESS => (float) $order->delivery_type_charge,
+                    \App\Models\ModuleZoneDeliveryOption::TYPE_SLIGHTLY_DELAY => -(float) $order->delivery_type_charge,
+                    default => 0.0,
+                };
+                $proDeliveryApply = $this->applyProCustomerDeliveryFee(
+                    $pro_offer,
+                    $netDeliveryFee,
+                    $total_price,
+                    $order->free_delivery_by,
+                    $store?->module?->module_type,
+                );
+                $pro_delivery_savings = (float) ($proDeliveryApply['savings'] ?? 0);
+                if ($pro_delivery_savings > 0) {
+                    // Savings taken off the pre-saver base, NOT off $netDeliveryFee's own
+                    // returned figure -- delivery_type_charge stays a separate, untouched amount
+                    // that applySaverToOrder() has already folded into order_amount above, so
+                    // subtracting the discount from the net fee here would double-count it.
+                    $order->delivery_charge  = (float) $order->delivery_charge - $pro_delivery_savings;
+                    $order->free_delivery_by = $proDeliveryApply['free_delivery_by'] ?? $order->free_delivery_by;
+                    $order->order_amount    -= $pro_delivery_savings;
+                }
+            }
+
             if($request->type == 'card'){
 
                 $order->adjusment = 0;
@@ -929,8 +1166,8 @@ class POSController extends Controller
                 }
                 if (count($product_data) > 0) {
                     foreach ($product_data as $item) {
-                        ProductLogic::update_stock($item['item'], $item['quantity'], $item['variant'])->save();
-                        ProductLogic::update_flash_stock($item['item'], $item['quantity'])?->save();
+                        self::updateItemStock($item['item'], $item['quantity'], $item['variant'])->save();
+                        self::updateFlashSaleStock($item['item'], $item['quantity'])?->save();
                     }
                 }
                 $store->increment('total_order');
@@ -958,16 +1195,18 @@ class POSController extends Controller
             ]);
             session(['last_order' => $order->id]);
             if($order->order_status=='confirmed' && $order->user){
-                Helpers::send_order_notification($order);
-                $mail_status = Helpers::get_mail_status('place_order_mail_status_user');
-                //PlaceOrderMail
+                SendNotification::sendOrderNotifications($order);
+                $mail_status = SendNotification::mailTemplateEnabled('place_order_mail_status_user');
                 try{
-                    if($order->order_status == 'pending' && config('mail.status') && $mail_status == '1' && Helpers::getNotificationStatusData('customer','customer_order_notification','mail_status'))
+                    if($order->order_status == 'pending' && config('mail.status') && $mail_status && SendNotification::channelEnabled('customer','customer_order_notification','mail_status'))
                     {
-                        Mail::to($order->customer?->getRawOriginal('email'))->send(new PlaceOrder($order->id));
+                        SendNotification::mail($order->customer?->getRawOriginal('email'), new PlaceOrder($order->id));
                     }
                 }catch (\Exception $ex) {
-                    info($ex->getMessage());
+                    Log::error('vendor.pos_controller.place_order_failed', [
+                        'error' => $ex->getMessage(),
+                        'file' => $ex->getFile().':'.$ex->getLine(),
+                    ]);
                 }
             }
 
@@ -975,12 +1214,15 @@ class POSController extends Controller
                 $store_sub->decrement('max_order' , 1);
             }
 
-            Toastr::success(translate('messages.order_placed_successfully'));
+            Toastr::success(translate('messages.Order placed successfully'));
             return back();
         } catch (\Exception $e) {
-            info($e->getMessage());
+            Log::error('vendor.pos_controller.place_order_failed', [
+                'error' => $e->getMessage(),
+                'file' => $e->getFile().':'.$e->getLine(),
+            ]);
         }
-        Toastr::warning(translate('messages.failed_to_place_order'));
+        Toastr::warning(translate('messages.Failed to place order'));
         return back();
     }
 
@@ -991,8 +1233,8 @@ class POSController extends Controller
         $request->validate([
             'f_name' => 'required',
             'l_name' => 'required',
-            'email' => 'required|email|unique:users',
-            'phone' => 'required|unique:users',
+            'email' => EmailAddress::rules('required', 'users'),
+            'phone' => PhoneNumber::rules('required', 'users'),
         ]);
         User::create([
             'f_name' => $request['f_name'],
@@ -1003,14 +1245,17 @@ class POSController extends Controller
             'is_from_pos' => 1
         ]);
         try {
-            if (config('mail.status') && $request->email && Helpers::get_mail_status('pos_registration_mail_status_user') == '1' && Helpers::getNotificationStatusData('customer','customer_pos_registration','mail_status')) {
-                Mail::to($request->email)->send(new \App\Mail\CustomerRegistrationPOS($request->f_name . ' ' . $request->l_name,$request['email'],'password'));
-                Toastr::success(translate('mail_sent_to_the_user'));
+            if (SendNotification::canSendMail('pos_registration_mail_status_user', 'customer', 'customer_pos_registration') && $request->email) {
+                SendNotification::mail($request->email, new \App\Mail\CustomerRegistrationPOS($request->f_name . ' ' . $request->l_name,$request['email'],'password'));
+                Toastr::success(translate('Mail sent to the user'));
             }
         } catch (\Exception $ex) {
-            info($ex->getMessage());
+            Log::error('vendor.pos_controller.customer_store_failed', [
+                'error' => $ex->getMessage(),
+                'file' => $ex->getFile().':'.$ex->getLine(),
+            ]);
         }
-        Toastr::success(translate('customer_added_successfully'));
+        Toastr::success(translate('Added successfully'));
         return back();
     }
 
@@ -1018,28 +1263,34 @@ class POSController extends Controller
     {
         $distance_data = $request->distancMileResult ?? 1;
         $store         = Helpers::get_store_data();
-        $userId        = $request->customer_id ?: Session::get('customer_id');
 
         $delivery_calc = $this->calculatePosDeliveryFee(
-            $store?->id,
+            $store,
             $distance_data,
-            $userId,
-            Helpers::posCartSubtotal(),
+            $request->area_id,
+            $request->zip_code_id,
         );
 
-        return response()->json($delivery_calc['delivery_fee'], 200);
+        // The plain base+surge quote — a Pro customer's discount is applied once, as the last
+        // step, only in the cart summary and at order placement (see
+        // PlaceNewOrderTrait::calculatePosDeliveryFee()'s own docblock).
+        return response()->json($delivery_calc['original_delivery_charge'], 200);
     }
 
-
-
-    public function update_tax(Request $request)
+    /**
+     * The area/zip picker for this vendor's own store's zone, when its active delivery rule
+     * prices by one of them. `type` is null and `coverage` empty for a distance/flat-priced
+     * zone, the same shape the Builder storefront's coverage picker reads, so the front end
+     * just hides the picker when `coverage` comes back empty rather than branching on `type`.
+     */
+    public function getDeliveryCoverage(Request $request)
     {
         $store = Helpers::get_store_data();
 
-        if ($store) {
-            $this->setPosCalculatedTax($store);
+        if (!$store) {
+            return response()->json(['type' => null, 'coverage' => []]);
         }
 
-        return back();
+        return response()->json(app(DeliveryRuleService::class)->coverageForZone($store->zone_id, $store->module_id));
     }
 }

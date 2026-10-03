@@ -14,7 +14,6 @@ class WordValidation implements ValidationRule
      */
     public function validate(string $attribute, mixed $value, Closure $fail): void
     {
-        // Example: Reject words longer than 30 characters
         $key=explode(' ', $value);
 
         foreach ($key as $value) {
@@ -25,13 +24,11 @@ class WordValidation implements ValidationRule
         }
 
 
-        // Example: Reject words with repeated characters more than twice
         if (preg_match('/(.)\1{5,}/', $value)) {
             $fail('The :attribute contains somany repeated characters.');
             return;
         }
 
-        // Example: Reject words with random sequences (you can define your own logic here)
         if (preg_match('/[a-zA-Z]{10,}/', $value)) {
             $fail('The :attribute contains invalid patterns.');
             return;

@@ -1,351 +1,230 @@
-<div class="card h-100">
-    <!-- Header -->
-    <div class="card-header justify-content-between">
-        <div class="chat-user-info w-100 d-flex align-items-center">
-            <div class="chat-user-info-img">
-                @include('partials._user-avatar', [
-                    'imageUrl'  => $user['image_full_url'],
-                    'proStatus' => $user['pro_status'] ?? false,
-                    'size'      => 55,
-                ])
-            </div>
-            <div class="chat-user-info-content">
-                <h5 class="mb-0 text-capitalize">
-                    {{$user['f_name'].' '.$user['l_name']}}</h5>
-                <span dir="ltr">{{ $user['phone'] }}</span>
+{{-- ------------------------------------------------------------------------
+     Conversation thread for the admin inbox.
+
+     Injected into #admin-view-conversation over AJAX. All behaviour lives in
+     view-pages/messages.js, which picks this up through a MutationObserver --
+     do not add inline scripts here.
+     ------------------------------------------------------------------------ --}}
+
+@php
+    use App\CentralLogics\Helpers;
+
+    $isDeliveryMan = (bool) $user->deliveryman_id;
+    $fullName = trim($user->f_name . ' ' . $user->l_name);
+
+    $detailsUrl = match (true) {
+        (bool) $user->user_id => route('admin.users.customer.view', [$user->user?->id]),
+        $isDeliveryMan => route('admin.users.delivery-man.preview', [$user->deliveryman_id]),
+        default => null,
+    };
+
+    // Group by calendar day up front so the loop below only has to decide
+    // whether a message continues the previous speaker's run.
+    $days = collect($convs)->groupBy(fn ($message) => \Carbon\Carbon::parse($message->created_at)->toDateString());
+
+    $statusTone = fn ($status) => match (true) {
+        in_array($status, ['delivered']) => 'done',
+        in_array($status, ['refund_requested', 'refunded', 'refund_request_canceled', 'canceled', 'failed']) => 'failed',
+        default => 'progress',
+    };
+@endphp
+
+<div class="msg-thread">
+
+    {{-- Header ------------------------------------------------------------ --}}
+    <header class="msg-thread__head">
+        <button type="button" class="msg-thread__back" aria-label="{{ translate('Back') }}">
+            <i class="tio-chevron-left"></i>
+        </button>
+
+        <div class="msg-thread__identity">
+            @include('partials._user-avatar', [
+                'imageUrl' => $user['image_full_url'],
+                'proStatus' => $user['pro_status'] ?? false,
+                'size' => 44,
+            ])
+
+            <div class="w-0 flex-grow-1">
+                <h5 class="msg-thread__name">{{ $fullName ?: translate('No data found') }}</h5>
+                <div class="msg-thread__sub">
+                    <span class="msg-chip {{ $isDeliveryMan ? 'msg-chip--deliveryman' : 'msg-chip--customer' }}">
+                        <i class="{{ $isDeliveryMan ? 'tio-bike' : 'tio-user-outlined' }}"></i>
+                        {{ $isDeliveryMan ? translate('Deliveryman') : translate('messages.Customer') }}
+                    </span>
+                    @if ($user->phone)
+                        <span dir="ltr"><i class="tio-call"></i> {{ $user->phone }}</span>
+                    @endif
+                </div>
             </div>
         </div>
-        <div class="dropdown">
-            <button class="btn shadow-none" data-toggle="dropdown">
-                <img src="{{asset('/public/assets/admin/img/ellipsis.png')}}" alt="">
-            </button>
-            @if($user->user_id)
-            <ul class="dropdown-menu conv-dropdown-menu">
-                <li>
-                    <a href="{{ route('admin.users.customer.view', [$user->user->id]) }}">{{ translate('View_Details') }}</a>
-                </li>
-            </ul>
-            @elseif($user->deliveryman_id)
-                <ul class="dropdown-menu conv-dropdown-menu">
+
+        @if ($detailsUrl)
+            <div class="msg-thread__actions dropdown">
+                <button type="button" class="msg-icon-btn" data-toggle="dropdown" aria-expanded="false"
+                    aria-label="{{ translate('messages.more') }}">
+                    <i class="tio-more-vertical"></i>
+                </button>
+                <ul class="dropdown-menu">
                     <li>
-                        <a href="{{ route('admin.users.delivery-man.preview', [$user->deliveryman_id]) }}">{{ translate('View_Details') }}</a>
+                        <a href="{{ $detailsUrl }}">
+                            <i class="tio-user-outlined"></i> {{ translate('View details') }}
+                        </a>
                     </li>
                 </ul>
-            @endif
-        </div>
-    </div>
+            </div>
+        @endif
+    </header>
 
-    <div class="card-body">
-        <div class="scroll-down">
-            @foreach($convs as $con)
-            @if($con->sender_id == $receiver->id)
+    {{-- Messages ---------------------------------------------------------- --}}
+    <div class="msg-thread__body" id="msgThreadBody">
+        @forelse ($days as $date => $messages)
+            @php $day = \Carbon\Carbon::parse($date); @endphp
 
-
-            @if ($con?->order)
-            <div class="conv-reply-1 p-0 m-0 bg-transparent">
-
-                <div class="card shadow-sm my-3" >
-                    <div class="card-body">
-                        <!-- Order ID and Status -->
-                        <div class="d-flex justify-content-between gap-2">
-                            <div>
-                                <div class="d-flex align-items-center gap-2">
-                                    <h5 class="card-title">{{ translate('Order ID') }} # {{ $con?->order?->id }}</h5>
-                                    @if (in_array($con?->order?->order_status ,['pending' ,'confirmed',
-                                    'accepted','processing','handover','picked_up']))
-                                    <span class="badge badge-soft-info">
-
-                                    @elseif (in_array($con?->order?->order_status ,['delivered' ]))
-
-                                    <span class="badge badge-soft-success">
-
-                                    @elseif (in_array($con?->order?->order_status ,['refund_requested', 'refunded', 'refund_request_canceled','canceled','failed' ]))
-
-                                    <span class="badge badge-soft-danger">
-
-                                        @endif
-
-                                        {{ translate($con?->order?->order_status) }}
-                                        </span>
-                                </div>
-                                <!-- Total Amount -->
-                                <p class="text-success font-weight-bold">{{ translate('Total') }}: {{ \App\CentralLogics\Helpers::format_currency($con?->order?->order_amount)  }}</p>
-                            </div>
-                            <!-- Order Date -->
-                                <p class="text-muted mb-2 text-right text-dark"> <span class="text-muted fs-12">{{ translate('Order Placed') }}</span> <br> {{ \App\CentralLogics\Helpers::date_format($con?->order?->created_at)  }}</p>
-                            </div>
-                            <br />
-                    <div class="d-flex justify-content-betweeen align-items-center">
-                        <div class="w-0 flex-grow-1">
-                            <!-- Delivery Address -->
-                            <h6 class="font-weight-bold"> {{ translate('Delivery Address') }}  </h6>
-                            @php
-                                $delivery_address = json_decode($con?->order?->delivery_address,true);
-                            @endphp
-                            <p class="mb-1">{{ data_get($delivery_address ,'contact_person_number') }}</p>
-                            <p>{{ data_get($delivery_address ,'address') }}</p>
-                        </div>
-                            <!-- Items count -->
-                            @if ($con?->order?->details_count > 0)
-                                <div class="d-flex justify-content-end">
-                                    <div class="border rounded p-2 text-center">
-                                        <p class="mb-0 font-weight-bold">{{ translate('Items') }}</p>
-                                        <h5 class="mb-0"> {{ $con?->order?->details_count }}</h5>
-                                    </div>
-                                </div>
-                            @endif
-                        </div>
-                    </div>
-                </div>
+            <div class="msg-day">
+                <span>
+                    @if ($day->isToday())
+                        {{ translate('messages.Today') }}
+                    @elseif ($day->isYesterday())
+                        {{ translate('messages.yesterday') }}
+                    @else
+                        {{ Helpers::date_format($day) }}
+                    @endif
+                </span>
             </div>
 
-                @endif
-                    <div class="pt1 pb-1">
-                        <div class="conv-reply-1">
-                                <h6>{{$con->message}}</h6>
-                                @if($con->file!=null)
-                                @foreach ($con->file_full_url as $img)
-                                <br>
-                                    <img class="w-100 mb-3"
+            @php $previousSenderId = null; @endphp
 
-                                    src="{{$img }}"
-                                    >
-                                    @endforeach
-                                @endif
+            @foreach ($messages as $con)
+                @php
+                    $incoming = $con->sender_id == $receiver->id;
+                    $grouped = $previousSenderId === $con->sender_id;
+                    $previousSenderId = $con->sender_id;
+                    $order = $con->order;
+                    $deliveryAddress = $order ? json_decode($order->delivery_address, true) : null;
+                @endphp
 
-                        </div>
-                        <div class="pl-1">
-                            <small>{{date('d M Y',strtotime($con->created_at))}} {{date(config('timeformat'),strtotime($con->created_at))}}</small>
-                        </div>
+                <div class="msg-row {{ $incoming ? 'msg-row--in' : 'msg-row--out' }} {{ $grouped && ! $order ? 'is-grouped' : '' }}">
+                    <div class="msg-row__avatar">
+                        @if ($incoming && ! $grouped)
+                            @include('partials._user-avatar', [
+                                'imageUrl' => $user['image_full_url'],
+                                'proStatus' => false,
+                                'size' => 28,
+                            ])
+                        @endif
                     </div>
-                @else
-                    <div class="pt-1 pb-1">
-                        <div class="conv-reply-2">
-                            <h6>{{$con->message}} </h6>
-                            @if($con->file!=null)
-                            @foreach ($con->file_full_url as $img)
-                            <br>
-                                <img class="w-100 mb-3"
 
-                                src="{{$img }}"
-                                >
+                    <div class="msg-row__stack">
+                        @if ($order)
+                            <div class="msg-order">
+                                <div class="msg-order__head">
+                                    <span class="msg-order__id">
+                                        <i class="tio-shopping-cart-outlined"></i>
+                                        {{ translate('messages.Order ID') }} #{{ $order->id }}
+                                    </span>
+                                    <span class="msg-status msg-status--{{ $statusTone($order->order_status) }}">
+                                        {{ translate($order->order_status) }}
+                                    </span>
+                                </div>
+
+                                <dl class="msg-order__body">
+                                    <div class="msg-order__field">
+                                        <dt>{{ translate('messages.Total') }}</dt>
+                                        <dd class="is-amount">{{ Helpers::format_currency($order->order_amount) }}</dd>
+                                    </div>
+                                    <div class="msg-order__field">
+                                        <dt>{{ translate('Order placed') }}</dt>
+                                        <dd>{{ Helpers::date_format($order->created_at) }}</dd>
+                                    </div>
+                                    @if ($order->details_count > 0)
+                                        <div class="msg-order__field">
+                                            <dt>{{ translate('messages.Items') }}</dt>
+                                            <dd>{{ $order->details_count }}</dd>
+                                        </div>
+                                    @endif
+                                    @if ($deliveryAddress)
+                                        <div class="msg-order__field">
+                                            <dt>{{ translate('Delivery address') }}</dt>
+                                            <dd>
+                                                {{ data_get($deliveryAddress, 'address') }}
+                                                @if (data_get($deliveryAddress, 'contact_person_number'))
+                                                    <br><span dir="ltr">{{ data_get($deliveryAddress, 'contact_person_number') }}</span>
+                                                @endif
+                                            </dd>
+                                        </div>
+                                    @endif
+                                </dl>
+                            </div>
+                        @endif
+
+                        @if (trim((string) $con->message) !== '')
+                            <div class="msg-bubble">{{ $con->message }}</div>
+                        @endif
+
+                        @if (! empty($con->file_full_url))
+                            <div class="msg-attachments">
+                                @foreach ($con->file_full_url as $image)
+                                    <button type="button" class="msg-attachment" data-full-image="{{ $image }}">
+                                        <img src="{{ $image }}" alt="{{ translate('Attachment') }}" loading="lazy">
+                                    </button>
                                 @endforeach
-                            @endif
-                        </div>
-                        <div class="text-right pr-1">
-                            <small>{{date('d M Y',strtotime($con->created_at))}} {{date(config('timeformat'),strtotime($con->created_at))}}</small>
-                            @if ($con->is_seen == 1)
-                            <span class="text-primary"><i class="tio-checkmark-circle"></i></span>
-                            @else
-                            <span><i class="tio-checkmark-circle-outlined"></i></span>
-                            @endif
-                        </div>
-                    </div>
-                @endif
-            @endforeach
-            <div id="scroll-here"></div>
-        </div>
+                            </div>
+                        @endif
 
-    </div>
-    <!-- Body -->
-    <div class="card-footer border-0 conv-reply-form">
-
-        <form action="javascript:" method="post" id="reply-form" enctype="multipart/form-data" class="conv-txtarea">
-            @csrf
-            <div class="quill-custom_">
-                <input type="hidden" name="user_type" value="{{ $user->user_id ? 'customer' : 'deliveryman' }}">
-                <!-- <label for="msg" class="layer-msg"></label> -->
-                <textarea id="conv-textarea" class="form-control pr--180" id="msg" rows = "1" name="reply" placeholder="{{translate('Start a new message')}}"></textarea>
-                <div class="upload__box">
-                    <div class="upload__img-wrap"></div>
-                    <div id="file-upload-filename" class="upload__file-wrap"></div>
-                    <div class="upload-btn-grp">
-                        <label class="m-0">
-                            <img src="{{asset('/public/assets/admin/img/gallery.png')}}" alt="">
-                            <input type="file" name="images[]" class="d-none upload_input_images" data-max_length="2"  multiple="" accept="image/jpeg, image/png">
-                        </label>
-                        <label class="m-0 emoji-icon-hidden">
-                            <img src="{{asset('/public/assets/admin/img/emoji.png')}}" alt="">
-                        </label>
+                        <div class="msg-meta">
+                            <span>{{ Helpers::time_format($con->created_at) }}</span>
+                            @unless ($incoming)
+                                <i class="{{ $con->is_seen == 1 ? 'tio-checkmark-circle is-seen' : 'tio-checkmark-circle-outlined' }}"
+                                    title="{{ $con->is_seen == 1 ? translate('messages.Seen') : translate('Sent') }}"></i>
+                            @endunless
+                        </div>
                     </div>
                 </div>
+            @endforeach
+        @empty
+            <div class="msg-empty">
+                <i class="tio-comment-outlined"></i>
+                <h6>{{ translate('messages.No messages yet') }}</h6>
+                <p>{{ translate('messages.Send the first message to start this conversation') }}</p>
+            </div>
+        @endforelse
+    </div>
 
-                <button type="submit"
-                        class="btn btn-primary btn--primary con-reply-btn">{{translate('messages.send')}}
+    {{-- Composer ---------------------------------------------------------- --}}
+    <form class="msg-composer" id="msgComposer" method="post" enctype="multipart/form-data" action="javascript:"
+        data-store-url="{{ route('admin.message.store', [$user->user_id ?? $user->deliveryman_id]) }}">
+        @csrf
+        <input type="hidden" name="user_type" value="{{ $isDeliveryMan ? 'deliveryman' : 'customer' }}">
+
+        <div class="msg-composer__previews" id="msgComposerPreviews"></div>
+
+        <div class="msg-composer__box">
+            <textarea class="msg-composer__input" id="msgComposerInput" name="reply" rows="1"
+                placeholder="{{ translate('messages.Write a message') }}"
+                aria-label="{{ translate('messages.Write a message') }}"></textarea>
+
+            <div class="msg-composer__tools">
+                <label class="msg-tool m-0" title="{{ translate('Attachment') }}">
+                    <i class="tio-attachment-diagonal"></i>
+                    <input type="file" name="images[]" id="msgComposerFiles" class="d-none" multiple
+                        accept="image/jpeg, image/png">
+                    <span class="sr-only">{{ translate('Attachment') }}</span>
+                </label>
+
+                <div class="msg-emoji">
+                    <button type="button" class="msg-tool" id="msgEmojiToggle" title="{{ translate('messages.emoji') }}">
+                        <i class="tio-slightly-smilling"></i>
+                    </button>
+                    <div class="msg-emoji__panel" id="msgEmojiPanel" hidden></div>
+                </div>
+
+                <span class="msg-composer__spacer"></span>
+                <span class="msg-composer__hint">{{ translate('messages.Shift + Enter for a new line') }}</span>
+
+                <button type="submit" class="msg-send">
+                    <i class="tio-send"></i> <span>{{ translate('messages.send') }}</span>
                 </button>
             </div>
-        </form>
-    </div>
+        </div>
+    </form>
 </div>
-
-<!-- Emoji Conv -->
-<script>
-    "use strict";
-    $(document).ready(function() {
-        $("#conv-textarea").emojioneArea({
-            pickerPosition: "top",
-            tonesStyle: "bullet",
-                events: {
-                    keyup: function (editor, event) {
-                        console.log(editor.html());
-                        console.log(this.getText());
-                    }
-                }
-            });
-    });
-
-    // Image Upload
-    jQuery(document).ready(function () {
-        ImgUpload();
-    });
-    function ImgUpload() {
-    let imgWrap = "";
-    let imgArray = [];
-
-    $('.upload_input_images').each(function () {
-        $(this).on('change', function (e) {
-        imgWrap = $(this).closest('.upload__box').find('.upload__img-wrap');
-        let maxLength = $(this).attr('data-max_length');
-
-        let files = e.target.files;
-        let filesArr = Array.prototype.slice.call(files);
-        console.log(filesArr);
-        let iterator = 0;
-        filesArr.forEach(function (f, index) {
-
-            if (!f.type.match('image.*')) {
-            return;
-            }
-
-            if (imgArray.length > maxLength) {
-            return false
-            } else {
-            let len = 0;
-            for (let i = 0; i < imgArray.length; i++) {
-                if (imgArray[i] !== undefined) {
-                len++;
-                }
-            }
-            if (len > maxLength) {
-                return false;
-            } else {
-                imgArray.push(f);
-
-                let reader = new FileReader();
-                reader.onload = function (e) {
-                let html = "<div class='upload__img-box'><div style='background-image: url(" + e.target.result + ")' data-number='" + $(".upload__img-close").length + "' data-file='" + f.name + "' class='img-bg'><div class='upload__img-close'></div></div></div>";
-                imgWrap.append(html);
-                iterator++;
-                }
-                reader.readAsDataURL(f);
-            }
-            }
-        });
-        });
-    });
-
-    $('body').on('click', ".upload__img-close", function (e) {
-        let file = $(this).parent().data("file");
-        for (let i = 0; i < imgArray.length; i++) {
-        if (imgArray[i].name === file) {
-            imgArray.splice(i, 1);
-            break;
-        }
-        }
-        $(this).parent().parent().remove();
-    });
-    }
-
-    //File Upload
-    $('#file-upload').change(function(e){
-        let fileName = e.target.files[0].name;
-        $('#file-upload-filename').text(fileName)
-    });
-
-
-    $(document).ready(function () {
-        $('.scroll-down').animate({
-            scrollTop: $('#scroll-here').offset().top
-        },0);
-    });
-
-
-    $(function() {
-        $("#coba").spartanMultiImagePicker({
-            fieldName: 'images[]',
-            maxCount: 3,
-            rowHeight: '55px',
-            groupClassName: 'attc--img border-0',
-            maxFileSize: '',
-            placeholderImage: {
-                image: '{{ asset('public/assets/admin/img/gallery.png') }}',
-                width: '100%'
-            },
-            dropFileLabel: "Drop Here",
-            onAddRow: function(index, file) {
-
-            },
-            onRenderedPreview: function(index) {
-
-            },
-            onRemoveRow: function(index) {
-
-            },
-            onExtensionErr: function(index, file) {
-                toastr.error('{{ translate('messages.please_only_input_png_or_jpg_type_file') }}', {
-                    CloseButton: true,
-                    ProgressBar: true
-                });
-            },
-            onSizeErr: function(index, file) {
-                toastr.error('{{ translate('messages.file_size_too_big') }}', {
-                    CloseButton: true,
-                    ProgressBar: true
-                });
-            }
-        });
-    });
-
-
-    $('#reply-form').on('submit', function() {
-        $('button[type=submit], input[type=submit]').prop('disabled',true);
-            let formData = new FormData(this);
-            $.ajaxSetup({
-                headers: {
-                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-                }
-            });
-            $.post({
-                url: '{{ route('admin.message.store', [$user->user_id ?? $user->deliveryman_id]) }}',
-                data: $('reply-form').serialize(),
-                data: formData,
-                cache: false,
-                contentType: false,
-                processData: false,
-                success: function(data) {
-                    console.log(data);
-                    if (data.errors && data.errors.length > 0) {
-                        $('button[type=submit], input[type=submit]').prop('disabled',false);
-                        toastr.error('Write something to send massage!', {
-                            CloseButton: true,
-                            ProgressBar: true
-                        });
-                    }else{
-
-                        toastr.success('Message sent', {
-                            CloseButton: true,
-                            ProgressBar: true
-                        });
-                        $('#admin-view-conversation').html(data.view);
-                        conversationList();
-                    }
-                },
-                error() {
-                    toastr.error('Write something to send massage!', {
-                        CloseButton: true,
-                        ProgressBar: true
-                    });
-                }
-            });
-        });
-</script>

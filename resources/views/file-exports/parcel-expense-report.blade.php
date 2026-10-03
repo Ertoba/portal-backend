@@ -4,36 +4,36 @@
         <table>
             <thead>
                 <tr>
-                    <th>{{ translate('Search_Criteria') }}</th>
+                    <th>{{ translate('Search criteria') }}</th>
                     <th></th>
                     <th></th>
                     <th>
                         @if(isset($data['module']))
-                            {{ translate('module') }} - {{ $data['module']?translate($data['module']):translate('all') }}
+                            {{ translate('Module') }} - {{ $data['module']?translate($data['module']):translate('All') }}
                             <br>
                         @endif
-                        {{ translate('zone') }} - {{ $data['zone']??translate('all') }}
+                        {{ translate('Zone') }} - {{ $data['zone']??translate('All') }}
                         <br>
-                        {{ translate('customer') }} - {{ $data['customer']??translate('all') }}
+                        {{ translate('Customer') }} - {{ $data['customer']??translate('All') }}
                         @if ($data['from'])
                             <br>{{ translate('from') }} - {{ Carbon\Carbon::parse($data['from'])->format('d M Y') }}
                         @endif
                         @if ($data['to'])
                             <br>{{ translate('to') }} - {{ Carbon\Carbon::parse($data['to'])->format('d M Y') }}
                         @endif
-                        <br>{{ translate('filter') }} - {{ translate($data['filter']) }}
-                        <br>{{ translate('Search_Bar_Content') }} - {{ $data['search'] ?? translate('N/A') }}
+                        <br>{{ translate('Filter') }} - {{ translate($data['filter']) }}
+                        <br>{{ translate('Search bar content') }} - {{ $data['search'] ?? translate('N/A') }}
                     </th>
                     <th></th>
                     <th></th>
                 </tr>
                 <tr>
-                    <th>{{ translate('sl') }}</th>
-                    <th>{{ translate('messages.order_id') }}</th>
-                    <th>{{ translate('Date & Time') }}</th>
-                    <th>{{ translate('Expense Type') }}</th>
-                    <th>{{ translate('Customer Name') }}</th>
-                    <th>{{ translate('expense amount') }}</th>
+                    <th>{{ translate('SL') }}</th>
+                    <th>{{ translate('messages.Order ID') }}</th>
+                    <th>{{ translate('Date & time') }}</th>
+                    <th>{{ translate('Expense type') }}</th>
+                    <th>{{ translate('Customer name') }}</th>
+                    <th>{{ translate('Expense amount') }}</th>
                 </tr>
             </thead>
             <tbody>
@@ -46,11 +46,11 @@
                         <td>
                             @if ($exp->order?->is_guest)
                                 @php($customer_details = json_decode($exp->order['delivery_address'], true))
-                                {{ $customer_details['contact_person_name'] ?? translate('messages.Guest_user') }}
+                                {{ $customer_details['contact_person_name'] ?? translate('messages.Guest user') }}
                             @elseif ($exp->order?->customer)
                                 {{ $exp->order?->customer['f_name'].' '.$exp->order?->customer['l_name'] }}
                             @else
-                                {{ translate('messages.invalid_customer_data') }}
+                                {{ translate('messages.Invalid customer data') }}
                             @endif
                         </td>
                         <td>{{ \App\CentralLogics\Helpers::format_currency($exp['amount']) }}</td>

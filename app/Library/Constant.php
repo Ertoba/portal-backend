@@ -1,45 +1,48 @@
 <?php
 
-const POINT_SRID = 0; // For MariaDB use 4326
+const POINT_SRID = 0;
 
-//payment methods
+/*
+ * Gateway brand names. These are proper nouns: payment_method_label() renders them
+ * verbatim in every locale and they must never reach translate() — see app/helpers.php.
+ * Values are the vendors' own spellings, so casing here is deliberate ('bKash', 'iyzico').
+ */
 const GATEWAYS_PAYMENT_METHODS = [
-    ['key' => 'ssl_commerz', 'value' => 'SSLCOMMERZ'],
+    ['key' => 'ssl_commerz', 'value' => 'SSLCommerz'],
     ['key' => 'stripe', 'value' => 'Stripe'],
     ['key' => 'paypal', 'value' => 'PayPal'],
-    ['key' => 'razor_pay', 'value' => 'Razor Pay'],
+    ['key' => 'razor_pay', 'value' => 'Razorpay'],
     ['key' => 'paystack', 'value' => 'Paystack'],
-    ['key' => 'senang_pay', 'value' => 'Senang Pay'],
+    ['key' => 'senang_pay', 'value' => 'senangPay'],
     ['key' => 'paymob_accept', 'value' => 'Paymob Accept'],
-    ['key' => 'flutterwave', 'value' => 'Flutter Wave'],
+    ['key' => 'flutterwave', 'value' => 'Flutterwave'],
     ['key' => 'paytm', 'value' => 'Paytm'],
-    ['key' => 'paytabs', 'value' => 'Pay Tabs'],
-    ['key' => 'liqpay', 'value' => 'Liq Pay'],
-    ['key' => 'mercadopago', 'value' => 'Mercadopago'],
-    ['key' => 'bkash', 'value' => 'Bkash'],
-    ['key' => 'fatoorah', 'value' => 'Fatoorah'],
+    ['key' => 'paytabs', 'value' => 'PayTabs'],
+    ['key' => 'liqpay', 'value' => 'LiqPay'],
+    ['key' => 'mercadopago', 'value' => 'Mercado Pago'],
+    ['key' => 'bkash', 'value' => 'bKash'],
+    ['key' => 'fatoorah', 'value' => 'MyFatoorah'],
     ['key' => 'xendit', 'value' => 'Xendit'],
     ['key' => 'amazon_pay', 'value' => 'Amazon Pay'],
-    ['key' => 'iyzi_pay', 'value' => 'Iyzi Pay'],
-    ['key' => 'hyper_pay', 'value' => 'Hyper Pay'],
+    ['key' => 'iyzi_pay', 'value' => 'iyzico'],
+    ['key' => 'hyper_pay', 'value' => 'HyperPay'],
     ['key' => 'foloosi', 'value' => 'Foloosi'],
-    ['key' => 'ccavenue', 'value' => 'CC Avenue'],
-    ['key' => 'pvit', 'value' => 'Pvit'],
-    ['key' => 'moncash', 'value' => 'Moncash'],
+    ['key' => 'ccavenue', 'value' => 'CCAvenue'],
+    ['key' => 'pvit', 'value' => 'PVit'],
+    ['key' => 'moncash', 'value' => 'MonCash'],
     ['key' => 'thawani', 'value' => 'Thawani'],
-    ['key' => 'tap', 'value' => 'Tap Payment'],
+    ['key' => 'tap', 'value' => 'Tap'],
     ['key' => 'viva_wallet', 'value' => 'Viva Wallet'],
     ['key' => 'hubtel', 'value' => 'Hubtel'],
-    ['key' => 'maxicash', 'value' => 'Maxicash'],
-    ['key' => 'esewa', 'value' => 'Esewa'],
+    ['key' => 'maxicash', 'value' => 'MaxiCash'],
+    ['key' => 'esewa', 'value' => 'eSewa'],
     ['key' => 'swish', 'value' => 'Swish'],
-    ['key' => 'momo', 'value' => 'Momo'],
-    ['key' => 'payfast', 'value' => 'Pay Fast'],
-    ['key' => 'worldpay', 'value' => 'World Pay'],
-    ['key' => 'sixcash', 'value' => 'Six Cash'],
+    ['key' => 'momo', 'value' => 'MoMo'],
+    ['key' => 'payfast', 'value' => 'PayFast'],
+    ['key' => 'worldpay', 'value' => 'Worldpay'],
+    ['key' => 'sixcash', 'value' => 'SixCash'],
 ];
 
-//currencies
 const GATEWAYS_CURRENCIES = [
     ["code" => "AED", "symbol" => "د.إ", "name" => "UAE dirham"],
     ["code" => "AFN", "symbol" => "Afs", "name" => "Afghan afghani"],
@@ -199,7 +202,6 @@ const GATEWAYS_CURRENCIES = [
     ["code" => "ZWR", "symbol" => "Z$", "name" => "Zimbabwean dollar"]
 ];
 
-//countries
 const GATEWAYS_COUNTRIES = [
     ["name" => 'Afghanistan', "code" => 'AF'],
     ["name" => 'Åland Islands', "code" => 'AX'],
@@ -446,7 +448,6 @@ const GATEWAYS_COUNTRIES = [
     ["name" => 'Zimbabwe', "code" => 'ZW']
 ];
 
-//languages
 const GATEWAYS_LANGUAGES = [
     ["code" => "ab", "name" => "Abkhaz", "nativeName" => "аҧсуа"],
     ["code" => "aa", "name" => "Afar", "nativeName" => "Afaraf"],
@@ -1215,8 +1216,8 @@ const LANGUAGE_NAMES = [
 const IMAGE_FORMAT = 'jpeg, jpg, png, gif, webp';
 const IMAGE_EXTENSION = '.jpeg, .jpg, .png, .gif, .webp';
 const IMAGE_FORMAT_FOR_VALIDATION = 'jpeg,jpg,png,gif,webp';
-const VIDEO_FORMAT = 'mp4,webm,ogg';
-const VIDEO_EXTENSION = '.mp4,.webm,.ogg';
+const VIDEO_FORMAT = 'mp4,webm,ogg,mov,3gp,mkv';
+const VIDEO_EXTENSION = '.mp4,.webm,.ogg,.mov,.3gp,.mkv';
 const PRODUCT_VIDEO_MAX_FILE_SIZE = 20;
 const DOCUMENT_FORMAT = 'pdf,doc,docx,excel';
 const DOCUMENT_EXTENSION = '.pdf,.doc,.docx,.excel';
@@ -1227,6 +1228,22 @@ const FILE_FORMAT_FOR_IMAGE_PICKER = 'jpeg|jpg|png|gif|webp';
 const FILE_EXTENSION = '.pdf,.doc,.docx,.zip,.p8';
 const MAX_FILE_SIZE = 2;
 const ADDON_MAX_FILE_SIZE = 20;
+
+const API_CACHE_MINUTES = 20;
+
+const DEFAULT_PAGINATION = 25;
+
+/*
+ * The verification code a test or demo install hands out instead of a random one, so anyone
+ * trying the site can get through a sign-up, login or forgot-password flow without a phone or
+ * inbox to read a real code from. Reached only through generateOtpCode()/isStaticOtpMode() in
+ * app/helpers.php, which gate it on APP_MODE — a live install must never issue this.
+ */
+const STATIC_OTP_CODE = '123456';
+
+const STORAGE_RELATION_COLUMNS = ['data_id', 'data_type', 'key', 'value'];
+
+const TRANSLATION_RELATION_COLUMNS = ['translationable_id', 'translationable_type', 'key', 'locale', 'value'];
 
 const VEHICLE_CATEGORY_USE_CASE = [
     'delivery',

@@ -9,7 +9,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('store_categories', function (Blueprint $table) {
-            $table->foreignId('module_id')->nullable()->after('store_id')->constrained('modules')->nullOnDelete();
+            $table->unsignedBigInteger('module_id')->nullable()->index();
         });
 
     }
@@ -17,7 +17,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('store_categories', function (Blueprint $table) {
-            $table->dropConstrainedForeignId('module_id');
+            $table->dropColumn('module_id');
         });
     }
 };

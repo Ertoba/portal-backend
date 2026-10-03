@@ -16,14 +16,14 @@
         @if($item->store)
         {{Str::limit($item->store->name,25,'...')}}
         @else
-        {{translate('messages.store_deleted')}}
+        {{translate('messages.Store deleted')}}
         @endif
     </td>
     <td>
         @if($item->store)
         {{$item->store->zone->name}}
         @else
-        {{translate('messages.not_found')}}
+        {{translate('No data found')}}
         @endif
     </td>
     <td>
@@ -31,7 +31,7 @@
     </td>
 
     <td>
-        <a class="btn action-btn btn--primary btn-outline-primary update-quantity" href="javascript:" title="{{translate('messages.edit_quantity')}}" data-id="{{ $item->id }}" data-toggle="modal" data-target="#update-quantity"><i class="tio-edit"></i>
+        <a class="btn action-btn action-btn--edit update-quantity" href="javascript:" title="{{translate('messages.Edit quantity')}}" data-id="{{ $item->id }}" data-toggle="modal" data-target="#update-quantity"><i class="tio-edit"></i>
         </a>
     </td>
 </tr>

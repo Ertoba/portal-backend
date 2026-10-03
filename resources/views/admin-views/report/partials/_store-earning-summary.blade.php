@@ -18,12 +18,11 @@
         <div class="card-shape-in d-flex position-relative bg-success-gradient text-white rounded-10 p-3 p-xxl-20 d-flex gap-2 justify-content-between align-items-start overflow-hidden z-2 p-3 p-xxl-20 h-100 cursor-pointer">
             <div class="flex-grow-1 d-flex flex-column h-100">
                 <div>
-                    <div class="opacity-lg fs-14 mb-2">{{ translate('messages.Total Earnings with Admin Commission') }}</div>
+                    <div class="opacity-lg fs-14 mb-2">{{ translate('Total earnings with admin commission') }}</div>
                     @if ($show_comparison)
-                        <div class="opacity-lg fs-14 mb-2">
-                            {{ $summary['total_earnings_positive'] ? '↑' : '↓' }}
-                            {{ $summary['total_earnings_percentage'] }}%
-                            {{ $comparison_text }}
+                        <div class="opacity-lg fs-14 mb-2 d-flex align-items-center gap-1">
+                            <i class="{{ $summary['total_earnings_positive'] ? 'tio-arrow-upward' : 'tio-arrow-downward' }}"></i>
+                            <span>{{ $summary['total_earnings_percentage'] }}% {{ $comparison_text }}</span>
                         </div>
                     @endif
                 </div>
@@ -41,12 +40,11 @@
         <div class="card-shape-in d-flex position-relative bg-warning-gradient text-white rounded-10 p-3 p-xxl-20 d-flex gap-2 justify-content-between align-items-start overflow-hidden z-2  p-3 p-xxl-20 h-100 cursor-pointer">
             <div class="flex-grow-1 d-flex flex-column h-100">
                 <div>
-                    <div class="opacity-lg fs-14 mb-2">{{ translate('messages.Total_Expenses') }}</div>
+                    <div class="opacity-lg fs-14 mb-2">{{ translate('Total expenses') }}</div>
                     @if ($show_comparison)
-                        <div class="opacity-lg fs-14 mb-2">
-                            {{ $summary['total_expenses_positive'] ? '↑' : '↓' }}
-                            {{ $summary['total_expenses_percentage'] }}%
-                            {{ $comparison_text }}
+                        <div class="opacity-lg fs-14 mb-2 d-flex align-items-center gap-1">
+                            <i class="{{ $summary['total_expenses_positive'] ? 'tio-arrow-upward' : 'tio-arrow-downward' }}"></i>
+                            <span>{{ $summary['total_expenses_percentage'] }}% {{ $comparison_text }}</span>
                         </div>
                     @endif
                 </div>
@@ -66,17 +64,16 @@
                 <div>
                     <div class="fs-14 mb-2">
                         <span class="opacity-lg">
-                            {{ translate('messages.Net_Profit') }}
+                            {{ translate('Net profit') }}
                         </span>
                         <span data-toggle="tooltip" data-placement="right"
                             data-original-title="{{ translate('Net profit shows the amount a store keeps after total earnings are reduced by total expenses.') }}"
                             class="text-white tio-info fs-16 m-0"></span>
                     </div>
                     @if ($show_comparison)
-                        <div class="opacity-lg fs-14 mb-2">
-                            {{ $summary['net_profit_positive'] ? '↑' : '↓' }}
-                            {{ $summary['net_profit_percentage'] }}%
-                            {{ $comparison_text }}
+                        <div class="opacity-lg fs-14 mb-2 d-flex align-items-center gap-1">
+                            <i class="{{ $summary['net_profit_positive'] ? 'tio-arrow-upward' : 'tio-arrow-downward' }}"></i>
+                            <span>{{ $summary['net_profit_percentage'] }}% {{ $comparison_text }}</span>
                         </div>
                     @endif
                 </div>

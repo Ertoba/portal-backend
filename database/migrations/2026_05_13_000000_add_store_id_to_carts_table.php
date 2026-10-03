@@ -9,14 +9,13 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('carts', function (Blueprint $table) {
-            $table->foreignId('store_id')->nullable()->after('module_id')->constrained('stores')->nullOnDelete();
+            $table->unsignedBigInteger('store_id')->nullable()->index();
         });
     }
 
     public function down(): void
     {
         Schema::table('carts', function (Blueprint $table) {
-            $table->dropForeign(['store_id']);
             $table->dropColumn('store_id');
         });
     }

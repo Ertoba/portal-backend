@@ -1,42 +1,41 @@
 @extends('layouts.admin.app')
 
-@section('title',translate('low_stock_list'))
+@section('title',translate('Low stock list'))
 @section('low_stock_list')
 active
 @endsection
 @section('content')
 
 <div class="content container-fluid">
-    <!-- Page Header -->
     <div class="page-header">
         <h1 class="page-header-title">
             <span class="page-header-icon">
-                <img src="{{asset('public/assets/admin/img/report.png')}}" class="w--22" alt="">
+                <img src="{{asset('public/assets/admin/img/outline/report.svg')}}" class="w--26" alt="">
             </span>
             <span>
-                {{translate('low_stock_list')}}
+                {{translate('Low stock list')}}
                 <span class="badge badge-soft-secondary" id="">{{ $items->total() }}</span>
             </span>
         </h1>
+        <p class="page-header-desc">{{ translate('Items that have run low or run out, so you can act before a customer notices.') }}</p>
     </div>
-    <!-- End Page Header -->
-    <!-- Card -->
     <div class="card mt-3">
-        <!-- Header -->
         <div class="card-header border-0 py-2">
             <div class="search--button-wrapper justify-content-end">
+                @include('partials._table-head', [
+                    'subtitle' => translate('messages.Stock currently held against each item.'),
+                ])
+
                 <form class="search-form">
-                    <!-- Search -->
                     <div class="input-group input--group">
-                        <input id="datatableSearch" name="search" type="search" class="form-control" placeholder="{{translate('ex_:_search_name')}}" aria-label="{{translate('messages.search_here')}}" value="{{request()->query('search')}}">
+                        <input id="datatableSearch" name="search" type="search" class="form-control" placeholder="{{translate('Ex') . ' : ' . translate('Search by name')}}" aria-label="{{translate('Search')}}" value="{{request()->query('search')}}">
                         <button type="submit" class="btn btn--secondary"><i class="tio-search"></i></button>
                     </div>
-                    <!-- End Search -->
                 </form>
                 <div class="min--200">
                     <select name="zone_id" class="form-control js-select2-custom set-filter" data-url="{{ url()->full() }}" data-filter="zone_id" id="zone">
-                        <option value="all">{{translate('All Zones')}}</option>
-                        @foreach(\App\Models\Zone::orderBy('name')->get() as $z)
+                        <option value="all">{{translate('All zones')}}</option>
+                        @foreach(\App\CentralLogics\Helpers::zones_dropdown() as $z)
                             <option value="{{$z['id']}}" {{isset($zone) && $zone->id == $z['id']?'selected':''}}>
                                 {{($z['name'])}}
                             </option>
@@ -44,48 +43,43 @@ active
                     </select>
                 </div>
                 <div class="min--200">
-                    <select name="store_id" data-placeholder="{{translate('messages.select_store')}}" class="js-data-example-ajax form-control set-filter" data-url="{{ url()->full() }}" data-filter="store_id">
+                    <select name="store_id" data-placeholder="{{translate('Select store')}}" class="js-data-example-ajax form-control set-filter" data-url="{{ url()->full() }}" data-filter="store_id">
                         @if(isset($store))
                             <option value="{{$store->id}}" data-verified="{{ (int) $store->verified_seller }}" selected>{{$store->name}}</option>
                         @else
-                            <option value="all" selected>{{translate('messages.all_stores')}}</option>
+                            <option value="all" selected>{{translate('All stores')}}</option>
                         @endif
                     </select>
                 </div>
-                <!-- Unfold -->
                 <div class="hs-unfold mr-2">
                     <a class="js-hs-unfold-invoker btn btn-sm btn-white dropdown-toggle min-height-40" href="javascript:;"
                         data-hs-unfold-options='{
                                 "target": "#usersExportDropdown",
                                 "type": "css-animation"
                             }'>
-                        <i class="tio-download-to mr-1"></i> {{ translate('messages.export') }}
+                        <i class="tio-download-to mr-1"></i> {{ translate('messages.Export') }}
                     </a>
 
                     <div id="usersExportDropdown"
                         class="hs-unfold-content dropdown-unfold dropdown-menu dropdown-menu-sm-right">
-                        <span class="dropdown-header">{{ translate('messages.download_options') }}</span>
+                        <span class="dropdown-header">{{ translate('messages.Download options') }}</span>
                         <a id="export-excel" class="dropdown-item" href="{{route('admin.transactions.report.stock-wise-report-export', ['type'=>'excel', 'module_id'=>Config::get('module.current_module_id') ?? request()->query('module_id'), request()->getQueryString()])}}">
                             <img class="avatar avatar-xss avatar-4by3 mr-2"
                                 src="{{ asset('public/assets/admin') }}/svg/components/excel.svg"
                                 alt="Image Description">
-                            {{ translate('messages.excel') }}
+                            Excel
                         </a>
                         <a id="export-csv" class="dropdown-item" href="{{route('admin.transactions.report.stock-wise-report-export', ['type'=>'csv', 'module_id'=>Config::get('module.current_module_id') ?? request()->query('module_id'), request()->getQueryString()])}}">
                             <img class="avatar avatar-xss avatar-4by3 mr-2"
                                 src="{{ asset('public/assets/admin') }}/svg/components/placeholder-csv-format.svg"
                                 alt="Image Description">
-                            {{ translate('messages.csv') }}
+                            CSV
                         </a>
                     </div>
                 </div>
-                <!-- End Unfold -->
             </div>
-            <!-- End Row -->
         </div>
-        <!-- End Header -->
 
-        <!-- Table -->
         <div class="table-responsive datatable-custom" id="table-div">
             <table id="datatable" class="table table-borderless table-thead-bordered table-nowrap card-table" data-hs-datatables-options='{
                         "columnDefs": [{
@@ -106,20 +100,20 @@ active
                     }'>
                 <thead class="thead-light">
                     <tr>
-                        <th class="border-0">{{translate('sl')}}</th>
-                        <th class="border-0 w--2">{{translate('messages.name')}}</th>
-                        <th class="border-0 w--2">{{translate('messages.store')}}</th>
-                        <th class="border-0">{{translate('messages.zone')}}</th>
+                        <th class="border-0 w--2">{{translate('Name')}}</th>
+                        <th class="border-0 w--2">{{translate('messages.Store')}}</th>
+                        <th class="border-0">{{translate('messages.Zone')}}</th>
                         <th class="border-0">{{translate('Current stock')}}</th>
-                        <th class="border-0">{{translate('messages.action')}}</th>
+                        <th class="border-0">{{translate('messages.Action')}}</th>
                     </tr>
                 </thead>
 
                 <tbody id="set-rows">
 
-                    @foreach($items as $key=>$item)
+                    @foreach($items as $item)
+                    @php($stock = max((int) $item->stock, 0))
+                    @php($warn_below = (int) ($item->store?->storeConfig?->minimum_stock_for_warning ?? 0))
                     <tr>
-                        <td>{{$key+$items->firstItem()}}</td>
                         <td>
                             <a class="media align-items-center min-w-220" href="{{route('admin.item.view',[$item['id'],'module_id'=>$item['module_id']])}}">
                                 <img class="avatar avatar-lg mr-3 onerror-image"
@@ -128,6 +122,7 @@ active
                                  data-onerror-image="{{asset('public/assets/admin/img/160x160/img2.jpg')}}" alt="{{$item->name}} image">
                                 <div class="media-body">
                                     <h5 class="text-hover-primary mb-0 max-width-200px word-break line--limit-2">{{$item['name']}}</h5>
+                                    <span class="d-block fs-12 text-muted">ID:{{$item['id']}}</span>
                                 </div>
                             </a>
                         </td>
@@ -135,21 +130,28 @@ active
                             @if($item->store)
                             {{Str::limit($item->store->name,25,'...')}}
                             @else
-                            {{translate('messages.store_deleted')}}
+                            {{translate('messages.Store deleted')}}
                             @endif
                         </td>
                         <td>
                             @if($item->store)
                             {{$item->store?->zone?->name}}
                             @else
-                            {{translate('messages.not_found')}}
+                            {{translate('No data found')}}
+                            @endif
+                        </td>
+                        <td data-order="{{ $stock }}">
+                            @if($stock === 0)
+                                <span class="badge badge-soft-danger">{{translate('Out of stock')}}</span>
+                            @else
+                                <span class="d-block text-title font-semibold">{{ $stock }}</span>
+                            @endif
+                            @if($warn_below)
+                                <span class="d-block fs-12 text-muted">{{ translate('Stock alert level') }}: {{ $warn_below }}</span>
                             @endif
                         </td>
                         <td>
-                            {{ max((int) $item->stock, 0) }}
-                        </td>
-                        <td>
-                            <a class="btn action-btn btn--primary btn-outline-primary update-quantity" href="javascript:" title="{{translate('messages.edit_quantity')}}" data-id="{{ $item->id }}" data-toggle="modal" data-target="#update-quantity"><i class="tio-edit"></i>
+                            <a class="btn action-btn action-btn--edit update-quantity" href="javascript:" title="{{translate('messages.Edit quantity')}}" data-id="{{ $item->id }}" data-toggle="modal" data-target="#update-quantity"><i class="tio-edit"></i>
                             </a>
                         </td>
                     </tr>
@@ -167,13 +169,11 @@ active
             <div class="empty--data">
                 <img src="{{asset('/public/assets/admin/svg/illustrations/sorry.svg')}}" alt="public">
                 <h5>
-                    {{translate('no_data_found')}}
+                    {{translate('No data found')}}
                 </h5>
             </div>
             @endif
-        <!-- End Table -->
     </div>
-    <!-- End Card -->
 </div>
 <div class="modal fade update-quantity-modal" id="update-quantity" tabindex="-1">
     <div class="modal-dialog modal-dialog-scrollable">
@@ -189,8 +189,8 @@ active
                     @csrf
                     <div class="mt-2 rest-part w-100"></div>
                     <div class="btn--container justify-content-end">
-                        <button type="reset" data-dismiss="modal" aria-label="Close" class="btn btn--reset">{{translate('cancel')}}</button>
-                        <button type="submit" id="submit_new_customer" class="btn btn--primary">{{translate('update_stock')}}</button>
+                        <button type="reset" data-dismiss="modal" aria-label="Close" class="btn btn--reset"><i class="tio-clear-circle-outlined"></i> {{translate('Cancel')}}</button>
+                        <button type="submit" id="submit_new_customer" class="btn btn--primary"><i class="tio-save"></i> {{translate('Update stock')}}</button>
                     </div>
                 </form>
             </div>

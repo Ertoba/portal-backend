@@ -18,6 +18,7 @@ var zone_id = [];
 
 $(document).on('ready', function () {
     $('#zone').on('change', function(){
+        $('#store_id').val(null).trigger('change');
         if($(this).val())
         {
             zone_id = $(this).val();

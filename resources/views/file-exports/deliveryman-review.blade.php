@@ -1,5 +1,5 @@
 <div class="row">
-    <div class="col-lg-12 text-center "><h1 >{{ translate('delivery_man_review_list') }}</h1></div>
+    <div class="col-lg-12 text-center "><h1 >{{ translate('Deliveryman review list') }}</h1></div>
     <div class="col-lg-12">
 
 
@@ -7,28 +7,27 @@
     <table>
         <thead>
             <tr>
-                <th>{{ translate('Search_Criteria') }}
+                <th>{{ translate('Search criteria') }}
 
                     @isset($data['delivery_men'])
                          <br>
-                        {{ translate('delivery_man')  }}- {{ $data['delivery_men']}}
+                        {{ translate('Deliveryman')  }}- {{ $data['delivery_men']}}
                     @endisset
 
                     @isset($data['order_by'])
                         <br>
-                        {{ translate('order_by')  }}- {{ $data['order_by']}}
+                        {{ translate('Order by')  }}- {{ $data['order_by']}}
 
                     @endisset
                 </th>
                 <th></th>
                 <th>
-                    {{-- @dd($data['delivery_men']) --}}
 
 
 
                 </th>
                 <th>
-                    {{ translate('Search_Bar_Content')  }}- {{ $data['search'] ??translate('N/A') }}
+                    {{ translate('Search bar content')  }}- {{ $data['search'] ??translate('N/A') }}
 
                 </th>
                 <th> </th>
@@ -37,12 +36,12 @@
                 <th></th>
                 </tr>
         <tr>
-            <th>{{ translate('sl') }}</th>
-            <th>{{translate('messages.delivery_man_name')}}</th>
-            <th>{{translate('messages.order_id')}}</th>
-            <th>{{translate('messages.customer_name')}}</th>
-            <th>{{translate('messages.store_name')}}</th>
-            <th>{{translate('messages.rating')}}</th>
+            <th>{{ translate('SL') }}</th>
+            <th>{{translate('Deliveryman name')}}</th>
+            <th>{{translate('messages.Order ID')}}</th>
+            <th>{{translate('Customer name')}}</th>
+            <th>{{translate('Store name')}}</th>
+            <th>{{translate('messages.Rating')}}</th>
             <th>{{translate('messages.review')}}</th>
         </thead>
         <tbody>
@@ -57,7 +56,7 @@
                     @if ($review->customer)
                         {{$review->customer?$review->customer->f_name:""}} {{$review->customer?$review->customer->l_name:""}}
                     @else
-                        {{translate('messages.customer_not_found')}}
+                        {{translate('No data found')}}
                     @endif
                 </td>
                 <td>

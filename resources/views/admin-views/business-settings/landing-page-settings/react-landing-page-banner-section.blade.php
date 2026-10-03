@@ -1,6 +1,6 @@
 @extends('layouts.admin.app')
 
-@section('title', translate('messages.react_landing_page'))
+@section('title', translate('React landing page'))
 
 @push('css_or_js')
     <meta name="csrf-token" content="{{ csrf_token() }}">
@@ -11,17 +11,20 @@
 <div class="content container-fluid">
     <div class="page-header pb-0">
         <div class="d-flex flex-wrap justify-content-between">
-            <h1 class="page-header-title">
-                <span class="page-header-icon">
-                    <img src="{{asset('public/assets/admin/img/landing.png')}}" class="w--20" alt="">
-                </span>
-                <span>
-                    {{ translate('messages.react_landing_page') }}
-                </span>
-            </h1>
+            <div>
+                <h1 class="page-header-title">
+                    <span class="page-header-icon">
+                        <img src="{{asset('public/assets/admin/img/outline/landing.svg')}}" class="w--26" alt="">
+                    </span>
+                    <span>
+                        {{ translate('React landing page') }}
+                    </span>
+                </h1>
+                <p class="page-header-desc">{{ translate('The banners that run across the top of the react landing page.') }}</p>
+            </div>
             <div class="text--primary-2 py-1 d-flex flex-wrap align-items-center" type="button" data-toggle="modal"
                 data-target="#how-it-works">
-                <strong class="mr-2">{{translate('See_how_it_works!')}}</strong>
+                <strong class="mr-2">{{translate('See how it works')}}</strong>
                 <div>
                     <i class="tio-info-outined"></i>
                 </div>
@@ -38,7 +41,7 @@
             <div class="">
                 <h3 class="mb-1">{{ translate('Banner Section') }}</h3>
                 <p class="mb-0 gray-dark fs-12">
-                    {{ translate('See how your Banner Section will look to customers.') }}
+                    {{ translate('See how this section will look to customers.') }}
                 </p>
             </div>
             <div class="max-w-300px ml-sm-auto">
@@ -56,7 +59,7 @@
                 <div class="">
                     <h3 class="mb-1">{{ translate('Show Banner Section') }}</h3>
                     <p class="mb-0 gray-dark fs-12">
-                        {{ translate('If you turn of the availability status, this section will not show in the website') }}
+                        {{ translate('If you turn off the availability status, this section will not show on the website') }}
                     </p>
                 </div>
             </div>
@@ -72,10 +75,10 @@
                         <input type="checkbox" data-id="CheckboxStatus" data-type="status"
                                data-image-on="{{ asset('/public/assets/admin/img/status-ons.png') }}"
                                data-image-off="{{ asset('/public/assets/admin/img/off-danger.png') }}"
-                               data-title-on="{{ translate('Do you want turn on this section ?') }}"
-                               data-title-off="{{ translate('Do you want to turn off this section ?') }}"
-                               data-text-on="<p>{{ translate('If you turn on this section will be show in react landing page.') }}"
-                               data-text-off="<p>{{ translate('If you turn off this section will not be show in react landing page.') }}</p>"
+                               data-title-on="{{ translate('Do you want to turn on this section?') }}"
+                               data-title-off="{{ translate('Do you want to turn off this section?') }}"
+                               data-text-on="<p>{{ translate('If you turn this on, the section will be shown on the React landing page.') }}"
+                               data-text-off="<p>{{ translate('If you turn this off, the section will not be shown on the React landing page.') }}</p>"
                                class="toggle-switch-input  status dynamic-checkbox" id="CheckboxStatus"
                             {{ $banner_section_status?->value ? 'checked' : '' }}>
                         <span class="toggle-switch-label text">
@@ -151,8 +154,8 @@
                             </div>
 
                             <p class="fs-10 text-center mb-0 mt-lg-4 mt-3">
-                                {{ translate('JPG, JPEG, PNG, Gif Image size : Max 2 MB') }}
-                                <span class="font-medium text-title">{{ translate('(8:1)') }}</span>
+                                {{ 'JPG, JPEG, PNG, GIF' . ' image, max ' . 2 . ' MB' }}
+                                <span class="font-medium text-title">(8:1)</span>
                             </p>
                         </div>
                     </div>
@@ -160,8 +163,8 @@
             </div>
 
             <div class="btn--container justify-content-end mt-20">
-                <button type="reset" class="btn btn--reset mb-2">{{ translate('Reset') }}</button>
-                <button type="submit" class="btn btn--primary mb-2">{{ translate('Save') }}</button>
+                <button type="reset" class="btn btn--reset mb-2"><i class="tio-refresh"></i> {{ translate('Reset') }}</button>
+                <button type="submit" class="btn btn--primary mb-2"><i class="tio-save"></i> {{ translate('Save') }}</button>
             </div>
         </div>
     </form>
@@ -169,7 +172,6 @@
 
 </div>
 
-<!-- Section View Offcanvas here -->
 <div id="banner_section" class="custom-offcanvas offcanvas-750 d-flex flex-column justify-content-between">
     <form action="{{ route('taxvat.store') }}" method="post">
         <div>
@@ -205,7 +207,6 @@
     </form>
 </div>
 <div id="offcanvasOverlay" class="offcanvas-overlay"></div>
-<!-- Section View Offcanvas end -->
 @endsection
 
 @push('script_2')

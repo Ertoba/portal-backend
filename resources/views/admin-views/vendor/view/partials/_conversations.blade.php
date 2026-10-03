@@ -1,6 +1,5 @@
 
 <div class="card h-100">
-    <!-- Header -->
     <div class="card-header">
         <div class="chat-user-info w-100 d-flex align-items-center">
             <div class="chat-user-info-img">
@@ -63,7 +62,6 @@
         </div>
 
     </div>
-    <!-- Body -->
 </div>
 <script>
     "use strict";

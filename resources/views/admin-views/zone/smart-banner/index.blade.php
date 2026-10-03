@@ -1,6 +1,6 @@
 @extends('layouts.admin.app')
 
-@section('title', translate('messages.smart_banner_setup'))
+@section('title', translate('messages.Smart banner setup'))
 
 @push('css_or_js')
     <meta name="csrf-token" content="{{ csrf_token() }}">
@@ -11,7 +11,7 @@
 @section('content')
     <div class="content container-fluid">
         <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
-            <h3 class="mb-0">{{ translate('messages.smart_banner_setup') }} - {{ $zone['name'] }}</h3>
+            <h3 class="mb-0">{{ translate('messages.Smart banner setup') }} - {{ $zone['name'] }}</h3>
         </div>
 
         @if (count($banners) > 0 || request()->filled('search'))
@@ -19,22 +19,22 @@
                 <div class="card-header py-2 border-0">
                     <div class="search--button-wrapper">
                         <h5 class="card-title">
-                            {{ translate('messages.smart_banner_list') }}
+                            {{ translate('messages.Smart banner list') }}
                             <span class="badge badge-soft-dark ml-2" id="itemCount">{{ $banners->total() }}</span>
                         </h5>
                         <form class="search-form">
                             <div class="input-group input--group">
                                 <input id="datatableSearch_" type="search" name="search" class="form-control"
-                                       placeholder="{{ translate('messages.search_by_title') }}"
+                                       placeholder="{{ translate('messages.Search by title') }}"
                                        value="{{ request()?->search ?? null }}"
-                                       aria-label="{{ translate('messages.search') }}" required>
+                                       aria-label="{{ translate('messages.Search') }}" required>
                                 <button type="submit" class="btn btn--secondary"><i class="tio-search"></i></button>
                             </div>
                         </form>
                         <button type="button"
                                 class="btn btn--primary offcanvas-trigger smart-banner-create-trigger"
                                 data-target="#smartBannerForm_offcanvas">
-                            <i class="tio-add mr-1"></i> {{ translate('messages.add_banner') }}
+                            <i class="tio-add mr-1"></i> {{ translate('messages.Add banner') }}
                         </button>
                     </div>
                 </div>
@@ -50,14 +50,14 @@
                             <img class="mb-20"
                                  src="{{ asset('public/assets/admin/img/smart-banner.svg') }}"
                                  alt="empty">
-                            <h4 class="mb-3">{{ translate('messages.add_smart_banner') }}</h4>
+                            <h4 class="mb-3">{{ translate('messages.Add smart banner') }}</h4>
                             <p class="mb-20 fs-12 mx-auto max-w-400px">
-                                {{ translate('messages.set_up_some_banners_to_showcase_modules_categories_and_vendors_right_from_the_home_page_of_the_customer_app.') }}
+                                {{ translate('messages.Set up some banners to showcase modules categories and vendors right from the home page of the customer app.') }}
                             </p>
                             <button type="button"
                                     class="btn btn--primary offcanvas-trigger smart-banner-create-trigger"
                                     data-target="#smartBannerForm_offcanvas">
-                                <i class="tio-add mr-1"></i> {{ translate('messages.add_banner') }}
+                                <i class="tio-add mr-1"></i> {{ translate('messages.Add banner') }}
                             </button>
                         </div>
                     </div>
@@ -76,7 +76,7 @@
             <input type="hidden" name="banner_id" id="smart_banner_id" value="">
 
             <div class="custom-offcanvas-header bg--secondary d-flex justify-content-between align-items-center px-3 py-3">
-                <h3 class="mb-0" id="smart_banner_form_title">{{ translate('messages.create_smart_banner') }}</h3>
+                <h3 class="mb-0" id="smart_banner_form_title">{{ translate('messages.Create smart banner') }}</h3>
                 <button type="button"
                         class="btn-close w-25px h-25px border rounded-circle d-center bg--secondary text-dark offcanvas-close fz-15px p-0"
                         aria-label="Close">&times;</button>
@@ -85,18 +85,18 @@
             <div class="custom-offcanvas-body p-3" style="overflow-y: auto;">
                 <div class="bg-light rounded p-3 mb-3">
                     <div class="form-group">
-                        <label class="input-label">{{ translate('messages.select_module') }} <span class="text-danger">*</span></label>
+                        <label class="input-label">{{ translate('messages.Select module') }} <span class="text-danger">*</span></label>
                         <select name="module_id" id="smart_banner_module" class="form-control js-select2-custom"
-                                data-placeholder="{{ translate('messages.select_module') }}">
+                                data-placeholder="{{ translate('messages.Select module') }}">
                             <option value=""></option>
                             @foreach($modules as $module)
-                                <option value="{{ $module->id }}" data-type="{{ $module->module_type }}">{{ translate($module->module_name) }}</option>
+                                <option value="{{ $module->id }}" data-type="{{ $module->module_type }}">{{ $module->module_name }}</option>
                             @endforeach
                         </select>
                     </div>
 
                     <div class="form-group">
-                        <label class="input-label">{{ translate('messages.active_days') }} <span class="text-danger">*</span></label>
+                        <label class="input-label">{{ translate('messages.Active days') }} <span class="text-danger">*</span></label>
                         <div class="resturant-type-group flex-md-nowrap border rounded">
                             <label class="form-check w-100 form--check mr-2 mr-md-4">
                                 <input class="form-check-input" type="radio" value="everyday" name="active_days" id="active_days_everyday">
@@ -104,35 +104,35 @@
                             </label>
                             <label class="form-check w-100 form--check mr-2 mr-md-4">
                                 <input class="form-check-input" type="radio" value="custom_date" name="active_days" id="active_days_custom" checked>
-                                <span class="form-check-label">{{ translate('messages.custom_date') }}</span>
+                                <span class="form-check-label">{{ translate('Custom date') }}</span>
                             </label>
                         </div>
                     </div>
 
                     <div class="form-group" id="smart_banner_date_wrapper">
-                        <label class="input-label">{{ translate('messages.select_custom_date') }} <span class="text-danger">*</span></label>
+                        <label class="input-label">{{ translate('messages.Select custom date') }} <span class="text-danger">*</span></label>
                         <div class="position-relative date-range__custom">
                             <i class="tio-calendar-month icon-absolute-on-right"></i>
                             <input type="text" name="date_range" id="smart_banner_date_range"
                                    class="form-control h-45 position-relative bg-transparent no-type"
-                                   placeholder="{{ translate('messages.select_date_range') }}" autocomplete="off">
+                                   placeholder="{{ translate('Select date range') }}" autocomplete="off">
                         </div>
                     </div>
 
                     <div class="form-group">
-                        <label class="input-label">{{ translate('messages.active_time_range') }}</label>
+                        <label class="input-label">{{ translate('messages.Active time range') }}</label>
                         <div class="position-relative cursor-pointer">
                             <i class="tio-time icon-absolute-on-right"></i>
                             <input type="text" name="time_range" id="smart_banner_time_range"
                                    class="form-control h-45 position-relative bg-transparent no-type"
-                                   placeholder="{{ translate('messages.select_time_range') }}" autocomplete="off">
+                                   placeholder="{{ translate('messages.Select time range') }}" autocomplete="off">
                         </div>
                     </div>
 
                     <div class="form-group mb-0">
-                        <label class="input-label">{{ translate('messages.select_position') }} <span class="text-danger">*</span></label>
+                        <label class="input-label">{{ translate('messages.Select position') }} <span class="text-danger">*</span></label>
                         <select name="position" id="smart_banner_position" class="form-control js-select2-custom"
-                                data-placeholder="{{ translate('messages.select_position') }}">
+                                data-placeholder="{{ translate('messages.Select position') }}">
                             <option value=""></option>
                             @foreach($positions as $key => $label)
                                 <option value="{{ $key }}">{{ $label }} {{ translate('messages.position') }}</option>
@@ -143,19 +143,19 @@
 
                 <div class="bg-light rounded p-3 mb-3">
                     <div class="form-group">
-                        <label class="input-label">{{ translate('messages.redirect_to') }} <span class="text-danger">*</span></label>
+                        <label class="input-label">{{ translate('messages.Redirect to') }} <span class="text-danger">*</span></label>
                         <select name="redirect_type" id="smart_banner_redirect_type" class="form-control js-select2-custom">
-                            <option value="category">{{ translate('messages.category') }}</option>
-                            <option value="module_home">{{ translate('messages.module_home') }}</option>
-                            <option value="store_page">{{ translate('messages.store_page') }}</option>
-                            <option value="offer_page">{{ translate('messages.offer_page') }}</option>
+                            <option value="category">{{ translate('messages.Category') }}</option>
+                            <option value="module_home">{{ translate('messages.Module home') }}</option>
+                            <option value="store_page">{{ translate('messages.Store page') }}</option>
+                            <option value="offer_page">{{ translate('messages.Offer page') }}</option>
                         </select>
                     </div>
 
                     <div class="form-group mb-0" id="smart_banner_target_wrapper">
-                        <label class="input-label" id="smart_banner_target_label">{{ translate('messages.select_category') }}</label>
+                        <label class="input-label" id="smart_banner_target_label">{{ translate('Select category') }}</label>
                         <select name="redirect_target_id" id="smart_banner_target" class="form-control js-select2-custom"
-                                data-placeholder="{{ translate('messages.select_target') }}"
+                                data-placeholder="{{ translate('messages.Select target') }}"
                                 data-categories-url="{{ route('admin.business-settings.zone.smart-banner.categories', ['module_id' => 'MODULE_ID']) }}"
                                 data-stores-url="{{ route('admin.business-settings.zone.smart-banner.stores', ['module_id' => 'MODULE_ID', 'zone_id' => 'ZONE_ID']) }}">
                             <option value=""></option>
@@ -167,7 +167,7 @@
                     @if ($language)
                         <ul class="nav nav-tabs mb-3 border-0">
                             <li class="nav-item">
-                                <a class="nav-link lang_link active" href="#" id="default-link">{{ translate('messages.default') }}({{ strtoupper(app()->getLocale()) }})</a>
+                                <a class="nav-link lang_link active" href="#" id="default-link">{{ translate('Default') }}({{ strtoupper(app()->getLocale()) }})</a>
                             </li>
                             @foreach ($language as $lang)
                                 <li class="nav-item">
@@ -181,19 +181,19 @@
 
                     <div class="lang_form" id="default-form">
                         <div class="form-group">
-                            <label class="input-label">{{ translate('messages.title') }} ({{ translate('messages.default') }}) <span class="text-danger">*</span></label>
+                            <label class="input-label">{{ translate('messages.Title') }} ({{ translate('Default') }}) <span class="text-danger">*</span></label>
                             <input type="text" name="title[]" maxlength="50"
                                    class="form-control smart-banner-char-counter"
                                    data-max="50"
-                                   placeholder="{{ translate('messages.your_ecommerce_venture_starts_here') }}">
+                                   placeholder="{{ translate('messages.Your ecommerce venture starts here') }}">
                             <span class="text-right d-block mt-1 char-counter-label">0/50</span>
                         </div>
                         <div class="form-group mb-0">
-                            <label class="input-label">{{ translate('messages.subtitle') }} ({{ translate('messages.default') }})</label>
+                            <label class="input-label">{{ translate('Subtitle') }} ({{ translate('Default') }})</label>
                             <input type="text" name="subtitle[]" maxlength="100"
                                    class="form-control smart-banner-char-counter"
                                    data-max="100"
-                                   placeholder="{{ translate('messages.enjoy_all_services_in_one_platform') }}">
+                                   placeholder="{{ translate('messages.Enjoy all services in one platform') }}">
                             <span class="text-right d-block mt-1 char-counter-label">0/100</span>
                         </div>
                         <input type="hidden" name="lang[]" value="default">
@@ -201,19 +201,19 @@
                     @foreach ($language as $lang)
                         <div class="d-none lang_form" id="{{ $lang }}-form">
                             <div class="form-group">
-                                <label class="input-label">{{ translate('messages.title') }} ({{ strtoupper($lang) }})</label>
+                                <label class="input-label">{{ translate('messages.Title') }} ({{ strtoupper($lang) }})</label>
                                 <input type="text" name="title[]" maxlength="50"
                                        class="form-control smart-banner-char-counter"
                                        data-max="50"
-                                       placeholder="{{ translate('messages.your_ecommerce_venture_starts_here') }}">
+                                       placeholder="{{ translate('messages.Your ecommerce venture starts here') }}">
                                 <span class="text-right d-block mt-1 char-counter-label">0/50</span>
                             </div>
                             <div class="form-group mb-0">
-                                <label class="input-label">{{ translate('messages.subtitle') }} ({{ strtoupper($lang) }})</label>
+                                <label class="input-label">{{ translate('Subtitle') }} ({{ strtoupper($lang) }})</label>
                                 <input type="text" name="subtitle[]" maxlength="100"
                                        class="form-control smart-banner-char-counter"
                                        data-max="100"
-                                       placeholder="{{ translate('messages.enjoy_all_services_in_one_platform') }}">
+                                       placeholder="{{ translate('messages.Enjoy all services in one platform') }}">
                                 <span class="text-right d-block mt-1 char-counter-label">0/100</span>
                             </div>
                             <input type="hidden" name="lang[]" value="{{ $lang }}">
@@ -222,9 +222,9 @@
                 </div>
 
                 <div class="bg-light rounded p-3 mb-3 text-center">
-                    <h6 class="mb-1">{{ translate('messages.upload_smart_banner_image') }} <span class="text-danger">*</span></h6>
-                    <p class="fs-12 mb-3 text-muted">{{ translate('messages.upload_banner_image') }}</p>
-                    @include('rental::admin.partials._image-uploader', [
+                    <h6 class="mb-1">{{ translate('messages.Upload smart banner image') }} <span class="text-danger">*</span></h6>
+                    <p class="fs-12 mb-3 text-muted">{{ translate('messages.Upload Banner Image') }}</p>
+                    @include('admin-views.partials._image-uploader', [
                         'id' => 'smart_banner_image_input',
                         'name' => 'image',
                         'ratio' => '1:1',
@@ -240,8 +240,8 @@
             </div>
 
             <div class="offcanvas-footer p-3 d-flex align-items-center justify-content-center gap-3 border-top bg-white">
-                <button type="button" class="btn w-100 btn--reset" id="smart_banner_reset_btn">{{ translate('messages.reset') }}</button>
-                <button type="submit" class="btn w-100 btn--primary" id="smart_banner_submit_btn">{{ translate('messages.add') }}</button>
+                <button type="button" class="btn w-100 btn--reset" id="smart_banner_reset_btn"><i class="tio-refresh"></i> {{ translate('messages.Reset') }}</button>
+                <button type="submit" class="btn w-100 btn--primary" id="smart_banner_submit_btn"><i class="tio-add-circle"></i> {{ translate('Add') }}</button>
             </div>
         </form>
     </div>
@@ -249,21 +249,22 @@
     <div id="smartBannerView_offcanvas" class="custom-offcanvas d-flex flex-column justify-content-between">
         <div>
             <div class="custom-offcanvas-header bg--secondary d-flex justify-content-between align-items-center px-3 py-3">
-                <h3 class="mb-0">{{ translate('messages.smart_banner_view') }}</h3>
+                <h3 class="mb-0">{{ translate('messages.Smart banner view') }}</h3>
                 <button type="button"
                         class="btn-close w-25px h-25px border rounded-circle d-center bg--secondary text-dark offcanvas-close fz-15px p-0"
                         aria-label="Close">&times;</button>
             </div>
             <div class="custom-offcanvas-body p-3" id="smart_banner_view_body">
-                <div class="text-center py-5 text-muted" id="smart_banner_view_loading">
-                    {{ translate('messages.loading') }}
+                <div class="text-center py-5" id="smart_banner_view_loading">
+                    <span class="app-loader__spinner app-loader__spinner--sm" role="status"
+                          aria-label="{{ translate('messages.loading') }}"></span>
                 </div>
             </div>
         </div>
         <div class="offcanvas-footer p-3 d-flex align-items-center justify-content-center border-top bg-white">
             <button type="button" class="btn w-100 btn--primary" id="smart_banner_view_edit_btn"
                     data-id="" data-url="">
-                {{ translate('messages.edit') }}
+                <i class="tio-edit"></i> {{ translate('Edit') }}
             </button>
         </div>
     </div>
@@ -282,14 +283,14 @@
                     <div class="max-349 mx-auto mb-20">
                         <div class="text-center">
                             <img alt="" src="{{ asset('public/assets/admin/img/modal-error.png') }}" class="mb-20">
-                            <h5 class="modal-title">{{ translate('messages.smart_banner_overlap') }}</h5>
+                            <h5 class="modal-title">{{ translate('messages.Smart banner overlap') }}</h5>
                         </div>
                         <div class="text-center" id="smart-banner-error-message">
-                            <p>{{ translate('messages.this_banner_overlaps_with_another_in_the_same_position._please_change_the_position_or_reschedule.') }}</p>
+                            <p>{{ translate('messages.This banner overlaps with another in the same position. please change the position or reschedule.') }}</p>
                         </div>
                         <div class="btn--container justify-content-center">
                             <button type="button" class="btn btn--primary min-w-120" data-dismiss="modal">
-                                {{ translate('messages.okay') }}
+                                <i class="tio-checkmark-circle-outlined"></i> {{ translate('messages.Okay') }}
                             </button>
                         </div>
                     </div>
@@ -308,6 +309,16 @@
             updateAction: "{{ route('admin.business-settings.zone.smart-banner.update', ['id' => 'BANNER_ID']) }}",
             editUrl: "{{ route('admin.business-settings.zone.smart-banner.edit', ['id' => 'BANNER_ID']) }}",
             listUrl: "{{ route('admin.business-settings.zone.smart-banner.list', [$zone['id']]) }}",
+            labels: {
+                storePage: "{{ translate('messages.Store page') }}",
+                providerPage: "{{ translate('messages.Provider page') }}",
+                selectStore: "{{ translate('Select store') }}",
+                selectProvider: "{{ translate('Select provider') }}",
+                selectCategory: "{{ translate('Select category') }}",
+                pleaseSelectStore: "{{ translate('messages.Please select a store') }}",
+                pleaseSelectProvider: "{{ translate('messages.Please select a provider') }}",
+                pleaseSelectModule: "{{ translate('messages.Please select a module') }}",
+            },
         };
     </script>
     <script src="{{ asset('public/assets/admin/js/view-pages/smart-banner.js') }}"></script>

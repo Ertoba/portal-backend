@@ -2,24 +2,22 @@
 
 namespace App\Mail;
 
-use Illuminate\Bus\Queueable;
+use App\Mail\Concerns\QueueableMailable;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Queue\SerializesModels;
 
-class TestEmailSender extends Mailable
+class TestEmailSender extends Mailable implements ShouldQueue
 {
-    use Queueable, SerializesModels;
+    use Queueable, QueueableMailable, SerializesModels;
 
     /**
      * Create a new message instance.
      *
      * @return void
      */
-    public function __construct()
-    {
-        //
-    }
+    public function __construct() {}
 
     /**
      * Build the message.

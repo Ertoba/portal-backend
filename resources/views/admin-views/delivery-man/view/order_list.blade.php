@@ -1,11 +1,10 @@
 @extends('layouts.admin.app')
 
-@section('title', translate('messages.Delivery Man Preview'))
+@section('title', translate('Deliveryman preview'))
 
 
 @section('content')
 <div class="content container-fluid">
-    <!-- Page Header -->
     <div class="page-header">
         @include('admin-views.delivery-man.partials._page_header')
 
@@ -13,7 +12,6 @@
             @include('admin-views.delivery-man.partials._tab_menu')
         </div>
     </div>
-    <!-- End Page Header -->
 
     <div class="card">
         <div class="card-body">
@@ -26,9 +24,9 @@
                         </div>
 
                         <div class="d-flex flex-column align-items-center">
-                            <h2 class="title"> {{$deliveryMan->orders->count()}} </h2>
+                            <h2 class="title"> {{$orderStats?->total_orders ?? 0}} </h2>
                             <div class="subtitle">
-                                {{translate('messages.total_order')}}
+                                {{translate('Total order')}}
                             </div>
                         </div>
                     </div>
@@ -41,10 +39,10 @@
                         </div>
                         <div class="d-flex flex-column align-items-center">
                             <h2 class="title">
-                                {{\App\CentralLogics\Helpers::format_currency($deliveryMan->total_ongoing_orders->sum('order_amount'))}}
+                                {{\App\CentralLogics\Helpers::format_currency($orderStats?->ongoing_amount ?? 0)}}
                             </h2>
                             <div class="subtitle">
-                                {{translate('messages.ongoing_order')}}
+                                {{translate('messages.Ongoing order')}}
                             </div>
                         </div>
                     </div>
@@ -57,11 +55,11 @@
                         </div>
                         <div class="d-flex flex-column align-items-center">
                             <h2 class="title">
-                                {{\App\CentralLogics\Helpers::format_currency($deliveryMan->total_delivered_orders->sum('order_amount'))}}
+                                {{\App\CentralLogics\Helpers::format_currency($orderStats?->delivered_amount ?? 0)}}
 
                             </h2>
                             <div class="subtitle">
-                                {{translate('messages.completed_order')}}
+                                {{translate('messages.Completed order')}}
                             </div>
                         </div>
                     </div>
@@ -73,9 +71,9 @@
                                 src="{{asset('/public/assets/admin/img/icons/order-icon-4.png')}}" alt="transactions">
                         </div>
                         <div class="d-flex flex-column align-items-center">
-                            <h2 class="title"> {{$deliveryMan->total_canceled_orders->count()}} </h2>
+                            <h2 class="title"> {{$orderStats?->canceled_orders ?? 0}} </h2>
                             <div class="subtitle">
-                                {{translate('messages.cancel_order')}}
+                                {{translate('Cancel order')}}
                             </div>
                         </div>
                     </div>
@@ -86,14 +84,13 @@
     <div class="card mb-3 mb-lg-5 mt-2">
         <div class="card-header py-2 border-0 gap-2">
             <div class="search--button-wrapper">
-                <h4 class="card-title">{{ translate('messages.order_list')}}
+                <h4 class="card-title">{{ translate('Order list')}}
                     <span class="badge badge-soft-dark ml-2" id="itemCount">
                         {{$order_lists->total()}}
                     </span>
                 </h4>
             </div>
         </div>
-        <!-- Body -->
         <div class="card-body p-0">
             <div class="table-responsive">
                 <table id="datatable"
@@ -101,11 +98,11 @@
                     <thead class="thead-light">
                         <tr>
                             <th class="border-0">{{translate('SL')}}</th>
-                            <th class="border-0">{{translate('messages.order_id')}}</th>
-                            <th class="border-0">{{translate('messages.contact_info')}}</th>
-                            <th class="border-0">{{translate('messages.total_items')}}</th>
-                            <th class="border-0">{{translate('messages.total_amount')}}</th>
-                            <th class="border-0">{{translate('messages.delivery_date')}}</th>
+                            <th class="border-0">{{translate('messages.Order ID')}}</th>
+                            <th class="border-0">{{translate('Contact information')}}</th>
+                            <th class="border-0">{{translate('messages.Total items')}}</th>
+                            <th class="border-0">{{translate('Total amount')}}</th>
+                            <th class="border-0">{{translate('messages.Delivery date')}}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -127,7 +124,7 @@
 
                                     <a class="text-body"
                                         title="{{$order->customer['f_name'] . ' ' . $order->customer['l_name']}}"
-                                        href="{{route('admin.customer.view', [$order['user_id']])}}">
+                                        href="{{route('admin.users.customer.view', [$order['user_id']])}}">
                                         <strong>
                                             <div> {{$order->customer['f_name'] . ' ' . $order->customer['l_name']}}</div>
                                         </strong>
@@ -137,7 +134,7 @@
                                     </a>
                                 @else
                                 <label
-                                    class="badge badge-danger">{{translate('messages.invalid_customer_data')}}</label>
+                                    class="badge badge-danger">{{translate('messages.Invalid customer data')}}</label>
                                 @endif
                             </td>
                             <td>{{$order?->details()?->count() }}</td>
@@ -167,7 +164,7 @@
                     <div class="empty--data">
                         <img src="{{asset('/public/assets/admin/svg/illustrations/sorry.svg')}}" alt="public">
                         <h5>
-                            {{translate('no_data_found')}}
+                            {{translate('No data found')}}
                         </h5>
                     </div>
                 @endif

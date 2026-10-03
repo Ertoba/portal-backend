@@ -6,19 +6,13 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::table('store_configs', function (Blueprint $table) {
-            $table->boolean('can_edit_order')->default(false)->after('website_builder_status');
+            $table->boolean('can_edit_order')->default(false);
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::table('store_configs', function (Blueprint $table) {

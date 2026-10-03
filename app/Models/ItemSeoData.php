@@ -3,10 +3,13 @@
 namespace App\Models;
 
 use App\CentralLogics\Helpers;
+use App\Traits\Model\HasStorageTrait;
 use Illuminate\Database\Eloquent\Model;
 
 class ItemSeoData extends Model
 {
+    use HasStorageTrait;
+
     protected $guarded = ['id'];
     protected $appends = ['image_full_url'];
 
@@ -19,11 +22,18 @@ class ItemSeoData extends Model
     public function getImageFullUrlAttribute()
     {
         $value = $this->image;
-        return Helpers::get_full_url('item_meta_data', $value, 'public');
+        return $this->storageFullUrl('item_meta_data', 'image', $value);
     }
 
     public function item()
     {
         return $this->belongsTo(Item::class);
     }
+    protected static function booted(): void
+    {
+        static::saved(function ($model) {
+            self::recordStorageDisk($model, 'image', 'image');
+        });
+    }
+
 }

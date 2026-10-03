@@ -1,29 +1,29 @@
 @extends('layouts.admin.app')
 
-@section('title', translate('messages.priority_settings'))
+@section('title', translate('messages.Priority settings'))
 
 @push('css_or_js')
 @endpush
 
 @section('content')
 @php use App\CentralLogics\Helpers;@endphp
+@php($priorityValues = app(\App\Services\System\PriorityListService::class)->keyedValues())
     <div class="content container-fluid">
-        <!-- Page Header -->
         <div class="page-header">
             <h1 class="page-header-title mr-3">
                 <span class="page-header-icon">
-                    <img src="{{ asset('public/assets/admin/img/business.png') }}" class="w--26" alt="">
+                    <img src="{{ asset('public/assets/admin/img/outline/business.svg') }}" class="w--26" alt="">
                 </span>
                 <span>
-                    {{ translate('business_setup') }}
+                    {{ translate('Business setup') }}
                 </span>
             </h1>
+            <p class="page-header-desc">{{ translate('The order stores, items and zones appear in when a customer browses or searches.') }}</p>
 
             @include('admin-views.business-settings.partials.nav-menu')
 
         </div>
 
-        <!-- Main Content -->
         <form method="post" action="{{ route('admin.business-settings.update-priority') }}">
             <div class="fs-12 px-3 py-2 bg-opacity-10 rounded bg-info mb-20">
                 <div class="d-flex align-items-center gap-2 mb-0">
@@ -31,17 +31,16 @@
                         <i class="tio-light-on"></i>
                     </span>
                     <span class="color-656565">
-                        {{ translate('After change any setup in this page must click the ') }} <strong>{{ translate('Save Information') }}</strong> {{ translate('button, otherwise changes are not work.') }}
+                        {{ translate('After changing any setting on this page, click this button or the changes will not be saved') }}: <strong>{{ translate('Save information') }}</strong>
                     </span>
                 </div>
             </div>
             <div class="card mb-3">
                 <div class="card-body">
-                    {{-- Category List --}}
                     <div class="row g-3">
                         <div class="col-lg-6 col-xl-4">
                             <div class="max-w-353px">
-                                <h4 class="mb-2 mt-4">{{ translate('Category List') }}</h4>
+                                <h4 class="mb-2 mt-4">{{ translate('Category list') }}</h4>
                                 <p class="m-0 fs-12">
                                     {{ translate('Category List is the list of categories which are most ordered by the customers') }}
                                 </p>
@@ -111,14 +110,14 @@
                                     </div>
                                     <div class="inner-collapse-div">
                                         <div class="pt-4">
-                                            @php($category_list_sort_by_general = \App\Models\PriorityList::where('name', 'category_list_sort_by_general')->where('type', 'general')->first()?->value ?? '')
+                                            @php($category_list_sort_by_general = $priorityValues['category_list_sort_by_general|general'] ?? '')
                                             <div class=" rounded p-3 d-flex flex-column gap-3 fs-14 mb-15 bg-white ">
                                                 <label class="form-check form--check">
                                                     <input class="form-check-input" type="radio"
                                                         name="category_list_sort_by_general" value="latest"
                                                         {{ $category_list_sort_by_general == 'latest' ? 'checked' : '' }}>
                                                     <span class="form-check-label">
-                                                        {{ translate('Sort by latest created') }}
+                                                        {{ translate('Sort by newest') }}
                                                     </span>
                                                 </label>
                                                 <label class="form-check form--check">
@@ -126,7 +125,7 @@
                                                         name="category_list_sort_by_general" value="oldest"
                                                         {{ $category_list_sort_by_general == 'oldest' ? 'checked' : '' }}>
                                                     <span class="form-check-label">
-                                                        {{ translate('Sort by first created') }}
+                                                        {{ translate('Sort by First created') }}
                                                     </span>
                                                 </label>
                                                 <label class="form-check form--check">
@@ -134,7 +133,7 @@
                                                         name="category_list_sort_by_general" value="order_count"
                                                         {{ $category_list_sort_by_general == 'order_count' ? 'checked' : '' }}>
                                                     <span class="form-check-label">
-                                                        {{ translate('Sort by orders') }}
+                                                        {{ translate('Sort by Orders') }}
                                                     </span>
                                                 </label>
                                                 <label class="form-check form--check">
@@ -166,14 +165,26 @@
             <div class="card">
                 @csrf
                 <div class="card-body">
-                    {{-- Best Stores Nearby List --}}
 
+                    {{-- Best Stores Nearby — hidden from this tab on purpose. The markup is kept
+                         intact rather than deleted, so switching the section back on is a matter
+                         of flipping this one flag.
+
+                         Nothing is lost while it is off: update_priority() writes only the
+                         sections the page actually RENDERED (it filters $list by
+                         $request->has($item.'_default_status')), so the stored
+                         popular_store_default_status and its popular_store_sort_by_* rows keep
+                         whatever the admin last saved and are not overwritten on the next save
+                         of this page. --}}
+                    @php($showBestStoresNearby = false)
+
+                    @if ($showBestStoresNearby)
                     <div class="row g-3">
                         <div class="col-lg-6 col-xl-4">
                             <div class="max-w-353px">
                                 <h4 class="mb-2 mt-4">{{ translate('Best Stores Nearby') }}</h4>
                                 <p class="m-0 fs-12">
-                                    {{ translate('Best Stores Nearby is the list of customer choices in which customer ordered items most and also highly rated with good reviews') }}
+                                    {{ translate('Nearby stores customers order from most, with high ratings and good reviews.') }}
                                 </p>
                             </div>
                         </div>
@@ -181,7 +192,6 @@
                         @php($popular_store_default_status =  Helpers::get_business_settings('popular_store_default_status')  ?? 1)
                         <div class="col-lg-6 col-xl-8">
                             <div class=" rounded d-flex flex-column gap-20px">
-                                <!-- Default Collapsible Card -->
                                 <div class="sorting-card bg-light rounded p-3">
                                     <div class="mb-10px">
                                         <h5 class="fs-14 font-semibold mb-1">{{ translate('Use default sorting list') }}
@@ -189,7 +199,7 @@
                                         <label class="form-label d-flex align-items-center m-0">
 
                                             <div class="fs-13">
-                                                {{ translate('This_section_is_currently_sorted_by_distance_which_is_the_most_nearby_user_and_total_orders.') }}
+                                                {{ translate('This section is currently sorted by distance which is the most nearby user and total orders.') }}
                                             </div>
                                         </label>
                                     </div>
@@ -215,7 +225,6 @@
                                         </div>
                                     </div>
                                 </div>
-                                <!-- Custom Collapsible Card -->
                                 <div class="sorting-card bg-light rounded p-3">
                                     <div class="mb-10px">
                                         <h5 class="fs-14 font-semibold mb-1">{{ translate('Use custom sorting list') }}
@@ -248,15 +257,14 @@
                                     </div>
                                     <div class="inner-collapse-div">
                                         <div class="pt-4">
-                                            @php($popular_store_sort_by_rating = \App\Models\PriorityList::where('name', 'popular_store_sort_by_rating')->where('type', 'rating')->first())
-                                            @php($popular_store_sort_by_rating = $popular_store_sort_by_rating ? $popular_store_sort_by_rating->value : '')
+                                            @php($popular_store_sort_by_rating = $priorityValues['popular_store_sort_by_rating|rating'] ?? '')
                                             <div class=" rounded p-3 d-flex flex-column gap-3 fs-14 mb-15 bg-white ">
                                                 <label class="form-check form--check">
                                                     <input class="form-check-input" type="radio"
                                                         name="popular_store_sort_by_rating" value="four_plus"
                                                         {{ $popular_store_sort_by_rating == 'four_plus' ? 'checked' : '' }}>
                                                     <span class="form-check-label">
-                                                        {{ translate('Show 4+ rated sellers') }}
+                                                        {{ translate('Show sellers with rating') }}: 4+
                                                     </span>
                                                 </label>
                                                 <label class="form-check form--check">
@@ -264,7 +272,7 @@
                                                         name="popular_store_sort_by_rating" value="three_half_plus"
                                                         {{ $popular_store_sort_by_rating == 'three_half_plus' ? 'checked' : '' }}>
                                                     <span class="form-check-label">
-                                                        {{ translate('Show 3.5+ rated sellers') }}
+                                                        {{ translate('Show sellers with rating') }}: 3.5+
                                                     </span>
                                                 </label>
                                                 <label class="form-check form--check">
@@ -272,7 +280,7 @@
                                                         name="popular_store_sort_by_rating" value="three_plus"
                                                         {{ $popular_store_sort_by_rating == 'three_plus' ? 'checked' : '' }}>
                                                     <span class="form-check-label">
-                                                        {{ translate('Show 3+ rated sellers') }}
+                                                        {{ translate('Show sellers with rating') }}: 3+
                                                     </span>
                                                 </label>
                                                 <label class="form-check form--check">
@@ -280,7 +288,7 @@
                                                         name="popular_store_sort_by_rating" value="two_plus"
                                                         {{ $popular_store_sort_by_rating == 'two_plus' ? 'checked' : '' }}>
                                                     <span class="form-check-label">
-                                                        {{ translate('Show 2+ rated sellers') }}
+                                                        {{ translate('Show sellers with rating') }}: 2+
                                                     </span>
                                                 </label>
                                                 <label class="form-check form--check">
@@ -292,8 +300,7 @@
                                                     </span>
                                                 </label>
                                             </div>
-                                            @php($popular_store_sort_by_general = \App\Models\PriorityList::where('name', 'popular_store_sort_by_general')->where('type', 'general')->first())
-                                            @php($popular_store_sort_by_general = $popular_store_sort_by_general ? $popular_store_sort_by_general->value : '')
+                                            @php($popular_store_sort_by_general = $priorityValues['popular_store_sort_by_general|general'] ?? '')
                                             <div class=" rounded p-3 d-flex flex-column gap-3 fs-14 mb-15 bg-white ">
                                                 <label class="form-check form--check">
                                                     <input class="form-check-input" type="radio"
@@ -308,7 +315,7 @@
                                                         name="popular_store_sort_by_general" value="order_count"
                                                         {{ $popular_store_sort_by_general == 'order_count' ? 'checked' : '' }}>
                                                     <span class="form-check-label">
-                                                        {{ translate('Sort by orders') }}
+                                                        {{ translate('Sort by Orders') }}
                                                     </span>
                                                 </label>
                                                 <label class="form-check form--check">
@@ -328,8 +335,7 @@
                                                     </span>
                                                 </label>
                                             </div>
-                                            @php($popular_store_sort_by_unavailable = \App\Models\PriorityList::where('name', 'popular_store_sort_by_unavailable')->where('type', 'unavailable')->first())
-                                            @php($popular_store_sort_by_unavailable = $popular_store_sort_by_unavailable ? $popular_store_sort_by_unavailable->value : '')
+                                            @php($popular_store_sort_by_unavailable = $priorityValues['popular_store_sort_by_unavailable|unavailable'] ?? '')
                                             <div class=" rounded p-3 d-flex flex-column gap-3 fs-14 mb-15 bg-white ">
                                                 <label class="form-check form--check">
                                                     <input class="form-check-input" type="radio"
@@ -356,8 +362,7 @@
                                                     </span>
                                                 </label>
                                             </div>
-                                            @php($popular_store_sort_by_temp_closed = \App\Models\PriorityList::where('name', 'popular_store_sort_by_temp_closed')->where('type', 'temp_closed')->first())
-                                            @php($popular_store_sort_by_temp_closed = $popular_store_sort_by_temp_closed ? $popular_store_sort_by_temp_closed->value : '')
+                                            @php($popular_store_sort_by_temp_closed = $priorityValues['popular_store_sort_by_temp_closed|temp_closed'] ?? '')
                                             <div class=" rounded p-3 d-flex flex-column gap-3 fs-14 mb-15 bg-white ">
                                                 <label class="form-check form--check">
                                                     <input class="form-check-input" type="radio"
@@ -391,13 +396,13 @@
                         </div>
                     </div>
                     <br>
+                    @endif
 
-                    {{-- Recommended Store List --}}
 
                     <div class="row g-3">
                         <div class="col-lg-6 col-xl-4">
                             <div class="max-w-353px">
-                                <h4 class="mb-2 mt-4">{{ translate('Recommended Store') }}</h4>
+                                <h4 class="mb-2 mt-4">{{ translate('Recommended store') }}</h4>
                                 <p class="m-0 fs-12">
                                     {{ translate('Recommended Stores is the list of Admin choices which is highly recommended by admin') }}
                                 </p>
@@ -407,7 +412,6 @@
                         @php($recommended_store_default_status =  Helpers::get_business_settings('recommended_store_default_status')  ?? 1)
                         <div class="col-lg-6 col-xl-8">
                             <div class=" rounded d-flex flex-column gap-20px">
-                                <!-- Default Collapsible Card -->
                                 <div class="sorting-card bg-light rounded p-3">
                                     <div class="mb-10px">
                                         <h5 class="fs-14 font-semibold mb-1">{{ translate('Use default sorting list') }}
@@ -415,7 +419,7 @@
                                         <label class="form-label d-flex align-items-center m-0">
 
                                             <div class="fs-13">
-                                                {{ translate('This_section_is_currently_sorted_by_oldest_recommended_stores.') }}
+                                                {{ translate('This section is currently sorted by oldest recommended stores.') }}
                                             </div>
                                         </label>
                                     </div>
@@ -441,7 +445,6 @@
                                         </div>
                                     </div>
                                 </div>
-                                <!-- Custom Collapsible Card -->
                                 <div class="sorting-card bg-light rounded p-3">
                                     <div class="mb-10px">
                                         <h5 class="fs-14 font-semibold mb-1">{{ translate('Use custom sorting list') }}
@@ -474,15 +477,14 @@
                                     </div>
                                     <div class="inner-collapse-div">
                                         <div class="pt-4">
-                                            @php($recommended_store_sort_by_general = \App\Models\PriorityList::where('name', 'recommended_store_sort_by_general')->where('type', 'general')->first())
-                                            @php($recommended_store_sort_by_general = $recommended_store_sort_by_general ? $recommended_store_sort_by_general->value : '')
+                                            @php($recommended_store_sort_by_general = $priorityValues['recommended_store_sort_by_general|general'] ?? '')
                                             <div class=" rounded p-3 d-flex flex-column gap-3 fs-14 mb-15 bg-white ">
                                                 <label class="form-check form--check">
                                                     <input class="form-check-input" type="radio"
                                                            name="recommended_store_sort_by_general" value="order_count"
                                                         {{ $recommended_store_sort_by_general == 'order_count' ? 'checked' : '' }}>
                                                     <span class="form-check-label">
-                                                        {{ translate('Sort by orders') }}
+                                                        {{ translate('Sort by Orders') }}
                                                     </span>
                                                 </label>
                                                 <label class="form-check form--check">
@@ -502,15 +504,14 @@
                                                     </span>
                                                 </label>
                                             </div>
-                                            @php($recommended_store_sort_by_rating = \App\Models\PriorityList::where('name', 'recommended_store_sort_by_rating')->where('type', 'rating')->first())
-                                            @php($recommended_store_sort_by_rating = $recommended_store_sort_by_rating ? $recommended_store_sort_by_rating->value : '')
+                                            @php($recommended_store_sort_by_rating = $priorityValues['recommended_store_sort_by_rating|rating'] ?? '')
                                             <div class=" rounded p-3 d-flex flex-column gap-3 fs-14 mb-15 bg-white ">
                                                 <label class="form-check form--check">
                                                     <input class="form-check-input" type="radio"
                                                         name="recommended_store_sort_by_rating" value="four_plus"
                                                         {{ $recommended_store_sort_by_rating == 'four_plus' ? 'checked' : '' }}>
                                                     <span class="form-check-label">
-                                                        {{ translate('Show 4+ rated sellers') }}
+                                                        {{ translate('Show sellers with rating') }}: 4+
                                                     </span>
                                                 </label>
                                                 <label class="form-check form--check">
@@ -518,7 +519,7 @@
                                                         name="recommended_store_sort_by_rating" value="three_half_plus"
                                                         {{ $recommended_store_sort_by_rating == 'three_half_plus' ? 'checked' : '' }}>
                                                     <span class="form-check-label">
-                                                        {{ translate('Show 3.5+ rated sellers') }}
+                                                        {{ translate('Show sellers with rating') }}: 3.5+
                                                     </span>
                                                 </label>
                                                 <label class="form-check form--check">
@@ -526,7 +527,7 @@
                                                         name="recommended_store_sort_by_rating" value="three_plus"
                                                         {{ $recommended_store_sort_by_rating == 'three_plus' ? 'checked' : '' }}>
                                                     <span class="form-check-label">
-                                                        {{ translate('Show 3+ rated sellers') }}
+                                                        {{ translate('Show sellers with rating') }}: 3+
                                                     </span>
                                                 </label>
                                                 <label class="form-check form--check">
@@ -534,7 +535,7 @@
                                                         name="recommended_store_sort_by_rating" value="two_plus"
                                                         {{ $recommended_store_sort_by_rating == 'two_plus' ? 'checked' : '' }}>
                                                     <span class="form-check-label">
-                                                        {{ translate('Show 2+ rated sellers') }}
+                                                        {{ translate('Show sellers with rating') }}: 2+
                                                     </span>
                                                 </label>
                                                 <label class="form-check form--check">
@@ -546,8 +547,7 @@
                                                     </span>
                                                 </label>
                                             </div>
-                                            @php($recommended_store_sort_by_unavailable = \App\Models\PriorityList::where('name', 'recommended_store_sort_by_unavailable')->where('type', 'unavailable')->first())
-                                            @php($recommended_store_sort_by_unavailable = $recommended_store_sort_by_unavailable ? $recommended_store_sort_by_unavailable->value : '')
+                                            @php($recommended_store_sort_by_unavailable = $priorityValues['recommended_store_sort_by_unavailable|unavailable'] ?? '')
                                             <div class=" rounded p-3 d-flex flex-column gap-3 fs-14 mb-15 bg-white ">
                                                 <label class="form-check form--check">
                                                     <input class="form-check-input" type="radio"
@@ -574,8 +574,7 @@
                                                     </span>
                                                 </label>
                                             </div>
-                                            @php($recommended_store_sort_by_temp_closed = \App\Models\PriorityList::where('name', 'recommended_store_sort_by_temp_closed')->where('type', 'temp_closed')->first())
-                                            @php($recommended_store_sort_by_temp_closed = $recommended_store_sort_by_temp_closed ? $recommended_store_sort_by_temp_closed->value : '')
+                                            @php($recommended_store_sort_by_temp_closed = $priorityValues['recommended_store_sort_by_temp_closed|temp_closed'] ?? '')
                                             <div class=" rounded p-3 d-flex flex-column gap-3 fs-14 mb-15 bg-white ">
                                                 <label class="form-check form--check">
                                                     <input class="form-check-input" type="radio"
@@ -610,7 +609,6 @@
                     </div>
                     <br>
 
-                    {{-- Special Offer List --}}
 
                     <div class="row g-3">
                         <div class="col-lg-6 col-xl-4">
@@ -625,7 +623,6 @@
                         @php($special_offer_default_status = Helpers::get_business_settings('special_offer_default_status')  ?? 1)
                         <div class="col-lg-6 col-xl-8">
                             <div class=" rounded d-flex flex-column gap-20px">
-                                <!-- Default Collapsible Card -->
                                 <div class="sorting-card bg-light rounded p-3">
                                     <div class="mb-10px">
                                         <h5 class="fs-14 font-semibold mb-1">{{ translate('Use default sorting list') }}
@@ -659,7 +656,6 @@
                                         </div>
                                     </div>
                                 </div>
-                                <!-- Custom Collapsible Card -->
                                 <div class="sorting-card bg-light rounded p-3">
                                     <div class="mb-10px">
                                         <h5 class="fs-14 font-semibold mb-1">{{ translate('Use custom sorting list') }}
@@ -692,15 +688,14 @@
                                     </div>
                                     <div class="inner-collapse-div">
                                         <div class="pt-4">
-                                            @php($special_offer_sort_by_general = \App\Models\PriorityList::where('name', 'special_offer_sort_by_general')->where('type', 'general')->first())
-                                            @php($special_offer_sort_by_general = $special_offer_sort_by_general ? $special_offer_sort_by_general->value : '')
+                                            @php($special_offer_sort_by_general = $priorityValues['special_offer_sort_by_general|general'] ?? '')
                                             <div class=" rounded p-3 d-flex flex-column gap-3 fs-14 mb-15 bg-white ">
                                                 <label class="form-check form--check">
                                                     <input class="form-check-input" type="radio"
                                                         name="special_offer_sort_by_general" value="order_count"
                                                         {{ $special_offer_sort_by_general == 'order_count' ? 'checked' : '' }}>
                                                     <span class="form-check-label">
-                                                        {{ translate('Sort by orders') }}
+                                                        {{ translate('Sort by Orders') }}
                                                     </span>
                                                 </label>
                                                 <label class="form-check form--check">
@@ -736,8 +731,7 @@
                                                     </span>
                                                 </label>
                                             </div>
-                                            @php($special_offer_sort_by_unavailable = \App\Models\PriorityList::where('name', 'special_offer_sort_by_unavailable')->where('type', 'unavailable')->first())
-                                            @php($special_offer_sort_by_unavailable = $special_offer_sort_by_unavailable ? $special_offer_sort_by_unavailable->value : '')
+                                            @php($special_offer_sort_by_unavailable = $priorityValues['special_offer_sort_by_unavailable|unavailable'] ?? '')
                                             <div class=" rounded p-3 d-flex flex-column gap-3 fs-14 mb-15 bg-white ">
                                                 <label class="form-check form--check">
                                                     <input class="form-check-input" type="radio"
@@ -772,21 +766,19 @@
                         </div>
                     <br>
 
-                    {{-- Most Popular Item List --}}
 
                     <div class="row g-3">
                         <div class="col-lg-6 col-xl-4">
                             <div class="max-w-353px">
                                 <h4 class="mb-2 mt-4">{{ translate('Most Popular Item') }}</h4>
                                 <p class="m-0 fs-12">
-                                    {{ translate('Popular item Nearby means the item items list  which are mostly ordered by the customers and have good reviews & ratings') }}
+                                    {{ translate('Popular Items Nearby is the list of items most ordered by customers and rated well') }}
                                 </p>
                             </div>
                         </div>
                         @php($popular_item_default_status = Helpers::get_business_settings('popular_item_default_status')  ?? 1)
                         <div class="col-lg-6 col-xl-8">
                             <div class=" rounded d-flex flex-column gap-20px">
-                                <!-- Default Collapsible Card -->
                                 <div class="sorting-card bg-light rounded p-3">
                                     <div class="mb-10px">
                                         <h5 class="fs-14 font-semibold mb-1">
@@ -794,7 +786,7 @@
                                         <label class="form-label d-flex align-items-center m-0">
 
                                             <div class="fs-13">
-                                                {{ translate('This_section_is_currently_sorted_by_higher_ordered_items.') }}
+                                                {{ translate('This section is currently sorted by higher ordered items.') }}
                                             </div>
                                         </label>
                                     </div>
@@ -803,7 +795,7 @@
                                             <label class="form-label d-flex align-items-center m-0">
 
                                                 <div class="fs-13">
-                                                    {{ translate('Status.') }}
+                                                    {{ translate('Status') }}
                                                 </div>
                                             </label>
                                         </div>
@@ -820,7 +812,6 @@
                                         </div>
                                     </div>
                                 </div>
-                                <!-- Custom Collapsible Card -->
                                 <div class="sorting-card bg-light rounded p-3">
                                     <div class="mb-10px">
                                         <h5 class="fs-14 font-semibold mb-1">
@@ -855,15 +846,14 @@
                                     </div>
                                     <div class="inner-collapse-div">
                                         <div class="pt-4">
-                                            @php($popular_item_sort_by_general = \App\Models\PriorityList::where('name', 'popular_item_sort_by_general')->where('type', 'general')->first())
-                                            @php($popular_item_sort_by_general = $popular_item_sort_by_general ? $popular_item_sort_by_general->value : '')
+                                            @php($popular_item_sort_by_general = $priorityValues['popular_item_sort_by_general|general'] ?? '')
                                             <div class=" rounded p-3 d-flex flex-column gap-3 fs-14 mb-15 bg-white ">
                                                 <label class="form-check form--check">
                                                     <input class="form-check-input" type="radio"
                                                            name="popular_item_sort_by_general" value="latest_created"
                                                         {{ $popular_item_sort_by_general == 'latest_created' ? 'checked' : '' }}>
                                                     <span class="form-check-label">
-                                                        {{ translate('Sort by latest created') }}
+                                                        {{ translate('Sort by newest') }}
                                                     </span>
                                                 </label>
                                                 <label class="form-check form--check">
@@ -871,7 +861,7 @@
                                                            name="popular_item_sort_by_general" value="first_created"
                                                         {{ $popular_item_sort_by_general == 'first_created' ? 'checked' : '' }}>
                                                     <span class="form-check-label">
-                                                        {{ translate('Sort by first created') }}
+                                                        {{ translate('Sort by First created') }}
                                                     </span>
                                                 </label>
                                                 <label class="form-check form--check">
@@ -879,7 +869,7 @@
                                                         name="popular_item_sort_by_general" value="order_count"
                                                         {{ $popular_item_sort_by_general == 'order_count' ? 'checked' : '' }}>
                                                     <span class="form-check-label">
-                                                        {{ translate('Sort by orders') }}
+                                                        {{ translate('Sort by Orders') }}
                                                     </span>
                                                 </label>
                                                 <label class="form-check form--check">
@@ -915,8 +905,7 @@
                                                     </span>
                                                 </label>
                                             </div>
-                                            @php($popular_item_sort_by_unavailable = \App\Models\PriorityList::where('name', 'popular_item_sort_by_unavailable')->where('type', 'unavailable')->first())
-                                            @php($popular_item_sort_by_unavailable = $popular_item_sort_by_unavailable ? $popular_item_sort_by_unavailable->value : '')
+                                            @php($popular_item_sort_by_unavailable = $priorityValues['popular_item_sort_by_unavailable|unavailable'] ?? '')
                                             <div class=" rounded p-3 d-flex flex-column gap-3 fs-14 mb-15 bg-white ">
                                                 <label class="form-check form--check">
                                                     <input class="form-check-input" type="radio"
@@ -943,8 +932,7 @@
                                                     </span>
                                                 </label>
                                             </div>
-                                            @php($popular_item_sort_by_temp_closed = \App\Models\PriorityList::where('name', 'popular_item_sort_by_temp_closed')->where('type', 'temp_closed')->first())
-                                            @php($popular_item_sort_by_temp_closed = $popular_item_sort_by_temp_closed ? $popular_item_sort_by_temp_closed->value : '')
+                                            @php($popular_item_sort_by_temp_closed = $priorityValues['popular_item_sort_by_temp_closed|temp_closed'] ?? '')
                                             <div class=" rounded p-3 d-flex flex-column gap-3 fs-14 mb-15 bg-white ">
                                                 <label class="form-check form--check">
                                                     <input class="form-check-input" type="radio"
@@ -979,21 +967,19 @@
                     </div>
                     <br>
 
-                    {{-- Best Reviewed Item List --}}
 
                     <div class="row g-3">
                         <div class="col-lg-6 col-xl-4">
                             <div class="max-w-353px">
                                 <h4 class="mb-2 mt-4">{{ translate('Best Reviewed Item') }}</h4>
                                 <p class="m-0 fs-12">
-                                    {{ translate('Best Reviewed items are the top most ordered item list of customer choice which are highly rated & reviewed ') }}
+                                    {{ translate('Best Reviewed items are the top most ordered item list of customer choice which are highly rated & reviewed') }} 
                                 </p>
                             </div>
                         </div>
                         @php($best_reviewed_item_default_status =  Helpers::get_business_settings('best_reviewed_item_default_status')  ?? 1)
                         <div class="col-lg-6 col-xl-8">
                             <div class=" rounded d-flex flex-column gap-20px">
-                                <!-- Default Collapsible Card -->
                                 <div class="sorting-card bg-light rounded p-3">
                                     <div class="mb-10px">
                                         <h5 class="fs-14 font-semibold mb-1">
@@ -1027,7 +1013,6 @@
                                         </div>
                                     </div>
                                 </div>
-                                <!-- Custom Collapsible Card -->
                                 <div class="sorting-card bg-light rounded p-3">
                                     <div class="mb-10px">
                                         <h5 class="fs-14 font-semibold mb-1">
@@ -1062,15 +1047,14 @@
                                     </div>
                                     <div class="inner-collapse-div">
                                         <div class="pt-4">
-                                            @php($best_reviewed_item_sort_by_general = \App\Models\PriorityList::where('name', 'best_reviewed_item_sort_by_general')->where('type', 'general')->first())
-                                            @php($best_reviewed_item_sort_by_general = $best_reviewed_item_sort_by_general ? $best_reviewed_item_sort_by_general->value : '')
+                                            @php($best_reviewed_item_sort_by_general = $priorityValues['best_reviewed_item_sort_by_general|general'] ?? '')
                                             <div class=" rounded p-3 d-flex flex-column gap-3 fs-14 mb-15 bg-white ">
                                                 <label class="form-check form--check">
                                                     <input class="form-check-input" type="radio"
                                                            name="best_reviewed_item_sort_by_general" value="order_count"
                                                         {{ $best_reviewed_item_sort_by_general == 'order_count' ? 'checked' : '' }}>
                                                     <span class="form-check-label">
-                                                            {{ translate('Sort by orders count') }}
+                                                            {{ translate('Sort by Orders') }}
                                                         </span>
                                                 </label>
                                                 <label class="form-check form--check">
@@ -1090,8 +1074,7 @@
                                                         </span>
                                                 </label>
                                             </div>
-                                            @php($best_reviewed_item_sort_by_unavailable = \App\Models\PriorityList::where('name', 'best_reviewed_item_sort_by_unavailable')->where('type', 'unavailable')->first())
-                                            @php($best_reviewed_item_sort_by_unavailable = $best_reviewed_item_sort_by_unavailable ? $best_reviewed_item_sort_by_unavailable->value : '')
+                                            @php($best_reviewed_item_sort_by_unavailable = $priorityValues['best_reviewed_item_sort_by_unavailable|unavailable'] ?? '')
                                             <div class=" rounded p-3 d-flex flex-column gap-3 fs-14 mb-15 bg-white ">
                                                 <label class="form-check form--check">
                                                     <input class="form-check-input" type="radio"
@@ -1118,8 +1101,7 @@
                                                         </span>
                                                 </label>
                                             </div>
-                                            @php($best_reviewed_item_sort_by_temp_closed = \App\Models\PriorityList::where('name', 'best_reviewed_item_sort_by_temp_closed')->where('type', 'temp_closed')->first())
-                                            @php($best_reviewed_item_sort_by_temp_closed = $best_reviewed_item_sort_by_temp_closed ? $best_reviewed_item_sort_by_temp_closed->value : '')
+                                            @php($best_reviewed_item_sort_by_temp_closed = $priorityValues['best_reviewed_item_sort_by_temp_closed|temp_closed'] ?? '')
                                             <div class=" rounded p-3 d-flex flex-column gap-3 fs-14 mb-15 bg-white ">
                                                 <label class="form-check form--check">
                                                     <input class="form-check-input" type="radio"
@@ -1154,7 +1136,6 @@
                     </div>
                     <br>
 
-                   {{-- Just for You (Item Campaign) --}}
 
                     <div class="row g-3">
                         <div class="col-lg-6 col-xl-4">
@@ -1229,14 +1210,14 @@
                                     </div>
                                     <div class="inner-collapse-div">
                                         <div class="pt-4">
-                                            @php($item_campaign_sort_by_general = \App\Models\PriorityList::where('name', 'item_campaign_sort_by_general')->where('type', 'general')->first()?->value ?? '')
+                                            @php($item_campaign_sort_by_general = $priorityValues['item_campaign_sort_by_general|general'] ?? '')
                                             <div class=" rounded p-3 d-flex flex-column gap-3 fs-14 mb-15 bg-white ">
                                                 <label class="form-check form--check">
                                                     <input class="form-check-input" type="radio"
                                                         name="item_campaign_sort_by_general" value="order_count"
                                                         {{ $item_campaign_sort_by_general == 'order_count' ? 'checked' : '' }}>
                                                     <span class="form-check-label">
-                                                        {{ translate('Sort by orders') }}
+                                                        {{ translate('Sort by Orders') }}
                                                     </span>
                                                 </label>
                                                 <label class="form-check form--check">
@@ -1281,7 +1262,7 @@
                     <div class="row g-3">
                         <div class="col-lg-6 col-xl-4">
                             <div class="max-w-353px">
-                                <h4 class="mb-2 mt-4">{{ translate('New_0n') }} {{ Helpers::get_business_settings('business_name') }}</h4>
+                                <h4 class="mb-2 mt-4">{{ translate('New stores') }}</h4>
                                 <p class="m-0 fs-12">
                                     {{ translate('The New store list arranges stores based on the latest join that are closest to the customers location.') }}
                                 </p>
@@ -1290,7 +1271,6 @@
                         @php($latest_stores_default_status = Helpers::get_business_settings('latest_stores_default_status')  ?? 1)
                         <div class="col-lg-6 col-xl-8">
                             <div class=" rounded d-flex flex-column gap-20px">
-                                <!-- Default Collapsible Card -->
                                 <div class="sorting-card bg-light rounded p-3">
                                     <div class="mb-10px">
                                         <h5 class="fs-14 font-semibold mb-1">
@@ -1324,7 +1304,6 @@
                                         </div>
                                     </div>
                                 </div>
-                                <!-- Custom Collapsible Card -->
                                 <div class="sorting-card bg-light rounded p-3">
                                     <div class="mb-10px">
                                             <h5 class="fs-14 font-semibold mb-1">
@@ -1359,15 +1338,14 @@
                                     </div>
                                     <div class="inner-collapse-div">
                                         <div class="pt-4">
-                                            @php($latest_stores_sort_by_general = \App\Models\PriorityList::where('name', 'latest_stores_sort_by_general')->where('type', 'general')->first())
-                                            @php($latest_stores_sort_by_general = $latest_stores_sort_by_general ? $latest_stores_sort_by_general->value : '')
+                                            @php($latest_stores_sort_by_general = $priorityValues['latest_stores_sort_by_general|general'] ?? '')
                                             <div class=" rounded p-3 d-flex flex-column gap-3 fs-14 mb-15 bg-white ">
                                                 <label class="form-check form--check">
                                                     <input class="form-check-input" type="radio"
                                                             name="latest_stores_sort_by_general" value="latest_created"
                                                         {{ $latest_stores_sort_by_general == 'latest_created' ? 'checked' : '' }}>
                                                     <span class="form-check-label">
-                                                            {{ translate('Sort by latest created') }}
+                                                            {{ translate('Sort by newest') }}
                                                         </span>
                                                 </label>
                                                 <label class="form-check form--check">
@@ -1403,8 +1381,7 @@
                                                     </span>
                                                 </label>
                                             </div>
-                                            @php($latest_stores_sort_by_unavailable = \App\Models\PriorityList::where('name', 'latest_stores_sort_by_unavailable')->where('type', 'unavailable')->first())
-                                            @php($latest_stores_sort_by_unavailable = $latest_stores_sort_by_unavailable ? $latest_stores_sort_by_unavailable->value : '')
+                                            @php($latest_stores_sort_by_unavailable = $priorityValues['latest_stores_sort_by_unavailable|unavailable'] ?? '')
                                             <div class=" rounded p-3 d-flex flex-column gap-3 fs-14 mb-15 bg-white ">
                                                 <label class="form-check form--check">
                                                     <input class="form-check-input" type="radio"
@@ -1431,8 +1408,7 @@
                                                         </span>
                                                 </label>
                                             </div>
-                                            @php($latest_stores_sort_by_temp_closed = \App\Models\PriorityList::where('name', 'latest_stores_sort_by_temp_closed')->where('type', 'temp_closed')->first())
-                                            @php($latest_stores_sort_by_temp_closed = $latest_stores_sort_by_temp_closed ? $latest_stores_sort_by_temp_closed->value : '')
+                                            @php($latest_stores_sort_by_temp_closed = $priorityValues['latest_stores_sort_by_temp_closed|temp_closed'] ?? '')
                                             <div class=" rounded p-3 d-flex flex-column gap-3 fs-14 mb-15 bg-white ">
                                                 <label class="form-check form--check">
                                                     <input class="form-check-input" type="radio"
@@ -1467,12 +1443,11 @@
                     </div>
                     <br>
 
-                    {{-- All Stores List --}}
 
                     <div class="row g-3">
                         <div class="col-lg-6 col-xl-4">
                             <div class="max-w-353px">
-                                <h4 class="mb-2 mt-4">{{ translate('All Stores') }}</h4>
+                                <h4 class="mb-2 mt-4">{{ translate('All stores') }}</h4>
                                 <p class="m-0 fs-12">
                                     {{ translate('The all store list arranges all stores based on the latest join that are closest to the customers location.') }}
                                 </p>
@@ -1481,7 +1456,6 @@
                         @php($all_stores_default_status = Helpers::get_business_settings('all_stores_default_status')  ?? 1)
                         <div class="col-lg-6 col-xl-8">
                             <div class=" rounded d-flex flex-column gap-20px">
-                                <!-- Default Collapsible Card -->
                                 <div class="sorting-card bg-light rounded p-3">
                                     <div class="mb-10px">
                                         <h5 class="fs-14 font-semibold mb-1">{{ translate('Use default sorting list') }}
@@ -1489,7 +1463,7 @@
                                         <label class="form-label d-flex align-items-center m-0">
 
                                             <div class="fs-13">
-                                                {{ translate('This_section_is_currently_sorted_by_active_stores.') }}
+                                                {{ translate('This section is currently sorted by active stores.') }}
                                             </div>
                                         </label>
                                     </div>
@@ -1515,7 +1489,6 @@
                                         </div>
                                     </div>
                                 </div>
-                                <!-- Custom Collapsible Card -->
                                 <div class="sorting-card bg-light rounded p-3">
                                     <div class="mb-10px">
                                         <h5 class="fs-14 font-semibold mb-1">{{ translate('Use custom sorting list') }}
@@ -1549,15 +1522,14 @@
                                     <div class="inner-collapse-div">
                                         <div class="pt-4">
 
-                                            @php($all_stores_sort_by_general = \App\Models\PriorityList::where('name', 'all_stores_sort_by_general')->where('type', 'general')->first())
-                                            @php($all_stores_sort_by_general = $all_stores_sort_by_general ? $all_stores_sort_by_general->value : '')
+                                            @php($all_stores_sort_by_general = $priorityValues['all_stores_sort_by_general|general'] ?? '')
                                             <div class=" rounded p-3 d-flex flex-column gap-3 fs-14 mb-15 bg-white ">
                                                 <label class="form-check form--check">
                                                     <input class="form-check-input" type="radio"
                                                         name="all_stores_sort_by_general" value="latest_created"
                                                         {{ $all_stores_sort_by_general == 'latest_created' ? 'checked' : '' }}>
                                                     <span class="form-check-label">
-                                                        {{ translate('Sort by latest created') }}
+                                                        {{ translate('Sort by newest') }}
                                                     </span>
                                                 </label>
                                                 <label class="form-check form--check">
@@ -1565,7 +1537,7 @@
                                                         name="all_stores_sort_by_general" value="first_created"
                                                         {{ $all_stores_sort_by_general == 'first_created' ? 'checked' : '' }}>
                                                     <span class="form-check-label">
-                                                        {{ translate('Sort by first created') }}
+                                                        {{ translate('Sort by First created') }}
                                                     </span>
                                                 </label>
                                                 <label class="form-check form--check">
@@ -1573,7 +1545,7 @@
                                                         name="all_stores_sort_by_general" value="order_count"
                                                         {{ $all_stores_sort_by_general == 'order_count' ? 'checked' : '' }}>
                                                     <span class="form-check-label">
-                                                        {{ translate('Sort by orders') }}
+                                                        {{ translate('Sort by Orders') }}
                                                     </span>
                                                 </label>
                                                 <label class="form-check form--check">
@@ -1609,8 +1581,7 @@
                                                     </span>
                                                 </label>
                                             </div>
-                                            @php($all_stores_sort_by_unavailable = \App\Models\PriorityList::where('name', 'all_stores_sort_by_unavailable')->where('type', 'unavailable')->first())
-                                            @php($all_stores_sort_by_unavailable = $all_stores_sort_by_unavailable ? $all_stores_sort_by_unavailable->value : '')
+                                            @php($all_stores_sort_by_unavailable = $priorityValues['all_stores_sort_by_unavailable|unavailable'] ?? '')
                                             <div class=" rounded p-3 d-flex flex-column gap-3 fs-14 mb-15 bg-white ">
                                                 <label class="form-check form--check">
                                                     <input class="form-check-input" type="radio"
@@ -1637,8 +1608,7 @@
                                                     </span>
                                                 </label>
                                             </div>
-                                            @php($all_stores_sort_by_temp_closed = \App\Models\PriorityList::where('name', 'all_stores_sort_by_temp_closed')->where('type', 'temp_closed')->first())
-                                            @php($all_stores_sort_by_temp_closed = $all_stores_sort_by_temp_closed ? $all_stores_sort_by_temp_closed->value : '')
+                                            @php($all_stores_sort_by_temp_closed = $priorityValues['all_stores_sort_by_temp_closed|temp_closed'] ?? '')
                                             <div class=" rounded p-3 d-flex flex-column gap-3 fs-14 mb-15 bg-white ">
                                                 <label class="form-check form--check">
                                                     <input class="form-check-input" type="radio"
@@ -1673,7 +1643,6 @@
                     </div>
                     <br>
 
-                    {{-- Category / Subcategory wise product list --}}
 
                     <div class="row g-3">
                         <div class="col-lg-6 col-xl-4">
@@ -1687,7 +1656,6 @@
                         @php($category_sub_category_item_default_status = Helpers::get_business_settings('category_sub_category_item_default_status')  ?? 1)
                         <div class="col-lg-6 col-xl-8">
                             <div class=" rounded d-flex flex-column gap-20px">
-                                <!-- Default Collapsible Card -->
                                 <div class="sorting-card bg-light rounded p-3">
                                     <div class="mb-10px">
                                         <h5 class="fs-14 font-semibold mb-1">{{ translate('Use default sorting list') }}
@@ -1695,7 +1663,7 @@
                                         <label class="form-label d-flex align-items-center m-0">
 
                                             <div class="fs-13">
-                                                {{ translate('This_section_is_currently_sorted_by_latest_created_items.') }}
+                                                {{ translate('This section is currently sorted by latest created items.') }}
                                             </div>
                                         </label>
                                     </div>
@@ -1721,7 +1689,6 @@
                                         </div>
                                     </div>
                                 </div>
-                                <!-- Custom Collapsible Card -->
                                 <div class="sorting-card bg-light rounded p-3">
                                     <div class="mb-10px">
                                         <h5 class="fs-14 font-semibold mb-1">{{ translate('Use custom sorting list') }}
@@ -1755,8 +1722,7 @@
                                     <div class="inner-collapse-div">
                                         <div class="pt-4">
 
-                                            @php($category_sub_category_item_sort_by_general = \App\Models\PriorityList::where('name', 'category_sub_category_item_sort_by_general')->where('type', 'general')->first())
-                                            @php($category_sub_category_item_sort_by_general = $category_sub_category_item_sort_by_general ? $category_sub_category_item_sort_by_general->value : '')
+                                            @php($category_sub_category_item_sort_by_general = $priorityValues['category_sub_category_item_sort_by_general|general'] ?? '')
                                             <div class=" rounded p-3 d-flex flex-column gap-3 fs-14 mb-15 bg-white ">
 
                                                 <label class="form-check form--check">
@@ -1764,7 +1730,7 @@
                                                         name="category_sub_category_item_sort_by_general" value="order_count"
                                                         {{ $category_sub_category_item_sort_by_general == 'order_count' ? 'checked' : '' }}>
                                                     <span class="form-check-label">
-                                                        {{ translate('Sort by orders') }}
+                                                        {{ translate('Sort by Orders') }}
                                                     </span>
                                                 </label>
                                                 <label class="form-check form--check">
@@ -1800,8 +1766,7 @@
                                                     </span>
                                                 </label>
                                             </div>
-                                            @php($category_sub_category_item_sort_by_unavailable = \App\Models\PriorityList::where('name', 'category_sub_category_item_sort_by_unavailable')->where('type', 'unavailable')->first())
-                                            @php($category_sub_category_item_sort_by_unavailable = $category_sub_category_item_sort_by_unavailable ? $category_sub_category_item_sort_by_unavailable->value : '')
+                                            @php($category_sub_category_item_sort_by_unavailable = $priorityValues['category_sub_category_item_sort_by_unavailable|unavailable'] ?? '')
                                             <div class=" rounded p-3 d-flex flex-column gap-3 fs-14 mb-15 bg-white ">
                                                 <label class="form-check form--check">
                                                     <input class="form-check-input" type="radio"
@@ -1828,8 +1793,7 @@
                                                     </span>
                                                 </label>
                                             </div>
-                                            @php($category_sub_category_item_sort_by_temp_closed = \App\Models\PriorityList::where('name', 'category_sub_category_item_sort_by_temp_closed')->where('type', 'temp_closed')->first())
-                                            @php($category_sub_category_item_sort_by_temp_closed = $category_sub_category_item_sort_by_temp_closed ? $category_sub_category_item_sort_by_temp_closed->value : '')
+                                            @php($category_sub_category_item_sort_by_temp_closed = $priorityValues['category_sub_category_item_sort_by_temp_closed|temp_closed'] ?? '')
                                             <div class=" rounded p-3 d-flex flex-column gap-3 fs-14 mb-15 bg-white ">
                                                 <label class="form-check form--check">
                                                     <input class="form-check-input" type="radio"
@@ -1864,7 +1828,6 @@
                     </div>
                     <br>
 
-                    {{-- product search list --}}
 
                     <div class="row g-3">
                         <div class="col-lg-6 col-xl-4">
@@ -1878,7 +1841,6 @@
                         @php($product_search_default_status = Helpers::get_business_settings('product_search_default_status')  ?? 1)
                         <div class="col-lg-6 col-xl-8">
                             <div class=" rounded d-flex flex-column gap-20px">
-                                <!-- Default Collapsible Card -->
                                 <div class="sorting-card bg-light rounded p-3">
                                     <div class="mb-10px">
                                         <h5 class="fs-14 font-semibold mb-1">{{ translate('Use default sorting list') }}
@@ -1886,7 +1848,7 @@
                                         <label class="form-label d-flex align-items-center m-0">
 
                                             <div class="fs-13">
-                                                {{ translate('This_section_is_currently_sorted_by_active_items.') }}
+                                                {{ translate('This section is currently sorted by active items.') }}
                                             </div>
                                         </label>
                                     </div>
@@ -1912,7 +1874,6 @@
                                         </div>
                                     </div>
                                 </div>
-                                <!-- Custom Collapsible Card -->
                                 <div class="sorting-card bg-light rounded p-3">
                                     <div class="mb-10px">
                                         <h5 class="fs-14 font-semibold mb-1">{{ translate('Use custom sorting list') }}
@@ -1946,13 +1907,11 @@
                                     <div class="inner-collapse-div">
                                         <div class="pt-4">
 
-                                            @php($product_search_sort_by_general = \App\Models\PriorityList::where('name', 'product_search_sort_by_general')->where('type', 'general')->first())
-                                            @php($product_search_sort_by_general = $product_search_sort_by_general ? $product_search_sort_by_general->value : '')
+                                            @php($product_search_sort_by_general = $priorityValues['product_search_sort_by_general|general'] ?? '')
                                             <input hidden class="form-check-input" type="radio"
                                             name="product_search_sort_by_general" value="order_count" checked>
 
-                                            @php($product_search_sort_by_unavailable = \App\Models\PriorityList::where('name', 'product_search_sort_by_unavailable')->where('type', 'unavailable')->first())
-                                            @php($product_search_sort_by_unavailable = $product_search_sort_by_unavailable ? $product_search_sort_by_unavailable->value : '')
+                                            @php($product_search_sort_by_unavailable = $priorityValues['product_search_sort_by_unavailable|unavailable'] ?? '')
                                             <div class=" rounded p-3 d-flex flex-column gap-3 fs-14 mb-15 bg-white ">
                                                 <label class="form-check form--check">
                                                     <input class="form-check-input" type="radio"
@@ -1979,8 +1938,7 @@
                                                     </span>
                                                 </label>
                                             </div>
-                                            @php($product_search_sort_by_temp_closed = \App\Models\PriorityList::where('name', 'product_search_sort_by_temp_closed')->where('type', 'temp_closed')->first())
-                                            @php($product_search_sort_by_temp_closed = $product_search_sort_by_temp_closed ? $product_search_sort_by_temp_closed->value : '')
+                                            @php($product_search_sort_by_temp_closed = $priorityValues['product_search_sort_by_temp_closed|temp_closed'] ?? '')
                                             <div class=" rounded p-3 d-flex flex-column gap-3 fs-14 mb-15 bg-white ">
                                                 <label class="form-check form--check">
                                                     <input class="form-check-input" type="radio"
@@ -2015,21 +1973,19 @@
                     </div>
                     <br>
 
-                    {{-- Basic Medicine Nearby list --}}
 
                     <div class="row g-3">
                         <div class="col-lg-6 col-xl-4">
                             <div class="max-w-353px">
                                 <h4 class="mb-2 mt-4">{{ translate('Basic Medicine Nearby') }}</h4>
                                 <p class="m-0 fs-12">
-                                    {{ translate('Basic Medicine Nearby is item list of the stores based on the latest join that are closest to the customers location.') }}
+                                    {{ translate('Basic Medicine Nearby lists items from the most recently joined stores closest to the customer\'s location.') }}
                                 </p>
                             </div>
                         </div>
                         @php($basic_medicine_default_status = Helpers::get_business_settings('basic_medicine_default_status')  ?? 1)
                         <div class="col-lg-6 col-xl-8">
                             <div class=" rounded d-flex flex-column gap-20px">
-                                <!-- Default Collapsible Card -->
                                 <div class="sorting-card bg-light rounded p-3">
                                     <div class="mb-10px">
                                         <h5 class="fs-14 font-semibold mb-1">{{ translate('Use default sorting list') }}
@@ -2037,7 +1993,7 @@
                                         <label class="form-label d-flex align-items-center m-0">
 
                                             <div class="fs-13">
-                                                {{ translate('This_section_is_currently_sorted_by_total_orders.') }}
+                                                {{ translate('This section is currently sorted by total orders.') }}
                                             </div>
                                         </label>
                                     </div>
@@ -2063,7 +2019,6 @@
                                         </div>
                                     </div>
                                 </div>
-                                <!-- Custom Collapsible Card -->
                                 <div class="sorting-card bg-light rounded p-3">
                                     <div class="mb-10px">
                                         <h5 class="fs-14 font-semibold mb-1">{{ translate('Use custom sorting list') }}
@@ -2097,8 +2052,7 @@
                                     <div class="inner-collapse-div">
                                         <div class="pt-4">
 
-                                            @php($basic_medicine_sort_by_general = \App\Models\PriorityList::where('name', 'basic_medicine_sort_by_general')->where('type', 'general')->first())
-                                            @php($basic_medicine_sort_by_general = $basic_medicine_sort_by_general ? $basic_medicine_sort_by_general->value : '')
+                                            @php($basic_medicine_sort_by_general = $priorityValues['basic_medicine_sort_by_general|general'] ?? '')
                                             <div class=" rounded p-3 d-flex flex-column gap-3 fs-14 mb-15 bg-white ">
 
                                                 <label class="form-check form--check">
@@ -2106,7 +2060,7 @@
                                                            name="basic_medicine_sort_by_general" value="order_count"
                                                         {{ $basic_medicine_sort_by_general == 'order_count' ? 'checked' : '' }}>
                                                     <span class="form-check-label">
-                                                        {{ translate('Sort by orders') }}
+                                                        {{ translate('Sort by Orders') }}
                                                     </span>
                                                 </label>
                                                 <label class="form-check form--check">
@@ -2142,8 +2096,7 @@
                                                     </span>
                                                 </label>
                                             </div>
-                                            @php($basic_medicine_sort_by_unavailable = \App\Models\PriorityList::where('name', 'basic_medicine_sort_by_unavailable')->where('type', 'unavailable')->first())
-                                            @php($basic_medicine_sort_by_unavailable = $basic_medicine_sort_by_unavailable ? $basic_medicine_sort_by_unavailable->value : '')
+                                            @php($basic_medicine_sort_by_unavailable = $priorityValues['basic_medicine_sort_by_unavailable|unavailable'] ?? '')
                                             <div class=" rounded p-3 d-flex flex-column gap-3 fs-14 mb-15 bg-white ">
                                                 <label class="form-check form--check">
                                                     <input class="form-check-input" type="radio"
@@ -2170,8 +2123,7 @@
                                                     </span>
                                                 </label>
                                             </div>
-                                            @php($basic_medicine_sort_by_temp_closed = \App\Models\PriorityList::where('name', 'basic_medicine_sort_by_temp_closed')->where('type', 'temp_closed')->first())
-                                            @php($basic_medicine_sort_by_temp_closed = $basic_medicine_sort_by_temp_closed ? $basic_medicine_sort_by_temp_closed->value : '')
+                                            @php($basic_medicine_sort_by_temp_closed = $priorityValues['basic_medicine_sort_by_temp_closed|temp_closed'] ?? '')
                                             <div class=" rounded p-3 d-flex flex-column gap-3 fs-14 mb-15 bg-white ">
                                                 <label class="form-check form--check">
                                                     <input class="form-check-input" type="radio"
@@ -2206,14 +2158,13 @@
                     </div>
                     <br>
 
-                    {{-- Common Condition List --}}
 
                     <div class="row g-3">
                         <div class="col-lg-6 col-xl-4">
                             <div class="max-w-353px">
                                 <h4 class="mb-2 mt-4">{{ translate('Common Condition') }}</h4>
                                 <p class="m-0 fs-12">
-                                    {{ translate('Common Condition is the list of items which are mostly commonly used by the users.') }}
+                                    {{ translate('Common Conditions are the items most commonly used by users.') }}
                                 </p>
                             </div>
                         </div>
@@ -2281,14 +2232,14 @@
                                     </div>
                                     <div class="inner-collapse-div">
                                         <div class="pt-4">
-                                            @php($common_condition_sort_by_general = \App\Models\PriorityList::where('name', 'common_condition_sort_by_general')->where('type', 'general')->first()?->value ?? '')
+                                            @php($common_condition_sort_by_general = $priorityValues['common_condition_sort_by_general|general'] ?? '')
                                             <div class=" rounded p-3 d-flex flex-column gap-3 fs-14 mb-15 bg-white ">
                                                 <label class="form-check form--check">
                                                     <input class="form-check-input" type="radio"
                                                            name="common_condition_sort_by_general" value="latest"
                                                         {{ $common_condition_sort_by_general == 'latest' ? 'checked' : '' }}>
                                                     <span class="form-check-label">
-                                                        {{ translate('Sort by latest created') }}
+                                                        {{ translate('Sort by newest') }}
                                                     </span>
                                                 </label>
                                                 <label class="form-check form--check">
@@ -2296,7 +2247,7 @@
                                                            name="common_condition_sort_by_general" value="oldest"
                                                         {{ $common_condition_sort_by_general == 'oldest' ? 'checked' : '' }}>
                                                     <span class="form-check-label">
-                                                        {{ translate('Sort by first created') }}
+                                                        {{ translate('Sort by First created') }}
                                                     </span>
                                                 </label>
                                                 <label class="form-check form--check">
@@ -2304,7 +2255,7 @@
                                                            name="common_condition_sort_by_general" value="order_count"
                                                         {{ $common_condition_sort_by_general == 'order_count' ? 'checked' : '' }}>
                                                     <span class="form-check-label">
-                                                        {{ translate('Sort by orders') }}
+                                                        {{ translate('Sort by Orders') }}
                                                     </span>
                                                 </label>
                                                 <label class="form-check form--check">
@@ -2333,7 +2284,6 @@
                     </div>
                     <br>
 
-                    {{-- Brand List --}}
 
                     <div class="row g-3">
                         <div class="col-lg-6 col-xl-4">
@@ -2361,7 +2311,7 @@
                                             <label class="form-label d-flex align-items-center m-0">
 
                                                 <div class="fs-13">
-                                                    {{ translate('Staus') }}</div>
+                                                    {{ translate('Status') }}</div>
                                             </label>
                                         </div>
                                         <div>
@@ -2408,14 +2358,14 @@
                                     </div>
                                     <div class="inner-collapse-div">
                                         <div class="pt-4">
-                                            @php($brand_sort_by_general = \App\Models\PriorityList::where('name', 'brand_sort_by_general')->where('type', 'general')->first()?->value ?? '')
+                                            @php($brand_sort_by_general = $priorityValues['brand_sort_by_general|general'] ?? '')
                                             <div class=" rounded p-3 d-flex flex-column gap-3 fs-14 mb-15 bg-white ">
                                                 <label class="form-check form--check">
                                                     <input class="form-check-input" type="radio"
                                                            name="brand_sort_by_general" value="latest"
                                                         {{ $brand_sort_by_general == 'latest' ? 'checked' : '' }}>
                                                     <span class="form-check-label">
-                                                        {{ translate('Sort by latest created') }}
+                                                        {{ translate('Sort by newest') }}
                                                     </span>
                                                 </label>
                                                 <label class="form-check form--check">
@@ -2423,7 +2373,7 @@
                                                            name="brand_sort_by_general" value="oldest"
                                                         {{ $brand_sort_by_general == 'oldest' ? 'checked' : '' }}>
                                                     <span class="form-check-label">
-                                                        {{ translate('Sort by first created') }}
+                                                        {{ translate('Sort by First created') }}
                                                     </span>
                                                 </label>
                                                 <label class="form-check form--check">
@@ -2431,7 +2381,7 @@
                                                            name="brand_sort_by_general" value="order_count"
                                                         {{ $brand_sort_by_general == 'order_count' ? 'checked' : '' }}>
                                                     <span class="form-check-label">
-                                                        {{ translate('Sort by orders') }}
+                                                        {{ translate('Sort by Orders') }}
                                                     </span>
                                                 </label>
                                                 <label class="form-check form--check">
@@ -2460,7 +2410,6 @@
                     </div>
                     <br>
 
-                    {{-- Brand wise product list --}}
 
                     <div class="row g-3">
                         <div class="col-lg-6 col-xl-4">
@@ -2474,7 +2423,6 @@
                         @php($brand_item_default_status = Helpers::get_business_settings('brand_item_default_status')  ?? 1)
                         <div class="col-lg-6 col-xl-8">
                             <div class=" rounded d-flex flex-column gap-20px">
-                                <!-- Default Collapsible Card -->
                                 <div class="sorting-card bg-light rounded p-3">
                                     <div class="mb-10px">
                                         <h5 class="fs-14 font-semibold mb-1">{{ translate('Use default sorting list') }}
@@ -2482,7 +2430,7 @@
                                         <label class="form-label d-flex align-items-center m-0">
 
                                             <div class="fs-13">
-                                                {{ translate('This_section_is_currently_sorted_by_latest_created_items.') }}
+                                                {{ translate('This section is currently sorted by latest created items.') }}
                                             </div>
                                         </label>
                                     </div>
@@ -2508,7 +2456,6 @@
                                         </div>
                                     </div>
                                 </div>
-                                <!-- Custom Collapsible Card -->
                                 <div class="sorting-card bg-light rounded p-3">
                                     <div class="mb-10px">
                                         <h5 class="fs-14 font-semibold mb-1">{{ translate('Use custom sorting list') }}
@@ -2542,8 +2489,7 @@
                                     <div class="inner-collapse-div">
                                         <div class="pt-4">
 
-                                            @php($brand_item_sort_by_general = \App\Models\PriorityList::where('name', 'brand_item_sort_by_general')->where('type', 'general')->first())
-                                            @php($brand_item_sort_by_general = $brand_item_sort_by_general ? $brand_item_sort_by_general->value : '')
+                                            @php($brand_item_sort_by_general = $priorityValues['brand_item_sort_by_general|general'] ?? '')
                                             <div class=" rounded p-3 d-flex flex-column gap-3 fs-14 mb-15 bg-white ">
 
                                                 <label class="form-check form--check">
@@ -2551,7 +2497,7 @@
                                                            name="brand_item_sort_by_general" value="order_count"
                                                         {{ $brand_item_sort_by_general == 'order_count' ? 'checked' : '' }}>
                                                     <span class="form-check-label">
-                                                        {{ translate('Sort by orders') }}
+                                                        {{ translate('Sort by Orders') }}
                                                     </span>
                                                 </label>
                                                 <label class="form-check form--check">
@@ -2587,8 +2533,7 @@
                                                     </span>
                                                 </label>
                                             </div>
-                                            @php($brand_item_sort_by_unavailable = \App\Models\PriorityList::where('name', 'brand_item_sort_by_unavailable')->where('type', 'unavailable')->first())
-                                            @php($brand_item_sort_by_unavailable = $brand_item_sort_by_unavailable ? $brand_item_sort_by_unavailable->value : '')
+                                            @php($brand_item_sort_by_unavailable = $priorityValues['brand_item_sort_by_unavailable|unavailable'] ?? '')
                                             <div class=" rounded p-3 d-flex flex-column gap-3 fs-14 mb-15 bg-white ">
                                                 <label class="form-check form--check">
                                                     <input class="form-check-input" type="radio"
@@ -2615,8 +2560,7 @@
                                                     </span>
                                                 </label>
                                             </div>
-                                            @php($brand_item_sort_by_temp_closed = \App\Models\PriorityList::where('name', 'brand_item_sort_by_temp_closed')->where('type', 'temp_closed')->first())
-                                            @php($brand_item_sort_by_temp_closed = $brand_item_sort_by_temp_closed ? $brand_item_sort_by_temp_closed->value : '')
+                                            @php($brand_item_sort_by_temp_closed = $priorityValues['brand_item_sort_by_temp_closed|temp_closed'] ?? '')
                                             <div class=" rounded p-3 d-flex flex-column gap-3 fs-14 mb-15 bg-white ">
                                                 <label class="form-check form--check">
                                                     <input class="form-check-input" type="radio"
@@ -2651,21 +2595,19 @@
                     </div>
                     <br>
 
-                    {{-- Top offer near me (discounted) --}}
 
                     <div class="row g-3">
                         <div class="col-lg-6 col-xl-4">
                             <div class="max-w-353px">
-                                <h4 class="mb-2 mt-4">{{ translate('Top_offer_near_me') }} </h4>
+                                <h4 class="mb-2 mt-4">{{ translate('Top offer near me') }} </h4>
                                 <p class="m-0 fs-12">
-                                    {{ translate('The store list arranges stores based on the dicount and closest to the customers location.') }}
+                                    {{ translate('The store list arranges stores based on the discount and closest to the customers location.') }}
                                 </p>
                             </div>
                         </div>
                         @php($top_offer_near_me_stores_default_status = Helpers::get_business_settings('top_offer_near_me_stores_default_status')  ?? 1)
                         <div class="col-lg-6 col-xl-8">
                             <div class=" rounded d-flex flex-column gap-20px">
-                                <!-- Default Collapsible Card -->
                                 <div class="sorting-card bg-light rounded p-3">
                                     <div class="mb-10px">
                                         <h5 class="fs-14 font-semibold mb-1">
@@ -2673,7 +2615,7 @@
                                         <label class="form-label d-flex align-items-center m-0">
 
                                             <div class="fs-13">
-                                                {{ translate('This section sorted based on the dicount and closest to the customers location') }}
+                                                {{ translate('This section sorted based on the discount and closest to the customers location') }}
                                             </div>
                                         </label>
                                     </div>
@@ -2699,7 +2641,6 @@
                                         </div>
                                     </div>
                                 </div>
-                                <!-- Custom Collapsible Card -->
                                 <div class="sorting-card bg-light rounded p-3">
                                     <div class="mb-10px">
                                         <h5 class="fs-14 font-semibold mb-1">
@@ -2734,8 +2675,7 @@
                                     </div>
                                     <div class="inner-collapse-div">
                                         <div class="pt-4">
-                                            @php($top_offer_near_me_stores_sort_by_general = \App\Models\PriorityList::where('name', 'top_offer_near_me_stores_sort_by_general')->where('type', 'general')->first())
-                                            @php($top_offer_near_me_stores_sort_by_general = $top_offer_near_me_stores_sort_by_general ? $top_offer_near_me_stores_sort_by_general->value : '')
+                                            @php($top_offer_near_me_stores_sort_by_general = $priorityValues['top_offer_near_me_stores_sort_by_general|general'] ?? '')
                                             <div class=" rounded p-3 d-flex flex-column gap-3 fs-14 mb-15 bg-white ">
                                                 <label class="form-check form--check">
                                                     <input class="form-check-input" type="radio"
@@ -2770,8 +2710,7 @@
                                                     </span>
                                                 </label>
                                             </div>
-                                            @php($top_offer_near_me_stores_sort_by_unavailable = \App\Models\PriorityList::where('name', 'top_offer_near_me_stores_sort_by_unavailable')->where('type', 'unavailable')->first())
-                                            @php($top_offer_near_me_stores_sort_by_unavailable = $top_offer_near_me_stores_sort_by_unavailable ? $top_offer_near_me_stores_sort_by_unavailable->value : '')
+                                            @php($top_offer_near_me_stores_sort_by_unavailable = $priorityValues['top_offer_near_me_stores_sort_by_unavailable|unavailable'] ?? '')
                                             <div class=" rounded p-3 d-flex flex-column gap-3 fs-14 mb-15 bg-white ">
                                                 <label class="form-check form--check">
                                                     <input class="form-check-input" type="radio"
@@ -2798,8 +2737,7 @@
                                                         </span>
                                                 </label>
                                             </div>
-                                            @php($top_offer_near_me_stores_sort_by_temp_closed = \App\Models\PriorityList::where('name', 'top_offer_near_me_stores_sort_by_temp_closed')->where('type', 'temp_closed')->first())
-                                            @php($top_offer_near_me_stores_sort_by_temp_closed = $top_offer_near_me_stores_sort_by_temp_closed ? $top_offer_near_me_stores_sort_by_temp_closed->value : '')
+                                            @php($top_offer_near_me_stores_sort_by_temp_closed = $priorityValues['top_offer_near_me_stores_sort_by_temp_closed|temp_closed'] ?? '')
                                             <div class=" rounded p-3 d-flex flex-column gap-3 fs-14 mb-15 bg-white ">
                                                 <label class="form-check form--check">
                                                     <input class="form-check-input" type="radio"
@@ -2857,17 +2795,17 @@
                         class="btn-collapse-icon w-35px h-35px bg-white d-flex align-items-center justify-content-center border icon-btn rounded-circle fs-12 lh-1">
                         <i class="tio-down-ui"></i>
                     </div>
-                    <span class="font-semibold text-left fs-14 text-title">{{ translate('Priority Setup') }}</span>
+                    <span class="font-semibold text-left fs-14 text-title">{{ translate('Priority setup') }}</span>
                 </button>
                 <a href="#priority_setup_form"
-                    class="text-info text-underline fs-12 text-nowrap offcanvas-close offcanvas-close-btn">{{ translate('messages.Let’s Setup') }}</a>
+                    class="text-info text-underline fs-12 text-nowrap offcanvas-close offcanvas-close-btn">{{ translate('Let\'s setup') }}</a>
             </div>
             <div class="collapse mt-3 show" id="priority_setup_guide">
                 <div class="card card-body">
                     <div class="">
-                        <h5 class="mb-3">{{ translate('Priority Setup') }}</h5>
+                        <h5 class="mb-3">{{ translate('Priority setup') }}</h5>
                         <p class="fs-12 mb-0">
-                            {{ translate('The Priority Setup feature allows the admin or vendor to control the display order of items, categories, and subcategories across the system. By setting priority rules, the platform can highlight specific items or organise listings in a way that improves visibility and user experience.') }}
+                            {{ translate('Controls the display order of items, categories and subcategories across the system.') }}
                         </p>
                         <br>
                         <h5 class="mb-2">{{ translate('Priority Setup Benefit') }}:</h5>
@@ -2892,7 +2830,7 @@
                     <span class="font-semibold text-left fs-14 text-title">{{ translate('Sorting Options') }}</span>
                 </button>
                 <a href="#category_list_section"
-                    class="text-info text-underline fs-12 text-nowrap offcanvas-close offcanvas-close-btn">{{ translate('messages.Let’s Setup') }}</a>
+                    class="text-info text-underline fs-12 text-nowrap offcanvas-close offcanvas-close-btn">{{ translate('Let\'s setup') }}</a>
             </div>
             <div class="collapse mt-3" id="sorting_options_guide">
                 <div class="card card-body">
@@ -2905,9 +2843,9 @@
                             </li>
                             <li class="mb-2">
                                 <strong>{{ translate('Use Custom Sorting') }}:</strong>
-                                {{ translate('Items are arranged based on selected criteria, including:') }}
+                                {{ translate('Items are arranged based on selected criteria, including') }}:
                                 <ul class="mt-2">
-                                    <li><strong>{{ translate('Sort by latest created') }}:</strong>
+                                    <li><strong>{{ translate('Sort by newest') }}:</strong>
                                         {{ translate('Shows the most recently added items or vendors first') }}</li>
                                     <li><strong>{{ translate('Sort by First created') }}:</strong>
                                         {{ translate('Displays the oldest items or vendor first') }}</li>
@@ -2925,7 +2863,7 @@
                                     </li>
                                     <li><strong>{{ translate('Remove unavailable items from the list') }}:</strong>
                                         {{ translate('Completely hides items or vendors that are unavailable') }}</li>
-                                    <li><strong>{{ translate('Show the currently closed vendors last') }}:</strong>
+                                    <li><strong>{{ translate('Show currently closed vendors in the last') }}:</strong>
                                         {{ translate('Keeps closed vendors at the end of the list while still showing them.') }}
                                     </li>
                                     <li><strong>{{ translate('Remove currently closed vendors from the list') }}:</strong>
@@ -2955,12 +2893,12 @@
                                     <li><strong>{{ translate('Sort by ratings') }}:</strong>
                                         {{ translate('Displays items/vendors with the highest average rating first.') }}
                                     </li>
-                                    <li><strong>{{ translate('Show 4+ rated items') }}:</strong>
-                                        {{ translate('Displays only items with ratings of 4 or higher.') }}</li>
-                                    <li><strong>{{ translate('Show 3.5+ rated items') }}:</strong>
-                                        {{ translate('Displays items with ratings of 3.5 or higher.') }}</li>
-                                    <li><strong>{{ translate('Show 3+ rated items') }}:</strong>
-                                        {{ translate('Displays items with ratings of 3 or higher.') }}</li>
+                                    <li><strong>{{ translate('Show items with rating') }} (4+):</strong>
+                                        {{ translate('Displays only items with this rating or higher.') }}</li>
+                                    <li><strong>{{ translate('Show items with rating') }} (3.5+):</strong>
+                                        {{ translate('Displays items with this rating or higher.') }}</li>
+                                    <li><strong>{{ translate('Show items with rating') }} (3+):</strong>
+                                        {{ translate('Displays items with this rating or higher.') }}</li>
                                 </ul>
                             </li>
                         </ul>

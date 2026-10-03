@@ -1,5 +1,19 @@
 "use strict";
 
+function posCartAlert(type, text) {
+    let lang = window.posCartLang || {};
+    return Swal.fire({
+        type: type,
+        title: lang.title || "Cart",
+        text: text || "",
+        confirmButtonText: lang.confirm || "OK",
+        showCloseButton: true,
+        closeButtonAriaLabel: lang.close || "Close",
+        customClass: "pos-swal pos-swal-" + type,
+        customContainerClass: "pos-swal-shell",
+    });
+}
+
 $("#order_place").on("keydown", function (e) {
     if (e.keyCode === 13) {
         e.preventDefault();
@@ -12,11 +26,43 @@ $("#insertPayableAmount").on("keydown", function (e) {
 });
 
 $(document).on("click", ".print-Div", function () {
-    let printContents = document.getElementById("printableArea").innerHTML;
-    let originalContents = document.body.innerHTML;
-    document.body.innerHTML = printContents;
-    window.print();
-    document.body.innerHTML = originalContents;
+    let area = document.getElementById("printableArea");
+
+    if (!area) {
+        return;
+    }
+
+    let head = "";
+    document
+        .querySelectorAll('link[rel="stylesheet"], style')
+        .forEach(function (node) {
+            head += node.outerHTML;
+        });
+
+    let frame = document.createElement("iframe");
+    frame.className = "pos-print-frame";
+    frame.setAttribute("aria-hidden", "true");
+    frame.onload = function () {
+        frame.contentWindow.focus();
+        frame.contentWindow.print();
+        setTimeout(function () {
+            frame.remove();
+        }, 1000);
+    };
+    document.body.appendChild(frame);
+
+    let doc = frame.contentWindow.document;
+    doc.open();
+    doc.write(
+        '<!doctype html><html dir="' +
+            (document.documentElement.getAttribute("dir") || "ltr") +
+            '"><head><meta charset="utf-8">' +
+            head +
+            "<style>@page{size:auto;margin:0}body{margin:0}</style></head><body>" +
+            area.outerHTML +
+            "</body></html>"
+    );
+    doc.close();
 });
 
 $(document).on("click", ".addon-quantity-input-toggle", function (event) {
@@ -72,11 +118,7 @@ function cartQuantityInitialize() {
                 ".btn-number[data-type='minus'][data-field='" + name + "']"
             ).removeAttr("disabled");
         } else {
-            Swal.fire({
-                icon: "error",
-                title: "Cart",
-                text: "Sorry, the minimum value was reached",
-            });
+            posCartAlert("error", (window.posCartLang || {}).minValue);
             $(this).val($(this).data("oldValue"));
         }
         if (valueCurrent <= maxValue) {
@@ -84,27 +126,18 @@ function cartQuantityInitialize() {
                 ".btn-number[data-type='plus'][data-field='" + name + "']"
             ).removeAttr("disabled");
         } else {
-            Swal.fire({
-                icon: "error",
-                title: "Cart",
-                text: "Sorry, stock limit exceeded.",
-            });
+            posCartAlert("error", (window.posCartLang || {}).stockLimit);
             $(this).val($(this).data("oldValue"));
         }
     });
     $(".input-number").keydown(function (e) {
-        // Allow: backspace, delete, tab, escape, enter and .
         if (
             $.inArray(e.keyCode, [46, 8, 9, 27, 13, 190]) !== -1 ||
-            // Allow: Ctrl+A
             (e.keyCode === 65 && e.ctrlKey === true) ||
-            // Allow: home, end, left, right
             (e.keyCode >= 35 && e.keyCode <= 39)
         ) {
-            // let it happen, don't do anything
             return;
         }
-        // Ensure that it is a number and stop the keypress
         if (
             (e.shiftKey || e.keyCode < 48 || e.keyCode > 57) &&
             (e.keyCode < 96 || e.keyCode > 105)
@@ -160,11 +193,7 @@ $(document).on("click", ".increase-button-cart", function () {
         addon_quantity_input.val(currentValue + 1);
         getVariantPrice();
     } else {
-        Swal.fire({
-            icon: "error",
-            title: "Cart",
-            text: "Sorry, stock limit exceeded.",
-        });
+        posCartAlert("error", (window.posCartLang || {}).stockLimit);
     }
 });
 
@@ -174,7 +203,6 @@ $(".js-select2-custom").each(function () {
 $("#delivery_address").on("click", function () {
     initMap();
 });
-// initMap();
 $("#customer").change(function () {
     if ($(this).val()) {
         $("#customer_id").val($(this).val());
@@ -233,6 +261,18 @@ function posCalculateDeliveryDistance(options) {
         };
         if (storeId !== undefined && storeId !== null && storeId !== "") {
             requestData.store_id = storeId;
+        }
+        // An area/zip-priced zone's coverage pick has to survive a new map pin too. Clicking a
+        // new point re-quotes the fee from scratch here, and without the pick this fell through
+        // to DeliveryRuleChargeService::chargeForArea()/chargeForZipCode()'s own "nothing
+        // selected" case (a bare 0, floored back up to just the rule's bare minimum) -- silently
+        // discarding whatever the admin had already chosen in the coverage picker above and
+        // replacing a real area/zip charge with the zone's floor price.
+        const $coveragePicker = $("#coverage_picker_select");
+        const coverageFieldName = $coveragePicker.attr("name");
+        const coverageValue = $coveragePicker.val();
+        if (coverageFieldName && coverageValue) {
+            requestData[coverageFieldName] = coverageValue;
         }
 
         $.get({
@@ -326,6 +366,91 @@ function posCalculateDeliveryDistance(options) {
             window.posUseRouteMatrix = false;
             legacyDistanceMatrix();
         });
+}
+
+// The area/zip picker for a zone whose active delivery rule prices by one of them, rather than
+// by distance. Fetched once per store selection (the store cannot change without reopening the
+// page) and left hidden -- with the map/distance flow untouched -- for every other zone.
+//
+// storeId is omitted entirely on the vendor panel: a vendor's POS is always their own one store,
+// so getDeliveryCoverage() resolves it server-side and never reads a store_id from the request.
+function posInitCoveragePicker(options) {
+    const coverageUrl = options.coverageUrl;
+    const extraChargeUrl = options.extraChargeUrl;
+    const storeId = options.storeId || null;
+    const currencySymbol = options.currencySymbol || "";
+    const areaLabel = options.areaLabel || "Select Area";
+    const zipLabel = options.zipLabel || "Select Zip Code";
+
+    const $wrap = $("#coverage_picker_wrap");
+    const $select = $("#coverage_picker_select");
+    const $labelText = $("#coverage_picker_label_text");
+
+    $.get({
+        url: coverageUrl,
+        dataType: "json",
+        data: storeId ? { store_id: storeId } : {},
+        success: function (data) {
+            const coverage = data.coverage || [];
+            if (!coverage.length) {
+                return;
+            }
+
+            const isZip = data.type === "zip_code_wise";
+            const fieldName = isZip ? "zip_code_id" : "area_id";
+            const label = isZip ? zipLabel : areaLabel;
+
+            $select.attr("name", fieldName);
+            $labelText.text(label);
+            $select.empty().append($("<option>").val("").text(label));
+            coverage.forEach(function (row) {
+                $select.append($("<option>").val(row.id).text(row.name));
+            });
+
+            $wrap.removeClass("d-none");
+        },
+    });
+
+    $(document).on("change", "#coverage_picker_select", function () {
+        const value = $(this).val();
+        const fieldName = $(this).attr("name");
+
+        if (!value) {
+            document.getElementById("delivery_fee").value = 0;
+            $("#delivery_fee").siblings("strong").html(0 + currencySymbol);
+            return;
+        }
+
+        const requestData = {
+            customer_id: document.getElementById("customer")?.value || "",
+        };
+        if (storeId) {
+            requestData.store_id = storeId;
+        }
+        requestData[fieldName] = value;
+
+        $.get({
+            url: extraChargeUrl,
+            dataType: "json",
+            data: requestData,
+            success: function (fee) {
+                let deliveryCharge = Math.round((fee + Number.EPSILON) * 100) / 100;
+                document.getElementById("delivery_fee").value = deliveryCharge;
+                $("#delivery_fee").siblings("strong").html(deliveryCharge + currencySymbol);
+            },
+            error: function () {
+                document.getElementById("delivery_fee").value = 0;
+                $("#delivery_fee").siblings("strong").html(0 + currencySymbol);
+            },
+        });
+    });
+}
+
+// True once the picker is showing (the zone's active rule prices by area or zip) and nothing is
+// picked yet -- the one case where the map's distance can't produce a real delivery fee, so the
+// address save has to be blocked rather than silently pricing at the rule's bare floor.
+function posCoverageSelectionMissing() {
+    return !$("#coverage_picker_wrap").hasClass("d-none") && !$("#coverage_picker_select").val();
 }
 
 function posInjectPlaceSearchStyles() {

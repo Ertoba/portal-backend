@@ -37,7 +37,7 @@
                 <div class="d-flex justify-content-between align-items-center">
                     <h6 class="card-subtitle d-flex justify-content-between m-0 align-items-center text-hover--primary">
                         <img src="{{asset('/public/assets/admin/img/order-status/unassigned.svg')}}" alt="dashboard" class="oder--card-icon">
-                        <span>{{translate('messages.unassigned_orders')}}</span>
+                        <span>{{translate('messages.Unassigned orders')}}</span>
                     </h6>
                     <span class="card-title text-3F8CE8">
                         {{$data['searching_for_dm']}}
@@ -51,7 +51,7 @@
                 <div class="d-flex justify-content-between align-items-center">
                     <h6 class="card-subtitle d-flex justify-content-between m-0 align-items-center text-hover--primary">
                         <img src="{{asset('/public/assets/admin/img/order-status/accepted.svg')}}" alt="dashboard" class="oder--card-icon">
-                        <span>{{translate('Accepted by Delivery Man')}}</span>
+                        <span>{{translate('Accepted by deliveryman')}}</span>
                     </h6>
                     <span class="card-title text-success">
                         {{$data['accepted_by_dm']}}
@@ -78,7 +78,7 @@
                 <div class="d-flex justify-content-between align-items-center">
                     <h6 class="card-subtitle d-flex justify-content-between m-0 align-items-center text-hover--primary">
                         <img src="{{asset('/public/assets/admin/img/order-status/out-for.svg')}}" alt="dashboard" class="oder--card-icon">
-                        <span>{{translate('Out for Delivery')}}</span>
+                        <span>{{translate('Out for delivery')}}</span>
                     </h6>
                     <span class="card-title text-success">
                         {{$data['picked_up']}}
@@ -92,7 +92,7 @@
                 <div class="d-flex justify-content-between align-items-center">
                     <h6 class="card-subtitle d-flex justify-content-between m-0 align-items-center text-hover--primary">
                         <img src="{{asset('/public/assets/admin/img/order-status/delivered.svg')}}" alt="dashboard" class="oder--card-icon">
-                        <span>{{translate('messages.delivered')}}</span>
+                        <span>{{translate('Delivered')}}</span>
                     </h6>
                     <span class="card-title text-success">
                         {{$data['delivered']}}
@@ -106,7 +106,7 @@
                 <div class="d-flex justify-content-between align-items-center">
                     <h6 class="card-subtitle d-flex justify-content-between m-0 align-items-center text-hover--primary">
                         <img src="{{asset('/public/assets/admin/img/order-status/canceled.svg')}}" alt="dashboard" class="oder--card-icon">
-                        <span>{{translate('messages.canceled')}}</span>
+                        <span>{{translate('Canceled')}}</span>
                     </h6>
                     <span class="card-title text-danger">
                         {{$data['canceled']}}
@@ -120,7 +120,7 @@
                 <div class="d-flex justify-content-between align-items-center">
                     <h6 class="card-subtitle d-flex justify-content-between m-0 align-items-center text-hover--primary">
                         <img src="{{asset('/public/assets/admin/img/order-status/refunded.svg')}}" alt="dashboard" class="oder--card-icon">
-                        <span>{{translate('messages.refunded')}}</span>
+                        <span>{{translate('Refunded')}}</span>
                     </h6>
                     <span class="card-title text-danger">
                         {{$data['refunded']}}
@@ -134,7 +134,7 @@
                 <div class="d-flex justify-content-between align-items-center">
                     <h6 class="card-subtitle d-flex justify-content-between m-0 align-items-center text-hover--primary">
                         <img src="{{asset('/public/assets/admin/img/order-status/payment-failed.svg')}}" alt="dashboard" class="oder--card-icon">
-                        <span>{{translate('messages.payment_failed')}}</span>
+                        <span>{{translate('Payment failed')}}</span>
                     </h6>
                     <span class="card-title text-danger">
                         {{$data['refund_requested']}}

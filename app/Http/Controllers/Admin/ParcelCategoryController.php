@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Rules\ImageFile;
 use App\CentralLogics\Helpers;
 use App\Http\Controllers\Controller;
 use App\Models\ParcelCategory;
@@ -27,7 +28,7 @@ class ParcelCategoryController extends Controller
         when($module_id, function($query)use($module_id){
             $query->Module($module_id);
         })
-        ->with($categoryWiseTax ? ['taxVats.tax'] : [])
+        ->with($categoryWiseTax ? ['module', 'taxVats.tax'] : ['module'])
         ->orderBy('name')->paginate(config('default_pagination'));
         $taxVats = $taxData['taxVats'];
 
@@ -41,7 +42,6 @@ class ParcelCategoryController extends Controller
      */
     public function create()
     {
-        //
     }
 
     /**
@@ -56,16 +56,17 @@ class ParcelCategoryController extends Controller
             'name'=>'required|array',
             'name.0'=>'unique:parcel_categories,name',
             'name.*'=>'max:191|unique:parcel_categories,name',
-            'image'=>'required|image',
+            'image' => ImageFile::rules('required'),
             'description'=>'required|array',
             'description.0'=>'required',
-            'parcel_per_km_shipping_charge'=>'required_with:parcel_minimum_shipping_charge',
-            'parcel_minimum_shipping_charge'=>'required_with:parcel_per_km_shipping_charge',
+            // One charge now, and it is ADDITIONAL (owner decision 2026-09-03). Nullable rather
+            // than required: a category that adds nothing is a legitimate configuration.
+            'charge'=>'nullable|numeric|min:0',
             'name.0' => 'required',
             'description.0' => 'required',
         ],[
-            'name.0.required'=>translate('default_name_is_required'),
-            'description.0.required'=>translate('default_description_is_required'),
+            'name.0.required'=>translate('Default name is required'),
+            'description.0.required'=>translate('Default description is required'),
         ]);
 
         $parcel_category = new ParcelCategory;
@@ -73,8 +74,9 @@ class ParcelCategoryController extends Controller
         $parcel_category->name = $request->name[array_search('default', $request->lang)];
         $parcel_category->description =  $request->description[array_search('default', $request->lang)];
         $parcel_category->image = Helpers::upload('parcel_category/', 'png', $request->file('image'));
-        $parcel_category->parcel_per_km_shipping_charge = $request->parcel_per_km_shipping_charge;
-        $parcel_category->parcel_minimum_shipping_charge = $request->parcel_minimum_shipping_charge;
+        // The two deprecated columns are no longer written. They keep whatever they held so a
+        // rollback loses nothing, and nothing reads them.
+        $parcel_category->charge = (float) ($request->charge ?? 0);
         $parcel_category->save();
 
         if(addon_published_status('TaxModule')){
@@ -144,7 +146,7 @@ class ParcelCategoryController extends Controller
         }
         Translation::insert($data);
 
-        Toastr::success(translate('messages.parcel_category_added_successfully'));
+        Toastr::success(translate('Added successfully'));
         return back();
     }
 
@@ -156,7 +158,6 @@ class ParcelCategoryController extends Controller
      */
     public function show($id)
     {
-        //
     }
 
     /**
@@ -167,7 +168,7 @@ class ParcelCategoryController extends Controller
      */
     public function edit($id)
     {
-        $parcel_category= ParcelCategory::withoutGlobalScope('translate')->findOrFail($id);
+        $parcel_category= ParcelCategory::withoutGlobalScope('translate')->with('translations')->findOrFail($id);
 
         $taxData = Helpers::getTaxSystemType(getTaxVatList: true, tax_payer: 'parcel');
         $categoryWiseTax = $taxData['categoryWiseTax'];
@@ -190,22 +191,23 @@ class ParcelCategoryController extends Controller
             'name.0'=>'unique:parcel_categories,name,'.$id,
             'name.*'=>'max:191',
             'description'=>'required|array',
-            'parcel_per_km_shipping_charge'=>'required_with:parcel_minimum_shipping_charge',
-            'parcel_minimum_shipping_charge'=>'required_with:parcel_per_km_shipping_charge',
+            // One charge now, and it is ADDITIONAL (owner decision 2026-09-03). Nullable rather
+            // than required: a category that adds nothing is a legitimate configuration.
+            'charge'=>'nullable|numeric|min:0',
             'name.0' => 'required',
             'description.0' => 'required',
         ],[
-            'name.0.required'=>translate('default_name_is_required'),
-            'description.0.required'=>translate('default_description_is_required'),
+            'name.0.required'=>translate('Default name is required'),
+            'description.0.required'=>translate('Default description is required'),
         ]);
 
         $parcel_category = ParcelCategory::findOrFail($id);
-        // $parcel_category->module_id = $request->module_id;
         $parcel_category->name = $request->name[array_search('default', $request->lang)];
         $parcel_category->description =  $request->description[array_search('default', $request->lang)];
         $parcel_category->image = Helpers::update('parcel_category/', $parcel_category->image, 'png', $request->file('image'));
-        $parcel_category->parcel_per_km_shipping_charge = $request->parcel_per_km_shipping_charge;
-        $parcel_category->parcel_minimum_shipping_charge = $request->parcel_minimum_shipping_charge;
+        // The two deprecated columns are no longer written. They keep whatever they held so a
+        // rollback loses nothing, and nothing reads them.
+        $parcel_category->charge = (float) ($request->charge ?? 0);
         $parcel_category->save();
        if(addon_published_status('TaxModule') && $parcel_category['position'] == 0){
             $taxVatIds = $parcel_category->taxVats()->pluck('tax_id')->toArray() ?? [];
@@ -288,7 +290,7 @@ class ParcelCategoryController extends Controller
             }
         }
 
-        Toastr::success(translate('messages.parcel_category_updated_successfully'));
+        Toastr::success(translate('Updated successfully'));
         return back();
     }
 
@@ -308,7 +310,7 @@ class ParcelCategoryController extends Controller
         $parcel_category?->taxVats()->delete();
         $parcel_category->translations()->delete();
         $parcel_category->delete();
-        Toastr::success(translate('messages.parcel_category_deleted_successfully'));
+        Toastr::success(translate('Deleted successfully'));
         return back();
     }
 
@@ -317,7 +319,7 @@ class ParcelCategoryController extends Controller
         $parcel_category = ParcelCategory::findOrFail($request->id);
         $parcel_category->status = $request->status;
         $parcel_category->save();
-        Toastr::success(translate('messages.parcel_category_status_updated'));
+        Toastr::success(translate('messages.Parcel category status updated'));
         return back();
     }
 }

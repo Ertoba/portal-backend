@@ -7,12 +7,12 @@
     <table>
         <thead>
             <tr>
-                <th>{{ translate('filter_criteria') }} -</th>
+                <th>{{ translate('Filter criteria') }} -</th>
                 <th></th>
                 <th></th>
                 <th>
 
-                    {{ translate('Search_Bar_Content')  }}- {{ $data['search'] ??translate('N/A') }}
+                    {{ translate('Search bar content')  }}- {{ $data['search'] ??translate('N/A') }}
 
                 </th>
                 <th></th>
@@ -21,13 +21,13 @@
                 <th></th>
             </tr>
             <tr>
-                <th>{{ translate('messages.sl') }}</th>
-                <th>{{ translate('messages.transaction_id') }}</th>
+                <th>{{ translate('messages.SL') }}</th>
+                <th>{{ translate('messages.Transaction ID') }}</th>
                 <th>{{ translate('messages.provided_st') }}</th>
-                <th>{{ translate('messages.payment_amount') }}</th>
-                <th>{{ translate('messages.delivery_man_name') }}</th>
-                <th>{{ translate('messages.phone') }}</th>
-                <th>{{ translate('messages.payment_method') }}</th>
+                <th>{{ translate('messages.Payment amount') }}</th>
+                <th>{{ translate('Deliveryman name') }}</th>
+                <th>{{ translate('Phone') }}</th>
+                <th>{{ translate('messages.Payment method') }}</th>
                 <th>{{ translate('messages.references') }}</th>
             </tr>
         </thead>
@@ -42,21 +42,21 @@
                     @if($at->delivery_man)
                     {{$at->delivery_man->f_name.' '.$at->delivery_man->l_name}}
                     @else
-                    {{translate('messages.deliveryman_deleted')}}
+                    {{translate('messages.Deliveryman deleted')}}
                     @endif
                 </td>
                 <td>
                     @if($at->delivery_man)
                     {{$at->delivery_man->phone}}
                     @else
-                    {{translate('messages.deliveryman_deleted')}}
+                    {{translate('messages.Deliveryman deleted')}}
                     @endif
                 </td>
-                <td>{{translate($at->method)}}</td>
+                <td>{{payment_method_label($at->method)}}</td>
                 @if(  $at['ref'] == 'delivery_man_wallet_adjustment_full')
-                    <td>{{ translate('wallet_adjusted') }}</td>
+                    <td>{{ translate('Wallet adjusted') }}</td>
                 @elseif( $at['ref'] == 'delivery_man_wallet_adjustment_partial')
-                    <td>{{ translate('wallet_adjusted_partially') }}</td>
+                    <td>{{ translate('Wallet adjusted partially') }}</td>
                 @else
                     <td>{{$at['ref']}}</td>
                 @endif

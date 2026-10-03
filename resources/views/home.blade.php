@@ -1,9 +1,8 @@
 @extends('layouts.landing.app')
 @php($business_name = \App\CentralLogics\Helpers::get_business_settings('business_name'))
-@section('title', translate('messages.landing_page') . ' | ' . $business_name != 'null' ? $business_name : 'Sixam Mart')
+@section('title', translate('Landing page') . ' | ' . $business_name != 'null' ? $business_name : 'Sixam Mart')
 @section('content')
 
-    <!-- Hero -->
     <section class="hero">
         <div class="container">
             <h1>{!! \App\CentralLogics\Helpers::highlight($landing_data['fixed_header_title']) !!}</h1>
@@ -17,13 +16,13 @@
                 @if ($toggle_store_registration_hero)
                 <a href="{{ route('restaurant.create') }}" class="hero-btn hero-btn--vendor">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-                    {{ translate('Join as a Vendor') }}
+                    {{ translate('Join as a vendor') }}
                 </a>
                 @endif
                 @if ($toggle_dm_registration_hero)
                 <a href="{{ route('deliveryman.create') }}" class="hero-btn hero-btn--delivery">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                    {{ translate('Join as a Delivery Partner') }}
+                    {{ translate('Join as a delivery partner') }}
                 </a>
                 @endif
                 @if (addon_published_status('RideShare'))
@@ -31,7 +30,7 @@
                     @if ($toggle_rider_reg == 1)
                     <a href="{{ route('rider.create') }}" class="hero-btn hero-btn--delivery">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9L18 10l-2-4H7L5 10l-2.5 1.1C1.7 11.3 1 12.1 1 13v3c0 .6.4 1 1 1h2"/><circle cx="7" cy="17" r="2"/><circle cx="17" cy="17" r="2"/></svg>
-                        {{ translate('Join as a Rider') }}
+                        {{ translate('Join as a rider') }}
                     </a>
                     @endif
                 @endif
@@ -42,8 +41,7 @@
         </div>
     </section>
 
-    <!-- Services -->
-    @php($modules = \App\Models\Module::Active()->get())
+    @php($modules = \App\CentralLogics\Helpers::modules_list()->where('status', 1))
     @if($modules && count($modules) > 0)
     <section class="services-section">
         <div class="container">
@@ -61,8 +59,8 @@
                     @endforeach
                 </div>
                 <div class="slider-nav">
-                    <button class="slider-arrow slider-prev" data-target=".svc-icons">&#8592;</button>
-                    <button class="slider-arrow slider-next" data-target=".svc-icons">&#8594;</button>
+                    <button class="slider-arrow slider-prev" data-target=".svc-icons" aria-label="{{ translate('Previous') }}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg></button>
+                    <button class="slider-arrow slider-next" data-target=".svc-icons" aria-label="{{ translate('Next') }}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></button>
                 </div>
             </div>
             <div class="svc-panels">
@@ -82,14 +80,13 @@
                 @endforeach
             </div>
             <div class="svc-nav">
-                <button class="svc-arrow" id="svcPrev">&#8592;</button>
-                <button class="svc-arrow" id="svcNext">&#8594;</button>
+                <button class="svc-arrow" id="svcPrev" aria-label="{{ translate('Previous') }}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg></button>
+                <button class="svc-arrow" id="svcNext" aria-label="{{ translate('Next') }}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></button>
             </div>
         </div>
     </section>
     @endif
 
-    <!-- Marquee -->
     @php($promo_banners = $landing_data['promotional_banners'])
     @if(isset($promo_banners) && count($promo_banners) > 0)
     <section class="marquee">
@@ -104,7 +101,6 @@
     </section>
     @endif
 
-    <!-- Features -->
     @php($feature = $landing_data['features'])
     @if (isset($feature) && count($feature) > 0)
     <section class="features">
@@ -124,15 +120,14 @@
                     @endforeach
                 </div>
                 <div class="slider-nav">
-                    <button class="slider-arrow slider-prev" data-target=".feat-grid">&#8592;</button>
-                    <button class="slider-arrow slider-next" data-target=".feat-grid">&#8594;</button>
+                    <button class="slider-arrow slider-prev" data-target=".feat-grid" aria-label="{{ translate('Previous') }}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg></button>
+                    <button class="slider-arrow slider-next" data-target=".feat-grid" aria-label="{{ translate('Next') }}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></button>
                 </div>
             </div>
         </div>
     </section>
     @endif
 
-    <!-- Zones -->
     @if ($landing_data['available_zone_status'] && $landing_data['available_zone_list'])
     <section class="zones">
         <div class="container">
@@ -146,7 +141,7 @@
                     <div class="zone-tags">
                         @foreach ($landing_data['available_zone_list'] as $zone)
                             @if (count($zone['modules']->toArray()) > 0)
-                            <div class="zone-tag" data-toggle="tooltip" data-placement="top" title="{{ count($zone['modules']->toArray()) > 0 ? implode(', ', $zone['modules']->toArray()) . ' ' . translate('are_available.') : translate('right_now_no_module_available.') }}"><span class="zone-dot"></span> {{ $zone['display_name'] }}</div>
+                            <div class="zone-tag" data-toggle="tooltip" data-placement="top" title="{{ count($zone['modules']->toArray()) > 0 ? translate('Available modules') . ': ' . implode(', ', $zone['modules']->toArray()) : translate('Right now no module available.') }}"><span class="zone-dot"></span> {{ $zone['display_name'] }}</div>
                             @endif
                         @endforeach
                     </div>
@@ -156,7 +151,6 @@
     </section>
     @endif
 
-    <!-- Referral -->
     <section class="referral">
         <div class="container">
             <div class="refer-card">
@@ -165,7 +159,6 @@
         </div>
     </section>
 
-    <!-- Earn -->
     <section class="earn">
         <div class="container">
             <div class="earn-top">
@@ -174,14 +167,13 @@
             </div>
             <div class="slider-wrap">
             <div class="earn-grid">
-                <!-- Seller Card -->
                 <div class="earn-card">
                     @if(!empty($landing_data['seller_card_image']))
                         <div class="earn-card-icon"><img src="{{ $landing_data['seller_card_image'] }}" alt="" style="width:44px;height:44px;object-fit:contain"></div>
                     @else
                         <div class="earn-card-icon">&#x1F3EA;</div>
                     @endif
-                    <h3>{!! \App\CentralLogics\Helpers::highlight($landing_data['seller_card_title'] ?? translate('messages.Become a best') . ' $' . translate('messages.Seller') . '$') !!}</h3>
+                    <h3>{!! \App\CentralLogics\Helpers::highlight($landing_data['seller_card_title'] ?? (translate('messages.Become a best') . ' $' . translate('messages.Seller') . '$')) !!}</h3>
                     <p>{!! \App\CentralLogics\Helpers::highlight($landing_data['seller_card_subtitle'] ?? translate('Grow your business with us. Reach thousands of customers and manage orders effortlessly.')) !!}</p>
                     @php($join_as_seller = $landing_data['seller_app_earning_links'])
                     <div class="earn-app-row">
@@ -194,19 +186,18 @@
                         @if (isset($join_as_seller['apple_store_url_status']) && $join_as_seller['apple_store_url_status'] == '1')
                         <a href="{{ isset($join_as_seller['apple_store_url']) ? $join_as_seller['apple_store_url'] : '' }}" class="app-btn">
                             <img src="{{ asset('/public/assets/landing/img/apple-store.png') }}" alt="App Store" />
-                            <span class="ab-text"><span class="ab-sm">{{ translate('Download on the') }}</span><span class="ab-lg">{{ translate('App Store') }}</span></span>
+                            <span class="ab-text"><span class="ab-sm">{{ translate('Download on the') }}</span><span class="ab-lg">App Store</span></span>
                         </a>
                         @endif
                     </div>
                 </div>
-                <!-- Deliveryman Card -->
                 <div class="earn-card">
                     @if(!empty($landing_data['dm_card_image']))
                         <div class="earn-card-icon"><img src="{{ $landing_data['dm_card_image'] }}" alt="" style="width:44px;height:44px;object-fit:contain"></div>
                     @else
                         <div class="earn-card-icon">&#x1F6F5;</div>
                     @endif
-                    <h3>{!! \App\CentralLogics\Helpers::highlight($landing_data['dm_card_title'] ?? translate('messages.Become a smart') . ' $' . translate('messages.Deliveryman') . '$') !!}</h3>
+                    <h3>{!! \App\CentralLogics\Helpers::highlight($landing_data['dm_card_title'] ?? (translate('messages.Become a smart') . ' $' . translate('Deliveryman') . '$')) !!}</h3>
                     <p>{!! \App\CentralLogics\Helpers::highlight($landing_data['dm_card_subtitle'] ?? translate('Deliver on your own schedule. Earn competitive pay with flexible hours and easy-to-use tools.')) !!}</p>
                     @php($join_as_dm = $landing_data['dm_app_earning_links'])
                     <div class="earn-app-row">
@@ -219,13 +210,12 @@
                         @if (isset($join_as_dm['apple_store_url_status']) && $join_as_dm['apple_store_url_status'] == '1')
                         <a href="{{ isset($join_as_dm['apple_store_url']) ? $join_as_dm['apple_store_url'] : '' }}" class="app-btn">
                             <img src="{{ asset('/public/assets/landing/img/apple-store.png') }}" alt="App Store" />
-                            <span class="ab-text"><span class="ab-sm">{{ translate('Download on the') }}</span><span class="ab-lg">{{ translate('App Store') }}</span></span>
+                            <span class="ab-text"><span class="ab-sm">{{ translate('Download on the') }}</span><span class="ab-lg">App Store</span></span>
                         </a>
                         @endif
                     </div>
                 </div>
 
-                <!-- Rider Card -->
                 @if(addon_published_status('RideShare'))
                 <div class="earn-card">
                     @if(!empty($landing_data['rider_card_image']))
@@ -233,7 +223,7 @@
                     @else
                         <div class="earn-card-icon">&#x1F697;</div>
                     @endif
-                    <h3>{!! \App\CentralLogics\Helpers::highlight($landing_data['rider_card_title'] ?? translate('messages.Become a smart') . ' $' . translate('messages.Rider') . '$') !!}</h3>
+                    <h3>{!! \App\CentralLogics\Helpers::highlight($landing_data['rider_card_title'] ?? (translate('messages.Become a smart') . ' $' . translate('Rider') . '$')) !!}</h3>
                     <p>{!! \App\CentralLogics\Helpers::highlight($landing_data['rider_card_subtitle'] ?? translate('Drive and earn on your own terms. Flexible rides, great pay, and easy-to-use tools.')) !!}</p>
                     @php($join_as_rider = $landing_data['rider_app_earning_links'])
                     <div class="earn-app-row">
@@ -246,7 +236,7 @@
                         @if (isset($join_as_rider['apple_store_url_status']) && $join_as_rider['apple_store_url_status'] == '1')
                         <a href="{{ isset($join_as_rider['apple_store_url']) ? $join_as_rider['apple_store_url'] : '' }}" class="app-btn">
                             <img src="{{ asset('/public/assets/landing/img/apple-store.png') }}" alt="App Store" />
-                            <span class="ab-text"><span class="ab-sm">{{ translate('Download on the') }}</span><span class="ab-lg">{{ translate('App Store') }}</span></span>
+                            <span class="ab-text"><span class="ab-sm">{{ translate('Download on the') }}</span><span class="ab-lg">App Store</span></span>
                         </a>
                         @endif
                     </div>
@@ -254,14 +244,13 @@
                 @endif
             </div>
                 <div class="slider-nav">
-                    <button class="slider-arrow slider-prev" data-target=".earn-grid">&#8592;</button>
-                    <button class="slider-arrow slider-next" data-target=".earn-grid">&#8594;</button>
+                    <button class="slider-arrow slider-prev" data-target=".earn-grid" aria-label="{{ translate('Previous') }}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg></button>
+                    <button class="slider-arrow slider-next" data-target=".earn-grid" aria-label="{{ translate('Next') }}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></button>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- Special -->
     @php($special = $landing_data['criterias'])
     @if ($special && count($special) > 0)
     <section class="special">
@@ -281,7 +270,6 @@
     </section>
     @endif
 
-    <!-- Stats -->
     @php($counter = $landing_data['counter_section'])
     @if (isset($counter) && $counter['status'] == '1')
     <section class="stats">
@@ -307,7 +295,7 @@
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
                     </div>
                     <div class="stat-num" data-t="{{ $counter['deliveryman_count_numbers'] ?? 0 }}">0<span class="plus">+</span></div>
-                    <div class="stat-label">{{ translate('messages.Deliveryman') }}</div>
+                    <div class="stat-label">{{ translate('Deliveryman') }}</div>
                 </div>
                 @if(addon_published_status('RideShare'))
                 <div class="stat-card">
@@ -315,7 +303,7 @@
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
                     </div>
                     <div class="stat-num" data-t="{{ $counter['rider_count_numbers'] ?? 0 }}">0<span class="plus">+</span></div>
-                    <div class="stat-label">{{ translate('messages.Rider') }}</div>
+                    <div class="stat-label">{{ translate('Rider') }}</div>
                 </div>
                 @endif
                 <div class="stat-card">
@@ -323,12 +311,12 @@
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
                     </div>
                     <div class="stat-num" data-t="{{ $counter['customer_count_numbers'] ?? 0 }}">0<span class="plus">+</span></div>
-                    <div class="stat-label">{{ translate('messages.customer') }}</div>
+                    <div class="stat-label">{{ translate('messages.Customer') }}</div>
                 </div>
             </div>
                 <div class="slider-nav">
-                    <button class="slider-arrow slider-prev" data-target=".stats-grid">&#8592;</button>
-                    <button class="slider-arrow slider-next" data-target=".stats-grid">&#8594;</button>
+                    <button class="slider-arrow slider-prev" data-target=".stats-grid" aria-label="{{ translate('Previous') }}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg></button>
+                    <button class="slider-arrow slider-next" data-target=".stats-grid" aria-label="{{ translate('Next') }}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></button>
                 </div>
             </div>
             <div class="stats-note">{{ translate('messages.Still increasing') }}</div>
@@ -336,7 +324,6 @@
     </section>
     @endif
 
-    <!-- CTA / Download App -->
     @php($landing_page_links = $landing_data['download_user_app_links'])
     @if (
         (isset($landing_page_links['playstore_url_status']) && $landing_page_links['playstore_url_status'] == '1') ||
@@ -345,8 +332,8 @@
         <div class="container">
             <div class="cta-box">
                 <div class="cta-info">
-                    <h2>{{ translate('Lets') }} {{ translate('Manage_your_business') }} <span class="hl">{{ translate('Smartly_or_Earn') }}</span></h2>
-                    <button class="cta-user-btn">{{ translate('User App') }}</button>
+                    <h2>{{ translate("Let's manage your business") }} <span class="hl">{{ translate('smartly or earn') }}</span></h2>
+                    <button class="cta-user-btn">{{ translate('User app') }}</button>
                     <div class="cta-app-row">
                         @if (isset($landing_page_links['playstore_url_status']) && $landing_page_links['playstore_url_status'] == '1')
                         <a href="{{ $landing_page_links['playstore_url'] }}" class="cta-app-link">
@@ -357,7 +344,7 @@
                         @if (isset($landing_page_links['apple_store_url_status']) && $landing_page_links['apple_store_url_status'] == '1')
                         <a href="{{ $landing_page_links['apple_store_url'] }}" class="cta-app-link">
                             <img src="{{ asset('/public/assets/landing/img/apple-store.png') }}" alt="Apple Store" style="filter:brightness(10)" />
-                            <span class="cal-text"><span class="cal-sm">{{ translate('Download on the') }}</span><span class="cal-lg">{{ translate('Apple Store') }}</span></span>
+                            <span class="cal-text"><span class="cal-sm">{{ translate('Download on the') }}</span><span class="cal-lg">App Store</span></span>
                         </a>
                         @endif
                     </div>
@@ -372,7 +359,6 @@
     </section>
     @endif
 
-    <!-- Testimonials -->
     @php($testimonial = $landing_data['testimonials'])
     @if ($testimonial && count($testimonial) > 0)
     <section class="testimonials">
@@ -399,8 +385,8 @@
                     @endforeach
                 </div>
                 <div class="slider-nav">
-                    <button class="slider-arrow slider-prev" data-target=".test-grid">&#8592;</button>
-                    <button class="slider-arrow slider-next" data-target=".test-grid">&#8594;</button>
+                    <button class="slider-arrow slider-prev" data-target=".test-grid" aria-label="{{ translate('Previous') }}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg></button>
+                    <button class="slider-arrow slider-next" data-target=".test-grid" aria-label="{{ translate('Next') }}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></button>
                 </div>
             </div>
         </div>
@@ -417,9 +403,9 @@
                 <div class="modal-body px-sm-5 pb-5">
                     <div class="text-center">
                         <img src="{{ asset('/public/assets/landing/img/welcome.svg') }}" class="mw-100 mb-3 mx-auto d-block" alt="">
-                        <h5 class="mb-3">{{ translate('Welcome_to') }} {{ $business_name }}!</h5>
+                        <h5 class="mb-3">{{ translate('Welcome to') }} {{ $business_name }}!</h5>
                         <p class="m-0 mb-4">{{ translate('Thanks for joining us! Your registration is under review. Hang tight, we\'ll notify you once approved!') }}</p>
-                        <button type="button" class="border-0 outline-0 shadow-none btn rounded-pill px-4" style="background:var(--green);color:#fff" data-bs-dismiss="modal">{{ translate('okay') }}</button>
+                        <button type="button" class="border-0 outline-0 shadow-none btn rounded-pill px-4" style="background:var(--green);color:#fff" data-bs-dismiss="modal">{{ translate('Okay') }}</button>
                     </div>
                 </div>
             </div>

@@ -19,7 +19,7 @@
                                     <span class="card-title h5">
                                         {{auth('admin')->user()->full_name}}
                                     </span>
-                                    <span class="card-text">{{Str::limit(auth('admin')->user()->email, 15, '...'); }}</span>
+                                    <span class="card-text">{{Str::limit(auth('admin')->user()->email, 15, '...') }}</span>
                                 </div>
                             </div>
                         </a>
@@ -38,21 +38,23 @@
                                     </div>
                                     <div class="media-body">
                                         <span class="card-title h5">{{auth('admin')->user()->full_name}}</span>
-                                        <span class="card-text">{{Str::limit(auth('admin')->user()->email, 15, '...'); }}</span>
+                                        <span class="card-text">{{Str::limit(auth('admin')->user()->email, 15, '...') }}</span>
                                     </div>
                                 </div>
                             </div>
 
                             <div class="dropdown-divider"></div>
 
+                            @if(\App\CentralLogics\Helpers::module_permission_check('profile'))
                             <a class="dropdown-item" href="{{route('admin.settings')}}">
-                                <span class="text-truncate pr-2" title="Settings">{{translate('messages.settings')}}</span>
+                                <span class="text-truncate pr-2" title="Settings">{{translate('Settings')}}</span>
                             </a>
 
                             <div class="dropdown-divider"></div>
+                            @endif
 
                            <a class="dropdown-item log-out" href="javascript:">
-                                <span class="text-truncate pr-2" title="Sign out">{{translate('messages.sign_out')}}</span>
+                                <span class="text-truncate pr-2" title="Sign out">{{translate('messages.Sign out')}}</span>
                             </a>
                         </div>
                     </div>

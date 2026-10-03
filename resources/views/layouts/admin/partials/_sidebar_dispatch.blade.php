@@ -2,66 +2,53 @@
     <aside class="js-navbar-vertical-aside navbar navbar-vertical-aside navbar-vertical navbar-vertical-fixed navbar-expand-xl navbar-bordered  ">
         <div class="navbar-vertical-container">
             <div class="navbar-brand-wrapper justify-content-between">
-                <!-- Logo -->
-                @php($store_logo = \App\Models\BusinessSetting::where(['key' => 'logo'])->first())
                 <a class="navbar-brand" href="#" aria-label="Front">
                        <img class="navbar-brand-logo initial--36 onerror-image onerror-image" data-onerror-image="{{ asset('public/assets/admin/img/160x160/img2.jpg') }}"
-                    src="{{\App\CentralLogics\Helpers::get_full_url('business', $store_logo?->value?? '', $store_logo?->storage[0]?->value ?? 'public','favicon')}}"
+                    src="{{\App\CentralLogics\Helpers::logoFullUrl()}}"
                     alt="Logo">
                     <img class="navbar-brand-logo-mini initial--36 onerror-image onerror-image" data-onerror-image="{{ asset('public/assets/admin/img/160x160/img2.jpg') }}"
-                    src="{{\App\CentralLogics\Helpers::get_full_url('business', $store_logo?->value?? '', $store_logo?->storage[0]?->value ?? 'public','favicon')}}"
+                    src="{{\App\CentralLogics\Helpers::logoFullUrl()}}"
                     alt="Logo">
                 </a>
-                <!-- End Logo -->
 
-                <!-- Navbar Vertical Toggle -->
                 <button type="button" class="js-navbar-vertical-aside-toggle-invoker navbar-vertical-aside-toggle btn btn-icon btn-xs btn-ghost-dark">
                     <i class="tio-clear tio-lg"></i>
                 </button>
-                <!-- End Navbar Vertical Toggle -->
 
                 <div class="navbar-nav-wrap-content-left">
-                    <!-- Navbar Vertical Toggle -->
                     <button type="button" class="js-navbar-vertical-aside-toggle-invoker close">
                         <i class="tio-first-page navbar-vertical-aside-toggle-short-align" data-toggle="tooltip"
                         data-placement="right" title="Collapse"></i>
                         <i class="tio-last-page navbar-vertical-aside-toggle-full-align"
                         data-template='<div class="tooltip d-none d-sm-block" role="tooltip"><div class="arrow"></div><div class="tooltip-inner"></div></div>'></i>
                     </button>
-                    <!-- End Navbar Vertical Toggle -->
                 </div>
 
             </div>
 
-            <!-- Content -->
             <div class="navbar-vertical-content bg--005555" id="navbar-vertical-content">
                 <form autocomplete="off" class="sidebar--search-form">
                     <div class="search--form-group">
                         <button type="button" class="btn"><i class="tio-search"></i></button>
-                        <input autocomplete="false" type="text" name="qq" class="form-control form--control" placeholder="{{ translate('Search Menu...') }}" id="search">
+                        <input autocomplete="false" type="text" name="qq" class="form-control form--control" placeholder="{{ translate('Search menu') }}" id="search">
                         <div id="search-suggestions" class="flex-wrap mt-1"></div>
                     </div>
                 </form>
                 <ul class="navbar-nav navbar-nav-lg nav-tabs">
-                <!-- Dashboards -->
                 <li class="navbar-vertical-aside-has-menu {{ Request::is('admin/dispatch') ? 'show active' : '' }}">
-                    <a class="js-navbar-vertical-aside-menu-link nav-link" href="{{ route('admin.dispatch.dashboard') }}" title="{{ translate('messages.dashboard') }}">
+                    <a class="js-navbar-vertical-aside-menu-link nav-link" href="{{ route('admin.dispatch.dashboard') }}" title="{{ translate('Dashboard') }}">
                         <i class="tio-home-vs-1-outlined nav-icon"></i>
                         <span class="navbar-vertical-aside-mini-mode-hidden-elements text-truncate">
-                            {{ translate('messages.dashboard') }}
+                            {{ translate('Dashboard') }}
                         </span>
                     </a>
                 </li>
-                <!-- End Dashboards -->
-                <!-- Business Section-->
                 <li class="nav-item">
-                    <small class="nav-subtitle" title="{{ translate('messages.dispatch_section') }}">{{ translate('messages.dispatch_management') }}</small>
+                    <small class="nav-subtitle" title="{{ translate('messages.Dispatch section') }}">{{ translate('Dispatch management') }}</small>
                     <small class="tio-more-horizontal nav-subtitle-replacer"></small>
                 </li>
 
-                <!-- dispatch -->
                 @if (\App\CentralLogics\Helpers::module_permission_check('order'))
-                    <!-- Order dispachment -->
                     @php($modules = \App\Models\Module::whereNotIn('module_type', ['rental','ride-share'])->when(auth('admin')->user()->zone_id, function($query){
                                 $query->whereHas('zones',function($query){
                                     $query->where('zone_id',auth('admin')->user()->zone_id);
@@ -87,10 +74,10 @@
                         </a>
                         <ul class="js-navbar-vertical-aside-submenu nav nav-sub" style="{{ Request::is('admin/dispatch*') ? 'display-block' : 'display-none' }}">
                             <li class="nav-item {{ Request::is("admin/dispatch/list/{$module->id}/searching_for_deliverymen") ? 'active' : '' }}">
-                                <a class="nav-link " href="{{ route('admin.dispatch.list', [$module->id,'searching_for_deliverymen']) }}" title="{{ translate('messages.unassigned_orders') }}">
+                                <a class="nav-link " href="{{ route('admin.dispatch.list', [$module->id,'searching_for_deliverymen']) }}" title="{{ translate('messages.Unassigned orders') }}">
                                     <span class="tio-circle nav-indicator-icon"></span>
                                     <span class="text-truncate sidebar--badge-container">
-                                        {{translate('messages.unassigned_orders')}}
+                                        {{translate('messages.Unassigned orders')}}
                                         <span class="badge badge-soft-info badge-pill ml-1">
                                             {{ $unassigned }}
                                         </span>
@@ -98,10 +85,10 @@
                                 </a>
                             </li>
                             <li class="nav-item {{ Request::is("admin/dispatch/list/{$module->id}/on_going") ? 'active' : '' }}">
-                                <a class="nav-link " href="{{ route('admin.dispatch.list', [$module->id,'on_going']) }}" title="{{ translate('messages.ongoingOrders') }}">
+                                <a class="nav-link " href="{{ route('admin.dispatch.list', [$module->id,'on_going']) }}" title="{{ translate('Ongoing orders') }}">
                                     <span class="tio-circle nav-indicator-icon"></span>
                                     <span class="text-truncate sidebar--badge-container">
-                                        {{ translate('messages.ongoingOrders') }}
+                                        {{ translate('Ongoing orders') }}
                                         <span class="badge badge-soft-light badge-pill ml-1">
                                             {{ $ongoing }}
                                         </span>
@@ -128,10 +115,10 @@
                         </a>
                         <ul class="js-navbar-vertical-aside-submenu nav nav-sub" style="{{ Request::is('admin/dispatch*') ? 'display-block' : 'display-none' }}">
                             <li class="nav-item {{ Request::is("admin/dispatch/parcel/list/{$module->id}/searching_for_deliverymen") ? 'active' : '' }}">
-                                <a class="nav-link " href="{{ route('admin.dispatch.parcel.list', [$module->id,'searching_for_deliverymen']) }}" title="{{ translate('messages.unassigned_orders') }}">
+                                <a class="nav-link " href="{{ route('admin.dispatch.parcel.list', [$module->id,'searching_for_deliverymen']) }}" title="{{ translate('messages.Unassigned orders') }}">
                                     <span class="tio-circle nav-indicator-icon"></span>
                                     <span class="text-truncate sidebar--badge-container">
-                                        {{translate('messages.unassigned_orders')}}
+                                        {{translate('messages.Unassigned orders')}}
                                         <span class="badge badge-soft-info badge-pill ml-1">
                                             {{ $unassigned }}
                                         </span>
@@ -139,10 +126,10 @@
                                 </a>
                             </li>
                             <li class="nav-item {{ Request::is("admin/dispatch/parcel/list/{$module->id}/on_going") ? 'active' : '' }}">
-                                <a class="nav-link " href="{{ route('admin.dispatch.parcel.list', [$module->id,'on_going']) }}" title="{{ translate('messages.ongoingOrders') }}">
+                                <a class="nav-link " href="{{ route('admin.dispatch.parcel.list', [$module->id,'on_going']) }}" title="{{ translate('Ongoing orders') }}">
                                     <span class="tio-circle nav-indicator-icon"></span>
                                     <span class="text-truncate sidebar--badge-container">
-                                        {{ translate('messages.ongoingOrders') }}
+                                        {{ translate('Ongoing orders') }}
                                         <span class="badge badge-soft-light badge-pill ml-1">
                                             {{ $ongoing }}
                                         </span>
@@ -153,9 +140,7 @@
                     </li>
                     @endif
                     @endforeach
-                    <!-- Order dispachment End-->
                 @endif
-                <!-- End dispatch -->
 
 
                 <li class="nav-item py-5">
@@ -165,7 +150,6 @@
                     @includeIf('layouts.admin.partials._logout_modal')
                 </ul>
             </div>
-            <!-- End Content -->
         </div>
     </aside>
 </div>

@@ -1,28 +1,26 @@
 @extends('layouts.admin.app')
 
-@section('title', translate('Disbursement_settings'))
+@section('title', translate('Disbursement settings'))
 
 
 @section('content')
     @php use App\CentralLogics\Helpers; @endphp
     <div class="content container-fluid">
-        <!-- Page Header -->
         <div class="page-header">
             <h1 class="page-header-title mr-3">
                 <span class="page-header-icon">
-                    <img src="{{ asset('public/assets/admin/img/business.png') }}" class="w--26" alt="">
+                    <img src="{{ asset('public/assets/admin/img/outline/business.svg') }}" class="w--26" alt="">
                 </span>
                 <span>
-                    {{ translate('messages.business_setup') }}
+                    {{ translate('Business setup') }}
                 </span>
             </h1>
+            <p class="page-header-desc">{{ translate('How often stores and deliverymen are paid out, and the minimum each payout needs.') }}</p>
             @include('admin-views.business-settings.partials.nav-menu')
         </div>
 
         @php($disbursement_type = Helpers::get_business_settings('disbursement_type') ?? 'manual')
-        <!-- Page Header -->
 
-        <!-- End Page Header -->
         <form action="{{ route('admin.business-settings.update-disbursement') }}" method="post" enctype="multipart/form-data">
             @csrf
             <div class="row g-2">
@@ -31,7 +29,7 @@
                         <div class="card-body">
                             <div class="mb-0">
                                 <h3 class="mb-1">
-                                    {{ translate('Disbursement Setup') }}
+                                    {{ translate('Disbursement setup') }}
                                 </h3>
                                 <p class="mb-0 fs-12">
                                     {{ translate('Manage and configure how vendors & deliverymen receive their payouts') }}
@@ -45,10 +43,10 @@
                                 <div class="col-xxl-7 col-lg-6">
                                     <div class="mb-0">
                                         <h4 class="mb-1">
-                                            {{ translate('Disbursement Request Type') }}
+                                            {{ translate('Disbursement request type') }}
                                         </h4>
                                         <p class="mb-0 fs-12">
-                                            {{ translate('Select Manual to approve payouts individually, or Automated to process them automatically') }}
+                                            {{ translate('Select manual to approve payouts individually, or automated to process them automatically') }}
                                         </p>
                                     </div>
                                 </div>
@@ -60,7 +58,7 @@
                                                     name="disbursement_type" id="disbursement_type"
                                                     {{ $disbursement_type == 'manual' ? 'checked' : '' }}>
                                                 <span class="form-check-label">
-                                                    {{ translate('Manual Request') }}
+                                                    {{ translate('Manual request') }}
                                                 </span>
                                             </label>
                                             <label class="form-check form--check w-100">
@@ -68,7 +66,7 @@
                                                     name="disbursement_type" id="disbursement_type2"
                                                     {{ $disbursement_type == 'automated' ? 'checked' : '' }}>
                                                 <span class="form-check-label">
-                                                    {{ translate('Automated Request') }}
+                                                    {{ translate('Automated request') }}
                                                 </span>
                                             </label>
                                         </div>
@@ -87,7 +85,7 @@
                                 <div class="col-xxl-9 col-xl-8 col-md-6">
                                     <div class="mb-0">
                                         <h4 class="mb-1">
-                                            {{ translate('Scheduler Dependency') }}
+                                            {{ translate('Scheduler dependency') }}
                                         </h4>
                                         <p class="mb-0 fs-12">
                                             {{ translate('Automated disbursement runs through Laravel\'s scheduler. Configure one cron entry on your server and every scheduled task — including disbursement — runs from it.') }}
@@ -98,7 +96,7 @@
                                     <div class="d-flex justify-content-md-end">
                                         <button type="button" class="btn btn--primary" data-toggle="modal"
                                             data-target="#disbursementSchedulerModal">
-                                            {{ translate('messages.Check_Dependencies') }}
+                                            <i class="tio-search"></i> {{ translate('Check dependencies') }}
                                         </button>
                                     </div>
                                 </div>
@@ -114,7 +112,7 @@
                                     <div class="card-body">
                                         <div class="mb-20">
                                             <h4 class="mb-1">
-                                                {{ translate('Vendor Panel Disbursement Request') }}
+                                                {{ translate('Vendor panel disbursement request') }}
                                             </h4>
                                             <p class="mb-0 fs-12">
                                                 {{ translate('Configure the parameters for when vendors can request disbursements.') }}
@@ -129,10 +127,10 @@
                                                         <div class="d-flex justify-content-between align-items-center mb-2">
                                                             <label for="store_disbursement_time_period"
                                                                 class="form-label text-capitalize m-0">
-                                                                {{ translate('Create_Disbursements') }}
+                                                                {{ translate('Create disbursements') }}
                                                                 <span class="input-label-secondary text--title"
                                                                     data-toggle="tooltip" data-placement="right"
-                                                                    data-original-title="{{ translate('Choose_how_the_disbursement_request_will_be_generated:_Monthly,_Weekly_or_Daily.') }}">
+                                                                    data-original-title="{{ translate('Choose how the disbursement request will be generated: monthly, weekly or daily.') }}">
                                                                     <i class="tio-info text-muted"></i>
                                                                 </span>
                                                                   <span class="text-danger">*</span>
@@ -143,11 +141,11 @@
                                                             required>
                                                             <option value="daily"
                                                                 {{ $store_disbursement_time_period == 'daily' ? 'selected' : '' }}>
-                                                                {{ translate('messages.daily') }}
+                                                                {{ translate('Daily') }}
                                                             </option>
                                                             <option value="weekly"
                                                                 {{ $store_disbursement_time_period == 'weekly' ? 'selected' : '' }}>
-                                                                {{ translate('messages.weekly') }}
+                                                                {{ translate('Weekly') }}
                                                             </option>
                                                             <option value="monthly"
                                                                 {{ $store_disbursement_time_period == 'monthly' ? 'selected' : '' }}>
@@ -164,10 +162,10 @@
                                                             class="d-flex justify-content-between align-items-center mb-2">
                                                             <label for="store_disbursement_week_start"
                                                                 class="form-label text-capitalize m-0">
-                                                                {{ translate('Week_Start') }}
+                                                                {{ translate('Week start') }}
                                                                 <span class="input-label-secondary text--title"
                                                                     data-toggle="tooltip" data-placement="right"
-                                                                    data-original-title="{{ translate('Choose_when_the_week_starts_for_the_new_disbursement_request._This_section_will_only_appear_when_weekly_disbursement_is_selected.') }}">
+                                                                    data-original-title="{{ translate('Choose when the week starts for the new disbursement request. This section will only appear when weekly disbursement is selected.') }}">
                                                                     <i class="tio-info text-muted"></i>
                                                                 </span>
                                                                   <span class="text-danger">*</span>
@@ -178,31 +176,31 @@
                                                             required>
                                                             <option value="saturday"
                                                                 {{ $store_disbursement_week_start == 'saturday' ? 'selected' : '' }}>
-                                                                {{ translate('messages.saturday') }}
+                                                                Saturday
                                                             </option>
                                                             <option value="sunday"
                                                                 {{ $store_disbursement_week_start == 'sunday' ? 'selected' : '' }}>
-                                                                {{ translate('messages.sunday') }}
+                                                                Sunday
                                                             </option>
                                                             <option value="monday"
                                                                 {{ $store_disbursement_week_start == 'monday' ? 'selected' : '' }}>
-                                                                {{ translate('messages.monday') }}
+                                                                Monday
                                                             </option>
                                                             <option value="tuesday"
                                                                 {{ $store_disbursement_week_start == 'tuesday' ? 'selected' : '' }}>
-                                                                {{ translate('messages.tuesday') }}
+                                                                Tuesday
                                                             </option>
                                                             <option value="wednesday"
                                                                 {{ $store_disbursement_week_start == 'wednesday' ? 'selected' : '' }}>
-                                                                {{ translate('messages.wednesday') }}
+                                                                Wednesday
                                                             </option>
                                                             <option value="thursday"
                                                                 {{ $store_disbursement_week_start == 'thursday' ? 'selected' : '' }}>
-                                                                {{ translate('messages.thursday') }}
+                                                                Thursday
                                                             </option>
                                                             <option value="friday"
                                                                 {{ $store_disbursement_week_start == 'friday' ? 'selected' : '' }}>
-                                                                {{ translate('messages.friday') }}
+                                                                Friday
                                                             </option>
                                                         </select>
                                                     </div>
@@ -214,17 +212,17 @@
                                                             class="d-flex justify-content-between align-items-center mb-2">
                                                             <label for="store_disbursement_create_time"
                                                                 class="form-label text-capitalize m-0">
-                                                                {{ translate('Create_Time') }}
+                                                                {{ translate('Create time') }}
                                                                 <span class="input-label-secondary text--title"
                                                                     data-toggle="tooltip" data-placement="right"
-                                                                    data-original-title="{{ translate('Define_when_the_new_disbursement_request_will_be_generated_automatically.') }}">
+                                                                    data-original-title="{{ translate('Define when the new disbursement request will be generated automatically.') }}">
                                                                     <i class="tio-info text-muted"></i>
                                                                 </span>
                                                                   <span class="text-danger">*</span>
                                                             </label>
                                                         </div>
                                                         <input type="time" id="store_disbursement_create_time"
-                                                            placeholder="{{ translate('Ex:_7') }}"
+                                                            placeholder="{{ translate('Ex') . ': 7' }}"
                                                             class="form-control h--45px"
                                                             name="store_disbursement_create_time"
                                                             value="{{ $store_disbursement_create_time }}" required>
@@ -237,17 +235,17 @@
                                                             class="d-flex justify-content-between align-items-center mb-2">
                                                             <label for="store_disbursement_min_amount"
                                                                 class="form-label text-capitalize m-0">
-                                                                {{ translate('Minimum_Amount') }}
+                                                                {{ translate('Minimum amount') }}
                                                                 <span class="input-label-secondary text--title"
                                                                     data-toggle="tooltip" data-placement="right"
-                                                                    data-original-title="{{ translate('Enter_the_minimum_amount_to_be_eligible_for_generating_an_auto-disbursement_request.') }}">
+                                                                    data-original-title="{{ translate('Enter the minimum amount to be eligible for generating an auto-disbursement request.') }}">
                                                                     <i class="tio-info text-muted"></i>
                                                                 </span>
                                                                   <span class="text-danger">*</span>
                                                             </label>
                                                         </div>
                                                         <input id="store_disbursement_min_amount" type="number"
-                                                            placeholder="{{ translate('Ex:_100') }}"
+                                                            placeholder="{{ translate('Ex') . ': 100' }}"
                                                             class="form-control h--45px" min="1"
                                                             name="store_disbursement_min_amount"
                                                             value="{{ $store_disbursement_min_amount }}" required>
@@ -260,17 +258,17 @@
                                                             class="d-flex justify-content-between align-items-center mb-2">
                                                             <label for="store_disbursement_waiting_time"
                                                                 class="form-label text-capitalize m-0">
-                                                                {{ translate('Days_needed_to_complete_disbursement') }}
+                                                                {{ translate('Days needed to complete disbursement') }}
                                                                 <span class="input-label-secondary text--title"
                                                                     data-toggle="tooltip" data-placement="right"
-                                                                    data-original-title="{{ translate('Enter_the_number_of_days_in_which_the_disbursement_will_be_completed.') }}">
+                                                                    data-original-title="{{ translate('Enter the number of days in which the disbursement will be completed.') }}">
                                                                     <i class="tio-info text-muted"></i>
                                                                 </span>
                                                                   <span class="text-danger">*</span>
                                                             </label>
                                                         </div>
                                                         <input id="store_disbursement_waiting_time" type="number"
-                                                            placeholder="{{ translate('Ex:_7') }}" min="1"
+                                                            placeholder="{{ translate('Ex') . ': 7' }}" min="1"
                                                             class="form-control h--45px"
                                                             name="store_disbursement_waiting_time"
                                                             value="{{ $store_disbursement_waiting_time }}" required>
@@ -286,7 +284,7 @@
                                     <div class="card-body">
                                         <div class="mb-20">
                                             <h4 class="mb-1">
-                                                {{ translate('Delivery Man Disbursement Request') }}
+                                                {{ translate('Deliveryman disbursement request') }}
                                             </h4>
                                             <p class="mb-0 fs-12">
                                                 {{ translate('Set parameters for when delivery drivers can request disbursements.') }}
@@ -302,10 +300,10 @@
                                                             class="d-flex justify-content-between align-items-center mb-2">
                                                             <label for="dm_disbursement_time_period"
                                                                 class="form-label text-capitalize m-0">
-                                                                {{ translate('Create_Disbursements') }}
+                                                                {{ translate('Create disbursements') }}
                                                                 <span class="input-label-secondary text--title"
                                                                     data-toggle="tooltip" data-placement="right"
-                                                                    data-original-title="{{ translate('Choose_how_the_disbursement_request_will_be_generated:_Monthly,_Weekly_or_Daily.') }}">
+                                                                    data-original-title="{{ translate('Choose how the disbursement request will be generated: monthly, weekly or daily.') }}">
                                                                     <i class="tio-info text-muted"></i>
                                                                 </span>
                                                                   <span class="text-danger">*</span>
@@ -316,11 +314,11 @@
                                                             required>
                                                             <option value="daily"
                                                                 {{ $dm_disbursement_time_period == 'daily' ? 'selected' : '' }}>
-                                                                {{ translate('messages.daily') }}
+                                                                {{ translate('Daily') }}
                                                             </option>
                                                             <option value="weekly"
                                                                 {{ $dm_disbursement_time_period == 'weekly' ? 'selected' : '' }}>
-                                                                {{ translate('messages.weekly') }}
+                                                                {{ translate('Weekly') }}
                                                             </option>
                                                             <option value="monthly"
                                                                 {{ $dm_disbursement_time_period == 'monthly' ? 'selected' : '' }}>
@@ -337,10 +335,10 @@
                                                             class="d-flex justify-content-between align-items-center mb-2">
                                                             <label for="dm_disbursement_week_start"
                                                                 class="form-label text-capitalize m-0">
-                                                                {{ translate('Week_Start') }}
+                                                                {{ translate('Week start') }}
                                                                 <span class="input-label-secondary text--title"
                                                                     data-toggle="tooltip" data-placement="right"
-                                                                    data-original-title="{{ translate('Choose_when_the_week_starts_for_the_new_disbursement_request._This_section_will_only_appear_when_weekly_disbursement_is_selected.') }}">
+                                                                    data-original-title="{{ translate('Choose when the week starts for the new disbursement request. This section will only appear when weekly disbursement is selected.') }}">
                                                                     <i class="tio-info text-muted"></i>
                                                                 </span>
                                                                   <span class="text-danger">*</span>
@@ -350,31 +348,31 @@
                                                             id="dm_disbursement_week_start" class="form-control" required>
                                                             <option value="saturday"
                                                                 {{ $dm_disbursement_week_start == 'saturday' ? 'selected' : '' }}>
-                                                                {{ translate('messages.saturday') }}
+                                                                Saturday
                                                             </option>
                                                             <option value="sunday"
                                                                 {{ $dm_disbursement_week_start == 'sunday' ? 'selected' : '' }}>
-                                                                {{ translate('messages.sunday') }}
+                                                                Sunday
                                                             </option>
                                                             <option value="monday"
                                                                 {{ $dm_disbursement_week_start == 'monday' ? 'selected' : '' }}>
-                                                                {{ translate('messages.monday') }}
+                                                                Monday
                                                             </option>
                                                             <option value="tuesday"
                                                                 {{ $dm_disbursement_week_start == 'tuesday' ? 'selected' : '' }}>
-                                                                {{ translate('messages.tuesday') }}
+                                                                Tuesday
                                                             </option>
                                                             <option value="wednesday"
                                                                 {{ $dm_disbursement_week_start == 'wednesday' ? 'selected' : '' }}>
-                                                                {{ translate('messages.wednesday') }}
+                                                                Wednesday
                                                             </option>
                                                             <option value="thursday"
                                                                 {{ $dm_disbursement_week_start == 'thursday' ? 'selected' : '' }}>
-                                                                {{ translate('messages.thursday') }}
+                                                                Thursday
                                                             </option>
                                                             <option value="friday"
                                                                 {{ $dm_disbursement_week_start == 'friday' ? 'selected' : '' }}>
-                                                                {{ translate('messages.friday') }}
+                                                                Friday
                                                             </option>
                                                         </select>
                                                     </div>
@@ -386,17 +384,17 @@
                                                             class="d-flex justify-content-between align-items-center mb-2">
                                                             <label for="dm_disbursement_create_time"
                                                                 class="form-label text-capitalize m-0">
-                                                                {{ translate('Create_Time') }}
+                                                                {{ translate('Create time') }}
                                                                 <span class="input-label-secondary text--title"
                                                                     data-toggle="tooltip" data-placement="right"
-                                                                    data-original-title="{{ translate('Define_when_the_new_disbursement_request_will_be_generated_automatically.') }}">
+                                                                    data-original-title="{{ translate('Define when the new disbursement request will be generated automatically.') }}">
                                                                     <i class="tio-info text-muted"></i>
                                                                 </span>
                                                                   <span class="text-danger">*</span>
                                                             </label>
                                                         </div>
                                                         <input id="dm_disbursement_create_time" type="time"
-                                                            placeholder="{{ translate('Ex:_7') }}"
+                                                            placeholder="{{ translate('Ex') . ': 7' }}"
                                                             class="form-control h--45px"
                                                             name="dm_disbursement_create_time"
                                                             value="{{ $dm_disbursement_create_time }}" required>
@@ -409,17 +407,17 @@
                                                             class="d-flex justify-content-between align-items-center mb-2">
                                                             <label for="dm_disbursement_min_amount"
                                                                 class="form-label text-capitalize m-0">
-                                                                {{ translate('Minimum_Amount') }}
+                                                                {{ translate('Minimum amount') }}
                                                                 <span class="input-label-secondary text--title"
                                                                     data-toggle="tooltip" data-placement="right"
-                                                                    data-original-title="{{ translate('Enter_the_minimum_amount_to_be_eligible_for_generating_an_auto-disbursement_request.') }}">
+                                                                    data-original-title="{{ translate('Enter the minimum amount to be eligible for generating an auto-disbursement request.') }}">
                                                                     <i class="tio-info text-muted"></i>
                                                                 </span>
                                                                   <span class="text-danger">*</span>
                                                             </label>
                                                         </div>
                                                         <input id="dm_disbursement_min_amount" type="number"
-                                                            placeholder="{{ translate('Ex:_100') }}"
+                                                            placeholder="{{ translate('Ex') . ': 100' }}"
                                                             class="form-control h--45px" min="1"
                                                             name="dm_disbursement_min_amount"
                                                             value="{{ $dm_disbursement_min_amount }}" required>
@@ -432,17 +430,17 @@
                                                             class="d-flex justify-content-between align-items-center mb-2">
                                                             <label for="dm_disbursement_waiting_time"
                                                                 class="form-label text-capitalize m-0">
-                                                                {{ translate('Days_needed_to_complete_disbursement') }}
+                                                                {{ translate('Days needed to complete disbursement') }}
                                                                 <span class="input-label-secondary text--title"
                                                                     data-toggle="tooltip" data-placement="right"
-                                                                    data-original-title="{{ translate('Enter_the_number_of_days_in_which_the_disbursement_will_be_completed.') }}">
+                                                                    data-original-title="{{ translate('Enter the number of days in which the disbursement will be completed.') }}">
                                                                     <i class="tio-info text-muted"></i>
                                                                 </span>
                                                                   <span class="text-danger">*</span>
                                                             </label>
                                                         </div>
                                                         <input id="dm_disbursement_waiting_time" type="number"
-                                                            min="1" placeholder="{{ translate('Ex:_7') }}"
+                                                            min="1" placeholder="{{ translate('Ex') . ': 7' }}"
                                                             class="form-control h--45px"
                                                             name="dm_disbursement_waiting_time"
                                                             value="{{ $dm_disbursement_waiting_time }}" required>
@@ -461,9 +459,9 @@
                         <div class="container-fluid">
                             <div class="btn--container justify-content-end py-3">
                                 <button type="reset" id="reset_btn"
-                                    class="btn min-w-120px btn--reset location-reload">{{ translate('messages.reset') }}</button>
+                                    class="btn min-w-120px btn--reset location-reload"><i class="tio-refresh"></i> {{ translate('messages.Reset') }}</button>
                                 <button type="submit" id="submit" class="btn min-w-120px btn--primary call-demo"><i
-                                        class="tio-save"></i> {{ translate('messages.save_information') }}</button>
+                                        class="tio-save"></i> {{ translate('Save information') }}</button>
                             </div>
                         </div>
                     </div>
@@ -491,38 +489,38 @@
             <div class="modal-dialog modal-lg" role="document">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h5 class="modal-title" id="disbursementSchedulerModalLabel">{{ translate('Disbursement Scheduler Dependency') }}</h5>
+                        <h5 class="modal-title" id="disbursementSchedulerModalLabel">{{ translate('Disbursement scheduler dependency') }}</h5>
                         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                             <span aria-hidden="true">&times;</span>
                         </button>
                     </div>
                     <div class="modal-body">
                         <p class="fs-13 mb-3">
-                            {{ translate('When Automated Request is selected, Laravel\'s scheduler runs dm:disbursement and store:disbursement based on the time period (daily / weekly / monthly) and create-time configured above. Pick ONE launcher for the scheduler.') }}
+                            {{ translate('When Automated Request is selected, Laravel\'s scheduler runs the disbursement commands based on the time period (daily / weekly / monthly) and create-time configured above. Pick ONE launcher for the scheduler.') }} {{ translate('Commands') }}: <code>dm:disbursement</code>, <code>store:disbursement</code>
                         </p>
 
                         <div class="bg-light rounded p-3 mb-3">
-                            <h6 class="mb-2">{{ translate('Option 1 — Cron drives the scheduler') }}</h6>
+                            <h6 class="mb-2">{{ translate('Option') }} 1 — {{ translate('Cron drives the scheduler') }}</h6>
                             <p class="fs-12 mb-2">
-                                {{ translate('Add this single line to your server crontab. Cron will trigger schedule:run every minute and Laravel decides which scheduled commands fire.') }}
+                                {{ translate('Add this line to your crontab. Laravel decides which scheduled commands fire.') }}
                             </p>
                             <div class="input--group input-group">
                                 <input type="text" value="{{ $disbursementCronLine }}" class="form-control" id="disbursementCronCommand" readonly>
-                                <button type="button" class="btn btn-primary disbursementCronCopy">{{ translate('Copy') }}</button>
+                                <button type="button" class="btn btn-primary disbursementCronCopy"><i class="tio-copy"></i> {{ translate('Copy') }}</button>
                             </div>
                         </div>
 
                         <div class="bg-light rounded p-3 mb-0">
-                            <h6 class="mb-2">{{ translate('Option 2 — Supervisor drives the scheduler (no cron)') }}</h6>
+                            <h6 class="mb-2">{{ translate('Option') }} 2 — {{ translate('Supervisor drives the scheduler (no cron)') }}</h6>
                             <p class="fs-12 mb-2">
-                                {{ translate('Use this if you can\'t install a cron entry (Docker, some shared hosts). Supervisor keeps schedule:work alive; it internally invokes schedule:run every 60 seconds.') }}
+                                {{ translate('Use this if you can\'t install a cron entry (Docker, some shared hosts). Supervisor keeps the scheduler worker alive, and the worker runs the scheduler every minute.') }} {{ translate('Commands') }}: <code>schedule:work</code>, <code>schedule:run</code>
                             </p>
                             <textarea class="form-control mb-2" id="disbursementSchedulerSupervisorBlock" rows="10" readonly>{{ $disbursementSchedulerSupervisor }}</textarea>
-                            <button type="button" class="btn btn-primary disbursementSchedulerSupervisorCopy">{{ translate('Copy') }}</button>
+                            <button type="button" class="btn btn-primary disbursementSchedulerSupervisorCopy"><i class="tio-copy"></i> {{ translate('Copy') }}</button>
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-dismiss="modal">{{ translate('Close') }}</button>
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal"><i class="tio-clear"></i> {{ translate('Close') }}</button>
                     </div>
                 </div>
             </div>
@@ -530,12 +528,9 @@
     </div>
     <div id="global_guideline_offcanvas"
         class="custom-offcanvas d-flex flex-column justify-content-between global_guideline_offcanvas">
-        <!-- Guidline Offcanvas -->
-        {{-- <div class="global_guideline_offcanvas" tabindex="-1" id="offcanvasSetupGuide" aria-labelledby="offcanvasSetupGuideLabel"
-            style="--offcanvas-width: 500px"> --}}
         <div>
             <div class="custom-offcanvas-header bg--secondary d-flex justify-content-between align-items-center px-3 py-3">
-                <h3 class="mb-0">{{ translate('messages.Disbursement Guideline') }}</h3>
+                <h3 class="mb-0">{{ translate('Disbursement guideline') }}</h3>
                 <button type="button"
                     class="btn-close w-25px h-25px border rounded-circle d-center bg--secondary offcanvas-close fz-15px p-0"
                     aria-label="Close">&times;</button>
@@ -552,17 +547,17 @@
                                 <i class="tio-down-ui"></i>
                             </div>
                             <span
-                                class="font-semibold text-left fs-14 text-title">{{ translate('messages.Disbursement Setup') }}</span>
+                                class="font-semibold text-left fs-14 text-title">{{ translate('Disbursement setup') }}</span>
                         </button>
                         <a href="#disbursement_setup_section"
-                            class="text-info text-underline fs-12 text-nowrap offcanvas-close-btn">{{ translate('messages.Let’s Setup') }}</a>
+                            class="text-info text-underline fs-12 text-nowrap offcanvas-close-btn">{{ translate('Let\'s setup') }}</a>
                     </div>
                     <div class="collapse mt-3 show" id="disbursement_setup">
                         <div class="card card-body">
                             <div class="">
-                                <h5 class="mb-3">{{ translate('Disbursement Setup') }}</h5>
+                                <h5 class="mb-3">{{ translate('Disbursement setup') }}</h5>
                                 <p class="fs-12 mb-0">
-                                    {{ translate('messages.The Disbursement Setup feature allows the admin to manage the payout of earnings to vendors and delivery personnel. It ensures timely and accurate settlements based on completed orders, commissions, and deductions.') }}
+                                    {{ translate('messages.Manages payouts to vendors and delivery personnel from completed orders, commissions and deductions.') }}
                                 </p>
                             </div>
                         </div>
@@ -580,27 +575,27 @@
                                 <i class="tio-down-ui"></i>
                             </div>
                             <span
-                                class="font-semibold text-left fs-14 text-title">{{ translate('messages.Disbursement Request Type') }}</span>
+                                class="font-semibold text-left fs-14 text-title">{{ translate('Disbursement request type') }}</span>
                         </button>
                         <a href="#disbursement_request_type_section"
-                            class="text-info text-underline fs-12 text-nowrap offcanvas-close-btn">{{ translate('messages.Let’s Setup') }}</a>
+                            class="text-info text-underline fs-12 text-nowrap offcanvas-close-btn">{{ translate('Let\'s setup') }}</a>
                     </div>
                     <div class="collapse mt-3" id="disbursement_request_type">
                         <div class="card card-body">
                             <div class="">
-                                <h5 class="mb-3">{{ translate('Disbursement Request Type') }}</h5>
+                                <h5 class="mb-3">{{ translate('Disbursement request type') }}</h5>
                                 <p class="fs-12 mb-3">
-                                    {{ translate('messages.The system supports two types of disbursement requests for vendors and delivery personnel: Manual and Automated. These settings determine how earnings are transferred from the platform to the recipients.') }}
+                                    {{ translate('messages.Disbursement requests can be manual or automated. This setting decides which.') }}
                                 </p>
                                 <ul class="mb-0 fs-12">
                                     <li class="font-semibold">
-                                        {{ translate('messages.Manual Disbursement') }}
+                                        {{ translate('Manual disbursement') }}
                                     </li>
                                     <p class="mb-3">
                                         {{ translate('messages.Admin reviews and approves each payout request before processing.') }}
                                     </p>
                                     <li class="font-semibold">
-                                        {{ translate('messages.Automated Disbursement') }}
+                                        {{ translate('Automated disbursement') }}
                                     </li>
                                     <p class="mb-3">
                                         {{ translate('messages.The system automatically processes payouts according to predefined schedules (daily, weekly, or monthly).') }}
@@ -621,17 +616,17 @@
                                 <i class="tio-down-ui"></i>
                             </div>
                             <span
-                                class="font-semibold text-left fs-14 text-title">{{ translate('messages.Disbursement Request Setup') }}</span>
+                                class="font-semibold text-left fs-14 text-title">{{ translate('Disbursement request setup') }}</span>
                         </button>
                         <a href="#disbursement_request_setup_section"
-                            class="text-info text-underline fs-12 text-nowrap offcanvas-close-btn">{{ translate('messages.Let’s Setup') }}</a>
+                            class="text-info text-underline fs-12 text-nowrap offcanvas-close-btn">{{ translate('Let\'s setup') }}</a>
                     </div>
                     <div class="collapse mt-3" id="disbursement_request_setup">
                         <div class="card card-body">
                             <div class="">
-                                <h5 class="mb-3">{{ translate('Disbursement Request Setup') }}</h5>
+                                <h5 class="mb-3">{{ translate('Disbursement request setup') }}</h5>
                                 <p class="fs-12 mb-0">
-                                    {{ translate('messages.This feature allows the admin to configure how and when earnings are disbursed to vendors and delivery personnel. Proper setup ensures timely payouts, automated processing, and compliance with operational rules.') }}
+                                    {{ translate('messages.Configure how and when earnings are paid out to vendors and delivery personnel.') }}
                                 </p>
                             </div>
                         </div>
@@ -669,11 +664,11 @@
                 el.setSelectionRange(0, 99999);
                 try {
                     document.execCommand("copy");
-                    toastr.success('{{ translate('Copied to clipboard!') }}');
+                    toastr.success('{{ translate('Copied to clipboard') }}');
                 } catch (err) {
                     if (navigator.clipboard) {
                         navigator.clipboard.writeText(el.value).then(function () {
-                            toastr.success('{{ translate('Copied to clipboard!') }}');
+                            toastr.success('{{ translate('Copied to clipboard') }}');
                         });
                     }
                 }

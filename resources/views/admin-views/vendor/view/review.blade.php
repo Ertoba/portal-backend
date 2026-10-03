@@ -1,9 +1,8 @@
 @extends('layouts.admin.app')
 
-@section('title',$store->name."'s ".translate('messages.reviews'))
+@section('title',$store->name."'s ".translate('messages.Reviews'))
 
 @push('css_or_js')
-    <!-- Custom styles for this page -->
     <link href="{{asset('public/assets/admin/css/croppie.css')}}" rel="stylesheet">
 
 @endpush
@@ -11,17 +10,10 @@
 @section('content')
 <div class="content container-fluid">
     @include('admin-views.vendor.view.partials._header',['store'=>$store])
-    <!-- Page Heading -->
     <div class="tab-content">
         <div class="tab-pane fade show active" id="product">
             <div class="resturant-review-top my-4" id="store_details">
                 <div class="resturant-review-left mb-3">
-                    @php($user_rating = null)
-                    @php($total_rating = 0)
-                    @php($total_reviews = 0)
-                    @php($store_reviews = \App\CentralLogics\StoreLogic::calculate_store_rating($store['rating']))
-                    @php($user_rating = $store_reviews['rating'])
-                    @php($reviews = $store_reviews['total'])
                     <h1 class="title">{{ number_format($user_rating, 1)}}<span class="out-of">/5</span></h1>
                     @if ($user_rating == 5)
                     <div class="rating">
@@ -121,21 +113,11 @@
                     </div>
                     @endif
                     <div class="info">
-                        {{-- <span class="mr-3">{{$total_rating}} {{translate('messages.ratings')}}</span> --}}
-                        <span>{{$reviews}} {{translate('messages.reviews')}}</span>
+                        <span>{{$total_reviews}} {{translate('messages.Reviews')}}</span>
                     </div>
                 </div>
                 <div class="resturant-review-right">
                     <ul class="list-unstyled list-unstyled-py-2 mb-0">
-                    @php($ratings = $store->rating)
-                    @php($five = $ratings[0])
-                    @php($four = $ratings[1])
-                    @php($three = $ratings[2])
-                    @php($two = $ratings[3])
-                    @php($one = $ratings[4])
-                    @php($total_rating = $one+$two+$three+$four+$five)
-                    @php($total_rating = $total_rating==0?1:$total_rating)
-                    <!-- Review Ratings -->
                         <li class="d-flex align-items-center font-size-sm">
                             <span
                                 class="progress-name mr-3">{{translate('messages.excellent')}}</span>
@@ -147,9 +129,7 @@
                             </div>
                             <span class="ml-3">{{$five}}</span>
                         </li>
-                        <!-- End Review Ratings -->
 
-                        <!-- Review Ratings -->
                         <li class="d-flex align-items-center font-size-sm">
                             <span class="progress-name mr-3">{{translate('messages.good')}}</span>
                             <div class="progress flex-grow-1">
@@ -160,9 +140,7 @@
                             </div>
                             <span class="ml-3">{{$four}}</span>
                         </li>
-                        <!-- End Review Ratings -->
 
-                        <!-- Review Ratings -->
                         <li class="d-flex align-items-center font-size-sm">
                             <span class="progress-name mr-3">{{translate('messages.average')}}</span>
                             <div class="progress flex-grow-1">
@@ -173,11 +151,9 @@
                             </div>
                             <span class="ml-3">{{$three}}</span>
                         </li>
-                        <!-- End Review Ratings -->
 
-                        <!-- Review Ratings -->
                         <li class="d-flex align-items-center font-size-sm">
-                            <span class="progress-name mr-3">{{translate('messages.below_average')}}</span>
+                            <span class="progress-name mr-3">{{translate('messages.Below average')}}</span>
                             <div class="progress flex-grow-1">
                                 <div class="progress-bar" role="progressbar"
                                         style="width: {{($two/$total_rating)*100}}%;"
@@ -186,9 +162,7 @@
                             </div>
                             <span class="ml-3">{{$two}}</span>
                         </li>
-                        <!-- End Review Ratings -->
 
-                        <!-- Review Ratings -->
                         <li class="d-flex align-items-center font-size-sm">
 
                             <span class="progress-name mr-3">{{translate('messages.poor')}}</span>
@@ -200,65 +174,49 @@
                             </div>
                             <span class="ml-3">{{$one}}</span>
                         </li>
-                        <!-- End Review Ratings -->
                     </ul>
                 </div>
             </div>
             <div class="card">
- @php($reviews = $store->reviews()->with('item',function($query){
-                                $query->withoutGlobalScope(\App\Scopes\StoreScope::class);
-                            })->with('customer')
-                            ->latest()->paginate(25))
-                    <!-- Header -->
             <div class="card-header py-2">
                 <div class="search--button-wrapper">
-                    <h5 class="card-title">{{translate('messages.Review_list')}} <span
-                                    class="badge badge-soft-dark ml-2" id="itemCount">{{ $reviews->total() }}</span></h5>
-                    {{-- <form  class="search-form">
-                                    <!-- Search -->
-                        @csrf
-                        <div class="input-group input--group">
-                            <input id="datatableSearch_" type="search" value="{{ request()?->search ?? null }}" name="search" class="form-control"
-                                    placeholder="{{translate('ex_:_Search_Store_Name')}}" aria-label="{{translate('messages.search')}}" >
-                            <button type="submit" class="btn btn--secondary"><i class="tio-search"></i></button>
 
-                        </div>
-                        <!-- End Search -->
-                    </form> --}}
-                    <!-- Unfold -->
+                    @include('partials._table-head', [
+                        'title'    => translate('Review list'),
+                        'subtitle' => translate('messages.Store review list subtitle'),
+                        'count'    => $reviews->total(),
+                        'count_id' => 'itemCount',
+                    ])
                     <div class="hs-unfold mr-2">
                         <a class="js-hs-unfold-invoker btn btn-sm btn-white dropdown-toggle min-height-40" href="javascript:;"
                             data-hs-unfold-options='{
                                     "target": "#usersExportDropdown",
                                     "type": "css-animation"
                                 }'>
-                            <i class="tio-download-to mr-1"></i> {{ translate('messages.export') }}
+                            <i class="tio-download-to mr-1"></i> {{ translate('messages.Export') }}
                         </a>
 
                         <div id="usersExportDropdown"
                             class="hs-unfold-content dropdown-unfold dropdown-menu dropdown-menu-sm-right">
 
-                            <span class="dropdown-header">{{ translate('messages.download_options') }}</span>
+                            <span class="dropdown-header">{{ translate('messages.Download options') }}</span>
                             <a id="export-excel" class="dropdown-item" href="{{route('admin.store.store_wise_reviwe_export', ['type'=>'excel', 'id' => $store->id,request()->getQueryString()])}}">
                                 <img class="avatar avatar-xss avatar-4by3 mr-2"
                                     src="{{ asset('public/assets/admin') }}/svg/components/excel.svg"
                                     alt="Image Description">
-                                {{ translate('messages.excel') }}
+                                Excel
                             </a>
                             <a id="export-csv" class="dropdown-item" href="{{route('admin.store.store_wise_reviwe_export', ['type'=>'csv','id' => $store->id,request()->getQueryString()])}}">
                                 <img class="avatar avatar-xss avatar-4by3 mr-2"
                                     src="{{ asset('public/assets/admin') }}/svg/components/placeholder-csv-format.svg"
                                     alt="Image Description">
-                                {{ translate('messages.csv') }}
+                                CSV
                             </a>
 
                         </div>
                     </div>
-                    <!-- End Unfold -->
                 </div>
             </div>
-
-
 
                 <div class="card-body p-0 verticle-align-middle-table">
                     <div class="table-responsive datatable-custom">
@@ -271,14 +229,14 @@
                         }'>
                             <thead class="thead-light">
                             <tr>
-                                <th class="text-center max-90px">{{translate('messages.sl')}}</th>
-                                <th>{{translate('messages.Review_Id')}}</th>
+                                <th class="text-center max-90px">{{translate('messages.SL')}}</th>
+                                <th>{{translate('Review ID')}}</th>
                                 <th>{{translate('messages.item')}}</th>
-                                <th class="pl-4">{{translate('messages.reviewer_info')}}</th>
+                                <th class="pl-4">{{translate('Reviewer information')}}</th>
                                 <th>{{translate('messages.review')}}</th>
-                                <th>{{translate('messages.date')}}</th>
-                                <th class="w-30p text-center">{{translate('messages.store_reply')}}</th>
-                                <th class="text-center w-100px">{{translate('messages.status')}}</th>
+                                <th>{{translate('messages.Date')}}</th>
+                                <th class="w-30p text-center">{{translate('messages.Store reply')}}</th>
+                                <th class="text-center w-100px">{{translate('Status')}}</th>
                             </tr>
                             </thead>
 
@@ -301,19 +259,19 @@
                                                     <a href="{{route('admin.item.view',[$review->item['id']])}}">
                                                         <h5 class="text-hover-primary mb-0">{{Str::limit($review->item['name'],10)}}</h5>
                                                     </a>
-                                                    <!-- Static Order ID -->
+                                                    @if($review->order_id)
                                                     <a class="text-body" href="{{route('admin.order.details',['id'=>$review->order_id])}}">Order ID: {{$review->order_id}}</a>
-                                                    <!-- Static Order ID -->
+                                                    @endif
                                                 </div>
                                             </div>
                                         @else
-                                            {{translate('messages.Food_deleted!')}}
+                                            {{translate('messages.Food deleted!')}}
                                         @endif
                                     </td>
                                     <td>
                                         @if($review->customer)
                                             <a
-                                                href="{{route('admin.customer.view',[$review['user_id']])}}">
+                                                href="{{route('admin.users.customer.view',[$review['user_id']])}}">
                                                 <div>
                                     <span class="d-block h5 text-hover-primary mb-0">{{Str::limit($review->customer['f_name']." ".$review->customer['l_name'], 15)}} </span>
                                                     <span class="d-block font-size-sm text-body">{{Str::limit($review->customer->phone)}}</span>
@@ -339,12 +297,12 @@
                                     </td>
                                     <td>
                                         <p class="text-wrap text-center" data-toggle="tooltip" data-placement="top"
-                                           data-original-title="{{ $review?->reply }}">{!! $review->reply?Str::limit($review->reply, 50, '...'): translate('messages.Not_replied_Yet') !!}</p>
+                                           data-original-title="{{ $review?->reply }}">{!! $review->reply?Str::limit($review->reply, 50, '...'): translate('Not replied yet') !!}</p>
                                     </td>
 
                                     <td>
                                         <label class="toggle-switch toggle-switch-sm" for="reviewCheckbox{{$review->id}}">
-                                            <input type="checkbox" data-id="status-{{$review['id']}}" data-message="{{$review->status?translate('messages.you_want_to_hide_this_review_for_customer'):translate('messages.you_want_to_show_this_review_for_customer')}}" class="toggle-switch-input status_form_alert" id="reviewCheckbox{{$review->id}}" {{$review->status?'checked':''}}>
+                                            <input type="checkbox" data-id="status-{{$review['id']}}" data-message="{{$review->status?translate('messages.You want to hide this review for customer'):translate('messages.You want to show this review for customer')}}" class="toggle-switch-input status_form_alert" id="reviewCheckbox{{$review->id}}" {{$review->status?'checked':''}}>
                                             <span class="toggle-switch-label">
                                         <span class="toggle-switch-indicator"></span>
                                     </span>
@@ -370,7 +328,7 @@
                         <div class="empty--data">
                             <img src="{{asset('/public/assets/admin/svg/illustrations/sorry.svg')}}" alt="public">
                             <h5>
-                                {{translate('no_data_found')}}
+                                {{translate('No data found')}}
                             </h5>
                         </div>
                         @endif
@@ -383,7 +341,6 @@
 @endsection
 
 @push('script_2')
-    <!-- Page level plugins -->
     <script>
         "use strict";
 
@@ -413,25 +370,5 @@
             });
         });
 
-        $(".status_form_alert").on("click", function (e) {
-            const id = $(this).data('id');
-            const message = $(this).data('message');
-            e.preventDefault();
-            Swal.fire({
-                title: '{{ translate('messages.are_you_sure') }}',
-                text: message,
-                type: 'warning',
-                showCancelButton: true,
-                cancelButtonColor: 'default',
-                confirmButtonColor: '#FC6A57',
-                cancelButtonText: '{{translate('messages.no')}}',
-                confirmButtonText: '{{translate('messages.yes')}}',
-                reverseButtons: true
-            }).then((result) => {
-                if (result.value) {
-                    $('#' + id).submit()
-                }
-            })
-        })
     </script>
 @endpush

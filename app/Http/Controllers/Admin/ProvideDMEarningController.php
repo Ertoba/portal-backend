@@ -11,7 +11,6 @@ use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 use Brian2694\Toastr\Facades\Toastr;
 use Maatwebsite\Excel\Facades\Excel;
-use Rap2hpoutre\FastExcel\FastExcel;
 use App\Exports\DeliverymanPaymentExport;
 use Illuminate\Support\Facades\Validator;
 
@@ -24,15 +23,39 @@ class ProvideDMEarningController extends Controller
      */
     public function index(Request $request)
     {
-        $key = isset($request['search']) ? explode(' ', $request['search']) : [];
-        $provide_dm_earning = ProvideDMEarning::when(isset($key), function ($query) use ($key) {
+        $key = isset($request['search']) ? explode(' ', $request['search'] ?? '') : [];
+        $provide_dm_earning = ProvideDMEarning::with('delivery_man.storage', 'delivery_man.zone')->when(isset($request['search']), function ($query) use ($key) {
             return $query->whereHas('delivery_man',function($query)use($key){
                 foreach ($key as $value) {
                     $query->where('f_name', 'like', "%{$value}%")->orWhere('l_name', 'like', "%{$value}%");
                 }
             });
-        })->latest()->paginate(config('default_pagination'));
-        return view('admin-views.deliveryman-earning-provide.index', compact('provide_dm_earning'));
+        })->latest()->paginate(config('default_pagination'))
+            ->appends($request->except('page'));
+
+        return view('admin-views.deliveryman-earning-provide.index', [
+            'provide_dm_earning' => $provide_dm_earning,
+            'summary' => $this->paidSummary(),
+        ]);
+    }
+
+    /**
+     * Totals for the summary strip: one row of aggregates for the whole
+     * ledger, one for the current month. Both ignore the search box — the
+     * count badge on the table is what tracks that.
+     */
+    private function paidSummary(): array
+    {
+        $all = ProvideDMEarning::selectRaw(
+            'COUNT(*) as payments, SUM(amount) as amount, COUNT(DISTINCT delivery_man_id) as recipients'
+        )->first();
+
+        $month = ProvideDMEarning::whereYear('created_at', now()->year)
+            ->whereMonth('created_at', now()->month)
+            ->selectRaw('COUNT(*) as payments, SUM(amount) as amount')
+            ->first();
+
+        return ['all' => $all, 'month' => $month];
     }
 
     /**
@@ -42,7 +65,6 @@ class ProvideDMEarningController extends Controller
      */
     public function create()
     {
-        //
     }
 
     /**
@@ -105,7 +127,7 @@ class ProvideDMEarningController extends Controller
      */
     public function show($id)
     {
-        $account_transaction=AccountTransaction::findOrFail($id);
+        $account_transaction=AccountTransaction::with('deliveryman')->findOrFail($id);
         return view('admin-views.account.view', compact('account_transaction'));
     }
 
@@ -117,7 +139,6 @@ class ProvideDMEarningController extends Controller
      */
     public function edit($id)
     {
-        //
     }
 
     /**
@@ -129,7 +150,6 @@ class ProvideDMEarningController extends Controller
      */
     public function update(Request $request, $id)
     {
-        //
     }
 
     /**
@@ -141,13 +161,13 @@ class ProvideDMEarningController extends Controller
     public function destroy($id)
     {
         DeliveryMan::where('id', $id)->delete();
-        Toastr::success(translate('messages.provided_dm_earnings_removed'));
+        Toastr::success(translate('messages.Provided dm earnings removed'));
         return back();
     }
 
     public function dm_earning_list_export(Request $request){
-        $key = isset($request['search']) ? explode(' ', $request['search']) : [];
-        $dm_earnings = ProvideDMEarning::when(isset($key), function ($query) use ($key) {
+        $key = isset($request['search']) ? explode(' ', $request['search'] ?? '') : [];
+        $dm_earnings = ProvideDMEarning::when(isset($request['search']), function ($query) use ($key) {
             return $query->whereHas('delivery_man',function($query)use($key){
                 foreach ($key as $value) {
                     $query->where('f_name', 'like', "%{$value}%")->orWhere('l_name', 'like', "%{$value}%");
@@ -160,7 +180,7 @@ class ProvideDMEarningController extends Controller
             'search'=>$request->search??null,
 
         ];
-        
+
         if ($request->type == 'excel') {
             return Excel::download(new DeliverymanPaymentExport($data), 'ProvideDMEarning.xlsx');
         } else if ($request->type == 'csv') {
@@ -169,7 +189,7 @@ class ProvideDMEarningController extends Controller
     }
 
     public function search_deliveryman_earning(Request $request){
-        $key = explode(' ', $request['search']);
+        $key = explode(' ', $request['search'] ?? '');
         $provide_dm_earning = ProvideDMEarning::with('delivery_man')->whereHas('delivery_man',function($query)use($key){
             foreach ($key as $value) {
                 $query->where('f_name', 'like', "%{$value}%")->orWhere('l_name', 'like', "%{$value}%");

@@ -1,97 +1,99 @@
 @extends('layouts.admin.app')
 
-@section('title',translate('messages.disbursement'))
+@section('title',translate('Deliveryman disbursement'))
 
 @push('css_or_js')
-
+    <link rel="stylesheet" href="{{ asset('public/assets/admin/css/view-pages/disbursement.css') }}">
 @endpush
 
 @section('content')
 
+@php
+    $payout_count = function ($n) {
+        return translate('Deliveryman payouts') . ': ' . $n;
+    };
 
-<div class="content container-fluid">
+    $is_filtered = request()->filled('search') || ($status !== 'all');
+@endphp
+
+<div class="content container-fluid sdb">
     <div class="page-header">
         <h1 class="page-header-title">
             <span class="page-header-icon">
                 <img src="{{asset('/public/assets/admin/img/report/new/disburstment.png')}}" class="w--22" alt="">
             </span>
-            <span>{{ translate('Deliveryman_Disbursement') }}</span>
+            <span>
+                {{ translate('Deliveryman disbursement') }}
+                <span class="badge badge-soft-dark ml-2" id="itemCount">{{ $disbursements->total() }}</span>
+            </span>
         </h1>
-        <ul class="nav nav-tabs mb-4 border-0 pt-2">
-            <li class="nav-item">
-                <a class="nav-link {{ $status == 'all'?'active':'' }}" href="{{ route('admin.transactions.dm-disbursement.list', ['status' => 'all']) }}" >{{ translate('all') }}</a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link {{ $status == 'pending'?'active':'' }}" href="{{ route('admin.transactions.dm-disbursement.list', ['status' => 'pending']) }}">{{ translate('pending') }}</a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link {{ $status == 'processing'?'active':'' }}" href="{{ route('admin.transactions.dm-disbursement.list', ['status' => 'processing']) }}">{{ translate('processing') }}</a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link {{ $status == 'completed'?'active':'' }}" href="{{ route('admin.transactions.dm-disbursement.list', ['status' => 'completed']) }}">{{ translate('completed') }}</a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link {{ $status == 'partially_completed'?'active':'' }}" href="{{ route('admin.transactions.dm-disbursement.list', ['status' => 'partially_completed']) }}">{{ translate('partially_completed') }}</a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link {{ $status == 'canceled'?'active':'' }}" href="{{ route('admin.transactions.dm-disbursement.list', ['status' => 'canceled']) }}">{{ translate('canceled') }}</a>
-            </li>
-        </ul>
+        <p class="page-header-desc">{{ translate('Payouts on their way to your deliverymen, and the state each one is in.') }}</p>
+
+        @include('admin-views.disbursement.partials._tabs', [
+            'tab_route' => 'admin.transactions.dm-disbursement.list',
+            'tab_statuses' => ['all', 'pending', 'processing', 'partially_completed', 'completed', 'canceled'],
+        ])
     </div>
-    <!-- Reports -->
-    <div class="d-flex flex-column gap-2">
-        @foreach($disbursements as $disbursement)
-            <div class="card">
-                <div class="card-header border-0 flex-wrap justify-content-between gap-4">
-                    <div class="left">
-                        <h3 class="m-0 font-bold">{{ $disbursement->title }}
-                            @if($disbursement->status=='pending')
-                                <label class="badge badge-soft-primary">{{ translate('pending') }}</label>
-                            @elseif($disbursement->status=='completed')
-                                <label class="badge badge-soft-success">{{ translate('Completed') }}</label>
-                            @elseif($disbursement->status=='partially_completed')
-                                <label class="badge badge-soft-info">{{ translate('partially_completed') }}</label>
-                            @else
-                                <label class="badge badge-soft-danger">{{ translate('canceled') }}</label>
-                            @endif
-                        </h3>
-                        <span>{{ translate('created_at') }} {{ \App\CentralLogics\Helpers::time_date_format($disbursement->created_at) }}</span>
+
+    {{-- Two grouped queries in the controller, not one count per tile. The
+         strip describes the whole ledger, so it deliberately ignores the tab
+         and the search box — the badge on the heading tracks those. --}}
+    @include('admin-views.disbursement.partials._summary-strip', [
+        'lead_value' => $batch_summary->sum(),
+        'lead_label' => translate('messages.Payout runs generated so far'),
+        'released_label' => translate('Released to deliverymen'),
+    ])
+
+    <div class="card">
+        <div class="card-header border-0 py-2">
+            <div class="search--button-wrapper">
+                @include('partials._table-head', [
+                    'subtitle' => translate('Scheduled payout runs that release deliveryman earnings. open a run to review and release each payout.'),
+                    'count' => null,
+                ])
+
+                <form class="search-form">
+                    <div class="input--group input-group input-group-merge input-group-flush">
+                        <input class="form-control" type="search" name="search" value="{{ request('search') }}"
+                               placeholder="{{ translate('Ex') }}: {{ translate('Disbursement') }} # 1024">
+                        <button type="submit" class="btn btn--secondary"><i class="tio-search"></i></button>
                     </div>
-                    <div class="d-flex flex-wrap align-items-center gap-2">
-                        <div class="d-flex flex-wrap align-items-center mr-2">
-                            <span>{{ translate('total_amount') }}</span> <span class="mx-2">:</span> <h3 class="m-0">{{\App\CentralLogics\Helpers::format_currency($disbursement['total_amount'])}}</h3>
-                        </div>
-                        <div>
-                            <a href="{{ route('admin.transactions.dm-disbursement.view', ['id' => $disbursement->id]) }}" class="btn btn--primary">{{ translate('view_details') }}</a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        @endforeach
-        @if (count($disbursements) === 0)
-          
-                <div class="empty--data">
-                     <img src="{{ asset('/public/assets/admin/svg/illustrations/sorry.svg') }}" alt="public">
-                    <h5>
-                        {{translate('no_data_found')}}
-                    </h5>
-                </div>
-            @endif
-    </div>
-    <div class="page-area px-4 pb-3">
-        <div class="d-flex align-items-center justify-content-end">
-            <div>
-                {!!$disbursements->links()!!}
+                    @if($status !== 'all')
+                        <input type="hidden" name="status" value="{{ $status }}">
+                    @endif
+                </form>
+
+                @if(request()->filled('search'))
+                    <a href="{{ route('admin.transactions.dm-disbursement.list', ['status' => $status]) }}" class="btn btn--reset">
+                        <i class="tio-refresh"></i> {{ translate('Reset') }}
+                    </a>
+                @endif
             </div>
         </div>
-    </div>
 
+        <div class="card-body">
+            @if(count($disbursements) === 0)
+                @include('admin-views.disbursement.partials._empty', [
+                    'empty_title' => translate('messages.No disbursement found'),
+                    'empty_body' => $is_filtered
+                        ? translate('messages.Nothing matches this filter. Try another status or clear the search.')
+                        : translate('messages.Payout runs appear here once the disbursement schedule fires. Check the disbursement settings to see when the next one is due.'),
+                ])
+            @else
+                <div class="sdb-batches">
+                    @foreach($disbursements as $disbursement)
+                        @include('admin-views.disbursement.partials._batch-card', [
+                            'details_url' => route('admin.transactions.dm-disbursement.view', ['id' => $disbursement->id]),
+                        ])
+                    @endforeach
+                </div>
+            @endif
+        </div>
+
+        <div class="page-area">
+            {!! $disbursements->links() !!}
+        </div>
+    </div>
 </div>
 
-
-
 @endsection
-
-@push('script_2')
-
-@endpush

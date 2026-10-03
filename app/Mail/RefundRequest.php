@@ -2,18 +2,20 @@
 
 namespace App\Mail;
 
-use App\CentralLogics\Helpers;
-use App\Models\BusinessSetting;
 use App\Models\EmailTemplate;
 use App\Models\Order;
-use Illuminate\Bus\Queueable;
+use App\Mail\Concerns\BuildsTemplatedMail;
+use App\Mail\Concerns\QueueableMailable;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Queue\SerializesModels;
+use App\Support\Notification\NotificationText;
+use App\Services\System\BusinessSettingService;
 
-class RefundRequest extends Mailable
+class RefundRequest extends Mailable implements ShouldQueue
 {
-    use Queueable, SerializesModels;
+    use BuildsTemplatedMail, Queueable, QueueableMailable, SerializesModels;
 
     /**
      * Create a new message instance.
@@ -27,7 +29,6 @@ class RefundRequest extends Mailable
         $this->o_id = $o_id;
     }
 
-
     /**
      * Build the message.
      *
@@ -35,25 +36,19 @@ class RefundRequest extends Mailable
      */
     public function build()
     {
-        $order_id = $this->o_id;
-        $order=Order::where('id', $order_id)->first();
-        $company_name = BusinessSetting::where('key', 'business_name')->first()->value;
-        $data=EmailTemplate::where('type','admin')->where('email_type', 'refund_request')->first();
-        $template=$data?$data->email_template:2;
-        $user_name = $order->customer->f_name.' '.$order->customer->l_name;
-        $store_name = $order->store->name;
+        $order = Order::where('id', $this->o_id)->first();
 
-        $delivery_man_name = $order->delivery_man?->f_name.''.$order->delivery_man?->l_name;
-
-        $title = Helpers::text_variable_data_format( value:$data['title']??'',user_name:$user_name??'',store_name:$store_name??'',delivery_man_name:$delivery_man_name??'',order_id:$order_id??'');
-
-        $body = Helpers::text_variable_data_format( value:$data['body']??'',user_name:$user_name??'',store_name:$store_name??'',delivery_man_name:$delivery_man_name??'',order_id:$order_id??'');
-
-        $footer_text = Helpers::text_variable_data_format( value:$data['footer_text']??'',user_name:$user_name??'',store_name:$store_name??'',delivery_man_name:$delivery_man_name??'',order_id:$order_id??'');
-
-        $copyright_text = Helpers::text_variable_data_format( value:$data['copyright_text']??'',user_name:$user_name??'',store_name:$store_name??'',delivery_man_name:$delivery_man_name??'',order_id:$order_id??'');
-
-        return $this->subject(translate('Order_Refund_Request'))->view('email-templates.new-email-format-'.$template, ['company_name'=>$company_name,'data'=>$data,'title'=>$title,'body'=>$body,'footer_text'=>$footer_text,'copyright_text'=>$copyright_text,'order'=>$order]);
+        return $this->templatedMail(
+            template: EmailTemplate::where('type', 'admin')->where('email_type', 'refund_request')->first(),
+            fallbackTemplate: 2,
+            subject: translate('Order refund request'),
+            placeholders: [
+                'user_name' => $order->customer->f_name.' '.$order->customer->l_name,
+                'store_name' => $order->store->name,
+                'delivery_man_name' => $order->delivery_man?->f_name.' '.$order->delivery_man?->l_name,
+                'order_id' => $this->o_id,
+            ],
+            viewData: ['order' => $order],
+        );
     }
-
 }

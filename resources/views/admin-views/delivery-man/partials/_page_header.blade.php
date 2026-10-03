@@ -1,4 +1,3 @@
-<!-- Page Header -->
         <div class="page-header">
             <div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
                 <div class="d-flex gap-2 mb-0">
@@ -8,9 +7,10 @@
                     <div>
                         <h1 class="page-header-title text-break mb-1">
                             <span class="text-dark">
-                                {{ translate('messages.deliveryman_preview') }}
+                                {{ translate('Deliveryman preview') }}
                             </span>
                         </h1>
+                        <p class="page-header-desc">{{ translate('This deliveryman\'s deliveries, earnings, reviews and account state in one place.') }}</p>
 
                         <p class="mb-0 fs-12">{{ translate('messages.Join at') }} {{ \App\CentralLogics\Helpers::time_date_format($deliveryMan?->created_at) }}
                         </p>
@@ -20,27 +20,28 @@
                 @if ($deliveryMan?->application_status != 'approved')
                     <div class="btn-container">
                         <a class="btn btn-primary text-capitalize font-weight-medium fs-12" data-toggle="tooltip"
-                            data-placement="top" data-original-title="{{ translate('messages.edit') }}"
+                            data-placement="top" data-original-title="{{ translate('Edit') }}"
                             href="{{ route('admin.users.delivery-man.edit', [$deliveryMan['id']]) }}">
                             <i class="tio-edit"></i>
-                            {{ translate('messages.edit-information') }}
+                            {{ translate('messages.Edit information') }}
                         </a>
 
                         @if ($deliveryMan?->application_status != 'denied')
                             <a class="btn btn-danger text-capitalize font-weight-medium request-alert fs-12"
                                 data-url="{{ route('admin.users.delivery-man.application', [$deliveryMan['id'], 'denied']) }}"
-                                data-message="{{ translate('messages.you_want_to_deny_this_application') }}"
+                                data-message="{{ translate('messages.You want to deny this application') }}"
                                 href="javascript:">
-                                {{ translate('messages.reject') }}
+                                <i class="tio-clear-circle-outlined"></i> {{ translate('messages.Reject') }}
                             </a>
                         @endif
 
                         <a class="btn btn-success text-capitalize font-weight-medium request-alert fs-12"
                             data-url="{{ route('admin.users.delivery-man.application', [$deliveryMan['id'], 'approved']) }}"
-                            data-message="{{ translate('messages.you_want_to_approve_this_application') }}"
+                            data-message="{{ translate('messages.You want to approve this application') }}"
                             href="javascript:">
-                            {{ translate('messages.approve') }}
+                            <i class="tio-checkmark-circle-outlined"></i> {{ translate('Approve') }}
                         </a>
                     </div>
                 @endif
             </div>
+        </div>

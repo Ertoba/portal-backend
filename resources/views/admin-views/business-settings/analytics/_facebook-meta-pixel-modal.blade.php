@@ -20,32 +20,32 @@
                                     </div>
                                     <div class="text-dark mb-3">
                                         <h3 class="lh-base">
-                                            {{ translate('how_to_get_the_meta_pixel_id') }}
+                                            {{ translate('How to get the meta pixel id') }}
                                         </h3>
                                         <p class="opacity-75">
-                                            {{ translate('to_get_your_meta_pixel_id,_log_into_your_meta_business_manager_account.') }}
-                                            {{ translate('go_to_the_events_manager,_select_your_desired_business_account,_and_find_data_sources.') }}
-                                            {{ translate('your_pixel_id_will_be_shown_in_the_detailed_section_of_the_property_you_select.') }}
-                                            {{ translate('simply_copy_the_pixel_id_from_there.') }}
+                                            {{ translate('to get your meta pixel id, log into your meta business manager account.') }}
+                                            {{ translate('Go to the Events Manager, select your desired business account, and find data sources.') }}
+                                            {{ translate('Your pixel id will be shown in the detailed section of the property you select.') }}
+                                            {{ translate('Simply copy the pixel id from there.') }}
                                         </p>
                                     </div>
 
                                     <div class="text-dark mb-3">
                                         <h3 class="lh-base">
-                                            {{ translate('where_to_use_the_meta_pixel_id') }}
+                                            {{ translate('Where to use the meta pixel id') }}
                                         </h3>
                                         <p class="opacity-75">
-                                            {{ translate('find_the_marketing_tools_feature_from_your_admin_panel_and_follow_the_instructions:') }}
+                                            {{ translate('Find the marketing tools feature from your admin panel and follow the instructions') }}:
                                         </p>
                                         <ol class="d-flex flex-column gap-2 opacity-75">
                                             <li>
-                                                {{ translate('navigate_to_the_meta_pixel_id_section_under_the_marketing_tools_feature.') }}
+                                                {{ translate('Navigate to the meta pixel id section under the marketing tools feature.') }}
                                             </li>
                                             <li>
-                                                {{ translate('turn_on_the_toggle_button.') }}
+                                                {{ translate('Turn on the toggle button.') }}
                                             </li>
                                             <li>
-                                                {{ translate('paste_your_meta_pixel_id_into_the_input_box_and_click_submit.') }}
+                                                {{ translate('Paste your meta pixel id into the input box and click submit.') }}
                                             </li>
                                         </ol>
                                     </div>

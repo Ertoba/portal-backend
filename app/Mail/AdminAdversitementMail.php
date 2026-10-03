@@ -2,31 +2,37 @@
 
 namespace App\Mail;
 
-use App\CentralLogics\Helpers;
-use App\Models\BusinessSetting;
 use App\Models\EmailTemplate;
+use App\Mail\Concerns\BuildsTemplatedMail;
+use App\Mail\Concerns\QueueableMailable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Queue\SerializesModels;
+use App\Support\Notification\NotificationText;
+use App\Services\System\BusinessSettingService;
 
-class AdminAdversitementMail extends Mailable
+class AdminAdversitementMail extends Mailable implements ShouldQueue
 {
-    use Queueable, SerializesModels;
+    use BuildsTemplatedMail, Queueable, QueueableMailable, SerializesModels;
 
     /**
      * Create a new message instance.
      *
      * @return void
      */
-    protected $store_name,$email_type,$add_id;
+    protected $store_name;
 
-    public function __construct($store_name,$email_type,$add_id = null)
+    protected $email_type;
+
+    protected $add_id;
+
+    public function __construct($store_name, $email_type, $add_id = null)
     {
         $this->store_name = $store_name;
         $this->email_type = $email_type;
         $this->add_id = $add_id;
     }
-
 
     /**
      * Build the message.
@@ -35,31 +41,24 @@ class AdminAdversitementMail extends Mailable
      */
     public function build()
     {
-
-        $company_name = BusinessSetting::where('key', 'business_name')->first()->value;
-
-
-
-        if($this->email_type == 'new_advertisement'){
-            $subject=translate('New Advertisement Request');
-            $data=EmailTemplate::where('type','admin')->where('email_type', 'new_advertisement')->first();
+        if ($this->email_type == 'new_advertisement') {
+            $subject = translate('New advertisement request');
+            $data = EmailTemplate::where('type', 'admin')->where('email_type', 'new_advertisement')->first();
+        } else {
+            $subject = translate('Advertisement update request');
+            $data = EmailTemplate::where('type', 'admin')->where('email_type', 'update_advertisement')->first();
         }
-        else{
-            $subject=translate('Advertisement Update Request');
-            $data=EmailTemplate::where('type','admin')->where('email_type', 'update_advertisement')->first();
-        }
-        $template=$data?$data->email_template:2;
         $store_name = $this->store_name;
         $add_id = $this->add_id;
 
-
-
-        $title = Helpers::text_variable_data_format( value:$data['title']??'',user_name:$user_name??'',store_name:$store_name??'',delivery_man_name:$delivery_man_name??'',order_id:$order_id??'',add_id: $add_id );
-        $body = Helpers::text_variable_data_format( value:$data['body']??'',user_name:$user_name??'',store_name:$store_name??'',delivery_man_name:$delivery_man_name??'',order_id:$order_id??'',add_id: $add_id );
-        $footer_text = Helpers::text_variable_data_format( value:$data['footer_text']??'',user_name:$user_name??'',store_name:$store_name??'',delivery_man_name:$delivery_man_name??'',order_id:$order_id??'',add_id: $add_id );
-        $copyright_text = Helpers::text_variable_data_format( value:$data['copyright_text']??'',user_name:$user_name??'',store_name:$store_name??'',delivery_man_name:$delivery_man_name??'',order_id:$order_id??'',add_id: $add_id );
-
-        return $this->subject($subject)->view('email-templates.new-email-format-'.$template, ['company_name'=>$company_name,'data'=>$data,'title'=>$title,'body'=>$body,'footer_text'=>$footer_text,'copyright_text'=>$copyright_text]);
+        return $this->templatedMail(
+            template: $data,
+            fallbackTemplate: 2,
+            subject: $subject,
+            placeholders: [
+                'store_name' => $store_name ?? '',
+                'add_id' => $add_id,
+            ],
+        );
     }
-
 }

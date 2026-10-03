@@ -1,5 +1,5 @@
 @extends('layouts.admin.app')
-@section('title', translate('edit_Offline_Payment_Method'))
+@section('title', translate('edit Offline Payment Method'))
 
 @push('css_or_js')
 
@@ -10,45 +10,43 @@
     <form action="{{ route('admin.business-settings.offline.update') }}" method="POST">
         @csrf
         <div class="container-fluid">
-            <!-- Page Title -->
             <div class="d-flex justify-content-between align-items-center gap-3 flex-wrap mb-3">
                 <div>
                     <h2 class="h1 mb-1 text-capitalize">
-                        {{translate('Edit_Offline_Payment_Method')}}
+                        {{translate('edit Offline Payment Method')}}
                     </h2>
                     <h6 class="text-info fs-12 d-flex gap-2 align-items-center mb-0">
-                        <i class="tio-back-ui fs-10"></i>
-                        <a style="color: #245BD1;" href="{{ route('admin.business-settings.offline') }}">{{ translate('messages.Back to Offline Payment Mathods') }}</a>
+                        <i class="tio-arrow-backward fs-10"></i>
+                        <a style="color: #245BD1;" href="{{ route('admin.business-settings.offline') }}">{{ translate('messages.Back to Offline Payment Methods') }}</a>
                     </h6>
                 </div>
                 <button type="button" class="btn btn--primary btn-outline-primary d-flex gap-2 align-items-center offcanvas-trigger" id="bkashInfoModalButton">
                     <i class="tio-invisible"></i>
-                    {{ translate('Section_View') }}
+                    {{ translate('Section View') }}
                 </button>
             </div>
-            <!-- End Page Title -->
     
             <div class="card card-body mb-20">
                 <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-20">
                     <div class="">
-                        <h3 class="mb-1">{{translate('payment_information')}}</h3>
+                        <h3 class="mb-1">{{translate('Payment information')}}</h3>
                         <p class="fs-12 mb-0">
                             {{ translate('messages.Configure the payment methods your customers will use to pay for their orders.') }}
                         </p>
                     </div>
                     <button class="btn btn--primary add-input-fields-group">
-                        <i class="tio-add-circle"></i> {{ translate('Add_New_Field') }}
+                        <i class="tio-add-circle"></i> {{ translate('Add new field') }}
                     </button>
                 </div>
                  <div class="__bg-F8F9FC-card mb-20">
                     <label for="method_name" class="input-label text-capitalize d-flex gap-1 align-items-center">
-                        {{ translate('messages.payment_Method_Name') }}
+                        {{ translate('messages.Payment method name') }}
                         <span class="tio-info text-light-gray fs-16" data-toggle="tooltip"
                             data-placement="right"
                             data-original-title="{{ translate('Specify the payment method name as it will appear in the system') }}">
                             </span>
                     </label>
-                    <input id="method_name" type="text" class="form-control" placeholder="{{ translate('ex') }}: {{ translate('bkash') }}" name="method_name" required value="{{ $data->method_name }}">
+                    <input id="method_name" type="text" class="form-control" placeholder="{{ translate('Ex') }}: bKash" name="method_name" required value="{{ $data->method_name }}">
                 </div>
                 <div>
     
@@ -62,13 +60,13 @@
                                     <div class="col-md-4">
                                         <div class="form-group mb-0">
                                             <label for="input_name" class="input-label">{{ translate('Input field Name') }}</label>
-                                            <input id="input_name" type="text" name="input_name[]" class="form-control" placeholder="{{ translate('Ex: Account Number') }}" required value="{{ ucwords(str_replace('_',' ',$item['input_name'])) }} ">
+                                            <input id="input_name" type="text" name="input_name[]" class="form-control" placeholder="{{ translate('Ex') . ': Account Number' }}" required value="{{ ucwords(str_replace('_',' ',$item['input_name'])) }} ">
                                         </div>
                                     </div>
                                     <div class="col-md-4">
                                         <div class="form-group mb-0">
                                             <label for="input_data" class="input-label">{{ translate('Input field Data') }}</label>
-                                            <input id="input_data" type="text" name="input_data[]" class="form-control" placeholder="{{ translate('Ex: 1235 5648 2314') }}" required value="{{ $item['input_data'] }}">
+                                            <input id="input_data" type="text" name="input_data[]" class="form-control" placeholder="{{ translate('Ex') . ': 1235 5648 2314' }}" required value="{{ $item['input_data'] }}">
                                         </div>
                                     </div>
                                     <div class="col-md-4">
@@ -90,13 +88,13 @@
             <div class="card card-body">
                  <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-20">
                     <div class="">
-                        <h3 class="mb-1">{{translate('required_Information_from_Customer')}}</h3>
+                        <h3 class="mb-1">{{translate('Required Information from Customer')}}</h3>
                         <p class="fs-12 mb-0">
                             {{ translate('messages.Configure the payment methods your customers will use to pay for their orders.') }}
                         </p>
                     </div>
                     <button class="btn btn--primary add-customer-input-fields-group">
-                        <i class="tio-add-circle"></i> {{ translate('Add_New_Field') }}
+                        <i class="tio-add-circle"></i> {{ translate('Add new field') }}
                     </button>
                 </div>
                 <div>
@@ -107,14 +105,14 @@
                                 <div class="row g-3">
                                     <div class="col-md-4">
                                         <div class="form-group mb-0">
-                                            <label for="customer_input" class="input-label">{{ translate('input_field_Name') }}</label>
-                                            <input id="customer_input" type="text" name="customer_input[]" class="form-control" placeholder="{{ translate('ex') }}: {{ translate('payment_By') }}" required value="{{ ucwords(str_replace('_',' ',$item['customer_input'])) }}">
+                                            <label for="customer_input" class="input-label">{{ translate('Input field Name') }}</label>
+                                            <input id="customer_input" type="text" name="customer_input[]" class="form-control" placeholder="{{ translate('Ex') }}: {{ translate('Payment by') }}" required value="{{ ucwords(str_replace('_',' ',$item['customer_input'])) }}">
                                         </div>
                                     </div>
                                     <div class="col-md-4">
                                         <div class="form-group mb-0">
-                                            <label for="customer_placeholder" class="input-label">{{ translate('place_Holder') }}</label>
-                                            <input id="customer_placeholder" type="text" name="customer_placeholder[]" class="form-control" placeholder="{{ translate('ex') }}: {{ translate('enter_name') }}" required value="{{ $item['customer_placeholder'] }}">
+                                            <label for="customer_placeholder" class="input-label">{{ translate('place Holder') }}</label>
+                                            <input id="customer_placeholder" type="text" name="customer_placeholder[]" class="form-control" placeholder="{{ translate('Ex') }}: {{ translate('Enter Name') }}" required value="{{ $item['customer_placeholder'] }}">
                                         </div>
                                     </div>
                                     <div class="col-md-4">
@@ -123,7 +121,7 @@
                                                 <div class="form-check text-start mb-3 align-content-end">
         
                                                     <label class="form-check-label text-dark" for="{{ $cRandomNumber+1 }}">
-                                                        <input type="checkbox" class="form-check-input" id="{{ $cRandomNumber+1 }}" name="is_required[]" {{ (isset($item['is_required']) && $item['is_required']) == 1 ? 'checked':'' }}> {{ translate('is_Required') }} ?
+                                                        <input type="checkbox" class="form-check-input" id="{{ $cRandomNumber+1 }}" name="is_required[]" {{ (isset($item['is_required']) && $item['is_required']) == 1 ? 'checked':'' }}> {{ translate('Is required') }} ?
                                                     </label>
                                                 </div>
         
@@ -143,10 +141,10 @@
         <div class="footer-sticky mt-2">
             <div class="container-fluid">
                 <div class="d-flex flex-wrap gap-3 justify-content-center py-3">
-                    <button type="reset" class="btn btn--reset min-w-120">{{ translate('Reset') }}</button>
+                    <button type="reset" class="btn btn--reset min-w-120"><i class="tio-refresh"></i> {{ translate('Reset') }}</button>
                     <button type="submit"  class="btn btn--primary">
                         <i class="tio-save"></i>
-                        {{ translate('Save_Information') }}</button>
+                        {{ translate('Save information') }}</button>
                 </div>
             </div>
         </div>
@@ -154,12 +152,11 @@
 
 </div>
 
-{{-- Section View Offcanvas --}}
 <div id="sectionViewModal" class="custom-offcanvas d-flex flex-column justify-content-between">
     <div>
         <div class="custom-offcanvas-header bg--secondary d-flex justify-content-between align-items-center px-3 py-3">
             <div class="py-1">
-                <h3 class="mb-0">{{ translate('messages.Section_View') }}</h3>
+                <h3 class="mb-0">{{ translate('messages.Section View') }}</h3>
             </div>
             <button type="button" class="btn-close w-25px h-25px border rounded-circle d-center bg--secondary text-dark offcanvas-close fz-15px p-0"aria-label="Close">
                 &times;
@@ -170,10 +167,10 @@
                 <div class="d-flex align-items-center flex-column gap-2 text-center">
                     <img width="68" src="{{asset('public/assets/admin/img/offline_payment-new.png')}}" alt="">
                     <p class="fs-12 text-title mb-0">
-                            {{ translate('messages.Pay your bill using any of the payment method below')}} <br> {{ translate('messages.and input the required information.') }}
+                            {{ translate('messages.Pay your bill using any of the payment methods below')}} <br> {{ translate('messages.and input the required information.') }}
                         </p>
                     <h5 class="font-medium mb-0">
-                        {{translate('messages.Amount')}} : xxx
+                        {{translate('Amount')}} : xxx
                     </h5>
                 </div>
                 <div class="card card-body mt-20 mb-20 overflow-wrap-anywhere" id="offline_payment_top_part">
@@ -188,7 +185,7 @@
                     <div class="d-flex text-wrap flex-column gap-2" id="methodNameDisplay"> </div>
                     <div class="d-flex text-wrap flex-column gap-2" id="displayDataDiv"> </div>
                 </div>
-                <h5 class="font-medium mb-2">{{ translate('messages.Payment Info') }}</h5>
+                <h5 class="font-medium mb-2">{{ translate('Payment information') }}</h5>
 
                 <div class="__bg-F8F9FC-card mb-3">
                     <div class="d-flex flex-column gap-3 mb-3 overflow-wrap-anywhere" id="customer-info-display-div">
@@ -219,13 +216,13 @@
                                 <div class="col-md-4">
                                     <div class="form-group mb-0">
                                         <label for="input_name" class="input-label">{{ translate('Input field Name') }}</label>
-                                        <input type="text" name="input_name[]" class="form-control" placeholder="{{ translate('Ex: Account Number') }}" required>
+                                        <input type="text" name="input_name[]" class="form-control" placeholder="{{ translate('Ex') . ': Account Number' }}" required>
                                     </div>
                                 </div>
                                 <div class="col-md-4">
                                     <div class="form-group mb-0">
                                         <label for="input_data" class="input-label">{{ translate('Input field Data') }}</label>
-                                        <input type="text" name="input_data[]" class="form-control" placeholder="{{ translate('Ex: 1235 5648 2314') }}" required>
+                                        <input type="text" name="input_data[]" class="form-control" placeholder="{{ translate('Ex') . ': 1235 5648 2314' }}" required>
                                     </div>
                                 </div>
                                 <div class="col-md-4">
@@ -252,13 +249,13 @@
                                 <div class="col-md-4">
                                     <div class="form-group mb-0">
                                         <label class="input-label">{{ translate('Input field Name') }}</label>
-                                        <input type="text" name="customer_input[]" class="form-control" placeholder="{{ translate('ex') }}: {{ translate('payment_By') }}" required>
+                                        <input type="text" name="customer_input[]" class="form-control" placeholder="{{ translate('Ex') }}: {{ translate('Payment by') }}" required>
                                     </div>
                                 </div>
                                 <div class="col-md-4">
                                     <div class="form-group mb-0">
-                                        <label for="customer_placeholder" class="input-label">{{ translate('Place Holder') }}</label>
-                                        <input type="text" name="customer_placeholder[]" class="form-control" placeholder="{{ translate('ex') }}: {{ translate('Enter Name') }}" required>
+                                        <label for="customer_placeholder" class="input-label">{{ translate('place Holder') }}</label>
+                                        <input type="text" name="customer_placeholder[]" class="form-control" placeholder="{{ translate('Ex') }}: {{ translate('Enter Name') }}" required>
                                     </div>
                                 </div>
                                 <div class="col-md-4">
@@ -267,7 +264,7 @@
                                             <div class="form-check text-start mb-3 align-content-end">
     
                                                 <label class="form-check-label text-dark" for="`+id+1+`">
-                                                    <input type="checkbox" class="form-check-input" id="`+id+1+`" name="is_required[]"> {{ translate('is_Required') }} ?
+                                                    <input type="checkbox" class="form-check-input" id="`+id+1+`" name="is_required[]"> {{ translate('Is required') }} ?
                                                 </label>
                                             </div>
     

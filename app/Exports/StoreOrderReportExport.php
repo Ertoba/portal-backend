@@ -27,6 +27,19 @@ class StoreOrderReportExport implements  FromView, ShouldAutoSize, WithStyles,Wi
         $this->data = $data;
     }
 
+
+    /**
+     * Row count used to size the styled ranges.
+     *
+     * The controller streams its rows as a LazyCollection, where count() would re-run every
+     * chunk query, so it supplies a precomputed count. A caller still passing an eager
+     * Collection falls through to count() unchanged.
+     */
+    private function rowCount(): int
+    {
+        return (int) ($this->data['total_orders'] ?? $this->data['orders']->count());
+    }
+
     public function view(): View
     {
         return view('file-exports.store-orders-report', [
@@ -37,7 +50,6 @@ class StoreOrderReportExport implements  FromView, ShouldAutoSize, WithStyles,Wi
     public function columnWidths(): array
     {
         return [
-            // 'C' => 45,
         ];
     }
 
@@ -62,12 +74,11 @@ class StoreOrderReportExport implements  FromView, ShouldAutoSize, WithStyles,Wi
         ];
         $sheet->getStyle('A1:C1')->applyFromArray($styleArray);
         return [
-            // Define the style for cells with data
-            'A1:J'.$this->data['orders']->count() +4 => [
+            'A1:J'.$this->rowCount() +4 => [
                 'borders' => [
                     'allBorders' => [
                         'borderStyle' => Border::BORDER_THIN,
-                        'color' => ['argb' => '000000'], // Specify the color of the border (optional)
+                        'color' => ['argb' => '000000'],
                     ],
                 ],
             ],
@@ -79,7 +90,7 @@ class StoreOrderReportExport implements  FromView, ShouldAutoSize, WithStyles,Wi
     {
         return [
             AfterSheet::class => function(AfterSheet $event) {
-                $event->sheet->getStyle('A1:J1') // Adjust the range as per your needs
+                $event->sheet->getStyle('A1:J1')
                     ->getAlignment()
                     ->setHorizontal(Alignment::HORIZONTAL_CENTER)
                     ->setVertical(Alignment::VERTICAL_CENTER);
@@ -96,7 +107,7 @@ class StoreOrderReportExport implements  FromView, ShouldAutoSize, WithStyles,Wi
                     ->setHorizontal(Alignment::HORIZONTAL_CENTER)
                     ->setVertical(Alignment::VERTICAL_CENTER);
 
-                $event->sheet->getStyle('A4:J'.$this->data['orders']->count() +4)
+                $event->sheet->getStyle('A4:J'.$this->rowCount() +4)
                     ->getAlignment()
                     ->setHorizontal(Alignment::HORIZONTAL_CENTER)
                     ->setVertical(Alignment::VERTICAL_CENTER);

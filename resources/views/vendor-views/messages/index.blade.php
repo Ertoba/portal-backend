@@ -1,138 +1,103 @@
 @extends('layouts.vendor.app')
 
-@section('title', 'Messages')
+@section('title', translate('messages.Conversation list'))
 
 @push('css_or_js')
-    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <link rel="stylesheet" href="{{ asset('public/assets/admin/css/view-pages/messages.css') }}">
 @endpush
 
 @section('content')
+    @php
+        $jsStrings = [
+            'load_failed' => translate('messages.Could not load the conversations, please try again'),
+            'send_failed' => translate('messages.Could not send the message, please try again'),
+            'empty_message' => translate('messages.Write a message or attach an image before sending'),
+            'message_sent' => translate('messages.Message sent'),
+            'images_only' => translate('Please upload a file in a supported format') . ': PNG, JPG',
+            'attachment_limit' => translate('messages.Image limit') . ': 5',
+            'remove' => translate('messages.remove'),
+        ];
+    @endphp
 
-    <div class="content container-fluid">
-        <!-- Page Header -->
-        <div class="page-header">
-            <h1 class="page-header-title">{{ translate('messages.conversation_list') }}</h1>
-        </div>
-        <!-- End Page Header -->
+    <div class="content container-fluid msg-page" id="msgPage" data-list-url="{{ route('vendor.message.list') }}"
+        data-view-url="{{ url('/') }}/vendor-panel/message/view" data-strings="{{ json_encode($jsStrings) }}">
 
-        <div class="row g-3">
-            <div class="col-lg-4 col-md-6">
-                <!-- Card -->
-                <div class="card">
-                    <div class="card-header border-0">
-                        <div class="input-group input---group">
-                            <div class="input-group-prepend border-inline-end-0">
-                                <span class="input-group-text border-inline-end-0" id="basic-addon1"><i class="tio-search"></i></span>
-                            </div>
-                            <input type="text" class="form-control border-inline-start-0 pl-1" id="serach" placeholder="{{translate('Search')}}" aria-label="Username"
-                                aria-describedby="basic-addon1" autocomplete="off">
-                        </div>
-                    </div>
-                    <!-- Body -->
-                    <div class="card-body p-0 initial--11"  id="conversation-list">
-                        <div class="border-bottom"></div>
-                        @include('vendor-views.messages.data')
-                    </div>
-                    <!-- End Body -->
-                </div>
-                <!-- End Card -->
+        <div class="msg-page__head">
+            <div>
+                <h1 class="msg-page__title">
+                    <i class="tio-messages"></i>
+                    {{ translate('messages.Conversation list') }}
+                </h1>
+                <p class="msg-page__subtitle">
+                    {{ translate('Chats with your customers and with the admin team, newest first.') }}
+                </p>
             </div>
 
-             <div class="col-lg-8 col-nd-6" id="view-conversation">
-                    <div class="h-100 d-flex align-items-center justify-content-center">
-                        <div class="text-center">
-                            <div class="empty-conversation-content d-flex flex-column align-items-center gap-3">
-                                <img width="128" height="128" src="{{asset('/public/assets/admin/img/icons/empty-conversation.png')}}" alt="public">
-                                <h5 class="text-muted">
-                                    {{translate('no_conversation_found')}}
-                                </h5>
-                            </div>
-                        </div>
+            <div class="msg-stats">
+                <span class="msg-stat">
+                    {{ translate('messages.Conversations') }}
+                    <b>{{ $total_conversations }}</b>
+                </span>
+                <span class="msg-stat msg-stat--unread">
+                    <span class="msg-stat__dot"></span>
+                    {{ translate('messages.unread') }}
+                    <b>{{ $unread_conversations }}</b>
+                </span>
+            </div>
+        </div>
+
+        <div class="msg-shell" id="msgShell">
+
+            <aside class="msg-pane msg-pane--rail">
+                <div class="msg-rail__head">
+                    <div class="msg-search" id="msgSearch">
+                        <span class="msg-search__icon"><i class="tio-search"></i></span>
+                        <input type="text" class="msg-search__input" id="msgSearchInput" autocomplete="off"
+                            placeholder="{{ translate('messages.Search by name or phone') }}"
+                            aria-label="{{ translate('messages.Search by name or phone') }}">
+                        <button type="button" class="msg-search__clear" id="msgSearchClear"
+                            aria-label="{{ translate('Clear') }}"><i class="tio-clear"></i></button>
+                    </div>
+
+                    <div class="msg-filters" role="tablist">
+                        <button type="button" class="msg-filter is-active" data-filter="all">
+                            {{ translate('All') }}
+                            <span class="msg-filter__count">{{ $total_conversations }}</span>
+                        </button>
+                        <button type="button" class="msg-filter" data-filter="unread">
+                            {{ translate('messages.unread') }}
+                            <span class="msg-filter__count">{{ $unread_conversations }}</span>
+                        </button>
                     </div>
                 </div>
 
+                <div class="msg-rail__list" id="conversation-list" data-has-more="{{ $conversations->hasMorePages() ? 1 : 0 }}">
+                    @include('vendor-views.messages.data')
+                </div>
+
+                <div class="msg-rail__foot" id="msgListLoader" hidden>
+                    <span class="msg-spinner"></span>{{ translate('messages.loading') }}
+                </div>
+            </aside>
+
+            <section class="msg-pane msg-pane--thread" id="vendor-view-conversation" aria-live="polite">
+                <div class="msg-empty">
+                    <i class="tio-chat-outlined"></i>
+                    <h6>{{ translate('messages.View conversation') }}</h6>
+                    <p>{{ translate('messages.Pick a conversation from the list to read the history and reply') }}</p>
+                </div>
+            </section>
         </div>
-        <!-- End Row -->
     </div>
 
+    <div class="msg-lightbox" id="msgLightbox" hidden>
+        <button type="button" class="msg-lightbox__close" aria-label="{{ translate('messages.Close') }}">
+            <i class="tio-clear"></i>
+        </button>
+        <img src="" alt="{{ translate('Attachment') }}">
+    </div>
 @endsection
 
 @push('script_2')
-<script src="{{ asset('public/assets/admin/js/spartan-multi-image-picker.js') }}"></script>
-    <script>
-        "use strict";
-
-
-        let empty_page = `<div class="h-100 d-flex align-items-center justify-content-center">
-                        <div class="text-center">
-                            <div class="empty-conversation-content d-flex flex-column align-items-center gap-3">
-                                <img width="128" height="128" src="{{asset('/public/assets/admin/img/icons/empty-conversation.png')}}" alt="public">
-                                <h5 class="text-muted">
-                                    {{translate('no_conversation_found')}}
-                                </h5>
-                            </div>
-                        </div>
-                    </div>`;
-
-        function viewConvs(url, id_to_active, conv_id, sender_id) {
-            $('.customer-list').removeClass('conv-active');
-            $('#' + id_to_active).addClass('conv-active');
-            let new_url= "{{ route('vendor.message.list') }}" + '?conversation=' + conv_id+ '&user=' + sender_id;
-            $.get({
-                url: url,
-                success: function(data) {
-                    window.history.pushState('', 'New Page Title', new_url);
-                    $('#view-conversation').html(data.view);
-                    conversationList();
-                }
-            });
-
-        }
-
-        let page = 1;
-        $('#conversation-list').scroll(function() {
-            if ($('#conversation-list').scrollTop() + $('#conversation-list').height() >= $('#conversation-list')
-                .height()) {
-                page++;
-                loadMoreData(page);
-            }
-        });
-
-        function loadMoreData(page) {
-            $.ajax({
-                    url: "{{ route('vendor.message.list') }}" + '?page=' + page,
-                    type: "get",
-                    beforeSend: function() {
-
-                    }
-                })
-                .done(function(data) {
-                    if (data.html === " ") {
-                        return;
-                    }
-                    $("#conversation-list").append(data.html);
-                })
-                .fail(function() {
-                    alert('server not responding...');
-                });
-        }
-
-        function fetch_data(page, query) {
-            $.ajax({
-                url: "{{ route('vendor.message.list') }}" + '?page=' + page + "&key=" + query,
-                success: function(data) {
-                    $('#conversation-list').empty();
-                    $("#conversation-list").append(data.html);
-                }
-            })
-        }
-
-        $(document).on('keyup', '#serach', function() {
-            let query = $('#serach').val();
-            fetch_data(page, query);
-            $('#view-conversation').empty();
-            $('#view-conversation').append(empty_page);
-        });
-
-    </script>
+    <script src="{{ asset('public/assets/admin/js/view-pages/messages.js') }}"></script>
 @endpush

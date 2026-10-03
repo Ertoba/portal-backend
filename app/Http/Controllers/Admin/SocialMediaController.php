@@ -25,7 +25,6 @@ class SocialMediaController extends Controller
      */
     public function create()
     {
-        //
     }
 
     /**
@@ -38,10 +37,10 @@ class SocialMediaController extends Controller
     {
         try {
             SocialMedia::updateOrInsert([
-                'name' => $request->get('name'),
+                'name' => $request->input('name'),
             ], [
-                'name' => $request->get('name'),
-                'link' => $request->get('link'),
+                'name' => $request->input('name'),
+                'link' => $request->input('link'),
             ]);
 
             return response()->json([
@@ -102,7 +101,6 @@ class SocialMediaController extends Controller
      */
     public function destroy(SocialMedia $socialMedia)
     {
-        //
     }
 
     public function fetch(Request $request)

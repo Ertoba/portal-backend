@@ -21,8 +21,8 @@
     <td>
         <div class="btn--container justify-content-center">
             <a href="{{ route('admin.item.view', [$item['id'], 'module_id'=>$item['module_id']]) }}"
-                class="action-btn btn--primary btn-outline-primary">
-                <i class="tio-invisible"></i>
+                class="btn action-btn action-btn--view">
+                <i class="tio-visible-outlined"></i>
             </a>
         </div>
     </td>

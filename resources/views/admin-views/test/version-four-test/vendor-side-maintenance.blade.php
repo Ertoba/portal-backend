@@ -1,6 +1,6 @@
 @extends('layouts.admin.app')
 
-@section('title', translate('messages.subscription'))
+@section('title', translate('messages.Subscription'))
 
 @section('content')
 
@@ -13,14 +13,14 @@
                     <img src="{{asset('public/assets/admin/img/wellcome-maintainance.png')}}" alt="icon" class="w-100">
                 </div>
                 <h3 class="mb-3 fs-20">
-                    {{ translate('We re Cooking Up Something Special!') }}
+                    {{ translate('We\'re Cooking Up Something Special!') }}
                 </h3>
                 <p class="mb-0 gray-dark fs-14">
                     {{ translate('Our system is currently undergoing maintenance to bring you an even tastier experience. Hang tight while we make the dishes.') }} 
                 </p>
                 <div class="border-bottom-dashed-cus my-4 py-1"></div>
                 <p class="mb-2 gray-dark fs-14">
-                    {{ translate('Any query? Feel free to call or mail Us') }} 
+                    {{ translate('Any query? Feel free to contact us.') }} 
                 </p>
                 <a href="#0" class="d-block mb-0">
                     <span class="d-block mb-1 fs-16 text--primary text-underline">

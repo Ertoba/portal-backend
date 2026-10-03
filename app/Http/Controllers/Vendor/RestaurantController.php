@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Vendor;
 
+use App\Rules\PhoneNumber;
 use App\Http\Controllers\Controller;
 use App\Models\Store;
 use Brian2694\Toastr\Facades\Toastr;
@@ -20,8 +21,16 @@ class RestaurantController extends Controller
     public function edit()
     {
         $store = Helpers::get_store_data();
-        $shop = Store::withoutGlobalScope('translate')->findOrFail($store['id']);
-        return view('vendor-views.shop.edit', compact('shop'));
+
+        // The edit form needs untranslated columns, so the row is deliberately re-read
+        // without the translate scope. The storage rows are identical either way, so they
+        // are carried over rather than fetched again (same approach as store-setup).
+        $shop = Store::withoutGlobalScope('translate')->with('translations')->findOrFail($store['id']);
+        $shop->setRelation('storage', $store->storage);
+
+        // the blade resolved this itself
+        $language = Helpers::get_business_settings('language');
+        return view('vendor-views.shop.edit', compact('shop', 'language'));
     }
 
     public function update(Request $request)
@@ -30,10 +39,10 @@ class RestaurantController extends Controller
             'name' => 'required',
             'name.0' => 'required',
             'address' => 'nullable|max:1000',
-            'contact' => 'required|regex:/^([0-9\s\-\+\(\)]*)$/|min:10|max:20|unique:stores,phone,'.Helpers::get_store_id(),
+            'contact' => PhoneNumber::rules('required', 'stores,phone,'.Helpers::get_store_id()),
         ], [
-            'f_name.required' => translate('messages.first_name_is_required'),
-            'name.0.required'=>translate('default_name_is_required'),
+            'f_name.required' => translate('messages.First name is required'),
+            'name.0.required'=>translate('Default name is required'),
         ]);
         $shop = Store::findOrFail(Helpers::get_store_id());
         $shop->name = $request->name[array_search('default', $request->lang)];
@@ -106,7 +115,7 @@ class RestaurantController extends Controller
             $userinfo->save();
         }
 
-        Toastr::success(translate('messages.store_data_updated'));
+        Toastr::success(translate('messages.Store data updated'));
         return redirect()->route('vendor.shop.view');
     }
 
@@ -119,7 +128,7 @@ class RestaurantController extends Controller
         $shop->announcement_message = $request->announcement_message;
         $shop->save();
 
-        Toastr::success(translate('messages.store_data_updated'));
+        Toastr::success(translate('messages.Store data updated'));
         return redirect()->route('vendor.shop.view');
     }
 

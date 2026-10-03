@@ -8,7 +8,7 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ translate('Email_Template') }}</title>
+    <title>{{ translate('Email template') }}</title>
 
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,400;0,500;0,700;1,400&display=swap');
@@ -209,8 +209,8 @@ width: 24px;
         <tbody>
             <tr>
                 <td class="main-table-td">
-                    <h2 class="mb-3" id="mail-title">{{ $title?? translate('Main_Title_or_Subject_of_the_Mail') }}</h2>
-                    <div class="mb-1" id="mail-body">{!! $body?? translate('Hi_Sabrina,') !!}</div>
+                    <h2 class="mb-3" id="mail-title">{{ $title?? translate('Main title or subject of the mail') }}</h2>
+                    <div class="mb-1" id="mail-body">{!! $body?? translate('Hi sabrina,') !!}</div>
                     <table class="bg-section p-10 w-100">
                         <tbody>
                             <tr>
@@ -219,7 +219,7 @@ width: 24px;
                                         <img class="mb-2 mail-img-2"
                                         src="{{ $data['image_full_url'] ?? asset('/public/assets/admin/img/blank2.png') }}"
                                         alt="">
-                                        <h3 class="mb-3 mt-0">{{ translate('Order_Info') }}</h3>
+                                        <h3 class="mb-3 mt-0">{{ translate('Order information') }}</h3>
                                     </span>
                                 </td>
                             </tr>
@@ -229,12 +229,12 @@ width: 24px;
                                         <tbody>
                                             <tr>
                                                 <td>
-                                                    <h3 class="subtitle">{{ translate('Order_Summary') }}</h3>
+                                                    <h3 class="subtitle">{{ translate('Order summary') }}</h3>
                                                     <span class="d-block">{{ translate('Order') }}# {{ $order->id }}</span>
                                                     <span class="d-block">{{ $order->created_at  }}</span>
                                                 </td>
                                                 <td style="max-width:130px">
-                                                    <h3 class="subtitle">{{ translate('Delivery_Address') }}</h3>
+                                                    <h3 class="subtitle">{{ translate('Delivery address') }}</h3>
                                                     @if ($order->delivery_address)
                                                     @php($address = json_decode($order->delivery_address, true))
                                                     <span class="d-block">{{ $address['contact_person_name']  ?? $order->customer['f_name'] . ' ' . $order->customer['l_name'] }}</span>
@@ -262,21 +262,23 @@ width: 24px;
                                                     <thead class="bg-section-2">
                                                         <tr>
                                                             <th class="text-left p-1 px-3">{{ translate('Product') }}</th>
-                                                            <th class="text-right p-1 px-3">{{ translate('Price') }}</th>
+                                                            <th class="text-right p-1 px-3">{{ translate('price') }}</th>
                                                         </tr>
                                                     </thead>
                                                     <tbody>
                                                         @if ($order->order_type=='parcel')
                                                         <tr>
                                                             <td class="text-left p-2 px-3">
-                                                                {{ Str::limit($order->parcel_category?$order->parcel_category->name:translate('messages.parcel_category_not_found'), 25, '...') }}
+                                                                {{ Str::limit($order->parcel_category?$order->parcel_category->name:translate('messages.Parcel category not found'), 25, '...') }}
+                                                                @include('partials.parcel-tier-lines', ['order' => $order])
                                                             </td>
                                                             <td class="text-right p-2 px-3">
                                                                 <h4>
-                                                                    {{ \App\CentralLogics\Helpers::format_currency($order->delivery_charge) }}
+                                                                    {{ \App\CentralLogics\Helpers::format_currency(app(\App\Services\Order\OrderService::class)->proDeliveryBreakdown($order)['original_fee']) }}
                                                                 </h4>
                                                             </td>
                                                         </tr>
+                                                        @include('partials.pro-delivery-discount-row', ['order' => $order, 'layout' => 'tr'])
                                                         @else
                                                         @foreach ($order->details as $key => $details)
                                                         <?php
@@ -318,7 +320,7 @@ width: 24px;
                                                                 @endif
                                                                 @foreach (json_decode($details['add_ons'], true) as $key2 => $addon)
                                                                     @if ($key2 == 0)
-                                                                        <br><span style="font-size: 12px;"><u>{{ translate('messages.addons') }}
+                                                                        <br><span style="font-size: 12px;"><u>{{ translate('Addons') }}
                                                                             </u></span>
                                                                     @endif
                                                                     <div style="font-size: 12px;">
@@ -353,19 +355,19 @@ width: 24px;
                                                                     @if ($order->order_type !='parcel')
                                                                     <tr>
                                                                         <td style="width: 40%"></td>
-                                                                        <td class="p-1 px-3">{{ translate('messages.item_price') }}</td>
+                                                                        <td class="p-1 px-3">{{ translate('Item price') }}</td>
                                                                         <td class="text-right p-1 px-3">{{ \App\CentralLogics\Helpers::format_currency($sub_total) }}</td>
                                                                     </tr>
                                                                     <tr>
                                                                         <td style="width: 40%"></td>
-                                                                        <td class="p-1 px-3">{{ translate('messages.addon_cost') }}</td>
+                                                                        <td class="p-1 px-3">{{ translate('messages.Addon cost') }}</td>
                                                                         <td class="text-right p-1 px-3">{{ \App\CentralLogics\Helpers::format_currency($total_addon_price) }}</td>
                                                                     </tr>
                                                                     <tr>
                                                                         <td style="width: 40%"></td>
                                                                         <td class="p-1 px-3">{{ translate('messages.subtotal') }}
                                                                             @if ($order->tax_status == 'included' )
-                                                                            ({{ translate('messages.TAX_Included') }})
+                                                                            ({{ translate('TAX included') }})
                                                                             @endif
                                                                         </td>
                                                                         <td class="text-right p-1 px-3">{{ \App\CentralLogics\Helpers::format_currency($sub_total + $total_addon_price) }}</td>
@@ -377,34 +379,34 @@ width: 24px;
                                                                     </tr>
                                                                     <tr>
                                                                         <td style="width: 40%"></td>
-                                                                        <td class="p-1 px-3">{{ translate('messages.discount') }}</td>
+                                                                        <td class="p-1 px-3">{{ translate('Discount') }}</td>
                                                                         <td class="text-right p-1 px-3">{{ \App\CentralLogics\Helpers::format_currency($order->store_discount_amount) }}</td>
                                                                     </tr>
 
                                                                     @if ($order?->ref_bonus_amount > 0 )
                                                                     <tr>
                                                                         <td style="width: 40%"></td>
-                                                                        <td class="p-1 px-3">{{ translate('messages.Referral_Discount') }}</td>
+                                                                        <td class="p-1 px-3">{{ translate('Referral discount') }}</td>
                                                                         <td class="text-right p-1 px-3">{{ \App\CentralLogics\Helpers::format_currency($order->ref_bonus_amount) }}</td>
                                                                     </tr>
                                                                     @endif
                                                                     @if (($order->orderProDiscount?->amount_saved ?? 0) > 0)
                                                                     <tr>
                                                                         <td style="width: 40%"></td>
-                                                                        <td class="p-1 px-3">{{ translate('messages.Pro_Discount') }}</td>
+                                                                        <td class="p-1 px-3">{{ translate('messages.Pro discount') }}</td>
                                                                         <td class="text-right p-1 px-3">{{ \App\CentralLogics\Helpers::format_currency($order->orderProDiscount->amount_saved) }}</td>
                                                                     </tr>
                                                                     @endif
                                                                     <tr>
                                                                         <td style="width: 40%"></td>
-                                                                        <td class="p-1 px-3">{{ translate('messages.coupon_discount') }}</td>
+                                                                        <td class="p-1 px-3">{{ translate('Coupon discount') }}</td>
                                                                         <td class="text-right p-1 px-3">{{ \App\CentralLogics\Helpers::format_currency($order->coupon_discount_amount) }}</td>
                                                                     </tr>
 
                                                                     @if ($order?->extra_packaging_amount > 0 )
                                                                     <tr>
                                                                         <td style="width: 40%"></td>
-                                                                        <td class="p-1 px-3">{{ translate('messages.Extra_Packaging_Amount') }}</td>
+                                                                        <td class="p-1 px-3">{{ translate('Extra packaging amount') }}</td>
                                                                         <td class="text-right p-1 px-3">{{ \App\CentralLogics\Helpers::format_currency($order->extra_packaging_amount) }}</td>
                                                                     </tr>
                                                                     @endif
@@ -423,14 +425,15 @@ width: 24px;
                                                                     </tr>
                                                                     <tr>
                                                                         <td style="width: 40%"></td>
-                                                                        <td class="p-1 px-3">{{ translate('messages.delivery_charge') }}</td>
-                                                                        <td class="text-right p-1 px-3">{{ \App\CentralLogics\Helpers::format_currency($order->delivery_charge) }}</td>
+                                                                        <td class="p-1 px-3">{{ translate('Delivery charge') }}</td>
+                                                                        <td class="text-right p-1 px-3">{{ \App\CentralLogics\Helpers::format_currency(app(\App\Services\Order\OrderService::class)->proDeliveryBreakdown($order)['original_fee']) }}</td>
                                                                     </tr>
+                                                                    @include('partials.pro-delivery-discount-row', ['order' => $order, 'layout' => 'tr3'])
                                                                     @endif
                                                                     <tr>
                                                                         <td style="width: 40%"></td>
                                                                         <td class="p-1 px-3">
-                                                                            <h4>{{ translate('messages.total') }}</h4>
+                                                                            <h4>{{ translate('messages.Total') }}</h4>
                                                                         </td>
                                                                         <td class="text-right p-1 px-3">
                                                                             <span class="text-base">{{ \App\CentralLogics\Helpers::format_currency($order->order_amount) }}</span>
@@ -453,7 +456,7 @@ width: 24px;
                         {{ $footer_text??'Please contact us for any queries, we’re always happy to help. ' }}
                     </div>
                     <div>
-                        {{ translate('Thanks & Regards') }},
+                        {{ translate('Thanks & regards') }},
                     </div>
                     <div class="mb-4">
                         {{ $company_name }}
@@ -462,30 +465,7 @@ width: 24px;
             </tr>
             <tr>
                 <td>
-                    <span class="privacy">
-@php($landing_data =\App\Models\DataSetting::where('type', 'admin_landing_page')->whereIn('key', ['shipping_policy_status','refund_policy_status','cancellation_policy_status'])->pluck('value','key')->toArray())
-                        <a href="{{ route('privacy-policy') }}" id="privacy-check" style="{{ (isset($data['privacy']) && $data['privacy'] == 1)?'':'display:none;' }}">{{ translate('Privacy_Policy')}}</a>
-                        @if (isset($landing_data['refund_policy_status']) && $landing_data['refund_policy_status']  == 1)
-                        <a href="{{ route('refund') }}" id="refund-check" style="{{ (isset($data['refund']) && $data['refund'] == 1)?'':'display:none;' }}"><span class="dot"></span>{{ translate('Refund_Policy') }}</a>
-                        @endif
-                        @if (isset($landing_data['cancellation_policy_status']) && $landing_data['cancellation_policy_status']  == 1)
-                        <a href="{{ route('cancelation') }}" id="cancelation-check" style="{{ (isset($data['cancelation']) && $data['cancelation'] == 1)?'':'display:none;' }}"><span class="dot"></span>{{ translate('Cancelation_Policy') }}</a>
-                        @endif
-                        <a href="{{ route('contact-us') }}" id="contact-check" style="{{ (isset($data['contact']) && $data['contact'] == 1)?'':'display:none;' }}"><span class="dot"></span>{{ translate('Contact_us') }}</a>
-                    </span>
-                    <span class="social" style="text-align:center">
-                        @php($social_media = \App\Models\SocialMedia::active()->get())
-                        @if (isset($social_media))
-                            @foreach ($social_media as $social)
-                                <a href="{{ $social->link }}" target=”_blank” id="{{ $social->name  }}-check" style="margin: 0 5px;text-decoration:none;{{ (isset($data[$social->name]) && $data[$social->name] == 1)?'':'display:none;' }}">
-                                    <img src="{{asset('/public/assets/admin/img/img/')}}/{{ $social->name }}.png" alt="">
-                                </a>
-                            @endforeach
-                        @endif
-                    </span>
-                    <span class="copyright" id="mail-copyright">
-                        {{ $copyright_text ?? translate('Copyright 2023 6ammart. All right reserved') }}
-                    </span>
+                    @include('email-templates.partials._footer')
                 </td>
             </tr>
         </tbody>

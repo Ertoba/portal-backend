@@ -7,12 +7,12 @@
     <table>
         <thead>
             <tr>
-                <th>{{ translate('filter_criteria') }} -</th>
+                <th>{{ translate('Filter criteria') }} -</th>
                 <th></th>
                 <th></th>
                 <th> 
 
-                    {{ translate('Search_Bar_Content')  }}- {{ $data['search'] ??translate('N/A') }}
+                    {{ translate('Search bar content')  }}- {{ $data['search'] ??translate('N/A') }}
 
                 </th>
                 <th></th>
@@ -21,15 +21,15 @@
                 <th></th>
             </tr>
             <tr>
-                <th>{{ translate('messages.sl') }}</th>
-                <th>{{ translate('messages.transaction_id') }}</th>
+                <th>{{ translate('messages.SL') }}</th>
+                <th>{{ translate('messages.Transaction ID') }}</th>
                 <th>{{ translate('messages.transaction_time') }}</th>
-                <th>{{ translate('messages.collected_amount') }}</th>
-                <th>{{ translate('messages.collected_from') }}</th>
-                <th>{{ translate('messages.user_type') }}</th>
-                <th>{{ translate('messages.phone') }}</th>
+                <th>{{ translate('messages.Collected amount') }}</th>
+                <th>{{ translate('messages.Collected from') }}</th>
+                <th>{{ translate('User type') }}</th>
+                <th>{{ translate('Phone') }}</th>
                 <th>{{ translate('messages.email') }}</th>
-                <th>{{ translate('messages.payment_method') }}</th>
+                <th>{{ translate('messages.Payment method') }}</th>
                 <th>{{ translate('messages.references') }}</th>
             </tr>
         </thead>
@@ -48,7 +48,7 @@
                     @elseif($at->rider)
                     {{ $at->rider->f_name }} {{ $at->rider->l_name }}
                     @else
-                        {{translate('messages.not_found')}}
+                        {{translate('No data found')}}
                     @endif
                 </td>
                 <td>{{translate($at['from_type'])}}</td>
@@ -60,7 +60,7 @@
                     @elseif($at->rider)
                     {{ $at->rider->phone }}
                     @else
-                        {{translate('messages.not_found')}}
+                        {{translate('No data found')}}
                     @endif
                 </td>
                 <td>
@@ -71,10 +71,10 @@
                     @elseif($at->rider)
                     {{ $at->rider->email }}
                     @else
-                        {{translate('messages.not_found')}}
+                        {{translate('No data found')}}
                     @endif
                 </td>
-                <td>{{translate($at->method)}}</td>
+                <td>{{payment_method_label($at->method)}}</td>
                 <td>{{$at['ref']}}</td>
             </tr>
         @endforeach

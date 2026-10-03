@@ -1,6 +1,6 @@
  <div>
      <div class="custom-offcanvas-header bg--secondary d-flex justify-content-between align-items-center px-3 py-3">
-         <h3 class="mb-0">{{ translate('Common Conditions') }}</h3>
+         <h3 class="mb-0">{{ translate('Common conditions') }}</h3>
          <button type="button"
              class="btn-close w-25px h-25px border rounded-circle d-center bg--secondary text-dark offcanvas-close fz-15px p-0"
              aria-label="Close">
@@ -18,7 +18,7 @@
                          data-id="condition-{{ $condition['id'] }}" data-toggle="modal"
                          data-target="#confirmation-deletes-{{ $condition['id'] }}"
                          data-id="condition-{{ $condition['id'] }}"
-                         data-message="{{ translate('messages.Want to delete this condition') }}" href="javascript:">
+                         data-message="{{ translate('Want to delete this condition?') }}" href="javascript:">
                          <i class="tio-delete-outlined text-danger"></i>
                      </a>
 
@@ -48,9 +48,9 @@
                                      </div>
                                      <div class="modal-footer justify-content-center border-0 pt-0 mb-1 gap-2">
                                          <button type="submit"
-                                             class="btn min-w-120px btn-danger min-h-45px">{{ translate('messages.Yes, Delete') }}</button>
+                                             class="btn min-w-120px btn-danger min-h-45px"><i class="tio-delete-outlined"></i> {{ translate('Yes, delete') }}</button>
                                          <button type="button" class="btn min-w-120px btn--reset min-h-45px"
-                                             data-dismiss="modal">{{ translate('messages.cancel') }}</button>
+                                             data-dismiss="modal"><i class="tio-clear-circle-outlined"></i> {{ translate('messages.Cancel') }}</button>
                                      </div>
                                  </div>
                              </form>
@@ -75,11 +75,11 @@
                  </div>
              </div>
              <div class="d-flex flex-wrap gap-xxl-20 gap-2">
-                 <p class="mb-0 fs-12">{{ translate('Created Date :') }} <strong
+                 <p class="mb-0 fs-12">{{ translate('Created Date') }}: <strong
                          class="text-dark">{{ \App\CentralLogics\Helpers::date_format($condition->created_at) }}</strong>
                  </p>
                  <div class="border d-xl-inline-block d-none lh--1 border-end"></div>
-                 <p class="mb-0 fs-12">{{ translate('Last Modified Date :') }} <strong
+                 <p class="mb-0 fs-12">{{ translate('Last Modified Date') }}: <strong
                          class="text-dark">{{ \App\CentralLogics\Helpers::date_format($condition->updated_at) }}</strong>
                  </p>
              </div>
@@ -113,7 +113,7 @@
                  <div class="empty--data">
                      <img src="{{ asset('/public/assets/admin/svg/illustrations/sorry.svg') }}" alt="public">
                      <h5>
-                         {{ translate('no_data_found') }}
+                         {{ translate('No data found') }}
                      </h5>
                  </div>
              @endforelse
@@ -123,8 +123,8 @@
      </div>
      <div class="offcanvas-footer p-3 d-flex align-items-center justify-content-center gap-3">
          <button type="reset"
-             class="btn w-100 btn--reset offcanvas-close">{{ translate('messages.Cancel') }}</button>
+             class="btn w-100 btn--reset offcanvas-close"><i class="tio-clear-circle-outlined"></i> {{ translate('messages.Cancel') }}</button>
          <a href="{{ route('admin.common-condition.edit', $condition->id) }}" type="button"
-             class="btn w-100 btn--primary">{{ translate('messages.Edit') }}</a>
+             class="btn w-100 btn--primary"><i class="tio-edit"></i> {{ translate('Edit') }}</a>
      </div>
  </div>

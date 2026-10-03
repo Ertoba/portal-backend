@@ -27,6 +27,11 @@ class ExpenseReportExport implements  FromView, ShouldAutoSize, WithStyles,WithC
         $this->data = $data;
     }
 
+    private function rowCount(): int
+    {
+        return (int) ($this->data['expenses_count'] ?? $this->data['expenses']->count());
+    }
+
     public function view(): View
     {
         return view('file-exports.expense-report', [
@@ -37,7 +42,6 @@ class ExpenseReportExport implements  FromView, ShouldAutoSize, WithStyles,WithC
     public function columnWidths(): array
     {
         return [
-            // 'C' => 45,
         ];
     }
 
@@ -62,12 +66,11 @@ class ExpenseReportExport implements  FromView, ShouldAutoSize, WithStyles,WithC
         ];
         $sheet->getStyle('A1:C1')->applyFromArray($styleArray);
         return [
-            // Define the style for cells with data
-            'A1:G'.$this->data['expenses']->count() +3 => [
+            'A1:G'.$this->rowCount() +3 => [
                 'borders' => [
                     'allBorders' => [
                         'borderStyle' => Border::BORDER_THIN,
-                        'color' => ['argb' => '000000'], // Specify the color of the border (optional)
+                        'color' => ['argb' => '000000'],
                     ],
                 ],
             ],
@@ -79,7 +82,7 @@ class ExpenseReportExport implements  FromView, ShouldAutoSize, WithStyles,WithC
     {
         return [
             AfterSheet::class => function(AfterSheet $event) {
-                $event->sheet->getStyle('A1:G1') // Adjust the range as per your needs
+                $event->sheet->getStyle('A1:G1')
                     ->getAlignment()
                     ->setHorizontal(Alignment::HORIZONTAL_CENTER)
                     ->setVertical(Alignment::VERTICAL_CENTER);
@@ -96,7 +99,7 @@ class ExpenseReportExport implements  FromView, ShouldAutoSize, WithStyles,WithC
                     ->setHorizontal(Alignment::HORIZONTAL_CENTER)
                     ->setVertical(Alignment::VERTICAL_CENTER);
 
-                $event->sheet->getStyle('A3:G'.$this->data['expenses']->count() +3)
+                $event->sheet->getStyle('A3:G'.$this->rowCount() +3)
                     ->getAlignment()
                     ->setHorizontal(Alignment::HORIZONTAL_CENTER)
                     ->setVertical(Alignment::VERTICAL_CENTER);

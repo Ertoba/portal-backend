@@ -38,15 +38,6 @@ class HandleInertiaRequests extends Middleware
         return [
             ...parent::share($request),
 
-            // Expose Laravel session flashes as `pageProps.flash.*` for
-            // any Inertia page that wants to toast / banner them.
-            //   - controllers using `back()->with('success', '...')`
-            //     surface as `flash.success`
-            //   - same for `error` / `info`
-            // BuilderFlashToaster (admin editor) and FlashToaster
-            // (storefront) both read these keys; the storefront's
-            // middleware additionally layers domain-specific flash keys
-            // on top (auth_event, wallet_add_fund_result, etc.).
             'flash' => fn () => [
                 'success' => $request->session()->get('success'),
                 'error'   => $request->session()->get('error'),

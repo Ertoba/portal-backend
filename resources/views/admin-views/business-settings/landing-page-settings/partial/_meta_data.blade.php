@@ -36,12 +36,12 @@
 <div class="card">
     <div class="card-header flex-sm-nowrap flex-wrap pt-3 pb-3 gap-2">
         <div class="">
-            <h4 class="fs-16 text-dark">{{ translate('messages.Meta Data Setup')}}</h4>
-            <p class="fs-12 m-0">{{ translate('messages.Include Meta Information to improve search engine visibility and social media sharing')}}</p>
+            <h4 class="fs-16 text-dark">{{ translate('Meta data setup')}}</h4>
+            <p class="fs-12 mb-0">{{ translate('Include meta information to improve search engine visibility and social media sharing')}}</p>
         </div>
         @if(Request::is('admin/business-settings/seo-settings*'))
         <a href="{{ route('admin.business-settings.seo-settings.pageMetaData') }}" class="theme-clr text-nowrap text-underline fs-14 font-weight-medium">
-            {{ translate('Back to List') }}
+            {{ translate('Back to list') }}
         </a>
         @endif
     </div>
@@ -53,34 +53,33 @@
                     <div class="d-flex flex-column gap-2">
                         <div class="form-group m-0">
                             <label for="" class>
-                                {{ translate('Meta Title') }}
+                                {{ translate('Meta title') }}
                                 <span data-toggle="tooltip" data-placement="right"
-                                data-original-title="{{ translate('This Title appears in browser tabs, search results, and link previews. Use a short ,clear, and keyword-focused title(recommended: 80-100 characters)') }}"><i class="tio-info text-muted fs-14"></i></span>
+                                data-original-title="{{ translate('Shown in browser tabs, search results and link previews. Keep it short and keyword-focused.') }}"><i class="tio-info text-muted fs-14"></i></span>
                             </label>
-                            <textarea name="meta_title" type="text" rows="1" maxlength="100" placeholder="{{ translate('Ex:Type meta title') }}" class="form-control">{{ $data['title'] }}</textarea>
+                            <textarea name="meta_title" type="text" rows="1" maxlength="100" placeholder="{{ translate('Ex') . ':' . translate('Type meta title') }}" class="form-control">{{ $data['title'] }}</textarea>
                             <span class="text-right text-counting color-A7A7A7 d-block mt-1">0/100</span>
                         </div>
                         <div class="form-group m-0">
                             <label for="" class>
-                                {{ translate('Meta Description') }}
+                                {{ translate('Meta description') }}
                                 <span data-toggle="tooltip" data-placement="right"
-                                data-original-title="{{ translate('A brief summary that appears under your page title in search results. Keep it compelling and relevant (recommended: 120-160 characters)') }}"><i class="tio-info text-muted fs-14"></i></span>
+                                data-original-title="{{ translate('A brief summary that appears under your page title in search results. Keep it compelling and relevant.') }} {{ translate('Recommended character range') }}: 120-160"><i class="tio-info text-muted fs-14"></i></span>
                             </label>
-                            <textarea name="meta_description" type="text" rows="4" maxlength="200" placeholder="{{ translate('type a short meta description') }}" class="form-control">{{ $data['description']}}</textarea>
+                            <textarea name="meta_description" type="text" rows="4" maxlength="200" placeholder="{{ translate('Type a short meta description') }}" class="form-control">{{ $data['description']}}</textarea>
                             <span class="text-right text-counting color-A7A7A7 d-block mt-1">0/200</span>
                         </div>
                     </div>
                 </div>
             </div>
 
-            {{-- Image --}}
             <div class="col-xxl-4 col-lg-5">
                 <div class="bg-light2 d-center rounded p-4 h-100">
                     <div class="">
                         <div class="mb-30 text-center">
-                            <h4 class="mb-1">{{ translate('Meta Image') }} </h4>
+                            <h4 class="mb-1">{{ translate('Meta image') }} </h4>
                             <p class="mb-0 fs-12 gray-dark">
-                                {{translate('Upload a rectangular image ')}}
+                                {{translate('Upload a rectangular image')}} 
                             </p>
                         </div>
                         @include('admin-views.partials._image-uploader', [
@@ -106,8 +105,8 @@
                         </label>
                         <label class="form-check flex-grow-1 form--check">
                             <input class="form-check-input" type="radio" value="0" name="meta_index"{{ ($metaData['meta_index'] ?? '') == 0 ? 'checked' : '' }}>
-                            <span class="form-check-label">{{ translate('No Index') }}</span>
-                            <span class="ms-4px" data-toggle="tooltip" data-placement="right" data-original-title="{{ translate('Disallow search engines from putting this web page on their list or index, and do not show it on search results') }}">
+                            <span class="form-check-label">{{ translate('No index') }}</span>
+                            <span class="ms-4px" data-toggle="tooltip" data-placement="right" data-original-title="{{ translate('Keeps this page out of search engine indexes and results.') }}">
                                 <i class="tio-info text-muted fs-14"></i>
                             </span>
                         </label>
@@ -115,7 +114,7 @@
                     <div class="bg-white rounded follow-type-group py-3 px-3">
                         <label class="custom_checkbox d-flex align-items-center gap-1 flex-grow-1 m-0">
                             <input type="checkbox" value="nofollow" name="meta_no_follow" {{ ($metaData['meta_no_follow'] ?? '') == 'nofollow' ? 'checked' : '' }}>
-                            <span class="text-nowrap label-text">{{ translate('No Follow') }}</span>
+                            <span class="text-nowrap label-text">{{ translate('No follow') }}</span>
                             <span class="ms-4px" data-toggle="tooltip" data-placement="right"
                                 data-original-title="{{ translate('Instruct search engines not to follow links from this webpage.') }}">
                                 <i class="tio-info text-muted fs-14"></i>
@@ -123,7 +122,7 @@
                         </label>
                         <label class="custom_checkbox d-flex align-items-center gap-1 flex-grow-1 m-0">
                             <input type="checkbox" value="noimageindex" name="meta_no_image_index" {{ ($metaData['meta_no_image_index'] ?? '') == 'noimageindex' ? 'checked' : '' }}>
-                            <span class="text-nowrap label-text">{{ translate('No Image Index') }}</span>
+                            <span class="text-nowrap label-text">{{ translate('No image index') }}</span>
                             <span class="ms-4px" data-toggle="tooltip" data-placement="right"
                                 data-original-title="{{ translate('Prevent images from being listed or indexed by search engines') }}">
                                 <i class="tio-info text-muted fs-14"></i>
@@ -131,17 +130,17 @@
                         </label>
                         <label class="custom_checkbox d-flex align-items-center gap-1 flex-grow-1 m-0">
                             <input type="checkbox" value="noarchive" name="meta_no_archive" {{ ($metaData['meta_no_archive'] ?? '') == 'noarchive' ? 'checked' : '' }}>
-                            <span class="text-nowrap label-text">{{ translate('No Archive') }}</span>
+                            <span class="text-nowrap label-text">{{ translate('No archive') }}</span>
                             <span class="ms-4px" data-toggle="tooltip" data-placement="right"
-                                data-original-title="{{ translate('Instruct search engines not to display this webpages cached or saved version') }}">
+                                data-original-title="{{ translate('Instruct search engines not to display this webpage\'s cached or saved version') }}">
                                 <i class="tio-info text-muted fs-14"></i>
                             </span>
                         </label>
                         <label class="custom_checkbox d-flex align-items-center gap-1 flex-grow-1 m-0">
                             <input type="checkbox" value="nosnippet" name="meta_no_snippet" {{ ($metaData['meta_no_snippet'] ?? '') == 'nosnippet' ? 'checked' : '' }}>
-                            <span class="text-nowrap label-text">{{ translate('No Snippet') }}</span>
+                            <span class="text-nowrap label-text">{{ translate('No snippet') }}</span>
                             <span class="ms-4px" data-toggle="tooltip" data-placement="right"
-                                data-original-title="{{ translate('Instruct search engines not to show a summary or snippet of this webpage s content in search results.') }}">
+                                data-original-title="{{ translate('Instruct search engines not to show a summary or snippet of this webpage\'s content in search results.') }}">
                                 <i class="tio-info text-muted fs-14"></i>
                             </span>
                         </label>
@@ -155,7 +154,7 @@
                             <div class="col-sm-6">
                                 <label class="custom_checkbox d-flex align-items-center gap-1 flex-grow-1 m-0">
                                     <input type="checkbox" value="1" name="meta_max_snippet" {{ ($metaData['meta_max_snippet'] ?? '') == 1 ? 'checked' : '' }}>
-                                    <span class="label-text">{{ translate('Max Snippet') }}</span>
+                                    <span class="label-text">{{ translate('Max snippet') }}</span>
                                     <span class="ms-4px" data-toggle="tooltip" data-placement="right"
                                         data-original-title="{{ translate('Determine the maximum length of a snippet or preview text of the webpage.') }}">
                                         <i class="tio-info text-muted fs-14"></i>
@@ -174,7 +173,7 @@
                             <div class="col-sm-6">
                                 <label class="custom_checkbox d-flex align-items-center gap-1 flex-grow-1 m-0">
                                     <input type="checkbox" value="1" name="meta_max_video_preview" {{ ($metaData['meta_max_video_preview'] ?? '') == 1 ? 'checked' : '' }}>
-                                    <span class="label-text">{{ translate('Max Video Preview') }}</span>
+                                    <span class="label-text">{{ translate('Max video preview') }}</span>
                                     <span class="ms-4px" data-toggle="tooltip" data-placement="right"
                                         data-original-title="{{ translate('Determine the maximum duration of a video preview that search engines will display') }}">
                                         <i class="tio-info text-muted fs-14"></i>
@@ -193,7 +192,7 @@
                             <div class="col-sm-6">
                                 <label class="custom_checkbox d-flex align-items-center gap-1 flex-grow-1 m-0">
                                     <input type="checkbox" value="1" name="meta_max_image_preview" {{ ($metaData['meta_max_image_preview'] ?? '') == 1 ? 'checked' : '' }}>
-                                    <span class="label-text">{{ translate('Max_Image_Preview') }}</span>
+                                    <span class="label-text">{{ translate('Max image preview') }}</span>
                                     <span class="ms-4px" data-toggle="tooltip" data-placement="right"
                                         data-original-title="{{ translate('Determine the maximum size or dimensions of an image preview that search engines will display') }}">
                                         <i class="tio-info text-muted fs-14"></i>
@@ -216,20 +215,19 @@
         </div>
        @if(isset($submit) && $submit)
        <div class="btn--container justify-content-end mt-4">
-            <button type="reset" id="reset_btn" class="btn btn--reset min-w-120px">{{ translate('Reset') }}</button>
-            <button type="submit" class="btn btn--primary min-w-120px">{{ translate('Save') }}</button>
+            <button type="reset" id="reset_btn" class="btn btn--reset min-w-120px"><i class="tio-refresh"></i> {{ translate('Reset') }}</button>
+            <button type="submit" class="btn btn--primary min-w-120px"><i class="tio-save"></i> {{ translate('Save') }}</button>
         </div>
         @endif
     </div>
 </div>
 
-<!-- global guideline view Offcanvas here -->
 <div id="global_guideline_offcanvas" class="custom-offcanvas d-flex flex-column justify-content-between">
     <form action="{{ route('taxvat.store') }}" method="post">
         <div>
             <div class="custom-offcanvas-header bg--secondary d-flex justify-content-between align-items-center px-3 py-3">
                 <div class="py-1">
-                    <h3 class="mb-0 line--limit-1">{{ translate('messages.Meta Data Setup') }}</h3>
+                    <h3 class="mb-0 line--limit-1">{{ translate('Meta data setup') }}</h3>
                 </div>
                 <button type="button" class="btn-close w-25px h-25px border rounded-circle d-center bg--secondary text-dark offcanvas-close fz-15px p-0"aria-label="Close">
                     &times;
@@ -244,24 +242,24 @@
                                 <div class="btn-collapse-icon w-35px h-35px bg-white d-flex align-items-center justify-content-center border icon-btn rounded-circle fs-12 lh-1">
                                     <i class="tio-down-ui top-01 color-656566"></i>
                                 </div>
-                                <span class="font-semibold text-left fs-14 text-title line--limit-1">{{ translate('What is Metadata Setup for pages?') }}</span>
+                                <span class="font-semibold text-left fs-14 text-title line--limit-1">{{ translate('What is metadata setup for pages?') }}</span>
                             </button>
                         </div>
                         <div class="collapse mt-3 show" id="collapseGeneralSetup_01">
                             <div class="card rounded border p-3 card-body">
                                 <div class="mb-3">
                                     <p class="m-0 fs-12 color-656566">
-                                        <strong>{{ translate('Meta Data Setup') }}</strong> {{ translate('allows you to define how each page of your e-commerce site appears in:') }}
+                                        <strong>{{ translate('Meta data setup') }}</strong> {{ translate('Allows you to define how each page of your e-commerce site appears in') }}:
                                     </p>
                                 </div>
                                 <div class="mb-3">
                                     <ul class="mb-0 list-group pl-3 d-flex flex-column gap-1px">
-                                        <li class="fs-12 color-656566"><strong>{{translate('Search engines')}}</strong> {{translate(' (Google, Bing, etc.)')}}</li>
-                                        <li class="fs-12 color-656566"><strong>{{translate('Social media shares')}}</strong> {{translate(' (Facebook, WhatsApp, Twitter, LinkedIn)')}}</li>
+                                        <li class="fs-12 color-656566"><strong>{{translate('Search engines')}}</strong>  (Google, Bing, etc.)</li>
+                                        <li class="fs-12 color-656566"><strong>{{translate('Social media shares')}}</strong>  (Facebook, WhatsApp, Twitter, LinkedIn)</li>
                                     </ul>
                                 </div>
                                 <p class="m-0 fs-12 color-656566">
-                                    <strong>{{ translate('Important Note:') }}</strong> {{ translate('Metadata does not change page content, but it strongly affects visibility, traffic, and click-through rate.') }}
+                                    <strong>{{ translate('Important note') }}:</strong> {{ translate('Metadata does not change page content, but it strongly affects visibility, traffic, and click-through rate.') }}
                                 </p>
                             </div>
                         </div>
@@ -273,16 +271,16 @@
                                 <div class="btn-collapse-icon w-35px h-35px bg-white d-flex align-items-center justify-content-center border icon-btn rounded-circle fs-12 lh-1 collapsed">
                                     <i class="tio-down-ui top-01 color-656566"></i>
                                 </div>
-                                <span class="font-semibold text-left fs-14 text-title line--limit-1">{{ translate('Why Set Up Metadata for Pages?') }}</span>
+                                <span class="font-semibold text-left fs-14 text-title line--limit-1">{{ translate('Why set up metadata for pages?') }}</span>
                             </button>
                         </div>
                         <div class="collapse mt-3" id="collapseGeneralSetup_032">
                             <div class="card rounded border p-3 card-body"> 
                                 <div class="mb-3">
-                                    <p class="m-0 font-weight-medium color-656566 fs-12">{{translate('Different e-commerce pages serve other purposes, so they need different SEO behaviour. Overall, This Setup Is Important for')}}</p>
+                                    <p class="m-0 font-weight-medium color-656566 fs-12">{{translate('Different e-commerce pages serve different purposes, so they need different SEO behaviour. This setup matters for these reasons.')}}</p>
                                 </div>                               
                                 <div class="mb-3">
-                                    <h6 class="mb-2 fs-12 color-656566">{{translate('Calculate Tax Included in Product Price')}}</h6>
+                                    <h6 class="mb-2 fs-12 color-656566">{{translate('Calculate tax included in product price')}}</h6>
                                     <ul class="mb-0 list-group pl-3 d-flex flex-column gap-1px">
                                         <li class="fs-12 color-656566">{{translate('Improves Google ranking')}}</li>
                                         <li class="fs-12 color-656566">{{translate('Increases organic traffic')}}</li>
@@ -301,7 +299,7 @@
                                 <div class="btn-collapse-icon w-35px h-35px bg-white d-flex align-items-center justify-content-center border icon-btn rounded-circle fs-12 lh-1 collapsed">
                                     <i class="tio-down-ui top-01 color-656566"></i>
                                 </div>
-                                <span class="font-semibold text-left fs-14 text-title line--limit-1">{{ translate('How to Set up Metadata for Pages?') }}</span>
+                                <span class="font-semibold text-left fs-14 text-title line--limit-1">{{ translate('How to set up metadata for pages?') }}</span>
                             </button>
                         </div>
                         <div class="collapse mt-3" id="collapseGeneralSetup_033">
@@ -309,27 +307,27 @@
                                 <div class="mb-3">
                                     <h6 class="mb-2 fs-12 color-656566">{{translate('Before activation')}}</h6>
                                     <ul class="mb-0 list-group pl-3 d-flex flex-column gap-1px">
-                                        <li class="fs-12 color-656566">{{translate('Add Page A Specific, Meaningful Text')}}</li>                                            
-                                        <li class="fs-12 color-656566">{{translate('Avoid copying the same text across pages, and Use keywords naturally.')}}</li>                                            
+                                        <li class="fs-12 color-656566">{{translate('Give the page specific, meaningful text')}}</li>                                            
+                                        <li class="fs-12 color-656566">{{translate('Avoid copying the same text across pages, and use keywords naturally.')}}</li>                                            
                                     </ul>
                                 </div>
                                 <div class="mb-3">
-                                    <h6 class="mb-2 fs-12 color-656566">{{translate('Upload Meta Image')}}</h6>
+                                    <h6 class="mb-2 fs-12 color-656566">{{translate('Upload meta image')}}</h6>
                                     <ul class="mb-0 list-group pl-3 d-flex flex-column gap-1px">
                                         <li class="fs-12 color-656566">{{translate('Used for social sharing previews')}}</li>                                            
-                                        <li class="fs-12 color-656566">{{translate('Maintain the Recommended Ratio & Size')}}</li>                                            
+                                        <li class="fs-12 color-656566">{{translate('Maintain the recommended ratio & size')}}</li>                                            
                                     </ul>
                                 </div>
                                 <div class="mb-3">
                                     <h6 class="mb-2 fs-12 color-656566">{{translate('Select the necessary options as per instructions')}}</h6>
                                     <ul class="mb-0 list-group pl-3 d-flex flex-column gap-1px">
-                                        <li class="fs-12 color-656566"><strong class="text-dark">{{translate('Index:')}}</strong> {{translate('Allow search engines to show this page')}}</li>                                            
-                                        <li class="fs-12 color-656566"><strong class="text-dark">{{translate('No Index:')}}</strong> {{translate('Hide page from search results')}}</li>                                            
-                                        <li class="fs-12 color-656566"><strong class="text-dark">{{translate('No Follow:')}}</strong> {{translate('Prevents search engines from following links on this page')}}</li>                                            
-                                        <li class="fs-12 color-656566"><strong class="text-dark">{{translate('No Image Index:')}}</strong> {{translate('Prevents images from appearing in Google Image search. Use for private/system pages')}}</li>                                            
-                                        <li class="fs-12 color-656566"><strong class="text-dark">{{translate('Max Snippet:')}}</strong> {{translate('Controls text shown in Google results')}}</li>                                            
-                                        <li class="fs-12 color-656566"><strong class="text-dark">{{translate('Max Video Preview:')}}</strong> {{translate('Video preview length')}}</li>                                            
-                                        <li class="fs-12 color-656566"><strong class="text-dark">{{translate('Max Image Preview:')}}</strong> {{translate('Small / Larges')}}</li>                                            
+                                        <li class="fs-12 color-656566"><strong class="text-dark">{{ translate('Index') }}:</strong> {{translate('Allow search engines to show this page')}}</li>                                            
+                                        <li class="fs-12 color-656566"><strong class="text-dark">{{ translate('No index') }}:</strong> {{translate('Hide page from search results')}}</li>                                            
+                                        <li class="fs-12 color-656566"><strong class="text-dark">{{ translate('No follow') }}:</strong> {{translate('Prevents search engines from following links on this page')}}</li>                                            
+                                        <li class="fs-12 color-656566"><strong class="text-dark">{{ translate('No image index') }}:</strong> {{translate('Prevents images from appearing in Google image search. Use for private/system pages.')}}</li>                                            
+                                        <li class="fs-12 color-656566"><strong class="text-dark">{{ translate('Max snippet') }}:</strong> {{translate('Controls text shown in Google results')}}</li>                                            
+                                        <li class="fs-12 color-656566"><strong class="text-dark">{{ translate('Max video preview') }}:</strong> {{translate('Video preview length')}}</li>                                            
+                                        <li class="fs-12 color-656566"><strong class="text-dark">{{ translate('Max image preview') }}:</strong> {{translate('Small / large')}}</li>                                            
                                     </ul>
                                 </div>
                             </div>
@@ -341,7 +339,6 @@
     </form>
 </div>
 <div id="offcanvasOverlay" class="offcanvas-overlay"></div>
-<!-- global guideline view Offcanvas end -->
 
 @push('script_2')
     <script>

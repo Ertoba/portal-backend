@@ -1,7 +1,7 @@
 @php use App\CentralLogics\Helpers; @endphp
 @extends('layouts.admin.app')
 
-@section('title',ucfirst(str_replace('_',' ',$status).' '.translate('messages.orders')))
+@section('title',ucfirst(str_replace('_',' ',$status).' '.translate('messages.Orders')))
 
 @push('css_or_js')
     <meta name="csrf-token" content="{{ csrf_token() }}">
@@ -13,7 +13,6 @@
     @php($parcel_order= true)
 @endisset
     <div class="content container-fluid">
-        <!-- Page Header -->
         <div class="page-header">
             <div class="d-flex flex-wrap justify-content-between align-items-center">
                 <div class="">
@@ -22,117 +21,103 @@
                             <img src="{{asset('public/assets/admin/img/items.png')}}" class="w--22" alt="">
                         </span>
                         <span>
-                            {{translate('messages.'.$status)}} {{translate('messages.orders')}} <span
+                            {{translate('messages.'.$status)}} {{translate('messages.Orders')}} <span
                                 class="badge badge-soft-dark ml-2">{{$total}}</span>
                         </span>
                     </h1>
+                    <p class="page-header-desc">{{ translate('Orders at this stage of dispatch, and the deliveryman handling each.') }}</p>
                 </div>
                 @if(isset($module_section_type))
                     <div class="min--280 max-sm-flex-grow-1">
-                        <!-- Select -->
                         <select name="zone_id" class="form-control js-select2-custom set-filter"
                                 data-url="{{url()->full()}}"
                                 data-filter="module_id"
-                                title="{{translate('messages.select_modules')}}">
+                                title="{{translate('messages.Select modules')}}">
                             <option
-                                value="" {{!request('module_id') ? 'selected':''}}>{{translate('messages.all_modules')}}</option>
-                            @foreach (\App\Models\Module::notParcel()->where('module_type',$module_section_type)->get() as $module)
+                                value="" {{!request('module_id') ? 'selected':''}}>{{translate('All modules')}}</option>
+                            @foreach (\App\CentralLogics\Helpers::modules_list()->where('module_type', '!=', 'parcel')->where('module_type', $module_section_type) as $module)
                                 <option
                                     value="{{$module->id}}" {{request('module_id') == $module->id?'selected':''}}>
                                     {{$module['module_name']}}
                                 </option>
                             @endforeach
                         </select>
-                        <!-- End Select -->
                     </div>
                 @endif
             </div>
-            <!-- End Row -->
         </div>
-        <!-- End Page Header -->
 
-        <!-- Card -->
         <div class="card">
-            <!-- Header -->
             <div class="card-header border-0 py-2">
                 <div class="search--button-wrapper justify-content-end">
+                    @include('partials._table-head', [
+                        'subtitle' => translate('messages.Orders waiting to be assigned to a delivery man, and those already on the way.'),
+                    ])
+
                     <form class="search-form min--260">
-                        <!-- Search -->
                         <div class="input-group input--group">
                             <input id="datatableSearch_" type="search" value="{{request()->input('search')}}" name="search" class="form-control h--40px"
-                                   placeholder="{{ translate('messages.Ex:') }} 10010"
-                                   aria-label="{{translate('messages.search')}}" required>
+                                   placeholder="{{ translate('messages.Ex') }}: 10010"
+                                   aria-label="{{translate('messages.Search')}}" required>
                             <input type="hidden" name="parcel_order" value="0">
                             <input type="hidden" name="module_section_type" value="{{isset($module)?$module:''}}">
                             <button type="submit" class="btn btn--secondary"><i class="tio-search"></i></button>
 
                         </div>
-                        <!-- End Search -->
                     </form>
                     @if(request()->input('search'))
-                        <button type="reset" class="btn btn--primary ml-2 location-reload-to-base" data-url="{{url()->full()}}">{{translate('messages.reset')}}</button>
+                        <button type="reset" class="btn btn--primary ml-2 location-reload-to-base" data-url="{{url()->full()}}"><i class="tio-refresh"></i> {{translate('messages.Reset')}}</button>
                     @endif
 
-                    <!-- Datatable Info -->
                     <div id="datatableCounterInfo" class="mr-2 mb-2 mb-sm-0 initial-hidden">
                         <div class="d-flex align-items-center">
                                 <span class="font-size-sm mr-3">
                                 <span id="datatableCounter">0</span>
-                                {{translate('messages.selected')}}
+                                {{translate('Selected')}}
                                 </span>
-                            {{--<a class="btn btn-sm btn-outline-danger" href="javascript:">
-                                <i class="tio-delete-outlined"></i> Delete
-                            </a>--}}
                         </div>
                     </div>
-                    <!-- End Datatable Info -->
 
-                    <!-- Unfold -->
                     <div class="hs-unfold mr-2">
                         <a class="js-hs-unfold-invoker btn btn-sm btn-white dropdown-toggle h--40px" href="javascript:"
                            data-hs-unfold-options='{
                                 "target": "#usersExportDropdown",
                                 "type": "css-animation"
                             }'>
-                            <i class="tio-download-to mr-1"></i> {{translate('messages.export')}}
+                            <i class="tio-download-to mr-1"></i> {{translate('messages.Export')}}
                         </a>
 
                         <div id="usersExportDropdown"
                              class="hs-unfold-content dropdown-unfold dropdown-menu dropdown-menu-sm-right">
 
 
-                            <span class="dropdown-header">{{translate('messages.download_options')}}</span>
+                            <span class="dropdown-header">{{translate('messages.Download options')}}</span>
                             <a id="export-excel" class="dropdown-item" href="javascript:">
                                 <img class="avatar avatar-xss avatar-4by3 mr-2"
                                      src="{{asset('public/assets/admin')}}/svg/components/excel.svg"
                                      alt="Image Description">
-                                {{translate('messages.excel')}}
+                                Excel
                             </a>
                             <a id="export-csv" class="dropdown-item" href="javascript:">
                                 <img class="avatar avatar-xss avatar-4by3 mr-2"
                                      src="{{asset('public/assets/admin')}}/svg/components/placeholder-csv-format.svg"
                                      alt="Image Description">
-                                .{{translate('messages.csv')}}
+                                .csv
                             </a>
 
                         </div>
                     </div>
-                    <!-- End Unfold -->
-                    <!-- Unfold -->
                     <div class="hs-unfold mr-2">
-                        <a class="js-hs-unfold-invoker btn btn-sm btn-white h--40px" href="javascript:"
-                           id="filter-button-on">
+                        <a class="btn btn-sm btn-white h--40px filter-button-show" href="javascript:"
+                           id="filter-button-on" role="button" aria-expanded="false"
+                           aria-controls="datatableFilterSidebar">
                             <i class="tio-filter-list mr-1"></i> {{ translate('Filters') }} <span
                                 class="badge badge-success badge-pill ml-1" id="filter_count"></span>
                         </a>
                     </div>
-                    <!-- End Unfold -->
                 </div>
-                <!-- End Row -->
             </div>
-            <!-- End Header -->
 
-            <!-- Table -->
             <div class="table-responsive datatable-custom">
                 <table id="datatable"
                        class="table table-hover table-borderless table-thead-bordered table-nowrap table-align-middle card-table w-100 fz--14px"
@@ -152,17 +137,17 @@
                     <thead class="thead-light">
                     <tr>
                         <th class="border-0">
-                            {{translate('sl')}}
+                            {{translate('SL')}}
                         </th>
-                        <th class="table-column-pl-0 border-0">{{translate('messages.order_id')}}</th>
-                        <th class="border-0">{{translate('messages.order_date')}}</th>
-                        <th class="border-0">{{translate('messages.customer_information')}}</th>
+                        <th class="table-column-pl-0 border-0">{{translate('messages.Order ID')}}</th>
+                        <th class="border-0">{{translate('Order date')}}</th>
+                        <th class="border-0">{{translate('Customer information')}}</th>
                         @if (!$parcel_order)
 
-                            <th class="border-0">{{translate('messages.store')}}</th>
+                            <th class="border-0">{{translate('messages.Store')}}</th>
                         @endif
-                        <th class="border-0">{{translate('messages.total_amount')}}</th>
-                        <th class="border-0 text-center">{{translate('messages.order_status')}}</th>
+                        <th class="border-0">{{translate('Total amount')}}</th>
+                        <th class="border-0 text-center">{{translate('Order status')}}</th>
                         <th class="border-0 text-center">{{translate('messages.actions')}}</th>
                     </tr>
                     </thead>
@@ -187,7 +172,7 @@
                                     </a>
                                 @elseif($order->customer)
 
-                                    <a class="text-body" href="{{route('admin.customer.view',[$order['user_id']])}}">
+                                    <a class="text-body" href="{{route('admin.users.customer.view',[$order['user_id']])}}">
                                         <strong>
                                             <div> {{$order->customer['f_name'].' '.$order->customer['l_name']}}</div>
                                         </strong>
@@ -197,7 +182,7 @@
                                     </a>
                                 @else
                                     <label
-                                        class="badge badge-danger">{{translate('messages.invalid_customer_data')}}</label>
+                                        class="badge badge-danger">{{translate('messages.Invalid customer data')}}</label>
                                 @endif
                             </td>
                             @if (!$parcel_order)
@@ -224,7 +209,7 @@
                             <td class="text-capitalize text-center">
                                 @if($order['order_status']=='pending')
                                     <span class="badge badge-soft-info">
-                                      {{translate('messages.pending')}}
+                                      {{translate('Pending')}}
                                     </span>
                                 @elseif($order['order_status']=='confirmed')
                                     <span class="badge badge-soft-info">
@@ -232,15 +217,15 @@
                                     </span>
                                 @elseif($order['order_status']=='processing')
                                     <span class="badge badge-soft-warning">
-                                      {{translate('messages.processing')}}
+                                      {{translate('Processing')}}
                                     </span>
                                 @elseif($order['order_status']=='picked_up')
                                     <span class="badge badge-soft-warning">
-                                      {{translate('messages.out_for_delivery')}}
+                                      {{translate('Out for delivery')}}
                                     </span>
                                 @elseif($order['order_status']=='delivered')
                                     <span class="badge badge-soft-success">
-                                      {{translate('messages.delivered')}}
+                                      {{translate('Delivered')}}
                                     </span>
                                 @else
                                     <span class="badge badge-soft-danger">
@@ -250,18 +235,18 @@
                                 @if (!$parcel_order)
                                     @if($order['order_type']=='take_away')
                                         <div class="text-title mt-1">
-                                            {{translate('messages.take_away')}}
+                                            {{translate('messages.Take away')}}
                                         </div>
                                     @else
                                         <div class="text-title mt-1">
-                                            {{translate('messages.home_delivery')}}
+                                            {{translate('Home delivery')}}
                                         </div>
                                     @endif
                                 @endif
                             </td>
                             <td>
                                 <div class="btn--container justify-content-center">
-                                    <a class="btn action-btn btn--warning btn-outline-warning"
+                                    <a class="btn action-btn action-btn--view"
                                        href="{{route('admin.order.details',['id'=>$order['id'],'module_id'=>$order['module_id']])}}"><i
                                             class="tio-visible-outlined"></i></a>
                                     @if (Request::is('admin/dispatch*'))
@@ -282,7 +267,6 @@
                     </tbody>
                 </table>
             </div>
-            <!-- End Table -->
 
             @if(count($orders) !== 0)
                 <hr>
@@ -294,36 +278,27 @@
                 <div class="empty--data">
                     <img src="{{asset('/public/assets/admin/svg/illustrations/sorry.svg')}}" alt="public">
                     <h5>
-                        {{translate('no_data_found')}}
+                        {{translate('No data found')}}
                     </h5>
                 </div>
             @endif
         </div>
-        <!-- End Card -->
-        <!-- Order Filter Modal -->
         <div id="datatableFilterSidebar"
-             class="hs-unfold-content_ sidebar sidebar-bordered sidebar-box-shadow initial-hidden">
+             class="filter-drawer sidebar sidebar-bordered sidebar-box-shadow">
             <div class="card card-lg sidebar-card sidebar-footer-fixed">
-                <div class="card-header">
-                    <h4 class="card-header-title">{{translate('messages.order_filter')}}</h4>
+                @include('partials._filter-drawer-head', [
+                    'fd_title'    => translate('messages.Order filter'),
+                    'fd_subtitle' => translate('messages.Narrow the order list down by zone, store, status, type and date range.'),
+                ])
 
-                    <!-- Toggle Button -->
-                    <a class="js-hs-unfold-invoker_ btn btn-icon btn-sm btn-ghost-dark ml-2" href="javascript:"
-                       id="filter-button-off">
-                        <i class="tio-clear tio-lg"></i>
-                    </a>
-                    <!-- End Toggle Button -->
-                </div>
-
-                <!-- Body -->
                 <form class="card-body sidebar-body sidebar-scrollbar" action="{{route('admin.order.filter')}}"
                       method="POST" id="order_filter_form">
                     @csrf
-                    <small class="text-cap mb-3">{{translate('messages.zone')}}</small>
+                    <small class="text-cap mb-3">{{translate('messages.Zone')}}</small>
 
                     <div class="mb-2 initial--21">
                         <select name="zone[]" id="zone_ids" class="form-control js-select2-custom" multiple="multiple">
-                            @foreach(\App\Models\Zone::all() as $zone)
+                            @foreach(\App\CentralLogics\Helpers::zones_dropdown() as $zone)
                                 <option
                                     value="{{$zone->id}}" {{isset($zone_ids)?(in_array($zone->id, $zone_ids)?'selected':''):''}}>{{$zone->name}}</option>
                             @endforeach
@@ -332,11 +307,11 @@
                     @if (!$parcel_order)
 
                     <hr class="my-4">
-                    <small class="text-cap mb-3">{{translate('messages.store')}}</small>
+                    <small class="text-cap mb-3">{{translate('messages.Store')}}</small>
                     <div class="mb-2 initial--21">
                         <select name="vendor[]" id="vendor_ids" class="form-control js-select2-custom"
                                 multiple="multiple">
-                            @foreach(\App\Models\Store::whereIn('id', $vendor_ids)->get(['id','name']) as $store)
+                            @foreach($selected_stores as $store)
                                 <option value="{{$store->id}}" data-verified="{{ (int) $store->verified_seller }}" selected>{{$store->name}}</option>
                             @endforeach
                         </select>
@@ -345,144 +320,135 @@
 
                     <hr class="my-4">
                     @if($status == 'all')
-                        <small class="text-cap mb-3">{{translate('messages.order_status')}}</small>
+                        <small class="text-cap mb-3">{{translate('Order status')}}</small>
 
-                        <!-- Custom Checkbox -->
-                        <div class="custom-control custom-radio mb-2">
+                        <div class="fd-grid">
+                        <div class="custom-control custom-checkbox mb-2">
                             <input type="checkbox" id="orderStatus2" name="orderStatus[]" class="custom-control-input"
                                    {{isset($orderstatus)?(in_array('pending', $orderstatus)?'checked':''):''}} value="pending">
                             <label class="custom-control-label"
-                                   for="orderStatus2">{{translate('messages.pending')}}</label>
+                                   for="orderStatus2">{{translate('Pending')}}</label>
                         </div>
-                        <div class="custom-control custom-radio mb-2">
+                        <div class="custom-control custom-checkbox mb-2">
                             <input type="checkbox" id="orderStatus1" name="orderStatus[]" class="custom-control-input"
                                    value="confirmed" {{isset($orderstatus)?(in_array('confirmed', $orderstatus)?'checked':''):''}}>
                             <label class="custom-control-label"
                                    for="orderStatus1">{{translate('messages.confirmed')}}</label>
                         </div>
-                        <div class="custom-control custom-radio mb-2">
+                        <div class="custom-control custom-checkbox mb-2">
                             <input type="checkbox" id="orderStatus3" name="orderStatus[]" class="custom-control-input"
                                    value="processing" {{isset($orderstatus)?(in_array('processing', $orderstatus)?'checked':''):''}}>
                             <label class="custom-control-label"
-                                   for="orderStatus3">{{translate('messages.processing')}}</label>
+                                   for="orderStatus3">{{translate('Processing')}}</label>
                         </div>
-                        <div class="custom-control custom-radio mb-2">
+                        <div class="custom-control custom-checkbox mb-2">
                             <input type="checkbox" id="orderStatus4" name="orderStatus[]" class="custom-control-input"
                                    value="picked_up" {{isset($orderstatus)?(in_array('picked_up', $orderstatus)?'checked':''):''}}>
                             <label class="custom-control-label"
-                                   for="orderStatus4">{{translate('messages.out_for_delivery')}}</label>
+                                   for="orderStatus4">{{translate('Out for delivery')}}</label>
                         </div>
-                        <div class="custom-control custom-radio mb-2">
+                        <div class="custom-control custom-checkbox mb-2">
                             <input type="checkbox" id="orderStatus5" name="orderStatus[]" class="custom-control-input"
                                    value="delivered" {{isset($orderstatus)?(in_array('delivered', $orderstatus)?'checked':''):''}}>
                             <label class="custom-control-label"
-                                   for="orderStatus5">{{translate('messages.delivered')}}</label>
+                                   for="orderStatus5">{{translate('Delivered')}}</label>
                         </div>
-                        <div class="custom-control custom-radio mb-2">
+                        <div class="custom-control custom-checkbox mb-2">
                             <input type="checkbox" id="orderStatus6" name="orderStatus[]" class="custom-control-input"
                                    value="returned" {{isset($orderstatus)?(in_array('returned', $orderstatus)?'checked':''):''}}>
                             <label class="custom-control-label"
-                                   for="orderStatus6">{{translate('messages.returned')}}</label>
+                                   for="orderStatus6">{{translate('Returned')}}</label>
                         </div>
-                        <div class="custom-control custom-radio mb-2">
+                        <div class="custom-control custom-checkbox mb-2">
                             <input type="checkbox" id="orderStatus7" name="orderStatus[]" class="custom-control-input"
                                    value="failed" {{isset($orderstatus)?(in_array('failed', $orderstatus)?'checked':''):''}}>
                             <label class="custom-control-label"
                                    for="orderStatus7">{{translate('messages.failed')}}</label>
                         </div>
-                        <div class="custom-control custom-radio mb-2">
+                        <div class="custom-control custom-checkbox mb-2">
                             <input type="checkbox" id="orderStatus8" name="orderStatus[]" class="custom-control-input"
                                    value="canceled" {{isset($orderstatus)?(in_array('canceled', $orderstatus)?'checked':''):''}}>
                             <label class="custom-control-label"
-                                   for="orderStatus8">{{translate('messages.canceled')}}</label>
+                                   for="orderStatus8">{{translate('Canceled')}}</label>
                         </div>
-                        <div class="custom-control custom-radio mb-2">
+                        <div class="custom-control custom-checkbox mb-2">
                             <input type="checkbox" id="orderStatus9" name="orderStatus[]" class="custom-control-input"
                                    value="refund_requested" {{isset($orderstatus)?(in_array('refund_requested', $orderstatus)?'checked':''):''}}>
                             <label class="custom-control-label"
                                    for="orderStatus9">{{translate('messages.refundRequest')}}</label>
                         </div>
-                        <div class="custom-control custom-radio mb-2">
+                        <div class="custom-control custom-checkbox mb-2">
                             <input type="checkbox" id="orderStatus10" name="orderStatus[]" class="custom-control-input"
                                    value="refunded" {{isset($orderstatus)?(in_array('refunded', $orderstatus)?'checked':''):''}}>
                             <label class="custom-control-label"
-                                   for="orderStatus10">{{translate('messages.refunded')}}</label>
+                                   for="orderStatus10">{{translate('Refunded')}}</label>
+                        </div>
                         </div>
 
                         <hr class="my-4">
 
-                        <div class="custom-control custom-radio mb-2">
+                        <div class="custom-control custom-checkbox mb-2">
                             <input type="checkbox" id="scheduled" name="scheduled" class="custom-control-input"
                                    value="1" {{isset($scheduled)?($scheduled==1?'checked':''):''}}>
-                            <label class="custom-control-label text-uppercase"
-                                   for="scheduled">{{translate('messages.scheduled')}}</label>
+                            <label class="custom-control-label"
+                                   for="scheduled">{{translate('Scheduled')}}</label>
                         </div>
                         <hr class="my-4">
-                        <small class="text-cap mb-3">{{translate('messages.order_type')}}</small>
+                        <small class="text-cap mb-3">{{translate('Order type')}}</small>
+                        <div class="fd-grid">
                         <div class="custom-control custom-radio mb-2">
                             <input type="radio" id="take_away" name="order_type" class="custom-control-input"
                                    value="take_away" {{isset($order_type)?($order_type=='take_away'?'checked':''):''}}>
-                            <label class="custom-control-label text-uppercase"
-                                   for="take_away">{{translate('messages.take_away')}}</label>
+                            <label class="custom-control-label"
+                                   for="take_away">{{translate('messages.Take away')}}</label>
                         </div>
                         <div class="custom-control custom-radio mb-2">
                             <input type="radio" id="delivery" name="order_type" class="custom-control-input"
                                    value="delivery" {{isset($order_type)?($order_type=='delivery'?'checked':''):''}}>
-                            <label class="custom-control-label text-uppercase"
+                            <label class="custom-control-label"
                                    for="delivery">{{translate('messages.delivery')}}</label>
+                        </div>
                         </div>
                         <hr class="my-4">
                     @endif
-                    <small class="text-cap mb-3">{{translate('messages.date_between')}}</small>
+                    <small class="text-cap mb-3">{{translate('messages.Date between')}}</small>
 
-                    <div class="row">
-                        <div class="col-12">
-                            <div class="form-group m-0">
-                                <input type="date" name="from_date" class="form-control" id="date_from"
-                                       value="{{isset($from_date)?$from_date:''}}">
-                            </div>
+                    <div class="fd-daterange">
+                        <div class="fd-daterange__field">
+                            <label class="fd-sublabel" for="date_from">{{ translate('messages.from') }}</label>
+                            <input type="date" name="from_date" class="form-control" id="date_from"
+                                   value="{{isset($from_date)?$from_date:''}}">
                         </div>
-                        <div class="col-12 text-center">----{{ translate('messages.to') }}----</div>
-                        <div class="col-12">
-                            <div class="form-group">
-                                <input type="date" name="to_date" class="form-control" id="date_to"
-                                       value="{{isset($to_date)?$to_date:''}}">
-                            </div>
+                        <div class="fd-daterange__field">
+                            <label class="fd-sublabel" for="date_to">{{ translate('messages.to') }}</label>
+                            <input type="date" name="to_date" class="form-control" id="date_to"
+                                   value="{{isset($to_date)?$to_date:''}}">
                         </div>
                     </div>
 
-                    <!-- Footer -->
                     <div class="card-footer sidebar-footer">
                         <div class="row gx-2">
                             <div class="col">
                                 <button type="reset" class="btn btn-block btn-white"
-                                        id="reset">{{ translate('Clear_all_filters') }}</button>
+                                        id="reset"><i class="tio-clear-circle-outlined"></i> {{ translate('Clear all') }}</button>
                             </div>
                             <div class="col">
-                                <button type="submit" class="btn btn-block btn-primary">{{ translate('Save') }}</button>
+                                <button type="submit" class="btn btn-block btn-primary"><i class="tio-filter-list"></i> {{ translate('Apply filters') }}</button>
                             </div>
                         </div>
                     </div>
-                    <!-- End Footer -->
                 </form>
             </div>
         </div>
 
-        <!-- End Order Filter Modal -->
+            </div>
         @endsection
 
         @push('script_2')
 
             <script>
 
-                document.getElementById('filter-button-on').addEventListener('click', function () {
-                    $('#datatableFilterSidebar, .hs-unfold-overlay').show(500);
-                });
-
-
-                document.getElementById('filter-button-off').addEventListener('click', function () {
-                    $('#datatableFilterSidebar, .hs-unfold-overlay').hide(500);
-                });
+                {{-- Opening/closing the filter panel is handled globally by filter-drawer.js. --}}
 
                 <?php
                 $filter_count = 0;

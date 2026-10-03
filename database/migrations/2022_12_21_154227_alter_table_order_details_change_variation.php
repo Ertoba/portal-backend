@@ -25,6 +25,5 @@ class AlterTableOrderDetailsChangeVariation extends Migration
      */
     public function down()
     {
-        //
     }
 }

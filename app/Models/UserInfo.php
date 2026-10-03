@@ -2,16 +2,15 @@
 
 namespace App\Models;
 
-use App\CentralLogics\Helpers;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Illuminate\Support\Facades\DB;
+use App\Traits\Model\HasStorageTrait;
 
 class UserInfo extends Model
 {
-    use HasFactory;
+    use HasFactory, HasStorageTrait;
 
     protected $casts = [
         'user_id' => 'integer',
@@ -20,36 +19,22 @@ class UserInfo extends Model
         'admin_id' => 'integer'
     ];
     protected $appends = ['image_full_url'];
+
+    /**
+     * image_full_url is appended, so every serialized row reads one of these three depending on
+     * which owner column is set. Which one is not known until the row is in hand, so all three
+     * are loaded with it rather than left to lazy-load per row.
+     */
+    protected $with = ['user.storage', 'vendor.stores.storage', 'delivery_man.storage'];
+
     public function getImageFullUrlAttribute(){
         if ($this->user_id){
             return $this->user?->image_full_url;
         }elseif ($this->vendor_id){
-            return $this->vendor?->stores[0]->logo_full_url;
+            return $this->vendor?->stores->first()?->logo_full_url;
         }elseif ($this->deliveryman_id){
             return $this->delivery_man?->image_full_url;
         }
-//        $value = $this->image;
-//        $path = 'profile';
-//        if ($this->user_id){
-//            $path = 'profile';
-//            $storages = $this->user?->storage;
-//        }elseif ($this->vendor_id){
-//            $path = 'store';
-//            $storages = $this->vendor?->storage;
-//        }elseif ($this->deliveryman_id){
-//            $path = 'delivery-man';
-//            $storages = $this->delivery_man?->storage;
-//        }
-//
-//        if (count($storages) > 0) {
-//            foreach ($storages as $storage) {
-//                if ($storage['key'] == 'image') {
-//                    return Helpers::get_full_url($path,$value,$storage['value']);
-//                }
-//            }
-//        }
-//
-//        return Helpers::get_full_url($path,$value,'public');
     }
     public function user()
     {
@@ -71,33 +56,11 @@ class UserInfo extends Model
         return $this->belongsTo(Admin::class, 'admin_id');
     }
 
-    public function storage()
-    {
-        return $this->morphMany(Storage::class, 'data');
-    }
-    protected static function booted()
-    {
-        static::addGlobalScope('storage', function ($builder) {
-            $builder->with('storage');
-        });
-    }
     protected static function boot()
     {
         parent::boot();
         static::saved(function ($model) {
-            if($model->isDirty('image')){
-                $value = Helpers::getDisk();
-
-                DB::table('storages')->updateOrInsert([
-                    'data_type' => get_class($model),
-                    'data_id' => $model->id,
-                    'key' => 'image',
-                ], [
-                    'value' => $value,
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
-            }
+            self::recordStorageDisk($model, 'image', 'image');
         });
 
     }

@@ -1,6 +1,6 @@
 @extends('layouts.admin.app')
 
-@section('title', translate('messages.react_landing_page'))
+@section('title', translate('React landing page'))
 
 @push('css_or_js')
     <meta name="csrf-token" content="{{ csrf_token() }}">
@@ -11,17 +11,20 @@
     <div class="content container-fluid">
         <div class="page-header pb-0">
             <div class="d-flex flex-wrap justify-content-between">
-                <h1 class="page-header-title">
-                <span class="page-header-icon">
-                    <img src="{{asset('public/assets/admin/img/landing.png')}}" class="w--20" alt="">
-                </span>
-                    <span>
-                    {{ translate('messages.react_landing_page') }}
-                </span>
-                </h1>
+                <div>
+                    <h1 class="page-header-title">
+                    <span class="page-header-icon">
+                        <img src="{{asset('public/assets/admin/img/outline/landing.svg')}}" class="w--26" alt="">
+                    </span>
+                        <span>
+                        {{ translate('React landing page') }}
+                    </span>
+                    </h1>
+                    <p class="page-header-desc">{{ translate('The trust block on the react landing page, and the figures it quotes.') }}</p>
+                </div>
                 <div class="text--primary-2 py-1 d-flex flex-wrap align-items-center" type="button" data-toggle="modal"
                      data-target="#how-it-works">
-                    <strong class="mr-2">{{translate('See_how_it_works!')}}</strong>
+                    <strong class="mr-2">{{translate('See how it works')}}</strong>
                     <div>
                         <i class="tio-info-outined"></i>
                     </div>
@@ -39,7 +42,7 @@
                 <div class="">
                     <h3 class="mb-1">{{ translate('Trust Section') }}</h3>
                     <p class="mb-0 gray-dark fs-12">
-                        {{ translate('See how your Trust Section will look to customers.') }}
+                        {{ translate('See how this section will look to customers.') }}
                     </p>
                 </div>
                 <div class="max-w-300px ml-sm-auto">
@@ -57,7 +60,7 @@
                     <div class="">
                         <h3 class="mb-1">{{ translate('Show Trust Section') }}</h3>
                         <p class="mb-0 gray-dark fs-12">
-                            {{ translate('If you turn of the availability status, this section will not show in the website') }}
+                            {{ translate('If you turn off the availability status, this section will not show on the website') }}
                         </p>
                     </div>
                 </div>
@@ -73,10 +76,10 @@
                             <input type="checkbox" data-id="CheckboxStatus" data-type="status"
                                    data-image-on="{{ asset('/public/assets/admin/img/status-ons.png') }}"
                                    data-image-off="{{ asset('/public/assets/admin/img/off-danger.png') }}"
-                                   data-title-on="{{ translate('Do you want turn on this section ?') }}"
-                                   data-title-off="{{ translate('Do you want to turn off this section ?') }}"
-                                   data-text-on="<p>{{ translate('If you turn on this section will be show in react landing page.') }}"
-                                   data-text-off="<p>{{ translate('If you turn off this section will not be show in react landing page.') }}</p>"
+                                   data-title-on="{{ translate('Do you want to turn on this section?') }}"
+                                   data-title-off="{{ translate('Do you want to turn off this section?') }}"
+                                   data-text-on="<p>{{ translate('If you turn this on, the section will be shown on the React landing page.') }}"
+                                   data-text-off="<p>{{ translate('If you turn this off, the section will not be shown on the React landing page.') }}</p>"
                                    class="toggle-switch-input  status dynamic-checkbox" id="CheckboxStatus"
                                 {{ $trust_section_status?->value ? 'checked' : '' }}>
                             <span class="toggle-switch-label text">
@@ -123,7 +126,7 @@
                         <div class="card">
                             <div class="card-header">
                                 <div class="w-100 d-flex align-items-center gap-2 flex-wrap justify-content-between">
-                                    <h5 class="mb-0">{{$cardLabel}} {{translate(' Card')}}</h5>
+                                    <h5 class="mb-0">{{$cardLabel}}  {{translate('Card')}}</h5>
                                     <label
                                         class="toggle-switch h--45px toggle-switch-sm d-flex justify-content-between gap-4">
                                         <span
@@ -142,8 +145,8 @@
                                     <div class="text-center py-1">
                                         <div class="mx-auto text-center error-wrapper">
                                             <div class="mb-4">
-                                                <h5 class="mb-1">{{ translate('Upload Image') }}</h5>
-                                                <p class="mb-0 fs-12 gray-dark">{{ translate('Upload ') }} {{$cardLabel}} {{translate(' Card Image')}}</p>
+                                                <h5 class="mb-1">{{ translate('Upload image') }}</h5>
+                                                <p class="mb-0 fs-12 gray-dark">{{ translate('Upload') }}  {{$cardLabel}}  {{translate('Card Image')}}</p>
                                             </div>
                                             <div class="upload-file_custom ratio-1 h-100px">
                                                 @if($trust_image?->value)
@@ -189,8 +192,8 @@
                                         </div>
 
                                         <p class="fs-10 text-center mb-0 mt-lg-4 mt-3">
-                                            {{ translate('JPG, JPEG, PNG, Gif Image size : Max 2 MB')}} <span
-                                                class="font-medium text-title">{{ translate('(1:1)')}}</span>
+                                            {{ 'JPG, JPEG, PNG, GIF' . ' image, max ' . 2 . ' MB'}} <span
+                                                class="font-medium text-title">(1:1)</span>
                                         </p>
                                     </div>
                                 </div>
@@ -199,7 +202,7 @@
                                         <ul class="nav nav-tabs mb-4 border-bottom">
                                             <li class="nav-item">
                                                 <a class="nav-link lang_link active" href="#"
-                                                   id="default-link">{{translate('messages.default')}}</a>
+                                                   id="default-link">{{translate('Default')}}</a>
                                             </li>
                                             @foreach ($language as $lang)
                                                 <li class="nav-item">
@@ -213,10 +216,10 @@
                                             <div class="row g-1">
                                                 <div class="col-sm-12">
                                                     <label for="trust_title_card_{{ $i }}">{{translate('Title')}}
-                                                        ({{ translate('messages.default') }})
+                                                        ({{ translate('Default') }})
                                                         <span class="form-label-secondary" data-toggle="tooltip"
                                                               data-placement="right"
-                                                              data-original-title="{{ translate('Write_the_title_within_20_characters') }}">
+                                                              data-original-title="{{ translate('Character limit') }}: 20">
                                                             <i class="tio-info color-A7A7A7"></i>
                                                         </span>
                                                         <span class="form-label-secondary text-danger"
@@ -228,17 +231,17 @@
                                                     <input id="trust_title_card_{{ $i }}" type="text" maxlength="20"
                                                            name="trust_title_card_{{ $i }}[]" class="form-control"
                                                            value="{{ $trust_title?->getRawOriginal('value') ?? '' }}"
-                                                           placeholder="{{translate('messages.title_here...')}}"
+                                                           placeholder="{{translate('Enter title')}}"
                                                            required>
                                                     <span class="text-right text-counting color-A7A7A7 d-block mt-1">0/20</span>
                                                 </div>
                                                 <div class="col-sm-12">
                                                     <label for="trust_sub_title_card_{{ $i }}"
                                                            class="form-label">{{translate('Sub Title')}}
-                                                        ({{ translate('messages.default') }})
+                                                        ({{ translate('Default') }})
                                                         <span class="form-label-secondary" data-toggle="tooltip"
                                                               data-placement="right"
-                                                              data-original-title="{{ translate('Write_the_sub_title_within_30_characters') }}">
+                                                              data-original-title="{{ translate('Character limit') }}: 30">
                                                             <i class="tio-info color-A7A7A7"></i>
                                                         </span>
                                                         <span class="form-label-secondary text-danger"
@@ -250,7 +253,7 @@
                                                     <input id="trust_sub_title_card_{{ $i }}" type="text" maxlength="30"
                                                            name="trust_sub_title_card_{{ $i }}[]" class="form-control"
                                                            value="{{ $trust_sub_title?->getRawOriginal('value') ?? '' }}"
-                                                           placeholder="{{translate('messages.sub_title_here...')}}"
+                                                           placeholder="{{translate('Enter subtitle')}}"
                                                            required>
                                                     <span class="text-right text-counting color-A7A7A7 d-block mt-1">0/30</span>
                                                 </div>
@@ -287,7 +290,7 @@
                                                             ({{strtoupper($lang)}})
                                                             <span class="form-label-secondary" data-toggle="tooltip"
                                                                   data-placement="right"
-                                                                  data-original-title="{{ translate('Write_the_title_within_20_characters') }}">
+                                                                  data-original-title="{{ translate('Character limit') }}: 20">
                                                                                 <i class="tio-info color-A7A7A7"></i>
                                                                             </span>
                                                         </label>
@@ -296,7 +299,7 @@
                                                                name="trust_title_card_{{ $i }}[]"
                                                                value="{{ $trust_title_translate[$lang]['value'] ?? '' }}"
                                                                class="form-control"
-                                                               placeholder="{{translate('messages.title_here...')}}">
+                                                               placeholder="{{translate('Enter title')}}">
                                                         <span
                                                             class="text-right text-counting color-A7A7A7 d-block mt-1">0/20</span>
                                                     </div>
@@ -306,7 +309,7 @@
                                                             ({{strtoupper($lang)}})
                                                             <span class="form-label-secondary" data-toggle="tooltip"
                                                                   data-placement="right"
-                                                                  data-original-title="{{ translate('Write_the_sub_title_within_30_characters') }}">
+                                                                  data-original-title="{{ translate('Character limit') }}: 30">
                                                                                 <i class="tio-info color-A7A7A7"></i>
                                                                             </span>
                                                         </label>
@@ -315,7 +318,7 @@
                                                                name="trust_sub_title_card_{{ $i }}[]"
                                                                value="{{ $trust_sub_title_translate[$lang]['value'] ?? '' }}"
                                                                class="form-control"
-                                                               placeholder="{{translate('messages.sub_title_here...')}}">
+                                                               placeholder="{{translate('Enter subtitle')}}">
                                                         <span
                                                             class="text-right text-counting color-A7A7A7 d-block mt-1">0/30</span>
                                                     </div>
@@ -329,7 +332,7 @@
                                                 <label for="trust_title_card_{{ $i }}">{{translate('Title')}}</label>
                                                 <input id="trust_title_card_{{ $i }}" type="text" maxlength="20"
                                                        name="trust_title_card_{{ $i }}[]" class="form-control" value=""
-                                                       placeholder="{{translate('messages.title_here...')}}" required>
+                                                       placeholder="{{translate('Enter title')}}" required>
                                                 <span
                                                     class="text-right text-counting color-A7A7A7 d-block mt-1">0/20</span>
                                             </div>
@@ -339,7 +342,7 @@
                                                 <input id="trust_sub_title_card_{{ $i }}" type="text" maxlength="30"
                                                        name="trust_sub_title_card_{{ $i }}[]" class="form-control"
                                                        value=""
-                                                       placeholder="{{translate('messages.sub_title_here...')}}"
+                                                       placeholder="{{translate('Enter subtitle')}}"
                                                        required>
                                                 <span
                                                     class="text-right text-counting color-A7A7A7 d-block mt-1">0/30</span>
@@ -349,8 +352,8 @@
                                     @endif
                                 </div>
                                 <div class="btn--container justify-content-end mt-20">
-                                    <button type="reset" class="btn btn--reset mb-2">{{translate('Reset')}}</button>
-                                    <button type="submit" class="btn btn--primary mb-2">{{translate('Save')}}</button>
+                                    <button type="reset" class="btn btn--reset mb-2"><i class="tio-refresh"></i> {{translate('Reset')}}</button>
+                                    <button type="submit" class="btn btn--primary mb-2"><i class="tio-save"></i> {{translate('Save')}}</button>
                                 </div>
                             </div>
                         </div>
@@ -360,7 +363,6 @@
         </div>
     </div>
 
-    <!-- Section View Offcanvas here -->
     <div id="trust_section" class="custom-offcanvas offcanvas-750 d-flex flex-column justify-content-between">
         <form action="{{ route('taxvat.store') }}" method="post">
             <div>
@@ -415,7 +417,6 @@
         </form>
     </div>
     <div id="offcanvasOverlay" class="offcanvas-overlay"></div>
-    <!-- Section View Offcanvas end -->
 @endsection
 
 @push('script_2')

@@ -25,7 +25,7 @@ interface ConversationRepositoryInterface extends RepositoryInterface
      * @param array $scopes
      * @return Collection|LengthAwarePaginator
      */
-    public function getListWithScope(array $orderBy = [], array $relations = [], int|string $dataLimit = DEFAULT_DATA_LIMIT, string $conversation_with = 'customer', int $offset = null, array $scopes=[]): Collection|LengthAwarePaginator;
+    public function getListWithScope(array $orderBy = [], array $relations = [], int|string $dataLimit = DEFAULT_DATA_LIMIT, string $conversation_with = 'customer', ?int $offset = null, array $scopes=[]): Collection|LengthAwarePaginator;
 
     /**
      * @param string|null $searchValue
@@ -36,13 +36,14 @@ interface ConversationRepositoryInterface extends RepositoryInterface
      * @param array $scopes
      * @return Collection|LengthAwarePaginator
      */
-    public function getListWhereWithScope(string $searchValue = null, array $filters = [], array $relations = [], int|string $dataLimit = DEFAULT_DATA_LIMIT, int $offset = null, array $scopes=[]): Collection|LengthAwarePaginator;
+    public function getListWhereWithScope(?string $searchValue = null, array $filters = [], array $relations = [], int|string $dataLimit = DEFAULT_DATA_LIMIT, ?int $offset = null, array $scopes=[]): Collection|LengthAwarePaginator;
 
     /**
      * @param Request $request
+     * @param int $user
      * @param int|string $dataLimit
      * @param int|null $offset
      * @return Collection|LengthAwarePaginator
      */
-    public function getDmConversationList(Request $request, int|string $dataLimit = DEFAULT_DATA_LIMIT, int $user,  int $offset = null ): Collection|LengthAwarePaginator;
+    public function getDmConversationList(Request $request, int $user, int|string $dataLimit = DEFAULT_DATA_LIMIT, ?int $offset = null): Collection|LengthAwarePaginator;
 }

@@ -1,10 +1,13 @@
+@if($use_v2_chrome ?? false)
+<div id="headerMain" class="d-none"></div>
+<button type="button" id="modalOpener" class="d-none" data-toggle="modal" data-target="#staticBackdrop"></button>
+@else
 <div id="headerMain" class="d-none">
     <header id="header"
             class="navbar navbar-expand-lg navbar-fixed navbar-height navbar-flush navbar-container navbar-bordered pr-0">
         <div class="navbar-nav-wrap">
 
             <div class="navbar-nav-wrap-content-left d-xl-none">
-                <!-- Navbar Vertical Toggle -->
                 <button type="button" class="js-navbar-vertical-aside-toggle-invoker close mr-3">
                     <i class="tio-first-page navbar-vertical-aside-toggle-short-align" data-toggle="tooltip"
                        data-placement="right" title="Collapse"></i>
@@ -12,12 +15,9 @@
                        data-template='<div class="tooltip d-none d-sm-block" role="tooltip"><div class="arrow"></div><div class="tooltip-inner"></div></div>'
                        data-toggle="tooltip" data-placement="right" title="Expand"></i>
                 </button>
-                <!-- End Navbar Vertical Toggle -->
             </div>
 
-            <!-- Secondary Content -->
             <div class="navbar-nav-wrap-content-right flex-grow-1 w-0">
-                <!-- Navbar -->
                 <ul class="navbar-nav align-items-center flex-row flex-grow-1 __navbar-nav">
 
                     @if (\App\CentralLogics\Helpers::admin_can_access_workspace('users'))
@@ -36,7 +36,7 @@
                            class="__nav-link {{ Request::is('admin/transactions*') ? 'active' : '' }}">
                             <img src="{{asset('/public/assets/admin/img/new-img/transaction-and-report.svg')}}"
                                  alt="public/img">
-                            <span>{{ translate('Transactions & Reports')}}</span>
+                            <span>{{ translate('Transactions & reports')}}</span>
                         </a>
                     </li>
                     @endif
@@ -46,7 +46,7 @@
                         <a href="{{ \App\CentralLogics\Helpers::settings_workspace_landing_url() }}" id="tourb-3"
                            class="__nav-link {{ Request::is('admin/business-settings*') ? 'active' : '' }}">
                             <img src="{{asset('/public/assets/admin/img/new-img/setting-icon.svg')}}" alt="public/img">
-                            <span>{{ translate('messages.Settings') }}</span>
+                            <span>{{ translate('Settings') }}</span>
                             <svg width="14" viewBox="0 0 14 14" fill="none">
                                 <path d="M2.33325 5.25L6.99992 9.91667L11.6666 5.25" stroke="#006161" stroke-width="1.5"
                                       stroke-linecap="round" stroke-linejoin="round"/>
@@ -70,18 +70,18 @@
                                                 <img
                                                     src="{{asset('/public/assets/admin/img/navbar-setting-icon/module.svg')}}"
                                                     alt="">
-                                                <span>{{translate('System Module Setup')}}</span>
+                                                <span>{{translate('System module setup')}}</span>
                                             </a>
                                         </li>
                                     @endif
-                                    @if (\App\CentralLogics\Helpers::module_permission_check('zone'))
+                                    @if (\App\CentralLogics\Helpers::module_permission_check('settings'))
                                         <li>
                                             <a href="{{ route('admin.business-settings.zone.home') }}"
                                                class="next-tour">
                                                 <img
                                                     src="{{asset('/public/assets/admin/img/navbar-setting-icon/location.svg')}}"
                                                     alt="">
-                                                <span>{{translate('Zone Setup')}}</span>
+                                                <span>{{translate('Zone setup')}}</span>
                                             </a>
                                         </li>
                                     @endif
@@ -92,7 +92,7 @@
                                                 <img
                                                     src="{{asset('/public/assets/admin/img/navbar-setting-icon/business.svg')}}"
                                                     alt="">
-                                                <span>{{translate('Business Settings')}}</span>
+                                                <span>{{translate('Business settings')}}</span>
                                             </a>
                                         </li>
                                     @endif
@@ -104,7 +104,7 @@
                                                 <img
                                                     src="{{asset('/public/assets/admin/img/navbar-setting-icon/third-party.svg')}}"
                                                     alt="">
-                                                <span>{{translate('3rd Party')}}</span>
+                                                <span>{{translate('Third-party')}}</span>
                                             </a>
                                         </li>
                                         <li>
@@ -113,14 +113,14 @@
                                                 <img
                                                     src="{{asset('/public/assets/admin/img/navbar-setting-icon/social.svg')}}"
                                                     alt="">
-                                                <span>{{translate('Social Media and Page Setup')}}</span>
+                                                <span>{{translate('Social media and page setup')}}</span>
                                             </a>
                                         </li>
                                     @endif
                                 </ul>
                                 <div class="text-center mt-2">
                                     <a href="{{ route('admin.business-settings.business-setup') }}"
-                                       class="next-tour">{{translate('View All')}}</a>
+                                       class="next-tour">{{translate('View all')}}</a>
                                 </div>
                             </div>
                         </div>
@@ -131,7 +131,7 @@
                             <a href="{{ route('admin.dispatch.dashboard')}}" id="tourb-8"
                                class="__nav-link {{ Request::is('admin/dispatch*') ? 'active' : '' }}">
                                 <img src="{{asset('/public/assets/admin/img/new-img/dispatch.svg')}}" alt="public/img">
-                                <span>{{ translate('Dispatch Management')}}</span>
+                                <span>{{ translate('Dispatch management')}}</span>
                             </a>
                         </li>
                     @endif
@@ -140,7 +140,7 @@
                     <li class="nav-item max-sm-m-0 w-xxl-200px ml-auto flex-grow-0">
                         <button type="button" id="modalOpener" class="title-color bg--secondary border-0 rounded justify-content-between w-100 align-items-center py-2 px-2 px-md-3 d-flex gap-1" data-toggle="modal" data-target="#staticBackdrop">
                             <div class="align-items-center d-flex flex-grow-1 gap-1 justify-content-between">
-                                <span class="align-items-center d-none d-xxl-flex gap-2 text-muted">{{translate('Search_or')}}
+                                <span class="align-items-center d-none d-xxl-flex gap-2 text-muted">{{translate('Search')}}
 
                                     <span class="bg-E7E6E8 border ctrlplusk d-md-block d-none font-bold fs-12 fw-bold lh-1 ms-1 px-1 rounded text-muted">Ctrl+K</span>
 
@@ -164,7 +164,7 @@
                         </a>
                     </li>
                     @endif
-                    @if(addon_published_status('RideShare') && \App\CentralLogics\Helpers::module_permission_check('fleet_view'))
+                    @if(addon_published_status('RideShare') && \App\CentralLogics\Helpers::module_permission_check('heat_map'))
                         <li class="nav-item max-sm-m-0  mr-lg-3">
                             @php($safetyAlert=\Modules\RideShare\Entities\TripManagement\RideSafetyAlert::where('status', 'pending'))
                             @php($safety=$safetyAlert->count())
@@ -227,24 +227,20 @@
                                 <img src="{{asset('/public/assets/admin/img/new-img/module-icon.svg')}}" class="flex-shrink-0"
                                      alt="public/img">
                             @endif
-                            <span class="text-white">{{ $mod ? $mod->module_name : translate('modules') }}</span>
+                            <span class="text-white">{{ $mod ? $mod->module_name : translate('Modules') }}</span>
                             <img src="{{asset('/public/assets/admin/img/new-img/angle-white.svg')}}"
                                  class="d-none d-lg-block ml-xl-2" alt="public/img">
                         </a>
                         <div class="__nav-module style-2" id="tourb-1">
-                            @php($modules = \App\Models\Module::when(auth('admin')->user()->zone_id, function($query){
-                                $query->whereHas('zones',function($query){
-                                    $query->where('zone_id',auth('admin')->user()->zone_id);
-                                });
-                            })->Active()->get())
+                            @php($modules = app(\App\Services\System\ModuleService::class)->switcherModules(auth('admin')->user()->zone_id))
                             @if(isset($modules) && ($modules->count()>0))
                                 <div class="__nav-module-header">
                                     <div class="inner">
                                         <div class="row g-3 align-items-center">
                                             <div class="col-6">
-                                                <h5>{{translate('Modules Section')}}</h5>
+                                                <h5>{{translate('Modules section')}}</h5>
                                                 <p class="m-0">
-                                                    {{translate('Select Module & Monitor your business module wise')}}
+                                                    {{translate('Select module & monitor your business module wise')}}
                                                 </p>
                                             </div>
 
@@ -254,7 +250,12 @@
                                 <div class="__nav-module-body">
                                     <div class="__nav-module-items">
                                         @foreach ($modules as $module)
-                                        @if(($module->module_type == 'rental' && addon_published_status('Rental') == 1) || $module->module_type != 'rental')
+                                        {{-- Rental was the only addon type this guarded, so a Service or
+                                             RideShare module kept its tile on an install without that addon --
+                                             and with no addon there is no icon either, so it drew as an empty
+                                             square that switched the panel into a module with no screens behind
+                                             it. module_type_addon_active() answers for all three. --}}
+                                        @if(module_type_addon_active($module->module_type))
                                             <a href="javascript:"
 
                                                data-module-id="{{ $module->id }}"
@@ -277,7 +278,7 @@
                                         @if (\App\CentralLogics\Helpers::module_permission_check('module'))
                                             <a href="{{ route('admin.business-settings.module.create') }}"
                                                class="__nav-module-item" data-toggle="tooltip"
-                                               data-placement="top" title="{{ translate('add_new_module') }}">
+                                               data-placement="top" title="{{ translate('Add new module') }}">
                                                 <i class="tio-add display-3"></i>
                                             </a>
                                         @endif
@@ -287,47 +288,23 @@
                                 <div class="__nav-module-body text-center py-5">
                                     <img class="w--120px" src="{{ asset('/public/assets/admin/img/empty-box.png') }}"
                                          alt="">
-                                    <h2 class="my-4">{{ translate('Please, Enable or Create Module First') }}</h2>
+                                    <h2 class="my-4">{{ translate('Please, enable or create module first') }}</h2>
                                     <a href="{{ route('admin.business-settings.module.index') }}"
-                                       class="btn btn--primary">{{ translate('messages.Module Setup') }}</a>
+                                       class="btn btn--primary"><i class="tio-settings-outlined"></i> {{ translate('Module setup') }}</a>
                                 </div>
                             @endif
                         </div>
                         </li>
                 </ul>
-                <!-- End Navbar -->
             </div>
-            <!-- End Secondary Content -->
         </div>
     </header>
 </div>
+@endif
 <div id="headerFluid" class="d-none"></div>
 <div id="headerDouble" class="d-none"></div>
 
-<div class="modal fade removeSlideDown" id="staticBackdrop" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered max-w-520">
-        <div class="modal-content modal-content__search border-0">
-            <div class="d-flex flex-column gap-3 rounded-20 bg-card py-2 px-3">
-                <div class="d-flex gap-2 align-items-center position-relative">
-                    <form class="flex-grow-1" id="searchForm" action="{{ route('admin.search.routing') }}">
-                        @csrf
-                        <div class="d-flex align-items-center global-search-container">
-                            <input  autocomplete="off" class="form-control flex-grow-1 rounded-10 search-input" id="searchInput" maxlength="255" name="search" type="search" placeholder="{{ translate('Search_by_keyword') }}" aria-label="Search" autofocus>
-                        </div>
-                    </form>
-                    <div class="position-absolute right-0 pr-2">
-                        <button class="border-0 rounded px-2 py-1" type="button" data-dismiss="modal">{{ translate('Esc') }}</button>
-                    </div>
-                </div>
-                <div class="min-h-350">
-                    <div class="search-result" id="searchResults">
-                        <div class="text-center text-muted py-5">{{translate('It appears that you have not yet searched.')}}.</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
+@include('layouts.partials._global_search_modal', ['searchRoute' => route('admin.search.routing')])
 
 
 
@@ -354,7 +331,7 @@
         <div class="tour-guide-items">
             <a href="https://youtube.com/playlist?list=PLLFMbDpKMZBxgtX3n3rKJvO5tlU8-ae2Y" target="_blank"
                class="d-flex align-items-center gap-10px">
-                <span class="text-capitalize fs-14 text-title">{{ translate('Turotial') }}</span>
+                <span class="text-capitalize fs-14 text-title">{{ translate('Tutorial') }}</span>
             </a>
         </div>
         <div class="tour-guide-items d-flex cursor-pointer align-items-center gap-10px restart-Tour">

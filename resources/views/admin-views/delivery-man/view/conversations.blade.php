@@ -1,10 +1,9 @@
 @extends('layouts.admin.app')
 
-@section('title',translate('messages.Delivery Man Preview'))
+@section('title',translate('Deliveryman preview'))
 
 @section('content')
     <div class="content container-fluid">
-        <!-- Page Header -->
         <div class="page-header">
                         @include('admin-views.delivery-man.partials._page_header')
 
@@ -12,29 +11,30 @@
                 @include('admin-views.delivery-man.partials._tab_menu')
             </div>
         </div>
-        <!-- End Page Header -->
 
         <div class="content">
-            <!-- Page Header -->
             <div class="page-header">
-                <h1 class="page-header-title">{{ translate('messages.conversation_list') }}</h1>
+                <h1 class="page-header-title">
+                    <i class="tio-chat"></i>
+                    <span>
+                        {{ translate('messages.Conversation list') }}
+                    </span>
+                </h1>
+                <p class="page-header-desc">{{ translate('Every chat this deliveryman has had with a customer or with your team.') }}</p>
             </div>
-            <!-- End Page Header -->
 
             <div class="row g-3">
                 <div class="col-lg-4 col-md-6">
-                    <!-- Card -->
                     <div class="card h-100">
                         <div class="card-header border-0">
                             <div class="input-group input---group">
                                 <div class="input-group-prepend border-inline-end-0">
                                     <span class="input-group-text border-inline-end-0" id="basic-addon1"><i class="tio-search"></i></span>
                                 </div>
-                                <input type="text" class="form-control border-inline-start-0 pl-1" id="serach" placeholder="{{ translate('messages.search') }}" aria-label="Username"
+                                <input type="text" class="form-control border-inline-start-0 pl-1" id="serach" placeholder="{{ translate('messages.Search') }}" aria-label="Username"
                                     aria-describedby="basic-addon1" autocomplete="off">
                             </div>
                         </div>
-                        <!-- Body -->
                         <div class="card-body p-0 initial-19"  id="dm-conversation-list">
                             <div class="d-flex justify-content-start px-3 gap-4 mb-3 tab-button-group">
                                 <button id="customer_conversations" data-url="{{route('admin.users.delivery-man.preview', ['id'=>$deliveryMan->id, 'tab'=> 'conversation','conversation_with' =>'customer'])}}" class="{{ request()?->conversation_with != 'store' ? 'active' : 'redirect-url' }}">{{ translate('Customer') }}</button>
@@ -44,9 +44,7 @@
                                 @include('admin-views.delivery-man.partials._conversation_list')
                             </div>
                         </div>
-                        <!-- End Body -->
                     </div>
-                    <!-- End Card -->
                 </div>
                 <div class="col-lg-8 col-nd-6" id="dm-view-conversation">
                     <div class="h-100 card d-flex align-items-center justify-content-center">
@@ -54,14 +52,13 @@
                             <div class="empty-conversation-content d-flex flex-column align-items-center gap-2">
                                 <img width="120" height="120" src="{{asset('/public/assets/admin/img/icons/empty-conversation.png')}}" alt="public">
                                 <h5 class="text-muted">
-                                    {{translate('no_conversation_found')}}
+                                    {{translate('No conversation found')}}
                                 </h5>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-            <!-- End Row -->
         </div>
 
     </div>

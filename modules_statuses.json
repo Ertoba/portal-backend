@@ -6,5 +6,6 @@
     "AI": true,
     "RideShare": false,
     "ReelsModule": true,
-    "Builder": true
+    "Builder": true,
+    "Service": true
 }

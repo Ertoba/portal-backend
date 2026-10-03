@@ -11,7 +11,7 @@ use App\Exports\EmployeeListExport;
 use App\Http\Controllers\BaseController;
 use App\Http\Requests\Admin\EmployeeAddRequest;
 use App\Http\Requests\Admin\EmployeeUpdateRequest;
-use App\Services\EmployeeService;
+use App\Services\Admin\EmployeeService;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -48,7 +48,7 @@ class EmployeeController extends BaseController
     {
         $zoneId = $request->query('zone_id', 'all');
         $employees = $this->employeeRepo->getZoneWiseListWhere(searchValue: $request['search'],
-        relations:['role'],
+        relations:['role', 'zones:id,name', 'storage'],
         zoneId: $zoneId,
         dataLimit: config('default_pagination'));
         return view(EmployeeViewPath::INDEX[VIEW], compact('employees'));
@@ -56,15 +56,22 @@ class EmployeeController extends BaseController
 
     public function add(EmployeeAddRequest $request): RedirectResponse
     {
-        $this->employeeRepo->add(data: $this->employeeService->getAddData(request: $request));
+        $this->employeeRepo->add(data: $this->employeeService->getAddData($request->all()));
 
-        Toastr::success(translate('messages.employee_added_successfully'));
+        Toastr::success(translate('Added successfully'));
         return redirect()->route('admin.users.employee.list');
     }
 
     public function getUpdateView(string|int $id): RedirectResponse|View
     {
         $employee = $this->employeeRepo->getFirstWhereExceptAdmin(params: ['id' => $id]);
+
+        if (! $employee) {
+            Toastr::warning(translate('No data found'));
+
+            return back();
+        }
+
         $roles = $this->roleRepo->getList();
         $data = $this->employeeService->adminCheck(employee: $employee);
         $zones = $this->zoneRepo->getList();
@@ -73,7 +80,7 @@ class EmployeeController extends BaseController
             return view(EmployeeViewPath::UPDATE[VIEW], compact('roles', 'employee','zones'));
         }
 
-        Toastr::warning(translate('messages.access_denied'));
+        Toastr::warning(translate('messages.Access denied'));
         return back();
     }
 
@@ -81,16 +88,16 @@ class EmployeeController extends BaseController
     {
         $employee = $this->employeeRepo->getFirstWhereExceptAdmin(params: ['id' => $id]);
 
-        $this->employeeRepo->update(id: $id ,data: $this->employeeService->getUpdateData(request: $request,employee: $employee));
+        $this->employeeRepo->update(id: $id ,data: $this->employeeService->getUpdateData($request->all(),employee: $employee));
 
-        Toastr::success(translate('messages.employee_updated_successfully'));
+        Toastr::success(translate('Updated successfully'));
         return back();
     }
 
     public function delete($id): RedirectResponse|View
     {
         $this->employeeRepo->delete(id: $id);
-        Toastr::success(translate('messages.employee_deleted_successfully'));
+        Toastr::success(translate('Deleted successfully'));
         return back();
     }
 

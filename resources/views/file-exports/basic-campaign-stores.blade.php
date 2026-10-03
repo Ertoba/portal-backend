@@ -1,6 +1,6 @@
 <div class="row">
     <div class="col-lg-12 text-center ">
-        <h1>{{ translate('Basic_Campaign') }} {{ $data['campaign']->title }} </h1>
+        <h1>{{ translate('Basic campaign') }} {{ $data['campaign']->title }} </h1>
     </div>
     <div class="col-lg-12">
 
@@ -9,11 +9,11 @@
         <table>
             <thead>
                 <tr>
-                    <th>{{ translate('Message_Analytics') }}</th>
+                    <th>{{ translate('Message analytics') }}</th>
                     <th></th>
                     <th></th>
                     <th>
-                        {{ translate('Total_Vendors') }}: {{ $data['stores']->count() }}
+                        {{ translate('Total vendors') }}: {{ $data['stores']->count() }}
                         <br>
 
                     </th>
@@ -23,11 +23,11 @@
                     <th></th>
                 </tr>
                 <tr>
-                    <th>{{ translate('Search_Criteria') }}</th>
+                    <th>{{ translate('Search criteria') }}</th>
                     <th></th>
                     <th></th>
                     <th>
-                        {{ translate('Search_Bar_Content') }}: : {{ $data['search'] ?? translate('N/A') }}
+                        {{ translate('Search bar content') }}: : {{ $data['search'] ?? translate('N/A') }}
                     </th>
                     <th> </th>
                     <th></th>
@@ -36,11 +36,11 @@
                 </tr>
                 <tr>
                     <th class="border-0">{{ translate('messages.SL') }}</th>
-                    <th class="border-0 w--15">{{ translate('messages.store') }}</th>
+                    <th class="border-0 w--15">{{ translate('messages.Store') }}</th>
                     <th class="border-0 w--25">{{ translate('messages.owner') }}</th>
-                    <th class="border-0">{{ translate('messages.Contact Info') }}</th>
-                    <th class="border-0">{{ translate('messages.Joining Date') }}</th>
-                    <th class="border-0">{{ translate('messages.status') }}</th>
+                    <th class="border-0">{{ translate('Contact information') }}</th>
+                    <th class="border-0">{{ translate('Joining date') }}</th>
+                    <th class="border-0">{{ translate('messages.Status') }}</th>
 
             </thead>
             <tbody>
@@ -74,11 +74,11 @@
                                 {{ \App\CentralLogics\Helpers::date_format($store->pivot->created_at ?? $data['campaign']->created_at) }}
                             </div>
                         </td>
-                        @php($status = $store->pivot ? $store->pivot->campaign_status : translate('messages.not_found'))
+                        @php($status = $store->pivot ? $store->pivot->campaign_status : translate('No data found'))
                         <td class="text-capitalize">
                             @if ($status == 'pending')
                                 <span class="badge badge-soft-info border-0">
-                                    {{ translate('messages.not_approved') }}
+                                    {{ translate('messages.Not approved') }}
                                 </span>
                             @elseif($status == 'confirmed')
                                 <span class="badge badge-soft-success border-0">

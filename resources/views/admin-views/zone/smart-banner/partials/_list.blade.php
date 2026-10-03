@@ -4,14 +4,14 @@
         <thead class="thead-light">
             <tr>
                 <th class="border-0 fs-14">{{ translate('messages.SL') }}</th>
-                <th class="border-0 fs-14">{{ translate('messages.banner_info') }}</th>
+                <th class="border-0 fs-14">{{ translate('Banner information') }}</th>
                 <th class="border-0 fs-14">
-                    <div class="min-w-160px">{{ translate('messages.duration') }}</div>
+                    <div class="min-w-160px">{{ translate('messages.Duration') }}</div>
                 </th>
-                <th class="border-0 fs-14">{{ translate('messages.module') }}</th>
+                <th class="border-0 fs-14">{{ translate('messages.Module') }}</th>
                 <th class="border-0 fs-14">{{ translate('messages.position') }}</th>
-                <th class="border-0 fs-14">{{ translate('messages.status') }}</th>
-                <th class="border-0 fs-14 text-center">{{ translate('messages.action') }}</th>
+                <th class="border-0 fs-14">{{ translate('messages.Status') }}</th>
+                <th class="border-0 fs-14 text-center">{{ translate('messages.Action') }}</th>
             </tr>
         </thead>
         <tbody id="set-rows">
@@ -39,11 +39,15 @@
                         </span>
                         <span class="d-block fs-12">
                             {{ translate('messages.Time') }}:
-                            {{ \App\CentralLogics\Helpers::time_format($banner->start_time) }} -
-                            {{ $banner->end_time ? \App\CentralLogics\Helpers::time_format($banner->end_time) : translate('messages.until_you_turn_off') }}
+                            @if($banner->start_time)
+                                {{ \App\CentralLogics\Helpers::time_format($banner->start_time) }} -
+                                {{ $banner->end_time ? \App\CentralLogics\Helpers::time_format($banner->end_time) : translate('messages.Until you turn off') }}
+                            @else
+                                {{ translate('messages.All day') }}
+                            @endif
                         </span>
                     </td>
-                    <td>{{ $banner->module ? translate($banner->module->module_name) : translate('messages.all_modules') }}</td>
+                    <td>{{ $banner->module ? $banner->module->module_name : translate('All modules') }}</td>
                     <td>{{ translate(ucfirst($banner->position)) }} {{ translate('messages.position') }}</td>
                     <td>
                         <label class="toggle-switch toggle-switch-sm" for="status-{{ $banner['id'] }}">
@@ -52,10 +56,10 @@
                                    data-type="status"
                                    data-image-on='{{ asset('public/assets/admin/img/status-ons.png') }}'
                                    data-image-off="{{ asset('public/assets/admin/img/status-ons.png') }}"
-                                   data-title-on="{{ translate('messages.want_to_turn_on_smart_banner') }}"
-                                   data-title-off="{{ translate('messages.want_to_turn_off_smart_banner') }}"
-                                   data-text-on="<p>{{ translate('messages.this_banner_will_become_visible_to_customers.') }}</p>"
-                                   data-text-off="<p>{{ translate('messages.this_banner_will_be_hidden_from_customers.') }}</p>"
+                                   data-title-on="{{ translate('messages.Want to turn on smart banner') }}"
+                                   data-title-off="{{ translate('messages.Want to turn off smart banner') }}"
+                                   data-text-on="<p>{{ translate('messages.This banner will become visible to customers.') }}</p>"
+                                   data-text-off="<p>{{ translate('messages.This banner will be hidden from customers.') }}</p>"
                                    id="status-{{ $banner['id'] }}" {{ $banner->status ? 'checked' : '' }}>
                             <span class="toggle-switch-label">
                                 <span class="toggle-switch-indicator"></span>
@@ -67,27 +71,27 @@
                     </td>
                     <td>
                         <div class="btn--container justify-content-center">
-                            <a class="btn action-btn btn--primary btn-outline-primary offcanvas-trigger smart-banner-edit-trigger"
+                            <a class="btn action-btn action-btn--edit offcanvas-trigger smart-banner-edit-trigger"
                                href="javascript:"
                                data-id="{{ $banner['id'] }}"
                                data-url="{{ route('admin.business-settings.zone.smart-banner.edit', [$banner['id']]) }}"
                                data-target="#smartBannerForm_offcanvas"
-                               title="{{ translate('messages.edit') }}">
+                               title="{{ translate('Edit') }}">
                                 <i class="tio-edit"></i>
                             </a>
-                            <a class="btn action-btn btn--primary btn-outline-primary offcanvas-trigger smart-banner-view-trigger"
+                            <a class="btn action-btn action-btn--view offcanvas-trigger smart-banner-view-trigger"
                                href="javascript:"
                                data-id="{{ $banner['id'] }}"
                                data-url="{{ route('admin.business-settings.zone.smart-banner.view', [$banner['id']]) }}"
                                data-target="#smartBannerView_offcanvas"
-                               title="{{ translate('messages.view') }}">
+                               title="{{ translate('messages.View') }}">
                                 <i class="tio-visible-outlined"></i>
                             </a>
-                            <a class="btn action-btn btn--danger btn-outline-danger form-alert"
+                            <a class="btn action-btn action-btn--delete form-alert"
                                href="javascript:"
                                data-id="smart-banner-{{ $banner['id'] }}"
-                               data-message="{{ translate('messages.are_you_sure_you_want_to_delete_this_smart_banner_permanently') }}"
-                               title="{{ translate('messages.delete') }}">
+                               data-message="{{ translate('Are you sure you want to delete this smart banner permanently?') }}"
+                               title="{{ translate('messages.Delete') }}">
                                 <i class="tio-delete-outlined"></i>
                             </a>
                             <form action="{{ route('admin.business-settings.zone.smart-banner.delete', [$banner['id']]) }}"
@@ -110,6 +114,6 @@
 @if (count($banners) === 0)
     <div class="empty--data">
         <img src="{{ asset('/public/assets/admin/svg/illustrations/sorry.svg') }}" alt="public">
-        <h5>{{ translate('messages.no_data_found') }}</h5>
+        <h5>{{ translate('No data found') }}</h5>
     </div>
 @endif

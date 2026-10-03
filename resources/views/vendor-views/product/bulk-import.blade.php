@@ -1,199 +1,64 @@
 @extends('layouts.vendor.app')
 
-@section('title',translate('messages.Item Bulk Import'))
+@section('title',translate('messages.Item bulk import'))
 
 @push('css_or_js')
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <link href="{{asset('public/assets/admin/css/tags-input.min.css')}}" rel="stylesheet">
+    <link href="{{ asset('public/assets/admin/css/tags-input.min.css') }}" rel="stylesheet">
+    <link rel="stylesheet" href="{{ asset('public/assets/admin/css/third-party-setup.css') }}">
+    <link rel="stylesheet" href="{{ asset('public/assets/admin/css/bulk-tools.css') }}">
 @endpush
 
 @section('content')
-@php($store_data=\App\CentralLogics\Helpers::get_store_data())
-    <div class="content container-fluid">
-        <div class="page-header">
-            <h1 class="page-header-title">
-                <span class="page-header-icon">
-                    <img src="{{asset('public/assets/admin/img/items.png')}}" class="w--22" alt="">
-                </span>
-                <span>
-                    {{translate('messages.items_bulk_import')}}
-                </span>
-            </h1>
-        </div>
-        <div class="card">
-            <div class="card-body">
-                <div class="export-steps style-2">
-                    <div class="export-steps-item">
-                        <div class="inner">
-                            <h5>{{translate('STEP 1')}}</h5>
-                            <p>
-                                {{translate('Download Excel File')}}
-                            </p>
-                        </div>
-                    </div>
-                    <div class="export-steps-item">
-                        <div class="inner">
-                            <h5>{{translate('STEP 2')}}</h5>
-                            <p>
-                                {{translate('Match Spread sheet data according to instruction')}}
-                            </p>
-                        </div>
-                    </div>
-                    <div class="export-steps-item">
-                        <div class="inner">
-                            <h5>{{translate('STEP 3')}}</h5>
-                            <p>
-                                {{translate('Validate data and complete import')}}
-                            </p>
-                        </div>
-                    </div>
-                </div>
-                <div class="jumbotron pt-1 mb-0 pb-4 bg-white">
-                    <h3>{{ translate('messages.Instructions') }} : </h3>
-                    <p>{{ translate('1. Download the format file and fill it with proper data.') }}</p>
-
-                    <p>{{ translate('2. You can download the example file to understand how the data must be filled.') }}</p>
-
-                    <p>{{ translate('3. Once you have downloaded and filled the format file, upload it in the form below and submit.') }}</p>
-                    <p>{{ translate('4. You can get store id, module id and unit id from their list, please input the right ids.') }}</p>
-
-                    <p>{{ translate('5. For ecommerce item avaliable time start and end will be 00:00:00 and 23:59:59') }}</p>
-
-                    <p>{{ translate('6. You can upload your product images in product folder from gallery, and copy image`s path.') }}</p>
-                    <p>{{ translate('7. Image_file_name_must_be_in_30_character') }}</p>
-
-                </div>
-                <div class="text-center pb-4">
-                    <h3 class="mb-3 export--template-title">{{translate('download_spreadsheet_template')}}</h3>
-                    <div class="btn--container justify-content-center export--template-btns">
-
-                        @if ($store_data->module->module_type == 'food')
-                            <a href="{{asset('public/assets/restaurant_panel/foods_bulk_format.xlsx')}}" download="" class="btn btn-dark">{{translate('template_with_existing_data')}}</a>
-                        @else
-                            <a href="{{asset('public/assets/restaurant_panel/items_bulk_format.xlsx')}}" download="" class="btn btn-dark">{{translate('template_with_existing_data')}}</a>
-                        @endif
-
-                        <a href="{{asset('public/assets/restaurant_panel/items_bulk_format_nodata.xlsx')}}" download="" class="btn btn-dark">{{translate('template_without_data')}}</a>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <form class="product-form" id="import_form" action="{{route('vendor.item.bulk-import')}}" method="POST"
-                enctype="multipart/form-data">
-            @csrf
-            <input type="hidden" name="button" id="btn_value">
-            <div class="card mt-2 rest-part">
-                <div class="card-body">
-                    <h4 class="mb-3">{{translate('messages.import_items_file')}}</h4>
-                    <div class="custom-file custom--file">
-                        <input type="file" name="products_file" class="form-control" id="products_file" accept=".xlsx,.xls">
-                        <label class="custom-file-label" for="products_file">{{ translate('messages.Choose File') }}</label>
-                    </div>
-                    <div class="btn--container justify-content-end mt-20">
-                        <button id="reset_btn" type="reset" class="btn btn--reset">{{translate('messages.reset')}}</button>
-                        <button type="submit" name="button" value="update" class="btn btn--warning submit_btn">{{translate('messages.update')}}</button>
-                        <button type="submit" name="button" value="import" class="btn btn--primary submit_btn">{{translate('messages.Import')}}</button>
-                    </div>
-                </div>
-            </div>
-        </form>
-
-        <form action="javascript:" method="post" id="item_form" enctype="multipart/form-data">
-            <div id="food_variation_section" style="display: none">
-                <div class="card mt-2 rest-part">
-                    <div class="card-header">
-                        <h5 class="card-title">
-                            {{-- <span class="card-header-icon">
-                                <i class="tio-canvas-text"></i>
-                            </span> --}}
-                            <span>{{ translate('messages.food_variations_generator') }}</span>
-                        </h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="row g-2">
-                            <div class="col-md-12">
-                                <div id="add_new_option">
-                                </div>
-                                <br>
-                                <div class="mt-2">
-                                    <a class="btn btn-outline-success"
-                                        id="add_new_option_button">{{ translate('add_new_variation') }}</a>
-                                </div> <br><br>
-                            </div>
-                        </div>
-                        <div class="btn--container justify-content-end mb-3">
-                            <button type="submit" class="btn btn--primary">{{translate('generate')}}</button>
-                        </div>
-                        <textarea name="" id="food_variation_outpot" class="form-control" rows="5" readonly></textarea>
-                    </div>
-                </div>
-            </div>
-        </form>
-<br>
-        <form action="javascript:" method="post" id="item_form_2" enctype="multipart/form-data">
-            <div id="attribute_section" style="display: none">
-                <h4 class="mb-3">{{translate('Generate Variation')}}</h4>
-                <div class="card card mt-2 rest-part">
-                    <div class="card-header border-0 p-0">
-                        <div class="alert w-100 alert-soft-primary alert-dismissible fade show d-flex m-0" role="alert">
-                            <div>
-                                <img src="{{asset('/public/assets/admin/img/icons/intel.png')}}" width="22" alt="">
-                            </div>
-                            <div class="w-0 flex-grow-1 pl-3">
-                                <strong>{{ translate('Attention!') }}</strong>
-                              {{ translate('You_must_generate_variations_from_this_generator_if_you_want_to_add_variations_to_your_products.You_must_copy_from_the_specific_filed_and_past_it_to_the_specific_column_at_your_excel_sheet.Otherwise_you_might_get_500_error_if_you_swap_or_entered_invalid_data.And_if_you_want_to_make_it_empty_then_you_have_to_enter_an_empty_array_[_]_.') }}
-                            </div>
-                            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                                <span aria-hidden="true">×</span>
-                            </button>
-                        </div>
-                    </div>
-                    <div class="card-body">
-                        <div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
-                            <label class="input-label m-0">{{ translate('messages.attribute') }}<span class="input-label-secondary"></span></label>
-                            <button type="submit" class="btn btn--primary">{{translate('generate value')}}</button>
-                        </div>
-                        <div class="row g-2">
-                            <div class="col-lg-6">
-                                <div class="form-group mb-0">
-                                    <select name="attribute_id[]" id="choice_attributes"
-                                        class="form-control js-select2-custom" multiple="multiple">
-                                        @foreach (\App\Models\Attribute::orderBy('name')->get() as $attribute)
-                                            <option value="{{ $attribute['id'] }}">{{ $attribute['name'] }}</option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                                <div class="customer_choice_options pt-3" id="customer_choice_options">
-                                </div>
-                            </div>
-                            <div class="col-lg-12">
-                                <div class="variant_combination" id="variant_combination">
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <label for="">{{ translate('messages.Generated_varient') }} <span class="form-label-secondary text-danger " data-toggle="tooltip" data-placement="right" data-original-title="{{ translate('messages.This_field_is_for_geenrated_variation._copy_them_&_paste_into_excel_sheet') }} "><img src="{{ asset('/public/assets/admin/img/info-circle.svg') }}" alt="Veg non veg"> * </span></label>
-                                <textarea name="" id="variation_output" class="form-control" rows="5" readonly></textarea>
-                            </div>
-                            <div class="col-md-4">
-                                <label for="">{{ translate('messages.Generated_choice_option') }} <span class="form-label-secondary text-danger " data-toggle="tooltip" data-placement="right" data-original-title="{{ translate('messages.Choice_option_is_required_if_you_are_using_product_variation') }}"><img src="{{ asset('/public/assets/admin/img/info-circle.svg') }}" alt="Veg non veg"> * </span></label>
-                                <textarea name="" id="choice_output" class="form-control" rows="5" readonly></textarea>
-                            </div>
-                            <div class="col-md-4">
-                                <label for="">{{ translate('messages.Generated_attributes_field') }} <span class="form-label-secondary text-danger " data-toggle="tooltip" data-placement="right" data-original-title="{{ translate('messages.Attributes_is_required_if_you_are_using_product_variation') }}"><img src="{{ asset('/public/assets/admin/img/info-circle.svg') }}" alt="Veg non veg"> * </span></label>
-                                <textarea name="" id="attributes" class="form-control" rows="5" readonly></textarea>
-                            </div>
-                        </div>
-
-                        <div class="btn--container justify-content-end mt-2 mb-2">
-                            <button type="reset" class="btn btn--reset">{{translate('Reset')}}</button>
-                        </div>
-
-
-                    </div>
-                </div>
-            </div>
-        </form>
-    </div>
+    @include('partials.bulk._import', ['bulk' => [
+        'title' => translate('messages.Item bulk import'),
+        'subtitle' => translate('Upload a spreadsheet to add new items or update the ones already in your store.'),
+        'icon' => asset('public/assets/admin/img/items.png'),
+        'action' => route('vendor.item.bulk-import'),
+        'summary' => $summary,
+        'count_label' => translate('Items in your store'),
+        'show_module' => false,
+        'mode_add_title' => translate('Add new items'),
+        'mode_add_desc' => translate('Every row becomes a new item.'),
+        'mode_update_title' => translate('Update existing items'),
+        'mode_update_desc' => translate('Rows are matched on their ID and overwritten.'),
+        'note_import' => translate('Ids in the file are ignored — new items get fresh ids.'),
+        'note_update' => translate('Your file must keep its Id column. Matching items are overwritten and cannot be restored.'),
+        'templates' => [
+            [
+                'label' => translate('Template with current data'),
+                'hint' => translate('The heading row plus example rows, so you can see how each column is filled.'),
+                'url' => $module_type == 'food'
+                    ? asset('public/assets/restaurant_panel/foods_bulk_format.xlsx')
+                    : asset('public/assets/restaurant_panel/items_bulk_format.xlsx'),
+            ],
+            [
+                'label' => translate('Empty template'),
+                'hint' => translate('Only the heading row — start from a clean sheet.'),
+                'url' => asset('public/assets/restaurant_panel/items_bulk_format_nodata.xlsx'),
+            ],
+        ],
+        'aside_title' => translate('How the file must look'),
+        'aside_subtitle' => translate('These columns must carry a value in every row.'),
+        'columns' => ['Id', 'Name', 'CategoryId', 'SubCategoryId', 'Price', 'StoreId', 'ModuleId', 'Discount', 'DiscountType'],
+        'tips' => [
+            translate('CategoryId and UnitId come from their own lists — put the right ids in, the file is not checked against names.'),
+            translate('Price and discount cannot be negative, and the row number in the error message is the one to fix.'),
+            translate('Build variations with the generators below, then paste the generated values into the matching columns.'),
+            translate('Image paths come from the item folder in the gallery, and the file name has to stay short.') . ' ' . translate('Character limit') . ': 30',
+        ],
+        'export_url' => route('vendor.item.bulk-export-index'),
+        'export_title' => translate('messages.Export items'),
+        'export_desc' => translate('Download your current items as a ready-made file to edit.'),
+        'help_title' => translate('Importing items'),
+        'help_steps' => [
+            translate('Download a template, or export your items to start from the data you already have.'),
+            translate('Fill one row per item and keep the column headings exactly as they come.'),
+            translate('Pick whether the file adds new items or updates existing ones.'),
+            translate('Choose the file and press upload — the whole file is checked before anything is saved.'),
+        ],
+        'after' => 'vendor-views.product.partials._bulk-import-generators',
+    ]])
 @endsection
 
 @push('script_2')
@@ -216,12 +81,12 @@
                 let add_option_view = `
                 <div class="card view_new_option mb-2" >
                     <div class="card-header">
-                        <label for="" id=new_option_name_` + count + `> {{ translate('add_new') }}</label>
+                        <label for="" id=new_option_name_` + count + `> {{ translate('Add new') }}</label>
                     </div>
                     <div class="card-body">
                         <div class="row g-2">
                             <div class="col-lg-3 col-md-6">
-                                <label for="">{{ translate('name') }}</label>
+                                <label for="">{{ translate('Name') }}</label>
                                  <input required name=options[` + count +
                     `][name] class="form-control new_option_name" type="text" data-count="`+
                     count +`">
@@ -229,7 +94,7 @@
 
                             <div class="col-lg-3 col-md-6">
                                 <div class="form-group">
-                                    <label class="input-label text-capitalize d-flex alig-items-center"><span class="line--limit-1">{{ translate('messages.selcetion_type') }} </span>
+                                    <label class="input-label text-capitalize d-flex alig-items-center"><span class="line--limit-1">{{ translate('messages.Selection type') }} </span>
                                     </label>
                                     <div class="resturant-type-group border">
                                         <label class="form-check form--check mr-2 mr-md-4">
@@ -238,7 +103,7 @@
                     `" checked
                                                 >
                                                 <span class="form-check-label">
-                                                    {{ translate('Multiple Selection') }}
+                                                    {{ translate('Multiple selection') }}
                     </span>
                 </label>
 
@@ -248,7 +113,7 @@
                     `"
                                                 >
                                                 <span class="form-check-label">
-                                                    {{ translate('Single Selection') }}
+                                                    {{ translate('Single selection') }}
                     </span>
                 </label>
         </div>
@@ -271,7 +136,7 @@
                                             <div>
                                                 <input id="options[` + count + `][required]" name="options[` +
                     count + `][required]" type="checkbox">
-                                                <label for="options[` + count + `][required]" class="m-0">{{ translate('Required') }}</label>
+                                                <label for="options[` + count + `][required]" class="m-0">{{ translate('Required.') }}</label>
                                             </div>
                                             <div>
                                                 <button type="button" class="btn btn-danger btn-sm delete_input_button"
@@ -290,13 +155,13 @@
                                 <div  id="option_price_view_` + count + `">
                                     <div class="row g-3 add_new_view_row_class mb-3">
                                         <div class="col-md-4 col-sm-6">
-                                            <label for="">{{ translate('Option_name') }}</label>
+                                            <label for="">{{ translate('Option name') }}</label>
                                             <input class="form-control" required type="text" name="options[` +
                     count +
                     `][values][0][label]" id="">
                                         </div>
                                         <div class="col-md-4 col-sm-6">
-                                            <label for="">{{ translate('Additional_price') }}</label>
+                                            <label for="">{{ translate('Additional price') }}</label>
                                             <input class="form-control" required type="number" min="0"  step="{{ \App\CentralLogics\Helpers::getDecimalPlaces() }}" max="999999999999.999" name="options[` +
                     count + `][values][0][optionPrice]" id="">
                                         </div>
@@ -305,7 +170,7 @@
                                 <div class="row mt-3 p-3 mr-1 d-flex "  id="add_new_button_` + count +
                     `">
                                    <button type="button" class="btn btn--primary btn-outline-primary add_new_row_button" data-count="`+
-                    count +`" >{{ translate('Add_New_Option') }}</button>
+                    count +`" ><i class="tio-add-circle"></i> {{ translate('Add new option') }}</button>
                                 </div>
                             </div>
                         </div>
@@ -378,12 +243,12 @@
             let add_new_row_view = `
         <div class="row add_new_view_row_class mb-3 position-relative pt-3 pt-sm-0">
             <div class="col-md-4 col-sm-5">
-                    <label for="">{{ translate('Option_name') }}</label>
+                    <label for="">{{ translate('Option name') }}</label>
                     <input class="form-control" required type="text" name="options[` + count + `][values][` +
                 countRow + `][label]" id="">
                 </div>
                 <div class="col-md-4 col-sm-5">
-                    <label for="">{{ translate('Additional_price') }}</label>
+                    <label for="">{{ translate('Additional price') }}</label>
                     <input class="form-control"  required type="number" min="0"  step="{{ \App\CentralLogics\Helpers::getDecimalPlaces() }}" max="999999999999.999" name="options[` +
                 count +
                 `][values][` + countRow + `][optionPrice]" id="">
@@ -419,7 +284,7 @@
             $.each($("#choice_attributes option:selected"), function() {
                 if ($(this).val().length > 50) {
                     toastr.error(
-                        '{{ translate('validation.max.string', ['attribute' => translate('messages.variation'), 'max' => '50']) }}', {
+                        '{{ translate('Variation name is too long') }}. {{ translate('Character limit') }}: 50', {
                             CloseButton: true,
                             ProgressBar: true
                         });
@@ -433,7 +298,7 @@
         let n = name;
 
         $('#customer_choice_options').append(
-            `<div class="__choos-item"><div><input type="hidden" name="choice_no[]" value="${i}"><input type="text" class="form-control d-none" name="choice[]" value="${n}" placeholder="{{ translate('messages.choice_title') }}" readonly> <label class="form-label">${n}</label> </div><div><input type="text" class="form-control combination_update" name="choice_options_${i}[]" placeholder="{{ translate('messages.enter_choice_values') }}" data-role="tagsinput"></div></div>`
+            `<div class="__choos-item"><div><input type="hidden" name="choice_no[]" value="${i}"><input type="text" class="form-control d-none" name="choice[]" value="${n}" placeholder="{{ translate('messages.Choice title') }}" readonly> <label class="form-label">${n}</label> </div><div><input type="text" class="form-control combination_update" name="choice_options_${i}[]" placeholder="{{ translate('messages.Enter choice values') }}" data-role="tagsinput"></div></div>`
         );
         $("input[data-role=tagsinput], select[multiple][data-role=tagsinput]").tagsinput();
     }
@@ -536,58 +401,6 @@
             });
         });
 
-        $('#reset_btn').click(function(){
-            $('#bulk__import').val(null);
-        })
 
-
-        $(document).on("click", ".submit_btn", function(e){
-            e.preventDefault();
-            let data = $(this).val();
-            myFunction(data)
-        });
-
-
-        function myFunction(data) {
-            Swal.fire({
-                title: '{{ translate('Are you sure?') }}' ,
-                text: "{{ translate('You_want_to_') }}" +data,
-                type: 'warning',
-                showCancelButton: true,
-                cancelButtonColor: 'default',
-                confirmButtonColor: '#FC6A57',
-                cancelButtonText: '{{translate('messages.no')}}',
-                confirmButtonText: '{{translate('messages.yes')}}',
-                reverseButtons: true
-            }).then((result) => {
-                if (result.value) {
-                    $('#btn_value').val(data);
-                    $("#import_form").submit();
-                }
-            })
-        }
-        $(document).ready(function () {
-
-    $('#import_form').on('change', function (e) {
-            const fileInput = $('#products_file')[0];
-            const filePath = $('#products_file').val();
-
-            if (fileInput.files.length === 0) {
-                e.preventDefault();
-                toastr.error('Please select a file first.');
-                return false;
-            }
-
-            const allowedExtensions = /(\.xls|\.xlsx)$/i;
-
-            if (!allowedExtensions.exec(filePath)) {
-                e.preventDefault();
-                $('#products_file').val('');
-                toastr.error('Invalid file format. Please upload only XLS or XLSX files.');
-                return false;
-            }
-        });
-
-    });
     </script>
 @endpush

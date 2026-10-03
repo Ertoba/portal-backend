@@ -1,5 +1,5 @@
 <div class="modal fade" id="instructions">
-    @php($deliverymanNameInstruction = \App\CentralLogics\Helpers::formatDeliverymanText(translate('the_name_of_the_delivery_person.'), null, true))
+    @php($deliverymanNameInstruction = \App\CentralLogics\Helpers::formatDeliverymanText(translate('the name of the delivery person.'), null, true))
     <div class="modal-dialog status-warning-modal">
         <div class="modal-content">
             <div class="modal-header">
@@ -13,9 +13,9 @@
                         <div class="mb-20">
                             <div class="text-center">
                                 <img src="{{asset('/public/assets/admin/img/email-templates/1.png')}}" alt="" class="mb-20">
-                                <h5 class="modal-title">{{translate('Select_Theme')}}</h5>
+                                <h5 class="modal-title">{{translate('Select Theme')}}</h5>
                                 <p>
-                                    {{ translate('Choose_a_related_email_template_theme_for_the_purpose_for_which_you_are_creating_the_email.') }}
+                                    {{ translate('Choose a related email template theme for the purpose for which you are creating the email.') }}
                                 </p>
                             </div>
                         </div>
@@ -24,9 +24,9 @@
                         <div class="mb-20">
                             <div class="text-center">
                                 <img src="{{asset('/public/assets/admin/img/email-templates/5.png')}}" alt="" class="mb-20">
-                                <h5 class="modal-title">{{translate('Choose_Logo')}}</h5>
+                                <h5 class="modal-title">{{translate('Choose Logo')}}</h5>
                                 <p>
-                                    {{translate('Upload_your_company_logo_in_1:1_format._This_will_show_above_the_Main_Title_of_the_email.')}}
+                                    {{translate('Upload your company logo. This will show above the Main Title of the email.')}} {{ translate('Ratio') }}: 1:1
                                 </p>
                             </div>
                         </div>
@@ -35,9 +35,9 @@
                         <div class="mb-20">
                             <div class="text-center">
                                 <img src="{{asset('/public/assets/admin/img/email-templates/2.png')}}" alt="" class="mb-20">
-                                <h5 class="modal-title">{{translate('Write_a_Title')}}</h5>
+                                <h5 class="modal-title">{{translate('Write a Title')}}</h5>
                                 <p>
-                                    {{translate('Give_your_email_a_‘Catchy_Title’_to_help_the_reader_understand_easily.')}}
+                                    {{translate('Give your email a \'Catchy Title\' to help the reader understand easily.')}}
                                 </p>
                             </div>
                         </div>
@@ -46,26 +46,26 @@
                         <div class="mb-20">
                             <div class="text-center">
                                 <img src="{{asset('/public/assets/admin/img/email-templates/3.png')}}" alt="" class="mb-20">
-                                <h5 class="modal-title">{{translate('Write_a_message_in_the_Email_Body')}}</h5>
+                                <h5 class="modal-title">{{translate('Write a message in the email body')}}</h5>
                             </div>
                             <p>
-                                {{ translate('you_can_add_your_message_using_placeholders_to_include_dynamic_content._Here_are_some_examples_of_placeholders_you_can_use:') }}
+                                {{ translate('You can add your message using placeholders to include dynamic content. Here are some examples of placeholders you can use') }}:
                             </p>
                             <ul>
                                 <li>
-                                    {userName}: {{ translate('the_name_of_the_user.') }}
+                                    {userName}: {{ translate('the name of the user.') }}
                                 </li>
                                 <li>
                                     {deliveryManName}: {{ $deliverymanNameInstruction }}
                                 </li>
                                 <li>
-                                    {storeName}: {{ translate('the_name_of_the_store.') }}
+                                    {storeName}: {{ translate('the name of the store.') }}
                                 </li>
                                 <li>
-                                    {orderId}: {{ translate('the_order_id.') }}
+                                    {orderId}: {{ translate('The order id.') }}
                                 </li>
                                 <li>
-                                    {transactionId}: {{ translate('the_transaction_id.') }}
+                                    {transactionId}: {{ translate('The transaction id.') }}
                                 </li>
                             </ul>
                         </div>
@@ -74,9 +74,9 @@
                         <div class="mb-20">
                             <div class="text-center">
                                 <img src="{{asset('/public/assets/admin/img/email-templates/4.png')}}" alt="" class="mb-20">
-                                <h5 class="modal-title">{{translate('Add_Button_&_Link')}}</h5>
+                                <h5 class="modal-title">{{translate('Add Button & Link')}}</h5>
                                 <p>
-                                    {{translate('Specify_the_text_and_URL_for_the_button_that_you_want_to_include_in_your_email.')}}
+                                    {{translate('Specify the text and URL for the button that you want to include in your email.')}}
                                 </p>
                             </div>
                         </div>
@@ -85,9 +85,9 @@
                         <div class="mb-20">
                             <div class="text-center">
                                 <img src="{{asset('/public/assets/admin/img/email-templates/5.png')}}" alt="" class="mb-20">
-                                <h5 class="modal-title">{{translate('Change_Banner_Image_if_needed')}}</h5>
+                                <h5 class="modal-title">{{translate('Change Banner Image if needed')}}</h5>
                                 <p>
-                                    {{translate('Choose_the_relevant_banner_image_for_the_email_theme_you_use_for_this_mail.')}}
+                                    {{translate('Choose the relevant banner image for the email theme you use for this mail.')}}
                                 </p>
                             </div>
                         </div>
@@ -96,9 +96,9 @@
                         <div class="mb-20">
                             <div class="text-center">
                                 <img src="{{asset('/public/assets/admin/img/email-templates/6.png')}}" alt="" class="mb-20">
-                                <h5 class="modal-title">{{translate('Add_Content_to_Email_Footer')}}</h5>
+                                <h5 class="modal-title">{{translate('Add Content to Email Footer')}}</h5>
                                 <p>
-                                    {{translate('Write_text_on_the_footer_section_of_the_email,_and_choose_important_page_links_and_social_media_links.')}}
+                                    {{translate('Write text on the footer section of the email, and choose important page links and social media links.')}}
                                 </p>
                             </div>
                         </div>
@@ -107,9 +107,9 @@
                         <div class="mb-20">
                             <div class="text-center">
                                 <img src="{{asset('/public/assets/admin/img/email-templates/7.png')}}" alt="" class="mb-20">
-                                <h5 class="modal-title">{{translate('Create_a_copyright_notice')}}</h5>
+                                <h5 class="modal-title">{{translate('Create a copyright notice')}}</h5>
                                 <p>
-                                    {{translate('Include_a_copyright_notice_at_the_bottom_of_your_email_to_protect_your_content.')}}
+                                    {{translate('Include a copyright notice at the bottom of your email to protect your content.')}}
                                 </p>
                             </div>
                         </div>
@@ -118,11 +118,11 @@
                         <div class="mb-20">
                             <div class="text-center">
                                 <img src="{{asset('/public/assets/admin/img/email-templates/8.png')}}" alt="" class="mb-20">
-                                <h5 class="modal-title">{{translate('Save_and_publish')}}</h5>
+                                <h5 class="modal-title">{{translate('Save and publish')}}</h5>
                                 <p>
-                                    {{translate("Once_you've_set_up_all_the_elements_of_your_email_template,_save_and_publish_it_for_use.")}}
+                                    {{translate("Once you've set up all the elements of your email template, save and publish it for use.")}}
                                 </p>
-                                <button class="btn btn--primary w-100 mw-300px" data-dismiss="modal" type="button">{{translate('Got_It')}}</button>
+                                <button class="btn btn--primary w-100 mw-300px" data-dismiss="modal" type="button"><i class="tio-checkmark-circle-outlined"></i> {{translate('Got it')}}</button>
                             </div>
                         </div>
                     </div>

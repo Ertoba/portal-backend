@@ -1,22 +1,25 @@
 @extends('layouts.admin.app')
 
-@section('title',translate('messages.flutter_web_landing_page'))
+@section('title',translate('messages.Flutter web landing page'))
 
 @section('content')
 
 <div class="content container-fluid">
     <div class="page-header pb-0">
         <div class="d-flex flex-wrap justify-content-between">
-            <h1 class="page-header-title">
-                <span class="page-header-icon">
-                    <img src="{{asset('public/assets/admin/img/flutter.png')}}" class="w--20" alt="">
-                </span>
-                <span>
-                    {{ translate('messages.flutter_web_landing_page') }}
-                </span>
-            </h1>
+            <div>
+                <h1 class="page-header-title">
+                    <span class="page-header-icon">
+                        <img src="{{asset('public/assets/admin/img/outline/flutter.svg')}}" class="w--26" alt="">
+                    </span>
+                    <span>
+                        {{ translate('messages.Flutter web landing page') }}
+                    </span>
+                </h1>
+                <p class="page-header-desc">{{ translate('Change this selling point on the flutter web landing page.') }}</p>
+            </div>
             <div class="text--primary-2 py-1 d-flex flex-wrap align-items-center" type="button" data-toggle="modal" data-target="#how-it-works">
-                <strong class="mr-2">{{translate('See_how_it_works!')}}</strong>
+                <strong class="mr-2">{{translate('See how it works')}}</strong>
                 <div>
                     <i class="tio-info-outined"></i>
                 </div>
@@ -28,15 +31,13 @@
             @include('admin-views.business-settings.landing-page-settings.top-menu-links.flutter-landing-page-links')
         </div>
     </div>
-    @php($language=\App\Models\BusinessSetting::where('key','language')->first())
-    @php($language = $language->value ?? null)
-    @php($defaultLang = str_replace('_', '-', app()->getLocale()))
+    @php($language = \App\CentralLogics\Helpers::get_business_settings('language', false) ?? null)
     @if($language)
         <ul class="nav nav-tabs mb-4 border-0">
             <li class="nav-item">
                 <a class="nav-link lang_link active"
                 href="#"
-                id="default-link">{{translate('messages.default')}}</a>
+                id="default-link">{{translate('Default')}}</a>
             </li>
             @foreach (json_decode($language) as $lang)
                 <li class="nav-item">
@@ -57,10 +58,10 @@
                             <div class="row g-3">
                                 @if ($language)
                                 <div class="col-sm-6 lang_form default-form">
-                                    <label for="title" class="form-label">{{translate('Title')}} ({{ translate('messages.default') }})<span class="form-label-secondary" data-toggle="tooltip" data-placement="right" data-original-title="{{ translate('Write_the_title_within_30_characters') }}">
+                                    <label for="title" class="form-label">{{translate('Title')}} ({{ translate('Default') }})<span class="form-label-secondary" data-toggle="tooltip" data-placement="right" data-original-title="{{ translate('Character limit') }}: 30">
                                                 <img src="{{asset('public/assets/admin/img/info-circle.svg')}}" alt="">
                                             </span></label>
-                                    <input type="text" id="title" maxlength="30" name="title[]" value="{{ $criteria?->getRawOriginal('title')??'' }}" class="form-control" placeholder="{{translate('messages.title_here...')}}">
+                                    <input type="text" id="title" maxlength="30" name="title[]" value="{{ $criteria?->getRawOriginal('title')??'' }}" class="form-control" placeholder="{{translate('Enter title')}}">
                                 </div>
                                 <input type="hidden" name="lang[]" value="default">
                                     @foreach(json_decode($language) as $lang)
@@ -76,26 +77,26 @@
                                     }
                                 ?>
                                     <div class="col-sm-6 d-none lang_form" id="{{$lang}}-form1">
-                                        <label for="title{{$lang}}" class="form-label">{{translate('Title')}} ({{strtoupper($lang)}})<span class="form-label-secondary" data-toggle="tooltip" data-placement="right" data-original-title="{{ translate('Write_the_title_within_30_characters') }}">
+                                        <label for="title{{$lang}}" class="form-label">{{translate('Title')}} ({{strtoupper($lang)}})<span class="form-label-secondary" data-toggle="tooltip" data-placement="right" data-original-title="{{ translate('Character limit') }}: 30">
                                             <img src="{{asset('public/assets/admin/img/info-circle.svg')}}" alt="">
                                         </span></label>
-                                <input type="text" id="title{{$lang}}" maxlength="30" name="title[]" value="{{ $translate[$lang]['title']??'' }}" class="form-control" placeholder="{{translate('messages.title_here...')}}">
+                                <input type="text" id="title{{$lang}}" maxlength="30" name="title[]" value="{{ $translate[$lang]['title']??'' }}" class="form-control" placeholder="{{translate('Enter title')}}">
                                     </div>
                                         <input type="hidden" name="lang[]" value="{{$lang}}">
                                     @endforeach
                                 @else
                                 <div class="col-sm-6">
-                                    <label for="title" class="form-label">{{translate('Title')}}<span class="form-label-secondary" data-toggle="tooltip" data-placement="right" data-original-title="{{ translate('Write_the_title_within_30_characters') }}">
+                                    <label for="title" class="form-label">{{translate('Title')}}<span class="form-label-secondary" data-toggle="tooltip" data-placement="right" data-original-title="{{ translate('Character limit') }}: 30">
                                                 <img src="{{asset('public/assets/admin/img/info-circle.svg')}}" alt="">
                                             </span></label>
-                                    <input id="title" type="text"  maxlength="30" name="title[]" class="form-control" placeholder="{{translate('messages.title_here...')}}">
+                                    <input id="title" type="text"  maxlength="30" name="title[]" class="form-control" placeholder="{{translate('Enter title')}}">
                                 </div>
                                     <input type="hidden" name="lang[]" value="default">
                                 @endif
                                 <div class="col-sm-6">
                                     <div>
 
-                                        <label class="form-label">{{translate('Criteria Icon/ Image')}}<span class="form-label-secondary" data-toggle="tooltip" data-placement="right" data-original-title="{{ translate('Icon_ratio_(1:1)_and_max_size_2_MB.') }}">
+                                        <label class="form-label">{{translate('Criteria Icon/ Image')}}<span class="form-label-secondary" data-toggle="tooltip" data-placement="right" data-original-title="Icon ratio (1:1) and max size 2 MB.">
                                             <img src="{{asset('public/assets/admin/img/info-circle.svg')}}" alt="">
                                         </span></label>
                                     </div>
@@ -110,8 +111,8 @@
                                             @if (isset($criteria['image']))
                                                 <span id="fixed_header_image" class="remove_image_button remove-image"
                                                       data-id="fixed_header_image"
-                                                      data-title="{{translate('Warning!')}}"
-                                                      data-text="<p>{{translate('Are_you_sure_you_want_to_remove_this_image_?')}}</p>"
+                                                      data-title="{{translate('warning')}}"
+                                                      data-text="<p>{{translate('Are you sure you want to remove this image?')}}</p>"
                                                 > <i class="tio-clear"></i></span>
                                                 @endif
                                             </div>
@@ -119,8 +120,8 @@
                                 </div>
                             </div>
                             <div class="btn--container justify-content-end mt-20">
-                                <button type="reset" class="btn btn--reset mb-2">{{translate('Reset')}}</button>
-                                <button type="submit"   class="btn btn--primary mb-2">{{translate('messages.Update')}}</button>
+                                <button type="reset" class="btn btn--reset mb-2"><i class="tio-refresh"></i> {{translate('Reset')}}</button>
+                                <button type="submit"   class="btn btn--primary mb-2"><i class="tio-save"></i> {{translate('Update')}}</button>
                             </div>
                         </div>
                         </div>
@@ -137,7 +138,6 @@
 
     </div>
 </div>
-    <!-- How it Works -->
     @include('admin-views.business-settings.landing-page-settings.partial.how-it-work-flutter')
 @endsection
 

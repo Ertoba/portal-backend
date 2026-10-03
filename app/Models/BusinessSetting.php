@@ -2,63 +2,39 @@
 
 namespace App\Models;
 
+use App\Traits\Model\InvalidatesCacheTrait;
 use App\CentralLogics\Helpers;
+use App\Services\System\BusinessSettingService;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\DB;
+use App\Traits\Model\HasStorageTrait;
+use App\Traits\Model\HasTranslationRelationTrait;
 
 class BusinessSetting extends Model
 {
+    use HasStorageTrait, HasTranslationRelationTrait, InvalidatesCacheTrait;
+
+    protected static array $cacheTags = ['business_setting'];
+
     protected $guarded = ['id'];
 
     protected $fillable = [
         'key',
         'value'
     ];
-    public function storage()
-    {
-        return $this->morphMany(Storage::class, 'data');
-    }
-    public function translations()
-    {
-        return $this->morphMany(Translation::class, 'translationable');
-    }
-
-    protected static function booted(): void
-    {
-        static::addGlobalScope('storage', function ($builder) {
-            $builder->with('storage');
-        });
-
-    }
-
     protected static function boot()
     {
         parent::boot();
         static::saved(function ($model) {
-             Helpers::deleteCacheData('business_settings_all_data');
-            $value = Helpers::getDisk();
+            BusinessSettingService::forgetCache();
+            BusinessSettingService::forgetModelMemo();
 
-            DB::table('storages')->updateOrInsert([
-                'data_type' => get_class($model),
-                'data_id' => $model->id,
-            ], [
-                'value' => $value,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
+            self::recordStorageDisk($model, 'value');
         });
 
-        static::created(function () {
-            Helpers::deleteCacheData('business_settings_all_data');
+        static::deleted(function () {
+            BusinessSettingService::forgetCache();
+            BusinessSettingService::forgetModelMemo();
         });
-        static::deleted(function(){
-            Helpers::deleteCacheData('business_settings_all_data');
-        });
-
-        static::updated(function(){
-            Helpers::deleteCacheData('business_settings_all_data');
-        });
-
     }
 
 }

@@ -1,18 +1,18 @@
 <div class="row">
-    <div class="col-lg-12 text-center "><h1 > {{ Config::get('module.current_module_type')== 'food' ?  translate('Food_Campaign_List') : translate('Item_Campaign_List') }}
+    <div class="col-lg-12 text-center "><h1 > {{ Config::get('module.current_module_type') === 'service' ? translate('Service campaign list') : (Config::get('module.current_module_type')== 'food' ?  translate('Food campaign list') : translate('Item campaign list')) }}
     </h1></div>
     <div class="col-lg-12">
 
     <table>
         <thead>
             <tr>
-                <th>{{ translate('Filter_Criteria') }}</th>
+                <th>{{ translate('Filter criteria') }}</th>
                 <th></th>
                 <th></th>
                 <th>
                     {{ translate('Module')  }}: {{ $module_name }}
                     <br>
-                    {{ translate('Search_Bar_Content')  }}: {{ $search ??translate('N/A') }}
+                    {{ translate('Search bar content')  }}: {{ $search ??translate('N/A') }}
                 </th>
                 <th> </th>
                 <th></th>
@@ -22,26 +22,26 @@
 
 
         <tr>
-            <th>{{ translate('sl') }}</th>
-            <th>{{ translate('Item_Name') }}</th>
+            <th>{{ translate('SL') }}</th>
+            <th>{{ Config::get('module.current_module_type') === 'service' ? translate('Service name') : translate('Item name') }}</th>
             <th>{{ translate('Description') }}</th>
-            <th>{{ translate('Category_Name') }}</th>
-            <th>{{ translate('Sub_Category_Name') }}</th>
-            <th>{{ translate('Item_Unit') }}</th>
-            <th>{{ translate('Price') }}</th>
-            <th>{{ translate('Available_Variations') }} </th>
+            <th>{{ translate('Category name') }}</th>
+            <th>{{ translate('Subcategory name') }}</th>
+            <th>{{ Config::get('module.current_module_type') === 'service' ? translate('Service unit') : translate('Item unit') }}</th>
+            <th>{{ translate('price') }}</th>
+            <th>{{ translate('Available Variations') }} </th>
             <th>{{ translate('Discount') }} </th>
-            <th>{{ translate('Discount_Type') }} </th>
+            <th>{{ translate('Discount type') }} </th>
             @if (Config::get('module.current_module_type') != 'food')
-            <th>{{ translate('Available_Stock') }} </th>
+            <th>{{ translate('Available stock') }} </th>
             @endif
 
 
-            <th>{{ translate('Start_Date') }} </th>
-            <th>{{ translate('End_Date') }} </th>
-            <th>{{ translate('Daily_Start_Time') }} </th>
-            <th>{{ translate('Daily_End_Time') }} </th>
-            <th>{{ translate('Store_Name') }} </th>
+            <th>{{ translate('Start date') }} </th>
+            <th>{{ translate('End date') }} </th>
+            <th>{{ translate('Daily start time') }} </th>
+            <th>{{ translate('Daily end time') }} </th>
+            <th>{{ Config::get('module.current_module_type') === 'service' ? translate('Provider name') : translate('Store name') }} </th>
         </thead>
         <tbody>
         @foreach($data as $key => $campaign)

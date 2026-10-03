@@ -19,5 +19,5 @@ interface BannerRepositoryInterface extends RepositoryInterface
      * @param int|string $dataLimit
      * @return Collection
      */
-    public function getSearchedList(string $searchValue = null, int|string $dataLimit = DEFAULT_DATA_LIMIT): Collection;
+    public function getSearchedList(?string $searchValue = null, int|string $dataLimit = DEFAULT_DATA_LIMIT): Collection;
 }

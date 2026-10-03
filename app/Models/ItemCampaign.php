@@ -2,18 +2,30 @@
 
 namespace App\Models;
 
-use App\CentralLogics\Helpers;
 use App\Scopes\ZoneScope;
 use Illuminate\Support\Facades\DB;
-use App\Traits\GeneratesSlug;
+use App\Traits\Model\SlugTrait;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Modules\TaxModule\Entities\Taxable;
+use App\Traits\Model\HasTranslationsTrait;
+use App\Traits\Model\HasStorageTrait;
+use App\Traits\Model\InvalidatesCacheTrait;
 
 class ItemCampaign extends Model
 {
-    use HasFactory, GeneratesSlug;
+    use HasFactory, SlugTrait, HasTranslationsTrait, HasStorageTrait, InvalidatesCacheTrait;
+
+    /**
+     * The only promotion model that busted nothing.
+     *
+     * A running item campaign is embedded in store cards by
+     * StoreDataTrait::offersByStore(), whose payloads are cached for 5-10 minutes under the
+     * `store`/`item` tags, and the basic-campaign list is cached under `campaign`. Deleting or
+     * editing one reached neither, so a campaign that was gone from `item_campaigns` kept
+     * being advertised on every cached store card until the TTL ran out.
+     */
+    protected static array $cacheTags = ['campaign', 'item'];
 
     protected $casts = [
         'tax' => 'float',
@@ -34,8 +46,6 @@ class ItemCampaign extends Model
         'end_time'=>'datetime',
     ];
 
-    protected $appends = ['image_full_url'];
-
     public function carts()
     {
     return $this->morphMany(Cart::class, 'item');
@@ -49,11 +59,6 @@ class ItemCampaign extends Model
     {
         return $this->belongsTo(Unit::class,'unit_id');
     }
-    public function translations()
-    {
-        return $this->morphMany(Translation::class, 'translationable');
-    }
-
     public function allergies()
     {
         return $this->belongsToMany(Allergy::class);
@@ -67,41 +72,19 @@ class ItemCampaign extends Model
         return $this->belongsToMany(Nutrition::class);
     }
 
-    public function getTitleAttribute($value){
-        if (count($this->translations) > 0) {
-            foreach ($this->translations as $translation) {
-                if ($translation['key'] == 'title') {
-                    return $translation['value'];
-                }
-            }
-        }
-
-        return $value;
+    public function getTitleAttribute($value)
+    {
+        return $this->translatedAttribute('title', $value);
     }
 
-    public function getDescriptionAttribute($value){
-        if (count($this->translations) > 0) {
-            foreach ($this->translations as $translation) {
-                if ($translation['key'] == 'description') {
-                    return $translation['value'];
-                }
-            }
-        }
-
-        return $value;
+    public function getDescriptionAttribute($value)
+    {
+        return $this->translatedAttribute('description', $value);
     }
 
-    public function getImageFullUrlAttribute(){
-        $value = $this->image;
-        if (count($this->storage) > 0) {
-            foreach ($this->storage as $storage) {
-                if ($storage['key'] == 'image') {
-                    return Helpers::get_full_url('campaign',$value,$storage['value']);
-                }
-            }
-        }
-
-        return Helpers::get_full_url('campaign',$value,'public');
+    public function getImageFullUrlAttribute()
+    {
+        return $this->storageFullUrl('campaign', 'image', $this->image);
     }
 
     public function store()
@@ -126,7 +109,6 @@ class ItemCampaign extends Model
 
     public function scopeActive($query)
     {
-        // return $query->where('status', '=', 1);
         return $query->where('status', 1)
         ->whereHas('store', function($query) {
             $query->where('status', 1)
@@ -149,18 +131,6 @@ class ItemCampaign extends Model
     protected static function booted()
     {
         static::addGlobalScope(new ZoneScope);
-        static::addGlobalScope('translate', function (Builder $builder) {
-            $builder->with(['translations' => function ($query) {
-                return $query->where('locale', app()->getLocale());
-            }]);
-        });
-        static::addGlobalScope('storage', function ($builder) {
-            $builder->with('storage');
-        });
-    }
-    public function storage()
-    {
-        return $this->morphMany(Storage::class, 'data');
     }
     protected static function boot()
     {
@@ -170,19 +140,7 @@ class ItemCampaign extends Model
             $itemcampaign->save();
         });
         static::saved(function ($model) {
-            if($model->isDirty('image')){
-                $value = Helpers::getDisk();
-
-                DB::table('storages')->updateOrInsert([
-                    'data_type' => get_class($model),
-                    'data_id' => $model->id,
-                    'key' => 'image',
-                ], [
-                    'value' => $value,
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
-            }
+            self::recordStorageDisk($model, 'image', 'image');
         });
     }         public function taxVats()
     {

@@ -1,6 +1,5 @@
 <?php
 const MAP_API_BASE_URI = 'https://maps.googleapis.com/maps/api';
-//driver & vehicle delete array
 const DV_DELETE_TRIP_CURRENT_STATUS = ['accepted', 'ongoing'];
 const PENDING = 'pending';
 
@@ -47,12 +46,10 @@ const CANCELLATION_TYPE = [
     'ongoing_ride' => 'Ongoing Ride',
 ];
 
-//passport address type
 const ADMIN_PANEL_ACCESS = "AccessToAdmin";
 const CUSTOMER_PANEL_ACCESS = "AccessToCustomer";
 const DRIVER_PANEL_ACCESS = "AccessToDriver";
 
-//users
 const ADMIN_USER_TYPES = ['super-admin', 'admin-employee'];
 const CUSTOMER_USER_TYPES = ['customer'];
 const DRIVER_USER_TYPES = 'driver';
@@ -72,7 +69,6 @@ const WALLET = 'wallet';
 const SAFETY_ALERT = 'safety-alert';
 const PRECAUTION = 'precaution';
 
-// REQUEST METHOD KEYS
 const WEB = 'web';
 const PAGINATE = 'paginate';
 const AJAX = 'ajax';
@@ -85,7 +81,6 @@ const UPDATE = 'update';
 
 const DESTROY = 'destroy';
 
-// filter
 const TODAY = 'today';
 const PREVIOUS_DAY = 'previous_day';
 const THIS_WEEK = 'this_week';
@@ -97,19 +92,19 @@ const THIS_YEAR = 'this_year';
 const ALL_TIME = 'all_time';
 const CUSTOM_DATE = 'custom_date';
 
-const KG = 'kg'; // Kilograms
-const LB = 'lb'; // Pounds
-const G = 'g'; // Grams
-const OZ = 'oz'; // Ounces
-const T = 't'; // Metric Tons
+const KG = 'kg';
+const LB = 'lb';
+const G = 'g';
+const OZ = 'oz';
+const T = 't';
 
-const MG = 'mg'; // Milligrams
-const ST = 'st'; // Stones
-const SHORT_TON = 'short_ton'; // Short Tons (US)
-const LONG_TON = 'long_ton'; // Long Tons (UK)
+const MG = 'mg';
+const ST = 'st';
+const SHORT_TON = 'short_ton';
+const LONG_TON = 'long_ton';
 
-const CT = 'ct'; // Carats
-const TROY_OZ = 'troy_oz'; // Troy Ounces (Precious Metals)
+const CT = 'ct';
+const TROY_OZ = 'troy_oz';
 
 const WEIGHT_UNIT = [
     KG => 'Kilograms',
@@ -140,10 +135,6 @@ const UPDATE_VEHICLE = [
     'license_expiry_date',
 ];
 
-//system defaults
-const DEFAULT_PAGINATION = 25;
-
-
 const GOVT_EMERGENCY_NUMBER_TYPE = [
   'phone' => 'Phone',
   'telephone' => 'Telephone',
@@ -151,7 +142,6 @@ const GOVT_EMERGENCY_NUMBER_TYPE = [
 ];
 
 
-////Business Settings Management
 
 const APP_VERSION = "app_version";
 const ALL_ZONE_EXTRA_FARE = "all_zone_extra_fare";
@@ -188,6 +178,7 @@ const SOCIAL_LOGIN = "social_login";
 
 const TRIP_SETTINGS = "trip_settings";
 const RIDE_SHARE_BUSINESS_SETTINGS = "ride_share_business_settings";
+const SERVICE_BUSINESS_SETTINGS = "service_business_settings";
 const PARCEL_SETTINGS = "parcel_settings";
 const TRIP_FARE_SETTINGS = "trip_fare_settings";
 
@@ -209,16 +200,11 @@ const SAFETY_FEATURE_SETTINGS = "safety_feature_settings";
 
 
 
-//// demandium
 
-// const ADMIN_PANEL_ACCESS = "AccessToAdmin";
 const PROVIDER_PANEL_ACCESS = "AccessToProvider";
-// const CUSTOMER_PANEL_ACCESS = "AccessToCustomer";
 const SERVICEMAN_APP_ACCESS = "AccessToServicemanApp";
 
-// const ADMIN_USER_TYPES = ['super-admin', 'admin-employee'];
 const PROVIDER_USER_TYPES = ['provider-admin', 'provider-employee', 'provider-serviceman'];
-// const CUSTOMER_USER_TYPES = ['customer'];
 const SERVICEMAN_USER_TYPES = PROVIDER_USER_TYPES[2];
 const PROVIDER = "provider";
 const SERVICEMAN = "serviceman";
@@ -243,7 +229,6 @@ const IMAGEFILESIZE = [
     ['key' => '10mb', 'value' => '10240'],
 ];
 
-// const DEFAULT_PAGINATION = 25;
 
 const COUPON_TYPES = [
     'default' => 'Default',
@@ -689,7 +674,6 @@ const NOTIFICATION_FOR_RIDE_SHARE_DRIVER = [
 ];
 
 const NOTIFICATION_FOR_RIDE_SHARE_DRIVER_REGISTRATION = [
-    // ['key' => 'registration_approved', 'value' => 'Registration Approved'],
     ['key' => 'vehicle_request_approved', 'value' => 'Vehicle Request Approved'],
     ['key' => 'vehicle_request_denied', 'value' => 'Vehicle Request Denied'],
     ['key' => 'identity_image_rejected', 'value' => 'Identity Image Rejected'],
@@ -699,24 +683,13 @@ const NOTIFICATION_FOR_RIDE_SHARE_DRIVER_REGISTRATION = [
 
 
 const NOTIFICATION_FOR_RIDE_SHARE_OTHERS = [
-    // ['key' => 'coupon_applied', 'value' => 'Coupon Applied'],
-    // ['key' => 'coupon_removed', 'value' => 'Coupon Removed'],
     ['key' => 'review_from_customer', 'value' => 'Review From Customer'],
     ['key' => 'review_from_driver', 'value' => 'Review From Driver'],
     ['key' => 'someone_used_your_code', 'value' => 'Someone Used Your Code'],
     ['key' => 'referral_reward_received', 'value' => 'Referral Reward Received'],
     ['key' => 'safety_alert_sent', 'value' => 'Safety Alert Sent'],
     ['key' => 'safety_problem_resolved', 'value' => 'Safety Problem Resolved'],
-    // ['key' => 'terms_and_conditions_updated', 'value' => 'Terms And Conditions Updated'],
-    // ['key' => 'privacy_policy_updated', 'value' => 'Privacy Policy Updated'],
-    // ['key' => 'legal_updated', 'value' => 'Legal Updated'],
-    // ['key' => 'new_message', 'value' => 'New Message'],
-    // ['key' => 'admin_message', 'value' => 'Admin Message'],
     ['key' => 'level_up', 'value' => 'Level Up'],
-    // ['key' => 'fund_added_by_admin', 'value' => 'Fund Added By Admin'],
-    // ['key' => 'admin_collected_cash', 'value' => 'Admin Collected Cash'],
     ['key' => 'withdraw_request_rejected', 'value' => 'Withdraw Request Rejected'],
     ['key' => 'withdraw_request_approved', 'value' => 'Withdraw Request Approved'],
-//    ['key' => 'withdraw_request_settled', 'value' => 'Withdraw Request Settled'],
-//    ['key' => 'withdraw_request_reversed', 'value' => 'Withdraw Request Reversed'],
 ];

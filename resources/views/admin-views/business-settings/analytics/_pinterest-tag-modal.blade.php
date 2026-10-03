@@ -21,31 +21,31 @@
                                     </div>
                                     <div class="text-dark mb-3">
                                         <h3 class="lh-base">
-                                            {{ translate('how_to_get_the_pinterest_tag_id') }}
+                                            {{ translate('How to get the pinterest tag id') }}
                                         </h3>
                                         <p class="opacity-75">
-                                            {{ translate('to_get_your_pinterest_tag_id,_log_in_to_your_pinterest_ads_manager.') }}
-                                            {{ translate('go_to_conversions_management_interface_and_then_click_tag_manager_from_the_left_navigation_bar,_where_you_will_find_your_tag_id.') }}
-                                            {{ translate('copy_it_from_there.') }}
+                                            {{ translate('to get your pinterest tag id, log in to your pinterest ads manager.') }}
+                                            {{ translate('Find your tag ID under Tag Manager in the conversions management interface.') }}
+                                            {{ translate('Copy it from there.') }}
                                         </p>
                                     </div>
 
                                     <div class="text-dark mb-3">
                                         <h3 class="lh-base">
-                                            {{ translate('where_to_use_the_pinterest_tag_id') }}
+                                            {{ translate('Where to use the pinterest tag id') }}
                                         </h3>
                                         <p class="opacity-75">
-                                            {{ translate('open_the_marketing_tools_feature_in_your_admin_panel_and_follow_the_steps:') }}
+                                            {{ translate('Open the marketing tools feature in your admin panel and follow the steps') }}:
                                         </p>
                                         <ol class="d-flex flex-column gap-2 opacity-75">
                                             <li>
-                                                {{ translate('go_to_the_pinterest_tag_id_section_under_marketing_tools.') }}
+                                                {{ translate('Go to the pinterest tag id section under marketing tools.') }}
                                             </li>
                                             <li>
-                                                {{ translate('turn_on_the_toggle_button.') }}
+                                                {{ translate('Turn on the toggle button.') }}
                                             </li>
                                             <li>
-                                                {{ translate('paste_your_pinterest_tag_id_into_the_input_box_and_click_submit.') }}
+                                                {{ translate('Paste your pinterest tag id into the input box and click submit.') }}
                                             </li>
                                         </ol>
                                     </div>

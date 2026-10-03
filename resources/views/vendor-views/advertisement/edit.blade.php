@@ -1,6 +1,6 @@
 @extends('layouts.vendor.app')
 
-@section('title',Request::is('vendor-panel/advertisement/copy-advertisement/*') ? translate('New_Advertisement')  : translate('Advertisement_Edit'))
+@section('title',$is_copy ? translate('New advertisement')  : translate('Advertisement edit'))
 
 
 @section('advertisement')
@@ -23,28 +23,26 @@ active
 <div class="content container-fluid">
 
 
-    <!-- Advertisement -->
-    <h1 class="page-header-title mb-3">
-        @if (Request::is('vendor-panel/advertisement/copy-advertisement/*'))
-            {{  translate('New_Advertisement') }}
-        @else
-
-        {{ translate('Advertisement_Edit') }}
-        @endif
-    </h1>
+    <div class="page-header">
+        <h1 class="page-header-title">
+            <span class="page-header-icon"><img src="{{asset('public/assets/admin/img/outline/advertisement.svg')}}" alt=""></span>
+            <span>{{ $is_copy ? translate('New advertisement') : translate('Advertisement edit') }}</span>
+        </h1>
+        <p class="page-header-desc">{{ translate('Change the artwork, the wording or the dates this advertisement runs.') }}</p>
+    </div>
 
 
     <div class="card mb-20">
         <div class="card-body p-30">
             <form id="create-add-form"  method="post" enctype="multipart/form-data" >
                 @csrf
-                @if (Request::is('vendor-panel/advertisement/copy-advertisement/*'))
+                @if ($is_copy)
                     @method("POST")
                 @else
                     @method("PUT")
                 @endif
                 <input type="hidden" value="{{ $advertisement?->id }}" name="add_id" >
-                <input type="hidden" value="{{ \App\CentralLogics\Helpers::get_store_id() }}" name="store_id" >
+                <input type="hidden" value="{{ $store_id }}" name="store_id" >
 
                 <div class="row g-4">
                     <div class="col-lg-6">
@@ -57,13 +55,13 @@ active
                             <li class="nav-item">
                                 <a class="nav-link lang_link active"
                                 href="#"
-                                id="default-link">{{translate('messages.default')}}</a>
+                                id="default-link">{{translate('Default')}}</a>
                             </li>
                             @foreach ($language as $lang)
                                 <li class="nav-item">
                                     <a class="nav-link lang_link"
                                         href="#"
-                                        id="{{ $lang }}-link">{{ \App\CentralLogics\Helpers::get_language_name($lang) . '(' . strtoupper($lang) . ')' }}</a>
+                                        id="{{ $lang }}-link">{{ $language_labels[$lang] }}</a>
                                     </li>
                                     @endforeach
                                 </ul>
@@ -71,20 +69,20 @@ active
 
                                 <div class="lang_form" id="default-form">
                                     <div class="mb-20">
-                                        <label class="form-label">{{ translate('Advertisement_Title') }}   ({{ translate('Default') }})
+                                        <label class="form-label">{{ translate('Advertisement title') }}   ({{ translate('Default') }})
                                             <span class="form-label-secondary text-danger"
                                        data-toggle="tooltip" data-placement="right"
                                        data-original-title="{{ translate('messages.Required.') }}"> *
                                    </span>
                                         </label>
                                         <input type="text" class="form-control" id="title" name="title[]"
-                                            value="{{  $advertisement?->getRawOriginal('title') }}" placeholder="{{ translate('Exclusive_Offer') }}" maxlength="255"
+                                            value="{{  $advertisement?->getRawOriginal('title') }}" placeholder="{{ translate('Exclusive offer') }}" maxlength="255"
                                             data-preview-text="preview-title">
                                     </div>
                                     <div class="form-floating mb-20">
-                                        <label class="form-label">{{ translate('Short_Description') }}  ({{ translate('Default') }})</label>
+                                        <label class="form-label">{{ translate('Short description') }}  ({{ translate('Default') }})</label>
                                         <textarea class="form-control resize-none" id="description"
-                                            placeholder="{{ translate('Get_Discount') }}" name="description[]"
+                                            placeholder="{{ translate('Get discount') }}" name="description[]"
                                             data-preview-text="preview-description">{{$advertisement?->getRawOriginal('description') }}</textarea>
                                     </div>
                                 <input type="hidden" name="lang[]" value="default">
@@ -112,15 +110,15 @@ active
 
                     <div class="d-none lang_form" id="{{ $lang }}-form">
                         <div class="mb-20">
-                            <label class="form-label">{{ translate('Advertisement_Title') }}    ({{ strtoupper($lang) }})</label>
+                            <label class="form-label">{{ translate('Advertisement title') }}    ({{ strtoupper($lang) }})</label>
                             <input type="text" class="form-control" id="title" name="title[]"
-                            value="{{$translate[$lang]['title']??''}}"  placeholder="{{ translate('Exclusive_Offer') }}" maxlength="255"
+                            value="{{$translate[$lang]['title']??''}}"  placeholder="{{ translate('Exclusive offer') }}" maxlength="255"
                                 data-preview-text="preview-title">
                         </div>
                         <div class="form-floating mb-20">
-                            <label class="form-label">{{ translate('Short_Description') }}   ({{ strtoupper($lang) }})</label>
+                            <label class="form-label">{{ translate('Short description') }}   ({{ strtoupper($lang) }})</label>
                             <textarea class="form-control resize-none" id="description"
-                                placeholder="{{ translate('Get_Discount') }}" name="description[]"
+                                placeholder="{{ translate('Get discount') }}" name="description[]"
                                 data-preview-text="preview-description">{{$translate[$lang]['description']??'' }}</textarea>
                         </div>
                         <input type="hidden" name="lang[]" value="{{ $lang }}">
@@ -131,15 +129,15 @@ active
                                 @else
 
                                 <div class="mb-20">
-                                    <label class="form-label">{{ translate('Advertisement_Title') }}</label>
+                                    <label class="form-label">{{ translate('Advertisement title') }}</label>
                                     <input type="text" class="form-control" id="title" name="title[]"
-                                        value="{{  $advertisement?->getRawOriginal('title') }}" placeholder="{{ translate('Exclusive_Offer') }}" maxlength="255"
+                                        value="{{  $advertisement?->getRawOriginal('title') }}" placeholder="{{ translate('Exclusive offer') }}" maxlength="255"
                                         data-preview-text="preview-title">
                                 </div>
                                 <div class="form-floating mb-20">
-                                    <label class="form-label">{{ translate('Short_Description') }}</label>
+                                    <label class="form-label">{{ translate('Short description') }}</label>
                                     <textarea class="form-control resize-none" id="description"
-                                        placeholder="{{ translate('Get_Discount') }}" name="description[]"
+                                        placeholder="{{ translate('Get discount') }}" name="description[]"
                                         data-preview-text="preview-description">{{$advertisement?->getRawOriginal('description') }}</textarea>
                                 </div>
                                 @endif
@@ -156,15 +154,15 @@ active
 
 
                         <div class="mb-20">
-                            <label class="form-label">{{ translate('Advertisement_Type') }}
+                            <label class="form-label">{{ translate('Advertisement type') }}
                                 <span class="form-label-secondary text-danger"
                                        data-toggle="tooltip" data-placement="right"
                                        data-original-title="{{ translate('messages.Required.') }}"> *
                                    </span>
                             </label>
                             <select class="js-select form-control w-100 promotion_type" name="advertisement_type">
-                                <option value="video_promotion" {{ $advertisement?->add_type == 'video_promotion' ? 'selected' : '' }}>{{ translate('Video_Promotion') }}</option>
-                                <option value="store_promotion" {{ $advertisement?->add_type == 'store_promotion' ? 'selected' : '' }} >{{ translate('store_promotion') }}</option>
+                                <option value="video_promotion" {{ $advertisement?->add_type == 'video_promotion' ? 'selected' : '' }}>{{ translate('Video promotion') }}</option>
+                                <option value="store_promotion" {{ $advertisement?->add_type == 'store_promotion' ? 'selected' : '' }} >{{ $module_store_label }} {{ translate('Promotion') }}</option>
                             </select>
                         </div>
                         <div class="mb-20">
@@ -181,7 +179,7 @@ active
                         </div>
 
                         <div class="promotion-typewise-upload-box" id="video-upload-box">
-                            <label class="form-label">{{ translate('Upload Related Files') }}
+                            <label class="form-label">{{ translate('Upload related files') }}
                                 <span class="form-label-secondary text-danger"
                                        data-toggle="tooltip" data-placement="right"
                                        data-original-title="{{ translate('messages.Required.') }}"> *
@@ -189,9 +187,9 @@ active
                             </label>
                             <div class="border rounded p-3">
                                 <div class="d-flex flex-column align-items-center gap-3">
-                                    <p class="title-color mb-0 ">{{ translate('Upload Your Video') }}
+                                    <p class="title-color mb-0 ">{{ translate('Upload your video') }}
 
-                                        ({{ translate('16:9') }})</p>
+                                        (16:9)</p>
 
                                     <div class="upload-file">
                                         <input type="file" class="video_attachment" name="video_attachment"
@@ -204,21 +202,21 @@ active
                                     </div>
 
                                     <p class="opacity-75 max-w220 mx-auto text-center fs-12">
-                                        {{ translate('Maximum 5 MB') }}
+                                        {{ translate('Maximum size') }}: 5 MB
                                         <br>
-                                        {{ translate('Supports: MP4, WEBM, MKV') }}
+                                        {{ translate('Supported formats') }}: MP4, WEBM, MKV
                                     </p>
                                 </div>
                             </div>
                         </div>
                         <div class="promotion-typewise-upload-box" id="profile-upload-box">
-                            <h5 class="mb-3">{{ translate('Show Review') }} &amp; {{ translate('Ratings') }}</h5>
+                            <h5 class="mb-3">{{ translate('Show review') }} &amp; {{ translate('Ratings') }}</h5>
                             <div class="card bg--secondary shadow-none">
                                 <div class="card-body p-3">
                                     <div class="w-100 d-flex flex-wrap gap-3">
                                         <label class="form-check form--check-2 me-3">
                                             <input type="checkbox" value='1' class="form-check-input" name="review" {{ $advertisement?->is_review_active  == 1 ?  ' checked' :" " }} >
-                                            <span class="form-check-label">{{ translate('Review') }}</span>
+                                            <span class="form-check-label">{{ translate('review') }}</span>
                                         </label>
                                         <label class="form-check form--check-2">
                                             <input type="checkbox" class="form-check-input"  value="1" name="rating"  {{ $advertisement?->is_rating_active  == 1 ?  'checked' :" " }} >
@@ -228,7 +226,7 @@ active
                                 </div>
                             </div>
                             <br>
-                            <label class="form-label">{{ translate('Upload Related Files') }}
+                            <label class="form-label">{{ translate('Upload related files') }}
                                 <span class="form-label-secondary text-danger"
                                        data-toggle="tooltip" data-placement="right"
                                        data-original-title="{{ translate('messages.Required.') }}"> *
@@ -236,7 +234,7 @@ active
                             </label>
                             <div class="d-flex flex-wrap flex-sm-nowrap justify-content-center gap-3 border rounded p-3">
                                 <div class="d-flex flex-column align-items-center gap-3 flex-shrink-0">
-                                    <p class="title-color mb-0">{{ translate('Profile Image') }} <span class="text-danger">({{ translate('Ratio - 1:1') }})</span></p>
+                                    <p class="title-color mb-0">{{ translate('Profile image') }} <span class="text-danger">(Ratio 1:1)</span></p>
 
                                     <div class="upload-file">
                                         <input type="file" class="cover_attachment js-upload-input"
@@ -251,13 +249,13 @@ active
                                     </div>
 
                                     <p class="opacity-75 max-w220 mx-auto text-center fs-12">
-                                        {{ translate('Supports: PNG, JPG, JPEG, WEBP') }}
+                                        {{ translate('Supported formats') . ': PNG, JPG, JPEG, WEBP' }}
                                         <br>
-                                        {{ translate('Maximum 2 MB') }}
+                                        Maximum 2 MB
                                     </p>
                                 </div>
                                 <div class="d-flex flex-column align-items-center gap-3">
-                                    <p class="title-color mb-0">{{ translate('Upload Cover') }} <span class="text-danger">({{ translate('Ratio - 2:1') }})</span></p>
+                                    <p class="title-color mb-0">{{ translate('Upload cover') }} <span class="text-danger">(Ratio 2:1)</span></p>
                                     <div class="upload-file">
                                         <input type="file" class="cover_attachment js-upload-input"
                                             data-target="main-image" name="cover_image"
@@ -271,9 +269,9 @@ active
                                     </div>
 
                                     <p class="opacity-75 max-w220 mx-auto text-center fs-12">
-                                        {{ translate('Supports: PNG, JPG, JPEG, WEBP') }}
+                                        {{ translate('Supported formats') . ': PNG, JPG, JPEG, WEBP' }}
                                         <br>
-                                        {{ translate('Maximum 2 MB') }}
+                                        Maximum 2 MB
                                     </p>
                                 </div>
                             </div>
@@ -282,7 +280,7 @@ active
                     <div class="col-lg-6">
                         <div class="position-sticky top-80px text-8797AB">
                             <div class="bg-light p-3 p-sm-4 rounded">
-                                <label class="form-label">{{ translate('Advertisement Preview') }}</label>
+                                <label class="form-label">{{ translate('Advertisement preview') }}</label>
                                 <div id="video-preview-box" class="video-preview-box">
                                     <div class="bg--secondary rounded">
                                         <div class="video h-200">
@@ -299,15 +297,12 @@ active
                                                 <div class="d-flex flex-column gap-2 flex-grow-1">
                                                     <div class="preview-title w-100">
                                                         <h5 class="main-text pe-4">{{ $advertisement?->getRawOriginal('title') }}</h5>
-                                                        {{-- <div class="placeholder-text bg--secondary p-2 w-50"></div> --}}
                                                     </div>
                                                     <div class="preview-description w-100">
                                                         <div class="main-text line-limit-2">{{ $advertisement?->getRawOriginal('description') }}
                                                         </div>
-                                                        {{-- <div class="placeholder-text bg--secondary p-2 w-75"></div> --}}
                                                     </div>
                                                     <div class="preview-description w-100">
-                                                        {{-- <div class="placeholder-text bg--secondary p-2 w-65"></div> --}}
                                                     </div>
                                                 </div>
                                                 <a class="btn btn--primary py-2 px-3 cursor-auto">
@@ -319,7 +314,6 @@ active
                                 </div>
                                 <div id="profile-preview-box" class="profile-preview-box">
                                     <div class="bg--secondary rounded">
-                                        <!-- Existing Profile Banner Image -->
                                         <div class="main-image rounded min-h-200" style="background: url('{{ $advertisement?->cover_image_full_url }}') center center / cover no-repeat">
                                         </div>
                                         <div class="rounded bg-white px-3 py-4 position-relative mt-n2">
@@ -334,7 +328,6 @@ active
                                             </div>
                                             <div
                                                 class="d-flex align-items-center justify-content-between gap-2">
-                                                <!-- Existing Profile Image -->
                                                 <div class="profile-prev-image bg--secondary me-xl-3" style="background: url('{{ $advertisement?->profile_image_full_url }}') center center / cover no-repeat">
                                                 </div>
                                                 <div class="review-rating-demo">
@@ -349,13 +342,11 @@ active
                                                     <div class="d-flex justify-content-between">
                                                         <div class="preview-title w-100">
                                                             <h5 class="main-text pe-4">{{ $advertisement?->getRawOriginal('title') }}</h5>
-                                                            {{-- <div class="placeholder-text bg--secondary p-2 w-50"></div> --}}
                                                         </div>
                                                     </div>
                                                     <div class="preview-description w-100">
                                                         <div class="main-text line-limit-2">{{ $advertisement?->getRawOriginal('description') }}
                                                         </div>
-                                                        {{-- <div class="placeholder-text bg--secondary p-2 w-75"></div> --}}
                                                     </div>
                                                 </div>
                                             </div>
@@ -369,13 +360,12 @@ active
                             </div>
                             </div>
                                 <div class="btn--container justify-content-end">
-                                    <button type="reset" id="reset_btn" class="btn btn--reset">{{ translate('Reset') }}</button>
-                                    <button type="submit" class="btn btn--primary">{{ translate('Submit') }}</button>
+                                    <button type="reset" id="reset_btn" class="btn btn--reset"><i class="tio-refresh"></i> {{ translate('Reset') }}</button>
+                                    <button type="submit" class="btn btn--primary"><i class="tio-checkmark-circle-outlined"></i> {{ translate('Submit') }}</button>
                                 </div>
             </form>
         </div>
     </div>
-    <!-- Advertisement -->
 
 </div>
 @endsection
@@ -409,7 +399,6 @@ active
     </script>
 
 
-    <!-- Video Upload Handlr -->
     <script>
         $(".video_attachment").on("change", function (event) {
             const videoEl = $(".video > video")
@@ -456,7 +445,6 @@ active
         })
     </script>
 
-    <!-- Select Toggler Scripts -->
     <script>
         const handleUploadBox = () => {
             const value = $('.promotion_type').val();
@@ -474,11 +462,9 @@ active
 
         $('.promotion_type').on('change', function () {
             handleUploadBox();
-            // $('.remove-file-button').click()
         })
     </script>
 
-    <!-- Profile Promotion Image Upload Handlr -->
     <script>
         $(".js-upload-input").on("change", function (event) {
             let file = event.target.files[0];
@@ -497,7 +483,6 @@ active
         })
     </script>
 
-    <!-- Title and Description Change Handlr -->
     <script>
         $('[data-preview-text]').on('input', function (event) {
             const target = $(this).data('preview-text');
@@ -515,29 +500,12 @@ active
                 })
             }
         })
-        // const resetTextHandlr = () => {
-        //     $('[data-preview-text]').each(function () {
-        //         const target = $(this).data('preview-text');
-        //         const value = $(this).val()
-        //         if (value) {
-        //             $('.' + target).each(function () {
-        //                 $(this).find('.main-text').text(value)
-        //                 $(this).find('.placeholder-text').hide()
-        //                 $(this).find('.static-text').show()
-        //             })
-        //         }
-        //     })
-        // }
-        // $(window).on('load', function () {
-        //     resetTextHandlr()
-        // })
 
         $('#create-add-form').on('reset', function () {
             window.location.reload()
         })
     </script>
 
-    <!-- Review and Rating Handlr -->
     <script>
         $('[name="review"]').on('change', function () {
             if ($(this).is(':checked')) {
@@ -607,7 +575,7 @@ active
                 }
             });
             $.post({
-                url: `{{ Request::is('vendor-panel/advertisement/copy-advertisement/*') ? route('vendor.advertisement.copyAddPost',$advertisement?->id) : route('vendor.advertisement.update',$advertisement?->id) }}`,
+                url: `{{ $is_copy ? route('vendor.advertisement.copyAddPost',$advertisement?->id) : route('vendor.advertisement.update',$advertisement?->id) }}`,
                 data: $('#create-add-form').serialize(),
                 data: formData,
                 cache: false,

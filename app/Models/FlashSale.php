@@ -2,13 +2,16 @@
 
 namespace App\Models;
 
+use App\Traits\Model\InvalidatesCacheTrait;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Builder;
+use App\Traits\Model\HasTranslationsTrait;
 
 class FlashSale extends Model
 {
-    use HasFactory;
+    use HasFactory, HasTranslationsTrait, InvalidatesCacheTrait;
+
+    protected static array $cacheTags = ['flash_sale'];
     protected $casts = [
         'is_publish' => 'integer',
         'created_at' => 'datetime',
@@ -20,21 +23,9 @@ class FlashSale extends Model
         'admin_discount_percentage' => 'float',
     ];
 
-    public function translations()
+    public function getTitleAttribute($value)
     {
-        return $this->morphMany(Translation::class, 'translationable');
-    }
-
-    public function getTitleAttribute($value){
-        if (count($this->translations) > 0) {
-            foreach ($this->translations as $translation) {
-                if ($translation['key'] == 'title') {
-                    return $translation['value'];
-                }
-            }
-        }
-
-        return $value;
+        return $this->translatedAttribute('title', $value);
     }
 
     public function module()
@@ -78,12 +69,4 @@ class FlashSale extends Model
     }
 
 
-    protected static function booted()
-    {
-        static::addGlobalScope('translate', function (Builder $builder) {
-            $builder->with(['translations' => function ($query) {
-                return $query->where('locale', app()->getLocale());
-            }]);
-        });
-    }
 }

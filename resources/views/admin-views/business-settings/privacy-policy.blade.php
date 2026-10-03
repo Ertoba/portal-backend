@@ -1,6 +1,6 @@
 @extends('layouts.admin.app')
 
-@section('title',translate('messages.privacy_policy'))
+@section('title',translate('Privacy policy'))
 
 @push('css_or_js')
 
@@ -8,31 +8,28 @@
 
 @section('content')
     <div class="content container-fluid">
-        <!-- Page Header -->
         <div class="page-header">
             <h1 class="page-header-title">
                 <span class="page-header-icon">
                     <img src="{{asset('public/assets/admin/img/privacy-policy.png')}}" class="w--26" alt="">
                 </span>
                 <span>
-                    {{translate('messages.privacy_policy')}}
+                    {{translate('Privacy policy')}}
                 </span>
             </h1>
+            <p class="page-header-desc">{{ translate('The privacy policy customers read in the apps and on your website.') }}</p>
         </div>
-        <!-- End Page Header -->
         <div class="row gx-2 gx-lg-3">
             <div class="col-sm-12 col-lg-12 mb-3 mb-lg-2">
                 <form action="{{route('admin.business-settings.privacy-policy')}}" method="post" id="tnc-form">
                     @csrf
-                    @php($language=\App\Models\BusinessSetting::where('key','language')->first())
-                    @php($language = $language->value ?? null)
-                    @php($defaultLang = str_replace('_', '-', app()->getLocale()))
+                    @php($language = \App\CentralLogics\Helpers::get_business_settings('language', false) ?? null)
                     @if ($language)
                     <ul class="nav nav-tabs mb-4 border-0">
                         <li class="nav-item">
                             <a class="nav-link lang_link active"
                             href="#"
-                            id="default-link">{{translate('messages.default')}}</a>
+                            id="default-link">{{translate('Default')}}</a>
                         </li>
 
                         @foreach (json_decode($language) as $lang)
@@ -72,7 +69,7 @@
                     @endif
 
                     <div class="btn--container justify-content-end">
-                        <button type="submit" class="btn btn--primary">{{translate('messages.submit')}}</button>
+                        <button type="submit" class="btn btn--primary"><i class="tio-checkmark-circle-outlined"></i> {{translate('messages.Submit')}}</button>
                     </div>
                 </form>
             </div>

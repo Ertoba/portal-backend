@@ -2,27 +2,26 @@
 @if ($deliveryMan->application_status == 'approved')
 
 <div class="js-nav-scroller hs-nav-scroller-horizontal mt-3">
-    <!-- Nav -->
     <ul class="nav nav-tabs nav--pills mb-3 border-0 nav--tabs">
         <li class="nav-item">
             <a class="nav-link {{request()?->tab == 'info' ||  !request()?->tab ? 'active' : ''}}"
                 href="{{ route('admin.users.delivery-man.preview', ['id' => $deliveryMan->id, 'tab' => 'info']) }}"
-                aria-disabled="true">{{ translate('messages.info') }}</a>
+                aria-disabled="true">{{ translate('messages.Information') }}</a>
         </li>
         <li class="nav-item">
             <a class="nav-link {{request()?->tab == 'transaction' ? 'active' : ''}}"
                 href="{{ route('admin.users.delivery-man.preview', ['id' => $deliveryMan->id, 'tab' => 'transaction']) }}"
-                aria-disabled="true">{{ translate('messages.transaction') }}</a>
+                aria-disabled="true">{{ translate('messages.Transaction') }}</a>
         </li>
         <li class="nav-item">
             <a class="nav-link {{request()?->tab == 'order_list' ? 'active' : ''}}"
                 href="{{ route('admin.users.delivery-man.preview', ['id' => $deliveryMan->id, 'tab' => 'order_list']) }}"
-                aria-disabled="true">{{ translate('messages.order_list') }}</a>
+                aria-disabled="true">{{ translate('Order list') }}</a>
         </li>
         <li class="nav-item">
             <a class="nav-link {{request()?->tab == 'conversation' ? 'active' : ''}}"
                 href="{{ route('admin.users.delivery-man.preview', ['id' => $deliveryMan->id, 'tab' => 'conversation']) }}"
-                aria-disabled="true">{{ translate('messages.conversations') }}</a>
+                aria-disabled="true">{{ translate('messages.Conversations') }}</a>
         </li>
         <li class="nav-item">
             <a class="nav-link {{request()?->tab == 'disbursement' ? 'active' : ''}}"
@@ -33,7 +32,7 @@
         <li class="nav-item">
             <a class="nav-link {{request()?->tab == 'loyalty-point' ? 'active' : ''}}"
                 href="{{ route('admin.users.delivery-man.preview', ['id' => $deliveryMan->id, 'tab' => 'loyalty-point']) }}"
-                aria-disabled="true">{{ translate('Loyalty Points') }}</a>
+                aria-disabled="true">{{ translate('Loyalty points') }}</a>
         </li>
         <li class="nav-item">
             <a class="nav-link {{request()?->tab == 'referal-earn' ? 'active' : ''}}"
@@ -42,6 +41,5 @@
         </li>
         @endif
     </ul>
-    <!-- End Nav -->
 </div>
 @endif

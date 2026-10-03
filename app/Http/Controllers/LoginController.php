@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Rules\EmailAddress;
+use App\Rules\StrongPassword;
 use App\Models\Admin;
  use App\Models\Module;
 use App\Models\Vendor;
@@ -11,7 +13,6 @@ use App\CentralLogics\Helpers;
 use App\Models\VendorEmployee;
 use Illuminate\Support\Carbon;
 use App\Models\BusinessSetting;
-use App\CentralLogics\SMS_module;
 use App\Models\PhoneVerification;
  use Illuminate\Support\Facades\DB;
  use Gregwar\Captcha\CaptchaBuilder;
@@ -20,18 +21,19 @@ use App\Http\Controllers\Controller;
 use App\Mail\AdminPasswordResetMail;
 use Brian2694\Toastr\Facades\Toastr;
 use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Crypt;
 use App\Mail\PasswordResetRequestMail;
 use Illuminate\Support\Facades\Cookie;
 use Illuminate\Support\Facades\Session;
-use Modules\Gateways\Traits\SmsGateway;
-use Illuminate\Validation\Rules\Password;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
+use App\Support\Notification\SendNotification;
+use App\Support\Notification\Sms;
+use Illuminate\Support\Facades\Log;
 
 class LoginController extends Controller
 {
+
     public function __construct()
     {
         $this->middleware('guest:admin,vendor', ['except' => 'logout']);
@@ -128,7 +130,7 @@ class LoginController extends Controller
     public function submit(Request $request)
     {
         $request->validate([
-            'email' => 'required|email',
+            'email' => EmailAddress::rules(),
             'password' => 'required|min:6',
             'role' => 'required'
         ]);
@@ -152,7 +154,7 @@ class LoginController extends Controller
                 ],
             ]);
         } else if (strtolower(session('six_captcha')) != strtolower($request->custome_recaptcha)) {
-            Toastr::error(translate('messages.ReCAPTCHA Failed'));
+            Toastr::error(translate('reCAPTCHA failed'));
             return back();
         }
 
@@ -195,12 +197,12 @@ class LoginController extends Controller
                 if($vendor?->stores[0]?->module?->module_type == 'rental'){
                     if(!addon_published_status('Rental')){
                         return redirect()->back()->withInput($request->only('email', 'remember'))
-                        ->withErrors([translate('messages.rental_module_is_not_available')]);
+                        ->withErrors([translate('messages.Rental module is not available')]);
                     }
                 }
                 if ($vendor?->stores[0]?->store_business_model == 'none') {
                     $key = ['subscription_free_trial_days', 'subscription_free_trial_type', 'subscription_free_trial_status'];
-                    $free_trial_settings = BusinessSetting::whereIn('key', $key)->pluck('value', 'key');
+                    $free_trial_settings = Helpers::get_business_settings_many($key);
 
                     return view('vendor-views.auth.register-subscription-payment', [
                         'package_id' => $vendor?->stores[0]?->package_id,
@@ -212,7 +214,7 @@ class LoginController extends Controller
 
                 if ($vendor?->stores[0]?->status == 0 && $vendor?->status == 0) {
                     return redirect()->back()->withInput($request->only('email', 'remember'))
-                        ->withErrors([translate('messages.Admin_did_not_approve_your_registration_yet.')]);
+                        ->withErrors([translate('messages.Admin did not approve your registration yet.')]);
                 }
             }else{
                 RateLimiter::hit($key, $decayMinutes * 60);
@@ -224,12 +226,12 @@ class LoginController extends Controller
                 if($employee?->store?->module?->module_type == 'rental'){
                     if(!addon_published_status('Rental')){
                         return redirect()->back()->withInput($request->only('email', 'remember'))
-                        ->withErrors([translate('messages.rental_module_is_not_available')]);
+                        ->withErrors([translate('messages.Rental module is not available')]);
                     }
                 }
                 if ($employee && (in_array($employee?->store?->store_business_model, ['none', 'unsubscribed']) || $employee?->store?->status == 0)) {
                     return redirect()->back()->withInput($request->only('email', 'remember'))
-                        ->withErrors([translate('messages.store_is_inactive')]);
+                        ->withErrors([translate('messages.Store is inactive')]);
                 }
                 if (!$employee) {
                     RateLimiter::hit($key, $decayMinutes * 60);
@@ -252,7 +254,7 @@ class LoginController extends Controller
 
 
         if ($data == 'admin') {
-            $admin = Admin::find(auth('admin')->id());
+            $admin = auth('admin')->user();
             $admin->is_logged_in = 1;
             $admin->save();
             $modules = Module::Active()->get();
@@ -274,6 +276,9 @@ class LoginController extends Controller
             }
             if(Helpers::get_store_data()?->module_type == 'rental' && addon_published_status('Rental')){
                 return redirect()->route('vendor.providerDashboard')->withCookies($forgetCookies);
+            }
+            if(Helpers::get_store_data()?->module_type == 'service' && addon_published_status('Service')){
+                return redirect()->route('vendor.service.dashboard')->withCookies($forgetCookies);
             }
             return redirect()->route('vendor.dashboard')->withCookies($forgetCookies);
         }
@@ -303,7 +308,7 @@ class LoginController extends Controller
         if (RateLimiter::tooManyAttempts($key, $maxAttempts)) {
             $seconds = RateLimiter::availableIn($key);
             $time = $seconds > 60 ? ceil($seconds / 60) . ' minutes' : $seconds . ' seconds';
-            Toastr::error(translate('Too many reset requests. Try again in ') . $time . '.');
+            Toastr::error(translate('Too many reset requests. Try again in') . ' ' . $time . '.');
             return back();
         }
         RateLimiter::hit($key, $decayMinutes * 60);
@@ -321,15 +326,18 @@ class LoginController extends Controller
             ]);
             $url = url('/') . '/password-reset?token=' . $token;
             try {
-                if (config('mail.status') && $admin['email'] && Helpers::get_mail_status('forget_password_mail_status_admin') == '1' && Helpers::getNotificationStatusData('admin', 'forget_password', 'mail_status')) {
-                    Mail::to($admin?->getRawOriginal('email'))->send(new AdminPasswordResetMail($url, $admin['f_name']));
+                if (SendNotification::canSendMail('forget_password_mail_status_admin', 'admin', 'forget_password') && $admin['email']) {
+                    SendNotification::mail($admin?->getRawOriginal('email'), new AdminPasswordResetMail($url, $admin['f_name']));
                     session()->put('log_email_succ', 1);
                 } else {
-                    Toastr::error(translate('messages.Failed_to_send_mail'));
+                    Toastr::error(translate('messages.Failed to send mail'));
                 }
             } catch (\Throwable $th) {
-                info($th->getMessage());
-                Toastr::error(translate('messages.Failed_to_send_mail'));
+                Log::error('login_controller.reset_password_request_failed', [
+                    'error' => $th->getMessage(),
+                    'file' => $th->getFile().':'.$th->getLine(),
+                ]);
+                Toastr::error(translate('messages.Failed to send mail'));
             }
             return back();
         }
@@ -340,7 +348,7 @@ class LoginController extends Controller
     public function vendor_reset_password_request(Request $request)
     {
         $request->validate([
-            'email' => 'required|email'
+            'email' => EmailAddress::rules()
         ]);
 
         $ip = $request->ip();
@@ -351,7 +359,7 @@ class LoginController extends Controller
         if (RateLimiter::tooManyAttempts($key, $maxAttempts)) {
             $seconds = RateLimiter::availableIn($key);
             $time = $seconds > 60 ? ceil($seconds / 60) . ' minutes' : $seconds . ' seconds';
-            Toastr::error(translate('Too many reset requests. Try again in ') . $time . '.');
+            Toastr::error(translate('Too many reset requests. Try again in') . ' ' . $time . '.');
             return back();
         }
         RateLimiter::hit($key, $decayMinutes * 60);
@@ -371,18 +379,21 @@ class LoginController extends Controller
 
             try {
                 if (config('mail.status') && $vendor['email']) {
-                    Mail::to($vendor?->getRawOriginal('email'))->send(new PasswordResetRequestMail($url, $vendor['f_name']));
+                    SendNotification::mail($vendor?->getRawOriginal('email'), new PasswordResetRequestMail($url, $vendor['f_name']));
                     session()->put('log_email_succ', 1);
                 } else {
-                    Toastr::error(translate('messages.Failed_to_send_mail'));
+                    Toastr::error(translate('messages.Failed to send mail'));
                 }
             } catch (\Throwable $th) {
-                info($th->getMessage());
-                Toastr::error(translate('messages.Failed_to_send_mail'));
+                Log::error('login_controller.vendor_reset_password_request_failed', [
+                    'error' => $th->getMessage(),
+                    'file' => $th->getFile().':'.$th->getLine(),
+                ]);
+                Toastr::error(translate('messages.Failed to send mail'));
             }
             return back();
         }
-        Toastr::error(translate('messages.Email_does_not_exists'));
+        Toastr::error(translate('messages.Email does not exists'));
         return back();
     }
 
@@ -413,16 +424,10 @@ class LoginController extends Controller
                     'created_at' => now(),
                     'updated_at' => now(),
                 ]);
-            //for payment and sms gateway addon
 
             $response = null;
-            if (Helpers::getNotificationStatusData('admin', 'forget_password', 'sms_status')) {
-                $published_status = addon_published_status('Gateways');
-                if ($published_status == 1) {
-                    $response = SmsGateway::send($admin['phone'], $otp);
-                } else {
-                    $response = SMS_module::send($admin['phone'], $otp);
-                }
+            if (SendNotification::channelEnabled('admin', 'forget_password', 'sms_status')) {
+                $response = Sms::deliver($admin['phone'], $otp);
             }
 
             $site_direction = session()?->get('site_direction') ?? $direction ?? 'ltr';
@@ -481,7 +486,7 @@ class LoginController extends Controller
     {
         $request->validate([
             'reset_token' => 'required',
-            'password' => ['required', Password::min(8)->mixedCase()->letters()->numbers()->symbols()->uncompromised()],
+            'password' => StrongPassword::rules('required'),
             'confirm_password' => 'required|same:password',
         ]);
         $data = DB::table('password_resets')->where(['token' => $request['reset_token']])->first();
@@ -502,11 +507,11 @@ class LoginController extends Controller
                     $user_link = Helpers::get_login_url('store_login_url');
                 }
                 DB::table('password_resets')->where(['token' => $request['reset_token']])->delete();
-                Toastr::success(translate('messages.password_changed_successfully'));
+                Toastr::success(translate('messages.Password changed successfully.'));
                 return redirect()->route('login', [$user_link]);
             }
         }
-        Toastr::error(translate('messages.something_went_wrong'));
+        Toastr::error(translate('messages.Something went wrong'));
         return back();
 
     }
@@ -544,7 +549,7 @@ class LoginController extends Controller
             return response()->json(['errors' => 'link_expired']);
         }
 
-        if (Helpers::getNotificationStatusData('admin', 'forget_password', 'sms_status') != 1) {
+        if (SendNotification::channelEnabled('admin', 'forget_password', 'sms_status') != 1) {
             return response()->json(['otp_fail' => 'otp_fail']);
         }
 
@@ -558,16 +563,9 @@ class LoginController extends Controller
                     'created_at' => now(),
                     'updated_at' => now(),
                 ]);
-            //for payment and sms gateway addon
 
 
-            $published_status = addon_published_status('Gateways');
-
-            if ($published_status == 1) {
-                $response = SmsGateway::send($admin['phone'], $otp);
-            } else {
-                $response = SMS_module::send($admin['phone'], $otp);
-            }
+            $response = Sms::deliver($admin['phone'], $otp);
 
 
             if ($response != 'success') {

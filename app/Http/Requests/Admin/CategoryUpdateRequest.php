@@ -2,8 +2,11 @@
 
 namespace App\Http\Requests\Admin;
 
+use App\Models\Category;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Facades\Config;
+use Illuminate\Validation\Validator;
 
 /**
  * @property int parent_id
@@ -13,9 +16,6 @@ use Illuminate\Foundation\Http\FormRequest;
  */
 class CategoryUpdateRequest extends FormRequest
 {
-    /**
-     * Determine if the user is authorized to make this request.
-     */
     public function authorize(): bool
     {
         return true;
@@ -34,10 +34,30 @@ class CategoryUpdateRequest extends FormRequest
         ];
     }
 
+    public function withValidator(Validator $validator): void
+    {
+        $validator->after(function (Validator $validator) {
+            $defaultName = Category::defaultName($this->name, $this->lang);
+            if ($defaultName === null) {
+                return;
+            }
+
+            $parentId = (int) ($this->parent_id ?? 0);
+            $moduleId = (int) Config::get('module.current_module_id');
+            $ignoreId = (int) $this->route('id');
+
+            if (Category::isDuplicateName($defaultName, $moduleId, $parentId, $ignoreId)) {
+                $validator->errors()->add('name.0', translate($parentId === 0
+                    ? 'messages.category_name_already_exists'
+                    : 'messages.sub_category_name_already_exists_under_this_category'));
+            }
+        });
+    }
+
     public function messages(): array
     {
         return [
-            'name.0.required' => translate('default_name_is_required'),
+            'name.0.required' => translate('Default name is required'),
         ];
     }
 }

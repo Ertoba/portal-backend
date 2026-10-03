@@ -13,14 +13,16 @@
                     <h5 class="text-hover-primary mb-0">{{Str::limit($review->item['name'],20,'...')}}</h5>
                 </div>
             </a>
-            <span class="ml-10"><a href="{{route('admin.order.details',['id'=>$review->order_id])}}">{{ translate('messages.order_id') }}: {{$review->order_id}}</a></span>
+            @if($review->order_id)
+            <span class="ml-10"><a href="{{route('admin.order.details',['id'=>$review->order_id])}}">{{ translate('messages.Order ID') }}: {{$review->order_id}}</a></span>
+            @endif
         @else
             {{translate('messages.Item deleted!')}}
         @endif
 
     </td>
     <td>
-        <a href="{{route('admin.customer.view',[$review->user_id])}}">
+        <a href="{{route('admin.users.customer.view',[$review->user_id])}}">
             {{$review->customer?$review->customer->f_name:""}} {{$review->customer?$review->customer->l_name:""}}
         </a>
     </td>
@@ -35,7 +37,7 @@
     <td>
         <label class="toggle-switch toggle-switch-sm" for="reviewCheckbox{{$review->id}}">
             <input type="checkbox"
-                   data-id="status-{{ $review['id'] }}" data-message="{{ $review->status ? translate('messages.you_want_to_hide_this_review_for_customer') : translate('messages.you_want_to_show_this_review_for_customer') }}"
+                   data-id="status-{{ $review['id'] }}" data-message="{{ $review->status ? translate('messages.You want to hide this review for customer') : translate('messages.You want to show this review for customer') }}"
                    class="toggle-switch-input status_form_alert" id="reviewCheckbox{{ $review->id }}"
                 {{ $review->status ? 'checked' : '' }}>
             <span class="toggle-switch-label">

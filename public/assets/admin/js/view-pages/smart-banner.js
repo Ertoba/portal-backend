@@ -112,20 +112,64 @@
         }
     }
 
+    const MODULE_REDIRECT_RULES = {
+        'parcel': { allowed: ['module_home'] },
+        'ride-share': { allowed: ['module_home'] },
+        'rental': { allowed: ['module_home', 'store_page'], useProviderLabel: true },
+        'service': { allowed: ['module_home', 'store_page'], useProviderLabel: true }
+    };
+
+    function getModuleRedirectRule() {
+        const type = $moduleSelect.find('option:selected').data('type');
+        return MODULE_REDIRECT_RULES[type] || null;
+    }
+
+    function applyModuleTypeRestrictions() {
+        const rule = getModuleRedirectRule();
+        const allowed = rule ? rule.allowed : null;
+
+        $redirectTypeSelect.find('option').each(function () {
+            const $opt = $(this);
+            $opt.prop('disabled', !!allowed && allowed.indexOf($opt.val()) === -1);
+        });
+
+        const storePageLabel = (rule && rule.useProviderLabel && config.labels)
+            ? config.labels.providerPage
+            : (config.labels && config.labels.storePage);
+        if (storePageLabel) {
+            $redirectTypeSelect.find('option[value="store_page"]').text(storePageLabel);
+        }
+
+        if (allowed && allowed.indexOf($redirectTypeSelect.val()) === -1) {
+            $redirectTypeSelect.val(allowed[0]);
+        }
+
+        initSelect2($redirectTypeSelect);
+    }
+
     function applyTargetMode(redirectType, selectedId, selectedLabel) {
         if (redirectType === 'module_home' || redirectType === 'offer_page') {
             $targetWrapper.addClass('d-none');
+            $targetSelect.prop('required', false);
+            $targetSelect.prop('disabled', true);
             $targetSelect.empty().append(new Option('', '', false, false));
             $targetSelect.trigger('change');
             return;
         }
 
         $targetWrapper.removeClass('d-none');
+        $targetSelect.prop('disabled', false);
 
         if (redirectType === 'store_page') {
-            $targetLabel.text('Select Store');
+            const rule = getModuleRedirectRule();
+            const label = (rule && rule.useProviderLabel && config.labels)
+                ? config.labels.selectProvider
+                : ((config.labels && config.labels.selectStore) || 'Select Store');
+            $targetLabel.html(label + ' <span class="text-danger">*</span>');
+            $targetSelect.prop('required', true);
         } else {
-            $targetLabel.text('Select Category');
+            $targetLabel.text((config.labels && config.labels.selectCategory) || 'Select Category');
+            $targetSelect.prop('required', false);
         }
 
         const moduleId = $moduleSelect.val();
@@ -184,8 +228,16 @@
         });
     }
 
+    function resetOffcanvasScroll($drawer) {
+        $drawer.scrollTop(0);
+        $drawer.find('.custom-offcanvas-body').scrollTop(0);
+    }
+
     function resetForm() {
+        resetOffcanvasScroll($formDrawer);
         $form[0].reset();
+        $moduleSelect.val('');
+        $targetSelect.val('');
         $bannerId.val('');
         $form.attr('action', config.storeAction);
         $formTitle.text('Create Smart Banner');
@@ -198,7 +250,8 @@
         $('.lang_form').addClass('d-none');
         $('#default-form').removeClass('d-none');
         toggleDateWrapper();
-        applyTargetMode('category');
+        applyModuleTypeRestrictions();
+        applyTargetMode($redirectTypeSelect.val() || 'category');
         bindCharCounters();
         initSelect2($('#smartBannerForm_offcanvas select.js-select2-custom'));
     }
@@ -271,8 +324,9 @@
     }
 
     function openView(url) {
+        resetOffcanvasScroll($viewDrawer);
         const $body = $('#smart_banner_view_body');
-        $body.html('<div class="text-center py-5 text-muted">Loading…</div>');
+        $body.html('<div class="text-center py-5"><span class="app-loader__spinner app-loader__spinner--sm"></span></div>');
         $('#smart_banner_view_edit_btn').data('id', '').data('url', '');
 
         $.ajax({
@@ -373,6 +427,7 @@ $(document).on('click', '.smart-banner-create-trigger', function () {
     $(document).on('change', 'input[name="active_days"]', toggleDateWrapper);
 
     $(document).on('change', '#smart_banner_module', function () {
+        applyModuleTypeRestrictions();
         applyTargetMode($redirectTypeSelect.val());
     });
 
@@ -393,8 +448,20 @@ $(document).on('click', '#smartBannerForm_offcanvas .lang_link', function (e) {
         e.preventDefault();
 
         if (!$moduleSelect.val()) {
-            if (window.toastr) toastr.error($moduleSelect.data('placeholder'));
+            if (window.toastr) {
+                toastr.error((config.labels && config.labels.pleaseSelectModule) || 'Please select a module');
+            }
             $moduleSelect.select2('open');
+            return;
+        }
+
+        if ($redirectTypeSelect.val() === 'store_page' && !$targetSelect.val()) {
+            const rule = getModuleRedirectRule();
+            const message = (rule && rule.useProviderLabel && config.labels)
+                ? config.labels.pleaseSelectProvider
+                : ((config.labels && config.labels.pleaseSelectStore) || 'Please select a store.');
+            if (window.toastr) toastr.error(message);
+            $targetSelect.select2('open');
             return;
         }
 
@@ -454,6 +521,7 @@ $(document).on('click', '#smartBannerForm_offcanvas .lang_link', function (e) {
         initSelect2($('#smartBannerForm_offcanvas select.js-select2-custom'));
         bindCharCounters();
         toggleDateWrapper();
+        applyModuleTypeRestrictions();
         applyTargetMode($redirectTypeSelect.val() || 'category');
     });
 })(jQuery);

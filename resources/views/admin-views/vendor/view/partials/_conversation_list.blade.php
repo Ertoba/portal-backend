@@ -26,7 +26,7 @@
             </div>
             <div class="chat-user-info-content">
                 <h5 class="mb-0 d-flex justify-content-between">
-                    <span class=" mr-3">{{ translate('Account not found') }}</span>
+                    <span class=" mr-3">{{ translate('No data found') }}</span>
                 </h5>
             </div>
         </div>
@@ -38,7 +38,7 @@
             <img width="64" class="mb-2" src="{{ asset('/public/assets/admin/img/no-vendor-list.svg') }}"
                 alt="public">
             <p class="fs-16 mb-20">
-                {{ translate('No Conversation List') }}
+                {{ translate('No conversation list') }}
             </p>
         </div>
     </div>
@@ -47,4 +47,3 @@
 
 
 
-{{-- <script src="{{asset('public/assets/admin')}}/js/view-pages/common.js"></script> --}}

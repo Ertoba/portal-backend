@@ -30,6 +30,22 @@ $(document).ready(function() {
     $('.js-select2-custom').each(function () {
         let select2 = $.HSCore.components.HSSelect2.init($(this));
     });
+
+    // When "All" customers is selected, individual customers can't be selected: their options are
+    // disabled and any already-picked ones are cleared. Deselecting "All" re-enables them.
+    function syncCustomerSelection() {
+        let $select = $('#select_customer');
+        let selected = $select.val() || [];
+        let allSelected = selected.indexOf('all') !== -1;
+        $select.find('.select_customer_option').prop('disabled', allSelected);
+        if (allSelected && selected.length > 1) {
+            $select.val(['all']);
+        }
+        $select.trigger('change.select2');
+    }
+    $('#select_customer').on('change', syncCustomerSelection);
+    syncCustomerSelection();
+
     $('#reset_btn').click(function(){
         setTimeout(reset_select, 100);
     })

@@ -8,23 +8,20 @@
 
 @section('content')
     <div class="content container-fluid">
-        <!-- Page Header -->
         <div class="page-header">
             <div class="row">
                 <div class="col-6">
                     <h1 class="page-header-title">{{$banner->title}}</h1>
+                    <p class="page-header-desc">{{ translate('How this banner looks to customers, and where tapping it takes them.') }}</p>
                 </div>
                 <div class="col-6">
                     <a href="{{url()->previous()}}" class="btn btn-primary float-right">
-                        <i class="tio-back-ui"></i> {{translate('messages.back')}}
+                        <i class="tio-arrow-backward"></i> {{translate('Back')}}
                     </a>
                 </div>
             </div>
         </div>
-        <!-- End Page Header -->
-        <!-- Card -->
         <div class="card mb-3 mb-lg-5">
-            <!-- Body -->
             <div class="card-body">
                 <div class="row align-items-md-center gx-md-5">
                     <div class="col-md-auto mb-3 mb-md-0">
@@ -41,20 +38,16 @@
                     </div>
 
                     <div class="col-md">
-                        <h4>{{translate('messages.short_description')}} : </h4>
+                        <h4>{{translate('Short description')}} : </h4>
                         <p>{{$banner->description}}</p>
                     </div>
 
                 </div>
             </div>
-            <!-- End Body -->
         </div>
-        <!-- End Card -->
         <div class="row gx-2 gx-lg-3">
             <div class="col-sm-12 col-lg-12 mb-3 mb-lg-2">
-                <!-- Card -->
                 <div class="card">
-                    <!-- Table -->
                     <div class="table-responsive datatable-custom">
                         <table id="columnSearchDatatable"
                                class="table table-borderless table-thead-bordered table-nowrap table-align-middle card-table"
@@ -64,19 +57,18 @@
                                }'>
                             <thead class="thead-light">
                             <tr>
-                                <th>{{translate('messages.#')}}</th>
-                                <th class="w--15">{{translate('messages.logo')}}</th>
-                                <th class="w--2">{{translate('messages.name')}}</th>
-                                <th class="w--25">{{translate('messages.store')}}</th>
+                                <th>#</th>
+                                <th class="w--15">{{translate('messages.Logo')}}</th>
+                                <th class="w--2">{{translate('Name')}}</th>
+                                <th class="w--25">{{translate('messages.Store')}}</th>
                                 <th>{{translate('messages.email')}}</th>
-                                <th>{{translate('messages.phone')}}</th>
-                                <th>{{translate('messages.action')}}</th>
+                                <th>{{translate('Phone')}}</th>
+                                <th>{{translate('messages.Action')}}</th>
                             </tr>
                             <tr>
                                 <th colspan="3">
                                     <form action="{{route('admin.banner.addstore',$banner->id)}}" id="store-add-form" method="POST">
                                         @csrf
-                                        <!-- Search -->
                                         <div class="row">
                                             <div class="input-group-prepend col-md-7">
                                             @php($allstores=App\Models\Store::all())
@@ -86,31 +78,24 @@
                                                     <option value="{{$store->id}}" data-verified="{{ (int) $store->verified_seller }}" >{{$store->name}}</option>
                                                     @endif
                                                     @empty
-                                                    <option value="">{{ translate('messages.no_data_found') }}</option>
+                                                    <option value="">{{ translate('No data found') }}</option>
                                                     @endforelse
                                                 </select>
                                             </div>
-                                            <button type="submit" class="btn btn--primary col-md-5">{{translate('messages.add_store')}}</button>
+                                            <button type="submit" class="btn btn--primary col-md-5"><i class="tio-add-circle"></i> {{translate('messages.Add store')}}</button>
 
                                         </div>
-                                        <!-- End Search -->
                                     </form>
                                 </th>
                                 <th></th>
                                 <th colspan="3">
                                     <form action="javascript:" id="search-form">
-                                        <input type="hidden" name="banner_id" value="{{ $banner->id }}">
-                                        @foreach($store_ids as $search_store_id)
-                                            <input type="hidden" name="store_ids[]" value="{{ $search_store_id }}">
-                                        @endforeach
-                                        <!-- Start Search -->
                                         <div class="input-group input--group">
-                                            <input id="datatableSearch_" type="search" name="search" class="form-control" placeholder="{{translate('messages.search')}}" aria-label="Search" required>
+                                            <input id="datatableSearch_" type="search" name="search" class="form-control" placeholder="{{translate('messages.Search')}}" aria-label="Search" required>
                                             <button type="submit" class="btn btn--secondary">
                                                 <i class="tio-search"></i>
                                             </button>
                                         </div>
-                                        <!-- End Search -->
                                     </form>
                                 </th>
 
@@ -143,18 +128,15 @@
                                     </td>
                                     <td>
                                         {{$dm->email}}
-                                        {{--<span class="d-block font-size-sm">{{$banner['image']}}</span>--}}
                                     </td>
                                     <td>
                                         {{$dm['phone']}}
                                     </td>
                                     <td>
-                                        <!-- Dropdown -->
                                         <div class="inline--2 redirect-url"
                                                  data-url="{{route('admin.banner.campaign',[$banner->id, $dm['id']])}}">
                                                 <span class="legend-indicator bg-danger"></span>{{ translate('messages.remove') }}
                                             </div>
-                                        <!-- End Dropdown -->
                                     </td>
                                 </tr>
                             @endforeach
@@ -171,9 +153,7 @@
                         </div>
 
                     </div>
-                    <!-- End Table -->
                 </div>
-                <!-- End Card -->
             </div>
         </div>
     </div>
@@ -183,8 +163,6 @@
 @push('script_2')
     <script>
         $(document).on('ready', function () {
-            // INITIALIZATION OF DATATABLES
-            // =======================================================
             var datatable = $.HSCore.components.HSDatatables.init($('#columnSearchDatatable'));
 
             $('#column1_search').on('keyup', function () {
@@ -216,8 +194,6 @@
             });
 
 
-            // INITIALIZATION OF SELECT2
-            // =======================================================
             $('.js-select2-custom').each(function () {
                 var select2 = $.HSCore.components.HSSelect2.init($(this));
             });

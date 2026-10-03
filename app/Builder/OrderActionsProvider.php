@@ -2,9 +2,8 @@
 
 namespace App\Builder;
 
+use App\Traits\Item\ItemStockTrait;
 use App\CentralLogics\Helpers;
-use App\CentralLogics\OrderLogic;
-use App\CentralLogics\ProductLogic;
 use App\Mail\RefundRequest;
 use App\Models\AddOn;
 use App\Models\Admin;
@@ -19,36 +18,20 @@ use App\Models\Refund;
 use App\Models\RefundReason;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\View;
 use Modules\Builder\Contracts\CartProvider;
 use Modules\Builder\Contracts\OrderActionsProvider as OrderActionsProviderContract;
-use Modules\Builder\Services\StorefrontContext;
 use Modules\Builder\ValueObjects\StorefrontScope;
+use App\Services\Order\OrderTransactionService;
+use App\Support\Notification\SendNotification;
+use App\Support\Storage\FileStorage;
 
-/**
- * Storefront-side counterparts to the host's order admin/customer
- * actions. Five operations:
- *   - cancel:               wraps `Api\V1\OrderController::cancel_order`
- *   - switchToCod:          wraps `Admin\OrderController::switch_to_cod`
- *   - repay:                re-issues the gateway redirect for an unpaid order
- *   - cancellationReasons:  admin-configured customer cancel reasons
- *   - refundReasons:        admin-configured refund reasons
- *   - requestRefund:        wraps `Api\V1\OrderController::refund_request`
- *
- * Ownership:
- *   - authenticated: `(user_id, is_guest=0)` joins
- *   - guest:         phone-match against `delivery_address->contact_person_number`
- *
- * Mirrors the host's existing predicates so a guest can't pivot into
- * another guest's order by guessing the id alone.
- */
 class OrderActionsProvider implements OrderActionsProviderContract
 {
+    use ItemStockTrait;
+
     public function cancellationReasons(): array
     {
-        // user_type='customer' so we don't surface store/deliveryman
-        // reasons (those exist in the same table for vendor/dm UIs).
         return OrderCancelReason::query()
             ->where('status', 1)
             ->where('user_type', 'customer')
@@ -81,23 +64,15 @@ class OrderActionsProvider implements OrderActionsProviderContract
             return ['success' => false, 'error' => 'Order not found.'];
         }
 
-        // Mirrors `cancel_order` line 242. We deliberately drop 'canceled'
-        // here even though the host allows re-cancel — re-cancelling
-        // re-runs stock/flash restoration, which double-credits the
-        // inventory.
         $allowed = ['pending', 'failed'];
         if (!in_array($order->order_status, $allowed, true)) {
             return ['success' => false, 'error' => 'This order can no longer be cancelled.'];
         }
 
-        // Mirror host validator: at least one of reason/note is required.
-        // Checked BEFORE any writes so an invalid call can't leave the
-        // order with restored stock but no cancellation row.
         if (!$reason && !$note) {
             return ['success' => false, 'error' => 'Please provide a reason or a note for cancelling.'];
         }
 
-        // Stock + flash-discount restoration (same as the host).
         $hasStock = config('module.' . ($order->module->module_type ?? '') . '.stock');
         $hasFlash = $order->flash_admin_discount_amount > 0
                  && $order->flash_store_discount_amount > 0;
@@ -111,16 +86,16 @@ class OrderActionsProvider implements OrderActionsProviderContract
                     if ($hasStock) {
                         $variant = json_decode($detail->variation, true);
                         $variantType = !empty($variant) ? ($variant[0]['type'] ?? null) : null;
-                        ProductLogic::update_stock($item, -$detail->quantity, $variantType)?->save();
+                        self::updateItemStock($item, -$detail->quantity, $variantType)?->save();
                     }
                     if ($hasFlash) {
-                        ProductLogic::update_flash_stock($detail->item, $detail->quantity, true)?->save();
+                        self::updateFlashSaleStock($detail->item, $detail->quantity, true)?->save();
                     }
                 }
             }
 
             if ((int) $order->is_guest === 0) {
-                try { OrderLogic::refund_before_delivered($order); } catch (\Throwable) { /* best effort */ }
+                try { app(OrderTransactionService::class)->refundBeforeDelivered($order); } catch (\Throwable) { /* best effort */ }
             }
 
             $order->order_status         = 'canceled';
@@ -136,7 +111,7 @@ class OrderActionsProvider implements OrderActionsProviderContract
             return ['success' => false, 'error' => 'Could not cancel the order. Please try again.'];
         }
 
-        try { Helpers::send_order_notification($order); } catch (\Throwable) { /* best effort */ }
+        try { SendNotification::sendOrderNotifications($order); } catch (\Throwable) { /* best effort */ }
 
         return ['success' => true, 'message' => 'Order cancelled.'];
     }
@@ -156,10 +131,6 @@ class OrderActionsProvider implements OrderActionsProviderContract
             return ['success' => false, 'error' => 'This order is already cash on delivery.'];
         }
 
-        // Mirror `Admin\OrderController::switch_to_cod`:
-        //  - delete any offline_payments rows
-        //  - flip partial-payment legs from unpaid → COD
-        //  - flip order back to pending if not already
         try {
             DB::beginTransaction();
 
@@ -183,7 +154,7 @@ class OrderActionsProvider implements OrderActionsProviderContract
             return ['success' => false, 'error' => 'Could not switch payment method. Please try again.'];
         }
 
-        try { Helpers::send_order_notification($order); } catch (\Throwable) { /* best effort */ }
+        try { SendNotification::sendOrderNotifications($order); } catch (\Throwable) { /* best effort */ }
 
         return ['success' => true, 'message' => 'Switched to Cash on Delivery.'];
     }
@@ -203,17 +174,9 @@ class OrderActionsProvider implements OrderActionsProviderContract
             return ['success' => false, 'error' => 'This order has already been paid.'];
         }
 
-        // Update the order's selected gateway so PaymentController can
-        // route to the right addon. Order.payment_method stays as
-        // 'digital_payment' (the bucket); the gateway-specific key
-        // travels in the URL.
         $order->payment_method = 'digital_payment';
         $order->save();
 
-        // Path-based callback for the same reason CheckoutProvider uses
-        // it — the host's `?flag=…` append would collide with any query
-        // string we put here. PaymentCallbackController normalises the
-        // result and redirects to profile/orders.
         $callback = url(route(
             'storefront.payment_callback',
             ['orderId' => $orderId],
@@ -243,7 +206,6 @@ class OrderActionsProvider implements OrderActionsProviderContract
         ?string $customerNote,
         array $imageFiles,
     ): array {
-        // Same admin gate the host's refund_request enforces.
         if ((int) (\App\Models\BusinessSetting::query()->where('key', 'refund_active_status')->value('value') ?? 0) !== 1) {
             return ['success' => false, 'error' => 'Refund requests are not currently accepted.'];
         }
@@ -257,22 +219,24 @@ class OrderActionsProvider implements OrderActionsProviderContract
             return ['success' => false, 'error' => 'You can only request a refund on a delivered, paid order.'];
         }
 
-        // Upload each image into the same `refund/` bucket the host
-        // controller uses, and store the path JSON on the Refund row.
-        // Mirrors `OrderController::refund_request` lines 320–328.
         $imagePaths = [];
         foreach ($imageFiles as $file) {
             try {
-                $path = Helpers::upload('refund/', 'png', $file);
-                $imagePaths[] = ['img' => $path, 'storage' => Helpers::getDisk()];
-            } catch (\Throwable) {
-                // Skip individual upload failures rather than aborting
-                // the whole refund — partial proof is better than none.
+                $path = FileStorage::upload('refund/', $file);
+                $imagePaths[] = ['img' => $path, 'storage' => FileStorage::getDisk()];
+            } catch (\Throwable $exception) {
+                Log::warning('builder.order_actions_provider.request_refund_failed', [
+                    'error' => $exception->getMessage(),
+                    'file' => $exception->getFile().':'.$exception->getLine(),
+                ]);
             }
         }
 
+        // No delivery-related charge is refunded — base/surge (delivery_charge) and the
+        // express/slightly-delay premium (delivery_type_charge) alike. Same fix as
+        // RefundService::create() and OrderTransactionsTrait::refundOrderTransaction().
         $refundAmount = round(
-            $order->order_amount - $order->delivery_charge - ($order->dm_tips ?? 0),
+            $order->order_amount - $order->delivery_charge - ($order->delivery_type_charge ?? 0) - ($order->dm_tips ?? 0),
             (int) (config('round_up_to_digit') ?? 2),
         );
 
@@ -298,9 +262,6 @@ class OrderActionsProvider implements OrderActionsProviderContract
             DB::commit();
         } catch (\Throwable $e) {
             DB::rollBack();
-            // Don't leak the underlying exception text to the customer —
-            // it can carry SQL fragments, file paths, or PII. Logged for
-            // ops; user sees a generic message.
             Log::warning('Refund request failed', [
                 'order_id' => $order->id,
                 'error'    => $e->getMessage(),
@@ -308,28 +269,21 @@ class OrderActionsProvider implements OrderActionsProviderContract
             return ['success' => false, 'error' => 'Could not file the refund request. Please try again.'];
         }
 
-        // Best-effort admin notification — same as host's controller.
         try {
             $admin = Admin::query()->where('role_id', 1)->first();
-            $mailStatus = Helpers::get_mail_status('refund_request_mail_status_admin');
+            $mailStatus = SendNotification::mailTemplateEnabled('refund_request_mail_status_admin');
             if (config('mail.status')
                 && $admin?->email
-                && $mailStatus == '1'
-                && Helpers::getNotificationStatusData('admin', 'order_refund_request', 'mail_status')
+                && $mailStatus
+                && SendNotification::channelEnabled('admin', 'order_refund_request', 'mail_status')
             ) {
-                Mail::to($admin->getRawOriginal('email'))->send(new RefundRequest($order->id));
+                SendNotification::mail($admin->getRawOriginal('email'), new RefundRequest($order->id));
             }
         } catch (\Throwable) { /* swallow — refund itself is committed */ }
 
         return ['success' => true, 'message' => 'Refund request submitted.'];
     }
 
-    /**
-     * Resolve the order with the same scope/ownership predicates the
-     * host uses. Returns null when the lookup misses — caller surfaces
-     * a generic "Order not found" so we don't leak whether it's a
-     * scope mismatch vs. a wrong phone.
-     */
     private function loadOrder(?StorefrontScope $scope, int $orderId, ?int $customerId, ?string $guestPhone): ?Order
     {
         $normalizedPhone = $guestPhone
@@ -337,7 +291,9 @@ class OrderActionsProvider implements OrderActionsProviderContract
             : null;
 
         return Order::query()
-            ->with(['details', 'module:id,module_type', 'store'])
+            // `parcel_category` and the two tiers because the invoice prints all three for a
+            // parcel order; they were being lazy-loaded off the rendered blade.
+            ->with(['details', 'module:id,module_type', 'store', 'parcel_category', 'weight', 'dimension'])
             ->where('id', $orderId)
             ->when(
                 $customerId,
@@ -355,49 +311,14 @@ class OrderActionsProvider implements OrderActionsProviderContract
 
     /* ─── invoice ─────────────────────────────────────────── */
 
-    /**
-     * Stream the host's existing PDF invoice for an owned order. Reuses
-     * the same `order-invoice` blade view + `Helpers::gen_mpdf` pipeline
-     * that `HomeController::order_invoice` uses, so the storefront PDF
-     * is byte-identical to admin/vendor-side downloads of the same order.
-     *
-     * `gen_mpdf` writes the PDF to the response stream via mpdf->Output(
-     * filename, 'D') — caller must not emit a second response after this
-     * returns success.
-     */
-    public function downloadInvoice(?StorefrontScope $scope, int $orderId, int $customerId): array
+    public function downloadInvoice(?StorefrontScope $scope, int $orderId, ?int $customerId, ?string $guestPhone = null): array
     {
-        // loadOrder() enforces (user_id, is_guest=0) ownership + scope.
-        // The host's /order-invoice/{id} route has NO ownership check
-        // (it accepts a base64-encoded id and 200s for any signed-in
-        // user). We deliberately don't expose that route from the
-        // storefront; this method is the safe path.
-        //
-        // loadOrder already eager-loads `store` for the cancel/refund
-        // flows — the storefront invoice header reads store.{name,
-        // address, phone, email, logo_full_url} for branding, so the
-        // existing eager-load is exactly what we need here too.
-        $order = $this->loadOrder($scope, $orderId, $customerId, null);
+        $order = $this->loadOrder($scope, $orderId, $customerId, $guestPhone);
         if (!$order) {
             return ['success' => false, 'error' => 'Order not found.'];
         }
 
         try {
-            // `storefront-order-invoice` is a host-owned fork of
-            // `resources/views/order-invoice.blade.php`. Same layout,
-            // but the header brands the SELLING STORE (logo, name,
-            // address, phone, email) instead of the platform.
-            //
-            // Lives in the host's resource path (NOT in Modules/Builder/
-            // Resources/views) because the blade uses host helpers like
-            // `\App\CentralLogics\Helpers::get_full_url`, `BusinessSetting`,
-            // and `Store.logo_full_url` accessor. Putting it in the
-            // Builder module would leak `App\*` references into the
-            // portable layer. The host owns the template; the adapter
-            // (which is already host-coupled by design) references it.
-            //
-            // Admin/vendor PDFs still use the platform-branded view
-            // because their controllers call View::make('order-invoice').
             $BusinessData = BusinessSetting::query()
                 ->whereIn('key', ['footer_text', 'email_address'])
                 ->pluck('value', 'key');
@@ -416,19 +337,19 @@ class OrderActionsProvider implements OrderActionsProviderContract
         return ['success' => true];
     }
 
+    public function downloadDigitalProduct(
+        ?StorefrontScope $scope,
+        int $orderDetailId,
+        ?int $customerId,
+        ?string $guestPhone,
+    ): array {
+        return ['success' => false, 'error' => 'Digital downloads are not available.'];
+    }
+
     /* ─── reorder ─────────────────────────────────────────── */
 
-    /**
-     * Re-add every item from a past order to the cart. All-or-nothing —
-     * if any line fails the live-catalog pre-flight, nothing is added
-     * and the caller gets the full list of human-readable reasons.
-     *
-     * Auth-only. Cart is store-scoped, so the active storefront is the
-     * store the items will land in (defensive store-match check below).
-     */
     public function reorder(?StorefrontScope $scope, int $orderId, int $customerId): array
     {
-        // === DEBUG: every gate logs why it returned or proceeded ===
         Log::info('Reorder: start', [
             'orderId'      => $orderId,
             'customerId'   => $customerId,
@@ -439,9 +360,6 @@ class OrderActionsProvider implements OrderActionsProviderContract
             ] : null,
         ]);
 
-        // Eager-load both polymorphic targets so the per-line validator
-        // doesn't N+1. `details.item` and `details.campaign` both fire,
-        // only one is non-null per row.
         $order = Order::query()
             ->with(['details.item', 'details.campaign', 'module:id,module_type', 'store'])
             ->where('id', $orderId)
@@ -474,11 +392,6 @@ class OrderActionsProvider implements OrderActionsProviderContract
             return ['success' => false, 'errors' => ['This order has no items to re-add.']];
         }
 
-        // Resolve once for all lines. We require an ACTIVE storefront
-        // store/module — the cart is store-scoped and `module_id` is
-        // NOT NULL on the carts table; without a scope, the write either
-        // bombs at the DB layer or silently lands in an unreadable
-        // (NULL module) row. Bail with a clear message instead.
         $activeStoreId  = $scope?->subTenantId;
         $activeModuleId = $scope?->moduleId;
         if (!$activeStoreId || !$activeModuleId) {
@@ -488,8 +401,6 @@ class OrderActionsProvider implements OrderActionsProviderContract
             ]);
             return ['success' => false, 'errors' => ['Open the storefront first, then reorder.']];
         }
-        // Defensive — should never trip because the listing is scope-
-        // filtered, but make the cross-store mismatch explicit.
         if ((int) $order->store_id !== (int) $activeStoreId) {
             Log::info('Reorder: store mismatch', [
                 'orderStoreId'  => $order->store_id,
@@ -506,10 +417,6 @@ class OrderActionsProvider implements OrderActionsProviderContract
             'hasStock'       => $hasStock,
         ]);
 
-        // Aggregate the customer's existing cart-line qty for each
-        // (item, item_type, variation-key) tuple so we can fail
-        // pre-flight (rather than mid-write) when reorder + existing
-        // would exceed `maximum_cart_quantity`.
         $cart = \app(CartProvider::class);
 
         $errors   = [];
@@ -538,8 +445,6 @@ class OrderActionsProvider implements OrderActionsProviderContract
         }
 
         if (empty($payloads)) {
-            // Belt and braces — if planReorderLine ever returned [true, null, null]
-            // we'd silently "succeed" with nothing in cart. Make it noisy.
             Log::warning('Reorder: empty payloads after clean pre-flight', [
                 'orderId'      => $order->id,
                 'detailsCount' => $details->count(),
@@ -547,10 +452,6 @@ class OrderActionsProvider implements OrderActionsProviderContract
             return ['success' => false, 'errors' => ['Nothing to add — please contact support.']];
         }
 
-        // All clean — write in one transaction so we never end up with a
-        // partial cart on a freak failure. Reuses CartProvider::add()
-        // (the single writer) so dedupe + JSON-encode quirk + store
-        // scoping stay consistent with normal cart adds.
         try {
             DB::beginTransaction();
             foreach ($payloads as $p) {
@@ -563,10 +464,6 @@ class OrderActionsProvider implements OrderActionsProviderContract
                 'rows'    => count($payloads),
             ]);
         } catch (\Illuminate\Validation\ValidationException $e) {
-            // CartProvider::add throws this for known-bad reasons (item
-            // gone, wrong store, max-qty exceeded after existing-line
-            // sum). Surface the host's message so the user sees the
-            // actual cause instead of a generic "try again".
             DB::rollBack();
             $messages = [];
             foreach ($e->errors() as $field => $fieldMessages) {
@@ -589,9 +486,6 @@ class OrderActionsProvider implements OrderActionsProviderContract
         }
 
         $count = count($payloads);
-        // Tag the message with the order id so identical reorders fire
-        // a fresh FlashToaster event (its useEffect deps are the message
-        // strings; same-string-twice would silently skip the toast).
         $orderId = (int) $order->id;
         return [
             'success' => true,
@@ -602,11 +496,6 @@ class OrderActionsProvider implements OrderActionsProviderContract
         ];
     }
 
-    /**
-     * Per-line pre-flight. Returns one of:
-     *   [true,  payload, null]   → ready for CartProvider::add()
-     *   [false, null,    string] → human-readable reason for the user
-     */
     private function planReorderLine(
         OrderDetail $d,
         int $activeStoreId,
@@ -618,17 +507,12 @@ class OrderActionsProvider implements OrderActionsProviderContract
         $isCampaign = !empty($d->item_campaign_id);
         $item = $isCampaign ? ($d->campaign ?? null) : ($d->item ?? null);
 
-        // Use the snapshot name from order_details.item_details when the
-        // item itself is gone, so errors are still recognizable.
         $snapshotName = $this->snapshotItemName($d);
 
         if (!$item) {
             return [false, null, "{$snapshotName} is no longer available."];
         }
 
-        // Defensive: should never trip because ProfileOrders is scope-
-        // filtered, but if the user somehow holds an order id from
-        // another store, refuse.
         if ((int) $item->store_id !== $activeStoreId) {
             return [false, null, "{$snapshotName} is from a different store."];
         }
@@ -640,15 +524,10 @@ class OrderActionsProvider implements OrderActionsProviderContract
             return [false, null, "{$snapshotName} is currently unavailable."];
         }
 
-        // Item-only (campaigns don't carry is_approved). Eloquent doesn't
-        // declare DB columns as class properties so `property_exists` is
-        // useless here — read via the magic getter and default to 1 ("approved")
-        // when the column doesn't exist on the model (ItemCampaign).
         if (!$isCampaign && (int) ($item->is_approved ?? 1) !== 1) {
             return [false, null, "{$snapshotName} is currently unavailable."];
         }
 
-        // Campaign window check.
         if ($isCampaign) {
             $end = $item->end_date ? $item->end_date->format('Y-m-d') : null;
             if ($end && $end < date('Y-m-d')) {
@@ -656,7 +535,6 @@ class OrderActionsProvider implements OrderActionsProviderContract
             }
         }
 
-        // Time-of-day check (only when the item carries window fields).
         $now = date('H:i:s');
         $startTime = $item->available_time_starts ?? null;
         $endTime   = $item->available_time_ends ?? null;
@@ -665,14 +543,6 @@ class OrderActionsProvider implements OrderActionsProviderContract
         }
 
         $variation = $this->decodeJsonArray($d->variation);
-        // order_details.variation stores food variation in a different
-        // shape than the cart expects. Cart-shape:
-        //     [{name, values: {label: ["small"]}}]
-        // Order-details snapshot shape:
-        //     [{name, values: [{label, optionPrice}]}]
-        // Helpers::cart_product_data_formatting (called by CartProvider::add
-        // via list()) reads `values.label` directly and crashes on the
-        // snapshot shape. Normalize once, here.
         if ($moduleType === 'food') {
             $variation = $this->normalizeFoodVariation($variation);
         }
@@ -680,19 +550,11 @@ class OrderActionsProvider implements OrderActionsProviderContract
         $addOnQtys = array_values(array_map('intval', $this->decodeJsonArray($d->add_on_qtys)));
         $qty       = max(1, (int) $d->quantity);
 
-        // Variation still offered. We match on `type` (non-food) or
-        // `name`+`values.label` (food) so a renamed-but-still-there
-        // option doesn't silently fall through.
         $variationError = $this->validateVariation($item, $variation, $moduleType);
         if ($variationError) {
             return [false, null, str_replace('{name}', $snapshotName, $variationError)];
         }
 
-        // Existing cart qty for the same combo — needed by both the stock
-        // check and the max-cart-qty check below, because CartProvider::add
-        // bumps an existing line by the reorder qty (it doesn't replace).
-        // Queried once; both checks compare `(existing + reorder)` against
-        // their respective ceilings.
         $existingCartQty = $this->existingCartLineQty(
             $item,
             $variation,
@@ -702,7 +564,6 @@ class OrderActionsProvider implements OrderActionsProviderContract
             $activeModuleId,
         );
 
-        // Stock — only when the module enforces it.
         if ($hasStock) {
             $stockError = $this->validateStock($item, $variation, $qty, $snapshotName, $existingCartQty, $moduleType);
             if ($stockError) {
@@ -710,7 +571,6 @@ class OrderActionsProvider implements OrderActionsProviderContract
             }
         }
 
-        // Addons exist + still active.
         if (!empty($addOnIds)) {
             $liveAddons = AddOn::query()
                 ->whereIn('id', $addOnIds)
@@ -724,10 +584,6 @@ class OrderActionsProvider implements OrderActionsProviderContract
             }
         }
 
-        // Max cart qty — compare `(existing + reorder)` against the cap.
-        // CartProvider::add sums quantities on an existing line; without
-        // this check we'd pass pre-flight then throw at write time
-        // (the catch surfaces it, but the message is generic).
         $maxCartQty = (int) ($item->maximum_cart_quantity ?? 0);
         if ($maxCartQty > 0 && ($qty + $existingCartQty) > $maxCartQty) {
             return [false, null, $existingCartQty > 0
@@ -735,12 +591,8 @@ class OrderActionsProvider implements OrderActionsProviderContract
                 : "You can add at most {$maxCartQty} of {$snapshotName} per order."];
         }
 
-        // Live re-price. See liveLinePrice() — module-aware variation math.
         $price = $this->liveLinePrice($item, $variation, $addOnIds, $addOnQtys, $qty, $moduleType);
 
-        // Pass-through payload matches CartProvider::add()'s schema. We
-        // send the model alias rather than the FQCN because the cart
-        // controller's validator gates on the alias.
         $payload = [
             'item_id'     => (int) $item->id,
             'model'       => $isCampaign ? 'ItemCampaign' : 'Item',
@@ -753,14 +605,6 @@ class OrderActionsProvider implements OrderActionsProviderContract
         return [true, $payload, null];
     }
 
-    /**
-     * Match historical variation choices against the live item's
-     * variation JSON. Shape differs by module:
-     *   - food: `food_variations` = [{name, values: [{label, optionPrice, ...}]}]
-     *           historical = [{name, values: {label: string[]}}]
-     *   - non-food: `variations` = [{type, price, stock}]
-     *               historical = [{type, ...}]
-     */
     private function validateVariation($item, array $variation, string $moduleType): ?string
     {
         if (empty($variation)) return null;
@@ -786,7 +630,6 @@ class OrderActionsProvider implements OrderActionsProviderContract
             return null;
         }
 
-        // Non-food
         $live = $this->decodeJsonArray($item->variations ?? []);
         $liveTypes = array_column($live, 'type');
         foreach ($variation as $sel) {
@@ -799,22 +642,6 @@ class OrderActionsProvider implements OrderActionsProviderContract
         return null;
     }
 
-    /**
-     * Stock check. Non-variant orders look at item-level stock; variant
-     * orders pull from the per-variation `stock` field. `hasStock` was
-     * already gated by the caller.
-     *
-     * Module-aware: food variations live in `food_variations` (option
-     * groups — no inherent stock), while non-food variations live in
-     * `variations` (each entry carries its own stock). For food we
-     * always fall through to item-level `stock` because option groups
-     * don't have stock semantics. (Default config sets food.stock=false
-     * anyway, but be defensive in case the admin flips it.)
-     *
-     * Compares `live_stock` against `(reorder_qty + existing_cart_qty)`
-     * because CartProvider::add bumps an existing matching line by the
-     * reorder qty — the final cart line has to fit within live stock.
-     */
     private function validateStock(
         $item,
         array $variation,
@@ -825,7 +652,6 @@ class OrderActionsProvider implements OrderActionsProviderContract
     ): ?string {
         $needed = $qty + $existingCartQty;
 
-        // Non-food: look up the chosen variant's per-variant stock.
         if ($moduleType !== 'food' && !empty($variation[0]['type'])) {
             $variant = (string) $variation[0]['type'];
             $live = $this->decodeJsonArray($item->variations ?? []);
@@ -838,12 +664,9 @@ class OrderActionsProvider implements OrderActionsProviderContract
                     return null;
                 }
             }
-            // Variant not present in live — validateVariation should have
-            // caught this already; defensive null here.
             return null;
         }
 
-        // Food, or non-food with no variant chosen → item-level stock.
         $stock = (int) ($item->stock ?? 0);
         if ($stock < $needed) {
             return $this->stockMessage($name, $stock, $existingCartQty);
@@ -862,15 +685,6 @@ class OrderActionsProvider implements OrderActionsProviderContract
         return "Only {$available} of {$name} left in stock.";
     }
 
-    /**
-     * How many of this (item, variation, addons) tuple does the customer
-     * already have in their cart? Mirrors CartProvider::findMatchingLine's
-     * dedupe key (variation matched ignoring volatile price/stock fields).
-     *
-     * We can't call CartProvider::findMatchingLine directly — it's private.
-     * Cheaper to duplicate the small bit of matching logic than to widen
-     * the contract for one caller.
-     */
     private function existingCartLineQty(
         $item,
         array $variation,
@@ -907,11 +721,6 @@ class OrderActionsProvider implements OrderActionsProviderContract
         return $total;
     }
 
-    /**
-     * Stable identity for a variation, ignoring volatile fields. Mirrors
-     * CartProvider::variationMatchKey verbatim so existing-cart matching
-     * stays consistent with the cart's own dedupe behavior.
-     */
     private function variationMatchKey(array $variation): string
     {
         $normalized = array_map(static function ($entry) {
@@ -923,21 +732,6 @@ class OrderActionsProvider implements OrderActionsProviderContract
         return json_encode($normalized) ?: '';
     }
 
-    /**
-     * Recompute the line price from live catalog data:
-     *   non-food: matched variation.price REPLACES base item price
-     *             (each variant carries its own price)
-     *   food:     each chosen option's optionPrice ADDS to base
-     *
-     * Addons are summed per-line (NOT per-unit) to match the cart's
-     * existing convention — see Resources/js/utils/cartPrice.js.
-     *
-     * Discounts intentionally not applied here — `PlaceNewOrder` re-
-     * derives the canonical `order_amount` at place-order time from
-     * the live cart, so any drift between our number and the final
-     * order is corrected then. We just want a sane price visible in
-     * the cart drawer / checkout summary.
-     */
     private function liveLinePrice($item, array $variation, array $addOnIds, array $addOnQtys, int $qty, string $moduleType): float
     {
         $base = (float) ($item->price ?? 0);
@@ -959,7 +753,6 @@ class OrderActionsProvider implements OrderActionsProviderContract
                     }
                 }
             } else {
-                // Non-food: variation REPLACES base.
                 $live = $this->decodeJsonArray($item->variations ?? []);
                 $type = (string) ($variation[0]['type'] ?? '');
                 foreach ($live as $v) {
@@ -989,17 +782,6 @@ class OrderActionsProvider implements OrderActionsProviderContract
         return round($base * $qty + $addonExtra, (int) (config('round_up_to_digit') ?? 2));
     }
 
-    /**
-     * Convert the order-details snapshot's food-variation shape into the
-     * cart's expected shape. The host's two surfaces stored variation
-     * differently:
-     *   carts:         [{name, values: {label: ["small", "large"]}}]
-     *   order_details: [{name, values: [{label, optionPrice}, ...]}]
-     *
-     * The cart's renderer (Helpers::cart_product_data_formatting) reads
-     * `values.label` directly — writing the snapshot shape verbatim
-     * crashes with "Undefined array key 'label'".
-     */
     private function normalizeFoodVariation(array $orderVariation): array
     {
         $out = [];
@@ -1010,11 +792,8 @@ class OrderActionsProvider implements OrderActionsProviderContract
             $values = $group['values'] ?? null;
             if (is_array($values)) {
                 if (array_key_exists('label', $values)) {
-                    // Already cart-shape — possible if the host already
-                    // normalized somewhere upstream. Pass through.
                     $labels = is_array($values['label']) ? $values['label'] : [$values['label']];
                 } else {
-                    // Order-details shape: a list of {label, optionPrice}.
                     foreach ($values as $v) {
                         if (is_array($v) && isset($v['label'])) {
                             $labels[] = $v['label'];
@@ -1023,9 +802,6 @@ class OrderActionsProvider implements OrderActionsProviderContract
                 }
             }
 
-            // Preserve every field on the group (name/type/min/max/
-            // required/…) so the cart row carries the same metadata
-            // the user originally picked. Only `values` gets rewritten.
             $normalized = $group;
             $normalized['values'] = [
                 'label' => array_values(array_map(static fn ($x) => (string) $x, $labels)),

@@ -23,15 +23,11 @@ class MediaUrlResolver implements MediaUrlResolverContract
 
     public function assetUrl(string $path): string
     {
-        // 6amMart's Laravel app is nested under a `public/` folder served as
-        // root, so bundled assets live behind the `public/` prefix.
         return asset('public/' . \ltrim($path, '/'));
     }
 
     public function storageBaseUrl(): string
     {
-        // 6amMart's public disk is served from /storage/app/public; expose that
-        // true base so the storefront resolves relative/legacy media correctly.
         return asset('storage/app/public');
     }
 }

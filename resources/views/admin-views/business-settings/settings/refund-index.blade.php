@@ -1,33 +1,32 @@
 @extends('layouts.admin.app')
 
-@section('title', translate('refund_settings'))
+@section('title', translate('Refund settings'))
 
 
 @section('content')
     <div class="content container-fluid">
-        <!-- Page Header -->
         <div class="page-header">
             <h1 class="page-header-title mr-3">
                 <span class="page-header-icon">
-                    <img src="{{ asset('public/assets/admin/img/business.png') }}" class="w--26" alt="">
+                    <img src="{{ asset('public/assets/admin/img/outline/business.svg') }}" class="w--26" alt="">
                 </span>
                 <span>
-                    {{ translate('messages.business_setup') }}
+                    {{ translate('Business setup') }}
                 </span>
             </h1>
+            <p class="page-header-desc">{{ translate('When a customer may ask for a refund, and the reasons they can choose from.') }}</p>
             @include('admin-views.business-settings.partials.nav-menu')
         </div>
-        <!-- End Page Header -->
     <div class="card mb-3" id="refund_mode_section">
             <div class="card-body">
                 <div class="row g-3 align-items-center">
                     <div class="col-xxl-9 col-lg-8 col-md-7 col-sm-6">
                         <div>
                             <h3 class="mb-1">
-                                {{ translate('Refund Request Mode') }}
+                                {{ translate('Refund request mode') }}
                             </h3>
                             <p class="mb-0 fs-12">
-                                {{ translate('Customers can’t request a Refund if Admin doesn’t specify a cause for Refund. Admin MUST provide a Refund Reason.') }}
+                                {{ translate('Customers can\'t request a refund if admin doesn\'t specify a cause for refund. Admin MUST provide a refund reason.') }}
                             </p>
                         </div>
                     </div>
@@ -35,7 +34,7 @@
                         <div class="maintenance-mode-toggle-bar d-flex flex-wrap justify-content-between border rounded align-items-center py-2 px-3">
                             @php($config = $refund_active_status ?? null)
                             <h5 class="text-capitalize m-0 text-title font-weight-normal">
-                                {{ translate('messages.Refund Request Mode') }}
+                                {{ translate('Refund request mode') }}
                             </h5>
                             <label class="toggle-switch toggle-switch-sm">
                                 <input type="checkbox" class="status toggle-switch-input refund-mode"
@@ -56,16 +55,16 @@
             <div class="card-header">
                 <div>
                     <h3 class="mb-1">
-                        {{ translate('Add Refund Reason') }}
+                        {{ translate('Add refund reason') }}
                     </h3>
                     <p class="mb-0 fs-12">
-                        {{ translate('Users cannot cancel an order if the Admin does not specify a cause for cancellation even though ') }}
+                        {{ translate('Users cannot cancel an order if the admin does not specify a cause for cancellation even though') }} 
                     </p>
                 </div>
             </div>
             <div class="card-body">
                 <div class="report-card-inner mb-4 mw-100">
-                    <div class="bg-light rounded p-xxl-20 p-2">
+                    <div class="bg-light rounded p-xxl-20 p-3">
                         <form action="{{route('admin.refund.refund_reason')}}" method="post">
                             @csrf
 
@@ -87,26 +86,24 @@
                             @endif
                             <div class="row align-items-end">
                                 <div class="col-md-12 lang_form default-form">
-                                    <label for="reason" class="form-label">{{translate('Refund Reason')}} ({{ translate('Default') }})
-                                        <span class="form-label-secondary" data-toggle="tooltip" data-placement="right" data-original-title="{{ translate('Write the related refund reasons that customers must select to request a refund. ') }}">
+                                    <label for="reason" class="form-label">{{translate('Refund reason')}} ({{ translate('Default') }})
+                                        <span class="form-label-secondary" data-toggle="tooltip" data-placement="right" data-original-title="{{ translate('Write the related refund reasons that customers must select to request a refund.') }}">
                                             <i class="tio-info text-muted"></i>
                                         </span>
-                                          <span class="text-danger">*</span>
+                                        <span class="text-danger">*</span>
                                     </label>
                                     <textarea id="reason" type="text" class="form-control" rows="1" maxlength="150" name="reason[]"
-                                                placeholder="{{ translate('Ex:_Item_is_Broken') }}"></textarea>
-                                                <span class="text-right text-counting color-A7A7A7 d-block mt-1">0/150</span>
-                                                <input type="hidden" name="lang[]" value="default">
+                                        placeholder="{{ translate('Ex') . ': ' . translate('Item is broken') }}"></textarea>
+                                    <span class="text-right text-counting color-A7A7A7 d-block mt-1">0/150</span>
+                                    <input type="hidden" name="lang[]" value="default">
                                 </div>
                                 @if ($language)
                                 @foreach ($language as $lang)
                                     <div class="col-md-12 d-none lang_form" id="{{$lang}}-form">
-                                        <label for="reason{{$lang}}" class="form-label">{{translate('Refund Reason')}} ({{strtoupper($lang)}})
-
-                                        </label>
+                                        <label for="reason{{$lang}}" class="form-label">{{translate('Refund reason')}} ({{strtoupper($lang)}})</label>
                                         <textarea id="reason{{$lang}}" type="text" class="form-control" rows="1" maxlength="150" name="reason[]"
-                                                placeholder="{{ translate('Ex:_Item_is_Broken') }}"></textarea>
-                                                <span class="text-right text-counting color-A7A7A7 d-block mt-1">0/150</span>
+                                            placeholder="{{ translate('Ex') . ': ' . translate('Item is broken') }}"></textarea>
+                                        <span class="text-right text-counting color-A7A7A7 d-block mt-1">0/150</span>
                                         <input type="hidden" name="lang[]" value="{{$lang}}">
                                     </div>
                                 @endforeach
@@ -114,8 +111,8 @@
 
                                 <div class="col-md-12">
                                     <div class="d-flex justify-content-end align-items-center gap-3 mt-20">
-                                        <button type="resest" class="btn btn--reset h--45px min-w-120px">{{translate('messages.Reset')}}</button>
-                                        <button type="submit" class="btn btn--primary m-0 h--45px min-w-120px">{{translate('messages.Save')}}</button>
+                                        <button type="reset" class="btn btn--reset h--45px min-w-120px"><i class="tio-refresh"></i> {{translate('messages.Reset')}}</button>
+                                        <button type="submit" class="btn btn--primary m-0 h--45px min-w-120px"><i class="tio-save"></i> {{translate('messages.Save')}}</button>
                                     </div>
                                 </div>
                             </div>
@@ -127,37 +124,34 @@
                         <div class="d-flex gap-3 flex-wrap justify-content-between align-items-center mb-20">
                             <div class="">
                                 <h4 class="mb-0">
-                                    {{translate('Refund Reason List')}}
+                                    {{translate('Refund reason list')}}
                                 </h4>
                             </div>
                             <form class="search-form order-search-wrap min--260">
-                                <!-- Search -->
                                 <div class="input-group input--group">
                                     <input id="datatableSearch" name="search" value="{{ request()?->search ?? null }}"
                                         type="search" class="form-control h--40px"
-                                        placeholder="{{ translate('ex_:search_here') }}"
-                                        aria-label="{{ translate('messages.search_here') }}">
+                                        placeholder="{{ translate('Ex') }}: Search here"
+                                        aria-label="{{ translate('Search') }}">
                                     <button type="submit" class="btn btn--secondary h--40px"><i
                                             class="tio-search"></i></button>
                                 </div>
-                                <!-- End Search -->
                             </form>
                         </div>
-                        <!-- Table -->
                         <div class="card-body p-0">
                             <div class="table-responsive datatable-custom">
                                 <table id="columnSearchDatatable"
                                     class="table table-borderless table-thead-bordered table-align-middle" data-hs-datatables-options='{
                                         "isResponsive": false,
                                         "isShowPaging": false,
-                                        "paging":false,
+                                        "paging":false
                                     }'>
                                     <thead class="thead-light">
                                         <tr>
                                             <th class="border-0">{{ translate('messages.SL') }}</th>
                                             <th class="border-0">{{translate('messages.Reason')}}</th>
-                                            <th class="border-0">{{translate('messages.status')}}</th>
-                                            <th class="border-0 text-center">{{translate('messages.action')}}</th>
+                                            <th class="border-0">{{translate('messages.Status')}}</th>
+                                            <th class="border-0 text-center">{{translate('messages.Action')}}</th>
                                         </tr>
                                     </thead>
 
@@ -183,19 +177,19 @@
                                             <td>
                                                 <div class="btn--container justify-content-center">
 
-                                                    <a class="btn btn-sm text-end action-btn info--outline text--info info-hover offcanvas-trigger data-info-show"
+                                                    <a class="btn btn-sm text-end action-btn action-btn--edit offcanvas-trigger data-info-show"
                                                         data-target="#offcanvas__customBtn3"
                                                         data-id="{{ $reason->id }}"
                                                         data-url="{{ route('admin.refund.reason-edit', [$reason->id]) }}"
                                                         href="javascript:"
-                                                        title="{{ translate('messages.edit_refund_reason') }}"><i
+                                                        title="{{ translate('Edit refund reason') }}"><i
                                                             class="tio-edit"></i></a>
 
-                                                    <a class="btn btn-sm btn--danger btn-outline-danger action-btn form-alert" href="javascript:"
+                                                    <a class="btn btn-sm action-btn action-btn--delete form-alert" href="javascript:"
                                                     data-id="refund_reason-{{$reason['id']}}"
-                                                    data-message="{{ translate('Want to delete this refund reason ?') }}"
+                                                    data-message="{{ translate('Want to delete this refund reason?') }}"
 
-                                                title="{{translate('messages.delete')}}">
+                                                title="{{translate('messages.Delete')}}">
                                                 <i class="tio-delete-outlined"></i>
                                             </a>
                                                     <form action="{{route('admin.refund.reason_delete',[$reason['id']])}}"
@@ -214,7 +208,7 @@
                                     <img src="{{ asset('/public/assets/admin/img/svg/no_record.svg') }}"
                                         alt="public">
                                     <p class="fs-12">
-                                        {{ translate('No Refund Reason List') }}
+                                        {{ translate('No refund reason list') }}
                                     </p>
                                 </div>
                             @endif
@@ -231,7 +225,6 @@
                             </div>
                             </div>
                         </div>
-                        <!-- End Table -->
                     </div>
                 </div>
             </div>
@@ -241,7 +234,7 @@
     class="custom-offcanvas d-flex flex-column justify-content-between global_guideline_offcanvas">
     <div>
         <div class="custom-offcanvas-header bg--secondary d-flex justify-content-between align-items-center px-3 py-3">
-            <h3 class="mb-0">{{ translate('Refund Settings Guideline') }}</h3>
+            <h3 class="mb-0">{{ translate('Refund settings guideline') }}</h3>
             <button type="button"
                 class="btn-close w-25px h-25px border rounded-circle d-center bg--secondary offcanvas-close fz-15px p-0"
                 aria-label="Close">&times;</button>
@@ -255,17 +248,17 @@
                         class="btn-collapse-icon w-35px h-35px bg-white d-flex align-items-center justify-content-center border icon-btn rounded-circle fs-12 lh-1">
                         <i class="tio-down-ui"></i>
                     </div>
-                    <span class="font-semibold text-left fs-14 text-title">{{ translate('Refund Request Mode') }}</span>
+                    <span class="font-semibold text-left fs-14 text-title">{{ translate('Refund request mode') }}</span>
                 </button>
                 <a href="#refund_mode_section"
-                    class="text-info text-underline fs-12 text-nowrap offcanvas-close offcanvas-close-btn">{{ translate('messages.Let’s Setup') }}</a>
+                    class="text-info text-underline fs-12 text-nowrap offcanvas-close offcanvas-close-btn">{{ translate('Let\'s setup') }}</a>
             </div>
             <div class="collapse mt-3 show" id="refund_mode_guide">
                 <div class="card card-body">
                     <div class="">
-                        <h5 class="mb-3">{{ translate('Refund Request Mode') }}</h5>
+                        <h5 class="mb-3">{{ translate('Refund request mode') }}</h5>
                         <p class="fs-12 mb-0">
-                            {{ translate('This option enables customers to submit refund requests for their orders. When this option is turned OFF, customers will not be able to request a refund.') }}
+                            {{ translate('Lets customers request refunds on their orders. Turn off to remove the option.') }}
                         </p>
                     </div>
                 </div>
@@ -280,17 +273,17 @@
                         class="btn-collapse-icon w-35px h-35px bg-white d-flex align-items-center justify-content-center border icon-btn rounded-circle fs-12 lh-1">
                         <i class="tio-down-ui"></i>
                     </div>
-                    <span class="font-semibold text-left fs-14 text-title">{{ translate('Refund Reason') }}</span>
+                    <span class="font-semibold text-left fs-14 text-title">{{ translate('Refund reason') }}</span>
                 </button>
                 <a href="#refund_reason_section"
-                    class="text-info text-underline fs-12 text-nowrap offcanvas-close offcanvas-close-btn">{{ translate('messages.Let’s Setup') }}</a>
+                    class="text-info text-underline fs-12 text-nowrap offcanvas-close offcanvas-close-btn">{{ translate('Let\'s setup') }}</a>
             </div>
             <div class="collapse mt-3" id="refund_reason_guide">
                 <div class="card card-body">
                     <div class="">
-                        <h5 class="mb-3">{{ translate('Refund Reason') }}</h5>
+                        <h5 class="mb-3">{{ translate('Refund reason') }}</h5>
                         <p class="fs-12 mb-0">
-                            {{ translate('This section allows the admin to manage refund cancellation reasons. Admin can create and configure cancellation reasons and control their active status. Customers will see these reasons as options when they request a refund.') }}
+                            {{ translate('Create and manage the refund reasons customers choose from, and control which are active.') }}
                         </p>
                     </div>
                 </div>
@@ -319,8 +312,8 @@
             showCancelButton: true,
             cancelButtonColor: 'default',
             confirmButtonColor: '#377dff',
-            cancelButtonText: '{{translate('messages.no')}}',
-            confirmButtonText: '{{translate('messages.yes')}}',
+            cancelButtonText: '{{translate('messages.No')}}',
+            confirmButtonText: '{{translate('messages.Yes')}}',
             reverseButtons: true
         }).then((result) => {
             if (result.value) {

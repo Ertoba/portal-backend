@@ -7,6 +7,7 @@ use App\Models\Coupon;
 use Brian2694\Toastr\Facades\Toastr;
 use Illuminate\Http\Request;
 use App\CentralLogics\Helpers;
+use App\Services\Marketing\CouponService;
 
 class CouponController extends Controller
 {
@@ -19,6 +20,11 @@ class CouponController extends Controller
         return view('vendor-views.coupon.index', compact('coupons', 'language'));
     }
 
+    public function generateCheckCode(Request $request, CouponService $couponService): \Illuminate\Http\JsonResponse
+    {
+        return response()->json($couponService->getUniqueCouponCode(title: $request['title']));
+    }
+
     public function store(Request $request)
     {
         $request->validate([
@@ -29,9 +35,12 @@ class CouponController extends Controller
             'discount' => 'required_if:coupon_type,default',
             'min_purchase' => 'required|numeric|min:1',
             'coupon_type' => 'required|in:free_delivery,default',
+            'max_discount' => 'exclude_unless:discount_type,percent|required|numeric|min:0.01',
             'title.0' => 'required',
         ],[
-            'title.0.required'=>translate('default_title_is_required'),
+            'title.0.required'=>translate('Default title is required'),
+            'max_discount.required'=>translate('Max discount is required for percentage discount type'),
+            'max_discount.min'=>translate('Max discount must be greater than zero for percentage discount type'),
         ]);
         $customer_id  = $request->customer_ids ?? ['all'];
         $data = "";
@@ -56,13 +65,13 @@ class CouponController extends Controller
 
         Helpers::add_or_update_translations(request: $request, key_data:'title' , name_field:'title' , model_name: 'Coupon' ,data_id: $coupon->id,data_value: $coupon->title);
 
-        Toastr::success(translate('messages.coupon_added_successfully'));
+        Toastr::success(translate('Added successfully'));
         return back();
     }
 
     public function edit($id)
     {
-        $coupon = Coupon::withoutGlobalScope('translate')->where(['id' => $id])->where('created_by', 'vendor' )->first();
+        $coupon = Coupon::withoutGlobalScope('translate')->with(['translations', 'store'])->where(['id' => $id])->where('created_by', 'vendor' )->firstOrFail();
         $language = getWebConfig('language');
         return view('vendor-views.coupon.edit', compact('coupon', 'language'));
     }
@@ -77,9 +86,12 @@ class CouponController extends Controller
             'discount' => 'required_if:coupon_type,default',
             'min_purchase' => 'required|numeric|min:1',
             'coupon_type' => 'required|in:free_delivery,default',
+            'max_discount' => 'exclude_unless:discount_type,percent|required|numeric|min:0.01',
             'title.0' => 'required',
         ],[
-            'title.0.required'=>translate('default_title_is_required'),
+            'title.0.required'=>translate('Default title is required'),
+            'max_discount.required'=>translate('Max discount is required for percentage discount type'),
+            'max_discount.min'=>translate('Max discount must be greater than zero for percentage discount type'),
         ]);
 
         $customer_id  = $request->customer_ids ?? ['all'];
@@ -100,7 +112,7 @@ class CouponController extends Controller
         Helpers::add_or_update_translations(request: $request, key_data:'title' , name_field:'title' , model_name: 'Coupon' ,data_id: $coupon->id,data_value: $coupon->title);
 
 
-        Toastr::success(translate('messages.coupon_updated_successfully'));
+        Toastr::success(translate('Updated successfully'));
         return redirect()->route('vendor.coupon.add-new');
     }
 
@@ -109,7 +121,7 @@ class CouponController extends Controller
         $coupon = Coupon::find($request->id);
         $coupon->status = $request->status;
         $coupon->save();
-        Toastr::success(translate('messages.coupon_status_updated'));
+        Toastr::success(translate('messages.Coupon status updated'));
         return back();
     }
 
@@ -117,17 +129,19 @@ class CouponController extends Controller
     {
         $coupon = Coupon::find($request->id);
         $coupon->delete();
-        Toastr::success(translate('messages.coupon_deleted_successfully'));
+        Toastr::success(translate('Deleted successfully'));
         return back();
     }
 
     public function viewCoupon($id){
 
-        $coupon = Coupon::withoutGlobalScope('translate')->where(['id' => $id])->where('created_by', 'vendor' )->first();
+        $coupon = Coupon::withoutGlobalScope('translate')->with(['translations', 'store'])->where(['id' => $id])->where('created_by', 'vendor' )->firstOrFail();
         $selectedCustomers='all';
 
-          return response()->json([
-            'view' => view('vendor-views.coupon._view', compact('coupon','selectedCustomers'))->render(),
+        $current_module_type = config('module.current_module_type');
+
+        return response()->json([
+            'view' => view('vendor-views.coupon._view', compact('coupon','selectedCustomers','current_module_type'))->render(),
         ]);
     }
 

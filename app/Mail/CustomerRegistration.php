@@ -2,27 +2,30 @@
 
 namespace App\Mail;
 
-use App\CentralLogics\Helpers;
-use App\Models\BusinessSetting;
 use App\Models\EmailTemplate;
+use App\Mail\Concerns\BuildsTemplatedMail;
+use App\Mail\Concerns\QueueableMailable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Queue\SerializesModels;
+use App\Support\Notification\NotificationText;
+use App\Services\System\BusinessSettingService;
 
-class CustomerRegistration extends Mailable
+class CustomerRegistration extends Mailable implements ShouldQueue
 {
-    use Queueable, SerializesModels;
+    use BuildsTemplatedMail, Queueable, QueueableMailable, SerializesModels;
 
     /**
      * Create a new message instance.
      *
      * @return void
      */
-
     protected $name;
+
     protected $type;
 
-    public function __construct($name, $type=false)
+    public function __construct($name, $type = false)
     {
         $this->name = $name;
         $this->type = $type;
@@ -35,15 +38,17 @@ class CustomerRegistration extends Mailable
      */
     public function build()
     {
-        $company_name = BusinessSetting::where('key', 'business_name')->first()->value;
-        $data=EmailTemplate::where('type','user')->where('email_type', 'registration')->first();
-        $template=$data?$data->email_template:5;
         $url = '';
         $user_name = $this->name;
-        $title = Helpers::text_variable_data_format( value:$data['title']??'',user_name:$user_name??'');
-        $body = Helpers::text_variable_data_format( value:$data['body']??'',user_name:$user_name??'');
-        $footer_text = Helpers::text_variable_data_format( value:$data['footer_text']??'',user_name:$user_name??'');
-        $copyright_text = Helpers::text_variable_data_format( value:$data['copyright_text']??'',user_name:$user_name??'');
-        return $this->subject(translate('Customer_Registration'))->view('email-templates.new-email-format-'.$template, ['company_name'=>$company_name,'data'=>$data,'title'=>$title,'body'=>$body,'footer_text'=>$footer_text,'copyright_text'=>$copyright_text,'url'=>$url]);
+
+        return $this->templatedMail(
+            template: EmailTemplate::where('type', 'user')->where('email_type', 'registration')->first(),
+            fallbackTemplate: 5,
+            subject: translate('Customer registration'),
+            placeholders: [
+                'user_name' => $user_name ?? '',
+            ],
+            viewData: ['url' => $url],
+        );
     }
 }

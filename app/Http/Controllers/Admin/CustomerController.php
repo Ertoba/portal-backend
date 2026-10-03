@@ -11,31 +11,28 @@ use App\CentralLogics\Helpers;
 use Illuminate\Support\Carbon;
 use App\Models\BusinessSetting;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use App\Exports\CustomerListExport;
 use App\Exports\CustomerOrderExport;
 use App\Http\Controllers\Controller;
 use Brian2694\Toastr\Facades\Toastr;
 use Illuminate\Pagination\Paginator;
-use Illuminate\Support\Facades\Mail;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\SubscriberListExport;
 use Modules\Builder\Entities\TenantDomainConfig;
 use Modules\Rental\Entities\Trips;
 use Modules\Rental\Exports\TripExport;
 
+use function Illuminate\Support\defer;
+use App\Support\Notification\SendNotification;
+
 class CustomerController extends Controller
 {
-    public function __construct()
-    {
-        DB::statement("SET sql_mode=(SELECT REPLACE(@@sql_mode,'ONLY_FULL_GROUP_BY',''));");
-    }
     public function customer_list(Request $request)
     {
         $builder_published = (bool) addon_published_status('Builder');
         $tab = $request->tab === 'storefront' && $builder_published ? 'storefront' : 'main';
 
-        // Stores whose Builder storefront is currently published — used for
-        // both the filter dropdown and to guard a hand-crafted storefront_id.
         $publishedStoreIds = $builder_published
             ? TenantDomainConfig::where('website_visibility', true)->pluck('sub_tenant_id')->unique()->values()
             : collect();
@@ -55,7 +52,7 @@ class CustomerController extends Controller
         $show_limit=  $request->show_limit ?? null;
         $key = [];
         if ($request->search) {
-            $key = explode(' ', $request['search']);
+            $key = explode(' ', $request['search'] ?? '');
         }
 
         $order_date_start = null;
@@ -78,7 +75,7 @@ class CustomerController extends Controller
 
 
 
-        $customers = User::when(count($key) > 0, function ($query) use ($key) {
+        $customers = User::withStorage()->when(count($key) > 0, function ($query) use ($key) {
             foreach ($key as $value) {
                 $query->orWhere('f_name', 'like', "%{$value}%")
                     ->orWhere('l_name', 'like', "%{$value}%")
@@ -86,10 +83,7 @@ class CustomerController extends Controller
                     ->orWhere('phone', 'like', "%{$value}%");
             };
         })->withcount('orders')
-
-        // Admin bypasses HostScope, so without these clauses both tabs would
-        // bleed into each other. Main tab = host-context users only; storefront
-        // tab = any user with a sub_tenant_id (i.e. registered via Builder).
+        ->withSum('orders as total_order_amount', 'order_amount')
         ->when($tab === 'main', function ($query) {
             $query->where('tenant_id', 0)->where('sub_tenant_id', 0);
         })
@@ -99,7 +93,6 @@ class CustomerController extends Controller
         ->when($tab === 'storefront' && $storefront_id, function ($query) use ($storefront_id) {
             $query->where('sub_tenant_id', (int) $storefront_id);
         })
-
         ->when(isset($request->join_date) , function ($query) use($join_date_start, $join_date_end) {
             $query->WhereBetween('created_at', [$join_date_start, $join_date_end]);
         })
@@ -108,7 +101,6 @@ class CustomerController extends Controller
                 $query->WhereBetween('created_at', [$order_date_start, $order_date_end]);
             });
         })
-
         ->when(isset($zone_id) && is_numeric($zone_id) , function ($query) use($zone_id){
             $query->where('zone_id' ,$zone_id);
         })
@@ -133,10 +125,8 @@ class CustomerController extends Controller
         ->when(isset($order_wise) && $order_wise == 'oldest' , function ($query) {
             $query->oldest();
         })
-
         ->when(isset($order_wise) && $order_wise == 'order_amount', function ($query) {
-            $query->withSum('orders as total_order_amount', 'order_amount')
-                ->orderByDesc('total_order_amount');
+            $query->orderByDesc('total_order_amount');
         })
         ->when(!$order_wise, function ($query) {
             $query->orderBy('orders_count', 'desc');
@@ -175,69 +165,86 @@ class CustomerController extends Controller
 
     public function status(User $customer, Request $request)
     {
-        $customer->status = $request->status;
-        $customer->save();
+        $request->validate([
+            'status' => 'required|in:0,1',
+        ]);
+
+        $status = (int) $request->status;
 
         try {
-            if ($request->status == 0) {
-                $customer->tokens->each(function ($token, $key) {
-                    $token->delete();
-                });
-                if (isset($customer->cm_firebase_token) && Helpers::getNotificationStatusData('customer','customer_account_block','push_notification_status') ) {
-                    $data = [
+            $customer->status = $status;
+            $customer->save();
+
+            if ($status == 0) {
+                $customer->tokens()->delete();
+            }
+        } catch (\Exception $e) {
+            Log::error('Customer status update failed for user '.$customer->id.': '.$e->getMessage());
+
+            if ($request->expectsJson()) {
+                return response()->json(['message' => translate('messages.Status update failed')], 500);
+            }
+
+            Toastr::error(translate('messages.Status update failed'));
+            return back();
+        }
+
+        // The FCM push and the SMTP mail are slow third party round trips. Running them after the
+        // response is flushed keeps the toggle instant instead of blocking the admin for seconds.
+        defer(fn () => $this->sendCustomerStatusNotifications($customer, $status));
+
+        $message = $status
+            ? translate('messages.Customer activated successfully')
+            : translate('messages.Customer blocked successfully');
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'status' => $status,
+                'message' => $message,
+            ]);
+        }
+
+        Toastr::success($message);
+        return back();
+    }
+
+    private function sendCustomerStatusNotifications(User $customer, int $status): void
+    {
+        $suspended = $status == 0;
+        $email = $customer->getRawOriginal('email');
+
+        try {
+            $push_key = $suspended ? 'customer_account_block' : 'customer_account_unblock';
+
+            if (isset($customer->cm_firebase_token) && SendNotification::channelEnabled('customer', $push_key, 'push_notification_status')) {
+                $data = $suspended
+                    ? [
                         'title' => translate('messages.suspended'),
-                        'description' => translate('messages.your_account_has_been_blocked'),
+                        'description' => translate('messages.Your account has been blocked'),
                         'order_id' => '',
                         'image' => '',
                         'type' => 'block'
-                    ];
-                    Helpers::send_push_notif_to_device($customer->cm_firebase_token, $data);
-
-                    DB::table('user_notifications')->insert([
-                        'data' => json_encode($data),
-                        'user_id' => $customer->id,
-                        'created_at' => now(),
-                        'updated_at' => now()
-                    ]);
-                }
-
-                if ( config('mail.status') && Helpers::get_mail_status('suspend_mail_status_user') == '1' &&  Helpers::getNotificationStatusData('customer','customer_account_block','mail_status') )  {
-                    Mail::to($customer?->getRawOriginal('email'))->send(new \App\Mail\UserStatus('suspended', $customer->f_name.' '.$customer->l_name));
-                }
-
-            } else{
-
-                if(Helpers::getNotificationStatusData('customer','customer_account_unblock','push_notification_status')  && isset($customer->cm_firebase_token))
-                {
-                    $data = [
-                        'title' => translate('messages.account_activation'),
-                        'description' => translate('messages.your_account_has_been_activated'),
+                    ]
+                    : [
+                        'title' => translate('messages.Account activation'),
+                        'description' => translate('messages.Your account has been activated'),
                         'order_id' => '',
                         'image' => '',
-                        'type'=> 'unblock'
+                        'type' => 'unblock'
                     ];
-                    Helpers::send_push_notif_to_device($customer->cm_firebase_token, $data);
 
-                    DB::table('user_notifications')->insert([
-                        'data'=> json_encode($data),
-                        'user_id'=>$customer->id,
-                        'created_at'=>now(),
-                        'updated_at'=>now()
-                    ]);
-                }
-
-                if ( config('mail.status') && Helpers::get_mail_status('unsuspend_mail_status_user')== '1' &&  Helpers::getNotificationStatusData('customer','customer_account_unblock','mail_status') ) {
-                    Mail::to($customer?->getRawOriginal('email'))->send(new \App\Mail\UserStatus('unsuspended', $customer->f_name.' '.$customer->l_name));
-                }
+                SendNotification::pushToCustomer($customer->id, $customer->cm_firebase_token, $data);
             }
 
+            $mail_key = $suspended ? 'suspend_mail_status_user' : 'unsuspend_mail_status_user';
 
+            if ($email && config('mail.status') && SendNotification::mailTemplateEnabled($mail_key) && SendNotification::channelEnabled('customer', $push_key, 'mail_status')) {
+                SendNotification::mail($email, new \App\Mail\UserStatus($suspended ? 'suspended' : 'unsuspended', $customer->f_name.' '.$customer->l_name));
+            }
         } catch (\Exception $e) {
-            Toastr::warning(translate('messages.push_notification_faild'));
+            // The response is already sent at this point, so surface the failure in the log instead of a toast.
+            Log::error('Customer status notification failed for user '.$customer->id.': '.$e->getMessage());
         }
-
-        Toastr::success(translate('messages.customer') . translate('messages.status_updated'));
-        return back();
     }
 
     public function search(Request $request)
@@ -257,7 +264,7 @@ class CustomerController extends Controller
             $storefront_id = null;
         }
 
-        $key = explode(' ', $request['search']);
+        $key = explode(' ', $request['search'] ?? '');
         $customers = User::where(function ($q) use ($key) {
             foreach ($key as $value) {
                 $q->orWhere('f_name', 'like', "%{$value}%")
@@ -285,48 +292,55 @@ class CustomerController extends Controller
     public function view(Request $request,$id)
     {
         $key = $request['search'];
-        $customer = User::find($id);
+        $customer = User::withStorage()->with('addresses')->find($id);
         if (isset($customer)) {
             $total_order_amount = Order::selectRaw('sum(order_amount) as total_order_amount')->latest()->where(['user_id' => $id])
-                ->when(isset($key), function($query) use($key){
+                ->when(isset($request['search']), function($query) use($key){
                     $query->Where('id', 'like', "%{$key}%");
                 } )
                 ->Notpos()->get();
-            $orders = Order::withcount('details')->latest()->where(['user_id' => $id])
-            ->when(isset($key), function($query) use($key){
+            $orders = Order::with('store')->withcount('details')->latest()->where(['user_id' => $id])
+            ->when(isset($request['search']), function($query) use($key){
                 $query->Where('id', 'like', "%{$key}%");
             } )
             ->Notpos()->paginate(config('default_pagination'));
             $moduleType = 'normal';
             return view('admin-views.customer.customer-view', compact('customer', 'orders','total_order_amount','moduleType'));
         }
-        Toastr::error(translate('messages.customer_not_found'));
+        Toastr::error(translate('No data found'));
         return back();
     }
 
     public function rentalView(Request $request,$id)
     {
         $key = $request['search'];
-        $customer = User::find($id);
+        $customer = User::withStorage()->with('addresses')->find($id);
         if (isset($customer)) {
             $total_trips_amount = Trips::selectRaw('sum(trip_amount) as total_trip_amount')->latest()->where(['user_id' => $id])
-                ->when(isset($key), function($query) use($key){
+                ->when(isset($request['search']), function($query) use($key){
                     $query->Where('id', 'like', "%{$key}%");
                 })->get();
-            $trips = Trips::withcount('trip_details')->latest()->where(['user_id' => $id])
-            ->when(isset($key), function($query) use($key){
+            $trips = Trips::with('provider')->withcount('trip_details')->latest()->where(['user_id' => $id])
+            ->when(isset($request['search']), function($query) use($key){
                 $query->Where('id', 'like', "%{$key}%");
             })->paginate(config('default_pagination'));
             $moduleType = 'rental';
             return view('admin-views.customer.customer-rental-view', compact('customer', 'trips','total_trips_amount','moduleType'));
         }
-        Toastr::error(translate('messages.customer_not_found'));
+        Toastr::error(translate('No data found'));
         return back();
     }
 
     public function customer_order_export(Request $request)
     {
         $customer = User::find($request->id);
+
+        if (!$customer) {
+            Toastr::error(translate('No data found'));
+
+            return back();
+        }
+
 
         $orders = Order::with(['orderProDiscount'])->latest()->where(['user_id' => $request->id])->Notpos()->get();
 
@@ -347,10 +361,10 @@ class CustomerController extends Controller
 
     public function customer_trip_export(Request $request)
     {
-        $key = explode(' ', $request['search']);
+        $key = explode(' ', $request['search'] ?? '');
 
         $trips = Trips::latest()->where(['user_id' => $request->id])
-            ->when(isset($key), function ($query) use ($key) {
+            ->when($request['search'], function ($query) use ($key) {
                 return $query->where(function ($q) use ($key) {
                     foreach ($key as $value) {
                         $q->orWhere('id', 'like', "%{$value}%");
@@ -383,21 +397,29 @@ class CustomerController extends Controller
             $join_date_end = Carbon::createFromFormat('m/d/Y', $join_date_end)->endOfDay();
         }
 
-        $key = explode(' ', $request['search']);
+        $key = explode(' ', $request['search'] ?? '');
 
 
-        $customers = Newsletter::when(isset($key), function($query) use($key) {
+        $customers = Newsletter::when($request['search'], function($query) use($key) {
             $query->where(function ($q) use ($key) {
                 foreach ($key as $value) {
-                    $q->orWhere('email', 'like', "%". $value."%");
+                    $q->orWhere('newsletters.email', 'like', "%". $value."%");
                 }
             });
         })
-
         ->when(isset($request->join_date) , function ($query) use($join_date_start, $join_date_end) {
-            $query->WhereBetween('created_at', [$join_date_start, $join_date_end]);
+            $query->WhereBetween('newsletters.created_at', [$join_date_start, $join_date_end]);
         });
 
+        $stats = [
+            'total' => (clone $customers)->count(),
+            'registered' => (clone $customers)
+                ->join('users', 'users.email', '=', 'newsletters.email')
+                ->distinct()->count('newsletters.id'),
+            'this_month' => (clone $customers)
+                ->where('newsletters.created_at', '>=', now()->startOfMonth())->count(),
+        ];
+        $stats['guest'] = max($stats['total'] - $stats['registered'], 0);
 
         if(isset($filter) && $filter == 'oldest' ){
             $customers=$customers->oldest();
@@ -424,15 +446,30 @@ class CustomerController extends Controller
             $customers=$customers->paginate(config('default_pagination'));
         }
 
-
         $data['subscribedCustomers'] = $customers;
-
+        $data['stats'] = $stats;
+        $data['linkedCustomers'] = $this->linked_customers_for_subscribers($customers->getCollection());
 
         return view('admin-views.customer.subscribed-emails', $data);
     }
 
+    private function linked_customers_for_subscribers($subscribers)
+    {
+        $emails = $subscribers->pluck('email')->filter()->unique()->values();
+
+        if ($emails->isEmpty()) {
+            return collect();
+        }
+
+        return User::whereIn('email', $emails)
+            ->select(['id', 'f_name', 'l_name', 'email', 'phone', 'image', 'status', 'order_count', 'pro_status', 'created_at'])
+            ->with('storage')
+            ->get()
+            ->keyBy(fn ($user) => strtolower($user->email));
+    }
+
     public function subscribed_customer_export(Request $request){
-        $key = explode(' ', $request['search']);
+        $key = explode(' ', $request['search'] ?? '');
 
         $filter=  $request->filter ?? null;
         $show_limit=  $request->show_limit ?? null;
@@ -446,7 +483,7 @@ class CustomerController extends Controller
 
 
 
-        $customers = Newsletter::when(isset($key), function($query) use($key) {
+        $customers = Newsletter::when($request['search'], function($query) use($key) {
             $query->where(function ($q) use ($key) {
                 foreach ($key as $value) {
                     $q->orWhere('email', 'like', "%". $value."%");
@@ -484,9 +521,9 @@ class CustomerController extends Controller
 
 
     public function get_customers(Request $request){
-        $key = explode(' ', $request['q']);
-        $data = User::
-        where(function ($q) use ($key) {
+        $key = explode(' ', $request['q'] ?? '');
+        $data = User::query()
+        ->where(function ($q) use ($key) {
             foreach ($key as $value) {
                 $q->orWhere('f_name', 'like', "%{$value}%")
                 ->orWhere('l_name', 'like', "%{$value}%")
@@ -494,8 +531,9 @@ class CustomerController extends Controller
             }
         })
         ->limit(8)
-        ->get([DB::raw('id, CONCAT(f_name, " ", l_name, " (", phone ,")") as text')]);
-        if($request->all) $data[]=(object)['id'=>false, 'text'=>translate('messages.all')];
+        ->get([DB::raw('id, CONCAT(f_name, " ", l_name, " (", phone ,")") as text')])
+        ->makeHidden('image_full_url');
+        if($request->all) $data[]=(object)['id'=>false, 'text'=>translate('All')];
 
 
         return response()->json($data);
@@ -508,14 +546,13 @@ class CustomerController extends Controller
             ->orWhere('key','like','ref_earning_%')
             ->orWhere('key','like','ref_earning_%')->get();
         $data = array_column($data->toArray(), 'value','key');
-        // dd($data);
         return view('admin-views.customer.settings', compact('data'));
     }
 
     public function update_settings(Request $request)
     {
         if (getEnvMode()== 'demo') {
-            Toastr::info(translate('messages.update_option_is_disable_for_demo'));
+            Toastr::info(translate('messages.Update option is disable for demo'));
             return back();
         }
 
@@ -529,7 +566,6 @@ class CustomerController extends Controller
                     'new_customer_discount_amount_type','new_customer_discount_validity_type','new_customer_discount_amount','new_customer_discount_amount_validity',
                     'pro_member_status',
                     'customer_personalization_status',
-                // 'country_picker_status',
                 ];
 
         foreach ($keys as $key) {
@@ -537,7 +573,7 @@ class CustomerController extends Controller
                 'value' => $request->$key ?? 0,
             ]);
         }
-        Toastr::success(translate('messages.customer_settings_updated_successfully'));
+        Toastr::success(translate('Updated successfully'));
         return back();
     }
 
@@ -560,7 +596,7 @@ class CustomerController extends Controller
         $show_limit=  $request->show_limit ?? null;
         $key = [];
         if ($request->search) {
-            $key = explode(' ', $request['search']);
+            $key = explode(' ', $request['search'] ?? '');
         }
 
         $order_date_start = null;
@@ -590,7 +626,7 @@ class CustomerController extends Controller
                     ->orWhere('phone', 'like', "%{$value}%");
             };
         })->withcount('orders')
-
+        ->withSum('orders as total_order_amount', 'order_amount')
         ->when($tab === 'main', function ($query) {
             $query->where('tenant_id', 0)->where('sub_tenant_id', 0);
         })
@@ -600,7 +636,6 @@ class CustomerController extends Controller
         ->when($tab === 'storefront' && $storefront_id, function ($query) use ($storefront_id) {
             $query->where('sub_tenant_id', (int) $storefront_id);
         })
-
         ->when(isset($request->join_date) , function ($query) use($join_date_start, $join_date_end) {
             $query->WhereBetween('created_at', [$join_date_start, $join_date_end]);
         })
@@ -633,10 +668,8 @@ class CustomerController extends Controller
         ->when(isset($order_wise) && $order_wise == 'oldest' , function ($query) {
             $query->oldest();
         })
-
         ->when(isset($order_wise) && $order_wise == 'order_amount', function ($query) {
-            $query->withSum('orders as total_order_amount', 'order_amount')
-                ->orderByDesc('total_order_amount');
+            $query->orderByDesc('total_order_amount');
         })
         ->when(!$order_wise, function ($query) {
             $query->orderBy('orders_count', 'desc');
@@ -651,11 +684,11 @@ class CustomerController extends Controller
 
 
         if($order_wise == 'top'){
-            $order_wise = translate('messages.Sort by order count');
+            $order_wise = translate('messages.Sort by Orders');
         }elseif ($order_wise == 'order_amount'){
             $order_wise = translate('messages.Sort by order amount');
         }elseif ($order_wise == 'oldest'){
-            $order_wise = translate('messages.Sort by oldest');
+            $order_wise = translate('messages.Sort by First created');
         }elseif ($order_wise == 'latest'){
             $order_wise =  translate('messages.Sort by newest');
         }

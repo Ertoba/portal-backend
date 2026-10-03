@@ -5,12 +5,12 @@ namespace App\Http\Controllers\Admin\Promotion;
 use App\Contracts\Repositories\CashBackRepositoryInterface;
 use App\Contracts\Repositories\TranslationRepositoryInterface;
 use App\Enums\ViewPaths\Admin\CashBack as CashBackViewPath;
+use App\CentralLogics\Helpers;
 use App\Http\Controllers\BaseController;
 use App\Http\Requests\Admin\CashBackAddRequest;
 use App\Http\Requests\Admin\CashBackUpdateRequest;
-use App\Services\CashBackService;
+use App\Services\Marketing\CashBackService;
 use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Brian2694\Toastr\Facades\Toastr;
@@ -40,15 +40,17 @@ class CashBackController extends BaseController
         );
         $language = getWebConfig('language');
         $defaultLang = str_replace('_', '-', app()->getLocale());
-        return view(CashBackViewPath::INDEX[VIEW], compact('cashbacks','language','defaultLang'));
+        $selected_customers = Helpers::customers_by_ids([$request['customer'] ?? null]);
+
+        return view(CashBackViewPath::INDEX[VIEW], compact('cashbacks','language','defaultLang','selected_customers'));
     }
 
     public function add(CashBackAddRequest $request): RedirectResponse
     {
-        $cashback = $this->cashBackRepo->add(data: $this->cashBackService->getAddData(request: $request));
+        $cashback = $this->cashBackRepo->add(data: $this->cashBackService->getAddData($request->all()));
         $this->translationRepo->addByModel(request: $request, model: $cashback, modelPath: 'App\Models\CashBack', attribute: 'title');
 
-        Toastr::success(translate('messages.cashback_added_successfully'));
+        Toastr::success(translate('Added successfully'));
         return back();
     }
 
@@ -57,48 +59,32 @@ class CashBackController extends BaseController
         $cashback = $this->cashBackRepo->getFirstWithoutGlobalScopeWhere(params: ['id' => $id]);
         $language = getWebConfig('language');
         $defaultLang = str_replace('_', '-', app()->getLocale());
+        $selected_customers = Helpers::customers_by_ids(json_decode($cashback->customer_id));
 
-        // return response()->json([
-        //     'view' => view(CashBackViewPath::UPDATE[VIEW], compact('cashback','language','defaultLang'))->render(),
-        // ]);
-
-        return view(CashBackViewPath::UPDATE[VIEW], compact('cashback','language','defaultLang'));
+        return view(CashBackViewPath::UPDATE[VIEW], compact('cashback','language','defaultLang','selected_customers'));
     }
 
     public function update(CashBackUpdateRequest $request, $id): RedirectResponse
     {
-        $cashback = $this->cashBackRepo->update(id: $id ,data: $this->cashBackService->getUpdateData(request: $request));
+        $cashback = $this->cashBackRepo->update(id: $id ,data: $this->cashBackService->getUpdateData($request->all()));
         $this->translationRepo->updateByModel(request: $request, model: $cashback, modelPath: 'App\Models\CashBack', attribute: 'title');
 
-        Toastr::success(translate('messages.cashback_updated_successfully'));
-        return back();
+        Toastr::success(translate('Updated successfully'));
+        return redirect()->route('admin.users.cashback.add-new');
     }
 
     public function delete(Request $request): RedirectResponse
     {
         $this->cashBackRepo->delete(id: $request['id']);
-        Toastr::success(translate('messages.cashback_deleted_successfully'));
+        Toastr::success(translate('Deleted successfully'));
         return back();
     }
 
 
-    // public function getSearchList(Request $request): JsonResponse
-    // {
-    //     $cashbacks = $this->cashBackRepo->getSearchedList(
-    //         searchValue: $request['search'],
-    //         dataLimit: 50
-    //     );
-
-    //     return response()->json([
-    //         'view'=>view(CashBackViewPath::SEARCH[VIEW],compact('cashbacks'))->render(),
-    //         'count'=>$cashbacks->count()
-    //     ]);
-    // }
-
     public function updateStatus(Request $request): RedirectResponse
     {
         $this->cashBackRepo->update(id: $request['id'] ,data: ['status'=>$request['status']]);
-        Toastr::success( $request['status'] == 1 ?  translate('messages.Cashback_Successfully_Enabled') : translate('Cashback_Disabled') );
+        Toastr::success( $request['status'] == 1 ?  translate('messages.Cashback Successfully Enabled') : translate('Cashback Disabled') );
         return back();
     }
 }

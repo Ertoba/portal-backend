@@ -1,19 +1,22 @@
 @extends('layouts.admin.app')
 
-@section('title', translate('messages.admin_landing_page'))
+@section('title', translate('Admin landing page'))
 
 @section('content')
     <div class="content container-fluid">
         <div class="page-header pb-0">
             <div class="d-flex flex-wrap justify-content-between">
-                <h1 class="page-header-title">
-                    <span class="page-header-icon">
-                        <img src="{{ asset('public/assets/admin/img/landing.png') }}" class="w--20" alt="">
-                    </span>
-                    <span>
-                        {{ translate('messages.admin_landing_pages') }}
-                    </span>
-                </h1>
+                <div>
+                    <h1 class="page-header-title">
+                        <span class="page-header-icon">
+                            <img src="{{ asset('public/assets/admin/img/outline/landing.svg') }}" class="w--26" alt="">
+                        </span>
+                        <span>
+                            {{ translate('messages.Admin landing pages') }}
+                        </span>
+                    </h1>
+                    <p class="page-header-desc">{{ translate('The features listed on the admin landing page, and the order they appear in.') }}</p>
+                </div>
                 <div class="text--primary-2 py-1 d-flex flex-wrap align-items-center" type="button" data-toggle="modal"
                     data-target="#how-it-works">
                     <strong class="mr-2">{{ translate('How the Setting Works') }}</strong>
@@ -30,14 +33,13 @@
         </div>
         @php($feature_title = \App\Models\DataSetting::withoutGlobalScope('translate')->where('type','admin_landing_page')->where('key', 'feature_title')->first())
         @php($feature_short_description = \App\Models\DataSetting::withoutGlobalScope('translate')->where('type','admin_landing_page')->where('key', 'feature_short_description')->first())
-        @php($language = \App\Models\BusinessSetting::where('key', 'language')->first())
-        @php($language = $language->value ?? null)
+        @php($language = \App\CentralLogics\Helpers::get_business_settings('language', false) ?? null)
 
         @if ($language)
             <ul class="nav nav-tabs mb-4 border-0">
                 <li class="nav-item">
                     <a class="nav-link lang_link active" href="#"
-                        id="default-link">{{ translate('messages.default') }}</a>
+                        id="default-link">{{ translate('Default') }}</a>
                 </li>
                 @foreach (json_decode($language) as $lang)
                     <li class="nav-item">
@@ -63,9 +65,9 @@
                                 <div class="row g-3 lang_form default-form">
                                     <div class="col-sm-6">
                                         <label for="feature_title" class="form-label">{{ translate('Title') }}
-                                            ({{ translate('messages.default') }})<span class="form-label-secondary"
+                                            ({{ translate('Default') }})<span class="form-label-secondary"
                                                 data-toggle="tooltip" data-placement="right"
-                                                data-original-title="{{ translate('Write_the_title_within_80_characters') }}">
+                                                data-original-title="{{ translate('Character limit') }}: 80">
                                                 <img src="{{ asset('public/assets/admin/img/info-circle.svg') }}"
                                                     alt="">
                                             </span>
@@ -75,13 +77,13 @@
                                                 </span></label>
                                         <input id="feature_title" type="text" maxlength="80" name="feature_title[]"
                                             value="{{ $feature_title?->getRawOriginal('value') }}" class="form-control"
-                                            placeholder="{{ translate('Ex_:_Remarkable_Features_that_You_Can_Count') }}" required>
+                                            placeholder="{{ translate('Ex') . ' : ' . translate('Remarkable Features that You Can Count') }}" required>
                                     </div>
                                     <div class="col-sm-6">
-                                        <label for="feature_short_description" class="form-label">{{ translate('Short Description') }}
-                                            ({{ translate('messages.default') }})<span class="form-label-secondary"
+                                        <label for="feature_short_description" class="form-label">{{ translate('Short description') }}
+                                            ({{ translate('Default') }})<span class="form-label-secondary"
                                                 data-toggle="tooltip" data-placement="right"
-                                                data-original-title="{{ translate('Write_the_title_within_240_characters') }}">
+                                                data-original-title="{{ translate('Character limit') }}: 240">
                                                 <img src="{{ asset('public/assets/admin/img/info-circle.svg') }}"
                                                     alt="">
                                             </span>
@@ -91,7 +93,7 @@
                                                 </span></label>
                                         <input id="feature_short_description" type="text" maxlength="240" name="feature_short_description[]"
                                             value="{{ $feature_short_description?->getRawOriginal('value') }}" class="form-control"
-                                            placeholder="{{ translate('Ex_:_Jam-packed_with_outstanding_features…') }}" required>
+                                            placeholder="{{ translate('Ex') . ' : ' . translate('Jam-packed with outstanding features…') }}" required>
                                     </div>
                                 </div>
                                 <input type="hidden" name="lang[]" value="default">
@@ -117,23 +119,23 @@
                                     <div class="row g-3 d-none lang_form" id="{{ $lang }}-form">
                                         <div class="col-sm-6">
                                             <label for="feature_title{{ $lang }}" class="form-label">{{ translate('Title') }}
-                                                ({{ strtoupper($lang) }})<span class="form-label-secondary" data-toggle="tooltip" data-placement="right" data-original-title="{{ translate('Write_the_title_within_80_characters') }}">
+                                                ({{ strtoupper($lang) }})<span class="form-label-secondary" data-toggle="tooltip" data-placement="right" data-original-title="{{ translate('Character limit') }}: 80">
                                                 <img src="{{asset('public/assets/admin/img/info-circle.svg')}}" alt="">
                                             </span></label>
                                         <input id="feature_title{{ $lang }}" type="text"  maxlength="80" name="feature_title[]"
                                                 value="{{ $feature_title_translate[$lang]['value'] ?? '' }}"
                                                 class="form-control"
-                                                placeholder="{{ translate('Ex_:_Remarkable_Features_that_You_Can_Count') }}">
+                                                placeholder="{{ translate('Ex') . ' : ' . translate('Remarkable Features that You Can Count') }}">
                                         </div>
                                         <div class="col-sm-6">
-                                            <label for="feature_short_description{{ $lang }}" class="form-label">{{ translate('Short Description') }}
-                                                ({{ strtoupper($lang) }})<span class="form-label-secondary" data-toggle="tooltip" data-placement="right" data-original-title="{{ translate('Write_the_title_within_240_characters') }}">
+                                            <label for="feature_short_description{{ $lang }}" class="form-label">{{ translate('Short description') }}
+                                                ({{ strtoupper($lang) }})<span class="form-label-secondary" data-toggle="tooltip" data-placement="right" data-original-title="{{ translate('Character limit') }}: 240">
                                                 <img src="{{asset('public/assets/admin/img/info-circle.svg')}}" alt="">
                                             </span></label>
                                         <input type="text" id="feature_short_description{{ $lang }}" maxlength="240" name="feature_short_description[]"
                                                 value="{{ $feature_short_description_translate[$lang]['value'] ?? '' }}"
                                                 class="form-control"
-                                                placeholder="{{ translate('Ex_:_Jam-packed_with_outstanding_features…') }}">
+                                                placeholder="{{ translate('Ex') . ' : ' . translate('Jam-packed with outstanding features…') }}">
                                         </div>
                                     </div>
                                     <input type="hidden" name="lang[]" value="{{ $lang }}">
@@ -143,31 +145,31 @@
                                     <div class="col-sm-6">
                                         <label for="feature_title" class="form-label">{{ translate('Title') }}<span
                                                 class="form-label-secondary" data-toggle="tooltip" data-placement="right"
-                                                data-original-title="{{ translate('Write_the_title_within_80_characters') }}">
+                                                data-original-title="{{ translate('Character limit') }}: 80">
                                                 <img src="{{ asset('public/assets/admin/img/info-circle.svg') }}"
                                                     alt="">
                                             </span></label>
                                         <input id="feature_title" type="text" maxlength="80" name="feature_title[]" class="form-control"
-                                            placeholder="{{ translate('Ex_:_Remarkable_Features_that_You_Can_Count') }}">
+                                            placeholder="{{ translate('Ex') . ' : ' . translate('Remarkable Features that You Can Count') }}">
                                     </div>
                                     <div class="col-sm-6">
-                                        <label for="feature_short_description" class="form-label">{{ translate('Short Description') }}<span
+                                        <label for="feature_short_description" class="form-label">{{ translate('Short description') }}<span
                                                 class="form-label-secondary" data-toggle="tooltip" data-placement="right"
-                                                data-original-title="{{ translate('Write_the_title_within_240_characters') }}">
+                                                data-original-title="{{ translate('Character limit') }}: 240">
                                                 <img src="{{ asset('public/assets/admin/img/info-circle.svg') }}"
                                                     alt="">
                                             </span></label>
                                         <input id="feature_short_description" type="text" maxlength="240" name="feature_short_description[]"
                                             class="form-control"
-                                            placeholder="{{ translate('Ex_:_Jam-packed_with_outstanding_features…') }}">
+                                            placeholder="{{ translate('Ex') . ' : ' . translate('Jam-packed with outstanding features…') }}">
                                     </div>
                                 </div>
                                 <input type="hidden" name="lang[]" value="default">
                             @endif
                             <div class="btn--container justify-content-end mt-20">
-                                <button type="reset" class="btn btn--reset mb-2">{{ translate('Reset') }}</button>
+                                <button type="reset" class="btn btn--reset mb-2"><i class="tio-refresh"></i> {{ translate('Reset') }}</button>
                                 <button type="submit"
-                                    class="btn btn--primary mb-2">{{ translate('Save') }}</button>
+                                    class="btn btn--primary mb-2"><i class="tio-save"></i> {{ translate('Save') }}</button>
                             </div>
                         </div>
                     </div>
@@ -183,10 +185,10 @@
                                         <div class="row g-3">
                                             <div class="col-12">
                                                 <label for="title" class="form-label">{{ translate('Title') }}
-                                                    ({{ translate('messages.default') }})<span
+                                                    ({{ translate('Default') }})<span
                                                         class="form-label-secondary" data-toggle="tooltip"
                                                         data-placement="right"
-                                                        data-original-title="{{ translate('Write_the_title_within_20_characters') }}">
+                                                        data-original-title="{{ translate('Character limit') }}: 20">
                                                         <img src="{{ asset('public/assets/admin/img/info-circle.svg') }}"
                                                             alt="">
                                                     </span>
@@ -195,14 +197,14 @@
                                                           data-original-title="{{ translate('messages.Required.')}}"> *
                                                 </span></label>
                                                 <input id="title" type="text" maxlength="20" name="title[]" class="form-control"
-                                                    placeholder="{{ translate('Ex_:_Shopping') }}" required>
+                                                    placeholder="{{ translate('Ex') . ' : ' . translate('Shopping') }}" required>
                                             </div>
                                             <div class="col-12">
                                                 <label for="sub_title" class="form-label">{{ translate('Sub Title') }}
-                                                    ({{ translate('messages.default') }})<span
+                                                    ({{ translate('Default') }})<span
                                                         class="form-label-secondary" data-toggle="tooltip"
                                                         data-placement="right"
-                                                        data-original-title="{{ translate('Write_the_title_within_80_characters') }}">
+                                                        data-original-title="{{ translate('Character limit') }}: 80">
                                                         <img src="{{ asset('public/assets/admin/img/info-circle.svg') }}"
                                                             alt="">
                                                     </span>
@@ -212,7 +214,7 @@
                                                 </span></label>
                                                 <input id="sub_title" type="text" maxlength="80" name="sub_title[]"
                                                     class="form-control"
-                                                    placeholder="{{ translate('Ex_:_Best_shopping_experience') }}" required>
+                                                    placeholder="{{ translate('Ex') . ' : ' . translate('Best shopping experience') }}" required>
                                             </div>
                                         </div>
                                     </div>
@@ -225,24 +227,24 @@
                                                         ({{ strtoupper($lang) }})<span
                                                         class="form-label-secondary" data-toggle="tooltip"
                                                         data-placement="right"
-                                                        data-original-title="{{ translate('Write_the_title_within_20_characters') }}">
+                                                        data-original-title="{{ translate('Character limit') }}: 20">
                                                         <img src="{{ asset('public/assets/admin/img/info-circle.svg') }}"
                                                             alt="">
                                                     </span></label>
                                                 <input id="title{{ $lang }}" type="text" maxlength="20" name="title[]" class="form-control"
-                                                        placeholder="{{ translate('Ex_:_Shopping') }}">
+                                                        placeholder="{{ translate('Ex') . ' : ' . translate('Shopping') }}">
                                                 </div>
                                                 <div class="col-12">
                                                     <label for="sub_title{{ $lang }}" class="form-label">{{ translate('Sub Title') }}
                                                         ({{ strtoupper($lang) }})<span
                                                         class="form-label-secondary" data-toggle="tooltip"
                                                         data-placement="right"
-                                                        data-original-title="{{ translate('Write_the_title_within_80_characters') }}">
+                                                        data-original-title="{{ translate('Character limit') }}: 80">
                                                         <img src="{{ asset('public/assets/admin/img/info-circle.svg') }}"
                                                             alt="">
                                                     </span></label>
                                                 <input id="sub_title{{ $lang }}" type="text" maxlength="80" name="sub_title[]" class="form-control"
-                                                        placeholder="{{ translate('Ex_:_Best_shopping_experience') }}">
+                                                        placeholder="{{ translate('Ex') . ' : ' . translate('Best shopping experience') }}">
                                                 </div>
                                             </div>
                                         </div>
@@ -255,24 +257,24 @@
                                                 <label for="title" class="form-label">{{ translate('Title') }}<span
                                                         class="form-label-secondary" data-toggle="tooltip"
                                                         data-placement="right"
-                                                        data-original-title="{{ translate('Write_the_title_within_50_characters') }}">
+                                                        data-original-title="{{ translate('Character limit') }}: 50">
                                                         <img src="{{ asset('public/assets/admin/img/info-circle.svg') }}"
                                                             alt="">
                                                     </span></label>
                                                 <input id="title" type="text" maxlength="50" name="title[]" class="form-control"
-                                                    placeholder="{{ translate('Ex_:_Shopping') }}">
+                                                    placeholder="{{ translate('Ex') . ' : ' . translate('Shopping') }}">
                                             </div>
                                             <div class="col-12">
                                                 <label for="sub_title" class="form-label">{{ translate('Sub Title') }}<span
                                                         class="form-label-secondary" data-toggle="tooltip"
                                                         data-placement="right"
-                                                        data-original-title="{{ translate('Write_the_title_within_50_characters') }}">
+                                                        data-original-title="{{ translate('Character limit') }}: 50">
                                                         <img src="{{ asset('public/assets/admin/img/info-circle.svg') }}"
                                                             alt="">
                                                     </span></label>
                                                 <input id="sub_title" type="text" maxlength="50" name="sub_title[]"
                                                     class="form-control"
-                                                    placeholder="{{ translate('Ex_:_Best_shopping_experience') }}">
+                                                    placeholder="{{ translate('Ex') . ' : ' . translate('Best shopping experience') }}">
                                             </div>
                                         </div>
                                     </div>
@@ -281,13 +283,13 @@
 
                                 <div class="col-md-6">
                                     <label class="form-label d-block mb-3">
-                                        {{ translate('messages.Image') }} <span class="text--primary">{{translate('(size:_1:1)')}}</span>
+                                        {{ translate('messages.Image') }} <span class="text--primary">({{ translate('size') }}: 1:1)</span>
                                         <span class="form-label-secondary text-danger"
                                               data-toggle="tooltip" data-placement="right"
                                               data-original-title="{{ translate('messages.Required.')}}"> *
                                                 </span>
                                         <div class="fs-12 opacity-70">
-                                            {{ translate(IMAGE_FORMAT.' ' . 'Less Than 2MB') }}
+                                            {{ IMAGE_FORMAT.' ' . 'Less Than 2MB' }}
                                         </div>
                                     </label>
                                     <label class="upload-img-3 m-0">
@@ -301,24 +303,25 @@
                                 </div>
                             </div>
                             <div class="btn--container justify-content-end mt-20">
-                                <button type="reset" class="btn btn--reset mb-2">{{ translate('Reset') }}</button>
-                                <button type="submit" class="btn btn--primary mb-2">{{ translate('Add') }}</button>
+                                <button type="reset" class="btn btn--reset mb-2"><i class="tio-refresh"></i> {{ translate('Reset') }}</button>
+                                <button type="submit" class="btn btn--primary mb-2"><i class="tio-add-circle"></i> {{ translate('Add') }}</button>
                             </div>
                         </div>
                     </div>
                 </form>
-                @php($features = \App\Models\AdminFeature::all())
+                @php($features = \App\CentralLogics\Helpers::cached_list(\App\Models\AdminFeature::class))
                 <div class="card">
                     <div class="card-header py-2">
                         <div class="search--button-wrapper">
-                            <h5 class="card-title">{{ translate('Features_List') }}
-
-                            </h5>
+                            @include('partials._table-head', [
+                                'title'    => translate('Features List'),
+                                'subtitle' => translate('messages.Feature highlights shown in the features section of your landing page.'),
+                                'count'    => null,
+                            ])
 
                         </div>
                     </div>
                     <div class="card-body p-0">
-                        <!-- Table -->
                         <div class="table-responsive datatable-custom">
                             <table id="columnSearchDatatable"
                                 class="table table-borderless table-thead-bordered table-nowrap table-align-middle card-table"
@@ -330,12 +333,12 @@
                                 }'>
                                 <thead class="thead-light">
                                     <tr>
-                                        <th class="border-0">{{ translate('sl') }}</th>
+                                        <th class="border-0">{{ translate('SL') }}</th>
                                         <th class="border-0">{{ translate('Title') }}</th>
                                         <th class="border-0">{{ translate('Sub Title') }}</th>
                                         <th class="border-0">{{ translate('Image') }}</th>
                                         <th class="border-0">{{ translate('Status') }}</th>
-                                        <th class="text-center border-0">{{ translate('messages.action') }}</th>
+                                        <th class="text-center border-0">{{ translate('messages.Action') }}</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -365,8 +368,8 @@
                                     data-type="toggle"
                                     data-image-on="{{ asset('/public/assets/admin/img/modal/feature-list-on.png') }}"
                                     data-image-off="{{ asset('/public/assets/admin/img/modal/feature-list-off.png') }}"
-                                    data-title-on="{{ translate('By Turning ON ') }} <strong>{{ translate('Feature List Section') }}"
-                                    data-title-off="{{ translate('By Turning OFF ') }} <strong>{{ translate('Feature List Section') }}"
+                                    data-title-on="{{ translate('By Turning ON') }}  <strong>{{ translate('Feature List Section') }}"
+                                    data-title-off="{{ translate('By Turning OFF') }}  <strong>{{ translate('Feature List Section') }}"
                                     data-text-on="<p>{{ translate('Feature list is enabled. You can now access its features and functionality') }}</p>"
                                     data-text-off="<p>{{ translate('Feature list will be disabled. You can enable it in the settings to access its features and functionality') }}</p>"
                                     class="status toggle-switch-input dynamic-checkbox"
@@ -385,16 +388,16 @@
 
                         <td>
                             <div class="btn--container justify-content-center">
-                                <a class="btn action-btn btn--primary btn-outline-primary"
+                                <a class="btn action-btn action-btn--edit"
                                     href="{{ route('admin.business-settings.feature-edit', [$feature['id']]) }}">
                                     <i class="tio-edit"></i>
                                 </a>
-                                <a class="btn action-btn btn--danger btn-outline-danger form-alert" href="javascript:"
+                                <a class="btn action-btn action-btn--delete form-alert" href="javascript:"
 
                                    data-id="banner-{{ $feature['id'] }}"
-                                   data-message="{{ translate('Want to delete this banner ?') }}"
+                                   data-message="{{ translate('Want to delete this banner?') }}"
 
-                                    title="{{ translate('messages.delete_banner') }}"><i
+                                    title="{{ translate('messages.Delete banner') }}"><i
                                         class="tio-delete-outlined"></i>
                                 </a>
                                 <form action="{{ route('admin.business-settings.feature-delete', [$feature['id']]) }}"
@@ -409,13 +412,12 @@
                         </table>
 
                     </div>
-                    <!-- End Table -->
                 </div>
                 @if (count($features) === 0)
                     <div class="empty--data">
                         <img src="{{ asset('/public/assets/admin/svg/illustrations/sorry.svg') }}" alt="public">
                         <h5>
-                            {{ translate('no_data_found') }}
+                            {{ translate('No data found') }}
                         </h5>
                     </div>
                 @endif

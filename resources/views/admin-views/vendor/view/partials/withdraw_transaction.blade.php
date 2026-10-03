@@ -3,15 +3,15 @@
         <table id="datatable" class="table table-hover table-borderless table-thead-bordered table-nowrap table-align-middle card-table">
             <thead class="thead-light">
                 <tr>
-                    <th class="border-0">{{translate('messages.sl#')}}</th>
-                    <th class="border-0">{{translate('messages.created_at')}}</th>
-                    <th class="border-0">{{translate('messages.amount')}}</th>
-                    <th class="border-0">{{translate('messages.status')}}</th>
-                    <th class="border-0">{{translate('messages.action')}}</th>
+                    <th class="border-0">{{translate('messages.SL')}}</th>
+                    <th class="border-0">{{translate('Created at')}}</th>
+                    <th class="border-0">{{translate('Amount')}}</th>
+                    <th class="border-0">{{translate('Status')}}</th>
+                    <th class="border-0">{{translate('messages.Action')}}</th>
                 </tr>
             </thead>
             <tbody>
-            @php($withdraw_transaction = \App\Models\WithdrawRequest::where('vendor_id', $store->vendor->id)->latest()->paginate(25))
+            @php($withdraw_transaction = $transactions)
             @foreach($withdraw_transaction as $k=>$wt)
                 <tr>
                     <td scope="row">{{$k+$withdraw_transaction->firstItem()}}</td>
@@ -19,16 +19,16 @@
                     <td>{{\App\CentralLogics\Helpers::format_currency($wt->amount)}}</td>
                     <td>
                         @if($wt->approved==0)
-                            <label class="badge badge-primary">{{ translate('messages.pending') }}</label>
+                            <label class="badge badge-primary">{{ translate('Pending') }}</label>
                         @elseif($wt->approved==1)
-                            <label class="badge badge-success">{{ translate('messages.approved') }}</label>
+                            <label class="badge badge-success">{{ translate('Approved') }}</label>
                         @else
-                            <label class="badge badge-danger">{{ translate('messages.denied') }}</label>
+                            <label class="badge badge-danger">{{ translate('Denied') }}</label>
                         @endif
                     </td>
                     <td>
-                        <a href="{{route('admin.store.withdraw_view',[$wt['id'],$store->vendor['id']])}}"
-                            class="btn btn--warning action-btn btn-outline-warning"><i class="tio-visible"></i>
+                        <a href="{{route('admin.transactions.store.withdraw_view',[$wt['id'],$store->vendor['id']])}}"
+                            class="btn action-btn action-btn--view"><i class="tio-visible-outlined"></i>
                         </a>
                     </td>
                 </tr>
@@ -47,7 +47,7 @@
 <div class="empty--data">
     <img src="{{asset('/public/assets/admin/svg/illustrations/sorry.svg')}}" alt="public">
     <h5>
-        {{translate('no_data_found')}}
+        {{translate('No data found')}}
     </h5>
 </div>
 @endif

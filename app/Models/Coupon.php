@@ -2,12 +2,13 @@
 
 namespace App\Models;
 
-use App\Traits\ReportFilter;
-use Illuminate\Database\Eloquent\Builder;
+use App\Traits\Model\InvalidatesCacheTrait;
+use App\Traits\Report\ReportFilterTrait;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Support\Carbon;
+use App\Traits\Model\HasTranslationsTrait;
 
 /**
  * Class Coupon
@@ -36,7 +37,9 @@ use Illuminate\Support\Carbon;
  */
 class Coupon extends Model
 {
-    use ReportFilter;
+    use ReportFilterTrait, HasTranslationsTrait, InvalidatesCacheTrait;
+
+    protected static array $cacheTags = ['coupon'];
     /**
      * The attributes that are mass assignable.
      *
@@ -80,27 +83,13 @@ class Coupon extends Model
     /**
      * @return MorphMany
      */
-    public function translations(): MorphMany
-    {
-        return $this->morphMany(Translation::class, 'translationable');
-    }
-
     /**
      * @param $value
      * @return mixed
      */
     public function getTitleAttribute($value): mixed
     {
-        if (count($this->translations) > 0) {
-            foreach ($this->translations as $translation) {
-                // dd($translation['key']);
-                if ($translation['key'] == 'title') {
-                    return $translation['value'];
-                }
-            }
-        }
-
-        return $value;
+        return $this->translatedAttribute('title', $value);
     }
 
     /**
@@ -141,12 +130,4 @@ class Coupon extends Model
     /**
      * @return void
      */
-    protected static function booted(): void
-    {
-        static::addGlobalScope('translate', function (Builder $builder) {
-            $builder->with(['translations' => function ($query) {
-                return $query->where('locale', app()->getLocale());
-            }]);
-        });
-    }
 }

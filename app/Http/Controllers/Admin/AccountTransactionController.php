@@ -13,10 +13,11 @@ use App\Models\AccountTransaction;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 use Brian2694\Toastr\Facades\Toastr;
-use Illuminate\Support\Facades\Mail;
 use Maatwebsite\Excel\Facades\Excel;
-use Rap2hpoutre\FastExcel\FastExcel;
 use Illuminate\Support\Facades\Validator;
+use App\Support\Notification\SendNotification;
+use App\Support\Notification\NotificationMessages;
+use Illuminate\Support\Facades\Log;
 
 class AccountTransactionController extends Controller
 {
@@ -27,17 +28,37 @@ class AccountTransactionController extends Controller
      */
     public function index(Request $request)
     {
-        $key = isset($request['search']) ? explode(' ', $request['search']) : [];
+        $key = isset($request['search']) ? explode(' ', $request['search'] ?? '') : [];
         $account_transaction = AccountTransaction::
-        when(isset($key), function ($query) use ($key) {
+        when(isset($request['search']), function ($query) use ($key) {
             return $query->where(function ($q) use ($key) {
                 foreach ($key as $value) {
                     $q->orWhere('ref', 'like', "%{$value}%");
                 }
             });
         })->where('type', 'collected' )
-            ->latest()->paginate(config('default_pagination'));
-        return view('admin-views.account.index', compact('account_transaction'));
+            ->with(['store.storage', 'deliveryman.storage', 'rider.storage'])
+            ->latest()->paginate(config('default_pagination'))
+            ->appends($request->except('page'));
+
+        return view('admin-views.account.index', [
+            'account_transaction' => $account_transaction,
+            'summary' => $this->collectedSummary(),
+        ]);
+    }
+
+    /**
+     * Cash collected per source, for the summary strip. One grouped query
+     * rather than a count() per tile, and it describes the whole ledger — the
+     * search box is what the count badge on the table tracks.
+     */
+    private function collectedSummary()
+    {
+        return AccountTransaction::where('type', 'collected')
+            ->selectRaw('from_type, COUNT(*) as entries, SUM(amount) as amount')
+            ->groupBy('from_type')
+            ->get()
+            ->keyBy('from_type');
     }
 
     /**
@@ -47,7 +68,6 @@ class AccountTransactionController extends Controller
      */
     public function create()
     {
-        //
     }
 
     /**
@@ -93,7 +113,7 @@ class AccountTransactionController extends Controller
         }
 
         if ($current_balance < $request['amount']) {
-            $validator->getMessageBag()->add('amount', translate('messages.insufficient_balance'));
+            $validator->getMessageBag()->add('amount', translate('messages.Insufficient balance'));
             return response()->json(['errors' => Helpers::error_processor($validator)]);
         }
 
@@ -126,29 +146,20 @@ class AccountTransactionController extends Controller
 
         try {
 
-            if( $request['type'] == 'deliveryman' && $request['deliveryman_id'] &&   Helpers::getNotificationStatusData('deliveryman','deliveryman_collect_cash','push_notification_status') && $data->fcm_token){
-                $notification_data = [
-                    'title' => translate('messages.Cash_Collected'),
-                    'description' => translate('messages.Your_hand_in_cash_has_been_collected_by_admin'),
-                    'order_id' => '',
-                    'image' => '',
-                    'type' => 'cash_collect'
-                ];
-                Helpers::send_push_notif_to_device($data->fcm_token, $notification_data);
-                DB::table('user_notifications')->insert([
-                    'data' => json_encode($notification_data),
-                    'delivery_man_id' => $data->id,
-                    'created_at' => now(),
-                    'updated_at' => now()
-                ]);
+            if( $request['type'] == 'deliveryman' && $request['deliveryman_id'] &&   SendNotification::channelEnabled('deliveryman','deliveryman_collect_cash','push_notification_status') && $data->fcm_token){
+                $notification_data = NotificationMessages::cashCollectedByAdmin();
+                SendNotification::pushToDeliveryMan($data->id, $data->fcm_token, $notification_data);
             }
 
 
-            if($request['type']=='deliveryman' && $request['deliveryman_id'] && config('mail.status') &&  Helpers::get_mail_status('cash_collect_mail_status_dm') == '1'  &&  Helpers::getNotificationStatusData('deliveryman','deliveryman_collect_cash','mail_status')){
-                Mail::to($data?->getRawOriginal('email'))->send(new \App\Mail\CollectCashMail($account_transaction, $data));
+            if($request['type']=='deliveryman' && $request['deliveryman_id'] && SendNotification::canSendMail('cash_collect_mail_status_dm', 'deliveryman', 'deliveryman_collect_cash')){
+                SendNotification::mail($data?->getRawOriginal('email'), new \App\Mail\CollectCashMail($account_transaction, $data));
             }
         } catch (\Throwable $th) {
-
+            Log::warning('admin.account_transaction_controller.store_failed', [
+                'error' => $th->getMessage(),
+                'file' => $th->getFile().':'.$th->getLine(),
+            ]);
         }
         return response()->json(200);
     }
@@ -161,7 +172,7 @@ class AccountTransactionController extends Controller
      */
     public function show($id)
     {
-        $account_transaction=AccountTransaction::findOrFail($id);
+        $account_transaction=AccountTransaction::with(['deliveryman', 'store.storage'])->findOrFail($id);
         return view('admin-views.account.view', compact('account_transaction'));
     }
 
@@ -173,7 +184,6 @@ class AccountTransactionController extends Controller
      */
     public function edit($id)
     {
-        //
     }
 
     /**
@@ -185,7 +195,6 @@ class AccountTransactionController extends Controller
      */
     public function update(Request $request, $id)
     {
-        //
     }
 
     /**
@@ -202,9 +211,9 @@ class AccountTransactionController extends Controller
     }
 
     public function export_account_transaction(Request $request){
-        $key = isset($request['search']) ? explode(' ', $request['search']) : [];
+        $key = isset($request['search']) ? explode(' ', $request['search'] ?? '') : [];
         $account_transaction = AccountTransaction::
-        when(isset($key), function ($query) use ($key) {
+        when(isset($request['search']), function ($query) use ($key) {
             return $query->where(function ($q) use ($key) {
                 foreach ($key as $value) {
                     $q->orWhere('ref', 'like', "%{$value}%");
@@ -227,7 +236,7 @@ class AccountTransactionController extends Controller
     }
 
     public function search_account_transaction(Request $request){
-        $key = explode(' ', $request['search']);
+        $key = explode(' ', $request['search'] ?? '');
         $account_transaction = AccountTransaction::where(function ($q) use ($key) {
             foreach ($key as $value) {
                 $q->orWhere('ref', 'like', "%{$value}%");

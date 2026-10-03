@@ -1,6 +1,6 @@
 @extends('layouts.admin.app')
 
-@section('title', translate('messages.Transactions_List'))
+@section('title', translate('messages.Transactions List'))
 
 @section('content')
 
@@ -13,22 +13,19 @@
                     {{ translate('Transactions') }}
                 </span>
             </h1>
+            <p class="page-header-desc">{{ translate('Every payment made for a Pro membership, and what it was for.') }}</p>
         </div>
     </div>
 
 
-    <!-- Card -->
     <div class="card">
-        <!-- Header -->
         <div class="card-header d-block border-0">
             <div class="search--button-wrapper gap-2 justify-content-lg-end">
                 <form class="search-form flex-grow-1">
-                    <!-- Search -->
                     <div class="input-group input--group max-w-280">
-                        <input id="datatableSearch" type="search" name="search"  value="{{ request()?->search ?? null }}" class="form-control" placeholder="{{ translate('messages.Search_here') }}" aria-label="Search here">
+                        <input id="datatableSearch" type="search" name="search"  value="{{ request()?->search ?? null }}" class="form-control" placeholder="{{ translate('Search') }}" aria-label="Search here">
                         <button type="submit" class="btn btn--secondary"><i class="tio-search"></i></button>
                     </div>
-                    <!-- End Search -->
                 </form>
                 <div class="hs-unfold mr-2">
                     <a class="btn btn-outline-primary btn-white filter-button-show h--40px px-4 w-max-content offcanvas-trigger"
@@ -38,42 +35,39 @@
                     </a>
                 </div>
 
-                <!-- Unfold -->
                 <div class="hs-unfold mr-2">
                     <a class="js-hs-unfold-invoker btn btn-sm btn-white dropdown-toggle min-height-40" href="javascript:;"
                         data-hs-unfold-options='{
                                 "target": "#usersExportDropdown",
                                 "type": "css-animation"
                             }'>
-                        <i class="tio-download-to mr-1"></i> {{ translate('messages.export') }}
+                        <i class="tio-download-to mr-1"></i> {{ translate('messages.Export') }}
                     </a>
 
                     <div id="usersExportDropdown"
                         class="hs-unfold-content dropdown-unfold dropdown-menu dropdown-menu-sm-right">
 
-                        <span class="dropdown-header">{{ translate('messages.download_options') }}</span>
+                        <span class="dropdown-header">{{ translate('messages.Download options') }}</span>
                         <a id="export-excel" class="dropdown-item" href="
                             {{ route('admin.campaign.basic_campaign_export', ['type' => 'excel', request()->getQueryString()]) }}
                             ">
                             <img class="avatar avatar-xss avatar-4by3 mr-2"
                                 src="{{ asset('public/assets/admin') }}/svg/components/excel.svg"
                                 alt="Image Description">
-                            {{ translate('messages.excel') }}
+                            Excel
                         </a>
                         <a id="export-csv" class="dropdown-item" href="
                         {{ route('admin.campaign.basic_campaign_export', ['type' => 'csv', request()->getQueryString()]) }}">
                             <img class="avatar avatar-xss avatar-4by3 mr-2"
                                 src="{{ asset('public/assets/admin') }}/svg/components/placeholder-csv-format.svg"
                                 alt="Image Description">
-                            {{ translate('messages.csv') }}
+                            CSV
                         </a>
                     </div>
                 </div>                                
             </div>
         </div>
-        <!-- End Header -->
 
-        <!-- Table -->
         <div class="px-xxl-20 px-3">
             <div class="table-responsive datatable-custom">
                 <table class="table table-hover table-borderless table-thead-bordered table-nowrap table-align-middle card-table text-dark">
@@ -83,11 +77,11 @@
                                 {{ translate('SL') }}
                             </th>
                             <th class="border-0">{{ translate('Transaction ID') }}</th>
-                            <th class="border-0">{{ translate('Transaction Date') }}</th>
-                            <th class="border-0">{{ translate('Customer Info') }}</th>
-                            <th class="border-0 text-center">{{ translate('plan name') }}</th>
-                            <th class="border-0 text-center">{{ translate('plan price') }}</th>
-                            <th class="border-0">{{ translate('plan validity') }}</th>
+                            <th class="border-0">{{ translate('Transaction date') }}</th>
+                            <th class="border-0">{{ translate('Customer information') }}</th>
+                            <th class="border-0 text-center">{{ translate('Plan name') }}</th>
+                            <th class="border-0 text-center">{{ translate('Plan price') }}</th>
+                            <th class="border-0">{{ translate('Plan validity') }}</th>
                             <th class="border-0 text-center">{{ translate('Payment by') }}</th>
                         </tr>
                     </thead>
@@ -147,13 +141,12 @@
         <div class="empty--data">
             <img src="{{asset('public/assets/admin/img/empty.png') }}" alt="public">
             <h5>
-                {{ translate('no_data_found') }}
+                {{ translate('No data found') }}
             </h5>
         </div>
     </div>
 </div>
 
-    <!-- Filter Offcanvas -->
     <div id="customer_list_offcanvas" class="custom-offcanvas d-flex flex-column justify-content-between"
         style="--offcanvas-width: 500px">
             <div>
@@ -175,47 +168,47 @@
                         <div class="bg-light p-xxl-20 p-3 rounded">
                             <div class="mb-20">
                                 <div class="d-flex align-items-center text-dark gap-1 fs-14 mb-2">
-                                    {{ translate('Subscription Plan') }}
+                                    {{ translate('Subscription plan') }}
                                 </div>
                                 <div class="position-relative bg-white rounded">
                                     <i class="tio-calendar-month icon-absolute-on-right"></i>
                                     <input type="text" class="form-control h-45 position-relative bg-transparent"
-                                            name="dates" placeholder="{{ translate('messages.Select_Date') }}">
+                                            name="dates" placeholder="{{ translate('Select date') }}">
                                 </div>
                             </div>
                             <div class="mb-20">
-                                <label class="form-label fw-400">{{ translate('plan') }}</label>
-                                <select name="filter" data-placeholder="{{ translate('messages.Select_Plan') }}"
+                                <label class="form-label fw-400">{{ translate('Plan') }}</label>
+                                <select name="filter" data-placeholder="{{ translate('messages.Select Plan') }}"
                                     class="form-control js-select2-custom ">
                                     <option value="" selected disabled>
-                                        {{ translate('messages.Select_Plan') }}
+                                        {{ translate('messages.Select Plan') }}
                                     </option>
                                     <option value="">test</option>
                                 </select>
                             </div>
                             <div class="mb-20">
                                 <label class="form-label fw-400">{{ translate('Customer') }}</label>
-                                <select name="filter" data-placeholder="{{ translate('messages.Select_Customer') }}"
+                                <select name="filter" data-placeholder="{{ translate('Select customer') }}"
                                     class="form-control js-select2-custom ">
                                     <option value="" selected disabled>
-                                        {{ translate('messages.Select_Customer') }}
+                                        {{ translate('Select customer') }}
                                     </option>
                                     <option {{ request()->input('filter') == 'all' ? 'selected' : '' }} value="all">
-                                        {{ translate('messages.All_Customers') }}</option>
+                                        {{ translate('All customers') }}</option>
                                     <option {{ request()->input('filter') == 'active' ? 'selected' : '' }}
                                         value="active">
-                                        {{ translate('messages.Active_Customers') }}</option>
+                                        {{ translate('messages.Active Customers') }}</option>
                                     <option {{ request()->input('filter') == 'blocked' ? 'selected' : '' }}
                                         value="blocked">
-                                        {{ translate('messages.Inactive_Customers') }}</option>
+                                        {{ translate('messages.Inactive Customers') }}</option>
                                 </select>
                             </div>
                             <div>
-                                <label class="form-label fw-400">{{ translate('Payment_Method') }}</label>
-                                <select name="filter" data-placeholder="{{ translate('messages.Select_Payment_Method') }}"
+                                <label class="form-label fw-400">{{ translate('Payment method') }}</label>
+                                <select name="filter" data-placeholder="{{ translate('Select payment method') }}"
                                     class="form-control js-select2-custom ">
                                     <option value="" selected disabled>
-                                        {{ translate('messages.Select_Payment_Method') }}
+                                        {{ translate('Select payment method') }}
                                     </option>
                                    <option value="">test</option>
                                 </select>
@@ -225,14 +218,13 @@
                 </div>
             </div>
             <div  class="align-items-center bg-white bottom-0 d-flex gap-3 justify-content-center offcanvas-footer p-3 position-sticky">
-                <a href="{{ route('admin.customer.list') }}"
-                    class="btn w-100 btn--reset offcanvas-close">{{ translate('Reset') }}</a>
-                <button type="submit" id="apply_filter" class="btn w-100 btn--primary">{{ translate('Apply') }}</button>
+                <a href="{{ route('admin.users.customer.list') }}"
+                    class="btn w-100 btn--reset offcanvas-close"><i class="tio-refresh"></i> {{ translate('Reset') }}</a>
+                <button type="submit" id="apply_filter" class="btn w-100 btn--primary"><i class="tio-filter-list"></i> {{ translate('Apply') }}</button>
             </form>
             </div>
     </div>
     <div id="offcanvasOverlay" class="offcanvas-overlay"></div>
-    <!-- Filter Offcanvas End -->
 
 @endsection
 

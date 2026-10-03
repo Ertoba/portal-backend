@@ -2,39 +2,53 @@
     $hide_source_column = $hide_source_column ?? false;
     $row_type = $type ?? 'order';
     $is_subscription_like = in_array($row_type, ['subscription', 'pro_customer'], true);
+    $is_expense = $row_type === 'expense';
+    $is_order_row = $row_type === 'order' || $row_type === '';
+    $column_count = 4 + ($hide_source_column ? 0 : 1);
     $use_additional_charge_name_in_breakdown = $use_additional_charge_name_in_breakdown ?? false;
-    $additionalChargeLabelForAdmin = \App\CentralLogics\Helpers::get_business_data('additional_charge_name') ?? translate('messages.additional_charge');
+    $additionalChargeLabelForAdmin = \App\CentralLogics\Helpers::get_business_data('additional_charge_name') ?? translate('Additional charge');
     $breakdown_additional_charge_label = $use_additional_charge_name_in_breakdown
         ? $additionalChargeLabelForAdmin
-        : translate('messages.Packaging Charge');
+        : translate('Packaging charge');
+    $source_type_labels = [
+        'Store' => translate('messages.Store'),
+        'Restaurant' => translate('messages.Restaurant'),
+        'Delivery Man' => translate('Deliveryman'),
+        'Customer' => translate('messages.Customer'),
+        'Tax Office' => translate('Tax office'),
+        'Admin' => translate('messages.admin'),
+    ];
+    $badge_labels = [
+        'discount_on_item' => translate('Discount on item'),
+        'discount_on_product' => translate('Discount on item'),
+        'commission_paid' => translate('Commission paid'),
+        'coupon_discount' => translate('Coupon discount'),
+        'free_delivery' => translate('Free delivery'),
+        'flash_sale_discount' => translate('messages.flash_sale_discount'),
+        'bogo_discount' => translate('BOGO discount'),
+        'happy_hour_discount' => translate('Happy hour discount'),
+        'bundle_discount' => translate('Bundle discount'),
+        'extra_discount' => translate('Extra discount'),
+        'cashback' => translate('messages.CashBack'),
+        'add_fund_bonus' => translate('messages.add_fund_bonus'),
+        'referral_discount' => translate('Referral discount'),
+        'tax' => translate('messages.tax'),
+        'delivery_commission' => translate('Delivery commission'),
+    ];
+    $plan_type_labels = [
+        'Renew Subscription' => translate('Renew subscription'),
+        'Migrate to New Plan' => translate('Migrate to new plan'),
+        'First Purchased' => translate('First purchased'),
+        'Free Trial' => translate('Free trial'),
+    ];
 @endphp
 
 @if(count($transactions) > 0)
 <div class="table-responsive datatable-custom mt-4 z-index-2">
-    <table id="datatable"
-        class="table table-hover table-borderless table-thead-bordered table-nowrap table-align-middle card-table text-dark"
-        data-hs-datatables-options='{
-        "columnDefs": [{
-            "targets": [0],
-            "orderable": false
-        }],
-        "order": [],
-        "info": {
-        "totalQty": "#datatableWithPaginationInfoTotalQty"
-        },
-        "search": "#datatableSearch",
-        "entries": "#datatableEntries",
-        "pageLength": 25,
-        "isResponsive": false,
-        "isShowPaging": false,
-        "paging":false
-    }'>
+    <table class="table table-hover table-borderless table-thead-bordered table-nowrap table-align-middle card-table text-dark">
         <thead class="thead-light">
             <tr>
-                <th class="border-0">
-                    {{ translate('SL') }}
-                </th>
-                <th class="table-column-pl-0 border-0">{{ translate('messages.Transaction_ID') }}</th>
+                <th class="border-0">{{ translate('messages.Transaction') }}</th>
                 <th class="border-0">{{ translate('messages.Date') }}</th>
                 @if(!$hide_source_column)
                     <th class="border-0">
@@ -48,216 +62,117 @@
                     </th>
                 @endif
                 @if($is_subscription_like)
-                    <th class="border-0">{{ $row_type === 'pro_customer' ? translate('messages.Plan') : translate('messages.Transaction_Type') }}</th>
+                    <th class="border-0">{{ $row_type === 'pro_customer' ? translate('messages.Plan') : translate('Transaction type') }}</th>
+                @else
+                    <th class="border-0">{{ $is_expense ? translate('Expense source') : translate('Earning source') }}</th>
                 @endif
-                @if(!$is_subscription_like)
-                    <th class="border-0 text-center">
-                        @if($row_type === 'expense')
-                            {{ translate('messages.Expense_Source') }}
-                        @else
-                            {{ translate('messages.Earning_Source') }}
-                        @endif
-                    </th>
-                @endif
-                <th class="border-0 text-right">{{ translate('messages.Amount') }}</th>
+                <th class="border-0 col--numeric">{{ translate('Amount') }}</th>
             </tr>
         </thead>
         <tbody id="set-rows">
-            @foreach($transactions as $k => $t)
+            @foreach($transactions as $t)
+                @php($has_breakdown = isset($t['breakdown']) && count($t['breakdown']) > 0)
                 <tr>
                     <td>
-                        @if(isset($t['breakdown']) && count($t['breakdown']) > 0)
-                            <span class="collapse-next-tr cursor-pointer">
-                                <i class="tio-chevron-down"></i> {{ $loop->iteration + $transactions->firstItem() - 1 }}
-                            </span>
-                        @else
-                            {{ $loop->iteration + $transactions->firstItem() - 1 }}
-                        @endif
+                        <div class="d-flex align-items-center gap-2">
+                            @if($has_breakdown)
+                                <button type="button" class="btn action-btn collapse-next-tr" aria-expanded="false" title="{{ translate('messages.Show breakdown') }}">
+                                    <i class="tio-chevron-down"></i>
+                                </button>
+                            @endif
+                            <span class="font-medium">{{ is_numeric($t['transaction_id']) ? '#'.$t['transaction_id'] : $t['transaction_id'] }}</span>
+                        </div>
                     </td>
-                    <td class="font-medium">{{ $t['transaction_id'] }}</td>
-                      <td>
-
-                        {{ \App\CentralLogics\Helpers::date_format($t['date']) }}
-                        <br>
-                        {{ \App\CentralLogics\Helpers::time_format($t['date']) }}
+                    <td>
+                        <span class="table-when">
+                            <span class="table-when__day">{{ \App\CentralLogics\Helpers::date_format($t['date']) }}</span>
+                            <span class="table-when__ago text-uppercase">{{ \App\CentralLogics\Helpers::time_format($t['date']) }}</span>
+                        </span>
                     </td>
                     @if(!$hide_source_column)
                         <td>
-                            <div class="mb-1">{{ $t['source'] ?? $t['store'] ?? '' }}</div>
+                            <span class="d-block text--title">{{ $t['source'] ?? $t['store'] ?? '' }}</span>
                             @if(isset($t['source_type']))
-                                <div
-                                    class="badge text-{{ in_array($t['source_type'], ['Store', 'Restaurant']) ? 'warning bg-warning' : ($t['source_type'] == 'Delivery Man' ? 'info bg-info' : 'info bg-info') }} bg-opacity-10 rounded-lg font-medium px-2">
-                                    {{ translate($t['source_type']) }}</div>
+                                <span class="cell-chips mt-1"><span class="cell-chip">{{ $source_type_labels[$t['source_type']] ?? $t['source_type'] }}</span></span>
                             @endif
                         </td>
                     @endif
                     @if($is_subscription_like)
                         <td>
                             @if(isset($t['transaction_type']))
-                                <div class="badge rounded-lg font-medium px-2" style="{{ $t['transaction_type_badge_style'] ?? 'background-color: #F4F5F7; color: #4B5563;' }}">
-                                    {{ translate($t['transaction_type']) }}
-                                </div>
+                                <span class="badge rounded-lg font-medium px-2" style="{{ $t['transaction_type_badge_style'] ?? 'background-color: #F4F5F7; color: #4B5563;' }}">{{ $row_type === 'pro_customer' ? $t['transaction_type'] : ($plan_type_labels[$t['transaction_type']] ?? $t['transaction_type']) }}</span>
+                            @endif
+                        </td>
+                    @else
+                        @php($source_label = $is_expense ? ($t['expense_source'] ?? '') : ($t['earning_from'] ?? $t['expense_source'] ?? ''))
+                        @php($badge = $is_expense ? ($t['expense_source_badge'] ?? $t['transaction_type'] ?? null) : ($t['earning_from_badge'] ?? null))
+                        <td>
+                            @if(!empty($t['order_id']) && $source_label !== '')
+                                <a class="font-medium" href="{{ request()->is('admin/*') ? route('admin.order.details', ['id' => $t['order_id']]) : route('vendor.order.details', ['id' => $t['order_id']]) }}">{{ $source_label }}</a>
+                            @elseif($source_label !== '')
+                                <span class="font-medium">{{ $source_label }}</span>
+                            @endif
+                            @if($badge)
+                                @php($badge_key = strtolower(str_replace([' ', '-'], '_', trim($badge))))
+                                <span class="cell-chips mt-1"><span class="cell-chip">{{ $badge_labels[$badge_key] ?? $badge }}</span></span>
                             @endif
                         </td>
                     @endif
-                    @if(!$is_subscription_like)
-                        <td class="text-center">
-                            @if($hide_source_column)
-                                @php
-                                    $order_id = $t['earning_from'] ?? $t['expense_source'] ?? null;
-                                    $badge = ($type ?? '') === 'expense' ? ($t['expense_source_badge'] ?? $t['transaction_type'] ?? null) : null;
-                                @endphp
-                                @if($badge)
-                                    <div class="badge text-dark bg-danger bg-opacity-10 rounded-lg font-regular px-2 mb-1">
-                                        {{ translate($badge) }}
-                                    </div>
-                                @endif
-                                @if(!empty($t['order_id']))
-                                    <a href="{{ route('vendor.order.details', ['id' => $t['order_id']]) }}">
-                                        <div class="fs-12">{{ $order_id }}</div>
-                                    </a>
-                                @elseif(!empty($order_id))
-                                    <div class="fs-12">{{ $order_id }}</div>
-                                @endif
-                            @else
-                                @if($type === 'order' || ($type ?? '') === '')
-                                    {{-- Just show Order ID for Earnings --}}
-                                    @if(isset($t['earning_from']))
-                                        @if(isset($t['order_id']) && !empty($t['order_id']))
-                                            <a href="{{ request()->is('admin/*') ? route('admin.order.details', $t['order_id']) : route('vendor.order.details', $t['order_id']) }}" class="fs-12 mt-1">{{ $t['earning_from'] }}</a>
-                                        @else
-                                            <div class="fs-12 mt-1">{{ $t['earning_from'] }}</div>
-                                        @endif
-                                    @endif
-                                @else
-                                    {{-- Show Badge and Source --}}
-                                    @php
-                                        $badge = $t['expense_source_badge'] ?? $t['transaction_type'] ?? null;
-                                    @endphp
-                                    @if($badge)
-                                        <div class="badge text-dark bg-danger bg-opacity-10 rounded-lg font-regular px-2 mb-1">
-                                            {{ translate($badge) }}</div>
-                                    @endif
-
-                                    @if(isset($t['expense_source']))
-                                        @if(isset($t['order_id']) && !empty($t['order_id']))
-                                            <a href="{{ request()->is('admin/*') ? route('admin.order.details', ['id' => $t['order_id']]) : route('vendor.order.details', ['id' => $t['order_id']]) }}" class="fs-12 mt-1">
-                                                <div class="fs-12">{{ $t['expense_source'] }}</div>
-                                            </a>
-                                        @else
-                                            <div class="fs-12 mt-1">{{ $t['expense_source'] }}</div>
-                                        @endif
-                                    @endif
-                                @endif
-                            @endif
-                        </td>
-                    @endif
-                    <td class="text-right">{{ \App\CentralLogics\Helpers::format_currency($t['amount']) }}</td>
+                    <td class="col--numeric">
+                        <span class="font-medium">{{ \App\CentralLogics\Helpers::format_currency($t['amount']) }}</span>
+                    </td>
                 </tr>
-                @if(isset($t['breakdown']) && count($t['breakdown']) > 0)
-                    @php
-                        $isOrderTransaction = $type === 'order' || ($type ?? '') === '';
-                        $hideOrderCommission = isset($t['breakdown']['hide_order_commission']) && $t['breakdown']['hide_order_commission'];
-                        $firstEarningLabel = translate('messages.Order Commission');
-                        $secondEarningLabel = isset($t['breakdown']['tax_collected'])
-                            ? translate('messages.Tax Collected')
-                            : translate('messages.Delivery Fee Comission');
-                        $secondEarningAmount = $t['breakdown']['delivery_fee_comission'] ?? $t['breakdown']['tax_collected'] ?? 0;
-                    @endphp
+                @if($has_breakdown)
+                    @php($breakdown = $t['breakdown'])
+                    @php($express_charge = (float) ($breakdown['express_charge'] ?? 0))
+                    @php($second_label = isset($breakdown['tax_collected']) ? translate('Tax collected') : translate('Delivery fee commission'))
+                    @php($second_amount = $breakdown['delivery_fee_comission'] ?? $breakdown['tax_collected'] ?? 0)
+                    @php($lines = [])
+                    @if($is_order_row)
+                        @if($hide_source_column)
+                            @php($lines[] = [translate('Order sales'), $breakdown['order_commission'] ?? 0])
+                            @php($lines[] = [$second_label, $second_amount])
+                        @else
+                            @if(empty($breakdown['hide_order_commission']))
+                                @php($lines[] = [translate('Order commission'), $breakdown['order_commission'] ?? 0])
+                            @endif
+                            @if(array_key_exists('delivery_fee_comission', $breakdown) || array_key_exists('tax_collected', $breakdown))
+                                @php($lines[] = [$second_label, $second_amount])
+                            @endif
+                        @endif
+                        @php($lines[] = [$breakdown_additional_charge_label, $breakdown['packaging_fee_collected'] ?? 0])
+                        @if($express_charge > 0)
+                            @php($lines[] = [translate('Express delivery charge'), $express_charge])
+                        @endif
+                    @else
+                        @php($lines[] = [translate('Commission paid'), $breakdown['admin_commission'] ?? 0])
+                        @php($lines[] = [translate('Discount on item'), $breakdown['discount_on_item'] ?? 0])
+                        @php($lines[] = [translate('Coupon contribution'), $breakdown['coupon_contribution'] ?? 0])
+                        @php($lines[] = [translate('Free delivery'), $breakdown['free_delivery'] ?? 0])
+                    @endif
                     <tr class="collapsing-tr d-none bg-light2">
-                        <td></td>
-                        <td colspan="{{ $hide_source_column ? '3' : '4' }}" class="pr-0">
-                            @if($isOrderTransaction)
-                                @if($hide_source_column)
-                                    <div class="mb-2">{{ translate('messages.Order Sales') }}</div>
-                                    <div class="mb-2">{{ $secondEarningLabel }}</div>
-                                    <div @if(($t['breakdown']['express_charge'] ?? 0) > 0) class="mb-2" @endif>{{ $breakdown_additional_charge_label }}</div>
-                                    @if(($t['breakdown']['express_charge'] ?? 0) > 0)
-                                        <div>{{ translate('messages.Express Delivery Charge') }}</div>
-                                    @endif
-                                @else
-                                    @if(!$hideOrderCommission)
-                                        <div class="mb-2">{{ $firstEarningLabel }}</div>
-                                    @endif
-                                    @if(array_key_exists('delivery_fee_comission', $t['breakdown']) || array_key_exists('tax_collected', $t['breakdown']))
-                                        <div class="mb-2">{{ $secondEarningLabel }}</div>
-                                    @endif
-                                    <div @if(($t['breakdown']['express_charge'] ?? 0) > 0) class="mb-2" @endif>{{ $breakdown_additional_charge_label }}</div>
-                                    @if(($t['breakdown']['express_charge'] ?? 0) > 0)
-                                        <div>{{ translate('messages.Express Delivery Charge') }}</div>
-                                    @endif
-                                @endif
-                            @else
-                                @if(isset($t['breakdown']['general_expense']))
-                                    <div class="mb-2">{{ translate($t['breakdown']['type'] ?? 'General Expense') }}</div>
-                                @else
-                                    <div class="mb-2">{{ translate('messages.Commission Paid') }}</div>
-                                    <div class="mb-2">{{ translate('messages.Discount on Item') }}</div>
-                                    <div class="mb-2">{{ translate('messages.Coupon Contribution') }}</div>
-                                    <div>{{ translate('messages.Free Delivery') }}</div>
-                                @endif
-                            @endif
+                        <td colspan="{{ $column_count - 1 }}" class="pl-5">
+                            @foreach($lines as $line)
+                                <div class="{{ $loop->last ? '' : 'mb-2' }}">{{ $line[0] }}</div>
+                            @endforeach
                         </td>
-                        <td class="text-right pl-0">
-                            @if($isOrderTransaction)
-                                @if($hide_source_column)
-                                    <div class="mb-2">
-                                        {{ \App\CentralLogics\Helpers::format_currency($t['breakdown']['order_commission'] ?? 0) }}</div>
-                                    <div class="mb-2">+
-                                        {{ \App\CentralLogics\Helpers::format_currency($secondEarningAmount) }}</div>
-                                    <div @if(($t['breakdown']['express_charge'] ?? 0) > 0) class="mb-2" @endif>+
-                                        {{ \App\CentralLogics\Helpers::format_currency($t['breakdown']['packaging_fee_collected'] ?? 0) }}
-                                    </div>
-                                    @if(($t['breakdown']['express_charge'] ?? 0) > 0)
-                                        <div>+
-                                            {{ \App\CentralLogics\Helpers::format_currency($t['breakdown']['express_charge'] ?? 0) }}</div>
-                                    @endif
-                                @else
-                                    @if(!$hideOrderCommission)
-                                        <div class="mb-2">
-                                            {{ \App\CentralLogics\Helpers::format_currency($t['breakdown']['order_commission'] ?? 0) }}</div>
-                                    @endif
-                                    @if(array_key_exists('delivery_fee_comission', $t['breakdown']) || array_key_exists('tax_collected', $t['breakdown']))
-                                        <div class="mb-2">+
-                                            {{ \App\CentralLogics\Helpers::format_currency($secondEarningAmount) }}</div>
-                                    @endif
-                                    <div class="mb-2">+
-                                        {{ \App\CentralLogics\Helpers::format_currency($t['breakdown']['packaging_fee_collected'] ?? 0) }}</div>
-                                    @if(($t['breakdown']['express_charge'] ?? 0) > 0)
-                                        <div>+
-                                            {{ \App\CentralLogics\Helpers::format_currency($t['breakdown']['express_charge'] ?? 0) }}</div>
-                                    @endif
-                                @endif
-                            @else
-                                @if(isset($t['breakdown']['general_expense']))
-                                    <div class="mb-2">
-                                        {{ \App\CentralLogics\Helpers::format_currency($t['breakdown']['general_expense'] ?? 0) }}</div>
-                                @else
-                                    <div class="mb-2">
-                                        {{ \App\CentralLogics\Helpers::format_currency($t['breakdown']['admin_commission'] ?? 0) }}</div>
-                                    <div class="mb-2">+
-                                        {{ \App\CentralLogics\Helpers::format_currency($t['breakdown']['discount_on_item'] ?? 0) }}</div>
-                                    <div class="mb-2">+
-                                        {{ \App\CentralLogics\Helpers::format_currency($t['breakdown']['coupon_contribution'] ?? 0) }}</div>
-                                    <div>+ {{ \App\CentralLogics\Helpers::format_currency($t['breakdown']['free_delivery'] ?? 0) }}</div>
-                                @endif
-                            @endif
+                        <td class="col--numeric">
+                            @foreach($lines as $line)
+                                <div class="{{ $loop->last ? '' : 'mb-2' }}">{{ $loop->first ? '' : '+ ' }}{{ \App\CentralLogics\Helpers::format_currency($line[1]) }}</div>
+                            @endforeach
                         </td>
                     </tr>
                 @endif
             @endforeach
         </tbody>
     </table>
-    
 </div>
 <div class="page-area px-4 pb-3">
     {!! $transactions->links() !!}
 </div>
 @else
     <div class="empty--data py-5 w-100">
-        <img src="{{ asset('public/assets/admin/svg/illustrations/sorry.svg') }}" alt="public">
-        <h5>
-            {{ translate('no_data_found') }}
-        </h5>
+        <img src="{{ asset('public/assets/admin/svg/illustrations/sorry.svg') }}" alt="">
+        <h5>{{ translate('messages.No transactions match this period or search.') }}</h5>
     </div>
 @endif

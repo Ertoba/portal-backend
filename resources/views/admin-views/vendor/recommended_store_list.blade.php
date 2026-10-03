@@ -1,55 +1,110 @@
 @extends('layouts.admin.app')
 
-@section('title', translate('messages.Recommended_stores'))
+@section('title', translate('messages.Recommended stores'))
 
 @push('css_or_js')
-
+    <link rel="stylesheet" href="{{ asset('public/assets/admin/css/third-party-setup.css') }}">
+    <link rel="stylesheet" href="{{ asset('public/assets/admin/css/recommended-store.css') }}">
 @endpush
 
 @section('content')
+    @php($store_service = app(\App\Services\Store\StoreService::class))
+    @php($is_shuffled = $shuffle_recommended_store == 1)
     <div class="content container-fluid">
-        <!-- Page Header -->
         <div class="page-header">
             <h1 class="page-header-title">
                 <span class="page-header-icon">
-                    <img src="{{asset('public/assets/admin/img/condition.png')}}" class="w--26" alt="">
+                    <img src="{{asset('public/assets/admin/img/outline/condition.svg')}}" class="w--26" alt="">
                 </span>
                 <span>
-                    {{translate('messages.Recommended_stores')}}
-                </span>
+                    {{translate('messages.Recommended stores')}}
+                <span class="badge badge-soft-dark ml-2" id="itemCount">{{ $stores->total() }}</span></span>
             </h1>
+            <p class="page-header-desc">{{ translate('Stores you have chosen to push to the front of the customer app.') }}</p>
         </div>
-        <!-- End Page Header -->
         <div class="row g-3">
-            <div class="col-12">
-                <div class="card">
-                    <div class="card-body">
-                            <form action="{{ route('admin.store.recommended_store_add') }}" method="GET">
-                                <div class="row gy-3 align-items-end">
-                                    <div class="col-12">
-                                        <div class="d-flex gap-2 flex-wrap" >
-
-                                        </div>
-                                    </div>
-                                    <div class="col-md-12">
-                                        <input type="hidden" id="store_ids" name="selected_store_ids" value="">
-
-                                        <h3 for="name" >{{ translate('Stores')}}</h3>
-                                        <div class="w-100 px-2">
-                                            <div class="search-form mb-3">
-                                                <button type="button" class="btn"></button>
-                                                <input type="text" class="js-form-search form-control search-bar-input"  placeholder="{{translate('Search Stores')}}...">
-                                            </div>
-                                            <div class="d-flex flex-wrap column-gap-4 row-gap-2 max-h-40vh overflow-y-auto overflow-x-hidden search-result-box" id='hide_class'> </div>
-
-                                        <div class="mb-4 row g-4 selected_store_list" id="hide_class_2" ></div>
-                                    </div>
-
-                            <div class="btn--container justify-content-end mt-4">
-                                <button type="reset" class="btn btn--reset remove_all_data">{{translate('messages.reset')}}</button>
-                                <button type="submit" class="btn btn--primary">{{translate('messages.submit')}}</button>
+            <div class="col-12 tps">
+                <div class="tps-card rcs">
+                    <form action="{{ route('admin.store.recommended_store_add') }}" method="GET" id="recommended-store-form">
+                        <div class="tps-card__head">
+                            <span class="tps-card__brand"><i class="tio-add-circle-outlined"></i></span>
+                            <div class="tps-card__titles">
+                                <h5 class="tps-card__title">{{ translate('Add stores to the list') }}</h5>
+                                <p class="tps-card__subtitle">{{ translate('Search a store by name, pick as many as you need, then submit them together.') }}</p>
                             </div>
-                        </form>
+                            <div class="tps-card__aside">
+                                <span class="tps-pill tps-pill--off" id="selectedStorePill" aria-live="polite">
+                                    {{ translate('Selected') }} <span class="rcs-count" id="selectedStoreCount">0</span>
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="tps-card__body">
+                            <input type="hidden" id="store_ids" name="selected_store_ids" value="">
+
+                            <div class="tps-field mb-0">
+                                <label class="tps-field__label" for="storeSearchInput">{{ translate('Search stores') }}</label>
+                                <div class="rcs-search">
+                                    <i class="tio-search rcs-search__icon" aria-hidden="true"></i>
+                                    <input type="text" id="storeSearchInput" class="form-control search-bar-input rcs-search__input"
+                                           autocomplete="off"
+                                           placeholder="{{translate('messages.Ex')}}: {{translate('Store name')}}">
+                                    <button type="button" class="rcs-search__clear d-none" id="storeSearchClear"
+                                            aria-label="{{ translate('Clear search') }}"><i class="tio-clear"></i></button>
+                                </div>
+                                <small class="tps-field__hint">{{ translate('Stores already on the list below are left out of the results.') }}</small>
+                                <div class="rcs-results d-none" id="hide_class" aria-live="polite"
+                                     data-searching="{{ translate('Searching') }}..."></div>
+                            </div>
+
+                            <div class="rcs-selected d-none" id="hide_class_2">
+                                <div class="rcs-selected__head">
+                                    <span class="rcs-selected__title">{{ translate('Selected stores') }}</span>
+                                    <button type="button" class="rcs-selected__clear remove_all_data">{{ translate('Clear all') }}</button>
+                                </div>
+                                <div class="rcs-chips selected_store_list"></div>
+                            </div>
+                        </div>
+
+                        <div class="tps-card__foot">
+                            <span class="tps-foot-note">{{ translate('A store shows up in the recommended section as soon as it is added.') }}</span>
+                            <button type="reset" class="btn btn--reset remove_all_data"><i class="tio-refresh"></i> {{translate('messages.Reset')}}</button>
+                            <button type="submit" class="btn btn--primary" id="recommendedStoreSubmit" disabled><i class="tio-checkmark-circle-outlined"></i> {{translate('messages.Submit')}}</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="col-12 tps">
+                <form action="{{ route('admin.store.shuffle_recommended_store', ['status' => $shuffle_recommended_store ?? 0]) }}" method="get" id="store_shffle_form"></form>
+                <div class="tps-switchbar">
+                    <div class="tps-switchbar__text">
+                        <h6>{{translate('Shuffle store when page reload?')}}</h6>
+                        <p>
+                            {{ $is_shuffled
+                                ? translate('Stores are reordered on every load, so each one gets a turn at the front.')
+                                : translate('Stores keep the order below every time the section is shown.') }}
+                        </p>
+                    </div>
+                    <div class="d-flex align-items-center gap-3">
+                        <span class="tps-pill {{ $is_shuffled ? 'tps-pill--on' : 'tps-pill--off' }}">
+                            {{ $is_shuffled ? translate('Shuffling') : translate('Fixed order') }}
+                        </span>
+                        <label class="toggle-switch toggle-switch-sm p-0 m-0" for="store_shffle">
+                            <input type="checkbox" id="store_shffle"
+                                   data-id="store_shffle"
+                                   data-type="status"
+                                   data-image-on='{{asset('/public/assets/admin/img/modal')}}/counter-on.png'
+                                   data-image-off="{{asset('/public/assets/admin/img/modal')}}/counter-off.png"
+                                   data-title-on="{{translate('Want to shuffle the store list?')}}"
+                                   data-title-off="{{translate('Want to disable shuffle store list?')}}"
+                                   data-text-on="<p>{{translate('If enabled, store recommended section will be shuffled.')}}</p>"
+                                   data-text-off="<p>{{translate('If disabled, store recommended section will not be shuffled.')}}</p>"
+                                   class="toggle-switch-input dynamic-checkbox" name="shuffle_store" value="1" {{ $is_shuffled ? 'checked' : '' }}>
+                            <span class="toggle-switch-label p-0">
+                                <span class="toggle-switch-indicator"></span>
+                            </span>
+                        </label>
                     </div>
                 </div>
             </div>
@@ -58,51 +113,24 @@
                 <div class="card">
                     <div class="card-header py-2 border-0">
                         <div class="search--button-wrapper">
-                            <h5 class="card-title">
-                                {{translate('messages.Recommended_Stores_List')}}<span class="badge badge-soft-dark ml-2" id="itemCount">{{$stores->total()}}</span>
-                            </h5>
-                            <div class="form-check text-start mb-3">
-                                    <input class="form-check-input dynamic-checkbox"
-                                           data-id="store_shffle"
-                                           data-type="status"
-                                           data-image-on='{{asset('/public/assets/admin/img/modal')}}/counter-on.png'
-                                           data-image-off="{{asset('/public/assets/admin/img/modal')}}/counter-off.png"
-                                           data-title-on="{{translate('Want_to_shuffle_the_store_list?')}}"
-                                           data-title-off="{{translate('Want_to_disable_shuffle_store_list?')}}"
-                                           data-text-on="<p>{{translate('If_enabled,_store_recommended_section_will_be_shuffled.’')}}</p>"
-                                           data-text-off="<p>{{translate('If_disabled,_store_recommended_section_will_not_be_shuffled.')}}</p>"
-                                           type="checkbox" value="1" name="shuffle_store" id="flexCheckDefault" {{ $shuffle_recommended_store == 1 ? 'checked' : '' }} >
-                                    <label
-                                       data-id="store_shffle"
-                                       data-type="status"
-                                       data-image-on='{{asset('/public/assets/admin/img/modal')}}/counter-on.png'
-                                       data-image-off="{{asset('/public/assets/admin/img/modal')}}/counter-off.png"
-                                       data-title-on="{{translate('Want_to_shuffle_the_store_list?')}}"
-                                       data-title-off="{{translate('Want_to_disable_shuffle_store_list?')}}"
-                                       data-text-on="<p>{{translate('If_enabled,_store_recommended_section_will_be_shuffled.’')}}</p>"
-                                       data-text-off="<p>{{translate('If_disabled,_store_recommended_section_will_not_be_shuffled.')}}</p>" id="store_shffle"
-                                    class="form-check-label dynamic-checkbox" for="flexCheckDefault">
-                                        {{translate('Shuffle_store_when_page_reload?')}}
-                                    </label>
-                            </div>
-                            <form  action="{{ route('admin.store.shuffle_recommended_store', ['status' => $shuffle_recommended_store ?? 0]) }}" method="get" id="store_shffle_form">
-                            </form>
-
-                            <form  class="search-form" id="storeSearchForm">
-                                <!-- Search -->
+                            @include('partials._table-head', [
+                                'subtitle' => translate('Switch a store off to drop it from the section without losing its place on this list.'),
+                            ])
+                            <form class="search-form">
                                 <div class="input-group input--group">
                                     <input id="datatableSearch_" value="{{ request()?->search ?? '' }}" type="search" name="search" class="form-control"
-                                            placeholder="{{translate('ex_:_Store_name')}}" aria-label="Search" >
+                                            placeholder="{{translate('messages.Ex')}}: {{translate('Store name')}}" aria-label="{{translate('Search')}}" >
                                     <button type="submit" class="btn btn--secondary"><i class="tio-search"></i></button>
                                 </div>
-                                <!-- End Search -->
                             </form>
+                            @if(request()->input('search'))
+                                <a class="btn btn--primary ml-2" href="{{ request()->fullUrlWithoutQuery(['search', 'page']) }}"><i class="tio-refresh"></i> {{translate('messages.Reset')}}</a>
+                            @endif
                         </div>
                     </div>
-                    <!-- Table -->
                     <div class="table-responsive datatable-custom">
                         <table id="columnSearchDatatable"
-                               class="table table-borderless table-thead-bordered table-nowrap table-align-middle card-table"
+                               class="table table-hover table-borderless table-thead-bordered table-nowrap table-align-middle card-table"
                                data-hs-datatables-options='{
                                  "order": [],
                                  "orderCellsTop": true,
@@ -110,68 +138,86 @@
                                }'>
                             <thead class="thead-light">
                             <tr >
-                                <th class="border-0">{{translate('sl')}}</th>
-                                <th class="border-0">{{translate('messages.Store_Name')}}</th>
+                                <th class="border-0">{{translate('Store information')}}</th>
+                                <th class="border-0">{{translate('messages.Zone')}}</th>
                                 <th class="border-0">{{translate('messages.Ratings')}}</th>
-                                <th class="border-0">{{translate('messages.Total_Products')}}</th>
-                                <th class="border-0">{{translate('messages.Total_Orders')}}</th>
-                                <th class="text-center">{{translate('messages.status')}}</th>
-                                <th class="text-center">{{translate('messages.action')}}</th>
+                                <th class="border-0 col--numeric">{{translate('messages.Total Products')}}</th>
+                                <th class="border-0 col--numeric">{{translate('messages.Total orders')}}</th>
+                                <th class="border-0">{{translate('Status')}}</th>
+                                <th class="border-0">{{translate('Recommended')}}</th>
+                                <th class="text-center">{{translate('messages.Action')}}</th>
                             </tr>
 
                             </thead>
 
                             <tbody id="set-rows">
-                            @foreach($stores as $key => $store)
+                            @foreach($stores as $store)
+                                @php($ratings = $store_service->calculateRating($store['rating']))
                                 <tr>
-                                    <td >
-                                        <span class="mr-3">
-                                            {{$key + $stores->firstItem()}}
+                                    <td>
+                                        <a href="{{route('admin.store.view', $store->id)}}" class="table-rest-info" alt="view store">
+                                            <img class="img--60 circle onerror-image" data-onerror-image="{{asset('public/assets/admin/img/160x160/img1.jpg')}}"
+                                            src="{{ $store['logo_full_url'] ?? asset('public/assets/admin/img/160x160/img1.jpg') }}"  >
+                                            <div class="info max-w-200px">
+                                                <div title="{{ $store?->name }}" class="text--title">
+                                                    {{Str::limit($store->name, 20, '...')}}
+                                                    @include('partials._verified_store_badge', ['store' => $store])
+                                                </div>
+                                                <div class="font-light">
+                                                    ID:{{$store->id}}
+                                                </div>
+                                            </div>
+                                        </a>
+                                    </td>
+                                    <td>
+                                        {{$store->zone?$store->zone->name:translate('messages.Zone deleted')}}
+                                        <span class="d-block fs-12 text-muted">
+                                            {{$store->self_delivery_system ? translate('Self delivery') : translate('Platform delivery')}}
                                         </span>
                                     </td>
-                                    <td >
-                                        <div>
-                                            <a href="{{route('admin.store.view', $store->id)}}" class="table-rest-info" alt="view store">
-                                                <img class="img--60 circle onerror-image" data-onerror-image="{{asset('public/assets/admin/img/160x160/img1.jpg')}}"
-                                                src="{{ $store['logo_full_url'] ?? asset('public/assets/admin/img/160x160/img1.jpg') }}"  >
-                                                <div class="info"><div class="text--title">
-                                                    {{Str::limit($store->name, 20, '...')}}
-                                                    </div>
-                                                    <div class="font-light">
-                                                        {{translate('messages.id')}}:{{$store->id}}
-                                                    </div>
-                                                </div>
-                                            </a>
-                                        </div>
+                                    <td data-order="{{ $ratings['total'] ? $ratings['rating'] : -1 }}">
+                                        @if($ratings['total'])
+                                            <span class="rating text-star" title="{{ translate('messages.Ratings') . ': ' . $ratings['total'] }}">
+                                                <i class="tio-star"></i> {{number_format($ratings['rating'], 1)}} ({{$ratings['total']}})
+                                            </span>
+                                        @else
+                                            <span class="text-muted font-size-sm">{{translate('messages.Not rated yet')}}</span>
+                                        @endif
                                     </td>
-
-                                    <td >
-                                        <i class="fs-13 tio-star"></i>
-                                        @php
-    $ratings = \App\CentralLogics\StoreLogic::calculate_store_rating($store['rating'])
-                                        @endphp
-                                        {{ $ratings['rating'] }}
-                                        </td>
-                                    <td >
+                                    <td class="col--numeric" data-order="{{ $store->items_count }}">
                                         {{ $store->items_count }}
                                     </td>
-                                    <td >
-                                        {{ $store->orders_count }}
+                                    <td class="col--numeric" data-order="{{ $store->orders_count }}">
+                                        <span class="badge badge-soft-{{$store->orders_count ? 'success' : 'secondary'}}"
+                                                title="{{ $store->orders_count ? translate('messages.Total orders') . ': ' . $store->orders_count : translate('messages.Never ordered yet') }}">
+                                            {{ $store->orders_count }}
+                                        </span>
                                     </td>
-
-
-
-                                    <td  >
-                                        <label class="toggle-switch toggle-switch-sm" for="publishCheckbox{{$store->id}}">
-                                            <input type="checkbox" data-url="{{route('admin.store.recommended_store_status', [$store['id'], $store->storeConfig->is_recommended ? 0 : 1])}}" class="toggle-switch-input redirect-url" id="publishCheckbox{{$store->id}}" {{$store->storeConfig->is_recommended ? 'checked' : ''}}>
-                                            <span class="toggle-switch-label mx-auto">
-                                                <span class="toggle-switch-indicator"></span>
+                                    <td>
+                                        <span class="badge badge-soft-{{$store->status ? 'success' : 'danger'}}">
+                                            {{$store->status ? translate('messages.Active') : translate('messages.Inactive')}}
+                                        </span>
+                                        <span class="cell-chips d-block mt-1">
+                                            <span class="cell-chip">{{$store->active ? translate('messages.Open') : translate('Temporarily closed')}}</span>
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="status-toggle" data-status="{{$store->storeConfig->is_recommended ? 1 : 0}}">
+                                            <label class="toggle-switch toggle-switch-sm" for="publishCheckbox{{$store->id}}">
+                                                <input type="checkbox" data-url="{{route('admin.store.recommended_store_status', [$store['id'], $store->storeConfig->is_recommended ? 0 : 1])}}" class="toggle-switch-input redirect-url" id="publishCheckbox{{$store->id}}"
+                                                        data-label-on="{{translate('Recommended')}}" data-label-off="{{translate('Not recommended')}}" {{$store->storeConfig->is_recommended ? 'checked' : ''}}>
+                                                <span class="toggle-switch-label">
+                                                    <span class="toggle-switch-indicator"></span>
+                                                </span>
+                                            </label>
+                                            <span class="status-toggle__text" aria-live="polite">
+                                                {{$store->storeConfig->is_recommended ? translate('Recommended') : translate('Not recommended')}}
                                             </span>
-                                        </label>
+                                        </div>
                                     </td>
                                     <td >
                                         <div class="btn--container justify-content-center">
-                                            <a class="btn action-btn btn--danger btn-outline-danger form-alert" href="javascript:" data-id="item-{{$store['id']}}" data-message="{{ translate('Want_to_remove_the_store_from_the_list?') }}" title="{{translate('messages.delete')}}"><i class="tio-delete-outlined"></i>
+                                            <a class="btn action-btn action-btn--delete form-alert" href="javascript:" data-id="item-{{$store['id']}}" data-message="{{ translate('Want to remove the store from the list?') }}" title="{{translate('messages.Delete')}}"><i class="tio-delete-outlined"></i>
                                             </a>
                                             <form action="{{route('admin.store.recommended_store_remove', [$store['id']])}}"
                                                     method="post" id="item-{{$store['id']}}">
@@ -194,64 +240,126 @@
                     <div class="empty--data">
                         <img src="{{asset('/public/assets/admin/svg/illustrations/sorry.svg')}}" alt="public">
                         <h5>
-                            {{translate('no_data_found')}}
+                            {{ request()->input('search') ? translate('No store matches this search') : translate('No recommended store yet') }}
                         </h5>
+                        <p>
+                            {{ request()->input('search')
+                                ? translate('Try another name, or reset the search to see the whole list.')
+                                : translate('Search a store above and add it to see it here.') }}
+                        </p>
                     </div>
                     @endif
                 </div>
             </div>
-            <!-- End Table -->
         </div>
     </div>
-
 @endsection
 
 @push('script_2')
     <script>
         "use strict";
+
         let selected_store_ids = [];
+        let store_search_timer = null;
+        let store_search_request = null;
 
-        $(document).on('input', '.search-bar-input', function() {
-        let name = $(this).val();
-        if (name.length > 0) {
-            $("#hide_class").addClass('d-flex search-result-box').removeClass('d-none');
-            $("#hide_class_2").addClass('d-none');
+        function render_store_selection() {
+            let count = selected_store_ids.length;
 
-            $.get("{{ route('admin.get_all_stores') }}", { name: name }, function(response) {
-                $('.search-result-box').empty().html(response.result);
-            });
-        }else{
-            location.reload();
+            $('#store_ids').val(selected_store_ids.join(','));
+            $('#selectedStoreCount').text(count);
+            $('#selectedStorePill').toggleClass('tps-pill--on', count > 0).toggleClass('tps-pill--off', count === 0);
+            $('#recommendedStoreSubmit').prop('disabled', count === 0);
+            $('#hide_class_2').toggleClass('d-none', count === 0);
         }
-    });
 
+        function hide_store_results() {
+            $('#hide_class').empty().addClass('d-none');
+        }
 
-        function selected_stores(key, remove=false) {
-            if(remove == true){
-                selected_store_ids = selected_store_ids.filter(function(e) { return e !== key })
-            }else{
+        function show_store_results(html) {
+            $('#hide_class').html(html).removeClass('d-none');
+        }
+
+        function search_stores(name) {
+            if (store_search_request) {
+                store_search_request.abort();
+            }
+
+            store_search_request = $.get("{{ route('admin.get_all_stores') }}", {
+                name: name,
+                exclude_recommended: 1
+            }, function (response) {
+                show_store_results(response.result);
+            });
+        }
+
+        function selected_stores(key, remove = false) {
+            key = parseInt(key);
+
+            if (remove) {
+                selected_store_ids = selected_store_ids.filter(function (e) { return e !== key });
+            } else if (selected_store_ids.includes(key)) {
+                return;
+            } else {
                 selected_store_ids.push(key);
             }
 
-            $("#hide_class").removeClass('d-flex');
-            $("#hide_class").removeClass('search-result-box');
-            $("#hide_class").addClass('d-none');
-            $("#hide_class_2").removeClass('d-none');
+            $('#storeSearchInput').val('');
+            $('#storeSearchClear').addClass('d-none');
+            hide_store_results();
+            render_store_selection();
 
-            $('#store_ids').val(selected_store_ids);
-            $.get("{{route('admin.store.selected_stores')}}",{id:selected_store_ids},(response)=>{
-                $('.selected_store_list').empty().html(response.result);
-            })
+            if (selected_store_ids.length === 0) {
+                $('.selected_store_list').empty();
+                return;
+            }
+
+            $.get("{{route('admin.store.selected_stores')}}", { id: selected_store_ids }, function (response) {
+                $('.selected_store_list').html(response.result);
+            });
         }
 
+        $(document).on('input', '#storeSearchInput', function () {
+            let name = $(this).val().trim();
 
-        $('.remove_all_data').on('click', function () {
-            $("#hide_class").removeClass('d-flex');
-            $("#hide_class").removeClass('search-result-box');
-            $("#hide_class").addClass('d-none');
-            $("#hide_class_2").addClass('d-none');
+            $('#storeSearchClear').toggleClass('d-none', name.length === 0);
+            clearTimeout(store_search_timer);
+
+            if (name.length === 0) {
+                if (store_search_request) {
+                    store_search_request.abort();
+                }
+                hide_store_results();
+                return;
+            }
+
+            show_store_results('<p class="rcs-results__status">' + $('#hide_class').data('searching') + '</p>');
+            store_search_timer = setTimeout(function () {
+                search_stores(name);
+            }, 300);
+        });
+
+        $(document).on('keydown', '#storeSearchInput', function (e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+            }
+        });
+
+        $(document).on('click', '#storeSearchClear', function () {
+            $('#storeSearchInput').val('').trigger('focus');
+            $(this).addClass('d-none');
+            clearTimeout(store_search_timer);
+            hide_store_results();
+        });
+
+        $(document).on('click', '.remove_all_data', function () {
             selected_store_ids = [];
-            $('#store_ids').val(null);
-        })
+            $('.selected_store_list').empty();
+            $('#storeSearchInput').val('');
+            $('#storeSearchClear').addClass('d-none');
+            hide_store_results();
+            render_store_selection();
+        });
     </script>
 @endpush

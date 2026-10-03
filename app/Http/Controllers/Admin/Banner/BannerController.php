@@ -9,7 +9,7 @@ use App\Enums\ViewPaths\Admin\Banner as BannerViewPath;
 use App\Http\Controllers\BaseController;
 use App\Http\Requests\Admin\BannerAddRequest;
 use App\Http\Requests\Admin\BannerUpdateRequest;
-use App\Services\BannerService;
+use App\Services\Marketing\BannerService;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -39,7 +39,7 @@ class BannerController extends BaseController
     {
         $banners = $this->bannerRepo->getListWhere(
             filters: ['module_id'=>Config::get('module.current_module_id'), 'created_by'=>'admin'],
-            relations: ['module'],
+            relations: ['storage', 'module.storage', 'zone:id,name', 'store:id,name'],
             searchValue: request()->search,
             dataLimit: config('default_pagination')
         );
@@ -51,7 +51,7 @@ class BannerController extends BaseController
 
     public function add(BannerAddRequest $request): JsonResponse
     {
-        $banner = $this->bannerRepo->add(data: $this->bannerService->getAddData(request: $request));
+        $banner = $this->bannerRepo->add(data: $this->bannerService->getAddData($request->all()));
         $this->translationRepo->addByModel(request: $request, model: $banner, modelPath: 'App\Models\Banner', attribute: 'title');
 
         return response()->json();
@@ -69,7 +69,7 @@ class BannerController extends BaseController
     public function update(BannerUpdateRequest $request, $id): JsonResponse
     {
         $banner = $this->bannerRepo->getFirstWithoutGlobalScopeWhere(params: ['id' => $id]);
-        $banner = $this->bannerRepo->update(id: $id ,data: $this->bannerService->getUpdateData(request: $request,banner: $banner));
+        $banner = $this->bannerRepo->update(id: $id ,data: $this->bannerService->getUpdateData($request->all(),banner: $banner));
         $this->translationRepo->updateByModel(request: $request, model: $banner, modelPath: 'App\Models\Banner', attribute: 'title');
 
         return response()->json();
@@ -78,7 +78,7 @@ class BannerController extends BaseController
     public function delete(Request $request): RedirectResponse
     {
         $this->bannerRepo->delete(id: $request['id']);
-        Toastr::success(translate('messages.banner_deleted_successfully'));
+        Toastr::success(translate('Deleted successfully'));
         return back();
     }
 
@@ -99,14 +99,14 @@ class BannerController extends BaseController
     public function updateStatus(Request $request): RedirectResponse
     {
         $this->bannerRepo->update(id: $request['id'] ,data: ['status'=>$request['status']]);
-        Toastr::success(translate('messages.banner_status_updated'));
+        Toastr::success(translate('messages.Banner status updated'));
         return back();
     }
 
     public function updateFeatured(Request $request): RedirectResponse
     {
         $this->bannerRepo->update(id: $request['id'] ,data: ['featured'=>$request['status']]);
-        Toastr::success(translate('messages.banner_featured_status_updated'));
+        Toastr::success(translate('messages.Banner featured status updated'));
         return back();
     }
 }

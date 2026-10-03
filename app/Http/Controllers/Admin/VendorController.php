@@ -2,8 +2,12 @@
 
 namespace App\Http\Controllers\Admin;
 
+use Illuminate\Support\Facades\Schema;
+use App\Rules\ImageFile;
+use App\Rules\PhoneNumber;
+use App\Rules\EmailAddress;
+use App\Rules\StrongPassword;
 use App\CentralLogics\Helpers;
-use App\CentralLogics\StoreLogic;
 use App\Exports\DisbursementHistoryExport;
 use App\Exports\StoreCashTransactionExport;
 use App\Exports\StoreListExport;
@@ -15,7 +19,6 @@ use App\Http\Controllers\Controller;
 use App\Mail\WithdrawRequestMail;
 use App\Models\AccountTransaction;
 use App\Models\AddOn;
-use App\Models\BusinessSetting;
 use App\Models\Conversation;
 use App\Models\DataSetting;
 use App\Models\DisbursementDetails;
@@ -34,26 +37,39 @@ use App\Models\UserInfo;
 use App\Models\Vendor;
 use App\Models\WithdrawRequest;
 use App\Models\Zone;
+use App\Observers\StoreObserver;
 use App\Scopes\StoreScope;
+use App\Services\Store\StoreService;
+use App\Traits\Report\ExportRowStreamTrait;
 use Brian2694\Toastr\Facades\Toastr;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
-use Illuminate\Validation\Rules\Password;
 use Maatwebsite\Excel\Facades\Excel;
 use MatanYadaev\EloquentSpatial\Objects\Point;
 use Modules\Rental\Emails\ProviderWithdrawRequestMail;
+use Modules\Service\Emails\ProviderWithdrawRequestMail as ServiceProviderWithdrawRequestMail;
 use Modules\Rental\Entities\TripTransaction;
 use Rap2hpoutre\FastExcel\FastExcel;
+use App\Support\Notification\SendNotification;
+use App\Support\Notification\NotificationMessages;
+use App\Support\Cache\ApiCache;
+use Illuminate\Support\Facades\Log;
 
 class VendorController extends Controller
 {
+    use ExportRowStreamTrait;
+
+    /**
+     * Whether getStoreReelsFilteredQuery() narrowed the reel list beyond the store scope.
+     * Set there, read to decide if the store-wide total can be taken from the paginator.
+     */
+    private bool $storeReelsAreFiltered = false;
+
     public function index()
     {
         return view('admin-views.vendor.index');
@@ -70,25 +86,20 @@ class VendorController extends Controller
             'address.*' => 'max:1000',
             'latitude' => 'required|numeric',
             'longitude' => 'required|numeric',
-            'email' => 'required|unique:vendors',
-            'phone' => 'required|regex:/^([0-9\s\-\+\(\)]*)$/|min:10|max:20|unique:vendors',
+            'email' => EmailAddress::rules('required', 'vendors'),
+            'phone' => PhoneNumber::rules('required', 'vendors'),
             'minimum_delivery_time' => 'required',
             'maximum_delivery_time' => 'required',
             'delivery_time_type' => 'required',
-            'password' => ['required', Password::min(8)->mixedCase()->letters()->numbers()->symbols(),
-                function ($attribute, $value, $fail) {
-                    if (strpos($value, ' ') !== false) {
-                        $fail('The :attribute cannot contain white spaces.');
-                    }
-                }, ],
+            'password' => StrongPassword::rules('required'),
             'zone_id' => 'required',
-            'logo' => 'required|image|max:2048|mimes:'.IMAGE_FORMAT_FOR_VALIDATION,
-            'cover_photo' => 'nullable|image|max:2048|mimes:'.IMAGE_FORMAT_FOR_VALIDATION,
+            'logo' => ImageFile::rules('required'),
+            'cover_photo' => ImageFile::rules('nullable'),
 
         ], [
-            'f_name.required' => translate('messages.first_name_is_required'),
-            'name.0.required' => translate('default_name_is_required'),
-            'address.0.required' => translate('default_address_is_required'),
+            'f_name.required' => translate('messages.First name is required'),
+            'name.0.required' => translate('Default name is required'),
+            'address.0.required' => translate('Default address is required'),
         ]);
 
         if ($validator->fails()) {
@@ -101,7 +112,7 @@ class VendorController extends Controller
                 ->where('id', $request->zone_id)
                 ->first();
             if (! $zone) {
-                $validator->getMessageBag()->add('latitude', translate('messages.Please_select_a_location_within_the_selected_zone.'));
+                $validator->getMessageBag()->add('latitude', translate('messages.Please select a location within the selected zone.'));
 
                 return response()->json(['errors' => Helpers::error_processor($validator)]);
             }
@@ -110,7 +121,7 @@ class VendorController extends Controller
         if ($request->delivery_time_type == 'min') {
             $minimum_delivery_time = (int) $request->input('minimum_delivery_time');
             if ($minimum_delivery_time < 10) {
-                $validator->getMessageBag()->add('minimum_delivery_time', translate('messages.minimum_delivery_time_should_be_more_than_10_min'));
+                $validator->getMessageBag()->add('minimum_delivery_time', translate('messages.Minimum delivery time') . ': ' . \Carbon\CarbonInterval::minutes(10)->forHumans());
 
                 return response()->json(['errors' => Helpers::error_processor($validator)]);
             }
@@ -143,32 +154,34 @@ class VendorController extends Controller
         $store->module_id = Config::get('module.current_module_id');
         try {
             $store->save();
-            // $store->module->increment('stores_count');
-            if (config('module.'.$store->module->module_type)['always_open']) {
-                StoreLogic::insert_schedule($store->id);
+            if (config('module.' . $store->module->module_type . '.always_open', false)) {
+                app(StoreService::class)->createSchedule($store->id);
             }
 
             Helpers::add_or_update_translations(request: $request, key_data: 'name', name_field: 'name', model_name: 'Store', data_id: $store->id, data_value: $store->name);
             Helpers::add_or_update_translations(request: $request, key_data: 'address', name_field: 'address', model_name: 'Store', data_id: $store->id, data_value: $store->address);
 
         } catch (\Exception $ex) {
-            info($ex->getMessage());
+            Log::error('admin.vendor_controller.store_failed', [
+                'error' => $ex->getMessage(),
+                'file' => $ex->getFile().':'.$ex->getLine(),
+            ]);
             $validator->getMessageBag()->add('store_add', $ex->getMessage());
 
             return response()->json(['errors' => Helpers::error_processor($validator)]);
         }
 
-        return response()->json(['message' => translate('messages.store_added_successfully'), 'redirect' => route('admin.store.list')]);
+        return response()->json(['message' => translate('Added successfully'), 'redirect' => route('admin.store.list')]);
     }
 
     public function edit($id)
     {
         if (getEnvMode() == 'demo' && $id == 2) {
-            Toastr::warning(translate('messages.you_can_not_edit_this_store_please_add_a_new_store_to_edit'));
+            Toastr::warning(translate('messages.You can not edit this store please add a new store to edit'));
 
             return back();
         }
-        $store = Store::withoutGlobalScope('translate')->findOrFail($id);
+        $store = Store::withoutGlobalScope('translate')->withStorage()->with(['translations', 'vendor.storage', 'zone', 'module.storage'])->findOrFail($id);
 
         return view('admin-views.vendor.edit', compact('store'));
     }
@@ -182,25 +195,21 @@ class VendorController extends Controller
             'name.*' => 'max:191',
             'address.0' => 'required',
             'address.*' => 'max:1000',
-            'email' => 'required|unique:vendors,email,'.$store->vendor->id,
-            'phone' => 'required|regex:/^([0-9\s\-\+\(\)]*)$/|min:10|max:20|unique:vendors,phone,'.$store->vendor->id,
+            'email' => EmailAddress::rules('required', 'vendors,email,'.$store->vendor->id),
+            'phone' => PhoneNumber::rules('required', 'vendors,phone,'.$store->vendor->id),
             'zone_id' => 'required',
             'latitude' => 'required|numeric',
             'longitude' => 'required|numeric',
-            'password' => ['nullable', Password::min(8)->mixedCase()->letters()->numbers()->symbols(), function ($attribute, $value, $fail) {
-                if (strpos($value, ' ') !== false) {
-                    $fail('The :attribute cannot contain white spaces.');
-                }
-            }, ],
+            'password' => StrongPassword::rules('nullable'),
             'minimum_delivery_time' => 'required',
             'maximum_delivery_time' => 'required',
             'delivery_time_type' => 'required',
-            'logo' => 'nullable|image|max:2048|mimes:'.IMAGE_FORMAT_FOR_VALIDATION,
-            'cover_photo' => 'nullable|image|max:2048|mimes:'.IMAGE_FORMAT_FOR_VALIDATION,
+            'logo' => ImageFile::rules('nullable'),
+            'cover_photo' => ImageFile::rules('nullable'),
         ], [
-            'f_name.required' => translate('messages.first_name_is_required'),
-            'name.0.required' => translate('default_name_is_required'),
-            'address.0.required' => translate('default_address_is_required'),
+            'f_name.required' => translate('messages.First name is required'),
+            'name.0.required' => translate('Default name is required'),
+            'address.0.required' => translate('Default address is required'),
         ]);
 
         if ($validator->fails()) {
@@ -214,7 +223,7 @@ class VendorController extends Controller
                 ->where('id', $request->zone_id)
                 ->first();
             if (! $zone) {
-                $validator->getMessageBag()->add('latitude', translate('messages.coordinates_out_of_zone'));
+                $validator->getMessageBag()->add('latitude', translate('messages.Coordinates out of zone'));
 
                 return response()->json(['errors' => Helpers::error_processor($validator)]);
             }
@@ -222,7 +231,7 @@ class VendorController extends Controller
         if ($request->delivery_time_type == 'min') {
             $minimum_delivery_time = (int) $request->input('minimum_delivery_time');
             if ($minimum_delivery_time < 10) {
-                $validator->getMessageBag()->add('minimum_delivery_time', translate('messages.minimum_delivery_time_should_be_more_than_10_min'));
+                $validator->getMessageBag()->add('minimum_delivery_time', translate('messages.Minimum delivery time') . ': ' . \Carbon\CarbonInterval::minutes(10)->forHumans());
 
                 return response()->json(['errors' => Helpers::error_processor($validator)]);
             }
@@ -275,7 +284,7 @@ class VendorController extends Controller
         }
 
         return response()->json([
-            'message' => translate('messages.store_updated_successfully'),
+            'message' => translate('Updated successfully'),
             'redirect' => route('admin.store.list'),
         ]);
     }
@@ -283,12 +292,12 @@ class VendorController extends Controller
     public function destroy(Request $request, Store $store)
     {
         if (getEnvMode() == 'demo' && $store->id == 2) {
-            Toastr::warning(translate('messages.you_can_not_delete_this_store_please_add_a_new_store_to_delete'));
+            Toastr::warning(translate('messages.You can not delete this store please add a new store to delete'));
 
             return back();
         }
         if (Order::where('store_id', $store->id)->whereIn('order_status', ['pending', 'accepted', 'confirmed', 'processing', 'handover', 'picked_up'])->exists()) {
-            Toastr::warning(translate('messages.you_can_not_delete_this_store_Please_complete_the_ongoing_and_accepted_orders'));
+            Toastr::warning(translate('messages.You can not delete this store Please complete the ongoing and accepted orders'));
 
             return back();
         }
@@ -319,7 +328,7 @@ class VendorController extends Controller
         $store?->vendor()?->delete();
         $store?->delete();
 
-        Toastr::success(translate('messages.store_removed'));
+        Toastr::success(translate('messages.Store removed'));
 
         return back();
     }
@@ -327,8 +336,17 @@ class VendorController extends Controller
     public function view(Request $request, $store_id, $tab = null, $sub_tab = 'cash')
     {
         $filter = $request?->filter;
-        $key = explode(' ', request()->search);
-        $store = Store::findOrFail($store_id);
+        $key = explode(' ', request()->search ?? '');
+        // The meta-data tab needs the untranslated row; fetching it here instead of
+        // re-querying inside that branch keeps the store to a single hydration, which in
+        // turn keeps its vendor and module relations to one load each for the whole page.
+        $store = Store::withStorage()->when($tab == 'meta-data', function ($query) {
+            $query->withoutGlobalScope('translate')->with('translations');
+        })->when($tab == 'discount', function ($query) {
+            $query->with('discount');
+        })->when($tab == 'settings', function ($query) {
+            $query->with('schedules');
+        })->with(['vendor.storage', 'vendor.wallet', 'zone', 'module.storage', 'store_sub_update_application', 'store_sub_update_application.package', 'store_sub.package'])->findOrFail($store_id);
 
         if (addon_published_status('Rental') && $store->module_type == 'rental') {
             return to_route('admin.rental.provider.details', ['id' => $store_id, 'tab' => $tab]);
@@ -347,14 +365,14 @@ class VendorController extends Controller
         }
         if ($tab == 'settings') {
             if ($store->module->module_type == 'ecommerce' && ! StoreSchedule::where('store_id', $store->id)->exists()) {
-                StoreLogic::insert_schedule($store->id);
+                app(StoreService::class)->createSchedule($store->id);
             }
             $admin_website_builder_status = Helpers::get_business_settings('admin_website_builder_status');
 
             return view('admin-views.vendor.view.settings', compact('store', 'admin_website_builder_status'));
         } elseif ($tab == 'order') {
-            $orders = Order::where('store_id', $store->id)->latest()
-                ->when(isset($key), function ($q) use ($key) {
+            $orders = Order::with('customer')->where('store_id', $store->id)->latest()
+                ->when(request()->search, function ($q) use ($key) {
                     $q->where(function ($q) use ($key) {
                         foreach ($key as $value) {
                             $q->orWhere('id', 'like', "%{$value}%");
@@ -378,10 +396,17 @@ class VendorController extends Controller
 
             return view('admin-views.vendor.view.order', compact('store', 'orders'));
         } elseif ($tab == 'item') {
+            $taxData = Helpers::getTaxSystemType(getTaxVatList: false);
+            $productWiseTax = $taxData['productWiseTax'];
+
             if ($sub_tab == 'pending-items' || $sub_tab == 'rejected-items') {
 
-                $foods = TempProduct::withoutGlobalScope(\App\Scopes\StoreScope::class)->where('store_id', $store->id)
-                    ->when(isset($key), function ($q) use ($key) {
+                $foods = TempProduct::withoutGlobalScope(\App\Scopes\StoreScope::class)->withStorage()
+                    ->when($productWiseTax, function ($q) {
+                        $q->with('taxVats.tax');
+                    })
+                    ->where('store_id', $store->id)
+                    ->when(request()->search, function ($q) use ($key) {
                         $q->where(function ($q) use ($key) {
                             foreach ($key as $value) {
                                 $q->where('name', 'like', "%{$value}%");
@@ -397,9 +422,13 @@ class VendorController extends Controller
                     ->latest()->paginate(25);
             } else {
 
-                $foods = Item::withoutGlobalScope(\App\Scopes\StoreScope::class)->where('store_id', $store->id)
-                 ->where('is_approved', 1)
-                    ->when(isset($key), function ($q) use ($key) {
+                $foods = Item::withoutGlobalScope(\App\Scopes\StoreScope::class)->withStorage()
+                    ->when($productWiseTax, function ($q) {
+                        $q->with('taxVats.tax');
+                    })
+                    ->where('store_id', $store->id)
+                    ->where('is_approved', 1)
+                    ->when(request()->search, function ($q) use ($key) {
                         $q->where(function ($q) use ($key) {
                             foreach ($key as $value) {
                                 $q->where('name', 'like', "%{$value}%");
@@ -414,19 +443,50 @@ class VendorController extends Controller
                     })
                     ->latest()->paginate(25);
             }
-            $taxData = Helpers::getTaxSystemType(getTaxVatList: false);
-            $productWiseTax = $taxData['productWiseTax'];
 
             return view('admin-views.vendor.view.product', compact('store', 'foods', 'sub_tab', 'productWiseTax'));
         } elseif ($tab == 'discount') {
             return view('admin-views.vendor.view.discount', compact('store'));
         } elseif ($tab == 'transaction') {
-            return view('admin-views.vendor.view.transaction', compact('store', 'sub_tab'));
+            $vendorId = $store->vendor->id;
+            $transactionQueries = [
+                'cash' => AccountTransaction::where('from_type', 'store')->where('type', 'collected')->where('from_id', $vendorId),
+                'digital' => OrderTransaction::where('vendor_id', $vendorId)->latest(),
+                'withdraw' => WithdrawRequest::where('vendor_id', $vendorId)->latest(),
+            ];
+            $sub_tab = array_key_exists($sub_tab, $transactionQueries) ? $sub_tab : 'cash';
+
+            // The active sub-tab's paginator already counts its own rows — reuse that total
+            // for the tab label instead of running the same count a second time.
+            $transactions = $transactionQueries[$sub_tab]->paginate(25);
+            $transactionCounts = [$sub_tab => $transactions->total()];
+            foreach ($transactionQueries as $name => $query) {
+                if ($name !== $sub_tab) {
+                    $transactionCounts[$name] = $query->count();
+                }
+            }
+
+            return view('admin-views.vendor.view.transaction', compact('store', 'sub_tab', 'transactions', 'transactionCounts'));
         } elseif ($tab == 'reviews') {
-            return view('admin-views.vendor.view.review', compact('store', 'sub_tab'));
+            $ratings = $store->rating ?: [0, 0, 0, 0, 0];
+            $storeRating = app(StoreService::class)->calculateRating($ratings);
+            $user_rating = $storeRating['rating'];
+            $total_reviews = $storeRating['total'];
+            [$five, $four, $three, $two, $one] = $ratings;
+            $total_rating = ($one + $two + $three + $four + $five) ?: 1;
+
+            $reviews = $store->reviews()
+                ->with([
+                    'item' => fn ($query) => $query->withoutGlobalScope(StoreScope::class)->withStorage(),
+                    'customer',
+                ])
+                ->latest()->paginate(25);
+
+            return view('admin-views.vendor.view.review', compact('store', 'sub_tab', 'reviews',
+                'user_rating', 'total_reviews', 'five', 'four', 'three', 'two', 'one', 'total_rating'));
         } elseif ($tab == 'reels') {
             if (!$this->canAccessStoreReelsTab($store)) {
-                Toastr::error(translate('messages.unknown_tab'));
+                Toastr::error(translate('messages.Unknown tab'));
 
                 return back();
             }
@@ -436,28 +496,44 @@ class VendorController extends Controller
                 ->paginate(config('default_pagination'))
                 ->appends($request->query());
 
-            $overview = $this->getStoreReelsOverview($store->id);
+            // Every reel here belongs to the store being viewed — hand it the instance we
+            // already have rather than letting the view resolve a second one.
+            $reels->getCollection()->each(fn ($reel) => $reel->setRelation('store', $store));
+
+            // Unfiltered, the paginator has already counted every reel for this store.
+            $unfilteredReelCount = $this->storeReelsAreFiltered
+                ? $filteredQuery->getModel()->newQuery()->where('store_id', $store->id)->count()
+                : $reels->total();
+
+            $overview = $this->getStoreReelsOverview($store->id, $unfilteredReelCount);
             $filterCount = $this->getStoreReelFilterCount($request);
 
             return view('reelsmodule::admin.vendor-view.reels', compact('store', 'reels', 'overview', 'filterCount'));
 
         } elseif ($tab == 'conversations') {
-            $user = UserInfo::where(['vendor_id' => $store->vendor->id])->first();
-            if ($user) {
-                $conversations = Conversation::with(['sender', 'receiver', 'last_message'])->WhereUser($user->id)
-                    ->paginate(8);
+            // toBase() keeps this to the id: hydrating a UserInfo would repeat the storage
+            // read the conversation list below already performs for the same row.
+            $userInfoId = UserInfo::where(['vendor_id' => $store->vendor->id])->toBase()->value('id');
+            if ($userInfoId) {
+                // UserInfo appends image_full_url, which resolves through the user or
+                // delivery_man the row points at. The list always renders the non-vendor
+                // side, so those two are what it reads — eager-load them rather than
+                // lazy loading one per conversation.
+                $conversations = Conversation::with([
+                    'sender.user', 'sender.delivery_man',
+                    'receiver.user', 'receiver.delivery_man',
+                    'last_message',
+                ])->WhereUser($userInfoId)->paginate(8);
             } else {
                 $conversations = [];
             }
 
             return view('admin-views.vendor.view.conversations', compact('store', 'sub_tab', 'conversations'));
         } elseif ($tab == 'meta-data') {
-            $store = Store::withoutGlobalScope('translate')->findOrFail($store_id);
-
             return view('admin-views.vendor.view.meta-data', compact('store', 'sub_tab'));
         } elseif ($tab == 'disbursements') {
-            $disbursements = DisbursementDetails::where('store_id', $store->id)
-                ->when(isset($key), function ($q) use ($key) {
+            $disbursements = DisbursementDetails::with(['store.vendor', 'withdraw_method'])->where('store_id', $store->id)
+                ->when(request()->search, function ($q) use ($key) {
                     $q->where(function ($q) use ($key) {
                         foreach ($key as $value) {
                             $q->orWhere('disbursement_id', 'like', "%{$value}%")
@@ -470,15 +546,19 @@ class VendorController extends Controller
             return view('admin-views.vendor.view.disbursement', compact('store', 'disbursements'));
         } elseif ($tab == 'business_plan') {
 
-            $store = Store::where('id', $store->id)->with([
+            $store->loadMissing([
                 'store_sub_update_application.package', 'vendor', 'store_sub_update_application.last_transcations', 'module:id,module_type',
-            ])->withcount('items')
-                ->first();
+            ])->loadCount('items');
+            if ($store->module_type == 'rental') {
+                $store->loadCount('vehicles as items_count');
+            } elseif ($store->module_type == 'service') {
+                $store->loadCount('services as items_count');
+            }
             $packages = SubscriptionPackage::where('status', 1)
-                ->where('module_type', $store?->module?->module_type == 'rental' && addon_published_status('Rental') ? 'rental' : 'all')
+                ->where('module_type', Helpers::subscriptionPackageType($store))
                 ->latest()->get();
-            $admin_commission = BusinessSetting::where('key', 'admin_commission')->first()?->value;
-            $business_name = BusinessSetting::where('key', 'business_name')->first()?->value;
+            $admin_commission = Helpers::get_business_settings('admin_commission', false);
+            $business_name = Helpers::get_business_settings('business_name', false);
             try {
                 $index = $store->store_business_model == 'commission' ? 0 : 1 + array_search($store?->store_sub_update_application?->package_id ?? 1, array_column($packages->toArray(), 'id'));
             } catch (\Throwable $th) {
@@ -489,16 +569,26 @@ class VendorController extends Controller
 
         }
 
+        $subscribedPackage = $store->store_sub_update_application?->package ?? $store->store_sub?->package;
+
+        if (! $store->package_id) {
+            $store->setRelation('package', null);
+        } elseif ($subscribedPackage && $subscribedPackage->id == $store->package_id) {
+            $store->setRelation('package', $subscribedPackage);
+        } else {
+            $store->loadMissing('package');
+        }
+
         return view('admin-views.vendor.view.index', compact('store', 'wallet'));
     }
 
     public function disbursement_export(Request $request, $id, $type)
     {
-        $key = explode(' ', $request['search']);
+        $key = explode(' ', $request['search'] ?? '');
 
         $store = Store::find($id);
-        $disbursements = DisbursementDetails::where('store_id', $store->id)
-            ->when(isset($key), function ($q) use ($key) {
+        $disbursements = DisbursementDetails::with(['store.vendor', 'withdraw_method'])->where('store_id', $store->id)
+            ->when($request['search'], function ($q) use ($key) {
                 $q->where(function ($q) use ($key) {
                     foreach ($key as $value) {
                         $q->orWhere('disbursement_id', 'like', "%{$value}%")
@@ -525,7 +615,7 @@ class VendorController extends Controller
     public function view_tab(Store $store)
     {
 
-        Toastr::error(translate('messages.unknown_tab'));
+        Toastr::error(translate('messages.Unknown tab'));
 
         return back();
     }
@@ -542,18 +632,24 @@ class VendorController extends Controller
     {
         $reelModel = 'Modules\\ReelsModule\\Entities\\Reel';
         $reelEngagementModel = 'Modules\\ReelsModule\\Entities\\ReelEngagement';
-        $keywords = array_filter(explode(' ', (string) $request->get('search', '')));
+        $keywords = array_filter(explode(' ', (string) $request->input('search', '')));
         $reelStatuses = array_values(array_filter((array) $request->input('reel_status', [])));
         $today = Carbon::today()->toDateString();
 
-        $query = $reelModel::with(['store', 'storage'])
+        // 'store' is deliberately not eager-loaded: this list is scoped to one store, which
+        // the caller already holds. Loading it here would hydrate a second Store and repeat
+        // its config/storage/translation reads.
+        $query = $reelModel::with(['storage'])
             ->withCount([
                 'engagements as total_views' => fn (Builder $builder) => $builder->where('type', $reelEngagementModel::TYPE_VIEW),
                 'engagements as total_likes' => fn (Builder $builder) => $builder->where('type', $reelEngagementModel::TYPE_LIKE),
                 'engagements as total_store_visits' => fn (Builder $builder) => $builder->where('type', $reelEngagementModel::TYPE_VISIT),
             ])
-            ->where('store_id', $storeId)
-            ->when($request->filled('status_filter'), function ($builder) use ($request) {
+            ->where('store_id', $storeId);
+
+        $storeOnlyWheres = count($query->getQuery()->wheres);
+
+        $query->when($request->filled('status_filter'), function ($builder) use ($request) {
                 $builder->where('status', $request->status_filter === 'active' ? 1 : 0);
             })
             ->when(!empty($keywords), function ($builder) use ($keywords) {
@@ -574,6 +670,11 @@ class VendorController extends Controller
 
         $this->applyStoreReelStatusFilter($query, $reelStatuses, $today);
         $this->applyStoreReelUploadDateFilter($query, $request);
+
+        // Every filter above adds at least one where clause, so comparing the count against
+        // the store-only baseline answers "was the list narrowed?" without maintaining a
+        // second list of filter inputs that a future filter could drift out of sync with.
+        $this->storeReelsAreFiltered = count($query->getQuery()->wheres) > $storeOnlyWheres;
 
         return $query;
     }
@@ -657,25 +758,27 @@ class VendorController extends Controller
         }
     }
 
-    private function getStoreReelsOverview(int $storeId): array
+    private function getStoreReelsOverview(int $storeId, int $unfilteredReelCount): array
     {
         $reelModel = 'Modules\\ReelsModule\\Entities\\Reel';
         $reelEngagementModel = 'Modules\\ReelsModule\\Entities\\ReelEngagement';
 
+        // One grouped aggregate instead of a count per engagement type — they all read the
+        // same rows.
+        $engagementTotals = $reelEngagementModel::query()
+            ->whereHas('reel', fn (Builder $builder) => $builder->where('store_id', $storeId))
+            ->selectRaw('type, COUNT(*) as total_count')
+            ->groupBy('type')
+            ->get()
+            ->keyBy('type');
+
+        $countOf = fn (string $type) => (int) ($engagementTotals->get($type)?->total_count ?? 0);
+
         return [
-            'total_reels' => $reelModel::query()->where('store_id', $storeId)->count(),
-            'total_views' => $reelEngagementModel::query()
-                ->where('type', $reelEngagementModel::TYPE_VIEW)
-                ->whereHas('reel', fn (Builder $builder) => $builder->where('store_id', $storeId))
-                ->count(),
-            'total_likes' => $reelEngagementModel::query()
-                ->where('type', $reelEngagementModel::TYPE_LIKE)
-                ->whereHas('reel', fn (Builder $builder) => $builder->where('store_id', $storeId))
-                ->count(),
-            'total_store_visits' => $reelEngagementModel::query()
-                ->where('type', $reelEngagementModel::TYPE_VISIT)
-                ->whereHas('reel', fn (Builder $builder) => $builder->where('store_id', $storeId))
-                ->count(),
+            'total_reels' => $unfilteredReelCount,
+            'total_views' => $countOf($reelEngagementModel::TYPE_VIEW),
+            'total_likes' => $countOf($reelEngagementModel::TYPE_LIKE),
+            'total_store_visits' => $countOf($reelEngagementModel::TYPE_VISIT),
         ];
     }
 
@@ -731,12 +834,12 @@ class VendorController extends Controller
         $inactive_stores = $data->inactive_stores;
         $recent_stores = $data->recent_stores;
 
-        $key = explode(' ', $request['search']);
+        $key = explode(' ', $request['search'] ?? '');
 
         $zone_id = $request->query('zone_id', 'all');
         $type = $request->query('type', 'all');
         $module_id = $request->query('module_id', 'all');
-        $stores = Store::with('vendor', 'module', 'zone')->whereHas('vendor', function ($query) {
+        $stores = Store::withStorage()->with(['vendor', 'module', 'zone:id,name', 'package:id,package_name', 'store_sub_update_application.package:id,package_name'])->whereHas('vendor', function ($query) {
             return $query->where('status', 1);
         })
             ->when(is_numeric($zone_id), function ($query) use ($zone_id) {
@@ -745,7 +848,7 @@ class VendorController extends Controller
             ->when(is_numeric($module_id), function ($query) use ($request) {
                 return $query->module($request->query('module_id'));
             })
-            ->when(isset($key), function ($query) use ($key, $request) {
+            ->when($request['search'], function ($query) use ($key, $request) {
                 return $query->where(function ($query) use ($key) {
                     $query->orWhereHas('vendor', function ($q) use ($key) {
                         $q->where(function ($q) use ($key) {
@@ -766,7 +869,7 @@ class VendorController extends Controller
                 })->orderByRaw('FIELD(name, ?) DESC', [$request->search]);
             })
             ->module(Config::get('module.current_module_id'))
-            ->with('vendor', 'module')->type($type)->latest()->paginate(config('default_pagination'));
+            ->type($type)->latest()->paginate(config('default_pagination'));
         $zone = is_numeric($zone_id) ? Zone::findOrFail($zone_id) : null;
 
         $result = OrderTransaction::where('module_id', Config::get('module.current_module_id'))
@@ -802,11 +905,11 @@ class VendorController extends Controller
 
         $zone_id = $request->query('zone_id', 'all');
         $search_by = $request->query('search_by');
-        $key = explode(' ', $search_by);
+        $key = explode(' ', $search_by ?? '');
         $type = $request->query('type', 'all');
         $module_id = $request->query('module_id', 'all');
 
-        $stores = Store::with('vendor:id,f_name,l_name,status', 'module:id,module_name', 'zone:id,name')->whereHas('vendor', function ($query) use ($storeApproveStatus) {
+        $stores = Store::withStorage()->with(['vendor:id,f_name,l_name,email,status,rejection_note', 'zone:id,name', 'package:id,package_name', 'store_sub_update_application.package:id,package_name'])->whereHas('vendor', function ($query) use ($storeApproveStatus) {
             return $query->where('status', $storeApproveStatus);
         })
             ->when(is_numeric($zone_id), function ($query) use ($zone_id) {
@@ -850,7 +953,7 @@ class VendorController extends Controller
     public function export(Request $request)
     {
 
-        $key = explode(' ', $request['search']);
+        $key = explode(' ', $request['search'] ?? '');
 
         $zone_id = $request->query('zone_id', 'all');
         $module_id = $request->query('module_id', 'all');
@@ -863,7 +966,7 @@ class VendorController extends Controller
             ->when(is_numeric($module_id), function ($query) use ($request) {
                 return $query->module($request->query('module_id'));
             })
-            ->when(isset($key), function ($query) use ($key) {
+            ->when($request['search'], function ($query) use ($key) {
                 return $query->where(function ($query) use ($key) {
                     $query->orWhereHas('vendor', function ($q) use ($key) {
                         $q->where(function ($q) use ($key) {
@@ -886,11 +989,14 @@ class VendorController extends Controller
             ->module(Config::get('module.current_module_id'))
             ->with('vendor', 'module')
             ->orderBy('id', 'DESC')
-            ->withCount('items')
-            ->get();
+            ->withCount(['items', 'trips', 'orders as store_orders_count' => fn ($query) => $query->StoreOrder()]);
+
+        $stores_count = (clone $stores)->count();
+        $stores = $this->streamExportRows($stores);
 
         $data = [
             'data' => $stores,
+            'data_count' => $stores_count,
             'zone' => is_numeric($zone_id) ? Helpers::get_zones_name($zone_id) : null,
             'module' => request('module_id') ? Helpers::get_module_name(Config::get('module.current_module_id')) : null,
             'search' => $request['search'] ?? null,
@@ -909,13 +1015,41 @@ class VendorController extends Controller
 
     public function get_stores(Request $request)
     {
-        $zone_ids = isset($request->zone_ids) ? (count($request->zone_ids) > 0 ? $request->zone_ids : []) : 0;
-        $data = Store::with('storeConfig')->whereHas('module', function ($q) {
-            $q->whereNot('module_type', 'rental');
-        })->
-        when($zone_ids, function ($query) use ($zone_ids) {
-            $query->whereIn('stores.zone_id', [$zone_ids]);
-        })
+        $zone_ids = array_values(array_filter((array) $request->zone_ids, function ($id) {
+            return is_numeric($id);
+        }));
+
+        $exclude_ids = array_values(array_filter((array) $request->exclude_ids, function ($id) {
+            return is_numeric($id);
+        }));
+
+        $includeAddonProviders = $request->boolean('include_addon_providers');
+
+        $hiddenModuleTypes = [];
+        if (! ($includeAddonProviders && addon_published_status('Rental'))) {
+            $hiddenModuleTypes[] = 'rental';
+        }
+        if (! ($includeAddonProviders && addon_published_status('Service'))) {
+            $hiddenModuleTypes[] = 'service';
+        }
+
+        $data = Store::translateOnly('name')
+            ->select('stores.id', 'stores.name', 'stores.zone_id', 'stores.module_id')
+            ->with([
+                'storeConfig',
+                'zone' => fn ($query) => $query->select('id', 'name')->translateOnly('name'),
+            ])
+            ->when(! empty($hiddenModuleTypes), function ($query) use ($hiddenModuleTypes) {
+                $query->whereHas('module', function ($q) use ($hiddenModuleTypes) {
+                    $q->whereNotIn('module_type', $hiddenModuleTypes);
+                });
+            })
+            ->when($zone_ids, function ($query) use ($zone_ids) {
+                $query->whereIn('stores.zone_id', $zone_ids);
+            })
+            ->when($exclude_ids, function ($query) use ($exclude_ids) {
+                $query->whereNotIn('stores.id', $exclude_ids);
+            })
             ->when($request->module_id, function ($query) use ($request) {
                 $query->where('module_id', $request->module_id);
             })
@@ -941,7 +1075,7 @@ class VendorController extends Controller
          if (isset($request->all)) {
             $allOption = (object) [
             'id'   => $request->all  ? "all" : false,
-            'text' => translate('messages.all')
+            'text' => translate('All')
             ];
 
             $data->prepend($allOption);
@@ -954,9 +1088,13 @@ class VendorController extends Controller
     {
         $zone_ids = isset($request->zone_ids) ? (count($request->zone_ids) > 0 ? $request->zone_ids : []) : [];
 
-        $data = Store::wherehas('vendor', function ($query) {
-            $query->where('status', 1);
-        })
+        $data = Store::translateOnly('name')
+            ->without('storeConfig')
+            ->select('id', 'name', 'zone_id')
+            ->with(['zone' => fn ($query) => $query->select('id', 'name')->translateOnly('name')])
+            ->wherehas('vendor', function ($query) {
+                $query->where('status', 1);
+            })
             ->when(count($zone_ids) > 0, function ($query) use ($zone_ids) {
                 $query->whereIn('zone_id', $zone_ids);
             })
@@ -977,7 +1115,7 @@ class VendorController extends Controller
             });
 
         if (isset($request->all)) {
-            $data[] = (object) ['id' => 'all', 'text' => translate('messages.all')];
+            $data[] = (object) ['id' => 'all', 'text' => translate('All')];
         }
 
         return response()->json($data);
@@ -992,55 +1130,31 @@ class VendorController extends Controller
         try {
             if ($request->status == 0) {
                 $vendor->auth_token = null;
-                if (isset($vendor->firebase_token) && Helpers::getNotificationStatusData('store', 'store_account_block', 'push_notification_status', $store?->id)) {
-                    $data = [
-                        'title' => translate('messages.suspended'),
-                        'description' => translate('messages.your_account_has_been_suspended'),
-                        'order_id' => '',
-                        'image' => '',
-                        'type' => 'block',
-                    ];
-                    Helpers::send_push_notif_to_device($vendor->firebase_token, $data);
-                    DB::table('user_notifications')->insert([
-                        'data' => json_encode($data),
-                        'vendor_id' => $vendor->id,
-                        'created_at' => now(),
-                        'updated_at' => now(),
-                    ]);
+                if (isset($vendor->firebase_token) && SendNotification::channelEnabled('store', 'store_account_block', 'push_notification_status', $store?->id)) {
+                    $data = NotificationMessages::accountSuspended();
+                    SendNotification::pushToVendor($vendor->id, $vendor->firebase_token, $data);
                 }
 
-                if (config('mail.status') && Helpers::get_mail_status('suspend_mail_status_store') == '1' && Helpers::getNotificationStatusData('store', 'store_account_block', 'mail_status', $store?->id)) {
-                    Mail::to($vendor?->getRawOriginal('email'))->send(new \App\Mail\VendorStatus('suspended', $vendor?->f_name.' '.$vendor?->l_name));
+                if (SendNotification::canSendMail('suspend_mail_status_store', 'store', 'store_account_block', $store?->id)) {
+                    SendNotification::mail($vendor?->getRawOriginal('email'), new \App\Mail\VendorStatus('suspended', $vendor?->f_name.' '.$vendor?->l_name));
                 }
             } else {
 
-                if (Helpers::getNotificationStatusData('store', 'store_account_unblock', 'push_notification_status', $store?->id) && isset($vendor->firebase_token)) {
-                    $data = [
-                        'title' => translate('Account_Activation'),
-                        'description' => translate('messages.your_account_has_been_activated'),
-                        'order_id' => '',
-                        'image' => '',
-                        'type' => 'unblock',
-                    ];
-                    Helpers::send_push_notif_to_device($vendor->firebase_token, $data);
-                    DB::table('user_notifications')->insert([
-                        'data' => json_encode($data),
-                        'vendor_id' => $vendor->id,
-                        'created_at' => now(),
-                        'updated_at' => now(),
-                    ]);
+                if (SendNotification::channelEnabled('store', 'store_account_unblock', 'push_notification_status', $store?->id) && isset($vendor->firebase_token)) {
+                    $data = NotificationMessages::storeAccountActivated();
+                    SendNotification::pushToVendor($vendor->id, $vendor->firebase_token, $data);
                 }
 
-                if (config('mail.status') && Helpers::get_mail_status('unsuspend_mail_status_store') == '1' && Helpers::getNotificationStatusData('store', 'store_account_unblock', 'mail_status', $store?->id)) {
-                    Mail::to($vendor?->getRawOriginal('email'))->send(new \App\Mail\VendorStatus('unsuspended', $vendor?->f_name.' '.$vendor?->l_name));
+                if (SendNotification::canSendMail('unsuspend_mail_status_store', 'store', 'store_account_unblock', $store?->id)) {
+                    SendNotification::mail($vendor?->getRawOriginal('email'), new \App\Mail\VendorStatus('unsuspended', $vendor?->f_name.' '.$vendor?->l_name));
                 }
             }
 
         } catch (\Exception $e) {
-            Toastr::warning(translate('messages.push_notification_faild'));
+            Toastr::warning(translate('messages.Push notification failed'));
         }
 
-        Toastr::success(translate('messages.store_status_updated'));
+        Toastr::success(translate('messages.Store status updated'));
 
         return back();
     }
@@ -1049,7 +1163,7 @@ class VendorController extends Controller
     {
         $status = Helpers::toggle_verified_seller($store);
 
-        Toastr::success($status ? translate('Verified Badge Given') : translate('messages.Removed Verified badge'));
+        Toastr::success($status ? translate('Verified badge given') : translate('Removed verified badge'));
 
         return back();
     }
@@ -1063,7 +1177,7 @@ class VendorController extends Controller
             ->values();
 
         if ($storeIds->isEmpty()) {
-            Toastr::warning(translate('messages.no_data_found'));
+            Toastr::warning(translate('No data found'));
 
             return back();
         }
@@ -1075,7 +1189,7 @@ class VendorController extends Controller
         Helpers::deleteCacheData('verified_seller_eligible_providers_');
         Helpers::deleteCacheData('verified_seller_eligible_stores_');
 
-        Toastr::success(translate('Verified Badge Given'));
+        Toastr::success(translate('Verified badge given'));
 
         return back();
     }
@@ -1083,19 +1197,19 @@ class VendorController extends Controller
     public function store_status(Store $store, Request $request)
     {
         if ($request->menu == 'schedule_order' && ! Helpers::schedule_order()) {
-            Toastr::warning(translate('messages.schedule_order_disabled_warning'));
+            Toastr::warning(translate('messages.Schedule order disabled warning'));
 
             return back();
         }
 
         if ((($request->menu == 'delivery' && $store->take_away == 0) || ($request->menu == 'take_away' && $store->delivery == 0)) && $request->status == 0) {
-            Toastr::warning(translate('messages.can_not_disable_both_take_away_and_delivery'));
+            Toastr::warning(translate('messages.Can not disable both take away and delivery'));
 
             return back();
         }
 
         if ((($request->menu == 'veg' && $store->non_veg == 0) || ($request->menu == 'non_veg' && $store->veg == 0)) && $request->status == 0) {
-            Toastr::warning(translate('messages.veg_non_veg_disable_warning'));
+            Toastr::warning(translate('messages.Veg non veg disable warning'));
 
             return back();
         }
@@ -1103,20 +1217,26 @@ class VendorController extends Controller
             $store['free_delivery'] = 0;
         }
 
-        if (in_array($request->menu, ['halal_tag_status', 'can_edit_order'])) {
+        if (in_array($request->menu, ['halal_tag_status', 'can_edit_order', 'can_edit_booking', 'manage_service_setup', 'show_reviews_provider_panel', 'service_booking_status', 'choose_service_location', 'serviceman_permission'])) {
             $conf = StoreConfig::firstOrNew(
                 ['store_id' => $store->id]
             );
             $conf[$request->menu] = $request->status;
             $conf->save();
-            Toastr::success(translate('messages.Store_settings_updated!'));
+            Toastr::success(translate('messages.Store settings updated'));
+
+            return back();
+        }
+
+        if (!$request->menu || !Schema::hasColumn($store->getTable(), $request->menu)) {
+            Toastr::error(translate('messages.Invalid store setting'));
 
             return back();
         }
 
         $store[$request->menu] = $request->status;
         $store->save();
-        Toastr::success(translate('messages.vendor_settings_updated'));
+        Toastr::success(translate('messages.Vendor settings updated'));
 
         return back();
     }
@@ -1131,14 +1251,14 @@ class VendorController extends Controller
                 'website_builder_status' => $request->status,
             ]
         );
-        Toastr::success(translate('messages.vendor_settings_updated'));
+        Toastr::success(translate('messages.Vendor settings updated'));
 
         return back();
     }
 
     public function discountSetup(Store $store, Request $request)
     {
-        $message = $store->discount ? translate('messages.discount_updated_successfully') : translate('messages.discount_added_successfully');
+        $message = $store->discount ? translate('Updated successfully') : translate('Added successfully');
         $store->discount()->updateOrinsert(
             [
                 'store_id' => $store->id,
@@ -1155,6 +1275,14 @@ class VendorController extends Controller
             ]
         );
 
+        // updateOrinsert() above is a raw query-builder upsert -- it never touches an Eloquent
+        // Discount instance, so Discount's own InvalidatesCacheTrait boot hook never fires for
+        // this, the only place a store-wide discount is actually written. Without this, every
+        // cache tagged 'store' (api.items_popular, api.service_popular, api.stores_top_offer,
+        // etc.) keeps serving whatever discount state was true when it was first cached, for up
+        // to its full TTL, regardless of what the vendor just changed.
+        ApiCache::bust('store');
+
         return response()->json(['message' => $message], 200);
     }
 
@@ -1163,12 +1291,12 @@ class VendorController extends Controller
         if ($request?->tab == 'business_plan') {
             $store->comission = $request->comission_status ? $request->comission : null;
             $store->save();
-            Toastr::success(translate('messages.Commission_updated'));
+            Toastr::success(translate('messages.Commission updated'));
 
             return back();
         }
         $request->validate([
-            'minimum_order' => 'required',
+            'minimum_order' => 'required|numeric|min:0.01',
             'minimum_delivery_time' => 'required|min:1|max:2',
             'maximum_delivery_time' => 'required|min:1|max:2|gt:minimum_delivery_time',
         ]);
@@ -1180,7 +1308,7 @@ class VendorController extends Controller
         $store->non_veg = (bool) ($request->veg_non_veg == 'non_veg' || $request->veg_non_veg == 'both');
 
         $store->save();
-        Toastr::success(translate('messages.store_settings_updated'));
+        Toastr::success(translate('messages.Store settings updated'));
 
         return back();
     }
@@ -1199,7 +1327,7 @@ class VendorController extends Controller
         $store->meta_data = Helpers::formatMetaData($request->all(), $store->meta_data);
         $store->save();
 
-        Toastr::success(translate('messages.meta_data_updated'));
+        Toastr::success(translate('messages.Meta data updated'));
 
         return back();
     }
@@ -1207,7 +1335,7 @@ class VendorController extends Controller
     public function update_application(Request $request)
     {
         $this->updateVendorApplication($request);
-        Toastr::success(translate('messages.application_status_updated_successfully'));
+        Toastr::success(translate('Updated successfully'));
 
         return redirect(route('admin.store.pending-requests'));
     }
@@ -1226,7 +1354,7 @@ class VendorController extends Controller
         $add_days = 1;
         if ($store?->store_sub_update_application) {
             if ($store?->store_sub_update_application && $store?->store_sub_update_application->is_trial == 1) {
-                $add_days = BusinessSetting::where(['key' => 'subscription_free_trial_days'])->first()?->value ?? 1;
+                $add_days = Helpers::get_business_settings('subscription_free_trial_days', false) ?? 1;
             } elseif ($store?->store_sub_update_application && $store?->store_sub_update_application->is_trial == 0) {
                 $add_days = $store?->store_sub_update_application->validity;
             }
@@ -1239,16 +1367,19 @@ class VendorController extends Controller
         $store->save();
         try {
             if ($request->status == 1) {
-                if (config('mail.status') && Helpers::get_mail_status('approve_mail_status_store') == '1' && Helpers::getNotificationStatusData('store', 'store_registration_approval', 'mail_status')) {
-                    Mail::to($store?->vendor?->getRawOriginal('email'))->send(new \App\Mail\VendorSelfRegistration('approved', $store->vendor->f_name.' '.$store->vendor->l_name));
+                if (SendNotification::canSendMail('approve_mail_status_store', 'store', 'store_registration_approval')) {
+                    SendNotification::mail($store?->vendor?->getRawOriginal('email'), new \App\Mail\VendorSelfRegistration('approved', $store->vendor->f_name.' '.$store->vendor->l_name));
                 }
             } else {
-                if (config('mail.status') && Helpers::get_mail_status('deny_mail_status_store') == '1' && Helpers::getNotificationStatusData('store', 'store_registration_deny', 'mail_status')) {
-                    Mail::to($store?->vendor?->getRawOriginal('email'))->send(new \App\Mail\VendorSelfRegistration('denied', $store->vendor->f_name.' '.$store->vendor->l_name));
+                if (SendNotification::canSendMail('deny_mail_status_store', 'store', 'store_registration_deny')) {
+                    SendNotification::mail($store?->vendor?->getRawOriginal('email'), new \App\Mail\VendorSelfRegistration('denied', $store->vendor->f_name.' '.$store->vendor->l_name));
                 }
             }
         } catch (\Exception $ex) {
-            info($ex->getMessage());
+            Log::error('admin.vendor_controller.update_vendor_application_failed', [
+                'error' => $ex->getMessage(),
+                'file' => $ex->getFile().':'.$ex->getLine(),
+            ]);
         }
 
         return true;
@@ -1259,33 +1390,30 @@ class VendorController extends Controller
     public function cleardiscount(Store $store)
     {
         $store->discount->delete();
-        Toastr::success(translate('messages.store_discount_cleared'));
+        Toastr::success(translate('messages.Store discount cleared'));
 
         return back();
     }
 
     public function withdraw(Request $request)
     {
-        $key = isset($request['search']) ? explode(' ', $request['search']) : [];
-        $all = session()->has('withdraw_status_filter') && session('withdraw_status_filter') == 'all' ? 1 : 0;
-        $active = session()->has('withdraw_status_filter') && session('withdraw_status_filter') == 'approved' ? 1 : 0;
-        $denied = session()->has('withdraw_status_filter') && session('withdraw_status_filter') == 'denied' ? 1 : 0;
-        $pending = session()->has('withdraw_status_filter') && session('withdraw_status_filter') == 'pending' ? 1 : 0;
+        $key = isset($request['search']) ? explode(' ', $request['search'] ?? '') : [];
+        // The status used to live in one session key, `withdraw_status_filter`,
+        // shared by all three withdraw queues — so filtering the vendor list to
+        // "denied" silently filtered the delivery man and rider lists too, and
+        // the URL never said which view you were looking at. It is a query
+        // parameter now, like every other list screen.
+        $status = $request->query('status', 'all');
+        $approved_map = ['pending' => 0, 'approved' => 1, 'denied' => 2];
 
-        $withdraw_req = WithdrawRequest::with(['vendor.stores'])
-            ->when($all, function ($query) {
-                return $query;
+        // `.stores.storage` because the list now shows each store's logo, and
+        // `logo_full_url` reads the `storage` relation — without it that is one
+        // extra query per row.
+        $withdraw_req = WithdrawRequest::with(['vendor.stores.storage', 'vendor.wallet', 'method', 'disbursementMethod'])
+            ->when(isset($approved_map[$status]), function ($query) use ($approved_map, $status) {
+                return $query->where('approved', $approved_map[$status]);
             })
-            ->when($active, function ($query) {
-                return $query->where('approved', 1);
-            })
-            ->when($denied, function ($query) {
-                return $query->where('approved', 2);
-            })
-            ->when($pending, function ($query) {
-                return $query->where('approved', 0);
-            })
-            ->when(isset($key), function ($query) use ($key) {
+            ->when(isset($request['search']), function ($query) use ($key) {
                 return $query->whereHas('vendor', function ($query) use ($key) {
                     $query->whereHas('stores', function ($q) use ($key) {
                         foreach ($key as $value) {
@@ -1294,38 +1422,56 @@ class VendorController extends Controller
                     });
                 });
             })
+            ->whereNotNull('vendor_id')
             ->latest()
-            ->paginate(config('default_pagination'));
+            ->paginate(config('default_pagination'))
+            ->appends($request->except('page'));
 
         if (! Helpers::module_permission_check('withdraw_list')) {
             return view('admin-views.wallet.withdraw-dashboard');
         }
 
-        return view('admin-views.wallet.withdraw', compact('withdraw_req'));
+        return view('admin-views.wallet.withdraw', [
+            'withdraw_req' => $withdraw_req,
+            'status' => $status,
+            'summary' => $this->withdrawSummary(),
+        ]);
+    }
+
+    /**
+     * Request counts and money per `approved` value, for the summary strip and
+     * the tab counters. One grouped query rather than a count() per tile, and
+     * it deliberately ignores the status tab and the search box — those are
+     * what the table itself is showing.
+     *
+     * The base filter matches the list above, so the tiles always
+     * agree with what is on screen.
+     */
+    private function withdrawSummary()
+    {
+        return WithdrawRequest::selectRaw('approved, COUNT(*) as requests, SUM(amount) as amount')
+            ->whereNotNull('vendor_id')
+            ->groupBy('approved')
+            ->get()
+            ->keyBy('approved');
     }
 
     public function withdraw_export(Request $request)
     {
-        $key = isset($request['search']) ? explode(' ', $request['search']) : [];
-        $all = session()->has('withdraw_status_filter') && session('withdraw_status_filter') == 'all' ? 1 : 0;
-        $active = session()->has('withdraw_status_filter') && session('withdraw_status_filter') == 'approved' ? 1 : 0;
-        $denied = session()->has('withdraw_status_filter') && session('withdraw_status_filter') == 'denied' ? 1 : 0;
-        $pending = session()->has('withdraw_status_filter') && session('withdraw_status_filter') == 'pending' ? 1 : 0;
+        $key = isset($request['search']) ? explode(' ', $request['search'] ?? '') : [];
+        // The status used to live in one session key, `withdraw_status_filter`,
+        // shared by all three withdraw queues — so filtering the vendor list to
+        // "denied" silently filtered the delivery man and rider lists too, and
+        // the URL never said which view you were looking at. It is a query
+        // parameter now, like every other list screen.
+        $status = $request->query('status', 'all');
+        $approved_map = ['pending' => 0, 'approved' => 1, 'denied' => 2];
 
         $withdraw_req = WithdrawRequest::with(['vendor'])
-            ->when($all, function ($query) {
-                return $query;
+            ->when(isset($approved_map[$status]), function ($query) use ($approved_map, $status) {
+                return $query->where('approved', $approved_map[$status]);
             })
-            ->when($active, function ($query) {
-                return $query->where('approved', 1);
-            })
-            ->when($denied, function ($query) {
-                return $query->where('approved', 2);
-            })
-            ->when($pending, function ($query) {
-                return $query->where('approved', 0);
-            })
-            ->when(isset($key), function ($query) use ($key) {
+            ->when(isset($request['search']), function ($query) use ($key) {
                 return $query->whereHas('vendor', function ($query) use ($key) {
                     $query->whereHas('stores', function ($q) use ($key) {
                         foreach ($key as $value) {
@@ -1334,12 +1480,13 @@ class VendorController extends Controller
                     });
                 });
             })
+            ->whereNotNull('vendor_id')
             ->latest()->get();
 
         $data = [
             'withdraw_requests' => $withdraw_req,
             'search' => $request->search ?? null,
-            'request_status' => session()->has('withdraw_status_filter') ? session('withdraw_status_filter') : null,
+            'request_status' => $status === 'all' ? null : $status,
 
         ];
 
@@ -1352,7 +1499,11 @@ class VendorController extends Controller
 
     public function getWithdrawDetails(Request $request)
     {
-        $withdraw = WithdrawRequest::with(['vendor.stores'])->where(['id' => $request->withdraw_id])->first();
+        $withdraw = WithdrawRequest::with(['vendor.stores', 'vendor.wallet', 'method', 'disbursementMethod'])->where(['id' => $request->withdraw_id])->first();
+
+        if (! $withdraw) {
+            return response()->json(['errors' => [['code' => 'withdraw', 'message' => translate('No data found')]]], 404);
+        }
 
         return response()->json([
             'view' => view('admin-views.wallet.partials._side_view', compact('withdraw'))->render(),
@@ -1361,8 +1512,8 @@ class VendorController extends Controller
 
     public function withdraw_search(Request $request)
     {
-        $key = explode(' ', $request['search']);
-        $withdraw_req = WithdrawRequest::whereHas('vendor', function ($query) use ($key) {
+        $key = explode(' ', $request['search'] ?? '');
+        $withdraw_req = WithdrawRequest::whereNotNull('vendor_id')->whereHas('vendor', function ($query) use ($key) {
             $query->whereHas('stores', function ($q) use ($key) {
                 foreach ($key as $value) {
                     $q->where('name', 'like', "%{$value}%");
@@ -1378,9 +1529,17 @@ class VendorController extends Controller
 
     public function withdraw_view($withdraw_id, $seller_id)
     {
-        $wr = WithdrawRequest::with(['vendor'])->where(['id' => $withdraw_id])->first();
+        $wr = WithdrawRequest::with(['vendor.stores', 'vendor.wallet', 'method'])->where(['id' => $withdraw_id])->first();
 
-        return view('admin-views.wallet.withdraw-view', compact('wr'));
+        if (! $wr) {
+            Toastr::warning(translate('No data found'));
+
+            return back();
+        }
+
+        $vendor = $wr->vendor?->stores?->first()?->module_type == 'rental' ? 'Provider' : 'store';
+
+        return view('admin-views.wallet.withdraw-view', compact('wr', 'vendor'));
     }
 
     public function status_filter(Request $request)
@@ -1401,9 +1560,9 @@ class VendorController extends Controller
 
         $wallet = StoreWallet::where('vendor_id', $withdraw->vendor_id)->first();
         if ((string) $wallet->total_earning < (string) ($wallet->total_withdrawn + $wallet->pending_withdraw)) {
-            Toastr::error(translate('messages.Blalnce_mismatched_total_earning_is_too_low'));
+            Toastr::error(translate('messages.Blalnce mismatched total earning is too low'));
 
-            return redirect()->route('admin.restaurant.withdraw_list');
+            return redirect()->route('admin.transactions.store.withdraw_list');
         }
 
         $vendor = $withdraw->vendor;
@@ -1414,63 +1573,72 @@ class VendorController extends Controller
             $wallet->increment('total_withdrawn', $withdraw->amount);
             $wallet->decrement('pending_withdraw', $withdraw->amount);
             $withdraw->save();
-            $push_notification_status = $moduleType == 'rental' ? Helpers::getRentalNotificationStatusData('provider', 'provider_withdraw_approve', 'push_notification_status', $store->id) : Helpers::getNotificationStatusData('store', 'store_withdraw_approve', 'push_notification_status', $store->id);
+            [$pushGate, $mailGate, $audience, $key, $template] = $this->withdrawNotificationSpec($moduleType, true);
+
+            $push_notification_status = SendNotification::$pushGate($audience, $key, 'push_notification_status', $store->id);
             $push_notification_status = $push_notification_status == 1 && $vendor?->firebase_token ? 1 : 0;
 
-            $mail_status = $moduleType == 'rental' ? (config('mail.status') && Helpers::get_mail_status('rental_withdraw_approve_mail_status_provider') == '1' && Helpers::getRentalNotificationStatusData('provider', 'provider_withdraw_approve', 'mail_status', $store->id)) : (config('mail.status') && Helpers::get_mail_status('withdraw_approve_mail_status_store') == '1' && Helpers::getNotificationStatusData('store', 'store_withdraw_approve', 'mail_status', $store->id));
+            $mail_status = SendNotification::$mailGate($template, $audience, $key, $store->id);
 
             $this->sentWithdrawRequestNotification($withdraw, $vendor->firebase_token, $vendor->getRawOriginal('email'), 'approved', $moduleType, $push_notification_status, $mail_status);
 
-            Toastr::success(translate('messages.vendor_withdraw_request_approved'));
+            Toastr::success(translate('messages.Vendor withdraw request approved'));
 
             return redirect()->route('admin.transactions.store.withdraw_list');
         } elseif ($request->approved == 2) {
             $wallet->decrement('pending_withdraw', $withdraw->amount);
             $withdraw->save();
 
-            $push_notification_status = $moduleType == 'rental' ? Helpers::getRentalNotificationStatusData('provider', 'provider_withdraw_rejaction', 'push_notification_status', $store->id) : Helpers::getNotificationStatusData('store', 'store_withdraw_rejaction', 'push_notification_status', $store->id);
+            [$pushGate, $mailGate, $audience, $key, $template] = $this->withdrawNotificationSpec($moduleType, false);
+
+            $push_notification_status = SendNotification::$pushGate($audience, $key, 'push_notification_status', $store->id);
             $push_notification_status = $push_notification_status == 1 && $vendor?->firebase_token ? 1 : 0;
 
-            $mail_status = $moduleType == 'rental' ? (config('mail.status') && Helpers::get_mail_status('rental_withdraw_deny_mail_status_provider') == '1' && Helpers::getRentalNotificationStatusData('provider', 'provider_withdraw_rejaction', 'mail_status', $store->id)) : (config('mail.status') && Helpers::get_mail_status('withdraw_deny_mail_status_store') == '1' && Helpers::getNotificationStatusData('store', 'store_withdraw_rejaction', 'mail_status', $store->id));
+            $mail_status = SendNotification::$mailGate($template, $audience, $key, $store->id);
 
             $this->sentWithdrawRequestNotification($withdraw, $vendor->firebase_token,  $vendor->getRawOriginal('email'), 'denied', $moduleType, $push_notification_status, $mail_status);
 
-            Toastr::info(translate('messages.vendor_withdraw_request_denied'));
+            Toastr::info(translate('messages.Vendor withdraw request denied'));
 
             return redirect()->route('admin.transactions.store.withdraw_list');
         } else {
-            Toastr::error(translate('messages.not_found'));
+            Toastr::error(translate('No data found'));
 
             return back();
         }
+    }
+
+    private function withdrawNotificationSpec(mixed $moduleType, bool $approved): array
+    {
+        return match (true) {
+            $moduleType == 'rental' => $approved
+                ? ['rentalChannelEnabled', 'canSendRentalMail', 'provider', 'provider_withdraw_approve', 'rental_withdraw_approve_mail_status_provider']
+                : ['rentalChannelEnabled', 'canSendRentalMail', 'provider', 'provider_withdraw_rejaction', 'rental_withdraw_deny_mail_status_provider'],
+            $moduleType == 'service' => $approved
+                ? ['serviceChannelEnabled', 'canSendServiceMail', 'provider', 'service_provider_withdraw_approve', 'service_withdraw_approve_mail_status_provider']
+                : ['serviceChannelEnabled', 'canSendServiceMail', 'provider', 'service_provider_withdraw_rejaction', 'service_withdraw_deny_mail_status_provider'],
+            default => $approved
+                ? ['channelEnabled', 'canSendMail', 'store', 'store_withdraw_approve', 'withdraw_approve_mail_status_store']
+                : ['channelEnabled', 'canSendMail', 'store', 'store_withdraw_rejaction', 'withdraw_deny_mail_status_store'],
+        };
     }
 
     private function sentWithdrawRequestNotification($withdraw, $token, $email, $type = 'approved', $module_type = 'all', $push_notification_status = '1', $mail_status = '1')
     {
         try {
             if ($push_notification_status == 1) {
-                $data = [
-                    'title' => $type == 'approved' ? translate('Withdraw_approved') : translate('Withdraw_rejected'),
-                    'description' => $type == 'approved' ? translate('Withdraw_request_approved_by_admin') : translate('Withdraw_request_rejected_by_admin'),
-                    'order_id' => '',
-                    'image' => '',
-                    'type' => 'withdraw',
-                    'order_status' => '',
-                ];
-                Helpers::send_push_notif_to_device($token, $data);
-                DB::table('user_notifications')->insert([
-                    'data' => json_encode($data),
-                    'vendor_id' => $withdraw->vendor_id,
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
+                $data = NotificationMessages::withdrawRequestProcessed($type);
+                SendNotification::pushToVendor($withdraw->vendor_id, $token, $data);
             }
 
             if ($mail_status == 1) {
-                Mail::to($email)->send($module_type == 'rental' ? new ProviderWithdrawRequestMail($type, $withdraw) : new WithdrawRequestMail($type, $withdraw));
+                SendNotification::mail($email, $module_type == 'rental' && addon_published_status('Rental') ? new ProviderWithdrawRequestMail($type, $withdraw) : ($module_type == 'service' && service_addon_active() ? new ServiceProviderWithdrawRequestMail($type, $withdraw) : new WithdrawRequestMail($type, $withdraw)));
             }
         } catch (\Exception $e) {
-            info($e->getMessage());
+            Log::error('admin.vendor_controller.sent_withdraw_request_notification_failed', [
+                'error' => $e->getMessage(),
+                'file' => $e->getFile().':'.$e->getLine(),
+            ]);
         }
 
         return true;
@@ -1478,25 +1646,31 @@ class VendorController extends Controller
 
     public function get_addons(Request $request)
     {
-        $cat = AddOn::withoutGlobalScope(StoreScope::class)->
-        // withoutGlobalScope('translate')->
-        where(['store_id' => $request->store_id])->active()->get();
-        $res = '';
+        $cat = AddOn::withoutGlobalScope(StoreScope::class)
+            ->translateOnly('name')
+            ->select('id', 'name')
+            ->where(['store_id' => $request->store_id])
+            ->active()
+            ->get();
+
+        $selectedIds = array_flip(array_map('strval', (array) $request->data));
+
+        $options = [];
         foreach ($cat as $row) {
-            $res .= '<option value="'.$row->id.'"';
-            if (count($request->data)) {
-                $res .= in_array($row->id, $request->data) ? 'selected' : '';
-            }
-            $res .= '>'.$row->name.'</option>';
+            $options[] = '<option value="'.$row->id.'"'
+                .(isset($selectedIds[(string) $row->id]) ? ' selected' : '').'>'
+                .e($row->name).'</option>';
         }
 
         return response()->json([
-            'options' => $res,
+            'options' => implode('', $options),
         ]);
     }
 
     public function get_store_data(Store $store)
     {
+        $store->loadMissing('storage');
+
         return response()->json($store);
     }
 
@@ -1515,6 +1689,8 @@ class VendorController extends Controller
 
     public function get_account_data(Store $store)
     {
+        $store->loadMissing('vendor.wallet');
+
         $wallet = $store->vendor->wallet;
         $cash_in_hand = 0;
         $balance = 0;
@@ -1530,18 +1706,20 @@ class VendorController extends Controller
 
     public function bulk_import_index()
     {
-        return view('admin-views.vendor.bulk-import');
+        return view('admin-views.vendor.bulk-import', [
+            'summary' => Helpers::bulkDataSummary($this->moduleVendorQuery()),
+        ]);
     }
 
     public function bulk_import_data(Request $request)
     {
         $request->validate([
-            'products_file' => 'required|max:2048',
+            'products_file' => 'required|max:'.(MAX_FILE_SIZE * 1024),
         ]);
         try {
             $collections = (new FastExcel)->import($request->file('products_file'));
         } catch (\Exception $exception) {
-            Toastr::error(translate('messages.you_have_uploaded_a_wrong_format_file'));
+            Toastr::error(translate('messages.You have uploaded a wrong format file'));
 
             return back();
         }
@@ -1549,13 +1727,13 @@ class VendorController extends Controller
         $duplicate_emails = $collections->duplicates('email');
 
         if ($duplicate_emails->isNotEmpty()) {
-            Toastr::error(translate('messages.duplicate_data_on_column', ['field' => translate('messages.email')]));
+            Toastr::error(translate('messages.Duplicate data on column') . ': ' . translate('messages.email'));
 
             return back();
         }
 
         if ($duplicate_phones->isNotEmpty()) {
-            Toastr::error(translate('messages.duplicate_data_on_column', ['field' => translate('messages.phone')]));
+            Toastr::error(translate('messages.Duplicate data on column') . ': ' . translate('Phone'));
 
             return back();
         }
@@ -1566,13 +1744,13 @@ class VendorController extends Controller
         if ($request->button == 'import') {
 
             if ($collections->isEmpty()) {
-                Toastr::error(translate('messages.please upload a file with valid data'));
+                Toastr::error(translate('Please upload a file with valid data'));
                 return back();
             }
 
             if (Store::whereIn('email', $email)->orWhereIn('phone', $phone)->exists()
             ) {
-                Toastr::error(translate('messages.email_or_phone_exists'));
+                Toastr::error(translate('messages.Email or phone exists'));
 
                 return back();
             }
@@ -1588,7 +1766,7 @@ class VendorController extends Controller
                 if ($collection['ownerFirstName'] === '' || $collection['storeName'] === '' || $collection['phone'] === ''
                 || $collection['email'] === '' || $collection['latitude'] === '' || $collection['longitude'] === ''
                 || $collection['zone_id'] === '' || $collection['DeliveryTime'] === '' || $collection['logo'] === '') {
-                    Toastr::error(translate('messages.please_fill_all_required_fields'));
+                    Toastr::error(translate('messages.Please fill all required fields'));
 
                     return back();
                 }
@@ -1687,11 +1865,6 @@ class VendorController extends Controller
 
             }
 
-            // $data = array_map(function($id){
-            //     return array_map(function($item)use($id){
-            //         return     ['store_id'=>$id,'day'=>$item,'opening_time'=>'00:00:00','closing_time'=>'23:59:59'];
-            //     },[0,1,2,3,4,5,6]);
-            // },$store_ids);
 
             try {
                 DB::beginTransaction();
@@ -1702,32 +1875,30 @@ class VendorController extends Controller
 
                 foreach ($chunk_stores as $key => $chunk_store) {
                     DB::table('vendors')->insert($chunk_vendors[$key]);
-                    //                    DB::table('stores')->insert($chunk_store);
                     foreach ($chunk_store as $store) {
                         $insertedId = DB::table('stores')->insertGetId($store);
                         Helpers::updateStorageTable(get_class(new Store), $insertedId, $store['logo']);
                         Helpers::updateStorageTable(get_class(new Store), $insertedId, $store['cover_photo']);
-                        StoreLogic::insert_schedule($insertedId);
+                        app(StoreService::class)->createSchedule($insertedId);
                     }
                 }
-                // DB::table('store_schedule')->insert(array_merge(...$data));
                 DB::commit();
             } catch (\Exception $e) {
                 DB::rollBack();
                 info(["line___{$e->getLine()}", $e->getMessage()]);
-                Toastr::error(translate('messages.failed_to_import_data'));
+                Toastr::error(translate('messages.Failed to import data'));
 
                 return back();
             }
 
-            Toastr::success(translate('messages.store_imported_successfully', ['count' => count($stores)]));
+            Toastr::success(translate('messages.Store imported successfully'));
 
             return back();
         }
 
         if (Store::whereIn('email', $email)->orWhereIn('phone', $phone)->doesntExist()
         ) {
-            Toastr::error(translate('messages.email_or_phone_doesnt_exist_at_the_database'));
+            Toastr::error(translate('messages.Email or phone doesnt exist at the database'));
 
             return back();
         }
@@ -1743,7 +1914,7 @@ class VendorController extends Controller
             if ($collection['id'] === '' || $collection['ownerId'] === '' || $collection['ownerFirstName'] === '' || $collection['storeName'] === '' || $collection['phone'] === ''
             || $collection['email'] === '' || $collection['latitude'] === '' || $collection['longitude'] === ''
             || $collection['zone_id'] === '' || $collection['DeliveryTime'] === '' || $collection['logo'] === '') {
-                Toastr::error(translate('messages.please_fill_all_required_fields'));
+                Toastr::error(translate('messages.Please fill all required fields'));
 
                 return back();
             }
@@ -1844,11 +2015,12 @@ class VendorController extends Controller
             DB::beginTransaction();
 
             foreach ($chunk_stores as $key => $chunk_store) {
+                $syncStoreIds = [];
                 DB::table('vendors')->upsert($chunk_vendors[$key], ['id', 'email', 'phone'], ['f_name', 'l_name', 'password']);
-                //                    DB::table('stores')->upsert($chunk_store,['id','email','phone','vendor_id'],['name','logo','cover_photo','latitude','longitude','address','zone_id','module_id','minimum_order','comission','tax','delivery_time','minimum_shipping_charge','per_km_shipping_charge','maximum_shipping_charge','schedule_order','status','self_delivery_system','veg','non_veg','free_delivery','take_away','delivery','reviews_section','pos_system','active','featured']);
                 foreach ($chunk_store as $store) {
-                    if (isset($store['id']) && DB::table('items')->where('id', $store['id'])->exists()) {
+                    if (isset($store['id']) && DB::table('stores')->where('id', $store['id'])->exists()) {
                         DB::table('stores')->where('id', $store['id'])->update($store);
+                        $syncStoreIds[] = $store['id'];
                         Helpers::updateStorageTable(get_class(new Store), $store['id'], $store['logo']);
                         Helpers::updateStorageTable(get_class(new Store), $store['id'], $store['cover_photo']);
                     } else {
@@ -1857,24 +2029,40 @@ class VendorController extends Controller
                         Helpers::updateStorageTable(get_class(new Store), $insertedId, $store['cover_photo']);
                     }
                 }
+                // DB::table() writes fire no model events, so StoreObserver did not run; an
+                // imported zone change would otherwise leave the store's items in the old zone.
+                StoreObserver::syncItemZones($syncStoreIds);
             }
             DB::commit();
         } catch (\Exception $e) {
             DB::rollBack();
             info(["line___{$e->getLine()}", $e->getMessage()]);
-            Toastr::error(translate('messages.failed_to_import_data'));
+            Toastr::error(translate('messages.Failed to import data'));
 
             return back();
         }
 
-        Toastr::success(translate('messages.store_imported_successfully', ['count' => count($stores)]));
+        Toastr::success(translate('messages.Store imported successfully'));
 
         return back();
     }
 
     public function bulk_export_index()
     {
-        return view('admin-views.vendor.bulk-export');
+        return view('admin-views.vendor.bulk-export', [
+            'summary' => Helpers::bulkDataSummary($this->moduleVendorQuery()),
+        ]);
+    }
+
+    /**
+     * Vendors that own a store in the module being worked in — the same set the
+     * bulk export writes out, so the id and date bounds on the form match it.
+     */
+    private function moduleVendorQuery()
+    {
+        return Vendor::whereHas('stores', function ($query) {
+            $query->where('module_id', Config::get('module.current_module_id'));
+        });
     }
 
     public function bulk_export_data(Request $request)
@@ -1887,15 +2075,16 @@ class VendorController extends Controller
             'to_date' => 'required_if:type,date_wise',
         ]);
         if($request->type == 'id_wise'){
-            $vendors = Vendor::with('stores')->whereBetween('id', [$request['start_id'], $request['end_id']])->whereHas('stores', function ($q) {
+            $vendors = Vendor::with(['stores'])->whereBetween('id', [$request['start_id'], $request['end_id']])->whereHas('stores', function ($q) {
                 return $q->where('module_id', Config::get('module.current_module_id'));
             })->get();
             if($vendors->isEmpty()){
-                Toastr::error(translate('messages.please provide valid id range'));
+                Toastr::error(translate('Please provide valid ID range'));
                 return back();
             }
         }
-        $vendors = Vendor::with('stores')
+        $vendors = Vendor::query()
+            ->with(['stores'])
             ->when($request['type'] == 'date_wise', function ($query) use ($request) {
                 $query->whereBetween('created_at', [$request['from_date'].' 00:00:00', $request['to_date'].' 23:59:59']);
             })
@@ -1906,9 +2095,7 @@ class VendorController extends Controller
             })
             ->get();
 
-        // Export consumes only a few MB, even with 10M+ rows.
-        return (new FastExcel(StoreLogic::format_export_stores(Helpers::Export_generator($vendors))))->download('Stores.xlsx');
-        // return (new FastExcel(StoreLogic::format_export_stores($vendors)))->download('Stores.xlsx');
+        return (new FastExcel(app(StoreService::class)->getExportData(Helpers::Export_generator($vendors))))->download('Stores.xlsx');
     }
 
     public function add_schedule(Request $request)
@@ -1937,12 +2124,12 @@ class VendorController extends Controller
 
         if (isset($temp)) {
             return response()->json(['errors' => [
-                ['code' => 'time', 'message' => translate('messages.schedule_overlapping_warning')],
+                ['code' => 'time', 'message' => translate('messages.Schedule overlapping warning')],
             ]]);
         }
 
         $store = Store::find($request->store_id);
-        $store_schedule = StoreLogic::insert_schedule($request->store_id, [$request->day], $request->start_time, $request->end_time.':59');
+        $store_schedule = app(StoreService::class)->createSchedule($request->store_id, [$request->day], $request->start_time, $request->end_time.':59');
 
         return response()->json([
             'view' => view('admin-views.vendor.view.partials._schedule', compact('store'))->render(),
@@ -1968,7 +2155,7 @@ class VendorController extends Controller
         $store = Store::findOrFail($request->store);
         $store->featured = $request->status;
         $store->save();
-        Toastr::success(translate('messages.store_featured_status_updated'));
+        Toastr::success(translate('messages.Store featured status updated'));
 
         return back();
     }
@@ -1978,10 +2165,10 @@ class VendorController extends Controller
 
         $user = UserInfo::where('vendor_id', $request->user_id)->first();
 
-        $conversations = Conversation::WhereUser($user->id);
+        $conversations = Conversation::with(['sender', 'receiver', 'last_message'])->WhereUser($user->id);
 
         if ($request->query('key') != null) {
-            $key = explode(' ', $request->get('key'));
+            $key = explode(' ', $request->input('key'));
             $conversations = $conversations->where(function ($qu) use ($key) {
 
                 $qu->whereHas('sender', function ($query) use ($key) {
@@ -2007,9 +2194,13 @@ class VendorController extends Controller
     {
         $convs = Message::where(['conversation_id' => $conversation_id])->get();
         $conversation = Conversation::find($conversation_id);
-        $receiver = UserInfo::find($conversation->receiver_id);
-        $sender = UserInfo::find($conversation->sender_id);
         $user = UserInfo::find($user_id);
+
+        if (! $conversation || ! $user) {
+            return response()->json(['errors' => [['code' => 'conversation', 'message' => translate('No data found')]]], 404);
+        }
+
+        $receiver = UserInfo::find($conversation->receiver_id);
 
         return response()->json([
             'view' => view('admin-views.vendor.view.partials._conversations', compact('convs', 'user', 'receiver'))->render(),
@@ -2018,7 +2209,7 @@ class VendorController extends Controller
 
     public function cash_export(Request $request, $type, $store_id)
     {
-        $store = Store::find($store_id);
+        $store = Store::with('vendor')->find($store_id);
         $account = AccountTransaction::where('from_type', 'store')->where('from_id', $store->id)->where('type', 'collected')->get();
         $data = [
             'data' => $account,
@@ -2034,7 +2225,7 @@ class VendorController extends Controller
 
     public function order_export(Request $request, $type, $store_id)
     {
-        $store = Store::find($store_id);
+        $store = Store::with('vendor')->find($store_id);
 
         if ($request['provider_id']) {
             $fileName = 'Trip';
@@ -2059,7 +2250,7 @@ class VendorController extends Controller
 
     public function withdraw_trans_export(Request $request, $type, $store_id)
     {
-        $store = Store::find($store_id);
+        $store = Store::with('vendor')->find($store_id);
         $account = WithdrawRequest::where('vendor_id', $store->vendor->id)->get();
 
         $data = [
@@ -2078,10 +2269,18 @@ class VendorController extends Controller
     public function store_wise_reviwe_export(Request $request)
     {
         $store = Store::where('id', $request->id)->first();
-        $reviews = $store->reviews()->with('item', function ($query) {
-            $query->withoutGlobalScope(\App\Scopes\StoreScope::class);
-        })->latest()->get();
-        $store_reviews = \App\CentralLogics\StoreLogic::calculate_store_rating($store['rating']);
+
+        if (!$store) {
+            Toastr::error(translate('No data found'));
+
+            return back();
+        }
+
+        $reviews = $store->reviews()->with([
+            'item' => fn ($query) => $query->withoutGlobalScope(StoreScope::class),
+            'customer',
+        ])->latest()->get();
+        $store_reviews = app(\App\Services\Store\StoreService::class)->calculateRating($store['rating']);
         $data = [
             'store_name' => $store->name,
             'store_id' => $store->id,
@@ -2098,12 +2297,12 @@ class VendorController extends Controller
 
     public function recommended_store()
     {
-        $key = explode(' ', request()->search);
-        $stores = Store::withcount(['orders', 'items'])->with('storeConfig')->where('module_id', Config::get('module.current_module_id'))
+        $key = explode(' ', request()->search ?? '');
+        $stores = Store::withStorage()->withcount(['orders', 'items'])->with('storeConfig', 'zone:id,name')->where('module_id', Config::get('module.current_module_id'))
             ->wherehas('storeConfig', function ($q) {
                 $q->where('is_recommended_deleted', 0);
             })
-            ->when(isset($key), function ($q) use ($key) {
+            ->when(request()->search, function ($q) use ($key) {
                 $q->where(function ($query) use ($key) {
                     foreach ($key as $value) {
                         $query->where('name', 'like', "%{$value}%");
@@ -2129,7 +2328,7 @@ class VendorController extends Controller
         $request->validate([
             'selected_store_ids' => 'required',
         ], [
-            'selected_store_ids.required' => translate('Please_select_a_store'),
+            'selected_store_ids.required' => translate('Please select a store'),
         ]);
         $ids = explode(',', $request['selected_store_ids']);
         $ids = array_unique($ids);
@@ -2140,7 +2339,7 @@ class VendorController extends Controller
                 'is_recommended_deleted' => 0,
             ]);
         }
-        Toastr::success(translate('messages.Recommended_Store_added_successfully'));
+        Toastr::success(translate('Added successfully'));
 
         return back();
     }
@@ -2150,7 +2349,7 @@ class VendorController extends Controller
         StoreConfig::updateOrInsert(['store_id' => $id], [
             'is_recommended_deleted' => 1,
         ]);
-        Toastr::success(translate('messages.store_is_removed_from_the_recommended_list'));
+        Toastr::success(translate('messages.Store is removed from the recommended list'));
 
         return back();
     }
@@ -2160,31 +2359,24 @@ class VendorController extends Controller
         StoreConfig::updateOrInsert(['store_id' => $id], [
             'is_recommended' => $status,
         ]);
-        Toastr::success(translate('messages.store_recommendation_status_updated'));
+        Toastr::success(translate('messages.Store recommendation status updated'));
 
         return back();
     }
 
     public function get_all_stores(Request $request)
     {
-        $key = explode(' ', $request['name']);
-        $stores = Store::withcount(['orders', 'items'])->where('module_id', Config::get('module.current_module_id'))
-            ->where(function ($query) use ($key) {
-                foreach ($key as $value) {
-                    $query->where('name', 'like', "%{$value}%");
-                }
-                $query->orWhereHas('translations', function ($query) use ($key) {
-                    $query->where(function ($q) use ($key) {
-                        foreach ($key as $value) {
-                            $q->where('value', 'like', "%{$value}%");
-                        }
-                    });
+        $stores = Store::withStorage()->withcount(['orders', 'items'])->where('module_id', Config::get('module.current_module_id'))
+            ->when($request->boolean('exclude_recommended'), function ($q) {
+                $q->whereDoesntHave('storeConfig', function ($sub) {
+                    $sub->where('is_recommended', 1)->where('is_recommended_deleted', 0);
                 });
             })
+            ->search($request['name'], ['translations' => 'value'])
             ->take(6)
             ->get()
             ->map(function ($stores) {
-                $stores->ratings = StoreLogic::calculate_store_rating($stores['rating']);
+                $stores->ratings = app(StoreService::class)->calculateRating($stores['rating']);
                 unset($stores['rating']);
 
                 return $stores;
@@ -2200,10 +2392,10 @@ class VendorController extends Controller
         $id = $request->id ?? [];
         $id = array_unique($id);
 
-        $stores = Store::whereIn('id', $id)->where('module_id', Config::get('module.current_module_id'))
+        $stores = Store::withStorage()->whereIn('id', $id)->where('module_id', Config::get('module.current_module_id'))
             ->get(['id', 'name', 'rating', 'logo'])
             ->map(function ($stores) {
-                $stores->ratings = StoreLogic::calculate_store_rating($stores['rating']);
+                $stores->ratings = app(StoreService::class)->calculateRating($stores['rating']);
                 unset($stores['rating']);
 
                 return $stores;
@@ -2216,7 +2408,6 @@ class VendorController extends Controller
 
     public function shuffle_recommended_store($status)
     {
-        // dd($status);
         $data = DataSetting::firstOrNew(
             ['key' => 'shuffle_recommended_store',
                 'type' => Config::get('module.current_module_id')],
@@ -2224,7 +2415,7 @@ class VendorController extends Controller
         $data->value = $status == 1 ? 0 : 1;
         $data->save();
 
-        Toastr::success(translate('messages.store_shuffle_status_updated'));
+        Toastr::success(translate('messages.Store shuffle status updated'));
 
         return back();
     }
@@ -2253,58 +2444,5 @@ class VendorController extends Controller
         $data = ['review' => round($review,1), 'rating' => round($rating,1)];
 
         return response()->json($data);
-    }
-
-
-
-    public function search(Request $request)
-    {
-        $storeIds = collect((array) $request->input('store_ids', []))
-            ->filter(fn ($id) => is_numeric($id))
-            ->map(fn ($id) => (int) $id)
-            ->unique()
-            ->values()
-            ->all();
-
-        $bannerId = (int) $request->input('banner_id', 0);
-        $search = trim((string) $request->input('search', ''));
-
-        if (empty($storeIds)) {
-            return response()->json([
-                'view' => '',
-            ]);
-        }
-
-        $keys = array_values(array_filter(
-            preg_split('/\s+/', $search) ?: []
-        ));
-
-        $stores = Store::with('vendor')
-            ->whereIn('id', $storeIds)
-            ->when(!empty($keys), function ($query) use ($keys) {
-                $query->where(function ($query) use ($keys) {
-                    foreach ($keys as $value) {
-                        $query->where(function ($q) use ($value) {
-                            $q->where('name', 'like', "%{$value}%")
-                                ->orWhere('email', 'like', "%{$value}%")
-                                ->orWhere('phone', 'like', "%{$value}%")
-                                ->orWhereHas('vendor', function ($vendor) use ($value) {
-                                    $vendor->where('f_name', 'like', "%{$value}%")
-                                        ->orWhere('l_name', 'like', "%{$value}%");
-                                });
-                        });
-                    }
-                });
-            })
-            ->latest()
-            ->limit(100)
-            ->get();
-
-        return response()->json([
-            'view' => view(
-                'admin-views.banner.partials._store_search_rows',
-                compact('stores', 'bannerId')
-            )->render(),
-        ]);
     }
 }

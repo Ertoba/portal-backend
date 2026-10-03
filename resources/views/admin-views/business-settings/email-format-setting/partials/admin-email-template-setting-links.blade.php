@@ -1,35 +1,34 @@
 <div class="d-flex flex-wrap justify-content-between align-items-center tabs-slide-wrap position-relative mb-2 __gap-12px">
     <div class="js-nav-scroller hs-nav-scroller-horizontal mt-2">
-        <!-- Nav -->
         <ul class="nav nav-tabs tabs-inner border-0 nav--tabs nav--pills">
             <li class="nav-item tabs-slide_items">
                 <a class="nav-link {{ Request::is('admin/business-settings/email-setup/admin/forgot-password') ? 'active' : '' }}"
                 href="{{ route('admin.business-settings.email-setup', ['admin','forgot-password']) }}">
-                    {{translate('Forgot Password')}}
+                    {{translate('Forgot password')}}
                 </a>
             </li>
             <li class="nav-item tabs-slide_items">
                 <a class="nav-link {{ Request::is('admin/business-settings/email-setup/admin/store-registration') ? 'active' : '' }}"
                 href="{{ route('admin.business-settings.email-setup', ['admin','store-registration']) }}">
-                    {{translate('New Store Registration')}}
+                    {{translate('New store registration')}}
                 </a>
             </li>
             <li class="nav-item tabs-slide_items">
                 <a class="nav-link {{ Request::is('admin/business-settings/email-setup/admin/dm-registration') ? 'active' : '' }}"
                 href="{{ route('admin.business-settings.email-setup', ['admin','dm-registration']) }}">
-                    {{ \App\CentralLogics\Helpers::formatDeliverymanText(translate('New Delivery Man Registration'), null, true) }}
+                    {{ \App\CentralLogics\Helpers::formatDeliverymanText(translate('New Deliveryman Registration'), null, true) }}
                 </a>
             </li>
             <li class="nav-item tabs-slide_items">
                 <a class="nav-link {{ Request::is('admin/business-settings/email-setup/admin/withdraw-request') ? 'active' : '' }}"
                 href="{{ route('admin.business-settings.email-setup', ['admin','withdraw-request']) }}">
-                    {{translate('Withdraw Request')}}
+                    {{translate('Withdraw request')}}
                 </a>
             </li>
             <li class="nav-item tabs-slide_items">
                 <a class="nav-link {{ Request::is('admin/business-settings/email-setup/admin/dm-withdraw-request') ? 'active' : '' }}"
                 href="{{ route('admin.business-settings.email-setup', ['admin','dm-withdraw-request']) }}">
-                    {{ \App\CentralLogics\Helpers::formatDeliverymanText(translate('Delivery Man Withdraw Request'), null, true) }}
+                    {{ \App\CentralLogics\Helpers::formatDeliverymanText(translate('Deliveryman withdraw request'), null, true) }}
                 </a>
             </li>
             <li class="nav-item tabs-slide_items">
@@ -41,29 +40,22 @@
             <li class="nav-item tabs-slide_items">
                 <a class="nav-link {{ Request::is('admin/business-settings/email-setup/admin/refund-request') ? 'active' : '' }}"
                 href="{{ route('admin.business-settings.email-setup', ['admin','refund-request']) }}">
-                    {{translate('Refund Request')}}
+                    {{translate('Refund request')}}
                 </a>
             </li>
-            {{-- <li class="nav-item tabs-slide_items">
-                <a class="nav-link {{ Request::is('admin/business-settings/email-setup/admin/login') ? 'active' : '' }}"
-                href="{{ route('admin.business-settings.email-setup', ['admin','login']) }}">
-                    {{translate('Login mail')}}
-                </a>
-            </li> --}}
             <li class="nav-item tabs-slide_items">
                 <a class="nav-link {{ Request::is('admin/business-settings/email-setup/admin/new-advertisement') ? 'active' : '' }}"
                 href="{{ route('admin.business-settings.email-setup', ['admin','new-advertisement']) }}">
-                    {{translate('New_Advertisement_Request')}}
+                    {{translate('New advertisement request')}}
                 </a>
             </li>
             <li class="nav-item tabs-slide_items">
                 <a class="nav-link {{ Request::is('admin/business-settings/email-setup/admin/update-advertisement') ? 'active' : '' }}"
                 href="{{ route('admin.business-settings.email-setup', ['admin','update-advertisement']) }}">
-                    {{translate('Advertisement_Update_Request')}}
+                    {{translate('Advertisement update request')}}
                 </a>
             </li>
         </ul>
-        <!-- End Nav -->
     </div>
     <div class="arrow-area">
         <div class="button-prev align-items-center">

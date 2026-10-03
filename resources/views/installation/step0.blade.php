@@ -1,13 +1,11 @@
 @extends('layouts.blank')
 
 @section('content')
-    <!-- Title -->
     <div class="text-center text-white mb-4">
         <h2>6amMart Software Installation</h2>
         <h6 class="fw-normal">Please proceed step by step with proper data according to instructions</h6>
     </div>
 
-    <!-- Progress -->
     <div class="pb-2 px-2 px-sm-5 mx-xl-4">
         <div class="progress cursor-pointer" role="progressbar" aria-label="6amMart Software Installation"
              aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" data-bs-toggle="tooltip"
@@ -17,7 +15,6 @@
         </div>
     </div>
 
-    <!-- Card -->
     <div class="card mt-4">
         <div class="p-4 my-md-3 mx-xl-4 px-md-5">
             <p class="text-center mb-4 top-info-text">Before starting the installation process please collect this

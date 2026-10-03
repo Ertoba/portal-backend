@@ -28,6 +28,11 @@ class StoreListExport implements  FromView, ShouldAutoSize, WithStyles,WithColum
         $this->data = $data;
     }
 
+    private function rowCount(): int
+    {
+        return (int) ($this->data['data_count'] ?? $this->data['data']->count());
+    }
+
     public function view(): View
     {
         return view('file-exports.store-list', [
@@ -38,7 +43,6 @@ class StoreListExport implements  FromView, ShouldAutoSize, WithStyles,WithColum
     public function columnWidths(): array
     {
         return [
-            // 'C' => 45,
         ];
     }
 
@@ -70,12 +74,11 @@ class StoreListExport implements  FromView, ShouldAutoSize, WithStyles,WithColum
         ];
         $sheet->getStyle('A1:C1')->applyFromArray($styleArray);
         return [
-            // Define the style for cells with data
-            'A1:K'.$this->data['data']->count() +4 => [
+            'A1:K'.$this->rowCount() +4 => [
                 'borders' => [
                     'allBorders' => [
                         'borderStyle' => Border::BORDER_THIN,
-                        'color' => ['argb' => '000000'], // Specify the color of the border (optional)
+                        'color' => ['argb' => '000000'],
                     ],
                 ],
             ],
@@ -100,7 +103,7 @@ class StoreListExport implements  FromView, ShouldAutoSize, WithStyles,WithColum
     {
         return [
             AfterSheet::class => function(AfterSheet $event) {
-                $event->sheet->getStyle('A1:K1') // Adjust the range as per your needs
+                $event->sheet->getStyle('A1:K1')
                     ->getAlignment()
                     ->setHorizontal(Alignment::HORIZONTAL_CENTER)
                     ->setVertical(Alignment::VERTICAL_CENTER);
@@ -117,7 +120,7 @@ class StoreListExport implements  FromView, ShouldAutoSize, WithStyles,WithColum
                     ->setHorizontal(Alignment::HORIZONTAL_CENTER)
                     ->setVertical(Alignment::VERTICAL_CENTER);
 
-                $event->sheet->getStyle('A4:K'.$this->data['data']->count() +4)
+                $event->sheet->getStyle('A4:K'.$this->rowCount() +4)
                     ->getAlignment()
                     ->setHorizontal(Alignment::HORIZONTAL_CENTER)
                     ->setVertical(Alignment::VERTICAL_CENTER);

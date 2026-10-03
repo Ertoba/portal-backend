@@ -1,18 +1,19 @@
 @extends('layouts.admin.app')
 
-@section('title',translate('messages.banner'))
+@section('title',translate('Banner'))
 
 @section('content')
 <div class="content container-fluid">
     <div class="page-header">
         <h1 class="page-header-title">
             <span class="page-header-icon">
-                <img src="{{asset('public/assets/admin/img/3rd-party.png')}}" class="w--26" alt="">
+                <img src="{{asset('public/assets/admin/img/outline/3rd-party.svg')}}" class="w--26" alt="">
             </span>
             <span>
-                {{translate('messages.Other_Promotional_Content_Setup')}}
+                {{translate('messages.Other Promotional Content Setup')}}
             </span>
         </h1>
+        <p class="page-header-desc">{{ translate('The extra artwork and copy shown around the parcel module in the customer app.') }}</p>
     </div>
     <div class="mb-20 mt-2">
         <div class="js-nav-scroller hs-nav-scroller-horizontal">
@@ -33,7 +34,7 @@
                                             <span class="d-flex g-1">
                                                 <img src="{{asset('public/assets/admin/img/other-banner.png')}}" class="h-85" alt="">
                                                 <h3 class="form-label d-block mb-2">
-                                                    {{translate('messages.Promotional Banners')}}
+                                                    {{translate('Promotional banners')}}
                                                 </h3>
                                             </span>
                                         </div>
@@ -50,28 +51,29 @@
                                             </label>
                                             <div class="text-center mt-5">
                                                 <h3 class="form-label d-block mt-2">
-                                                {{translate('Banner_Image_Ratio_4:1')}}
+                                                Banner Image Ratio 4:1
                                             </h3>
-                                            <p>{{translate('image_format_:_jpg_,_png_,_jpeg_|_maximum_size:_2_MB')}}</p>
+                                            <p>{{'JPG, PNG, JPEG' . ' image, max ' . 2 . ' MB'}}</p>
 
                                             </div>
                                         </div>
                                     </div>
                                     <div class="btn--container justify-content-end mt-20">
-                                        <button type="submit" class="btn btn--primary mb-2">{{translate('Submit')}}</button>
+                                        <button type="submit" class="btn btn--primary mb-2"><i class="tio-checkmark-circle-outlined"></i> {{translate('Submit')}}</button>
                                     </div>
                                 </div>
                             </form>
-                            @php($banners=\App\Models\ModuleWiseBanner::where('module_id',Config::get('module.current_module_id'))->where('key','promotional_banner')->get())
-                            {{-- <div class="card"> --}}
+                            @php($banners=\App\Models\ModuleWiseBanner::withStorage()->where('module_id',Config::get('module.current_module_id'))->where('key','promotional_banner')->get())
                                 <div class="card-header py-2">
                                     <div class="search--button-wrapper">
-                                        <h5 class="card-title">{{translate('Promotional_Banner_List')}}
-                                        </h5>
+                                        @include('partials._table-head', [
+                                            'title'    => translate('Promotional Banner List'),
+                                            'subtitle' => translate('messages.Banners displayed inside the parcel delivery module.'),
+                                            'count'    => null,
+                                        ])
                                     </div>
                                 </div>
                                 <div class="card-body p-0">
-                                    <!-- Table -->
                                     <div class="table-responsive datatable-custom">
                                         <table id="columnSearchDatatable"
                                                 class="table table-borderless table-thead-bordered table-nowrap table-align-middle card-table"
@@ -83,10 +85,10 @@
                                                 }'>
                                             <thead class="thead-light">
                                             <tr>
-                                                <th class="border-0">{{translate('sl')}}</th>
+                                                <th class="border-0">{{translate('SL')}}</th>
                                                 <th class="border-0">{{translate('Image')}}</th>
                                                 <th class="border-0">{{translate('Status')}}</th>
-                                                <th class="text-center border-0">{{translate('messages.action')}}</th>
+                                                <th class="text-center border-0">{{translate('messages.Action')}}</th>
                                             </tr>
                                             </thead>
                                             <tbody>
@@ -102,23 +104,16 @@
                                                                 <div class="modal-content">
                                                                     <div class="modal-header">
                                                                         <h4 class="modal-title" id="myModalLabel">
-                                                                            {{ translate('messages.banner') }}</h4>
+                                                                            {{ translate('Banner') }}</h4>
                                                                         <button type="button" class="close"
                                                                                 data-dismiss="modal"><span
                                                                                 aria-hidden="true">&times;</span><span
-                                                                                class="sr-only">{{ translate('messages.cancel') }}</span></button>
+                                                                                class="sr-only">{{ translate('messages.Cancel') }}</span></button>
                                                                     </div>
                                                                     <div class="modal-body">
                                                                         <img src="{{ $banner->value_full_url ?? asset('/public/assets/admin/img/upload-3.png') }}"
                                                                              class="initial--22 w-100">
                                                                     </div>
-{{--                                                                    <div class="modal-footer">--}}
-{{--                                                                        <a class="btn btn-primary"--}}
-{{--                                                                           href="{{ route('admin.file-manager.download', base64_encode('public/promotional_banner/' . $banner->value ?? '')) }}"><i--}}
-{{--                                                                                class="tio-download"></i>--}}
-{{--                                                                            {{ translate('messages.download') }}--}}
-{{--                                                                        </a>--}}
-{{--                                                                    </div>--}}
                                                                 </div>
                                                             </div>
                                                         </div>
@@ -130,10 +125,10 @@
                                                                    data-type="status"
                                                                    data-image-on="{{asset('/public/assets/admin/img/modal')}}/promotional-on.png"
                                                                    data-image-off="{{asset('/public/assets/admin/img/modal')}}/promotional-off.png"
-                                                                   data-title-on="{{translate('By Turning ONN Promotional Banner Section')}}"
+                                                                   data-title-on="{{translate('By Turning ON Promotional Banner Section')}}"
                                                                    data-title-off="{{translate('By Turning OFF Promotional Banner Section')}}"
-                                                                   data-text-on="<p>{{translate('Promotional banner will be enabled. You will be able to see promotional activity')}}</p>"
-                                                                   data-text-off="<p>{{translate('Promotional banner will be disabled. You will be unable to see promotional activity')}}</p>"
+                                                                   data-text-on="<p>{{translate('Promotional banner will be enabled. You can see promotional activity')}}</p>"
+                                                                   data-text-off="<p>{{translate('Promotional banner will be disabled. You will be unable to see promotional activity.')}}</p>"
                                                                    id="status-{{$banner->id}}" {{$banner->status?'checked':''}}>
                                                             <span class="toggle-switch-label">
                                                                 <span class="toggle-switch-indicator"></span>
@@ -145,12 +140,12 @@
 
                                                     <td>
                                                         <div class="btn--container justify-content-center">
-                                                            <a class="btn action-btn btn--primary btn-outline-primary" href="{{route('admin.promotional-banner.edit',[$banner['id']])}}">
+                                                            <a class="btn action-btn action-btn--edit" href="{{route('admin.promotional-banner.edit',[$banner['id']])}}">
                                                                 <i class="tio-edit"></i>
                                                             </a>
-                                                            <a class="btn action-btn btn--danger btn-outline-danger form-alert" href="javascript:"
-                                                               data-id="banner-{{$banner['id']}}" data-message="{{ translate('Want to delete this banner ?') }}"
-                                                             title="{{translate('messages.delete_banner')}}"><i class="tio-delete-outlined"></i>
+                                                            <a class="btn action-btn action-btn--delete form-alert" href="javascript:"
+                                                               data-id="banner-{{$banner['id']}}" data-message="{{ translate('Want to delete this banner?') }}"
+                                                             title="{{translate('messages.Delete banner')}}"><i class="tio-delete-outlined"></i>
                                                             </a>
                                                             <form action="{{route('admin.promotional-banner.delete',[$banner['id']])}}" method="post" id="banner-{{$banner['id']}}">
                                                                 @csrf @method('delete')
@@ -163,17 +158,15 @@
                                         </table>
 
                                     </div>
-                                    <!-- End Table -->
                                 </div>
                                 @if(count($banners) === 0)
                                 <div class="empty--data">
                                     <img src="{{asset('/public/assets/admin/svg/illustrations/sorry.svg')}}" alt="public">
                                     <h5>
-                                        {{translate('no_data_found')}}
+                                        {{translate('No data found')}}
                                     </h5>
                                 </div>
                                 @endif
-                            {{-- </div> --}}
                         </div>
 
                 </div>

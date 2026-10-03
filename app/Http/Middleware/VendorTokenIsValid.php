@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Support\ApiEnvelope;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Config;
@@ -19,32 +20,36 @@ class VendorTokenIsValid
      */
     public function handle(Request $request, Closure $next)
     {
-        $token=$request->bearerToken();
+        $token = (string) $request->bearerToken();
         if(strlen($token)<1)
         {
-            return response()->json([
-                'errors' => [
-                    ['code' => 'auth-001', 'message' => 'Unauthorized.']
-                ]
-            ], 401);
+            return response()->json(
+                ApiEnvelope::make(config('response.unauthorized_401'), null, ApiEnvelope::singleError('auth-001', 'Unauthorized.')),
+                401
+            );
         }
         if (!$request->hasHeader('vendorType')) {
             $errors = [];
-            array_push($errors, ['code' => 'vendor_type', 'message' => translate('messages.vendor_type_required')]);
-            return response()->json([
-                'errors' => $errors
-            ], 403);
+            array_push($errors, ['code' => 'vendor_type', 'message' => translate('messages.Vendor type required')]);
+            return response()->json(ApiEnvelope::make(config('response.forbidden_403'), null, $errors), 403);
         }
         $vendor_type= $request->header('vendorType');
         if($vendor_type == 'owner'){
             $vendor = Vendor::where('auth_token', $token)->first();
             if(!isset($vendor))
             {
-                return response()->json([
-                    'errors' => [
-                        ['code' => 'auth-001', 'message' => 'Unauthorized.']
-                    ]
-                ], 401);
+                return response()->json(
+                    ApiEnvelope::make(config('response.unauthorized_401'), null, ApiEnvelope::singleError('auth-001', 'Unauthorized.')),
+                    401
+                );
+            }
+            $vendor->loadMissing(['stores.module.storage', 'stores.storage', 'stores.store_sub', 'stores.store_sub_update_application', 'stores.discount', 'wallet']);
+            if($vendor->stores->isEmpty())
+            {
+                return response()->json(
+                    ApiEnvelope::make(config('response.unauthorized_401'), null, ApiEnvelope::singleError('auth-001', 'Unauthorized.')),
+                    401
+                );
             }
             $request['vendor']=$vendor;
             Config::set('module.current_module_data', $vendor->stores[0]->module);
@@ -52,11 +57,17 @@ class VendorTokenIsValid
             $vendor = VendorEmployee::where('auth_token', $token)->first();
             if(!isset($vendor))
             {
-                return response()->json([
-                    'errors' => [
-                        ['code' => 'auth-001', 'message' => 'Unauthorized.']
-                    ]
-                ], 401);
+                return response()->json(
+                    ApiEnvelope::make(config('response.unauthorized_401'), null, ApiEnvelope::singleError('auth-001', 'Unauthorized.')),
+                    401
+                );
+            }
+            if(!isset($vendor->vendor) || $vendor->vendor->stores->isEmpty())
+            {
+                return response()->json(
+                    ApiEnvelope::make(config('response.unauthorized_401'), null, ApiEnvelope::singleError('auth-001', 'Unauthorized.')),
+                    401
+                );
             }
             $request['vendor']=$vendor->vendor;
             $request['vendor_employee']=$vendor;

@@ -9,7 +9,7 @@ $site_direction = \App\CentralLogics\Helpers::system_default_direction();
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{translate('Delivery Man Earning Report Invoice')}}</title>
+    <title>{{translate('Deliveryman earning report invoice')}}</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,400;0,500;0,700;1,400&display=swap');
 
@@ -159,7 +159,6 @@ $site_direction = \App\CentralLogics\Helpers::system_default_direction();
             text-align: right;
         }
 
-        /*Logo Header*/
         .invoice-body {
             max-width: 595px;
             width: 100%;
@@ -184,7 +183,6 @@ $site_direction = \App\CentralLogics\Helpers::system_default_direction();
             padding-bottom: 12px;
         }
 
-        /*Header Info*/
         .header-information {
             border-bottom: 1px dashed #E6E7EC;
             border-top: 1px dashed #E6E7EC;
@@ -212,7 +210,6 @@ $site_direction = \App\CentralLogics\Helpers::system_default_direction();
             line-height: 14px;
         }
 
-        /*Main Table*/
         .main-table {
             margin-top: 20px;
             border-spacing: 0;
@@ -253,7 +250,6 @@ $site_direction = \App\CentralLogics\Helpers::system_default_direction();
         }
 
 
-        /*Footer*/
         .invoice-footer {
             background-color: #FAFAFA;
             padding: 12px 32px;
@@ -295,12 +291,12 @@ $site_direction = \App\CentralLogics\Helpers::system_default_direction();
             <table class=" table w-100">
                 <tr>
                     <td>
-                        <h3 class="fs-20 mb-0">{{translate('Earning Statement')}}</h3>
+                        <h3 class="fs-20 mb-0">{{translate('Earning statement')}}</h3>
                     </td>
                     <td class="text-right">
                         <img height="30px"
                             src="{{\App\CentralLogics\Helpers::get_full_url('business', $logo?->value ?? '', $logo?->storage[0]?->value ?? 'public', 'favicon')}}"
-                            alt="{{translate('logo')}}" class="logo">
+                            alt="{{translate('Logo')}}" class="logo">
                     </td>
                 </tr>
             </table>
@@ -319,7 +315,7 @@ $site_direction = \App\CentralLogics\Helpers::system_default_direction();
                             </tr>
                             <tr>
                                 <td>
-                                    <span class="name"><strong>{{translate('Phone Number')}}</strong></span>
+                                    <span class="name"><strong>{{translate('Phone number')}}</strong></span>
                                 </td>
                                 <td>:</td>
                                 <td>
@@ -328,17 +324,17 @@ $site_direction = \App\CentralLogics\Helpers::system_default_direction();
                             </tr>
                             <tr>
                                 <td>
-                                    <span class="name"><strong>{{translate('Deliveryman Type')}}</strong></span>
+                                    <span class="name"><strong>{{translate('Deliveryman type')}}</strong></span>
                                 </td>
                                 <td>:</td>
                                 <td>
-                                    <span class="datas">@if($dm->earning) {{translate('Freelance')}} @else
-                                    {{ translate('Salary Based') }} @endif</span>
+                                    <span class="datas">@if($dm->earning) {{translate('Freelancer')}} @else
+                                    {{ translate('Salary based') }} @endif</span>
                                 </td>
                             </tr>
                             <tr>
                                 <td>
-                                    <span class="name"><strong>{{translate('Download Date')}}</strong></span>
+                                    <span class="name"><strong>{{translate('Download date')}}</strong></span>
                                 </td>
                                 <td>:</td>
                                 <td>
@@ -347,7 +343,7 @@ $site_direction = \App\CentralLogics\Helpers::system_default_direction();
                             </tr>
                             <tr>
                                 <td>
-                                    <span class="name"><strong>{{translate('Statement Period')}}</strong></span>
+                                    <span class="name"><strong>{{translate('Statement period')}}</strong></span>
                                 </td>
                                 <td>:</td>
                                 <td>
@@ -359,7 +355,7 @@ $site_direction = \App\CentralLogics\Helpers::system_default_direction();
                                         @elseif ($endDate)
                                             {{ $endDate }}
                                         @else
-                                            {{ translate('All Time') }}
+                                            {{ translate('All time') }}
                                         @endif
                                     </span>
                                 </td>
@@ -372,7 +368,7 @@ $site_direction = \App\CentralLogics\Helpers::system_default_direction();
                             <table class="fs-10">
                                 <tr>
                                     <td>
-                                        <span class="name"><strong>{{translate('Total Earning')}}</strong></span>
+                                        <span class="name"><strong>{{translate('Total earning')}}</strong></span>
                                     </td>
                                     <td>:</td>
                                     <td>
@@ -382,7 +378,7 @@ $site_direction = \App\CentralLogics\Helpers::system_default_direction();
                                 </tr>
                                 <tr>
                                     <td>
-                                        <span class="name"><strong>{{translate('Delivery Fee')}}</strong></span>
+                                        <span class="name"><strong>{{translate('Delivery fee')}}</strong></span>
                                     </td>
                                     <td>:</td>
                                     <td>
@@ -392,7 +388,7 @@ $site_direction = \App\CentralLogics\Helpers::system_default_direction();
                                 </tr>
                                 <tr>
                                     <td>
-                                        <span class="name"><strong>{{translate('Delivery Tips')}}</strong></span>
+                                        <span class="name"><strong>{{translate('Delivery tips')}}</strong></span>
                                     </td>
                                     <td>:</td>
                                     <td>
@@ -409,10 +405,10 @@ $site_direction = \App\CentralLogics\Helpers::system_default_direction();
                 <thead class="text-nowrap">
                     <tr>
                         <th class="fs-10 text-left">{{translate('Date')}}</th>
-                        <th class="fs-10 text-left">{{translate('Paid By')}}</th>
-                        <th class="fs-10 text-left">{{translate('Order & Transaction')}}</th>
-                        <th class="fs-10 text-right">{{translate('Delivery Fee')}}</th>
-                        <th class="fs-10 text-right">{{translate('Delivery Tips')}}</th>
+                        <th class="fs-10 text-left">{{translate('Paid by')}}</th>
+                        <th class="fs-10 text-left">{{translate('Order & transaction')}}</th>
+                        <th class="fs-10 text-right">{{translate('Delivery fee')}}</th>
+                        <th class="fs-10 text-right">{{translate('Delivery tips')}}</th>
                         <th class="fs-10 text-right">{{translate('Total')}}</th>
                     </tr>
                 </thead>
@@ -423,7 +419,7 @@ $site_direction = \App\CentralLogics\Helpers::system_default_direction();
                                 <span>{{ \Carbon\Carbon::parse($earning->delivered)->format('d-M-Y') }}</span>
                             </td>
                             <td class="text-left">
-                                <span>{{ translate($earning?->order?->payment_method) }}</span>
+                                <span>{{ payment_method_label($earning?->order?->payment_method) }}</span>
                             </td>
                             <td class="text-left">
                                 <table class="">
@@ -432,8 +428,6 @@ $site_direction = \App\CentralLogics\Helpers::system_default_direction();
                                         <td class="text-clr">: {{ $earning->order_id }}</td>
                                     </tr>
                                     <tr>
-                                        {{-- <td style="color: rgba(48, 48, 48, 0.7);">{{ translate('TrxID') }}</td>
-                                        <td class="text-clr">: 8465dfg5848F89</td> --}}
                                     </tr>
                                 </table>
                             </td>

@@ -5,45 +5,40 @@
 
 <html dir="{{ $site_direction }}" lang="{{ $locale }}" class="{{ $site_direction === 'rtl'?'active':'' }}">
 <head>
-    <!-- Required Meta Tags Always Come First -->
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <!-- Title -->
     <title>{{translate('messages.login')}}</title>
 
-    <!-- Favicon -->
     <link rel="shortcut icon" href="{{asset('public/favicon.ico')}}">
 
-    <!-- Font -->
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
-    <!-- CSS Implementing Plugins -->
     <link rel="stylesheet" href="{{asset('public/assets/admin')}}/css/vendor.min.css">
     <link rel="stylesheet" href="{{asset('public/assets/admin')}}/vendor/icon-set/style.css">
-    <!-- CSS Front Template -->
+    <link rel="stylesheet" href="{{ asset('public/assets/admin/css/button-icons.css') }}">
     <link rel="stylesheet" href="{{asset('public/assets/admin/css/bootstrap.min.css')}}">
     <link rel="stylesheet" href="{{asset('public/assets/admin/css/theme.minc619.css?v=1.0')}}">
     <link rel="stylesheet" href="{{asset('public/assets/admin/css/style.css')}}">
+    <link rel="stylesheet" href="{{asset('public/assets/admin/css/form-controls.css')}}">
+    <link rel="stylesheet" href="{{asset('public/assets/admin/css/buttons.css')}}">
     <link rel="stylesheet" href="{{asset('public/assets/admin')}}/css/toastr.css">
+    <link rel="stylesheet" href="{{asset('public/assets/admin/css/app-toast.css')}}">
 </head>
 
 <body>
-<!-- ========== MAIN CONTENT ========== -->
 <main id="content" role="main" class="main">
     <div class="auth-wrapper">
         <div class="auth-wrapper-left">
             <div class="auth-left-cont">
-                @php($store_logo = \App\Models\BusinessSetting::where(['key' => 'logo'])->first())
                 <img class="onerror-image"  data-onerror-image="{{asset('/public/assets/admin/img/favicon.png')}}"
-                src="{{\App\CentralLogics\Helpers::get_full_url('business', $store_logo?->value?? '', $store_logo?->storage[0]?->value ?? 'public','favicon')}}"  alt="public/img">
-                <h2 class="title">{{translate('Your')}} <span class="d-block">{{translate('All Service')}}</span> <strong class="text--039D55">{{translate('in one field')}}....</strong></h2>
+                src="{{\App\CentralLogics\Helpers::logoFullUrl()}}"  alt="public/img">
+                <h2 class="title">{{translate('Your')}} <span class="d-block">{{translate('All service')}}</span> <strong class="text--039D55">{{translate('in one field')}}....</strong></h2>
             </div>
         </div>
         <div class="auth-wrapper-right">
             <label class="badge badge-soft-success __login-badge">
-                {{translate('messages.software_version')}} : {{env('SOFTWARE_VERSION')}}
+                {{translate('messages.Software version')}} : {{env('SOFTWARE_VERSION')}}
             </label>
 
-            <!-- OTP Card -->
             <div class="reset-password">
                 <div class="mb-3 text-center">
                     <img src="{{asset('/public/assets/admin/img/lock.svg')}}" alt="">
@@ -52,18 +47,17 @@
                     <form action="{{ route('reset-password-submit') }}" method="POST">
                         @csrf
                         <input type="hidden" name="reset_token" value="{{ $token }}">
-                        <!-- Form Group -->
                         <div class="js-form-message form-group mb-4">
                             <label class="input-label">
-                                {{translate('New Password')}}
+                                {{translate('New password')}}
                                 <span class="form-label-secondary" data-toggle="tooltip" data-placement="right"
-                                data-original-title="{{ translate('messages.Must_contain_at_least_one_number_and_one_uppercase_and_lowercase_letter_and_symbol,_and_at_least_8_or_more_characters') }}"><img src="{{ asset('/public/assets/admin/img/info-circle.svg') }}" alt="{{ translate('messages.Must_contain_at_least_one_number_and_one_uppercase_and_lowercase_letter_and_symbol,_and_at_least_8_or_more_characters') }}"></span>
+                                data-original-title="{{ translate('Use at least one uppercase letter, one lowercase letter, one number and one symbol.') }} {{ translate('Minimum characters') }}: 8"><img src="{{ asset('/public/assets/admin/img/info-circle.svg') }}" alt="{{ translate('Use at least one uppercase letter, one lowercase letter, one number and one symbol.') }} {{ translate('Minimum characters') }}: 8"></span>
                             </label>
                             <div class="input-group input-group-merge">
                                 <input type="password" class="js-toggle-password form-control form-control-lg"
-                                        name="password" id="signupSrPassword" placeholder="{{translate('messages.password_length_placeholder',['length'=>'6+'])}}"
-                                        aria-label="{{translate('messages.password_length_placeholder',['length'=>'6+'])}}" required
-                                        data-msg="{{translate('messages.invalid_password_warning')}}"
+                                        name="password" id="signupSrPassword" placeholder="{{ translate('Minimum characters') }}: 6+"
+                                        aria-label="{{ translate('Minimum characters') }}: 6+" required
+                                        data-msg="{{translate('messages.Invalid password warning')}}"
                                         data-hs-toggle-password-options='{
                                                     "target": "#new-pass",
                                         "defaultClass": "tio-hidden-outlined",
@@ -77,19 +71,17 @@
                                 </div>
                             </div>
                         </div>
-                        <!-- End Form Group -->
-                        <!-- Form Group -->
                         <div class="js-form-message form-group mb-4">
                             <label class="input-label">
                                 <span class="d-flex justify-content-between align-items-center">
-                                    {{translate('Confirm Password')}}
+                                    {{translate('Confirm password')}}
                                 </span>
                             </label>
                             <div class="input-group input-group-merge">
                                 <input type="password" class="js-toggle-password form-control form-control-lg"
-                                        name="confirm_password" id="signupSrPassword" placeholder="{{translate('messages.password_length_placeholder',['length'=>'6+'])}}"
-                                        aria-label="{{translate('messages.password_length_placeholder',['length'=>'6+'])}}" required
-                                        data-msg="{{translate('messages.invalid_password_warning')}}"
+                                        name="confirm_password" id="signupSrPassword" placeholder="{{ translate('Minimum characters') }}: 6+"
+                                        aria-label="{{ translate('Minimum characters') }}: 6+" required
+                                        data-msg="{{translate('messages.Invalid password warning')}}"
                                         data-hs-toggle-password-options='{
                                                     "target": "#conf-pass",
                                         "defaultClass": "tio-hidden-outlined",
@@ -103,24 +95,20 @@
                                 </div>
                             </div>
                         </div>
-                        <!-- End Form Group -->
-                        <button type="submit" class="btn btn-block btn--primary">{{translate('Change Password')}}</button>
+                        <button type="submit" class="btn btn-block btn--primary"><i class="tio-lock"></i> {{translate('Change password')}}</button>
                     </form>
                 </div>
             </div>
-            <!-- End Card -->
 
         </div>
     </div>
 </main>
-<!-- ========== END MAIN CONTENT ========== -->
 
-<!-- JS Implementing Plugins -->
 <script src="{{asset('public/assets/admin')}}/js/vendor.min.js"></script>
 
-<!-- JS Front -->
 <script src="{{asset('public/assets/admin')}}/js/theme.min.js"></script>
 <script src="{{asset('public/assets/admin')}}/js/toastr.js"></script>
+<script src="{{asset('public/assets/admin/js/app-toast.js')}}"></script>
 {!! Toastr::message() !!}
 
 @if ($errors->any())
@@ -135,25 +123,19 @@
     </script>
 @endif
 
-<!-- JS Plugins Init. -->
 <script>
     "use strict";
     $(document).on('ready', function () {
-        // INITIALIZATION OF SHOW PASSWORD
-        // =======================================================
         $('.js-toggle-password').each(function () {
             new HSTogglePassword(this).init()
         });
 
-        // INITIALIZATION OF FORM VALIDATION
-        // =======================================================
         $('.js-validate').each(function () {
             $.HSCore.components.HSValidation.init($(this));
         });
     });
 </script>
 
-{{-- recaptcha scripts start --}}
 @if(isset($recaptcha) && $recaptcha['status'] == 1)
     <script type="text/javascript">
     "use strict";

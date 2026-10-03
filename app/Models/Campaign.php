@@ -2,17 +2,21 @@
 
 namespace App\Models;
 
-use App\CentralLogics\Helpers;
+use App\Traits\Model\InvalidatesCacheTrait;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Illuminate\Support\Facades\DB;
-use App\Traits\GeneratesSlug;
+use App\Traits\Model\SlugTrait;
+use App\Traits\Model\HasTranslationsTrait;
+use App\Traits\Model\HasStorageTrait;
+use App\Support\Cache\ApiCache;
 
 class Campaign extends Model
 {
-    use HasFactory, GeneratesSlug;
+    use HasFactory, SlugTrait, HasTranslationsTrait, HasStorageTrait, InvalidatesCacheTrait;
+
+    protected static array $cacheTags = ['campaign'];
 
     protected $casts = [
         'status' => 'integer',
@@ -23,35 +27,16 @@ class Campaign extends Model
         'end_date' => 'datetime',
     ];
 
-    protected $appends = ['image_full_url'];
+    protected $appends = [];
 
-    public function translations()
+    public function getTitleAttribute($value)
     {
-        return $this->morphMany(Translation::class, 'translationable');
+        return $this->translatedAttribute('title', $value);
     }
 
-    public function getTitleAttribute($value){
-        if (count($this->translations) > 0) {
-            foreach ($this->translations as $translation) {
-                if ($translation['key'] == 'title') {
-                    return $translation['value'];
-                }
-            }
-        }
-
-        return $value;
-    }
-
-    public function getDescriptionAttribute($value){
-        if (count($this->translations) > 0) {
-            foreach ($this->translations as $translation) {
-                if ($translation['key'] == 'description') {
-                    return $translation['value'];
-                }
-            }
-        }
-
-        return $value;
+    public function getDescriptionAttribute($value)
+    {
+        return $this->translatedAttribute('description', $value);
     }
 
     public function module()
@@ -73,17 +58,9 @@ class Campaign extends Model
         return $this->belongsToMany(Store::class)->withPivot('campaign_status','updated_at','created_at');
     }
 
-    public function getImageFullUrlAttribute(){
-        $value = $this->image;
-        if (count($this->storage) > 0) {
-            foreach ($this->storage as $storage) {
-                if ($storage['key'] == 'image') {
-                    return Helpers::get_full_url('campaign',$value,$storage['value']);
-                }
-            }
-        }
-
-        return Helpers::get_full_url('campaign',$value,'public');
+    public function getImageFullUrlAttribute()
+    {
+        return $this->storageFullUrl('campaign', 'image', $this->image);
     }
 
     public function scopeActive($query)
@@ -109,23 +86,6 @@ class Campaign extends Model
             });
     }
 
-    protected static function booted()
-    {
-        static::addGlobalScope('storage', function ($builder) {
-            $builder->with('storage');
-        });
-        static::addGlobalScope('translate', function (Builder $builder) {
-            $builder->with(['translations' => function ($query) {
-                return $query->where('locale', app()->getLocale());
-            }]);
-        });
-    }
-
-    public function storage()
-    {
-        return $this->morphMany(Storage::class, 'data');
-    }
-
     protected static function boot()
     {
         parent::boot();
@@ -134,19 +94,8 @@ class Campaign extends Model
             $campaign->save();
         });
         static::saved(function ($model) {
-            if($model->isDirty('image')){
-                $value = Helpers::getDisk();
+            self::recordStorageDisk($model, 'image', 'image');
 
-                DB::table('storages')->updateOrInsert([
-                    'data_type' => get_class($model),
-                    'data_id' => $model->id,
-                    'key' => 'image',
-                ], [
-                    'value' => $value,
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
-            }
         });
     }
 }

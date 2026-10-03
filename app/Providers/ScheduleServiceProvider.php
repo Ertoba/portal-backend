@@ -2,10 +2,13 @@
 
 namespace App\Providers;
 
+use App\CentralLogics\Helpers;
 use App\Models\BusinessSetting;
 use App\Models\DataSetting;
 use App\Models\NotificationMessage;
 use App\Support\DisbursementScheduleResolver;
+use App\Support\Notification\NotificationConfig;
+use App\Support\Notification\NotificationMode;
 use Cron\CronExpression;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\ServiceProvider;
@@ -17,10 +20,6 @@ class ScheduleServiceProvider extends ServiceProvider
         $this->app->booted(function () {
             $schedule = $this->app->make(Schedule::class);
 
-            // Disbursement and subscription cadences live in business_settings. They
-            // are evaluated inside the when() gate on every tick so changes take effect
-            // immediately under both cron-driven schedule:run and supervisor-driven
-            // schedule:work.
             $schedule->command('dm:disbursement')
                 ->everyMinute()
                 ->when(fn () => $this->disbursementShouldFire('dm'))
@@ -42,23 +41,42 @@ class ScheduleServiceProvider extends ServiceProvider
                 ->withoutOverlapping()
                 ->appendOutputTo(storage_path('logs/schedule.log'));
 
+            $schedule->command('store-subscription:validity-sweep')
+                ->dailyAt('00:05')
+                ->runInBackground()
+                ->withoutOverlapping()
+                ->appendOutputTo(storage_path('logs/schedule.log'));
+
+            $schedule->command('customer-subscription:expire')
+                ->dailyAt('00:10')
+                ->runInBackground()
+                ->withoutOverlapping()
+                ->appendOutputTo(storage_path('logs/schedule.log'));
+
             $schedule->command('monthly-order-reminder:dispatch')
                 ->everyFiveMinutes()
                 ->runInBackground()
                 ->withoutOverlapping()
                 ->appendOutputTo(storage_path('logs/schedule.log'));
 
-            $schedule->command('payments:reconcile-flitt')
-                ->everyFiveMinutes()
+            $schedule->command('maintenance:expire-sweep')
+                ->everyMinute()
                 ->runInBackground()
                 ->withoutOverlapping()
                 ->appendOutputTo(storage_path('logs/schedule.log'));
+
+            $schedule->command('notification:drain')
+                ->everyMinute()
+                ->when(fn () => NotificationConfig::mode() === NotificationMode::Cron)
+                ->runInBackground()
+                ->withoutOverlapping()
+                ->appendOutputTo(storage_path('logs/notifications.log'));
         });
     }
 
     private function disbursementShouldFire(string $prefix): bool
     {
-        if (BusinessSetting::where('key', 'disbursement_type')->value('value') !== 'automated') {
+        if (Helpers::get_business_settings('disbursement_type', false) !== 'automated') {
             return false;
         }
 

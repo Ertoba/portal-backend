@@ -6,7 +6,7 @@
 @extends('payment-views.layouts.master')
 
 @push('script')
-    <title>{{ translate('MercadoPago_Payment') }} - {{ $additionalData['business_name'] ?? '' }}</title>
+    <title>{{ translate('MercadoPago Payment') }} - {{ $additionalData['business_name'] ?? '' }}</title>
     <link rel="shortcut icon" href="{{ $additionalData['business_logo'] ?? '' }}" type="image/x-icon">
     <script src="https://sdk.mercadopago.com/js/v2"></script>
 @endpush

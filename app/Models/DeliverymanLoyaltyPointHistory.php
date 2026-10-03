@@ -3,11 +3,11 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use App\Traits\ReportFilter;
+use App\Traits\Report\ReportFilterTrait;
 
 class DeliverymanLoyaltyPointHistory extends Model
 {
-    use ReportFilter;
+    use ReportFilterTrait;
     protected $casts = [
         'delivery_man_id' => 'integer',
         'point' => 'integer',

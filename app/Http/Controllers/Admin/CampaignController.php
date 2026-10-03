@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Rules\ImageFile;
 use App\Models\Allergy;
 use App\Models\GenericName;
 use App\Models\Nutrition;
@@ -12,16 +13,17 @@ use Illuminate\Support\Str;
 use App\Models\ItemCampaign;
 use Illuminate\Http\Request;
 use App\CentralLogics\Helpers;
-use Illuminate\Support\Facades\DB;
 use App\Exports\ItemCampaignExport;
 use App\Exports\BasicCampaignExport;
 use App\Exports\BasicCampaignStoresExport;
 use App\Http\Controllers\Controller;
 use Brian2694\Toastr\Facades\Toastr;
-use Illuminate\Support\Facades\Mail;
 use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Validator;
+use App\Support\Notification\SendNotification;
+use App\Support\Notification\NotificationMessages;
+use Illuminate\Support\Facades\Log;
 
 class CampaignController extends Controller
 {
@@ -35,7 +37,7 @@ class CampaignController extends Controller
 
     function list(Request $request, $type)
     {
-        $key = explode(' ', $request['search']);
+        $key = explode(' ', $request['search'] ?? '');
         if($type=='basic')
         {
             $campaigns=Campaign::with('module')->where('module_id', Config::get('module.current_module_id'))
@@ -45,11 +47,19 @@ class CampaignController extends Controller
                         $q->orWhere('title', 'like', "%{$value}%");
                     }
                 });
-            })->withCount('stores')
+            })->withCount([
+                'stores',
+                'stores as joined_stores_count' => function ($q) {
+                    $q->where('campaign_store.campaign_status', 'confirmed');
+                },
+                'stores as pending_stores_count' => function ($q) {
+                    $q->where('campaign_store.campaign_status', 'pending');
+                },
+            ])
             ->latest()->paginate(config('default_pagination'));
         }
         else{
-            $campaigns=ItemCampaign::where('module_id', Config::get('module.current_module_id'))
+            $campaigns=ItemCampaign::with(['store:id,name', 'category:id,name'])->where('module_id', Config::get('module.current_module_id'))
             ->when(isset($key ), function ($q) use ($key){
                 $q->where(function ($q) use ($key) {
                     foreach ($key as $value) {
@@ -75,12 +85,12 @@ class CampaignController extends Controller
         $validator = Validator::make($request->all(), [
             'title' => 'required|unique:campaigns|max:191',
             'description'=>'max:1000',
-            'image' => 'required',
+            'image' => ImageFile::rules('required'),
             'title.0' => 'required',
             'description.0' => 'required',
         ],[
-            'title.0.required'=>translate('default_title_is_required'),
-            'description.0.required'=>translate('default_description_is_required'),
+            'title.0.required'=>translate('Default title is required'),
+            'description.0.required'=>translate('Default description is required'),
         ]);
 
         if ($validator->fails()) {
@@ -158,8 +168,8 @@ class CampaignController extends Controller
             'title.0' => 'required',
             'description.0' => 'required',
         ],[
-            'title.0.required'=>translate('default_title_is_required'),
-            'description.0.required'=>translate('default_description_is_required'),
+            'title.0.required'=>translate('Default title is required'),
+            'description.0.required'=>translate('Default description is required'),
         ]);
 
         if ($validator->fails()) {
@@ -238,7 +248,7 @@ class CampaignController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'title' => 'required|max:191|unique:item_campaigns',
-            'image' => 'required',
+            'image' => ImageFile::rules('required'),
             'category_id' => 'required',
             'price' => 'required|numeric|between:0.01,999999999999.99',
             'store_id' => 'required',
@@ -251,9 +261,9 @@ class CampaignController extends Controller
             'title.0' => 'required',
             'description.0' => 'required',
         ], [
-            'category_id.required' => translate('messages.select_category'),
-            'title.0.required'=>translate('default_title_is_required'),
-            'description.0.required'=>translate('default_description_is_required'),
+            'category_id.required' => translate('Select category'),
+            'title.0.required'=>translate('Default title is required'),
+            'description.0.required'=>translate('Default description is required'),
         ]);
 
         if ($validator->fails()) {
@@ -267,7 +277,7 @@ class CampaignController extends Controller
         }
 
         if ($request['price'] <= $dis) {
-            $validator->getMessageBag()->add('unit_price', translate('messages.discount_can_not_be_more_than_or_equal'));
+            $validator->getMessageBag()->add('unit_price', translate('messages.Discount can not be more than or equal'));
         }
 
         if ($request['price'] <= $dis || $validator->fails()) {
@@ -340,7 +350,7 @@ class CampaignController extends Controller
             foreach ($request->choice_no as $key => $no) {
                 $str = 'choice_options_' . $no;
                 if ($request[$str][0] == null) {
-                    $validator->getMessageBag()->add('name', translate('messages.attribute_choice_option_value_can_not_be_null'));
+                    $validator->getMessageBag()->add('name', translate('messages.Attribute choice option value can not be null'));
                     return response()->json(['errors' => Helpers::error_processor($validator)]);
                 }
                 $item['name'] = 'choice_' . $no;
@@ -359,7 +369,6 @@ class CampaignController extends Controller
                 array_push($options, explode(',', $my_str));
             }
         }
-        //Generates the combinations of customer choice options
         $combinations = Helpers::combinations($options);
         if (count($combinations[0]) > 0) {
             foreach ($combinations as $key => $combination) {
@@ -379,7 +388,6 @@ class CampaignController extends Controller
             }
         }
 
-        // food variation
         $food_variations = [];
         if (isset($request->options)) {
             foreach (array_values($request->options) as $key => $option) {
@@ -390,15 +398,15 @@ class CampaignController extends Controller
                 $temp_variation['max'] = $option['max'] ?? 0;
                 $temp_variation['required'] = $option['required'] ?? 'off';
                 if ($option['min'] > 0 &&  $option['min'] > $option['max']) {
-                    $validator->getMessageBag()->add('name', translate('messages.minimum_value_can_not_be_greater_then_maximum_value'));
+                    $validator->getMessageBag()->add('name', translate('messages.Minimum value can not be greater then maximum value'));
                     return response()->json(['errors' => Helpers::error_processor($validator)]);
                 }
                 if (!isset($option['values'])) {
-                    $validator->getMessageBag()->add('name', translate('messages.please_add_options_for') . $option['name']);
+                    $validator->getMessageBag()->add('name', translate('messages.Please add options for') . $option['name']);
                     return response()->json(['errors' => Helpers::error_processor($validator)]);
                 }
                 if ($option['max'] > count($option['values'])) {
-                    $validator->getMessageBag()->add('name', translate('messages.please_add_more_options_or_change_the_max_value_for') . $option['name']);
+                    $validator->getMessageBag()->add('name', translate('messages.Please add more options or change the max value for') . $option['name']);
                     return response()->json(['errors' => Helpers::error_processor($validator)]);
                 }
                 $temp_value = [];
@@ -525,8 +533,8 @@ class CampaignController extends Controller
             'title.0' => 'required',
             'description.0' => 'required',
         ],[
-            'title.0.required'=>translate('default_title_is_required'),
-            'description.0.required'=>translate('default_description_is_required'),
+            'title.0.required'=>translate('Default title is required'),
+            'description.0.required'=>translate('Default description is required'),
         ]);
 
         if ($validator->fails()) {
@@ -540,7 +548,7 @@ class CampaignController extends Controller
         }
 
         if ($request['price'] <= $dis) {
-            $validator->getMessageBag()->add('unit_price', translate('messages.discount_can_not_be_more_than_or_equal'));
+            $validator->getMessageBag()->add('unit_price', translate('messages.Discount can not be more than or equal'));
         }
 
         if ($request['price'] <= $dis || $validator->fails()) {
@@ -611,7 +619,7 @@ class CampaignController extends Controller
             foreach ($request->choice_no as $key => $no) {
                 $str = 'choice_options_' . $no;
                 if ($request[$str][0] == null) {
-                    $validator->getMessageBag()->add('name', translate('messages.attribute_choice_option_value_can_not_be_null'));
+                    $validator->getMessageBag()->add('name', translate('messages.Attribute choice option value can not be null'));
                     return response()->json(['errors' => Helpers::error_processor($validator)]);
                 }
                 $item['name'] = 'choice_' . $no;
@@ -630,7 +638,6 @@ class CampaignController extends Controller
                 array_push($options, explode(',', $my_str));
             }
         }
-        //Generates the combinations of customer choice options
         $combinations = Helpers::combinations($options);
         if (count($combinations[0]) > 0) {
             foreach ($combinations as $key => $combination) {
@@ -658,15 +665,15 @@ class CampaignController extends Controller
                 $temp_variation['min'] = $option['min'] ?? 0;
                 $temp_variation['max'] = $option['max'] ?? 0;
                 if ($option['min'] > 0 &&  $option['min'] > $option['max']) {
-                    $validator->getMessageBag()->add('name', translate('messages.minimum_value_can_not_be_greater_then_maximum_value'));
+                    $validator->getMessageBag()->add('name', translate('messages.Minimum value can not be greater then maximum value'));
                     return response()->json(['errors' => Helpers::error_processor($validator)]);
                 }
                 if (!isset($option['values'])) {
-                    $validator->getMessageBag()->add('name', translate('messages.please_add_options_for') . $option['name']);
+                    $validator->getMessageBag()->add('name', translate('messages.Please add options for') . $option['name']);
                     return response()->json(['errors' => Helpers::error_processor($validator)]);
                 }
                 if ($option['max'] > count($option['values'])) {
-                    $validator->getMessageBag()->add('name', translate('messages.please_add_more_options_or_change_the_max_value_for') . $option['name']);
+                    $validator->getMessageBag()->add('name', translate('messages.Please add more options or change the max value for') . $option['name']);
                     return response()->json(['errors' => Helpers::error_processor($validator)]);
                 }
                 $temp_variation['required'] = $option['required'] ?? 'off';
@@ -790,12 +797,12 @@ class CampaignController extends Controller
     {
         if($type=='basic')
         {
-            $campaign = Campaign::withoutGlobalScope('translate')->findOrFail($campaign);
+            $campaign = Campaign::withoutGlobalScope('translate')->with('translations')->findOrFail($campaign);
             return view('admin-views.campaign.'.$type.'.edit', compact('campaign'));
         }
         else
         {
-            $campaign = ItemCampaign::withoutGlobalScope('translate')->findOrFail($campaign);
+            $campaign = ItemCampaign::withoutGlobalScope('translate')->with(['translations', 'category', 'store'])->findOrFail($campaign);
             $temp = $campaign->category;
             if($temp?->position)
             {
@@ -823,22 +830,24 @@ class CampaignController extends Controller
         {
             $campaign = Campaign::where('id',$campaign)->withCount('stores')->first();
             if(!$campaign){
-                Toastr::error(translate('messages.campaign_is_expired'));
+                Toastr::error(translate('messages.Campaign is expired'));
                 return back();
             }
-            $stores = $campaign->stores()->search(request()->search)->paginate(config('default_pagination'));
-            $store_ids = [];
-            foreach($campaign->stores as $store)
-            {
-                $store_ids[] = $store->id;
-            }
+            $stores = $campaign->stores()->with('vendor:id,f_name,l_name')->search(request()->search)->paginate(config('default_pagination'));
+            $store_ids = $campaign->stores()->pluck('stores.id')->toArray();
+
             return view('admin-views.campaign.basic.view', compact('campaign', 'stores', 'store_ids'));
         }
         else
         {
-            $campaign = ItemCampaign::findOrFail($campaign);
+            $campaign = ItemCampaign::withStorage()->with(['store.storage', 'module.storage', 'nutritions', 'allergies', 'generic', 'unit'])->findOrFail($campaign);
         }
-        return view('admin-views.campaign.item.view', compact('campaign'));
+
+        $orders = $campaign->orderdetails()
+            ->with(['order.customer', 'order.store.storage'])
+            ->paginate(config('default_pagination'));
+
+        return view('admin-views.campaign.item.view', compact('campaign', 'orders'));
 
     }
 
@@ -853,7 +862,7 @@ class CampaignController extends Controller
         }
         $campaign->status = $status;
         $campaign->save();
-        Toastr::success(translate('messages.campaign_status_updated'));
+        Toastr::success(translate('messages.Campaign status updated'));
         return back();
     }
 
@@ -864,7 +873,7 @@ class CampaignController extends Controller
 
         $campaign->translations()->delete();
         $campaign->delete();
-        Toastr::success(translate('messages.campaign_deleted_successfully'));
+        Toastr::success(translate('Deleted successfully'));
         return redirect()->route('admin.campaign.list', 'basic');
     }
     public function delete_item(ItemCampaign $campaign)
@@ -876,7 +885,7 @@ class CampaignController extends Controller
         $campaign?->taxVats()->delete();
         $campaign?->carts()?->delete();
         $campaign->delete();
-        Toastr::success(translate('messages.campaign_deleted_successfully'));
+        Toastr::success(translate('Deleted successfully'));
         return back();
     }
 
@@ -884,49 +893,43 @@ class CampaignController extends Controller
     {
         $campaign->stores()->detach($store);
         $campaign->save();
+        $store = Store::with('vendor')->find($store);
+        if (!$store) {
+            Toastr::success(translate('messages.Store remove from campaign'));
+            return back();
+        }
         try
         {
-                    $push_notification_status= Helpers::getNotificationStatusData('store','store_campaign_join_rejaction','push_notification_status',$store->id);
-                    $store_push_notification_title= translate('Campaign_Request_Rejected') ;
-                    $store_push_notification_description= translate('Campaign_Request_Has_Been_Rejected_By_Admin') ;
+                    $push_notification_status= SendNotification::channelEnabled('store','store_campaign_join_rejaction','push_notification_status',$store->id);
+                    $store_push_notification_title= translate('Campaign Request Rejected') ;
+                    $store_push_notification_description= translate('Campaign request has been rejected by admin') ;
 
 
                 if($push_notification_status  &&  $store?->vendor?->firebase_token){
 
-                    $data = [
-                        'title' => $store_push_notification_title,
-                        'description' => $store_push_notification_description,
-                        'order_id' => '',
-                        'image' => '',
-                        'data_id'=> $campaign->id,
-                        'type' => 'campaign',
-                        'order_status' => '',
-                    ];
-                    Helpers::send_push_notif_to_device($store?->vendor?->firebase_token, $data);
-                    DB::table('user_notifications')->insert([
-                        'data' => json_encode($data),
-                        'vendor_id' => $store->vendor_id,
-                        'created_at' => now(),
-                        'updated_at' => now()
-                    ]);
+                    $data = NotificationMessages::campaignNotice($campaign, $store_push_notification_title, $store_push_notification_description);
+                    SendNotification::pushToVendor($store->vendor_id, $store?->vendor?->firebase_token, $data);
                 }
 
-            if(config('mail.status') && Helpers::get_mail_status('campaign_deny_mail_status_store') == '1' &&  Helpers::getNotificationStatusData('store','store_campaign_join_rejaction','mail_status',$store->id )) {
-                Mail::to($store->vendor?->getRawOriginal('email'))->send(new \App\Mail\VendorCampaignRequestMail($store->name,'denied'));
+            if(SendNotification::canSendMail('campaign_deny_mail_status_store', 'store', 'store_campaign_join_rejaction', $store->id)) {
+                SendNotification::mail($store->vendor?->getRawOriginal('email'), new \App\Mail\VendorCampaignRequestMail($store->name,'denied'));
             }
         }
         catch(\Exception $e)
         {
-            info($e->getMessage());
+            Log::error('admin.campaign_controller.remove_store_failed', [
+                'error' => $e->getMessage(),
+                'file' => $e->getFile().':'.$e->getLine(),
+            ]);
         }
-        Toastr::success(translate('messages.store_remove_from_campaign'));
+        Toastr::success(translate('messages.Store remove from campaign'));
         return back();
     }
     public function addstore(Request $request, Campaign $campaign)
     {
         $campaign->stores()->attach($request->store_id,['campaign_status' => 'confirmed','updated_at' => now(),'created_at' => now()]);
         $campaign->save();
-        Toastr::success(translate('messages.store_added_to_campaign'));
+        Toastr::success(translate('messages.Store added to campaign'));
         return back();
     }
 
@@ -937,61 +940,50 @@ class CampaignController extends Controller
         $campaign->save();
         try
         {
-            $store=Store::find($store_id);
+            $store=Store::with('vendor')->find($store_id);
 
             if ( $status == 'confirmed') {
-                    $push_notification_status= Helpers::getNotificationStatusData('store','store_campaign_join_approval','push_notification_status',$store->id);
-                    $store_push_notification_description= translate('Campaign_Request_Has_Been_Approved_By_Admin') ;
-                    $store_push_notification_title= translate('Campaign_Request_Approved') ;
+                    $push_notification_status= SendNotification::channelEnabled('store','store_campaign_join_approval','push_notification_status',$store->id);
+                    $store_push_notification_description= translate('Campaign Request Has Been Approved By Admin') ;
+                    $store_push_notification_title= translate('Campaign Request Approved') ;
                 }
                 else{
-                    $push_notification_status= Helpers::getNotificationStatusData('store','store_campaign_join_rejaction','push_notification_status',$store->id);
-                    $store_push_notification_title= translate('Campaign_Request_Rejected') ;
-                    $store_push_notification_description= translate('Campaign_Request_Has_Been_Rejected_By_Admin') ;
+                    $push_notification_status= SendNotification::channelEnabled('store','store_campaign_join_rejaction','push_notification_status',$store->id);
+                    $store_push_notification_title= translate('Campaign Request Rejected') ;
+                    $store_push_notification_description= translate('Campaign request has been rejected by admin') ;
                 }
 
                 if($push_notification_status  &&  $store?->vendor?->firebase_token){
 
-                    $data = [
-                        'title' => $store_push_notification_title,
-                        'description' => $store_push_notification_description,
-                        'order_id' => '',
-                        'image' => '',
-                        'type' => 'campaign',
-                        'data_id'=> $campaign->id,
-                        'order_status' => '',
-                    ];
-                    Helpers::send_push_notif_to_device($store?->vendor?->firebase_token, $data);
-                    DB::table('user_notifications')->insert([
-                        'data' => json_encode($data),
-                        'vendor_id' => $store->vendor_id,
-                        'created_at' => now(),
-                        'updated_at' => now()
-                    ]);
+                    $data = NotificationMessages::campaignNotice($campaign, $store_push_notification_title, $store_push_notification_description);
+                    SendNotification::pushToVendor($store->vendor_id, $store?->vendor?->firebase_token, $data);
                 }
 
 
 
-            if(config('mail.status') && Helpers::get_mail_status('campaign_deny_mail_status_store') == '1' && $status == 'rejected' &&  Helpers::getNotificationStatusData('store','store_campaign_join_rejaction','mail_status',$store->id )) {
-                Mail::to($store->vendor?->getRawOriginal('email'))->send(new \App\Mail\VendorCampaignRequestMail($store->name,'denied'));
+            if(SendNotification::canSendMail('campaign_deny_mail_status_store', 'store', 'store_campaign_join_rejaction', $store->id) && $status == 'rejected') {
+                SendNotification::mail($store->vendor?->getRawOriginal('email'), new \App\Mail\VendorCampaignRequestMail($store->name,'denied'));
             }
 
-            if(config('mail.status') && Helpers::get_mail_status('campaign_approve_mail_status_store') == '1' && $status == 'confirmed' &&  Helpers::getNotificationStatusData('store','store_campaign_join_approval','mail_status',$store->id )) {
-                Mail::to($store->vendor?->getRawOriginal('email'))->send(new \App\Mail\VendorCampaignRequestMail($store->name,'approved'));
+            if(SendNotification::canSendMail('campaign_approve_mail_status_store', 'store', 'store_campaign_join_approval', $store->id) && $status == 'confirmed') {
+                SendNotification::mail($store->vendor?->getRawOriginal('email'), new \App\Mail\VendorCampaignRequestMail($store->name,'approved'));
             }
         }
         catch(\Exception $e)
         {
-            info($e->getMessage());
+            Log::error('admin.campaign_controller.store_confirmation_failed', [
+                'error' => $e->getMessage(),
+                'file' => $e->getFile().':'.$e->getLine(),
+            ]);
         }
-        Toastr::success(translate('messages.store_added_to_campaign'));
+        Toastr::success(translate('messages.Store added to campaign'));
         return back();
     }
 
 
     public function basic_campaign_export(Request $request){
-        $key = explode(' ', $request['search']);
-        $campaigns=Campaign::with('module')->where('module_id', Config::get('module.current_module_id'))
+        $key = explode(' ', $request['search'] ?? '');
+        $campaigns=Campaign::with(['module'])->withCount('stores')->where('module_id', Config::get('module.current_module_id'))
         ->when(isset($key ), function ($q) use ($key){
             $q->where(function ($q) use ($key) {
                 foreach ($key as $value) {
@@ -1010,7 +1002,7 @@ class CampaignController extends Controller
 
         $campaign = Campaign::where('id',$request->id)->withCount('stores')->first();
             if(!$campaign){
-                Toastr::error(translate('messages.campaign_is_expired'));
+                Toastr::error(translate('messages.Campaign is expired'));
                 return back();
             }
             $stores = $campaign->stores()->search(request()->search)->get();
@@ -1025,8 +1017,8 @@ class CampaignController extends Controller
 
 
     public function item_campaign_export(Request $request){
-        $key = explode(' ', $request['search']);
-        $campaigns=ItemCampaign::where('module_id', Config::get('module.current_module_id'))
+        $key = explode(' ', $request['search'] ?? '');
+        $campaigns=ItemCampaign::with(['unit', 'store'])->where('module_id', Config::get('module.current_module_id'))
         ->when(isset($key ), function ($q) use ($key){
             $q->where(function ($q) use ($key) {
                 foreach ($key as $value) {

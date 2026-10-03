@@ -1,6 +1,6 @@
 @extends('layouts.vendor.app')
 
-@section('title',translate('messages.flash_sales'))
+@section('title',translate('Flash sales'))
 
 @push('css_or_js')
 
@@ -8,18 +8,17 @@
 
 @section('content')
     <div class="content container-fluid">
-        <!-- Page Header -->
         <div class="page-header">
             <h1 class="page-header-title">
                 <span class="page-header-icon">
-                    <img src="{{asset('public/assets/admin/img/condition.png')}}" class="w--26" alt="">
+                    <img src="{{asset('public/assets/admin/img/outline/condition.svg')}}" class="w--26" alt="">
                 </span>
                 <span>
-                    {{translate('messages.flash_sale_product_setup')}}
+                    {{translate('messages.Flash sale product setup')}}
                 </span>
             </h1>
+            <p class="page-header-desc">{{ translate('Flash sales you can join, and the discount each of your items would carry.') }}</p>
         </div>
-        <!-- End Page Header -->
         <div class="row g-3">
 
 
@@ -27,22 +26,22 @@
                 <div class="card">
                     <div class="card-header py-2 border-0">
                         <div class="search--button-wrapper">
-                            <h5 class="card-title">
-                                {{translate('messages.flash_sale_product_list')}}<span class="badge badge-soft-dark ml-2" id="itemCount">{{$items->total()}}</span>
-                            </h5>
+                            @include('partials._table-head', [
+                                'title'    => translate('messages.Flash sale product list'),
+                                'subtitle' => translate('messages.Your items taking part in the current flash sale.'),
+                                'count'    => $items->total(),
+                                'count_id' => 'itemCount',
+                            ])
                             <form  class="search-form">
-                                <!-- Search -->
 
                                 <div class="input-group input--group">
                                     <input id="datatableSearch_" value="{{ request()?->search ?? null }}" type="search" name="search" class="form-control"
-                                            placeholder="{{translate('ex_:_name')}}" aria-label="Search" >
+                                            placeholder="{{ translate('Ex') }}: Name" aria-label="Search" >
                                     <button type="submit" class="btn btn--secondary"><i class="tio-search"></i></button>
                                 </div>
-                                <!-- End Search -->
                             </form>
                         </div>
                     </div>
-                    <!-- Table -->
                     <div class="table-responsive datatable-custom">
                         <table id="columnSearchDatatable"
                                class="table table-borderless table-thead-bordered table-nowrap table-align-middle card-table"
@@ -53,14 +52,14 @@
                                }'>
                             <thead class="thead-light">
                             <tr class="text-center">
-                                <th class="border-0">{{translate('sl')}}</th>
-                                <th class="border-0">{{translate('messages.product')}}</th>
-                                <th class="border-0">{{translate('messages.Current_Stock')}}</th>
-                                <th class="border-0">{{translate('messages.Flash_sale_Qty')}}</th>
-                                <th class="border-0">{{translate('messages.Qty_Sold')}}</th>
-                                <th class="border-0">{{translate('messages.Discount')}}</th>
-                                <th class="border-0">{{translate('messages.Sold_Amount')}}</th>
-                                <th class="border-0">{{translate('messages.status')}}</th>
+                                <th class="border-0">{{translate('SL')}}</th>
+                                <th class="border-0">{{translate('messages.Product')}}</th>
+                                <th class="border-0">{{translate('Current stock')}}</th>
+                                <th class="border-0">{{translate('Flash sale quantity')}}</th>
+                                <th class="border-0">{{translate('Quantity sold')}}</th>
+                                <th class="border-0">{{translate('Discount')}}</th>
+                                <th class="border-0">{{translate('Sold amount')}}</th>
+                                <th class="border-0">{{translate('messages.Status')}}</th>
                             </tr>
 
                             </thead>
@@ -113,9 +112,9 @@
                                         @if($item['status'] == 0 || $item->flashSale->is_publish == 0)
                                         <span class="badge badge-soft-info">{{ translate('off')}}</span>
                                         @elseif($item->flashSale->is_publish == 1 && $t2->gte(now())  )
-                                        <span class="badge badge-soft-success"> {{ translate('running')}} </span>
+                                        <span class="badge badge-soft-success"> {{ translate('Running')}} </span>
                                         @else
-                                        <span class="badge badge-soft-danger">{{ translate('expired')}}</span>
+                                        <span class="badge badge-soft-danger">{{ translate('Expired')}}</span>
                                         @endif
                                     </td>
 
@@ -134,13 +133,12 @@
                     <div class="empty--data">
                         <img src="{{asset('/public/assets/admin/svg/illustrations/sorry.svg')}}" alt="public">
                         <h5>
-                            {{translate('no_data_found')}}
+                            {{translate('No data found')}}
                         </h5>
                     </div>
                     @endif
                 </div>
             </div>
-            <!-- End Table -->
         </div>
     </div>
 

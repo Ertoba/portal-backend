@@ -14,8 +14,8 @@
         data-initial-video-size="{{ $existingVideoSize }}">
         <div class="card-body">
             <div class="mb-20">
-                <h3 class="text--title text-dark mb-0">Product Video</h3>
-                <p class="fs-12 mb-0">Upload one optional video or provide a video link.</p>
+                <h3 class="text--title text-dark mb-0">{{ translate('Product video') }}</h3>
+                <p class="fs-12 mb-0">{{ translate('Upload one optional video or provide a video link.') }}</p>
             </div>
 
             <input type="hidden" name="remove_video" class="js-remove-video-input" value="0">
@@ -24,12 +24,12 @@
                 <label class="form-check form--check w-100">
                     <input class="form-check-input js-video-type-switch" type="radio" value="file"
                         name="video_upload_type" {{ $videoMode === 'file' ? 'checked' : '' }}>
-                    <span class="form-check-label">Upload Video</span>
+                    <span class="form-check-label">{{ translate('Upload Video') }}</span>
                 </label>
                 <label class="form-check form--check w-100">
                     <input class="form-check-input js-video-type-switch" type="radio" value="link"
                         name="video_upload_type" {{ $videoMode === 'link' ? 'checked' : '' }}>
-                    <span class="form-check-label">Upload Video Link</span>
+                    <span class="form-check-label">{{ translate('Upload video link') }}</span>
                 </label>
             </div>
 
@@ -44,7 +44,7 @@
                             <img width="34" height="34"
                                 src="{{ asset('public/assets/admin/img/video-placeholder.svg') }}" alt="">
                             <h6 class="mt-2 mb-0 fs-10 text-primary font-semibold text-center">
-                                <span>{{ translate('messages.Add Video') }}</span>
+                                <span>{{ translate('Add video') }}</span>
                             </h6>
                         </div>
                     </div>
@@ -85,11 +85,11 @@
             <div class="bg-light rounded p-20 mt-3 upload-video-link-container">
                 <div>
                     <label class="input-label text-capitalize d-flex align-items-center">
-                        <span class="line--limit-1">Provide Video Link</span>
+                        <span class="line--limit-1">{{ translate('Provide video link') }}</span>
                     </label>
                     <input type="text" name="video_link" class="form-control js-product-video-link"
                         value="{{ $existingVideoLink }}" placeholder="https://example.com/video" data-link-validation
-                        data-link-validation-message="Please enter a valid video link.">
+                        data-link-validation-message="{{ translate('Please enter a valid video link.') }}">
                 </div>
             </div>
         </div>

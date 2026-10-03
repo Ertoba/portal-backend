@@ -16,9 +16,6 @@ use Illuminate\Support\Carbon;
  */
 class CustomRoleUpdateRequest extends FormRequest
 {
-    /**
-     * Determine if the user is authorized to make this request.
-     */
     public function authorize(): bool
     {
         return true;
@@ -41,9 +38,9 @@ class CustomRoleUpdateRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'name.0.required'=>translate('default_data_is_required'),
-            'name.required'=>translate('messages.Role name is required!'),
-            'modules.required'=>translate('messages.Please select atleast one module')
+            'name.0.required'=>translate('Default data is required'),
+            'name.required'=>translate('messages.Role name is required'),
+            'modules.required'=>translate('messages.Please select at least one module')
         ];
     }
 }

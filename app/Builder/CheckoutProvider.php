@@ -2,8 +2,17 @@
 
 namespace App\Builder;
 
+use App\Services\Marketing\CashBackService;
+use App\Services\Order\DeliveryChargeService;
+use App\Services\System\DistanceService;
+use App\Services\Zone\DeliveryRuleService;
+use App\Services\Zone\FreeDeliveryService;
+use App\Services\Zone\SurgePriceService;
+use App\Services\Zone\ZoneService;
 use App\CentralLogics\Helpers;
 use App\Models\BusinessSetting;
+use App\Models\DeliveryRule;
+use App\Models\FreeDelivery;
 use App\Models\Cart;
 use App\Models\CashBackHistory;
 use App\Models\Item;
@@ -12,9 +21,9 @@ use App\Models\OfflinePaymentMethod;
 use App\Models\OfflinePayments;
 use App\Models\Store;
 use App\Models\User;
-use App\Traits\PlaceNewOrder;
+use App\Traits\Order\PlaceNewOrderTrait;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
+use App\Support\Cache\ApiCache;
 use Illuminate\Support\Facades\DB;
 use Modules\Builder\Contracts\CartProvider;
 use Modules\Builder\Contracts\CheckoutProvider as CheckoutProviderContract;
@@ -26,27 +35,9 @@ use Modules\Builder\ValueObjects\Storefront\CheckoutQuoteDTO;
 use Modules\Builder\ValueObjects\Storefront\CheckoutSnapshotDTO;
 use Modules\Builder\ValueObjects\StorefrontScope;
 
-/**
- * Host adapter wiring the storefront checkout to 6amMart's existing
- * order-placement pipeline (PlaceNewOrder trait + BusinessSetting + Helpers).
- *
- * Three responsibilities — see CheckoutProvider contract for the canonical
- * shape of each return value.
- *
- * Implementation notes:
- *  - quote() approximates the host's full pricing pipeline (delivery fee +
- *    surge + tax + tips + packaging) accurately enough for the storefront's
- *    UX. The CANONICAL re-validation happens at place-order time inside the
- *    host's PlaceNewOrder trait, which is the single source of truth for the
- *    final order_amount written to the DB.
- *  - placeOrder() builds a Request that PlaceNewOrder::new_place_order()
- *    accepts and forwards to it via an anonymous class that uses the trait.
- *    Auth is bridged by setUserResolver() so $request->user works with the
- *    customer guard's User model.
- */
 class CheckoutProvider implements CheckoutProviderContract
 {
-    use PlaceNewOrder;
+    use PlaceNewOrderTrait;
 
     public function __construct(
         private StorefrontContext $context,
@@ -65,10 +56,6 @@ class CheckoutProvider implements CheckoutProviderContract
         $store   = $storeId ? $this->loadStoreWithOpenFlag($storeId) : null;
         $deliveryTypes = $this->mapDeliveryTypes($store);
 
-        // Schedule delivery is reserved for authenticated customers — guests
-        // can't be reliably re-contacted for slot reminders / no-show flows,
-        // and the host's scheduling pipeline assumes a real customer record.
-        // Force the flag off (and skip the slot query) when no customerId.
         if ($customerId === null) {
             $deliveryTypes['schedule'] = false;
         }
@@ -76,41 +63,82 @@ class CheckoutProvider implements CheckoutProviderContract
         return CheckoutSnapshotDTO::fromArray([
             'store'          => $this->mapStore($store),
             'deliveryTypes'  => $deliveryTypes,
-            'paymentMethods' => $this->mapPaymentMethods($customerId),
+            'paymentMethods' => $this->mapPaymentMethods($customerId, $store),
             'features'       => $this->mapFeatures($store),
-            // Tip presets come from the host capability manifest so each
-            // project can set its own (falls back to the legacy default).
             'tipPresets'     => (array) config('builder.capabilities.checkout.tipPresets', [10, 15, 20, 40]),
             'mostTipped'     => $this->mostTippedAmount(),
-            // Only build slots when scheduling is actually enabled — saves
-            // a query for every page render on stores that don't allow it.
             'scheduleSlots'  => ($deliveryTypes['schedule'] && $storeId)
                 ? $this->buildScheduleSlots($storeId, $deliveryTypes['scheduleSlotDuration'])
                 : [],
+            'coverage'       => $this->mapCoverage($store, $scope?->moduleId),
         ]);
     }
 
     /**
-     * Generate the next 7 days worth of pickable schedule slots for the
-     * store, honoring the store_schedule rows + the host's slot duration
-     * setting. Past slots for "today" are dropped so users can't pick a
-     * time that has already passed.
+     * The priced areas or ZIP codes the customer must pick from — port doc §15.3.
      *
-     * Returns:
-     *   [
-     *     ['date' => '2026-05-10', 'label' => 'Today',
-     *      'slots' => [
-     *        ['start' => '14:00', 'end' => '14:30',
-     *         'iso'   => '2026-05-10 14:00:00',
-     *         'label' => '2:00 PM - 2:30 PM'],
-     *        …,
-     *      ]],
-     *     …,
-     *   ]
+     * Empty unless the store's (zone, module) is priced by an ACTIVE `area_wise` or
+     * `zip_code_wise` rule, which is what hides the picker in distance and fixed zones. Empty
+     * too for a self-delivery store, which charges its own rates and has no coverage of its own.
+     *
+     * @return array{method:string, isZip:bool, options:array<int, array{id:int,name:string}>}|array{}
      */
+    private function mapCoverage(mixed $store, ?int $moduleId): array
+    {
+        if (! $store?->zone_id || ! $moduleId || (int) ($store->sub_self_delivery ?? 0) === 1) {
+            return [];
+        }
+
+        $payload = app(DeliveryRuleService::class)->coverageForZone($store->zone_id, $moduleId);
+        $method = $payload['type'] ?? null;
+
+        if (! in_array($method, [DeliveryRule::METHOD_AREA, DeliveryRule::METHOD_ZIP], true)) {
+            return [];
+        }
+
+        return [
+            'method' => $method,
+            'isZip' => $method === DeliveryRule::METHOD_ZIP,
+            'options' => array_map(
+                fn ($row) => ['id' => (int) $row['id'], 'name' => (string) $row['name']],
+                $payload['coverage'] ?? [],
+            ),
+        ];
+    }
+
+    /**
+     * The customer's coverage pick, or nulls — port doc §5.4.
+     *
+     * A customer can post any id. Left unchecked they post the id of a cheaper area in another
+     * zone and are charged its rate, so a pick that does not belong to this zone is discarded
+     * rather than trusted: the worst case is then the rule's own floor, never someone else's
+     * cheaper rate. The engine repeats this check; this is the near line, that is the far one.
+     *
+     * The storefront posts CAMELCASE (`areaId`, `zipCodeId`) — a host-side
+     * `request()->input('area_id')` would find nothing.
+     *
+     * @return array{0:?int, 1:?int}
+     */
+    private function validatedCoveragePick(mixed $store, array $state): array
+    {
+        $areaId = $state['areaId'] ?? null;
+        $zipCodeId = $state['zipCodeId'] ?? null;
+        $rules = app(DeliveryRuleService::class);
+
+        if ($areaId && ! $rules->coverageBelongsToZone($store->zone_id, (int) $areaId, null)) {
+            $areaId = null;
+        }
+
+        if ($zipCodeId && ! $rules->coverageBelongsToZone($store->zone_id, null, (int) $zipCodeId)) {
+            $zipCodeId = null;
+        }
+
+        return [$areaId ? (int) $areaId : null, $zipCodeId ? (int) $zipCodeId : null];
+    }
+
     private function buildScheduleSlots(int $storeId, int $slotDurationMin): array
     {
-        $duration = max(5, $slotDurationMin); // safety floor — avoids infinite loops
+        $duration = max(5, $slotDurationMin);
         $rows = \DB::table('store_schedule')
             ->where('store_id', $storeId)
             ->get(['day', 'opening_time', 'closing_time']);
@@ -133,7 +161,7 @@ class CheckoutProvider implements CheckoutProviderContract
 
         for ($i = 0; $i < 7; $i++) {
             $day      = $today->copy()->addDays($i);
-            $dow      = (int) $day->dayOfWeek; // 0=Sunday … 6=Saturday
+            $dow      = (int) $day->dayOfWeek;
             $ranges   = $byDay[$dow] ?? [];
             $slots    = [];
 
@@ -173,9 +201,6 @@ class CheckoutProvider implements CheckoutProviderContract
 
     private function loadStoreWithOpenFlag(int $storeId): ?Store
     {
-        // Store::scopeWithOpen() needs a coordinate pair — use the customer's
-        // selected location when present, otherwise the store's own coords.
-        // The `open` flag itself is computed from store_schedule, not distance.
         $loc  = $this->location->current();
         $lat  = $loc['lat'] ?? null;
         $lng  = $loc['lng'] ?? null;
@@ -193,31 +218,43 @@ class CheckoutProvider implements CheckoutProviderContract
             return null;
         }
 
-        // `open` is only populated when withOpen() was applied; default to true
-        // (closed stores will be re-checked at place-order time anyway).
         $open = isset($store->open) ? (bool) $store->open : true;
 
-        $freeDeliveryOver = (float) ($store->free_delivery == 1 ? 0 : ($store->minimum_order ?? 0));
+        // TC_15 — this used to only ever look at the vendor's own free-delivery flag, so a store
+        // whose free delivery came from the admin's zone/module setup (the source checkout's own
+        // fee computation already honours) reported no free-delivery status here at all. Checked
+        // in the same precedence order effectiveFee() applies at checkout: vendor flag first, then
+        // the admin setup.
+        $adminFreeDelivery = app(FreeDeliveryService::class)->activeSetup($store->zone_id, $store->module_id);
+        $freeDeliveryOver = match (true) {
+            (int) ($store->free_delivery ?? 0) === 1 => 0.0,
+            $adminFreeDelivery?->type === FreeDelivery::TYPE_ALL => 0.0,
+            $adminFreeDelivery?->type === FreeDelivery::TYPE_CRITERIA => (float) ($adminFreeDelivery->minimum_order_amount ?? 0),
+            default => null,
+        };
 
         return [
             'id'               => (int) $store->id,
             'name'             => (string) $store->name,
             'open'             => $open,
             'minOrder'         => (float) ($store->minimum_order ?? 0),
-            'freeDeliveryOver' => $store->free_delivery ? 0.0 : null,
+            'freeDeliveryOver' => $freeDeliveryOver,
+            // Storefront-only: lets the checkout page ask Google's Distance Matrix for a real
+            // routed distance to this store, the same way the customer app's own client does
+            // before it posts `distance` to /order/checkout-summary. Without this the page has
+            // no way to compute one at all and computeDelivery() falls back to a straight-line
+            // estimate, which undercharges every distance-priced zone (see haversineKm()).
+            'latitude'         => $store->latitude !== null ? (float) $store->latitude : null,
+            'longitude'        => $store->longitude !== null ? (float) $store->longitude : null,
         ];
     }
 
     private function mapDeliveryTypes(?Store $store = null): array
     {
-        // Global master switches from business_settings.
         $delivery = (int) Helpers::get_business_settings('home_delivery_status') === 1;
         $pickup   = (int) Helpers::get_business_settings('takeaway_status') === 1;
         $schedule = (bool) Helpers::get_business_settings('schedule_order');
 
-        // Per-store toggles override the globals — a store can disable any of
-        // these for itself even when the platform allows them. A type only
-        // stays on when BOTH the global switch and the store flag are enabled.
         if ($store) {
             $delivery = $delivery && (bool) $store->delivery;
             $pickup   = $pickup   && (bool) $store->take_away;
@@ -232,12 +269,6 @@ class CheckoutProvider implements CheckoutProviderContract
         ];
     }
 
-    /**
-     * `schedule_order_slot_duration` is documented in minutes by the host's
-     * BusinessSettingsController, but live data has been seen at 600000 (416
-     * days) — the field has no admin-side validation. Clamp to a sensible
-     * range so a bad value can't kill the picker.
-     */
     private function slotDurationMinutes(): int
     {
         $raw = (int) (Helpers::get_business_settings('schedule_order_slot_duration') ?? 0);
@@ -247,16 +278,18 @@ class CheckoutProvider implements CheckoutProviderContract
         return $raw;
     }
 
-    private function mapPaymentMethods(?int $customerId): array
+    private function mapPaymentMethods(?int $customerId, ?Store $store = null): array
     {
+        // Zone only narrows the platform setting, never widens it — same rule
+        // ConfigService.php applies for the legacy checkout's /config payload — so a method the
+        // admin unchecked in "Connect module with zone" (see the screenshot) is hidden here too,
+        // instead of being offerable and only rejected once the order is placed.
+        $zoneAllowed = app(ZoneService::class)->allowedPaymentMethodsForZoneIds($store?->zone_id);
+
         $cod             = Helpers::get_business_settings('cash_on_delivery');
         $digital         = Helpers::get_business_settings('digital_payment');
-        $offlineEnabled  = (int) Helpers::get_business_settings('offline_payment_status') === 1;
+        $offlineEnabled  = $zoneAllowed['offline_payment'] && (int) Helpers::get_business_settings('offline_payment_status') === 1;
 
-        // Master switch (config/builder.php) forces partial + wallet off
-        // regardless of the host's business settings. This is how the
-        // storefront hides the wallet+partial payment options without
-        // touching admin config.
         $walletFeaturesEnabled = (bool) \config('builder.wallet_features_enabled', true);
         $partialEnabled  = $walletFeaturesEnabled
             && (int) Helpers::get_business_settings('partial_payment_status') === 1;
@@ -269,9 +302,6 @@ class CheckoutProvider implements CheckoutProviderContract
             $walletBalance = (float) (User::query()->where('id', $customerId)->value('wallet_balance') ?? 0);
         }
 
-        // Hydrate offline methods with both `method_fields` (admin-provided
-        // bank info shown to the customer for reference) and
-        // `method_informations` (the dynamic form schema the customer fills).
         $offlineMethods = $offlineEnabled
             ? OfflinePaymentMethod::query()
                 ->where('status', 1)
@@ -288,7 +318,7 @@ class CheckoutProvider implements CheckoutProviderContract
             : [];
 
         $gateways = [];
-        if (is_array($digital) && (int) ($digital['status'] ?? 0) === 1) {
+        if ($zoneAllowed['digital_payment'] && is_array($digital) && (int) ($digital['status'] ?? 0) === 1) {
             foreach (Helpers::getActivePaymentGateways() as $g) {
                 $gateways[] = [
                     'key'      => (string) ($g['gateway'] ?? ''),
@@ -300,7 +330,7 @@ class CheckoutProvider implements CheckoutProviderContract
 
         return [
             'cod' => [
-                'enabled'           => is_array($cod) && (int) ($cod['status'] ?? 0) === 1,
+                'enabled'           => $zoneAllowed['cash_on_delivery'] && is_array($cod) && (int) ($cod['status'] ?? 0) === 1,
                 'allowChangeAmount' => true,
             ],
             'offline' => [
@@ -327,9 +357,9 @@ class CheckoutProvider implements CheckoutProviderContract
 
         $extraPackagingFee = 0.0;
         $extraPackagingEnabled = false;
-        if ($store && ($cfg = $store->storeConfig ?? null)) {
+        if ($store && $this->packagingAllowedForModule($store) && ($cfg = $store->storeConfig ?? null)) {
             $extraPackagingEnabled = (int) ($cfg->extra_packaging_status ?? 0) === 1;
-            $extraPackagingFee     = (float) ($cfg->extra_packaging_amount ?? 0);
+            $extraPackagingFee     = $extraPackagingEnabled ? (float) ($cfg->extra_packaging_amount ?? 0) : 0.0;
         }
 
         $taxIncluded = false;
@@ -347,8 +377,9 @@ class CheckoutProvider implements CheckoutProviderContract
                 'amount'  => $additionalChargeAmount,
             ],
             'extraPackaging' => [
-                'enabled' => $extraPackagingEnabled,
-                'fee'     => $extraPackagingFee,
+                'enabled'  => $extraPackagingEnabled,
+                'required' => false,
+                'fee'      => $extraPackagingFee,
             ],
             'taxIncluded' => $taxIncluded,
         ];
@@ -356,12 +387,8 @@ class CheckoutProvider implements CheckoutProviderContract
 
     private function mostTippedAmount(): ?float
     {
-        // Aggregate is a full-table GROUP BY on `orders.dm_tips` — fine
-        // for a UX badge but ruinous on every checkout page render once
-        // the orders table grows. Cache for 6h; the "most common tip"
-        // value moves slowly enough that staleness is invisible.
         try {
-            return Cache::remember('builder.checkout.mostTipped', now()->addHours(6), function () {
+            return ApiCache::remember('builder_checkout', 'mostTipped', function () {
                 $val = DB::table('orders')
                     ->where('dm_tips', '>', 0)
                     ->select('dm_tips', DB::raw('count(*) as n'))
@@ -383,53 +410,65 @@ class CheckoutProvider implements CheckoutProviderContract
         $cart = $this->cart->list();
         $items = $cart['items'] ?? [];
 
-        // The cart's stored line `price` is the DISCOUNTED line total
-        // (catalog × qty minus the active sale/flash item discount,
-        // baked in at add-to-cart time). For the summary breakdown we
-        // need the GROSS itemPrice (catalog × qty) so that subtracting
-        // `$itemDiscount` below applies the discount exactly once, the
-        // displayed "Item Price - Discount - Coupon" math matches what
-        // place_order persists, and the coupon base is computed
-        // against the post-item-discount payable (not gross minus
-        // twice-applied discount).
         $itemDiscount   = $this->sumItemLevelDiscount($items);
         $discountedLine = (float) ($cart['totals']['subtotal'] ?? 0);
         $itemPrice      = $discountedLine + $itemDiscount;
 
-        // Coupon (optional) — runs against the discounted subtotal so that
-        // percent coupons compute against the actually-payable amount.
+        // The store-wide rate -- a happy hour, or the vendor's own standing discount -- takes the
+        // WHOLE basket over from the items' own discounts, never both. Same rule
+        // PlaceNewOrderTrait::makeOrderDetails() applies at order placement and ItemPricing::compute()
+        // applies to a single item's display price, and the one StackFood's own
+        // CheckoutProvider::cartPricing() has always followed: a configured rate suppresses the
+        // items' own discounts even when it computes to nothing (basket under the minimum spend) --
+        // it does not fall back to them, or the customer would see the promotion silently swap
+        // depending on basket size.
+        //
+        // Computed on the GROSS basket ($itemPrice, before $itemDiscount comes off) rather than the
+        // item-discounted one: that is what checkAdminDiscount() is charged against everywhere else,
+        // and charging it on a smaller, already-discounted base would quietly shrink the discount.
+        $basketDiscount = $this->storeWideVerdict($scope, $itemPrice);
+        $storeWideDiscount = $basketDiscount['discount'];
+        $storeWideSource   = $basketDiscount['source'];
+
+        if ($basketDiscount['rateExists']) {
+            $itemDiscount = 0.0;
+        }
+
         $couponCode      = $state['couponCode'] ?? null;
         $couponDiscount  = 0.0;
         $couponTitle     = null;
         $couponError     = null;
         $couponFreeDeliv = false;
         if ($couponCode) {
-            $base = max(0.0, $itemPrice - $itemDiscount);
+            // Net of the store-wide reduction too, matching placement: getCalculatedTax() and
+            // placeNewOrder() both hand the coupon a basket that already had the store rate taken
+            // off. Validating against the gross basket here would let a coupon with a minimum
+            // spend pass on the quote and then be refused at placement.
+            $base = max(0.0, $itemPrice - $itemDiscount - $storeWideDiscount);
             $r = $this->coupons->validate((string) $couponCode, $customerId, $scope, $base);
             if ($r['ok'] ?? false) {
-                // Adopt the canonical code from the DB. The apply-time lookup
-                // is case-insensitive, but the host's place-order coupon check
-                // (getCouponData) matches `code` exactly — so submitting the
-                // shopper's raw casing (e.g. "save10" vs stored "SAVE10")
-                // makes the order fail with "coupon expired". Carry the exact
-                // stored code through to placeOrder().
                 $couponCode      = $r['code'] ?? $couponCode;
                 $couponDiscount  = (float) ($r['discount'] ?? 0);
                 $couponTitle     = $r['title'] ?? null;
                 $couponFreeDeliv = (bool) ($r['freeDelivery'] ?? false);
             } else {
                 $couponError = (string) ($r['error'] ?? 'Invalid coupon');
-                $couponCode  = null; // ignore the bad code in the totals
+                $couponCode  = null;
             }
         }
 
-        $discountedSubtotal = max(0.0, $itemPrice - $itemDiscount - $couponDiscount);
+        $discountedSubtotal = max(0.0, $itemPrice - $itemDiscount - $storeWideDiscount - $couponDiscount);
+        $state['couponCode'] = $couponCode;
 
-        // Delivery — pickup short-circuits to zero.
         $deliveryType = $state['deliveryType'] ?? 'delivery';
-        [$deliveryFee, $deliveryFeeNote, $distanceKm, $freeDelivery] = $deliveryType === 'pickup'
-            ? [0.0, null, null, ['active' => false, 'reason' => 'pickup']]
-            : $this->computeDelivery($scope, $state, $itemPrice, $couponFreeDeliv);
+        $delivery = $deliveryType === 'pickup'
+            ? $this->deliveryQuote(0.0, null, null, ['active' => false, 'reason' => 'pickup'])
+            : $this->computeDelivery($scope, $state, $discountedSubtotal, $couponFreeDeliv);
+
+        $deliveryFee = $delivery['fee'];
+        $deliveryFeeNote = $delivery['note'];
+        $distanceKm = $delivery['distanceKm'];
+        $freeDelivery = $delivery['freeDelivery'];
 
         $tax = $this->computeTax($scope, $customerId, $state, $discountedSubtotal);
 
@@ -443,15 +482,7 @@ class CheckoutProvider implements CheckoutProviderContract
         $tipsEnabled = (int) Helpers::get_business_settings('dm_tips_status') === 1;
         $dmTip = ($tipsEnabled && $deliveryType !== 'pickup') ? (float) ($state['tip'] ?? 0) : 0.0;
 
-        $packagingFee = 0.0;
-        if (!empty($state['extraPackaging'])) {
-            $store = $scope?->subTenantId ? Store::find($scope->subTenantId) : null;
-            if ($store && ($cfg = $store->storeConfig ?? null)) {
-                $packagingFee = (int) ($cfg->extra_packaging_status ?? 0) === 1
-                    ? (float) ($cfg->extra_packaging_amount ?? 0)
-                    : 0.0;
-            }
-        }
+        $packagingFee = $this->extraPackagingFee($scope, $state);
 
         $taxIncluded = $this->isTaxIncluded();
         $total = $discountedSubtotal + ($taxIncluded ? 0 : $tax) + $deliveryFee + $additionalCharge + $dmTip + $packagingFee;
@@ -461,14 +492,20 @@ class CheckoutProvider implements CheckoutProviderContract
         return CheckoutQuoteDTO::fromArray([
             'itemPrice'        => $this->roundMoney($itemPrice),
             'itemDiscount'     => $this->roundMoney($itemDiscount),
+            'storeWideDiscount' => $this->roundMoney($storeWideDiscount),
+            'storeWideSource'  => $storeWideSource,
             'couponCode'       => $couponCode,
             'couponTitle'      => $couponTitle,
             'couponDiscount'   => $this->roundMoney($couponDiscount),
             'couponError'      => $couponError,
             'tax'              => $this->roundMoney($tax),
+            'taxEnabled'       => true,
             'taxIncluded'      => $taxIncluded,
             'deliveryFee'      => $this->roundMoney($deliveryFee),
             'deliveryFeeNote'  => $deliveryFeeNote,
+            // §12.1 — equal to `deliveryFee` when nothing was taken off, so the storefront can
+            // render it unconditionally and compare the two.
+            'deliveryFeeBeforeDiscount' => $this->roundMoney($delivery['beforeDiscount']),
             'additionalCharge' => $this->roundMoney($additionalCharge),
             'dmTip'            => $this->roundMoney($dmTip),
             'extraPackaging'   => $this->roundMoney($packagingFee),
@@ -479,15 +516,92 @@ class CheckoutProvider implements CheckoutProviderContract
         ]);
     }
 
+
+    /**
+     * The shape computeDelivery() answers in.
+     *
+     * A named array rather than the four-element list it used to return: S11 added two more
+     * values, and a six-element list is where a caller starts destructuring the wrong slot.
+     *
+     * @return array{fee:float, note:?string, distanceKm:?float, freeDelivery:array, beforeDiscount:float}
+     */
+    private function deliveryQuote(
+        float $fee,
+        ?string $note,
+        ?float $distanceKm,
+        array $freeDelivery,
+        ?float $beforeDiscount = null,
+    ): array {
+        return [
+            'fee' => $fee,
+            'note' => $note,
+            'distanceKm' => $distanceKm,
+            'freeDelivery' => $freeDelivery,
+            // Defaults to the fee itself, so "nothing was taken off" needs no special case.
+            'beforeDiscount' => $beforeDiscount ?? $fee,
+        ];
+    }
+
+    public function shippingMethods(?StorefrontScope $scope, ?int $customerId): array
+    {
+        return ['enabled' => false, 'groups' => []];
+    }
+
+    public function selectShippingMethod(?StorefrontScope $scope, ?int $customerId, string $cartGroupId, int $shippingMethodId): array
+    {
+        return ['success' => false, 'error' => 'Order-wise shipping selection is not available.'];
+    }
+
+    public function resolveDigitalPaymentReturn(array $query): array
+    {
+        return ['orderId' => null, 'phone' => null];
+    }
+
+    /**
+     * The store-wide rate's verdict on this basket -- a happy hour or the vendor's own standing
+     * discount -- charged through the same helper placement uses (Helpers::checkAdminDiscount()),
+     * so the quote and the bill apply the minimum spend and the cap identically.
+     *
+     * `rateExists` is true whenever the store has a live rate configured at all, independent of
+     * whether it produced a discount here -- callers use it to decide whether the items' own
+     * discounts are suppressed (see the call site in quote()).
+     *
+     * @return array{discount: float, source: ?string, rateExists: bool}
+     */
+    private function storeWideVerdict(?StorefrontScope $scope, float $grossBasket): array
+    {
+        $empty = ['discount' => 0.0, 'source' => null, 'rateExists' => false];
+
+        $storeId = $scope?->subTenantId;
+
+        if (! $storeId) {
+            return $empty;
+        }
+
+        $store = Store::query()->with('discount')->find($storeId);
+        $rate = Helpers::get_store_discount($store);
+
+        if (! $rate || ($rate['discount'] ?? 0) <= 0) {
+            return $empty;
+        }
+
+        $discount = (float) Helpers::checkAdminDiscount(
+            price: $grossBasket,
+            discount: $rate['discount'],
+            max_discount: $rate['max_discount'],
+            min_purchase: $rate['min_purchase'],
+        );
+
+        return [
+            'discount' => $discount,
+            // Below the minimum purchase nothing came off, so there is no rate to name.
+            'source' => $discount > 0 ? ($rate['source'] ?? null) : null,
+            'rateExists' => true,
+        ];
+    }
+
     private function sumItemLevelDiscount(array $items): float
     {
-        // For plain rows (no variation), gross = catalog × qty and the
-        // difference vs stored line price surfaces as a visible Discount
-        // row. For rows WITH variations the stored line already includes
-        // the option adders, so catalog × qty < line — we skip those
-        // (the `if ($gross > $line)` guard handles this naturally) and
-        // the breakdown shows a single combined Item Price line, matching
-        // the user's preference for variation-bearing rows.
         $sum = 0.0;
         foreach ($items as $row) {
             $catalog = $row['item']['price'] ?? null;
@@ -504,182 +618,230 @@ class CheckoutProvider implements CheckoutProviderContract
         return $sum;
     }
 
-    /**
-     * Server-side delivery-fee approximation. For Phase 1 we cover:
-     *   - free-delivery short-circuits (admin / coupon / store)
-     *   - distance-based (self-delivery): per_km × km, bounded by min/max
-     *   - fixed-fee (platform delivery): zone or store pivot fixed_shipping_charge
-     *
-     * Surge & vehicle-extra are deferred to placeOrder() (host re-derives them
-     * authoritatively). This is good enough for the user-facing total — the
-     * canonical figure on the order row comes from PlaceNewOrder either way.
-     *
-     * @return array{0: float, 1: ?string, 2: ?float, 3: array{active: bool, reason: ?string}}
-     */
-    private function computeDelivery(?StorefrontScope $scope, array $state, float $itemPrice, bool $couponFreeDelivery): array
+    private function computeDelivery(?StorefrontScope $scope, array $state, float $eligibleAmount, bool $couponFreeDelivery): array
     {
         $storeId = $scope?->subTenantId;
         if (!$storeId) {
-            return [0.0, __('messages.service_not_available_in_this_area'), null, ['active' => false, 'reason' => null]];
+            return $this->deliveryQuote(0.0, __('messages.service_not_available_in_this_area'), null, ['active' => false, 'reason' => null]);
         }
 
-        // Resolve destination coords (from saved address id, ad-hoc state, or current location).
         [$destLat, $destLng] = $this->resolveDestinationCoords($state);
         if ($destLat === null || $destLng === null) {
-            return [0.0, 'Select a delivery address to see the delivery fee.', null, ['active' => false, 'reason' => null]];
+            return $this->deliveryQuote(0.0, 'Select a delivery address to see the delivery fee.', null, ['active' => false, 'reason' => null]);
         }
 
+        // `store_business_model` and the `store_sub` relation are loaded because
+        // sub_self_delivery (below) is an accessor that defers to the subscription for
+        // subscription-model stores. Without them it either lazy-loads — which strict mode
+        // forbids — or silently answers from the raw column.
         $store = Store::query()
             ->select(['id', 'latitude', 'longitude', 'self_delivery_system', 'free_delivery',
                       'per_km_shipping_charge', 'minimum_shipping_charge', 'maximum_shipping_charge',
-                      'minimum_order', 'zone_id'])
+                      // `module_id` is not decoration: step 7a of the fee pipeline reads the
+                      // store's (zone, module) to find the admin's free-delivery setup, and an
+                      // unselected column answers NULL — so the storefront skipped that step
+                      // entirely and never gave admin free delivery. Found in S11.
+                      'minimum_order', 'zone_id', 'module_id', 'store_business_model'])
+            ->with('store_sub')
             ->where('id', $storeId)
             ->first();
         if (!$store) {
-            return [0.0, null, null, ['active' => false, 'reason' => null]];
+            return $this->deliveryQuote(0.0, null, null, ['active' => false, 'reason' => null]);
         }
 
-        $distanceKm = $this->haversineKm((float) $store->latitude, (float) $store->longitude, $destLat, $destLng);
+        // A real routed distance, when the storefront managed to get one from Google's Distance
+        // Matrix (see mapStore()'s latitude/longitude and CheckoutController::normalizeState()).
+        // Straight-line haversine is the fallback only — before the client-side lookup resolves,
+        // if it errors, or for a customer whose browser blocked the Maps script. It is always a
+        // shorter, cheaper UNDER-estimate of the real route, so a zone priced per km/mile must
+        // never treat it as anything but a stopgap: place_order and the REST API's own
+        // checkout-summary both price off a client-supplied routed distance, never haversine.
+        $clientDistanceKm = isset($state['distance']) ? (float) $state['distance'] : null;
+        $distanceKm = $clientDistanceKm !== null && $clientDistanceKm > 0
+            ? $clientDistanceKm
+            : $this->haversineKm((float) $store->latitude, (float) $store->longitude, $destLat, $destLng);
 
-        // --- Base delivery fee (BEFORE free-delivery rules) ---
-        if ((int) ($store->self_delivery_system ?? 0) === 1) {
-            // Self-delivery: store-owned. Distance × per-km bounded by store
-            // min/max. Surge + vehicle-extra do NOT apply (host's
-            // getDeliveryCharge zeroes them for self-delivery).
-            $fee = $this->boundedDistanceFee(
-                $distanceKm,
-                (float) $store->per_km_shipping_charge,
-                (float) $store->minimum_shipping_charge,
-                (float) $store->maximum_shipping_charge,
-            );
-            $note = $fee > 0
-                ? sprintf('%.2f km × store rate', $distanceKm)
-                : 'Store has no per-km delivery rate set.';
-        } else {
-            // Platform delivery: zone-module pivot owns the pricing rule. The
-            // pivot's `delivery_charge_type` switches between distance (per-km
-            // bounded by min/max) and fixed (flat fee). Mirrors the host's
-            // PlaceNewOrder::getDeliveryCharge logic.
+        // The storefront asks the same question place_order asks. It used to read the raw
+        // `self_delivery_system` column instead, which disagrees with the subscription on a
+        // subscription-model store — and for four stores on this install that meant the app
+        // charged the zone rate while the storefront charged nothing at all, because those
+        // stores have no self-delivery rates of their own to fall back on.
+        $isSelfDelivery = (int) ($store->sub_self_delivery ?? 0) === 1;
+
+        // TC_16 — the admin's own zone/module threshold (when the setup is amount-based), so the
+        // storefront can show "add $X more for free delivery" progress toward it. This is
+        // independent of whether the order already qualifies through some OTHER free-delivery
+        // source (the vendor's own flag, a coupon, or an "every order" setup with no threshold at
+        // all) — those still zero the fee via effectiveFee() below, they just have nothing to show
+        // a progress bar against.
+        $freeDeliverySetup = app(FreeDeliveryService::class)->activeSetup($store->zone_id, $scope?->moduleId);
+        $freeDeliveryThreshold = ($freeDeliverySetup && $freeDeliverySetup->type === FreeDelivery::TYPE_CRITERIA)
+            ? (float) ($freeDeliverySetup->minimum_order_amount ?? 0)
+            : 0.0;
+        $freeDeliveryProgress = function (bool $isFree, ?string $reason) use ($freeDeliveryThreshold, $eligibleAmount): array {
+            return [
+                'active'       => $isFree,
+                'reason'       => $reason,
+                'enabled'      => $freeDeliveryThreshold > 0,
+                'threshold'    => $freeDeliveryThreshold,
+                'qualified'    => $isFree || ($freeDeliveryThreshold > 0 && $eligibleAmount >= $freeDeliveryThreshold),
+                'amountNeeded' => $freeDeliveryThreshold > 0 ? max(0.0, $freeDeliveryThreshold - $eligibleAmount) : 0.0,
+                'progress'     => $freeDeliveryThreshold > 0 ? min(100.0, ($eligibleAmount / $freeDeliveryThreshold) * 100) : 0.0,
+            ];
+        };
+
+        $pivot = null;
+        if (! $isSelfDelivery) {
             $pivot = \DB::table('module_zone')
                 ->where('zone_id', $store->zone_id)
                 ->where('module_id', $scope?->moduleId)
                 ->first();
-            if (!$pivot) {
-                return [0.0, 'No delivery pricing rule configured for this zone.', $distanceKm, ['active' => false, 'reason' => null]];
-            }
 
-            $type = $pivot->delivery_charge_type ?? 'fixed';
-            if ($type === 'distance') {
-                $fee = $this->boundedDistanceFee(
-                    $distanceKm,
-                    (float) ($pivot->per_km_shipping_charge ?? 0),
-                    (float) ($pivot->minimum_shipping_charge ?? 0),
-                    (float) ($pivot->maximum_shipping_charge ?? 0),
-                );
-                $note = $fee > 0
-                    ? sprintf('%.2f km × zone rate', $distanceKm)
-                    : 'Distance pricing configured but per-km rate is zero.';
-            } else {
-                $fee  = (float) ($pivot->fixed_shipping_charge ?? 0);
-                $note = $fee > 0 ? 'Flat zone delivery fee.' : 'Flat fee for this zone is zero.';
-            }
+            // S19 — a pivot row is not availability. The pair also has to carry both setups, the
+            // same test the API applies before it will accept an order: the storefront must not
+            // quote a fee for a checkout place_order would refuse, which is what the pivot
+            // fallback let it do. Same zero-quote answer as an unconnected module, because to the
+            // shopper the two are the same thing.
+            $available = $pivot && in_array(
+                (int) $scope?->moduleId,
+                \App\Models\Zone::withoutGlobalScopes()->find($store->zone_id)?->completeModuleIds() ?? [],
+                true
+            );
 
-            // Match getDeliveryCharge() at place-order time: vehicle-extra is
-            // added to the base fee, then surge price is applied. Without this
-            // the screen value drifts below order.delivery_charge — customer
-            // sees one number, gets billed another.
-            $vehicleExtra = $this->resolveVehicleExtraCharge($distanceKm);
-            if ($vehicleExtra > 0) {
-                $fee += $vehicleExtra;
-            }
-
-            $surge = $this->resolveSurgePrice($store->zone_id, $scope?->moduleId, $state['scheduleAt'] ?? null);
-            if ($surge['amount'] > 0 && $fee > 0) {
-                $surgeExtra = $surge['type'] === 'percent'
-                    ? ($fee * $surge['amount']) / 100
-                    : $surge['amount'];
-                $fee += $surgeExtra;
-
-                $note = trim(($note ?? '') . sprintf(' + surge (%.2f)', $surgeExtra));
-            }
-            if ($vehicleExtra > 0) {
-                $note = trim(($note ?? '') . sprintf(' + vehicle (%.2f)', $vehicleExtra));
+            if (! $available) {
+                return $this->deliveryQuote(0.0, 'No delivery pricing rule configured for this zone.', $distanceKm, $freeDeliveryProgress(false, null));
             }
         }
 
-        // --- Free-delivery decision — delegate to the host's canonical
-        // DeliveryFeeLogic::effectiveFee so the storefront matches the order
-        // row exactly. It reads BusinessSetting DIRECTLY (not the forever-
-        // cached get_business_settings helper), so an admin toggling free
-        // delivery off takes effect immediately; and it enforces the
-        // threshold>0 guard, the admin>vendor>coupon priority, and the
-        // baseFee<=0 ⇒ not-free semantic that the previous hand-rolled checks
-        // got wrong (showing a $0.00 "free" fee when it shouldn't). ---
-        $effective = \App\CentralLogics\DeliveryFeeLogic::effectiveFee(
+        // Steps 1-6 belong to the one engine (N1) — the storefront never reimplements the
+        // arithmetic place_order runs (§15.1). One Builder-only behaviour is still preserved
+        // as a compat flag: it clamps to the maximum under a guard the other engines do not
+        // share. That one is latent on current data (no zone has a positive maximum below its
+        // minimum) and is retired in S5.
+        // §15.1 — the pick is passed EXPLICITLY. The engine keys on `area_id` / `zip_code_id`;
+        // the storefront posts `areaId` / `zipCodeId`, and nothing in between translates them.
+        [$areaId, $zipCodeId] = $this->validatedCoveragePick($store, $state);
+        $coverage = $this->mapCoverage($store, $scope?->moduleId);
+
+        $quote = app(DeliveryChargeService::class)->quote([
+            'order_type' => 'delivery',
+            'distance' => $distanceKm,
+            'store' => $store,
+            'module_zone_pivot' => $pivot,
+            'zone_id' => $store->zone_id,
+            'module_id' => $scope?->moduleId,
+            'area_id' => $areaId,
+            'zip_code_id' => $zipCodeId,
+            'surge' => $surge = $this->resolveSurgePriceValue($store->zone_id, $scope?->moduleId, $state['scheduleAt'] ?? null),
+        ]);
+
+        $fee = $quote['delivery_charge'];
+        // Always 0.00 since A8; kept so the subtraction below reads as the sum it always was.
+        $vehicleExtra = $quote['vehicle_extra'];
+        $surgeExtra = $quote['surge_amount'];
+
+        // §3.4 — the note states a distance, so it states it in the unit the rate is quoted in.
+        // `format()` converts and labels in one call; the hardcoded "%.2f km" this replaces would
+        // have said "km" while the fee was being computed per mile.
+        $distanceLabel = app(DistanceService::class)->format($distanceKm);
+
+        if ($isSelfDelivery) {
+            $note = $fee > 0
+                ? sprintf('Based on %s delivery distance', $distanceLabel)
+                : 'Store has no per-unit delivery rate set.';
+        } else {
+            $priced = $fee - $vehicleExtra - $surgeExtra;
+
+            // The note has to describe the SOURCE the engine actually priced from, not the
+            // pivot's column: an active delivery rule outranks the pivot (step 2b over 2c), and
+            // an area-wise rule priced by the customer's area was still being explained as
+            // "7.04 km × zone rate".
+            $isRulePriced = ($quote['pricing_source'] ?? null) === DeliveryChargeService::SOURCE_DELIVERY_RULE;
+            $needsPick = $isRulePriced && $coverage !== [] && $areaId === null && $zipCodeId === null;
+            $isDistancePriced = $isRulePriced
+                ? ! $needsPick && $areaId === null && $zipCodeId === null
+                : ($pivot->delivery_charge_type ?? 'fixed') === 'distance';
+
+            $note = match (true) {
+                // No full stops: a vehicle or surge suffix may be appended below.
+                $areaId !== null => 'Delivery rate for the selected area',
+                $zipCodeId !== null => 'Delivery rate for the selected zip code',
+                // An area or ZIP rule with nothing picked prices at the zone's minimum. Saying
+                // so is what tells the customer why the picker above matters.
+                $needsPick => 'Minimum delivery charge for this zone — select your '
+                    .(($coverage['isZip'] ?? false) ? 'zip code' : 'area').' for the exact rate',
+                $isDistancePriced => $priced > 0
+                    ? sprintf('%s × zone rate', $distanceLabel)
+                    : 'Distance pricing configured but the per-unit rate is zero.',
+                default => $priced > 0 ? 'Flat zone delivery fee.' : 'Flat fee for this zone is zero.',
+            };
+
+            // The "+ vehicle (…)" clause that stood here is gone with the charge itself (A8):
+            // `vehicle_extra` is always 0.00 now, so the branch was dead. Vehicle categories
+            // survive as dispatch (A10) and are not part of what the customer pays.
+
+            // §9.3 / POS parity — gated the same way PlaceNewOrderTrait::posSurgeNote() gates
+            // POS's tooltip: on the surge amount actually charged, not on whether the admin
+            // wrote a note (that used to be the ONLY way this appeared at all, hiding a real
+            // surge whenever no note was set). Content differs from POS by design: when the
+            // admin's customer-facing note is on and filled in, it stands ALONE — the amount
+            // prefix would repeat what the note already says in the admin's own words. Only
+            // when no note is configured does it fall back to the plain "Surge price {amount}".
+            // REPLACES the breakdown note rather than appending to it: once a surge applies,
+            // that is the more useful explanation for the fee. Folded into the one tooltip —
+            // showing it as its own line too (Checkout/CheckoutOrderSummary.jsx) duplicated the
+            // exact same text a second time whenever an admin note was set, and said nothing at
+            // all otherwise.
+            $surgeAmount = round($surgeExtra, config('round_up_to_digit'));
+
+            if ($surgeAmount > 0) {
+                $adminNote = trim((string) (app(SurgePriceService::class)->customerNote($surge ?? [], (float) $fee) ?? ''));
+
+                $note = $adminNote !== ''
+                    ? $adminNote
+                    : translate('messages.surge_price') . ' ' . Helpers::format_currency($surgeAmount);
+            }
+        }
+
+        $effective = $this->effectiveFee(
             (float) $fee,
             $store,
-            max(0.0, $itemPrice),
+            max(0.0, $eligibleAmount),
             null,
         );
+        // §12.1 — what the fee was immediately BEFORE steps 7 to 9 (free delivery, post-engine
+        // discounts, saver). The storefront prints it beside the net one so a customer sees the
+        // fee and its discount as two lines rather than one already-netted number.
+        $beforeDiscount = (float) $fee;
+
         if ($effective['is_free']) {
-            return [0.0, 'Free delivery (' . $effective['free_by'] . ').', $distanceKm, ['active' => true, 'reason' => $effective['free_by']]];
+            return $this->deliveryQuote(0.0, 'Free delivery (' . $effective['free_by'] . ').', $distanceKm, $freeDeliveryProgress(true, $effective['free_by']), $beforeDiscount);
         }
 
-        // Coupon free-delivery — the Builder already validated the coupon
-        // (case-insensitively) in quote(); effectiveFee re-matches `code`
-        // exactly, so honour the already-validated flag here instead.
         if ($couponFreeDelivery && $fee > 0) {
-            return [0.0, 'Coupon includes free delivery.', $distanceKm, ['active' => true, 'reason' => 'coupon']];
+            return $this->deliveryQuote(0.0, 'Coupon includes free delivery.', $distanceKm, $freeDeliveryProgress(true, 'coupon'), $beforeDiscount);
         }
 
-        return [$fee, $note, $distanceKm, ['active' => false, 'reason' => null]];
+        return $this->deliveryQuote($fee, $note, $distanceKm, $freeDeliveryProgress(false, null), $beforeDiscount);
     }
 
     /**
-     * Vehicle-extra wrapper around the trait's `getVehicleExtraCharge()`.
-     * Trait is `private` so we re-enter via a thin local proxy. Returns
-     * the extra-charge amount (0 if no matching vehicle row).
+     * Surge in the shape DeliveryChargeService expects. A storefront quote must not fail
+     * outright because a surge lookup did, so a failure prices as no surge and is logged.
      */
-    private function resolveVehicleExtraCharge(float $distanceKm): float
-    {
-        try {
-            $r = $this->getVehicleExtraCharge($distanceKm);
-            return (float) ($r['extraCharge'] ?? 0);
-        } catch (\Throwable $e) {
-            \info('Builder quote: vehicle-extra lookup failed — ' . $e->getMessage());
-            return 0.0;
-        }
-    }
-
-    /**
-     * Surge-price wrapper around the trait's `getSurgePriceValue()`. Returns
-     * `[amount, type ('percent'|'amount')]`. Schedule-at (if set) determines
-     * the surge window — same as PlaceNewOrder.
-     */
-    private function resolveSurgePrice($zoneId, $moduleId, ?string $scheduleAt): array
+    private function resolveSurgePriceValue($zoneId, $moduleId, ?string $scheduleAt): ?array
     {
         if (!$zoneId || !$moduleId) {
-            return ['amount' => 0.0, 'type' => 'amount'];
+            return null;
         }
         try {
             $when = $scheduleAt ? \Carbon\Carbon::parse($scheduleAt) : \Carbon\Carbon::now();
-            $surge = $this->getSurgePriceValue((int) $zoneId, (int) $moduleId, $when);
-            return [
-                'amount' => (float) ($surge['price'] ?? 0),
-                'type'   => (string) ($surge['price_type'] ?? 'amount'),
-            ];
+
+            return $this->getSurgePriceValue((int) $zoneId, (int) $moduleId, $when);
         } catch (\Throwable $e) {
             \info('Builder quote: surge lookup failed — ' . $e->getMessage());
-            return ['amount' => 0.0, 'type' => 'amount'];
+            return null;
         }
-    }
-
-    private function boundedDistanceFee(float $distanceKm, float $perKm, float $min, float $max): float
-    {
-        $raw = $distanceKm * $perKm;
-        if ($raw < $min) return $min;
-        if ($max > 0 && $raw > $max) return $max;
-        return $raw;
     }
 
     private function resolveDestinationCoords(array $state): array
@@ -697,18 +859,6 @@ class CheckoutProvider implements CheckoutProviderContract
         return [$loc['lat'] ?? null, $loc['lng'] ?? null];
     }
 
-    /**
-     * For pickup orders the trait's `getZoneAndStore()` only resolves the
-     * store when lat/lng are present on the request (see
-     * `PlaceNewOrder.php::getZoneAndStore`). Pickup orders skip address
-     * collection, so without an override the trait short-circuits and
-     * fails validation with "store not found". Fall back to the store's
-     * own coordinates — which is also semantically correct (the
-     * destination IS the store) — and use the store's address as the
-     * displayed delivery address on the order row.
-     *
-     * Returns null when no store is in scope.
-     */
     private function resolvePickupOverride(?StorefrontScope $scope): ?array
     {
         if (!$scope?->subTenantId) {
@@ -727,11 +877,6 @@ class CheckoutProvider implements CheckoutProviderContract
         ];
     }
 
-    /**
-     * Great-circle distance in kilometres between two GPS points.
-     * Mirrors the Haversine formula in the existing storefront JS bundle so
-     * server- and client-computed distances stay aligned.
-     */
     private function haversineKm(float $lat1, float $lng1, float $lat2, float $lng2): float
     {
         $earthRadiusM = 6_378_137.0;
@@ -741,20 +886,6 @@ class CheckoutProvider implements CheckoutProviderContract
         return ($earthRadiusM * 2 * asin(sqrt($a))) / 1000.0;
     }
 
-    /**
-     * Populate `config('module.current_module_data')` from the active scope.
-     *
-     * The host's CouponLogic::is_valide() (and other trait code) reads
-     * `config('module.current_module_data')['id']` when no module_id is
-     * passed. In a normal API request ModuleCheckMiddleware sets this from the
-     * `moduleId` header; our synthetic place-order / tax requests bypass the
-     * middleware, leaving it null — so the array access throws "Trying to
-     * access array offset on null", which both breaks tax calculation AND
-     * fails place-order with "Failed to place order" whenever a coupon is
-     * applied. Mirror the middleware (it stores the Module model) so the
-     * trait's coupon validation resolves the module the same way it would
-     * over HTTP.
-     */
     private function ensureModuleConfig(?StorefrontScope $scope): void
     {
         if (!$scope?->moduleId) {
@@ -770,18 +901,38 @@ class CheckoutProvider implements CheckoutProviderContract
         }
     }
 
-    /**
-     * Tax — defers to the host's `getCalculatedTax($request)` trait method
-     * which is the canonical pipeline used at place-order time. It internally
-     * calls `Helpers::getFinalCalculatedTax()` → `\Modules\TaxModule\Services\
-     * CalculateTaxService::getCalculatedTax()` when the TaxModule is published.
-     *
-     * The trait reads the customer's DB cart + the active store + the coupon,
-     * so the result on screen matches what gets stored on the order row.
-     *
-     * Falls back to a per-store-rate approximation only if the trait throws
-     * (e.g. TaxModule not installed and no graceful path).
-     */
+    private function packagingAllowedForModule(?Store $store): bool
+    {
+        $moduleType = $store?->module?->module_type;
+        if (!$moduleType) {
+            return false;
+        }
+
+        $raw = Helpers::get_business_settings('extra_packaging_data', false);
+        $map = json_decode((string) $raw, true);
+
+        return is_array($map) && (string) ($map[$moduleType] ?? '0') === '1';
+    }
+
+    private function extraPackagingFee(?StorefrontScope $scope, array $state): float
+    {
+        if (!$scope?->subTenantId || empty($state['extraPackaging'])) {
+            return 0.0;
+        }
+
+        $store = Store::find($scope->subTenantId);
+        if (!$store || !$this->packagingAllowedForModule($store)) {
+            return 0.0;
+        }
+
+        $cfg = $store->storeConfig ?? null;
+        if (!$cfg || (int) ($cfg->extra_packaging_status ?? 0) !== 1) {
+            return 0.0;
+        }
+
+        return (float) ($cfg->extra_packaging_amount ?? 0);
+    }
+
     private function computeTax(?StorefrontScope $scope, ?int $customerId, array $state, float $discountedSubtotal): float
     {
         if (!$scope?->subTenantId || $discountedSubtotal <= 0) {
@@ -790,96 +941,73 @@ class CheckoutProvider implements CheckoutProviderContract
 
         $this->ensureModuleConfig($scope);
 
-        if ($customerId) {
-            try {
-                $user = User::query()->find($customerId);
-                if ($user) {
-                    $request = Request::create('', 'POST', [
-                        'store_id'              => $scope->subTenantId,
-                        'order_type'            => $state['deliveryType'] === 'pickup' ? 'take_away' : 'delivery',
-                        'order_amount'          => $discountedSubtotal,
-                        'coupon_code'           => $state['couponCode'] ?? null,
-                        'extra_packaging_amount' => !empty($state['extraPackaging']) ? 1 : 0,
-                        'is_prescription'       => false,
-                        'is_buy_now'            => 0,
-                    ]);
-                    $request->headers->set('moduleId', (string) $scope->moduleId);
-                    $request->setUserResolver(fn () => $user);
+        $user    = $customerId ? User::query()->find($customerId) : null;
+        $guestId = $user ? null : $this->context->getGuestId();
 
-                    // PlaceNewOrder trait reads `$request->user` as a property
-                    // (set explicitly at line 72 of new_place_order with the
-                    // resolved User model). setUserResolver only wires the
-                    // user() method, leaving `$request->user` null — which
-                    // makes `getCalculatedTax` query the cart with user_id=null,
-                    // find zero rows, and silently return tax_amount=0.
-                    // Mirror new_place_order's contract by merging the user
-                    // into the input bag so the property access resolves.
-                    $request->merge(['user' => $user]);
-
-                    $response = $this->getCalculatedTax($request);
-                    $payload  = $response->getData(true);
-                    if (isset($payload['tax_amount'])) {
-                        $tax = (float) $payload['tax_amount'];
-                        // A zero tax_amount while `$discountedSubtotal > 0`
-                        // means the trait queried the cart and got nothing
-                        // (or got items with zero price). Most common cause:
-                        // cart rows still flagged `is_guest=1` after the
-                        // shopper logged in — the trait queries with
-                        // is_guest=0 (because $request->user is set) and
-                        // finds nothing. Surface the diagnostics so the
-                        // underlying cart-migration gap is fixable.
-                        if ($tax <= 0 && $discountedSubtotal > 0) {
-                            $cartRows = Cart::where('user_id', $customerId)
-                                ->where('module_id', \getModuleId((string) $scope->moduleId))
-                                ->selectRaw('is_guest, count(*) as n, sum(price) as total_price')
-                                ->groupBy('is_guest')
-                                ->get();
-                            \info('Builder quote tax: trait returned tax_amount=0 despite payable subtotal', [
-                                'store_id'    => $scope->subTenantId,
-                                'module_id'   => $scope->moduleId,
-                                'user_id'     => $customerId,
-                                'subtotal'    => $discountedSubtotal,
-                                'cart_rows'   => $cartRows->toArray(),
-                                'tax_status'  => $payload['tax_status'] ?? null,
-                                'tax_included' => $payload['tax_included'] ?? null,
-                                'taxmodule_published' => \addon_published_status('TaxModule'),
-                                'system_tax_active'   => \addon_published_status('TaxModule')
-                                    ? \Modules\TaxModule\Entities\SystemTaxSetup::query()
-                                        ->where('is_active', 1)->where('tax_payer', 'vendor')->exists()
-                                    : null,
-                            ]);
-                        }
-                        return $tax;
-                    }
-
-                    // No `tax_amount` key — trait took a 403 short-circuit
-                    // (different-store cart row, missing prescription,
-                    // stock, etc.). Log so the underlying issue surfaces.
-                    \info('Builder quote tax: trait returned no tax_amount', [
-                        'store_id'  => $scope->subTenantId,
-                        'module_id' => $scope->moduleId,
-                        'user_id'   => $customerId,
-                        'payload'   => $payload,
-                    ]);
-                }
-            } catch (\Throwable $e) {
-                \info('Builder quote tax: trait threw — falling back to store rate. ' . $e->getMessage());
-            }
-        }
-
-        // Fallback: per-store flat rate (used for guests OR when the host
-        // pipeline blew up). Mirrors the old behaviour so unauthenticated
-        // visits still see a number close to reality.
-        $store = Store::query()->where('id', $scope->subTenantId)->first(['tax']);
-        $rate  = (float) ($store->tax ?? 0);
-        if ($rate <= 0) {
+        if (!$user && !$guestId) {
             return 0.0;
         }
 
-        $included = $this->isTaxIncluded();
-        return $included
-            ? ($discountedSubtotal * $rate) / (100 + $rate)
-            : ($discountedSubtotal * $rate) / 100;
+        try {
+            $request = Request::create('', 'POST', [
+                'store_id'              => $scope->subTenantId,
+                'order_type'            => $state['deliveryType'] === 'pickup' ? 'take_away' : 'delivery',
+                'order_amount'          => $discountedSubtotal,
+                'coupon_code'           => $state['couponCode'] ?? null,
+                'extra_packaging_amount' => $this->extraPackagingFee($scope, $state) > 0 ? 1 : 0,
+                'is_prescription'       => false,
+                'is_buy_now'            => 0,
+                'guest_id'              => $guestId,
+            ]);
+            $request->headers->set('moduleId', (string) $scope->moduleId);
+
+            if ($user) {
+                $request->setUserResolver(fn () => $user);
+
+                $request->merge(['user' => $user]);
+            }
+
+            $response = $this->getCalculatedTax($request);
+            $payload  = $response->getData(true);
+            if (isset($payload['tax_amount'])) {
+                $tax = (float) $payload['tax_amount'];
+                if ($tax <= 0 && $discountedSubtotal > 0) {
+                    $cartRows = Cart::where('user_id', $user?->id ?? (int) $guestId)
+                        ->where('module_id', \getModuleId((string) $scope->moduleId))
+                        ->selectRaw('is_guest, count(*) as n, sum(price) as total_price')
+                        ->groupBy('is_guest')
+                        ->get();
+                    \info('Builder quote tax: trait returned tax_amount=0 despite payable subtotal', [
+                        'store_id'    => $scope->subTenantId,
+                        'module_id'   => $scope->moduleId,
+                        'user_id'     => $customerId,
+                        'guest_id'    => $guestId,
+                        'subtotal'    => $discountedSubtotal,
+                        'cart_rows'   => $cartRows->toArray(),
+                        'tax_status'  => $payload['tax_status'] ?? null,
+                        'tax_included' => $payload['tax_included'] ?? null,
+                        'taxmodule_published' => \addon_published_status('TaxModule'),
+                        'system_tax_active'   => \addon_published_status('TaxModule')
+                            ? \Modules\TaxModule\Entities\SystemTaxSetup::query()
+                                ->where('is_active', 1)->where('tax_payer', 'vendor')->exists()
+                            : null,
+                    ]);
+                }
+                return $tax;
+            }
+
+            \info('Builder quote tax: trait returned no tax_amount', [
+                'store_id'  => $scope->subTenantId,
+                'module_id' => $scope->moduleId,
+                'user_id'   => $customerId,
+                'guest_id'  => $guestId,
+                'payload'   => $payload,
+            ]);
+        } catch (\Throwable $e) {
+            \info('Builder quote tax: trait threw — quoting zero tax. ' . $e->getMessage());
+        }
+
+        return 0.0;
     }
 
     private function isTaxIncluded(): bool
@@ -897,12 +1025,11 @@ class CheckoutProvider implements CheckoutProviderContract
         if (!$customerId || $orderTotal <= 0) {
             return null;
         }
-        // Wallet cashback rides on the wallet-features master switch.
         if (! \config('builder.wallet_features_enabled', true)) {
             return null;
         }
         try {
-            $r = Helpers::getCalculatedCashBackAmount($orderTotal, $customerId);
+            $r = app(CashBackService::class)->calculateForCustomer($orderTotal, $customerId);
             if (!is_array($r) || empty($r)) {
                 return null;
             }
@@ -925,16 +1052,8 @@ class CheckoutProvider implements CheckoutProviderContract
 
     public function placeOrder(?StorefrontScope $scope, ?int $customerId, array $state): array
     {
-        // The host's coupon validation (CouponLogic::is_valide) reads the
-        // module from config('module.current_module_data') — set it here since
-        // our synthetic request never runs ModuleCheckMiddleware. Without it a
-        // coupon order throws and surfaces as "Failed to place order".
         $this->ensureModuleConfig($scope);
 
-        // When the wallet-features master switch is off, reject any incoming
-        // request that tries to pay with wallet or split via partial payment.
-        // The UI hides these options, so reaching here means a stale page or
-        // a crafted request — fail loudly with a 422-style error.
         if (! \config('builder.wallet_features_enabled', true)) {
             $rawMethod = (string) ($state['paymentMethod'] ?? '');
             $partial   = !empty($state['partialPayment']);
@@ -950,11 +1069,8 @@ class CheckoutProvider implements CheckoutProviderContract
             return ['success' => false, 'errors' => [['code' => 'auth', 'message' => 'Could not identify the current shopper. Please refresh and try again.']]];
         }
 
-        // Guest checkout requires the host's `guest_checkout_status` flag and
-        // the contact-person fields the trait validates. Surface a friendly
-        // error early so we don't trip the trait's validator.
         if (!$user) {
-            if (!Helpers::get_mail_status('guest_checkout_status')) {
+            if (!Helpers::get_business_settings('guest_checkout_status')) {
                 return ['success' => false, 'errors' => [['code' => 'is_guest', 'message' => 'Guest checkout is currently disabled. Please sign in to place an order.']]];
             }
             $missing = [];
@@ -966,29 +1082,19 @@ class CheckoutProvider implements CheckoutProviderContract
             }
         }
 
-        // Quote once more so the order_amount we submit matches what the user
-        // saw at the moment of click. Host trait re-validates anyway.
-        // `->toArray()` keeps the buildPlaceOrderRequest money path on the
-        // existing array shape (it reads $quote['total'] etc.).
         $quote = $this->quote($scope, $customerId, $state)->toArray();
 
         $request = $user
             ? $this->buildPlaceOrderRequest($scope, $user, $state, $quote)
             : $this->buildGuestPlaceOrderRequest($scope, $guestId, $state, $quote);
 
-        // PlaceNewOrder::new_place_order returns a JsonResponse (200 success,
-        // 403 error). Unwrap and map to our DTO.
-        $response = $this->new_place_order($request);
+        $response = $this->placeNewOrder($request);
         $payload  = $response->getData(true);
         $status   = $response->getStatusCode();
 
         if ($status === 200) {
             $orderId = (int) ($payload['order_id'] ?? 0);
 
-            // Clear the store-scoped cart rows ourselves. The trait skips
-            // its own delete loop because we ran with `is_buy_now=1`.
-            // Other-store cart rows in the same module stay intact —
-            // the customer might still want them when they switch stores.
             $this->clearStoreScopedCart(
                 $user ? $user->id : (int) $guestId,
                 (int) $scope?->moduleId,
@@ -996,18 +1102,9 @@ class CheckoutProvider implements CheckoutProviderContract
                 $user ? 0 : 1,
             );
 
-            // Offline-payment chain: the host's `new_place_order` writes the
-            // order with `payment_method='offline_payment'` and status `failed`;
-            // the customer's chosen method + dynamic-form fields go into the
-            // `offline_payments` row, which flips the order back to `pending`
-            // for admin verification. Mirrors OrderController::offline_payment.
             if (($state['paymentMethod'] ?? null) === 'offline_payment') {
                 $regError = $this->registerOfflinePayment($orderId, $state);
                 if ($regError) {
-                    // Order was created but the offline registration failed.
-                    // Surface the error so the user can retry from the order
-                    // detail; the order itself is still valid (just awaits a
-                    // proof-of-payment record).
                     return [
                         'success' => false,
                         'errors'  => [['code' => 'offline_payment', 'message' => $regError]],
@@ -1021,26 +1118,12 @@ class CheckoutProvider implements CheckoutProviderContract
                 'paymentRedirect' => $this->paymentRedirectFor(
                     $state['paymentMethod'] ?? null,
                     $orderId,
-                    // For guests, the order row carries `user_id = guest_id`
-                    // (per PlaceNewOrder::new_place_order line 189). The
-                    // host's PaymentController::payment + success/fail/cancel
-                    // all run `Order::where(user_id = customer_id)` against
-                    // SESSION('customer_id'). Passing null for guests would
-                    // make those queries miss and the gateway flow returns
-                    // "Data not found". So always send the user_id that's
-                    // ACTUALLY on the order row — auth: user.id; guest: guestId.
                     $user?->id ?? (int) $guestId,
-                    !$user, // isGuest
-                    // Guests don't have a profile to land on after the
-                    // gateway returns — point them at the tracking page
-                    // (deep-linked with orderId + the phone they used,
-                    // normalized to leading-+ E.164 form).
+                    !$user,
                     $user ? null : $this->normalizePhone($state['contactPhone'] ?? null),
                 ),
                 'message'         => (string) ($payload['message'] ?? 'Order placed successfully'),
                 'total'           => (float) ($payload['total_ammount'] ?? $quote['total']),
-                // Normalized phone for downstream UI (the success modal +
-                // the gateway callback URL). Always E.164-ish (leading +).
                 'contactPhone'    => $this->normalizePhone($state['contactPhone'] ?? null),
             ];
         }
@@ -1052,15 +1135,6 @@ class CheckoutProvider implements CheckoutProviderContract
         return ['success' => false, 'errors' => $errors];
     }
 
-    /**
-     * E.164-ish normalization: ensure a leading `+`. The frontend uses
-     * react-phone-input-2 which emits the phone as digits-only (e.g.
-     * "8801521333257") even though the visible input shows a "+" prefix.
-     * The host's `track_order` lookup matches the JSON column
-     * `delivery_address.contact_person_number` against the value
-     * verbatim, so storing without the "+" makes guest tracking fail.
-     * Mirrors `OrderController::track_order` lines 49-51.
-     */
     private function normalizePhone(?string $phone): ?string
     {
         $trimmed = $phone === null ? null : trim($phone);
@@ -1070,13 +1144,6 @@ class CheckoutProvider implements CheckoutProviderContract
         return str_starts_with($trimmed, '+') ? $trimmed : '+' . ltrim($trimmed, '+ ');
     }
 
-    /**
-     * Gateway keys that map to the host's `digital_payment` bucket. The
-     * frontend-selected gateway (paypal, stripe, …) is NOT what gets stored
-     * on `Order.payment_method` — the host writes the literal string
-     * `digital_payment` and routes the user through `/payment-mobile` where
-     * the gateway-specific flow runs server-side.
-     */
     private const DIGITAL_GATEWAYS = [
         'paypal', 'stripe', 'razor_pay', 'senang_pay', 'paystack',
         'flutterwave', 'ssl_commerz', 'paytabs', 'paytm', 'paymob_accept',
@@ -1088,10 +1155,6 @@ class CheckoutProvider implements CheckoutProviderContract
         return $key && in_array($key, self::DIGITAL_GATEWAYS, true);
     }
 
-    /**
-     * Translate our state DTO into the Request the host trait expects.
-     * Headers (`moduleId`, `zoneId`) carry scope; user resolver carries auth.
-     */
     private function buildPlaceOrderRequest(?StorefrontScope $scope, User $user, array $state, array $quote): Request
     {
         $deliveryType = $state['deliveryType'] ?? 'delivery';
@@ -1117,24 +1180,9 @@ class CheckoutProvider implements CheckoutProviderContract
             }
         }
 
-        // Build cart JSON in the EXACT shape `PlaceNewOrder::makeOrderDetails`
-        // expects (FQCN item_type, decoded variation/add_on_*, etc.) AND
-        // pass `is_buy_now=1` so the trait uses this list instead of running
-        // its own `Cart::where(user_id, module_id)` query — which would pull
-        // in items from OTHER stores in the same module that the customer
-        // accumulated in past sessions, triggering the "select items from
-        // the same store" rejection at line 1063 of the trait.
-        //
-        // We track the cart-row IDs so we can clear them ourselves after
-        // the order succeeds (since `is_buy_now=1` skips the trait's
-        // post-order delete loop on line 571–574).
         $cartRows = $this->loadStoreScopedCart($user->id, (int) $scope?->moduleId, (int) $scope?->subTenantId);
         $cart     = $cartRows->map(fn (Cart $row) => $this->cartRowForOrderDetails($row))->all();
 
-        // Normalize the gateway key the host expects on Order.payment_method.
-        // PayPal/Stripe/etc. all collapse to "digital_payment"; the actual
-        // gateway selection rides through to /payment-mobile via the redirect
-        // URL we build in placeOrder().
         $rawMethod = $state['paymentMethod'] ?? 'cash_on_delivery';
         $hostMethod = $this->isDigitalGateway($rawMethod) ? 'digital_payment' : $rawMethod;
 
@@ -1146,6 +1194,11 @@ class CheckoutProvider implements CheckoutProviderContract
             'coupon_discount_amount' => $quote['couponDiscount'],
             'coupon_discount_title'  => $quote['couponTitle'],
             'distance'               => $quote['distance'] ?? 0,
+            // §15.1 — the priced-coverage pick, sent on the ORDER as well as on the quote, so
+            // the fee place_order computes is the fee the customer was shown. The storefront
+            // posts camelCase; place_order keys on snake_case.
+            'area_id'                => $state['areaId'] ?? null,
+            'zip_code_id'            => $state['zipCodeId'] ?? null,
             'order_type'             => $orderType,
             'payment_method'         => $hostMethod,
             'store_id'               => $scope?->subTenantId,
@@ -1163,17 +1216,15 @@ class CheckoutProvider implements CheckoutProviderContract
             'extra_packaging_amount' => $quote['extraPackaging'],
             'unavailable_item_note'  => $state['unavailableAction'] ?? null,
             'delivery_instruction'   => $state['instructions'] ?? null,
-            // Free-text order note (checkout.orderNote capability). 6amMart has
-            // no order_note column so the trait ignores it; hosts that support
-            // it persist this key.
             'order_note'             => $state['orderNote'] ?? null,
             'bring_change_amount'    => $state['bringChange'] ?? 0,
             'schedule_at'            => $scheduleAt,
             'partial_payment'        => !empty($state['partialPayment']) ? 1 : 0,
-            // Always 1 — see comment above. We pass our store-scoped cart
-            // and clear the rows ourselves after the order succeeds.
             'is_buy_now'             => 1,
             'guest_id'               => null,
+            // Read only by PlaceNewOrderTrait to skip the Pro-customer delivery-fee benefit for
+            // Builder orders (TC_14) — never persisted onto the order itself.
+            'order_source'           => 'builder',
         ];
 
         $request = Request::create('', 'POST', $body);
@@ -1181,30 +1232,14 @@ class CheckoutProvider implements CheckoutProviderContract
         $request->headers->set('zoneId',   json_encode($scope?->regionId ? [$scope->regionId] : []));
         $request->setUserResolver(fn () => $user);
 
-        // The trait reads `$request->user` as a property — Laravel's Request
-        // `__get` resolves that against the input bag (NOT setUserResolver,
-        // which only powers `$request->user()` method calls). The host's
-        // APIGuestMiddleware does the same merge to satisfy this. Without
-        // it, `guest_id` is `required` per the trait's validation rule.
         $request->merge(['user' => $user]);
 
         return $request;
     }
 
-    /**
-     * Guest counterpart of buildPlaceOrderRequest. The trait's validator
-     * accepts `guest_id` in lieu of an authenticated user, then routes
-     * through the same place-order pipeline with `is_guest = 1` on the
-     * resulting Order row. Contact-person fields are required (the trait
-     * uses them for the receipt email + driver pings).
-     */
     private function buildGuestPlaceOrderRequest(?StorefrontScope $scope, int $guestId, array $state, array $quote): Request
     {
         $deliveryType = $state['deliveryType'] ?? 'delivery';
-        // Guard against a tampered request body — the snapshot already hides
-        // the Schedule option from guests, but a posted `deliveryType=schedule`
-        // would otherwise sail through. Coerce back to standard delivery so
-        // `schedule_at` cannot be set on a guest order.
         if ($deliveryType === 'schedule') {
             $deliveryType = 'delivery';
         }
@@ -1238,6 +1273,11 @@ class CheckoutProvider implements CheckoutProviderContract
             'coupon_discount_amount' => $quote['couponDiscount'],
             'coupon_discount_title'  => $quote['couponTitle'],
             'distance'               => $quote['distance'] ?? 0,
+            // §15.1 — the priced-coverage pick, sent on the ORDER as well as on the quote, so
+            // the fee place_order computes is the fee the customer was shown. The storefront
+            // posts camelCase; place_order keys on snake_case.
+            'area_id'                => $state['areaId'] ?? null,
+            'zip_code_id'            => $state['zipCodeId'] ?? null,
             'order_type'             => $orderType,
             'payment_method'         => $hostMethod,
             'store_id'               => $scope?->subTenantId,
@@ -1255,47 +1295,26 @@ class CheckoutProvider implements CheckoutProviderContract
             'extra_packaging_amount' => $quote['extraPackaging'],
             'unavailable_item_note'  => $state['unavailableAction'] ?? null,
             'delivery_instruction'   => $state['instructions'] ?? null,
-            // Free-text order note (checkout.orderNote capability) — see auth path.
             'order_note'             => $state['orderNote'] ?? null,
             'bring_change_amount'    => $state['bringChange'] ?? 0,
             'schedule_at'            => $scheduleAt,
             'partial_payment'        => !empty($state['partialPayment']) ? 1 : 0,
             'is_buy_now'             => 1,
-            // Guest checkout contract: trait writes the order with
-            // user_id = guest_id, is_guest = 1.
             'guest_id'               => $guestId,
-            // We deliberately do NOT pass `create_new_user`/`password` —
-            // the LoginOrGuest modal puts the customer in the explicit
-            // "stay-as-guest" branch. They can sign up later.
+            // Read only by PlaceNewOrderTrait to skip the Pro-customer delivery-fee benefit for
+            // Builder orders (TC_14) — never persisted onto the order itself.
+            'order_source'           => 'builder',
         ];
 
         $request = Request::create('', 'POST', $body);
         $request->headers->set('moduleId', (string) ($scope?->moduleId ?? ''));
         $request->headers->set('zoneId',   json_encode($scope?->regionId ? [$scope->regionId] : []));
 
-        // Explicitly NULL the user property — the trait branches on
-        // `$request->user ? … : $request['guest_id']` (line 189), and a stale
-        // user from another request would hijack the guest path.
         $request->merge(['user' => null]);
 
         return $request;
     }
 
-    /**
-     * For digital_payment orders the storefront sends the user to the host's
-     * `/payment-mobile` endpoint, which routes to the gateway-specific flow
-     * server-side. Required query params:
-     *   - order_id      — host's Order.id
-     *   - customer_id   — host's User.id
-     *   - payment_method — the SPECIFIC gateway key (paypal/stripe/…) so the
-     *                      router picks the right integration
-     *   - callback      — URL the user lands on after gateway success/cancel
-     */
-    /**
-     * Load the customer's cart rows scoped to the active storefront's store.
-     * Uses `whereHasMorph` against the polymorphic `item` relation — same
-     * predicate `Modules\Builder` uses everywhere else for store scoping.
-     */
     private function loadStoreScopedCart(int $userId, int $moduleId, int $storeId, int $isGuest = 0)
     {
         return Cart::query()
@@ -1310,13 +1329,6 @@ class CheckoutProvider implements CheckoutProviderContract
             ->get();
     }
 
-    /**
-     * Re-shape a Cart row into the assoc-array structure
-     * `PlaceNewOrder::makeOrderDetails` expects when `is_buy_now=1`.
-     * Critical fields: `item_type` MUST be the FQCN (the trait does a
-     * literal string comparison against `'App\Models\ItemCampaign'`),
-     * variation/add_ons MUST be decoded.
-     */
     private function cartRowForOrderDetails(Cart $row): array
     {
         return [
@@ -1326,7 +1338,7 @@ class CheckoutProvider implements CheckoutProviderContract
             'price'      => (float) $row->price,
             'quantity'   => (int) $row->quantity,
             'variation'  => $this->decodeJson($row->variation),
-            'variant'    => '', // legacy field — populated only by older POS flows
+            'variant'    => '',
             'add_on_ids' => $this->decodeJson($row->add_on_ids),
             'add_on_qtys'=> $this->decodeJson($row->add_on_qtys),
         ];
@@ -1339,15 +1351,9 @@ class CheckoutProvider implements CheckoutProviderContract
         return is_array($decoded) ? $decoded : [];
     }
 
-    /**
-     * Required by `PlaceNewOrder` (line 601) but NOT defined on the trait —
-     * lives on `OrderController` in the host. Ported verbatim so our class
-     * (which `use`s the trait without extending the controller) can satisfy
-     * the `$this->createCashBackHistory(...)` call.
-     */
     private function createCashBackHistory($order_amount, $user_id, $order_id)
     {
-        $cashBack = Helpers::getCalculatedCashBackAmount(amount: $order_amount, customer_id: $user_id);
+        $cashBack = app(CashBackService::class)->calculateForCustomer(amount: $order_amount, customerId: $user_id);
         if (data_get($cashBack, 'calculated_amount') > 0) {
             $row = new CashBackHistory();
             $row->user_id           = $user_id;
@@ -1365,12 +1371,6 @@ class CheckoutProvider implements CheckoutProviderContract
         return true;
     }
 
-    /**
-     * Delete the just-ordered store's cart rows for this customer. Mirrors
-     * the trait's post-order cart delete (which we skipped via `is_buy_now=1`)
-     * but ONLY for the active store — items in the customer's other-store
-     * carts (same module, different store) stay untouched.
-     */
     private function clearStoreScopedCart(int $userId, int $moduleId, int $storeId, int $isGuest = 0): void
     {
         Cart::query()
@@ -1385,13 +1385,6 @@ class CheckoutProvider implements CheckoutProviderContract
             ->delete();
     }
 
-    /**
-     * Persist the customer's offline-payment selection against an order.
-     * Mirrors `App\Http\Controllers\Api\V1\OrderController::offline_payment`
-     * — the host's reference flow — without round-tripping through HTTP.
-     *
-     * Returns a user-facing error string on failure, or null on success.
-     */
     private function registerOfflinePayment(int $orderId, array $state): ?string
     {
         $methodId = (int) ($state['offlinePayment']['methodId'] ?? 0);
@@ -1407,8 +1400,6 @@ class CheckoutProvider implements CheckoutProviderContract
         $offlineFields = (array) ($state['offlinePayment']['fields'] ?? []);
         $customerNote  = (string) ($state['offlinePayment']['customerNote'] ?? '');
 
-        // Filter the submitted fields against the method's declared schema —
-        // mirrors the host controller's array_column intersection.
         $declared = array_column($method->method_informations ?? [], 'customer_input');
         $info = ['method_id' => $methodId, 'method_name' => $method->method_name];
         foreach ($declared as $key) {
@@ -1424,8 +1415,6 @@ class CheckoutProvider implements CheckoutProviderContract
             $row->method_fields  = json_encode($method->method_fields);
             $row->save();
 
-            // Match the host: flip order from failed → pending now that
-            // proof-of-payment is captured.
             \App\Models\Order::query()->where('id', $orderId)->update([
                 'order_status'   => 'pending',
                 'payment_method' => 'offline_payment',
@@ -1437,18 +1426,6 @@ class CheckoutProvider implements CheckoutProviderContract
         return null;
     }
 
-    /**
-     * Build the `/payment-mobile` URL the storefront jumps to via
-     * Inertia::location for digital orders.
-     *
-     * `$payerId` is the value the host's PaymentController will compare
-     * against `Order.user_id` on every step (initial render + success/
-     * fail/cancel callbacks). For auth orders it's the user id; for
-     * guest orders it's the guest id (which the trait writes to
-     * `Order.user_id` for guests). Passing null for guests would make
-     * the host's query at line 51 of PaymentController return null and
-     * the gateway flow surfaces "Data not found".
-     */
     private function paymentRedirectFor(
         ?string $paymentMethod,
         int $orderId,
@@ -1460,11 +1437,6 @@ class CheckoutProvider implements CheckoutProviderContract
             return null;
         }
 
-        // Path-based callback so the host's `?flag=…` / `&status=…`
-        // append doesn't collide with our own query string. The
-        // PaymentCallbackController fans out from there to home/profile
-        // with the right flash payload. See that controller for the
-        // full rationale on why this matters.
         $callback = url(route(
             'storefront.payment_callback',
             array_filter([

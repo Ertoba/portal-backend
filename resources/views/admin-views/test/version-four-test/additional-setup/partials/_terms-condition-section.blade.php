@@ -79,9 +79,9 @@
                     <div class="row g-1">
                         <div class="col-md-12">
                             <div class="form-group mb-0">
-                                <label class="input-label fw-400" for="default_title">{{ translate('messages.page title') }}
-                                        ({{ translate('messages.Default') }})<span class="form-label-secondary" data-toggle="tooltip" data-placement="right" 
-                                            data-original-title="{{ translate('messages.Type page title within 100 characters') }}">
+                                <label class="input-label fw-400" for="default_title">{{ translate('messages.Page Title') }}
+                                        ({{ translate('Default') }})<span class="form-label-secondary" data-toggle="tooltip" data-placement="right" 
+                                            data-original-title="{{ translate('Character limit') }}: 100">
                                             <i class="tio-info text-muted fs-16"></i>
                                         </span>
                                 </label>
@@ -95,7 +95,7 @@
                         </div>
                         <div class="col-md-12">
                             <div class="form-group mb-0">
-                                <label class="input-label fw-400" for="">{{ translate('messages.page description') }}</label>
+                                <label class="input-label fw-400" for="">{{ translate('messages.Page Description') }}</label>
                                 <input type="hidden" name="lang[]" value="default">     
                                <textarea id="term_condition" class="ckeditor form-control" name="term_condition[]"></textarea>                        
                             </div>
@@ -105,10 +105,10 @@
             </div>
         </div>
         <div class="btn--container justify-content-end">
-            <button type="reset" class="btn min-w-120 btn--reset">{{translate('Reset')}}</button>
+            <button type="reset" class="btn min-w-120 btn--reset"><i class="tio-refresh"></i> {{translate('Reset')}}</button>
             <button type="submit"   class="btn min-w-120 btn--primary">
                 <i class="tio-save"></i>
-                {{translate('save information')}}
+                {{translate('Save information')}}
             </button>
         </div>
     </div>

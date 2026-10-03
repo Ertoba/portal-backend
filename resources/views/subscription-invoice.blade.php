@@ -1,7 +1,7 @@
 <html>
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{{translate('Subscription_Invoice')}}</title>
+    <title>{{translate('Subscription invoice')}}</title>
     <meta http-equiv="Content-Type" content="text/html;"/>
     <meta charset="UTF-8">
 
@@ -190,7 +190,7 @@
                                 <span class="text-dark">{{ translate('Transaction ID')}}</span> : #{{ $transaction->id }}
                             </div>
                             <div class="font-normal">
-                                <span class="text-dark">{{ translate('invoice_Date')}}</span> : {{ App\CentralLogics\Helpers::date_format($transaction->created_at) }}
+                                <span class="text-dark">{{ translate('Invoice date')}}</span> : {{ App\CentralLogics\Helpers::date_format($transaction->created_at) }}
                             </div>
                         </td>
                         <td style="padding:0;text-align:right">
@@ -200,9 +200,6 @@
                             <div class="font-normal">
                                 {{ $BusinessData['address'] }}
                             </div>
-                            {{-- <div  class="font-normal">
-                                {{ translate('TNX ID') }} {{ $transaction->id}}
-                            </div> --}}
                         </td>
                     </tr>
                 </table>
@@ -210,7 +207,7 @@
                 <table class="border" style="border-radius:12px;">
                     <tr>
                         <td class="text-left" style="padding:21px 8px;">
-                            <div class="fz-11">{{ translate('Store Owner')}}</div>
+                            <div class="fz-11">{{ translate('Store owner')}}</div>
                             <span class="text-dark fz-10">{{ $transaction?->store?->vendor?->f_name. ' '.$transaction?->store?->vendor?->l_name }}</span>
                         </td>
                         <td class="text-left" style="padding:21px 8px;">
@@ -219,13 +216,13 @@
                             <span class="text-dark">{{ $transaction?->store?->vendor?->phone }}</span></div>
                         </td>
                         <td class="text-left" style="padding:21px 8px;">
-                            <div class="fz-11">{{ translate('Email')}}</div>
+                            <div class="fz-11">{{ translate('email')}}</div>
                             <div class="font-medium fz-10 mb-2 text-capitalize">
                             <span class="text-dark">{{ $transaction?->store?->vendor?->email }}</span></div>
                         </td>
                         <td class="text-right" style="padding:21px 8px;">
                             <div class="mb-1 fz-10" style="white-space: nowrap">
-                                <span class="text-dark">{{translate('invoice_of')}}</span> <span class="font-normal">({{  App\CentralLogics\Helpers::currency_code() }})</span>
+                                <span class="text-dark">{{translate('Invoice of')}}</span> <span class="font-normal">({{  App\CentralLogics\Helpers::currency_code() }})</span>
                             </div>
                             <div class="text-right" style="font-size: 24px;font-weight:600;color:#039d55;white-space:nowrap;">{{  App\CentralLogics\Helpers::format_currency($transaction->paid_amount)  }}</div>
                         </td>
@@ -241,9 +238,9 @@
                             <table>
                                 <tr>
                                     <td class="vertical-align-top" style="padding:8px 24px; width:30%">
-                                        <div class="fz-11">{{ translate('payment')}}</div>
+                                        <div class="fz-11">{{ translate('Payment')}}</div>
                                         <div class="font-medium fz-10 mb-2 text-capitalize">
-                                        <span class="text-dark">{{ translate($transaction->payment_method) }}</span></div>
+                                        <span class="text-dark">{{ payment_method_label($transaction->payment_method) }}</span></div>
                                     </td>
                                     <td class="fz-10 border-left vertical-align-top" style="padding:8px 24px; width:34%">
                                         <div>{{ translate('Purchased') }}</div>
@@ -251,7 +248,7 @@
                                     </td>
                                     <td class="fz-10 border-left vertical-align-top" style="padding:8px 24px; width:34%">
                                         <div>{{translate('Duration')}}</div>
-                                        <div class="font-bold fz-11"> {{ $transaction->validity }} {{translate('Days')}} </div>
+                                        <div class="font-bold fz-11"> {{ $transaction->validity }} {{translate('days')}} </div>
                                     </td>
                                 </tr>
                             </table>
@@ -275,13 +272,13 @@
                                             <span>{{ translate('Transaction ID') }}</span>
                                         </th>
                                         <th>
-                                            <span>{{ translate('Package Name') }}</span>
+                                            <span>{{ translate('Package name') }}</span>
                                         </th>
                                         <th>
-                                            <span>{{ translate('Transaction Time') }}</span>
+                                            <span>{{ translate('Transaction time') }}</span>
                                         </th>
                                         <th>
-                                            <span>{{ translate('Validity Time') }}</span>
+                                            <span>{{ translate('Validity time') }}</span>
                                         </th>
                                         <th>
                                             <span>{{ translate('Amount') }}</span>
@@ -300,7 +297,7 @@
                                             <span>{{ App\CentralLogics\Helpers::date_format($transaction->created_at) }}</span>
                                         </td>
                                         <td style="padding: 18px 10px;">
-                                            <span>{{ $transaction->validity }} {{translate('Days')}}</span>
+                                            <span>{{ $transaction->validity }} {{translate('days')}}</span>
                                         </td>
                                         <td style="padding: 18px 10px;">
                                             <span class="__txt-nowrap">
@@ -317,7 +314,7 @@
                     </tr>
                     <tr>
                         <td colspan="4" class="font-semibold fz-12 pt-0" style="text-align: center;padding-bottom: 14px">
-                            {{translate('Thanks for the Subscription')}}
+                            {{translate('Thanks for the subscription')}}
                         </td>
                     </tr>
                 </table>

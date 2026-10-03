@@ -1,5 +1,5 @@
 <div class="row">
-    <div class="col-lg-12 text-center "><h1 >{{ translate('item_report') }}</h1></div>
+    <div class="col-lg-12 text-center "><h1 >{{ translate('Item report') }}</h1></div>
     <div class="col-lg-12">
 
 
@@ -7,15 +7,15 @@
     <table>
         <thead>
             <tr>
-                <th>{{ translate('Search_Criteria') }}</th>
+                <th>{{ translate('Search criteria') }}</th>
                 <th></th>
                 <th></th>
                 <th>
-                    {{ translate('module' )}} - {{ $data['module']?translate($data['module']):translate('all') }}
+                    {{ translate('Module' )}} - {{ $data['module']?translate($data['module']):translate('All') }}
                     <br>
-                    {{ translate('zone' )}} - {{ $data['zone']??translate('all') }}
+                    {{ translate('Zone' )}} - {{ $data['zone']??translate('All') }}
                     <br>
-                    {{ translate('store' )}} - {{ $data['store']??translate('all') }}
+                    {{ translate('Store' )}} - {{ $data['store']??translate('All') }}
                     @if ($data['from'])
                     <br>
                     {{ translate('from' )}} - {{ $data['from']?Carbon\Carbon::parse($data['from'])->format('d M Y'):'' }}
@@ -25,9 +25,9 @@
                     {{ translate('to' )}} - {{ $data['to']?Carbon\Carbon::parse($data['to'])->format('d M Y'):'' }}
                     @endif
                     <br>
-                    {{ translate('filter')  }}- {{  translate($data['filter']) }}
+                    {{ translate('Filter')  }}- {{  translate($data['filter']) }}
                     <br>
-                    {{ translate('Search_Bar_Content')  }}- {{ $data['search'] ??translate('N/A') }}
+                    {{ translate('Search bar content')  }}- {{ $data['search'] ??translate('N/A') }}
 
                 </th>
                 <th> </th>
@@ -36,19 +36,19 @@
                 <th></th>
                 </tr>
         <tr>
-            <th>{{ translate('sl') }}</th>
-            <th>{{translate('messages.item_image')}}</th>
-            <th>{{translate('messages.item_name')}}</th>
-            <th>{{translate('messages.module')}}</th>
-            <th>{{translate('messages.store_name')}}</th>
+            <th>{{ translate('SL') }}</th>
+            <th>{{translate('Item image')}}</th>
+            <th>{{translate('Item name')}}</th>
+            <th>{{translate('messages.Module')}}</th>
+            <th>{{translate('Store name')}}</th>
             <th>{{translate('messages.stock')}}</th>
-            <th>{{translate('messages.total_order_count')}}</th>
-            <th>{{translate('messages.unit_price')}}</th>
-            <th>{{translate('messages.total_amount_sold')}}</th>
-            <th>{{translate('messages.total_discount_given')}}</th>
-            <th>{{translate('messages.average_sale_value')}}</th>
-            <th>{{translate('messages.total_ratings_given')}}</th>
-            <th>{{translate('messages.average_ratings')}}</th>
+            <th>{{translate('messages.Total order count')}}</th>
+            <th>{{translate('Unit price')}}</th>
+            <th>{{translate('messages.Total amount sold')}}</th>
+            <th>{{translate('Total discount given')}}</th>
+            <th>{{translate('messages.Average sale value')}}</th>
+            <th>{{translate('messages.Total ratings given')}}</th>
+            <th>{{translate('messages.Average ratings')}}</th>
         </thead>
         <tbody>
         @foreach($data['items'] as $key => $item)
@@ -63,7 +63,7 @@
                     @if($item->store)
                     {{ $item->store->name }}
                     @else
-                    {{translate('messages.store_deleted')}}
+                    {{translate('messages.Store deleted')}}
                     @endif
                 </td>
                 <td>

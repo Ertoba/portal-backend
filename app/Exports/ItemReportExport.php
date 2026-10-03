@@ -28,6 +28,19 @@ class ItemReportExport implements  FromView, ShouldAutoSize, WithStyles,WithColu
         $this->data = $data;
     }
 
+
+    /**
+     * Row count used to size the styled ranges.
+     *
+     * The controller streams its rows as a LazyCollection, where count() would re-run every
+     * chunk query, so it supplies a precomputed count. A caller still passing an eager
+     * Collection falls through to count() unchanged.
+     */
+    private function rowCount(): int
+    {
+        return (int) ($this->data['items_count'] ?? $this->data['items']->count());
+    }
+
     public function view(): View
     {
         return view('file-exports.item-report', [
@@ -38,7 +51,6 @@ class ItemReportExport implements  FromView, ShouldAutoSize, WithStyles,WithColu
     public function columnWidths(): array
     {
         return [
-            // 'C' => 45,
         ];
     }
 
@@ -63,12 +75,11 @@ class ItemReportExport implements  FromView, ShouldAutoSize, WithStyles,WithColu
         ];
         $sheet->getStyle('A1:C1')->applyFromArray($styleArray);
         return [
-            // Define the style for cells with data
-            'A1:M'.$this->data['items']->count() +3 => [
+            'A1:M'.$this->rowCount() +3 => [
                 'borders' => [
                     'allBorders' => [
                         'borderStyle' => Border::BORDER_THIN,
-                        'color' => ['argb' => '000000'], // Specify the color of the border (optional)
+                        'color' => ['argb' => '000000'],
                     ],
                 ],
             ],
@@ -93,7 +104,7 @@ class ItemReportExport implements  FromView, ShouldAutoSize, WithStyles,WithColu
     {
         return [
             AfterSheet::class => function(AfterSheet $event) {
-                $event->sheet->getStyle('A1:M1') // Adjust the range as per your needs
+                $event->sheet->getStyle('A1:M1')
                     ->getAlignment()
                     ->setHorizontal(Alignment::HORIZONTAL_CENTER)
                     ->setVertical(Alignment::VERTICAL_CENTER);
@@ -110,7 +121,7 @@ class ItemReportExport implements  FromView, ShouldAutoSize, WithStyles,WithColu
                     ->setHorizontal(Alignment::HORIZONTAL_CENTER)
                     ->setVertical(Alignment::VERTICAL_CENTER);
 
-                $event->sheet->getStyle('A4:M'.$this->data['items']->count() +3)
+                $event->sheet->getStyle('A4:M'.$this->rowCount() +3)
                     ->getAlignment()
                     ->setHorizontal(Alignment::HORIZONTAL_CENTER)
                     ->setVertical(Alignment::VERTICAL_CENTER);

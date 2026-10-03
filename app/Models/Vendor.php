@@ -2,19 +2,20 @@
 
 namespace App\Models;
 
-use App\CentralLogics\Helpers;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use App\Models\Store;
-use App\Traits\DemoMaskable;
+use App\Traits\Model\DemoMaskableTrait;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use App\Traits\Model\HasStorageTrait;
+use App\Traits\System\SidebarCountsTrait;
 
 
 class Vendor extends Authenticatable
 {
-    use Notifiable, DemoMaskable;
+    use Notifiable, DemoMaskableTrait, HasStorageTrait, SidebarCountsTrait;
 
     protected $guarded = ['id'];
 
@@ -28,18 +29,11 @@ class Vendor extends Authenticatable
         'auth_token',
         'remember_token',
     ];
-    protected $appends = ['image_full_url'];
-    public function getImageFullUrlAttribute(){
-        $value = $this->image;
-        if (count($this->storage) > 0) {
-            foreach ($this->storage as $storage) {
-                if ($storage['key'] == 'image') {
-                    return Helpers::get_full_url('vendor',$value,$storage['value']);
-                }
-            }
-        }
+    protected $appends = [];
 
-        return Helpers::get_full_url('vendor',$value,'public');
+    public function getImageFullUrlAttribute()
+    {
+        return $this->storageFullUrl('vendor', 'image', $this->image);
     }
 
     public function scopeOfStatus($query, $status): void
@@ -109,35 +103,11 @@ class Vendor extends Authenticatable
         return $this->hasOne(UserInfo::class,'vendor_id', 'id');
     }
 
-    public function storage()
-    {
-        return $this->morphMany(Storage::class, 'data');
-    }
-
-    protected static function booted()
-    {
-        static::addGlobalScope('storage', function ($builder) {
-            $builder->with('storage');
-        });
-
-    }
     protected static function boot()
     {
         parent::boot();
         static::saved(function ($model) {
-            if($model->isDirty('image')){
-                $value = Helpers::getDisk();
-
-                DB::table('storages')->updateOrInsert([
-                    'data_type' => get_class($model),
-                    'data_id' => $model->id,
-                    'key' => 'image',
-                ], [
-                    'value' => $value,
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
-            }
+            self::recordStorageDisk($model, 'image', 'image');
         });
 
     }

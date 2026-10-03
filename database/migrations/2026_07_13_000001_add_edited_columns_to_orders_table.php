@@ -10,10 +10,10 @@ return new class extends Migration
     {
         Schema::table('orders', function (Blueprint $table) {
             if (!Schema::hasColumn('orders', 'edited')) {
-                $table->boolean('edited')->default(false)->after('delivery_type_charge');
+                $table->boolean('edited')->default(false);
             }
             if (!Schema::hasColumn('orders', 'adjusment')) {
-                $table->decimal('adjusment', 24, 2)->default(0)->after('edited');
+                $table->decimal('adjusment', 24, 2)->default(0);
             }
         });
     }

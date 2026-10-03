@@ -1,16 +1,14 @@
 @extends('layouts.admin.app')
 
-@section('title', $store->name . "'s " . translate('messages.items'))
+@section('title', $store->name . "'s " . translate('messages.Items'))
 
 @push('css_or_js')
-    <!-- Custom styles for this page -->
     <link href="{{ asset('public/assets/admin/css/croppie.css') }}" rel="stylesheet">
 @endpush
 
 @section('content')
     <div class="content container-fluid">
         @include('admin-views.vendor.view.partials._header', ['store' => $store])
-        <!-- Page Heading -->
 
         <div class="tab-content">
             <div class="tab-pane fade show active" id="product">
@@ -25,7 +23,7 @@
                                     <h6 class="card-subtitle d-flex justify-content-between m-0 align-items-center">
                                         <img src="{{ asset('/public/assets/admin/img/store_items/fi_9752284.png') }}"
                                             alt="dashboard" class="oder--card-icon">
-                                        <span>{{ translate('All_Items') }}</span>
+                                        <span>{{ translate('All Items') }}</span>
                                     </h6>
                                     <span class="card-title text-success">
                                         {{ $item }}
@@ -42,7 +40,7 @@
                                     <h6 class="card-subtitle d-flex justify-content-between m-0 align-items-center">
                                         <img src="{{ asset('/public/assets/admin/img/store_items/fi_10608883.png') }}"
                                             alt="dashboard" class="oder--card-icon">
-                                        <span>{{ translate('messages.Active_Items') }}</span>
+                                        <span>{{ translate('Active items') }}</span>
                                     </h6>
                                     <span class="card-title text-success">
                                         {{ $item }}
@@ -58,7 +56,7 @@
                                     <h6 class="card-subtitle d-flex justify-content-between m-0 align-items-center">
                                         <img src="{{ asset('/public/assets/admin/img/store_items/fi_10186054.png') }}"
                                             alt="dashboard" class="oder--card-icon">
-                                        <span>{{ translate('messages.Inactive_Items') }}</span>
+                                        <span>{{ translate('Inactive items') }}</span>
                                     </h6>
                                     <span class="card-title text-success">
                                         {{ $item }}
@@ -74,7 +72,7 @@
                                     <h6 class="card-subtitle d-flex justify-content-between m-0 align-items-center">
                                         <img src="{{ asset('/public/assets/admin/img/store_items/fi_5106700.png') }}"
                                             alt="dashboard" class="oder--card-icon">
-                                        <span>{{ translate('messages.Pending_for_Approval') }}</span>
+                                        <span>{{ translate('Pending for approval') }}</span>
                                     </h6>
                                     <span class="card-title text-success">
                                         {{ $item }}
@@ -90,7 +88,7 @@
                                     <h6 class="card-subtitle d-flex justify-content-between m-0 align-items-center">
                                         <img src="{{ asset('/public/assets/admin/img/store_items/image 89.png') }}"
                                             alt="dashboard" class="oder--card-icon">
-                                        <span>{{ translate('messages.Rejected_Items') }}</span>
+                                        <span>{{ translate('messages.Rejected Items') }}</span>
                                     </h6>
                                     <span class="card-title text-success">
                                         {{ $item }}
@@ -114,26 +112,24 @@
                 <div class="card">
                     <div class="card-header border-0 py-2">
                         <div class="search--button-wrapper">
-                            <h3 class="card-title"> {{ $item ?? '' }} {{ translate('messages.items') }} <span
-                                    class="badge badge-soft-dark ml-2"><span
-                                        class="total_items">{{ $foods->total() }}</span></span>
-                            </h3>
+                            @include('partials._table-head', [
+                                'title'    => translate('Item list'),
+                                'subtitle' => translate('messages.Store product list subtitle'),
+                                'count'    => $foods->total(),
+                            ])
 
                             <form class="search-form">
                                 <input type="hidden" name="store_id" value="{{ $store->id }}">
-                                <!-- Search -->
                                 <div class="input-group input--group">
                                     <input id="datatableSearch" name="search" value="{{ request()?->search ?? null }}"
                                         type="search" class="form-control h--40px"
-                                        placeholder="{{ translate('Search by name...') }}"
-                                        aria-label="{{ translate('messages.search_here') }}">
+                                        placeholder="{{ translate('Search by name') }}"
+                                        aria-label="{{ translate('Search') }}">
                                     <button type="submit" class="btn btn--secondary h--40px"><i
                                             class="tio-search"></i></button>
                                 </div>
-                                <!-- End Search -->
                             </form>
 
-                            <!-- Unfold -->
                             <div class="hs-unfold mr-2">
                                 <a class="js-hs-unfold-invoker btn btn-sm btn-white dropdown-toggle min-height-40"
                                     href="javascript:;"
@@ -141,33 +137,32 @@
                                     "target": "#usersExportDropdown",
                                     "type": "css-animation"
                                 }'>
-                                    <i class="tio-download-to mr-1"></i> {{ translate('messages.export') }}
+                                    <i class="tio-download-to mr-1"></i> {{ translate('messages.Export') }}
                                 </a>
 
                                 <div id="usersExportDropdown"
                                     class="hs-unfold-content dropdown-unfold dropdown-menu dropdown-menu-sm-right">
 
-                                    <span class="dropdown-header">{{ translate('messages.download_options') }}</span>
+                                    <span class="dropdown-header">{{ translate('messages.Download options') }}</span>
                                     <a id="export-excel" class="dropdown-item"
                                         href="{{ route('admin.item.store-item-export', ['type' => 'excel', 'table' => isset($sub_tab) && ($sub_tab == 'pending-items' || $sub_tab == 'rejected-items') ? 'TempProduct' : null, 'sub_tab' => $sub_tab ?? null, 'store_id' => $store->id, request()->getQueryString()]) }}">
                                         <img class="avatar avatar-xss avatar-4by3 mr-2"
                                             src="{{ asset('public/assets/admin') }}/svg/components/excel.svg"
                                             alt="Image Description">
-                                        {{ translate('messages.excel') }}
+                                        Excel
                                     </a>
                                     <a id="export-csv" class="dropdown-item"
                                         href="{{ route('admin.item.store-item-export', ['type' => 'csv', 'table' => isset($sub_tab) && ($sub_tab == 'pending-items' || $sub_tab == 'rejected-items') ? 'TempProduct' : null, 'sub_tab' => $sub_tab ?? null, 'store_id' => $store->id, request()->getQueryString()]) }}">
                                         <img class="avatar avatar-xss avatar-4by3 mr-2"
                                             src="{{ asset('public/assets/admin') }}/svg/components/placeholder-csv-format.svg"
                                             alt="Image Description">
-                                        {{ translate('messages.csv') }}
+                                        CSV
                                     </a>
 
                                 </div>
                             </div>
-                            <!-- End Unfold -->
                             <a href="{{ route('admin.item.add-new') }}" class="btn btn--primary pull-right"><i
-                                    class="tio-add-circle"></i> {{ translate('messages.add_new_item') }}</a>
+                                    class="tio-add-circle"></i> {{ translate('messages.Add new item') }}</a>
                         </div>
                     </div>
                     <div class="table-responsive datatable-custom">
@@ -180,8 +175,8 @@
                             }'>
                             <thead class="thead-light">
                                 <tr>
-                                    <th class="border-0">{{ translate('sl') }}</th>
-                                    <th class="border-0">{{ translate('messages.name') }}</th>
+                                    <th class="border-0">{{ translate('SL') }}</th>
+                                    <th class="border-0">{{ translate('Name') }}</th>
                                     <th class="border-0">{{ translate('Category') }}</th>
                                     @if (Config::get('module.current_module_type') != 'food' &&
                                             !(isset($sub_tab) && ($sub_tab == 'rejected-items' || $sub_tab == 'pending-items')))
@@ -189,10 +184,10 @@
                                     @endif
                                     <th class="border-0">{{ translate('messages.price') }}</th>
                                       @if ($productWiseTax)
-                                        <th  class="border-0 ">{{ translate('messages.Vat/Tax') }}</th>
+                                        <th  class="border-0 ">{{ translate('VAT/tax') }}</th>
                                     @endif
-                                    <th class="border-0">{{ translate('messages.status') }}</th>
-                                    <th class="border-0 text-center">{{ translate('messages.action') }}</th>
+                                    <th class="border-0">{{ translate('Status') }}</th>
+                                    <th class="border-0 text-center">{{ translate('messages.Action') }}</th>
                                 </tr>
                             </thead>
 
@@ -234,7 +229,7 @@
                                                             </span> </span>
                                                         <br>
                                                     @empty
-                                                        <span> {{ translate('messages.no_tax') }} </span>
+                                                        <span> {{ translate('messages.No tax') }} </span>
                                                     @endforelse
                                                 </span>
 
@@ -249,43 +244,43 @@
                                                         </span>
                                                     @else
                                                         <span class="badge badge-soft-info  text-capitalize">
-                                                            {{ translate('messages.pending') }}
+                                                            {{ translate('Pending') }}
                                                         </span>
                                                     @endif
                                                 </div>
                                             </td>
                                             <td>
                                                 <div class="btn--container justify-content-center">
-                                                    <a class="ml-2 btn btn-sm btn--warning btn-outline-warning action-btn"
+                                                    <a class="ml-2 btn btn-sm action-btn action-btn--view"
                                                         data-toggle="tooltip" data-placement="top"
                                                         data-original-title="{{ translate('messages.View') }}"
                                                         href="{{ route('admin.item.requested_item_view', ['id' => $food['id']]) }}">
-                                                        <i class="tio-invisible"></i>
+                                                        <i class="tio-visible-outlined"></i>
                                                     </a>
                                                     <a class="btn action-btn btn--primary btn-outline-primary route-alert"
                                                         data-toggle="tooltip" data-placement="top"
-                                                        data-original-title="{{ translate('messages.approve') }}"
+                                                        data-original-title="{{ translate('Approve') }}"
                                                         data-url="{{ route('admin.item.approved', ['id' => $food['id']]) }}"
-                                                        data-message="{{ translate('messages.you_want_to_approve_this_product') }}"
+                                                        data-message="{{ translate('messages.You want to approve this product') }}"
                                                         href="javascript:"><i class="tio-done font-weight-bold"></i> </a>
                                                     @if ($food->is_rejected == 0)
                                                         <a class="btn action-btn btn--danger btn-outline-danger canceled-status"
                                                             data-toggle="tooltip" data-placement="top"
-                                                            data-original-title="{{ translate('messages.deny') }}"
+                                                            data-original-title="{{ translate('Deny') }}"
                                                             data-url="{{ route('admin.item.deny', ['id' => $food['id']]) }}"
-                                                            data-message="{{ translate('you_want_to_deny_this_product') }}"
+                                                            data-message="{{ translate('You want to deny this product') }}"
                                                             href="javascript:"><i
                                                                 class="tio-clear font-weight-bold"></i></a>
                                                     @endif
-                                                    <a class="btn action-btn btn--primary btn-outline-primary"
+                                                    <a class="btn action-btn action-btn--edit"
                                                         href="{{ route('admin.item.edit', [$food['id'], 'temp_product' => true]) }}"
-                                                        title="{{ translate('messages.edit_item') }}"><i
+                                                        title="{{ translate('messages.Edit item') }}"><i
                                                             class="tio-edit"></i>
                                                     </a>
-                                                    <a class="btn action-btn btn--danger btn-outline-danger form-alert"
+                                                    <a class="btn action-btn action-btn--delete form-alert"
                                                         href="javascript:" data-url="food-{{ $food['id'] }}"
-                                                        data-message="{{ translate('messages.Want_to_delete_this_item') }}"
-                                                        title="{{ translate('messages.delete_item') }}"><i
+                                                        data-message="{{ translate('Want to delete this item?') }}"
+                                                        title="{{ translate('Delete item') }}"><i
                                                             class="tio-delete-outlined"></i>
                                                     </a>
                                                     <form action="{{ route('admin.item.delete', [$food['id']]) }}"
@@ -337,7 +332,7 @@
                                                             </span> </span>
                                                         <br>
                                                     @empty
-                                                        <span> {{ translate('messages.no_tax') }} </span>
+                                                        <span> {{ translate('messages.No tax') }} </span>
                                                     @endforelse
                                                 </span>
                                             </td>
@@ -357,15 +352,15 @@
                                             </td>
                                             <td>
                                                 <div class="btn--container justify-content-center">
-                                                    <a class="btn action-btn btn--primary btn-outline-primary"
+                                                    <a class="btn action-btn action-btn--edit"
                                                         href="{{ route('admin.item.edit', [$food['id']]) }}"
-                                                        title="{{ translate('messages.edit_item') }}"><i
+                                                        title="{{ translate('messages.Edit item') }}"><i
                                                             class="tio-edit"></i>
                                                     </a>
-                                                    <a class="btn action-btn btn--danger btn-outline-danger form-alert"
+                                                    <a class="btn action-btn action-btn--delete form-alert"
                                                         href="javascript:" data-id="food-{{ $food['id'] }}"
-                                                        data-message="{{ translate('messages.Want to delete this item ?') }}"
-                                                        title="{{ translate('messages.delete_item') }}"><i
+                                                        data-message="{{ translate('Want to delete this item?') }}"
+                                                        title="{{ translate('Delete item') }}"><i
                                                             class="tio-delete-outlined"></i>
                                                     </a>
                                                 </div>
@@ -390,7 +385,7 @@
                         <div class="empty--data">
                             <img src="{{ asset('/public/assets/admin/svg/illustrations/sorry.svg') }}" alt="public">
                             <h5>
-                                {{ translate('no_data_found') }}
+                                {{ translate('No data found') }}
                             </h5>
                         </div>
                     @endif
@@ -399,7 +394,6 @@
         </div>
     </div>
 
-    {{-- Add Quantity Modal --}}
     <div class="modal fade update-quantity-modal" id="update-quantity" tabindex="-1">
         <div class="modal-dialog modal-dialog-scrollable">
             <div class="modal-content">
@@ -415,9 +409,9 @@
                         <div class="mt-2 rest-part w-100"></div>
                         <div class="btn--container justify-content-end">
                             <button type="reset" data-dismiss="modal" aria-label="Close"
-                                class="btn btn--reset">{{ translate('cancel') }}</button>
+                                class="btn btn--reset"><i class="tio-clear-circle-outlined"></i> {{ translate('Cancel') }}</button>
                             <button type="submit" id="submit_new_customer"
-                                class="btn btn--primary">{{ translate('update_stock') }}</button>
+                                class="btn btn--primary"><i class="tio-save"></i> {{ translate('Update stock') }}</button>
                         </div>
                     </form>
                 </div>
@@ -427,7 +421,6 @@
 @endsection
 
 @push('script_2')
-    <!-- Page level plugins -->
     <script>
         "use script";
         $('.update-quantity').on('click', function() {

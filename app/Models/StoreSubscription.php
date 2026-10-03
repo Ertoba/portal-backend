@@ -14,7 +14,6 @@ class StoreSubscription extends Model
 
 
     protected $casts = [
-        // 'expiry_date'=> 'datetime',
         'price'=>'float',
         'validity'=>'integer',
         'chat'=>'integer',

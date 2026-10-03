@@ -13,6 +13,5 @@ class NewsletterSeeder extends Seeder
      */
     public function run()
     {
-        //
     }
 }

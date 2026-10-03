@@ -11,7 +11,6 @@ class UserFile extends Model
     use HasFactory;
 
     protected $guarded = ['id'];
-    protected $appends = ['image_full_url'];
 
     public function getImageFullUrlAttribute()
     {

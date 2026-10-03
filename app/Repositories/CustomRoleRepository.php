@@ -27,18 +27,18 @@ class CustomRoleRepository implements CustomRoleRepositoryInterface
 
     public function getFirstWhere(array $params, array $relations = []): ?Model
     {
-        return $this->role->where($params)->first();
+        return $this->role->with($relations)->where($params)->first();
     }
 
-    public function getList(array $orderBy = [], array $relations = [], int|string $dataLimit = DEFAULT_DATA_LIMIT, int $offset = null): Collection|LengthAwarePaginator
+    public function getList(array $orderBy = [], array $relations = [], int|string $dataLimit = DEFAULT_DATA_LIMIT, ?int $offset = null): Collection|LengthAwarePaginator
     {
-        return $this->role->whereNotIn('id', [1])->get();
+        return $this->role->with($relations)->whereNotIn('id', [1])->get();
     }
 
-    public function getListWhere(string $searchValue = null, array $filters = [], array $relations = [], int|string $dataLimit = DEFAULT_DATA_LIMIT, int $offset = null): Collection|LengthAwarePaginator
+    public function getListWhere(?string $searchValue = null, array $filters = [], array $relations = [], int|string $dataLimit = DEFAULT_DATA_LIMIT, ?int $offset = null): Collection|LengthAwarePaginator
     {
-        $key = explode(' ', $searchValue);
-        return $this->role->whereNotIn('id',[1])
+        $key = explode(' ', $searchValue ?? '');
+        return $this->role->with($relations)->withCount('employees')->whereNotIn('id',[1])
             ->when(isset($searchValue), function($query) use($key) {
             $query->where(function ($q) use ($key) {
                 foreach ($key as $value) {
@@ -70,8 +70,8 @@ class CustomRoleRepository implements CustomRoleRepositoryInterface
 
     public function getSearchList(Request $request): Collection
     {
-        $key = explode(' ', $request['search']);
-        return $this->role->where('id','!=','1')
+        $key = explode(' ', $request['search'] ?? '');
+        return $this->role->withCount('employees')->where('id','!=','1')
             ->where(function ($q) use ($key) {
                 foreach ($key as $value) {
                     $q->orWhere('name', 'like', "%{$value}%");
@@ -81,6 +81,6 @@ class CustomRoleRepository implements CustomRoleRepositoryInterface
 
     public function getFirstWithoutGlobalScopeWhere(array $params, array $relations = []): ?Model
     {
-        return $this->role->withoutGlobalScope('translate')->where($params)->first(['id','name','modules']);
+        return $this->role->with($relations)->withoutGlobalScope('translate')->with('translations')->where($params)->first(['id','name','modules']);
     }
 }

@@ -1,20 +1,26 @@
-{{--
-    v2 Vendor topbar.
-    Single-store workspace, so no admin-style workspace tabs or module switcher.
-    Topbar = mobile-toggle + view-mode + brand + search + language + messages + fullscreen.
-    Profile pop lives in the rail bottom (see _v2_profile_pop_vendor).
---}}
 @php
     use App\CentralLogics\Helpers;
     $store_data        = Helpers::get_store_data();
     $logged_in_user    = Helpers::get_loggedin_user();
     $local             = session()->has('vendor_local') ? session('vendor_local') : null;
-    $lang_setting      = \App\Models\BusinessSetting::where('key', 'system_language')->first();
-    $lang              = $lang_setting ? json_decode($lang_setting->value, true) : [];
-    $unread_messages   = \App\Models\Conversation::whereUser($logged_in_user->id ?? 0)->where('unread_message_count', '>', 0)->count();
+    $lang              = $system_languages;
+    $unread_messages   = $unread_message_count;
 @endphp
 
 <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+
+<script>
+/* Restore the saved mode before the chrome paints. Without this the panel
+   renders pinned and then jumps to compact once the deferred script below
+   runs — the admin topbar has done this since compact mode landed. */
+(function () {
+    try {
+        var saved = localStorage.getItem('v2_view_mode');
+        var isPos = /\/vendor-panel\/pos(\/|$)/.test(window.location.pathname);
+        document.body.classList.toggle('v2-mode-compact', isPos || saved === 'compact');
+    } catch (e) {}
+})();
+</script>
 
 <header class="v2-topbar" role="banner">
     <a class="v2-brand" href="{{ route('vendor.dashboard') }}" title="{{ $store_data->name ?? 'Store' }}">
@@ -26,20 +32,20 @@
         <i data-lucide="menu"></i>
     </button>
     @if($layout_features['compact_mode_toggle'] ?? true)
-    <button type="button" class="v2-mode-btn v2-desktop-only" id="v2-mode-btn" title="{{ translate('Toggle view mode') }}" aria-label="{{ translate('Toggle view mode') }}">
-        <i data-lucide="{{ session()->get('site_direction') === 'rtl' ? 'panel-right-open' : 'panel-left-open' }}" id="v2-mode-icon"></i>
+    <button type="button" class="v2-mode-btn v2-desktop-only" id="v2-mode-btn"
+            title="{{ translate('Collapse sidebar') }}" aria-label="{{ translate('Collapse sidebar') }}"
+            aria-controls="v2-panel" aria-pressed="false">
+        @include('layouts.admin.partials._v2_mode_icon')
     </button>
     @endif
 
-    {{-- Builder button — left-aligned (sits before the flex spacer so it stays
-         in the left cluster next to the brand, instead of being pushed right). --}}
-    @if(Helpers::check_website_builder_status())
+    @if(Helpers::check_website_builder_status() && Helpers::employee_module_permission_check('custom_website'))
     <a href="{{ route('vendor.builder.index', ['page' => 'global-settings']) }}"
        class="website-builder-btn v2-builder-btn" id="vendor-dashboard-builder-button">
         <span class="website-builder-icon">
             <img src="{{ asset('public/assets/admin/img/builder.svg') }}" alt="">
         </span>
-        <span class="v2-desktop-only">{{ translate('Build Your Custom Website') }}</span>
+        <span class="v2-desktop-only">{{ translate('Build your custom website') }}</span>
         @if(getEnvMode() == 'demo')
             <span class="v2-builder-addon-tag v2-desktop-only">{{ translate('Addon') }}</span>
         @endif
@@ -48,14 +54,14 @@
 
     <div class="v2-topbar-spacer"></div>
 
-    <button type="button" class="v2-topbar-search" data-toggle="modal" data-target="#staticBackdrop" aria-label="{{ translate('Search_or') }}">
+    <button type="button" class="v2-topbar-search" data-toggle="modal" data-target="#staticBackdrop" aria-label="{{ translate('Search or') }}">
         <i data-lucide="search"></i>
-        <span class="v2-search-placeholder">{{ translate('Search_by_keyword') }}</span>
+        <span class="v2-search-placeholder">{{ translate('Search by keyword') }}</span>
         <kbd>Ctrl+K</kbd>
     </button>
 
     <div class="v2-topbar-actions">
-        <button type="button" class="v2-icon-btn v2-mobile-only-search" data-toggle="modal" data-target="#staticBackdrop" aria-label="{{ translate('Search_or') }}">
+        <button type="button" class="v2-icon-btn v2-mobile-only-search" data-toggle="modal" data-target="#staticBackdrop" aria-label="{{ translate('Search or') }}">
             <i data-lucide="search"></i>
         </button>
 
@@ -87,7 +93,7 @@
         @endif
 
         @if($layout_features['fullscreen'] ?? true)
-        <button type="button" class="v2-icon-btn v2-desktop-only" id="v2-fs-btn" aria-label="{{ translate('Toggle fullscreen') }}" title="{{ translate('Toggle fullscreen (F11)') }}">
+        <button type="button" class="v2-icon-btn v2-desktop-only" id="v2-fs-btn" aria-label="{{ translate('Toggle fullscreen') }}" title="{{ translate('Toggle fullscreen') }} (F11)">
             <i data-lucide="maximize-2" id="v2-fs-icon"></i>
         </button>
         @endif
@@ -122,38 +128,53 @@
         closePops();
     });
 
-    // View mode (compact / pinned)
     var modeBtn = document.getElementById('v2-mode-btn');
-    var modeIcon = document.getElementById('v2-mode-icon');
     var savedMode = localStorage.getItem('v2_view_mode') || 'pinned';
-    // POS auto-compact: force compact mode while on /vendor-panel/pos/* without
-    // persisting, so leaving POS restores the user's previous preference.
     var isPosPage = /\/vendor-panel\/pos(\/|$)/.test(window.location.pathname);
-    function v2IsRtl() { return (document.documentElement.getAttribute('dir') || '').toLowerCase() === 'rtl'; }
-    function v2ModeIcon(mode) {
-        var rtl = v2IsRtl();
-        if (mode === 'compact') return rtl ? 'panel-right-close' : 'panel-left-close';
-        return rtl ? 'panel-right-open' : 'panel-left-open';
+    var modeAnimTimer = null;
+    /* The button is labelled with what the next click does. The glyph animates
+       between its two states on its own — see .v2-mode-glyph in admin-v2.css —
+       so nothing here rewrites the icon node. */
+    var MODE_LABEL = {
+        pinned: '{{ translate('Collapse sidebar') }}',
+        compact: '{{ translate('Expand sidebar') }}'
+    };
+
+    /* The content edge is only allowed to animate for the length of a mode
+       switch — see the .v2-mode-anim block in admin-v2.css. Arming it here and
+       nowhere else is also what keeps the saved mode from sliding in on every
+       page load. */
+    function armModeAnimation() {
+        document.body.classList.add('v2-mode-anim');
+        if (modeAnimTimer) clearTimeout(modeAnimTimer);
+        modeAnimTimer = setTimeout(function () {
+            document.body.classList.remove('v2-mode-anim');
+            modeAnimTimer = null;
+            /* Charts and datatables size themselves off the content width and
+               only ever re-measure on resize, so tell them the edge settled. */
+            var ev;
+            try { ev = new Event('resize'); }
+            catch (e) { ev = document.createEvent('Event'); ev.initEvent('resize', true, true); }
+            window.dispatchEvent(ev);
+        }, 380);
     }
+
     function applyMode(m) {
         document.body.classList.toggle('v2-mode-compact', m === 'compact');
-        // Lucide replaces our <i data-lucide=> with an <svg>, so re-inject a
-        // fresh placeholder rather than setAttribute on the (now SVG) element.
-        var ic = document.getElementById('v2-mode-icon');
-        if (ic) {
-            ic.outerHTML = '<i data-lucide="' + v2ModeIcon(m) + '" id="v2-mode-icon"></i>';
-            modeIcon = document.getElementById('v2-mode-icon');
+        if (modeBtn) {
+            modeBtn.setAttribute('title', MODE_LABEL[m === 'compact' ? 'compact' : 'pinned']);
+            modeBtn.setAttribute('aria-label', MODE_LABEL[m === 'compact' ? 'compact' : 'pinned']);
+            modeBtn.setAttribute('aria-pressed', m === 'compact' ? 'true' : 'false');
         }
-        if (window.lucide && typeof window.lucide.createIcons === 'function') window.lucide.createIcons();
     }
     applyMode(isPosPage ? 'compact' : savedMode);
     if (modeBtn) modeBtn.addEventListener('click', function () {
         var next = document.body.classList.contains('v2-mode-compact') ? 'pinned' : 'compact';
         if (!isPosPage) localStorage.setItem('v2_view_mode', next);
+        armModeAnimation();
         applyMode(next);
     });
 
-    // Fullscreen
     function v2ToggleFullscreen() {
         var el = document.documentElement;
         var isFs = !!(document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement);
@@ -176,7 +197,6 @@
         document.addEventListener(ev, v2SyncFullscreenIcon);
     });
 
-    // Mobile drawer
     var mobileToggle = document.getElementById('v2-mobile-toggle');
     var backdrop = document.getElementById('v2-mobile-backdrop');
     function setDrawer(open) { document.body.classList.toggle('v2-drawer-open', !!open); }

@@ -16,8 +16,9 @@ use App\Http\Requests\Admin\AddonBulkImportRequest;
 use App\Http\Requests\Admin\AddonUpdateRequest;
 use App\Models\AddOn as ModelsAddOn;
 use App\Models\AddonCategory;
-use App\Services\AddonService;
-use App\Traits\ImportExportTrait;
+use App\Scopes\StoreScope;
+use App\Services\Item\AddonService;
+use App\Traits\Report\ImportExportTrait;
 use Exception;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\RedirectResponse;
@@ -63,7 +64,7 @@ class AddonController extends BaseController
             storeId: $storeId,
             dataLimit: config('default_pagination')
         );
-        $store = $storeId != 'all' ? $this->storeRepo->getFirstWhere(params: ['id' => $storeId]) : null;
+        $store = $storeId != 'all' ? $this->storeRepo->getFirstWhere(params: ['id' => $storeId], relations: ['storeConfig']) : null;
         $language = getWebConfig('language');
 
         $addonCategories = AddonCategory::where(function ($query) {
@@ -79,11 +80,11 @@ class AddonController extends BaseController
 
     public function add(AddonAddRequest $request): RedirectResponse
     {
-        if($this->addonService->checkAddonExistsForThisStore(storeId: $request->store_id, addonName: $request->name[0])) {
-            Toastr::error(translate('messages.addon_already_exists_for_this_store'));
+        if($this->addonService->existsInStore(storeId: $request->store_id, addonName: $request->name[0])) {
+            Toastr::error(translate('messages.Addon already exists for this store'));
             return back();
         }
-        $addon = $this->addonRepo->add(data: $this->addonService->getAddData(request: $request));
+        $addon = $this->addonRepo->add(data: $this->addonService->getAddData($request->all()));
 
         if (addon_published_status('TaxModule')) {
             $SystemTaxVat = \Modules\TaxModule\Entities\SystemTaxSetup::where('is_active', 1)->where('is_default', 1)->first();
@@ -102,7 +103,7 @@ class AddonController extends BaseController
         }
 
         $this->translationRepo->addByModel(request: $request, model: $addon, modelPath: 'App\Models\AddOn', attribute: 'name');
-        Toastr::success(translate('messages.addon_added_successfully'));
+        Toastr::success(translate('Added successfully'));
         return back();
     }
 
@@ -127,7 +128,7 @@ class AddonController extends BaseController
 
     public function update(AddonUpdateRequest $request, $id): RedirectResponse
     {
-        $addon = $this->addonRepo->update(id: $id, data: $this->addonService->getAddData(request: $request));
+        $addon = $this->addonRepo->update(id: $id, data: $this->addonService->getAddData($request->all()));
 
 
             if (addon_published_status('TaxModule')) {
@@ -149,21 +150,21 @@ class AddonController extends BaseController
 
 
         $this->translationRepo->updateByModel(request: $request, model: $addon, modelPath: 'App\Models\AddOn', attribute: 'name');
-        Toastr::success(translate('messages.addon_updated_successfully'));
+        Toastr::success(translate('Updated successfully'));
         return back();
     }
 
     public function delete(Request $request): RedirectResponse
     {
         $this->addonRepo->delete(id: $request['id']);
-        Toastr::success(translate('messages.addon_deleted_successfully'));
+        Toastr::success(translate('Deleted successfully'));
         return back();
     }
 
     public function updateStatus(Request $request): RedirectResponse
     {
         $this->addonRepo->update(id: $request['id'], data: ['status' => $request['status']]);
-        Toastr::success(translate('messages.addon_status_updated'));
+        Toastr::success(translate('messages.Addon status updated'));
         return back();
     }
 
@@ -195,25 +196,27 @@ class AddonController extends BaseController
 
     public function getBulkImportView(): View
     {
-        return view(AddonViewPath::BULK_IMPORT['view']);
+        return view(AddonViewPath::BULK_IMPORT['view'], [
+            'summary' => Helpers::bulkDataSummary($this->moduleAddonQuery()),
+        ]);
     }
 
     public function importBulkData(AddonBulkImportRequest $request): RedirectResponse
     {
-        $data = $this->addonService->getImportData(request: $request);
+        $data = $this->addonService->getImportData(file: $request->file('products_file'));
 
         if (array_key_exists('flag', $data) && $data['flag'] == 'wrong_format') {
-            Toastr::error(translate('messages.you_have_uploaded_a_wrong_format_file'));
+            Toastr::error(translate('messages.You have uploaded a wrong format file'));
             return back();
         }
 
         if (array_key_exists('flag', $data) && $data['flag'] == 'required_fields') {
-            Toastr::error(translate('messages.please_fill_all_required_fields'));
+            Toastr::error(translate('messages.Please fill all required fields'));
             return back();
         }
 
         if (array_key_exists('flag', $data) && $data['flag'] == 'price_range') {
-            Toastr::error(translate('messages.Price_must_be_greater_then_0'));
+            Toastr::error(translate('messages.Price must be greater than zero'));
             return back();
         }
 
@@ -223,29 +226,29 @@ class AddonController extends BaseController
             DB::commit();
         } catch (Exception) {
             DB::rollBack();
-            Toastr::error(translate('messages.failed_to_import_data'));
+            Toastr::error(translate('messages.Failed to import data'));
             return back();
         }
 
-        Toastr::success(translate('messages.category_imported_successfully', ['count' => count($data)]));
+        Toastr::success(translate('messages.category_imported_successfully'));
         return back();
     }
     public function updateBulkData(AddonBulkImportRequest $request): RedirectResponse
     {
-        $data = $this->addonService->getImportData(request: $request, toAdd: false);
+        $data = $this->addonService->getImportData(file: $request->file('products_file'), toAdd: false);
 
         if (array_key_exists('flag', $data) && 'wrong_format' == $data['flag']) {
-            Toastr::error(translate('messages.you_have_uploaded_a_wrong_format_file'));
+            Toastr::error(translate('messages.You have uploaded a wrong format file'));
             return back();
         }
 
         if (array_key_exists('flag', $data) && $data['flag'] == 'required_fields') {
-            Toastr::error(translate('messages.please_fill_all_required_fields'));
+            Toastr::error(translate('messages.Please fill all required fields'));
             return back();
         }
 
         if (array_key_exists('flag', $data) && $data['flag'] == 'price_range') {
-            Toastr::error(translate('messages.Price_must_be_greater_then_0'));
+            Toastr::error(translate('messages.Price must be greater than zero'));
             return back();
         }
 
@@ -255,16 +258,29 @@ class AddonController extends BaseController
             DB::commit();
         } catch (Exception) {
             DB::rollBack();
-            Toastr::error(translate('messages.failed_to_import_data'));
+            Toastr::error(translate('messages.Failed to import data'));
             return back();
         }
 
-        Toastr::success(translate('messages.category_imported_successfully', ['count' => count($data)]));
+        Toastr::success(translate('messages.category_imported_successfully'));
         return back();
     }
     public function getBulkExportView(): View
     {
-        return view(AddonViewPath::BULK_EXPORT['view']);
+        return view(AddonViewPath::BULK_EXPORT['view'], [
+            'summary' => Helpers::bulkDataSummary($this->moduleAddonQuery()),
+        ]);
+    }
+
+    /**
+     * Add-ons belonging to a store in the module being worked in — the same set
+     * the bulk export writes out, so the bounds on the form match it.
+     */
+    private function moduleAddonQuery()
+    {
+        return ModelsAddOn::withoutGlobalScope(StoreScope::class)->whereHas('store', function ($query) {
+            $query->where('module_id', Config::get('module.current_module_id'));
+        });
     }
 
     /**

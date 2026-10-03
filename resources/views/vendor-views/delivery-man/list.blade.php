@@ -1,38 +1,32 @@
 @extends('layouts.vendor.app')
 
-@section('title',translate('messages.deliverymen'))
+@section('title',translate('Deliveryman'))
 
 
 @section('content')
     <div class="content container-fluid">
-        <!-- Page Header -->
         <div class="page-header">
             <h1 class="page-header-title">
                 <span class="page-header-icon">
-                    <img src="{{asset('public/assets/admin/img/deliveryman.png')}}" class="w--30" alt="">
+                    <img src="{{asset('public/assets/admin/img/outline/deliveryman.svg')}}" class="w--26" alt="">
                 </span>
                 <span>
-                   {{translate('messages.deliveryman')}}<span class="badge badge-soft-dark ml-2" id="itemCount">{{$delivery_men->total()}}</span>
+                   {{translate('Deliveryman')}}<span class="badge badge-soft-dark ml-2" id="itemCount">{{$delivery_men->total()}}</span>
                 </span>
             </h1>
+            <p class="page-header-desc">{{ translate('Everyone who delivers for your store, and whether they are on shift.') }}</p>
         </div>
-        <!-- End Page Header -->
-        <!-- Card -->
         <div class="card">
-            <!-- Header -->
             <div class="card-header justify-content-end">
                 <form class="search-form" >
                     <div class="input-group input--group">
                         <input  type="search" name="search" class="form-control" value="{{request()?->search ?? ''}}"
-                                placeholder="{{translate('messages.ex_search_name')}}" aria-label="{{translate('messages.ex_search_name')}}" >
+                                placeholder="{{translate('messages.Ex search name')}}" aria-label="{{translate('messages.Ex search name')}}" >
                         <button type="submit" class="btn btn--secondary"><i class="tio-search"></i></button>
                     </div>
-                    <!-- End Search -->
                 </form>
             </div>
-            <!-- End Header -->
 
-            <!-- Table -->
             <div class="table-responsive datatable-custom">
                 <table id="columnSearchDatatable"
                         class="table table-borderless table-thead-bordered table-nowrap table-align-middle card-table"
@@ -43,12 +37,12 @@
                         }'>
                     <thead class="thead-light">
                     <tr>
-                        <th class="border-0 text-capitalize">{{translate('messages.#')}}</th>
-                        <th class="border-0 text-capitalize">{{translate('messages.name')}}</th>
-                        <th class="border-0 text-capitalize">{{translate('messages.availability_status')}}</th>
-                        <th class="border-0 text-capitalize">{{translate('messages.phone')}}</th>
-                        <th class="border-0 text-capitalize text-center">{{translate('messages.active_orders')}}</th>
-                        <th class="border-0 text-capitalize text-center">{{translate('messages.action')}}</th>
+                        <th class="border-0 text-capitalize">#</th>
+                        <th class="border-0 text-capitalize">{{translate('Name')}}</th>
+                        <th class="border-0 text-capitalize">{{translate('messages.Availability status')}}</th>
+                        <th class="border-0 text-capitalize">{{translate('Phone')}}</th>
+                        <th class="border-0 text-capitalize text-center">{{translate('messages.Active orders')}}</th>
+                        <th class="border-0 text-capitalize text-center">{{translate('messages.Action')}}</th>
                     </tr>
                     </thead>
 
@@ -72,10 +66,10 @@
                             </td>
                             <td>
                                 <div>
-                                    {{translate('messages.currently_assigned_orders')}} : {{$dm->current_orders}}
+                                    {{translate('Currently assigned orders')}} : {{$dm->current_orders}}
                                 </div>
                                 <div>
-                                    {{translate('messages.active_status')}} :
+                                    {{translate('Active status')}} :
                                     @if($dm->application_status == 'approved')
                                         @if($dm->active)
                                         <strong class="text-capitalize text-success">{{translate('messages.online')}}</strong>
@@ -83,9 +77,9 @@
                                         <strong class="text-capitalize text-danger">{{translate('messages.offline')}}</strong>
                                         @endif
                                     @elseif ($dm->application_status == 'denied')
-                                        <strong class="text-capitalize text-danger">{{translate('messages.denied')}}</strong>
+                                        <strong class="text-capitalize text-danger">{{translate('Denied')}}</strong>
                                     @else
-                                        <strong class="text-capitalize text-primary">{{translate('messages.pending')}}</strong>
+                                        <strong class="text-capitalize text-primary">{{translate('Pending')}}</strong>
                                     @endif
                                 </div>
                             </td>
@@ -93,16 +87,16 @@
                                 <a class="deco-none" href="tel:{{$dm['phone']}}">{{$dm['phone']}}</a>
                             </td>
                             <td class="text-center">
-                                {{ $dm->orders ? count($dm->orders):0 }}
+                                {{ $dm->orders_count ?? 0 }}
                             </td>
                             <td>
                                 <div class="btn--container justify-content-center">
-                                    <a class="btn action-btn btn--primary btn-outline-primary" href="{{route('vendor.delivery-man.edit',[$dm['id']])}}" title="{{translate('messages.edit')}}"><i class="tio-edit"></i>
+                                    <a class="btn action-btn action-btn--edit" href="{{route('vendor.delivery-man.edit',[$dm['id']])}}" title="{{translate('Edit')}}"><i class="tio-edit"></i>
                                     </a>
-                                    <a class="btn action-btn btn--danger btn-outline-danger form-alert"
+                                    <a class="btn action-btn action-btn--delete form-alert"
                                        data-id="delivery-man-{{$dm['id']}}"
-                                       data-message="{{translate('Want_to_remove_this_deliveryman_?')}}"
-                                       href="javascript:"  title="{{translate('messages.delete')}}"><i class="tio-delete-outlined"></i>
+                                       data-message="{{translate('Want to remove this deliveryman?')}}"
+                                       href="javascript:"  title="{{translate('messages.Delete')}}"><i class="tio-delete-outlined"></i>
                                     </a>
                                 </div>
                                 <form action="{{route('vendor.delivery-man.delete',[$dm['id']])}}" method="post" id="delivery-man-{{$dm['id']}}">
@@ -116,26 +110,24 @@
                 @if(count($delivery_men) !== 0)
                 <hr>
                 @endif
-                <div class="page-area">
-                    <table>
-                        <tfoot>
-                        {!! $delivery_men->links() !!}
-                        </tfoot>
-                    </table>
-                </div>
                     @if(count($delivery_men) === 0)
                     <div class="empty--data">
                         <img src="{{asset('/public/assets/admin/svg/illustrations/sorry.svg')}}" alt="public">
                         <h5>
-                            {{translate('no_data_found')}}
+                            {{translate('No data found')}}
                         </h5>
                     </div>
                     @endif
 
             </div>
-            <!-- End Table -->
+            <div class="page-area">
+                <table>
+                    <tfoot>
+                    {!! $delivery_men->links() !!}
+                    </tfoot>
+                </table>
+            </div>
         </div>
-        <!-- End Card -->
     </div>
 
 @endsection

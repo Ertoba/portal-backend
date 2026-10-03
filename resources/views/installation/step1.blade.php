@@ -1,13 +1,11 @@
 @extends('layouts.blank')
 
 @section('content')
-    <!-- Title -->
     <div class="text-center text-white mb-4">
         <h2>6amMart Software Installation</h2>
         <h6 class="fw-normal">Please proceed step by step with proper data according to instructions</h6>
     </div>
 
-    <!-- Progress -->
     <div class="pb-2">
         <div class="progress cursor-pointer" role="progressbar" aria-label="6amMart Software Installation"
              aria-valuenow="20" aria-valuemin="0" aria-valuemax="100" data-bs-toggle="tooltip"
@@ -17,7 +15,6 @@
         </div>
     </div>
 
-    <!-- Card -->
     <div class="card mt-4">
         <div class="p-4 mb-md-3 mx-xl-4 px-md-5">
             <div class="d-flex justify-content-end mb-2">
@@ -75,12 +72,15 @@
                             </div>
                         </div>
                         @foreach($permission as $key => $item)
-                            @if ($key != 'db_file_write_perm' && $key != 'routes_file_write_perm' && $key != 'config_file_write_perm')
+                            {{-- Keyed off $fileChecks, like the update wizard does, instead of
+                                 naming the file keys one by one - the hardcoded list silently
+                                 leaked any newly added file check into this extensions list. --}}
+                            @if (!array_key_exists($key, $fileChecks))
                                 <div class="col-md-6">
                                     <div class="d-flex gap-3 align-items-center">
                                         <img src="{{ asset('public/assets/installation') }}/assets/img/svg-icons/curl-enabled.svg" alt="">
                                         <div class="d-flex align-items-center gap-2 justify-content-between flex-grow-1">
-                                            {{ translate($key) . ' ' . translate('Enabled') }}
+                                            {{ $key . ' ' . translate('Enabled') }}
 
                                             @if ($item)
                                                 <img width="20" src="{{ asset('public/assets/installation') }}/assets/img/svg-icons/check.png" alt="">
@@ -88,7 +88,7 @@
                                                 <span class="cursor-pointer" data-bs-toggle="tooltip"
                                                       data-bs-placement="top" data-bs-custom-class="custom-tooltip"
                                                       data-bs-html="true" data-bs-delay='{"hide":1000}'
-                                                      data-bs-title="{{ translate($key) }} extension is not enabled in your server. To enable go to PHP version > extensions and select {{ translate($key) }}.">
+                                                      data-bs-title="{{ $key }} extension is not enabled in your server. To enable go to PHP version > extensions and select {{ $key }}.">
                             <img src="{{ asset('public/assets/installation') }}/assets/img/svg-icons/info.svg"
                                  class="svg text-danger" alt="">
                         </span>
@@ -177,6 +177,37 @@
                                 </div>
                             </div>
                         </div>
+
+                        {{-- Leaving install mode means copying this file over
+                             RouteServiceProvider.php. If it never made it onto the server the
+                             copy has no source and the installer keeps re-appearing, so it is
+                             checked here rather than discovered at the last step. --}}
+                        <div class="col-md-6">
+                            <div class="d-flex gap-3 align-items-center">
+                                <img
+                                    src="{{asset('public/assets/installation')}}/assets/img/svg-icons/route-service.svg"
+                                    alt="">
+                                <div
+                                    class="d-flex align-items-center gap-2 justify-content-between flex-grow-1">
+                                    {{ $fileChecks['routes_backup_file_exists']['label'] }}
+
+                                    @if ($permission['routes_backup_file_exists'])
+                                        <img width="20"
+                                             src="{{asset('public/assets/installation')}}/assets/img/svg-icons/check.png"
+                                             alt="">
+                                    @else
+                                        <span class="cursor-pointer" data-bs-toggle="tooltip"
+                                              data-bs-placement="top" data-bs-custom-class="custom-tooltip"
+                                              data-bs-html="true" data-bs-delay='{"hide":1000}'
+                                              data-bs-title="{{ $fileChecks['routes_backup_file_exists']['requirement'] }} <br> {{ $fileChecks['routes_backup_file_exists']['path'] }}">
+                                                <img
+                                                    src="{{asset('public/assets/installation')}}/assets/img/svg-icons/info.svg"
+                                                    class="svg text-danger" alt="">
+                                            </span>
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -184,7 +215,7 @@
             <div class="text-center">
                 <p>All the permissions are provided successfully ? </p>
 
-                @if ($permission['curl_enabled'] == 1 && $permission['db_file_write_perm'] == 1 &&  $permission['config_file_write_perm'] == 1 && $permission['routes_file_write_perm'] == 1 && $phpVersion >= 8.3)
+                @if ($permission['curl_enabled'] == 1 && $permission['db_file_write_perm'] == 1 &&  $permission['config_file_write_perm'] == 1 && $permission['routes_file_write_perm'] == 1 && $permission['routes_backup_file_exists'] == 1 && $phpVersion >= 8.3)
                     <a href="{{ route('step2',['token'=>bcrypt('step_2')]) }}" class="btn btn-dark px-sm-5">Proceed
                         Next</a>
                 @endif

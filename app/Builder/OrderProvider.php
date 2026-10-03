@@ -3,6 +3,8 @@
 namespace App\Builder;
 
 use App\CentralLogics\Helpers;
+use App\Services\Order\OrderService;
+use App\Http\Resources\Common\Order\OrderDetailResource;
 use App\Models\CustomerAddress;
 use App\Models\Order;
 use App\Models\Store;
@@ -19,35 +21,22 @@ use Modules\Builder\ValueObjects\StorefrontScope;
 
 class OrderProvider implements OrderProviderContract
 {
-    /**
-     * Order status → user-facing label. Each row mirrors a real value
-     * in the `orders.order_status` column so the badge in the UI never
-     * misreports the underlying state. The refund-flow rows used to
-     * collapse into "Cancelled" — that was wrong, the order isn't
-     * cancelled, it's somewhere in the refund pipeline.
-     */
     private const STATUS_LABEL = [
         'pending'                 => 'Pending',
         'failed'                  => 'Pending',
-        'confirmed'               => 'On The Way',
-        'accepted'                => 'On The Way',
-        'processing'              => 'On The Way',
-        'handover'                => 'On The Way',
-        'picked_up'               => 'On The Way',
+        'confirmed'               => 'On the way',
+        'accepted'                => 'On the way',
+        'processing'              => 'On the way',
+        'handover'                => 'On the way',
+        'picked_up'               => 'On the way',
         'delivered'               => 'Delivered',
-        'canceled'                => 'Cancelled',
-        'refund_requested'        => 'Refund Requested',
-        'refund_request_canceled' => 'Refund Cancelled',
+        'canceled'                => 'Canceled',
+        'refund_requested'        => 'Refund requested',
+        'refund_request_canceled' => 'Refund canceled',
         'refunded'                => 'Refunded',
         'returned'                => 'Returned',
     ];
 
-    /**
-     * Order status → CustomBadge variant. Emitted with the order DTO so
-     * the frontend doesn't pattern-match against translated labels.
-     * Variants map to the storefront's `CustomBadge` palette
-     * (info|warning|success|danger).
-     */
     private const STATUS_VARIANT = [
         'pending'                 => 'info',
         'failed'                  => 'info',
@@ -64,12 +53,6 @@ class OrderProvider implements OrderProviderContract
         'returned'                => 'danger',
     ];
 
-    /**
-     * Raw order statuses during which a "delivery in progress" polyline
-     * should be drawn on the tracking map. Anything outside this set
-     * means the DM either hasn't picked up yet or has already delivered,
-     * so the route line would be misleading.
-     */
     private const ROUTE_ACTIVE_STATUSES = ['handover', 'picked_up'];
 
     public function customerOrderListing(
@@ -108,15 +91,7 @@ class OrderProvider implements OrderProviderContract
                 'amount'        => (float) $order->order_amount,
                 'items'         => (int) $order->details_count,
                 'paid'          => $order->payment_status === 'paid',
-                // Parcels have no line items; reorder is meaningless. Other
-                // failure modes (out-of-stock, expired campaign, …) are
-                // discovered at click time by OrderActionsProvider::reorder
-                // — we don't hide the button on stock state.
                 'reorderable'   => (string) ($order->order_type ?? '') !== 'parcel',
-                // Cheap predicate (delivered + non-parcel). The modal's
-                // hydration endpoint does the precise per-item check;
-                // we don't pay an extra query per listing row just to
-                // hide the button when everything's already reviewed.
                 'reviewable'    => $order->order_status === 'delivered'
                                    && (string) ($order->order_type ?? '') !== 'parcel',
                 'date'          => $order->created_at ? Carbon::parse($order->created_at)->format('h:iA, d M y') : null,
@@ -150,12 +125,6 @@ class OrderProvider implements OrderProviderContract
             return null;
         }
 
-        // The trait writes digital orders with `payment_status = unpaid`
-        // and flips `order_status` to `failed` when the gateway doesn't
-        // settle. That pair (unpaid + failed) is the "needs the user to
-        // do something" signal the PaymentFailedModal handles.
-        // COD orders never reach `payment_status = unpaid + failed` so
-        // they're naturally excluded.
         $order = $this->customerOrdersBaseQuery($scope, $customerId)
             ->where('payment_status', 'unpaid')
             ->where('order_status', 'failed')
@@ -218,47 +187,26 @@ class OrderProvider implements OrderProviderContract
         return $order ? $this->formatOrder($order) : null;
     }
 
-    /**
-     * Storefront DTO for a single Order — same shape consumed by
-     * `ProfileOrderDetails.jsx` and `OrderTrackingPage.jsx`.
-     *
-     * Public so the OrderTrackingProvider adapter can reuse the same
-     * mapping after running its own (id + phone) lookup, instead of
-     * re-implementing every field-by-field transformation.
-     */
     public function formatOrder(Order $order): array
     {
-        $detailsHydrated = Helpers::order_details_data_formatting($order->details);
+        $detailsHydrated = OrderDetailResource::renderList($order->details, app(OrderService::class)->detailImages($order->details));
 
         $rawStatus = (string) $order->order_status;
         $paid      = $order->payment_status === 'paid';
 
-        // Cancellable mirrors the host's `cancel_order` window
-        // (PlaceNewOrder line 242): pending OR failed. Cancelled
-        // orders aren't re-cancellable from the UI.
-        // Refundable mirrors `refund_request`: must be delivered + paid.
-        // Reorderable: any non-parcel order with item details. Whether
-        // the items are still buyable is a runtime decision (the
-        // OrderActionsProvider's pre-flight returns specific reasons
-        // when a line fails), so we don't hide the button on stock
-        // status — let the user discover and see why.
         $cancellable = in_array($rawStatus, ['pending', 'failed'], true);
-        // Refunds credit back to the wallet, so they ride on the
-        // wallet-features master switch — when off, the refund button is
-        // hidden on the storefront and the matching endpoint 404s.
         $refundable  = $rawStatus === 'delivered'
             && $paid
             && (bool) \config('builder.wallet_features_enabled', true);
         $reorderable = (string) ($order->order_type ?? '') !== 'parcel';
-        // Reviewable when the order is delivered AND of a type that has
-        // reviewable participants (items + DM). Parcel deliveries have
-        // no items to rate — exclude. The modal itself handles the
-        // "everything already reviewed" empty state, so we don't query
-        // Review/DMReview here per-row (one extra query per listing
-        // row would be the cost; the modal's hydration endpoint
-        // already does the precise check).
         $reviewable = $rawStatus === 'delivered'
             && (string) ($order->order_type ?? '') !== 'parcel';
+
+        $verificationCode = (int) (Helpers::get_business_settings('order_delivery_verification') ?? 0) === 1
+            && ! in_array($rawStatus, ['delivered', 'canceled', 'failed', 'refunded', 'returned'], true)
+            && ! empty($order->otp)
+                ? (string) $order->otp
+                : null;
 
         return OrderDetailDTO::fromArray([
             'id'             => (string) $order->id,
@@ -285,12 +233,54 @@ class OrderProvider implements OrderProviderContract
             'pricing'        => $this->mapPricing($order, $detailsHydrated),
             'delivery'       => $this->mapDelivery($order),
             'seller'         => $this->mapSeller($order->store),
-            // null when no DM has been assigned yet — JSX hides the card.
             'deliveryMan'    => $this->mapDeliveryMan($order->delivery_man),
-            // 4-step timeline + map coords. Returns null for orders that
-            // can't be tracked (pickup orders, parcel, cancelled, etc.).
             'tracking'       => $this->mapTracking($order),
+            'offlinePayment' => $this->mapOfflinePayment($order),
+            'changeAmount'   => (int) ($order->bring_change_amount ?? 0) > 0 ? (float) $order->bring_change_amount : null,
+            'cancellationNote' => $order->cancellation_note ?: null,
+            'verificationCode' => $verificationCode,
         ])->toArray();
+    }
+
+    private function mapOfflinePayment(Order $order): ?array
+    {
+        if ($order->payment_method !== 'offline_payment') {
+            return null;
+        }
+
+        $record = $order->offline_payments;
+        if (! $record) {
+            return null;
+        }
+
+        $info = \json_decode($record->payment_info ?? '[]', true);
+        if (! \is_array($info)) {
+            $info = [];
+        }
+
+        $labels = [
+            'method_name'    => translate('Payment method'),
+            'name'           => translate('Payment by'),
+            'date'           => translate('Date'),
+            'transaction_id' => translate('Transaction ID'),
+        ];
+
+        $fields = [];
+        foreach ($info as $key => $value) {
+            if ($key === 'method_id' || $value === null || $value === '') {
+                continue;
+            }
+            $fields[] = [
+                'label' => $labels[$key] ?? \ucwords(\str_replace('_', ' ', (string) $key)),
+                'value' => (string) $value,
+            ];
+        }
+
+        return [
+            'methodName' => $info['method_name'] ?? null,
+            'status'     => (string) ($record->status ?? ''),
+            'fields'     => $fields,
+        ];
     }
 
     private function mapItems(array $details): array
@@ -320,10 +310,6 @@ class OrderProvider implements OrderProviderContract
         return $items;
     }
 
-    /**
-     * Returns the trimmed string when it carries real content, or null when
-     * it is blank, the literal string "null", or pure whitespace/quotes.
-     */
     private function cleanScalar(mixed $value): ?string
     {
         if ($value === null) return null;
@@ -334,13 +320,6 @@ class OrderProvider implements OrderProviderContract
         return $trimmed;
     }
 
-    /**
-     * Flatten the `variation` JSON of an OrderDetail into a single label.
-     *
-     * Two shapes coexist in the column:
-     *   - food module: [{name, type, values:[{label, optionPrice}]}, ...]
-     *   - other modules: [{type:"Green", price, stock}, ...]
-     */
     private function variantLabel(mixed $variation): ?string
     {
         if (!is_array($variation) || empty($variation)) {
@@ -356,7 +335,6 @@ class OrderProvider implements OrderProviderContract
                 continue;
             }
 
-            // Food shape: {name, type, values:[{label, optionPrice}]}
             if (isset($value['values']) && is_array($value['values'])) {
                 $labels = [];
                 foreach ($value['values'] as $v) {
@@ -380,16 +358,11 @@ class OrderProvider implements OrderProviderContract
                 continue;
             }
 
-            // Non-food shape: {type:"Green", price:500, stock:881}.
-            // `price` here is the product's selling price for that variant — it's already
-            // reflected in OrderDetail.price (the line's unit price), so we never want
-            // to render it again as an upcharge. Only the `type` label is user-facing.
             if (isset($value['type']) && $value['type'] !== '') {
                 $parts[] = (string) $value['type'];
                 continue;
             }
 
-            // Generic {name, value} fallback.
             if (isset($value['name']) && isset($value['value'])) {
                 $parts[] = $value['name'] . ': ' . $value['value'];
             }
@@ -398,13 +371,6 @@ class OrderProvider implements OrderProviderContract
         return $parts ? implode(' • ', $parts) : null;
     }
 
-    /**
-     * Flatten the selected `add_ons` JSON ([{id,name,price,quantity}, ...])
-     * into a single suffix like "Add-ons: Cheese ×1, Coke ×1".
-     *
-     * Note: `Helpers::order_details_data_formatting` decodes `add_ons` without
-     * the assoc flag, so each entry here may be a stdClass — handle both.
-     */
     private function addOnsLabel(mixed $addOns): ?string
     {
         if (is_string($addOns)) {
@@ -450,6 +416,18 @@ class OrderProvider implements OrderProviderContract
         $discount = (float) ($order->store_discount_amount ?? 0)
                   + (float) ($order->flash_admin_discount_amount ?? 0)
                   + (float) ($order->flash_store_discount_amount ?? 0);
+
+        // Same two sources CheckoutProvider::quote() labels as storeWideSource, read back off
+        // the order rather than re-resolved live: a happy hour or standing discount can end or
+        // change after the order is placed, and the badge has to keep naming what was ACTUALLY
+        // applied then, not what would apply now. happy_hour_id is set alongside
+        // store_discount_amount only when that amount came from a happy hour (see
+        // PlaceNewOrderTrait, every order-building path). A flash-sale discount is neither —
+        // it is a different promotion StoreDiscountResolver does not resolve at all — so it gets
+        // no source label and no tooltip.
+        $discountSource = $order->happy_hour_id
+            ? 'happy_hour'
+            : ((float) ($order->store_discount_amount ?? 0) > 0 ? 'store_discount' : null);
         $vatTax = $order->tax_status === 'included'
             ? 0.0
             : (float) ($order->total_tax_amount ?? 0);
@@ -462,11 +440,18 @@ class OrderProvider implements OrderProviderContract
             'addonsPrice'           => $addonsPrice,
             'subtotal'              => $subtotal,
             'discount'              => $discount,
+            'discountSource'        => $discountSource,
             'couponDiscount'        => (float) ($order->coupon_discount_amount ?? 0),
             'vatTax'                => $vatTax,
             'taxIncluded'           => $order->tax_status === 'included',
             'dmTips'                => (float) ($order->dm_tips ?? 0),
             'deliveryCharge'        => (float) ($order->delivery_charge ?? 0),
+            // TC_15/TC_19 — surfaced so the order-details screen can show the same free-delivery
+            // and self-delivery status the admin panel and invoice already show, instead of
+            // silently omitting it.
+            'freeDelivery'          => (bool) $order->free_delivery_by,
+            'freeDeliveryBy'        => $order->free_delivery_by,
+            'isSelfDelivery'        => $order->wasSelfDelivery(),
             'additionalCharge'      => (float) ($order->additional_charge ?? 0),
             'additionalChargeLabel' => $additionalChargeLabel,
             'extraPackaging'        => (float) ($order->extra_packaging_amount ?? 0),
@@ -503,6 +488,8 @@ class OrderProvider implements OrderProviderContract
             'name'    => $field('contact_person_name', 'contact_person_name'),
             'phone'   => $field('contact_person_number', 'contact_person_number'),
             'email'   => $stored['contact_person_email'] ?? $order->customer?->email ?? null,
+            'instruction'         => $order->delivery_instruction ?: null,
+            'unavailableItemNote' => $order->unavailable_item_note ?: null,
         ];
     }
 
@@ -527,18 +514,6 @@ class OrderProvider implements OrderProviderContract
         ];
     }
 
-    /**
-     * Delivery-man card data — same shape as seller (name + rating +
-     * reviews + image) plus a phone the customer can call directly.
-     * Returns null when no DM is assigned (JSX hides the card).
-     *
-     * `DeliveryMan::rating()` is a `hasMany` that selects an aggregated
-     * row (`avg(rating)`, `count(delivery_man_id)`) grouped by
-     * `delivery_man_id` — so `$dm->rating` is a Collection containing
-     * (typically) one row. Use `->first()` to unwrap it; reading
-     * `$dm->rating?->average` directly hits a HigherOrderCollectionProxy
-     * and throws on cast.
-     */
     private function mapDeliveryMan(mixed $dm): ?array
     {
         if (!$dm) {
@@ -557,10 +532,6 @@ class OrderProvider implements OrderProviderContract
         }
 
         return [
-            // Surfaced so the order-details DM card's chat icon can
-            // deep-link into the inbox at this specific delivery man
-            // (via ?openWith=dm:<id>). The provider's
-            // reachableUserInfoIds + UserInfo-ensure handle the rest.
             'id'      => (int) ($dm->id ?? 0),
             'name'    => $name,
             'phone'   => $dm->phone ?? null,
@@ -570,27 +541,6 @@ class OrderProvider implements OrderProviderContract
         ];
     }
 
-    /**
-     * Four-step delivery timeline + map coordinates. The timeline maps
-     * the 7+ underlying `order_status` values onto the four steps the
-     * customer cares about:
-     *
-     *   confirmed   ← pending, confirmed, accepted
-     *   preparing   ← processing
-     *   on_the_way  ← handover, picked_up
-     *   delivered   ← delivered
-     *
-     * Each step exposes `done` (in the past) and `current` (the active
-     * one) so the JSX can colour the dots and connecting line.
-     *
-     * Returns null for orders that can't be tracked at all:
-     *   - take_away / parcel (no delivery route)
-     *   - canceled / refund_requested / refund_request_canceled / refunded
-     *
-     * Coordinates: storeLocation (route start), customerLocation (end),
-     * deliveryManLocation (current DM position, null when no DM assigned
-     * or DM hasn't reported a position yet).
-     */
     private function mapTracking(Order $order): ?array
     {
         $orderType = (string) ($order->order_type ?? 'delivery');
@@ -599,14 +549,10 @@ class OrderProvider implements OrderProviderContract
         }
 
         $raw = (string) $order->order_status;
-        // Hide the tracker for orders that are NOT in a deliverable
-        // trajectory — refunds and cancellations get their own status
-        // chip on the order header, no need for a misleading timeline.
         if (in_array($raw, ['canceled', 'refunded', 'refund_requested', 'refund_request_canceled', 'failed'], true)) {
             return null;
         }
 
-        // Map raw status → step index (0-based, 4 steps total).
         $bucket = match ($raw) {
             'pending', 'confirmed', 'accepted' => 0,
             'processing'                       => 1,
@@ -616,10 +562,10 @@ class OrderProvider implements OrderProviderContract
         };
 
         $stepDefs = [
-            ['key' => 'confirmed',  'label' => 'Order Confirmed'],
-            ['key' => 'preparing',  'label' => 'Preparing items'],
-            ['key' => 'on_the_way', 'label' => 'Items on the way'],
-            ['key' => 'delivered',  'label' => 'Delivered'],
+            ['key' => 'confirmed',  'label' => translate('Order confirmed')],
+            ['key' => 'preparing',  'label' => translate('Preparing items')],
+            ['key' => 'on_the_way', 'label' => translate('Items on the way')],
+            ['key' => 'delivered',  'label' => translate('Delivered')],
         ];
 
         $steps = [];
@@ -632,7 +578,6 @@ class OrderProvider implements OrderProviderContract
             ];
         }
 
-        // Store location is the route's start point.
         $storeLoc = null;
         if ($order->store && $order->store->latitude && $order->store->longitude) {
             $storeLoc = [
@@ -641,8 +586,6 @@ class OrderProvider implements OrderProviderContract
             ];
         }
 
-        // Customer drop-off — from delivery_address JSON column or the
-        // fallback CustomerAddress row when the JSON is empty.
         $customerLoc = null;
         $stored = is_array($order->delivery_address)
             ? $order->delivery_address
@@ -662,7 +605,6 @@ class OrderProvider implements OrderProviderContract
             }
         }
 
-        // DM's last reported position, when one is assigned.
         $dmLoc = null;
         $dm = $order->delivery_man;
         if ($dm) {
@@ -682,13 +624,7 @@ class OrderProvider implements OrderProviderContract
             'storeLocation'       => $storeLoc,
             'customerLocation'    => $customerLoc,
             'deliveryManLocation' => $dmLoc,
-            // True only when the DM is en-route. The frontend uses this
-            // to decide whether to draw the polyline. Keeps raw status
-            // strings out of the React tree.
             'routeActive'         => in_array($raw, self::ROUTE_ACTIVE_STATUSES, true) && $dmLoc !== null,
-            // False once the order is delivered — frontend uses this to
-            // stop the 10s tracking-refresh polling. Same portability
-            // reason as `routeActive`: don't leak raw status enums.
             'isLive'              => $raw !== 'delivered',
         ];
     }
@@ -713,7 +649,11 @@ class OrderProvider implements OrderProviderContract
 
     private function statusLabel(?string $status): string
     {
-        return self::STATUS_LABEL[(string) $status] ?? Str::title(str_replace('_', ' ', (string) $status));
+        $label = self::STATUS_LABEL[(string) $status] ?? null;
+
+        return $label !== null
+            ? translate($label)
+            : Str::title(str_replace('_', ' ', (string) $status));
     }
 
     private function statusVariant(?string $status): string

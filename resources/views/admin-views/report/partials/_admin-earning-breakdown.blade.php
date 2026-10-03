@@ -8,11 +8,11 @@
                             <img src="{{ asset('public/assets/admin/img/report/earning-breakdown/order-commission.svg') }}"
                                 alt="earning">
                         </div>
-                        <div class="mb-2">{{ translate('messages.Order Commission') }}</div>
+                        <div class="mb-2">{{ translate('Order commission') }}</div>
                         <h2 class="font-medium fs-24 fs-18-mobile mb-2">
                             {{ App\CentralLogics\Helpers::format_currency($earnings['order_commission']) }}</h2>
                         <div class="fs-12 bg-light px-2 py-1 rounded-lg w-max-content">
-                            {{ $earnings['order_commission_percentage'] }}% {{ translate('messages.of Total') }}</div>
+                            {{ $earnings['order_commission_percentage'] }}% {{ translate('Of total') }}</div>
                     </div>
                 </div>
             @endif
@@ -26,11 +26,11 @@
                         <img src="{{ asset('public/assets/admin/img/report/earning-breakdown/subscription.svg') }}"
                             alt="earning">
                     </div>
-                    <div class="mb-2">{{ translate('messages.Subscription Packages') }}</div>
+                    <div class="mb-2">{{ translate('Subscription packages') }}</div>
                     <h2 class="font-medium fs-24 fs-18-mobile mb-2">
                         {{ App\CentralLogics\Helpers::format_currency($earnings['subscription_earning']) }}</h2>
                     <div class="fs-12 bg-light px-2 py-1 rounded-lg w-max-content">
-                        {{ $earnings['subscription_percentage'] }}% {{ translate('messages.of Total') }}</div>
+                        {{ $earnings['subscription_percentage'] }}% {{ translate('Of total') }}</div>
                 </div>
             </div>
             @endif
@@ -44,11 +44,11 @@
                         <img src="{{ asset('public/assets/admin/img/report/earning-breakdown/subscription.svg') }}"
                             alt="earning">
                     </div>
-                    <div class="mb-2">{{ translate('messages.Pro Customer Subscription') }}</div>
+                    <div class="mb-2">{{ translate('Pro customer subscription') }}</div>
                     <h2 class="font-medium fs-24 fs-18-mobile mb-2">
                         {{ App\CentralLogics\Helpers::format_currency($earnings['pro_customer_subscription']) }}</h2>
                     <div class="fs-12 bg-light px-2 py-1 rounded-lg w-max-content">
-                        {{ $earnings['pro_customer_subscription_percentage'] }}% {{ translate('messages.of Total') }}</div>
+                        {{ $earnings['pro_customer_subscription_percentage'] }}% {{ translate('Of total') }}</div>
                 </div>
             </div>
             @endif
@@ -60,11 +60,11 @@
                         <img src="{{ asset('public/assets/admin/img/report/earning-breakdown/other-income.svg') }}"
                             alt="earning">
                     </div>
-                    <div class="mb-2">{{ translate('Delivery Fee Commission') }}</div>
+                    <div class="mb-2">{{ translate('Delivery fee commission') }}</div>
                     <h2 class="font-medium fs-24 fs-18-mobile mb-2">
                         {{ App\CentralLogics\Helpers::format_currency($earnings['delivery_fee_comission']) }}</h2>
                     <div class="fs-12 bg-light px-2 py-1 rounded-lg w-max-content">
-                        {{ $earnings['delivery_fee_comission_percentage'] }}% {{ translate('messages.of Total') }}
+                        {{ $earnings['delivery_fee_comission_percentage'] }}% {{ translate('Of total') }}
                     </div>
                 </div>
             </div>
@@ -80,7 +80,7 @@
                     <h2 class="font-medium fs-24 fs-18-mobile mb-2">
                         {{ App\CentralLogics\Helpers::format_currency($earnings['additional_charge']) }}</h2>
                     <div class="fs-12 bg-light px-2 py-1 rounded-lg w-max-content">
-                        {{ $earnings['additional_charge_percentage'] }}% {{ translate('messages.of Total') }}</div>
+                        {{ $earnings['additional_charge_percentage'] }}% {{ translate('Of total') }}</div>
                 </div>
             </div>
 
@@ -92,11 +92,11 @@
                         <img src="{{ asset('public/assets/admin/img/report/earning-breakdown/other-income.svg') }}"
                             alt="earning">
                     </div>
-                    <div class="mb-2">{{ translate('messages.Express Delivery Charge') }}</div>
+                    <div class="mb-2">{{ translate('Express delivery charge') }}</div>
                     <h2 class="font-medium fs-24 fs-18-mobile mb-2">
                         {{ App\CentralLogics\Helpers::format_currency($earnings['express_charge']) }}</h2>
                     <div class="fs-12 bg-light px-2 py-1 rounded-lg w-max-content">
-                        {{ $earnings['express_charge_percentage'] }}% {{ translate('messages.of Total') }}</div>
+                        {{ $earnings['express_charge_percentage'] }}% {{ translate('Of total') }}</div>
                 </div>
             </div>
             @endif

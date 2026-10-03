@@ -12,8 +12,6 @@ class EmailVerifications extends Model
 
     protected static function booted(): void
     {
-        // Default-filters email-verification rows to the host scope.
-        // Storefront adapter bypasses via withoutGlobalScope.
         static::addGlobalScope(new HostScope());
     }
 }

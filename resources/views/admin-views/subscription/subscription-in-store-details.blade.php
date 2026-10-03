@@ -1,6 +1,6 @@
 @extends('layouts.admin.app')
 
-@section('title',translate('messages.disbursement'))
+@section('title',translate('Disbursement'))
 
 @push('css_or_js')
 
@@ -16,6 +16,7 @@
                         <img src="{{asset('/public/assets/admin/img/store.png')}}" width="24" alt="img">
                         <div class="w-0 flex-grow pl-2">
                             <h1 class="page-header-title">{{translate('Green Mart Subscription')}}</h1>
+                            <p class="page-header-desc">{{ translate('How this store pays to trade with you, and what its plan covers.') }}</p>
                         </div>
                     </div>
                 </div>
@@ -178,8 +179,8 @@
                     </div>
                 </div>
                 <div class="btn--container justify-content-end mt-20">
-                    <button type="button" class="btn btn--danger text-white">Cancel Subscription</button>
-                    <button type="button" data-toggle="modal" data-target="#plan-modal" class="btn btn--primary">Change/Renew Subscription Plan</button>
+                    <button type="button" class="btn btn--danger text-white"><i class="tio-clear-circle-outlined"></i> Cancel Subscription</button>
+                    <button type="button" data-toggle="modal" data-target="#plan-modal" class="btn btn--primary"><i class="tio-autorenew"></i> Change/Renew Subscription Plan</button>
                 </div>
             </div>
         </div>
@@ -214,7 +215,7 @@
                                             </div>
                                         </div>
                                         <div class="text-center">
-                                            <button type="button" class="btn btn--primary" data-dismiss="modal" data-toggle="modal" data-target="#shift-modal">Shift in this plan</button>
+                                            <button type="button" class="btn btn--primary" data-dismiss="modal" data-toggle="modal" data-target="#shift-modal"><i class="tio-sync"></i> Shift in this plan</button>
                                         </div>
                                     </div>
                                 </div>
@@ -240,7 +241,7 @@
                                             </li>
                                         </ul>
                                         <div class="text-center">
-                                            <button type="button" class="btn btn--primary" data-dismiss="modal" data-toggle="modal" data-target="#shift-modal">Shift in this plan</button>
+                                            <button type="button" class="btn btn--primary" data-dismiss="modal" data-toggle="modal" data-target="#shift-modal"><i class="tio-sync"></i> Shift in this plan</button>
                                         </div>
                                     </div>
                                 </div>
@@ -266,7 +267,7 @@
                                             </li>
                                         </ul>
                                         <div class="text-center">
-                                            <button type="button" class="btn btn--primary" data-dismiss="modal" data-toggle="modal" data-target="#renew-modal">Renew</button>
+                                            <button type="button" class="btn btn--primary" data-dismiss="modal" data-toggle="modal" data-target="#renew-modal"><i class="tio-autorenew"></i> Renew</button>
                                         </div>
                                     </div>
                                 </div>
@@ -292,7 +293,7 @@
                                             </li>
                                         </ul>
                                         <div class="text-center">
-                                            <button type="button" class="btn btn--primary" data-dismiss="modal" data-toggle="modal" data-target="#shift-modal">Shift in this plan</button>
+                                            <button type="button" class="btn btn--primary" data-dismiss="modal" data-toggle="modal" data-target="#shift-modal"><i class="tio-sync"></i> Shift in this plan</button>
                                         </div>
                                     </div>
                                 </div>
@@ -326,11 +327,9 @@
                                         </div>
                                     </div>
                                 </div>
-                                <!-- Plan Seperator Arrow -->
                                 <div class="plan-seperator-arrow mx-auto">
                                     <img src="{{asset('public/assets/admin/img/exchange.svg')}}" alt="" class="w-100">
                                 </div>
-                                <!-- Plan Seperator Arrow -->
                                 <div class="__plan-item active">
                                     <div class="inner-div">
                                         <div class="text-center">
@@ -425,8 +424,8 @@
                                 </div>
                             </div>
                             <div class="btn--container justify-content-end mt-20">
-                                <button type="reset" data-dismiss="modal" class="btn btn--reset">Cancel</button>
-                                <button type="submit" class="btn btn--primary">Renew Subscription Plan</button>
+                                <button type="reset" data-dismiss="modal" class="btn btn--reset"><i class="tio-clear-circle-outlined"></i> Cancel</button>
+                                <button type="submit" class="btn btn--primary"><i class="tio-autorenew"></i> Renew Subscription Plan</button>
                             </div>
                         </div>
                     </div>
@@ -542,8 +541,8 @@
                                 </div>
                             </div>
                             <div class="btn--container justify-content-end mt-20">
-                                <button type="reset" data-dismiss="modal" class="btn btn--reset">Cancel</button>
-                                <button type="submit" class="btn btn--primary">Renew Subscription Plan</button>
+                                <button type="reset" data-dismiss="modal" class="btn btn--reset"><i class="tio-clear-circle-outlined"></i> Cancel</button>
+                                <button type="submit" class="btn btn--primary"><i class="tio-autorenew"></i> Renew Subscription Plan</button>
                             </div>
                         </div>
                     </div>

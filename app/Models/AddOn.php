@@ -5,11 +5,11 @@ namespace App\Models;
 use App\Scopes\StoreScope;
 use App\Scopes\ZoneScope;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Support\Carbon;
 use Modules\TaxModule\Entities\Taxable;
+use App\Traits\Model\HasTranslationsTrait;
 
 /**
  * Class AddOn
@@ -21,9 +21,12 @@ use Modules\TaxModule\Entities\Taxable;
  * @property Carbon|null $updated_at
  * @property int $store_id
  * @property bool $status
+ * @property int $addon_category_id
  */
 class AddOn extends Model
 {
+    use HasTranslationsTrait;
+
     /**
      * The attributes that are mass assignable.
      *
@@ -52,25 +55,13 @@ class AddOn extends Model
     /**
      * @return MorphMany
      */
-    public function translations(): MorphMany
-    {
-        return $this->morphMany(Translation::class, 'translationable');
-    }
-
     /**
      * @param $value
      * @return mixed
      */
-    public function getNameAttribute($value){
-        if (count($this->translations) > 0) {
-            foreach ($this->translations as $translation) {
-                if ($translation['key'] == 'name') {
-                    return $translation['value'];
-                }
-            }
-        }
-
-        return $value;
+    public function getNameAttribute($value)
+    {
+        return $this->translatedAttribute('name', $value);
     }
 
     /**
@@ -100,11 +91,6 @@ class AddOn extends Model
             static::addGlobalScope(new StoreScope);
         }
         static::addGlobalScope(new ZoneScope);
-        static::addGlobalScope('translate', function (Builder $builder) {
-            $builder->with(['translations' => function($query){
-                return $query->where('locale', app()->getLocale());
-            }]);
-        });
     }
         public function taxVats()
     {

@@ -31,18 +31,18 @@ class AddonRepository implements AddonRepositoryInterface
 
     public function getFirstWhere(array $params, array $relations = []): ?Model
     {
-        return $this->addon->where($params)->first();
+        return $this->addon->with($relations)->where($params)->first();
     }
 
-    public function getList(array $orderBy = [], array $relations = [], int|string $dataLimit = DEFAULT_DATA_LIMIT, int $offset = null): Collection|LengthAwarePaginator
+    public function getList(array $orderBy = [], array $relations = [], int|string $dataLimit = DEFAULT_DATA_LIMIT, ?int $offset = null): Collection|LengthAwarePaginator
     {
-        return $this->addon->paginate($dataLimit);
+        return $this->addon->with($relations)->paginate($dataLimit);
     }
 
-    public function getListWhere(string $searchValue = null, array $filters = [], array $relations = [], int|string $dataLimit = DEFAULT_DATA_LIMIT, int $offset = null): Collection|LengthAwarePaginator
+    public function getListWhere(?string $searchValue = null, array $filters = [], array $relations = [], int|string $dataLimit = DEFAULT_DATA_LIMIT, ?int $offset = null): Collection|LengthAwarePaginator
     {
-        $key = explode(' ', $searchValue);
-        return $this->addon->where(function ($q) use ($key) {
+        $key = explode(' ', $searchValue ?? '');
+        return $this->addon->with($relations)->where(function ($q) use ($key) {
             foreach ($key as $value) {
                 $q->orWhere('addon', 'like', "%{$value}%");
             }
@@ -71,37 +71,39 @@ class AddonRepository implements AddonRepositoryInterface
 
     public function getFirstWithoutGlobalScopeWhere(array $params, array $relations = []): ?Model
     {
-        return $this->addon->withoutGlobalScope(StoreScope::class)->withoutGlobalScope('translate')->where($params)->first();
+        return $this->addon->with($relations)->withoutGlobalScope(StoreScope::class)->withoutGlobalScope('translate')->with('translations')->where($params)->first();
     }
 
-    public function getStoreWiseList(int|string $moduleId ,string $searchValue = null, int|string $storeId = 'all', int|string $dataLimit = DEFAULT_DATA_LIMIT): Collection|LengthAwarePaginator
+    public function getStoreWiseList(int|string $moduleId ,?string $searchValue = null, int|string $storeId = 'all', int|string $dataLimit = DEFAULT_DATA_LIMIT): Collection|LengthAwarePaginator
     {
-        $key = explode(' ', $searchValue);
+        $key = explode(' ', $searchValue ?? '');
         return $this->addon->withoutGlobalScope(StoreScope::class)
             ->when(is_numeric($storeId), function($query)use($storeId){
                 return $query->where('store_id', $storeId);
             })->whereHas('store', function ($q) use ($moduleId) {
                 return $q->where('module_id', $moduleId);
             })
-            ->when(isset($key), function ($q1) use($key){
+            ->when($searchValue, function ($q1) use($key){
                 $q1->where(function ($q) use ($key) {
                     foreach ($key as $value) {
                         $q->orWhere('name', 'like', "%{$value}%");
                     }
                 });
             })
+            ->with(['store' => fn ($query) => $query->select(['id', 'name'])])
             ->orderBy('name')->paginate($dataLimit);
     }
-    public function getExportList(int|string $moduleId ,string $searchValue = null, int|string $storeId = 'all'): Collection
+    public function getExportList(int|string $moduleId ,?string $searchValue = null, int|string $storeId = 'all'): Collection
     {
-        $key = explode(' ', $searchValue);
+        $key = explode(' ', $searchValue ?? '');
         return $this->addon->withoutGlobalScope(StoreScope::class)
+            ->with(['store' => fn ($query) => $query->select(['id', 'name']), 'taxVats.tax'])
             ->when(is_numeric($storeId), function($query)use($storeId){
                 return $query->where('store_id', $storeId);
             })->whereHas('store', function ($q) use ($moduleId) {
                 return $q->where('module_id', $moduleId);
             })
-            ->when(isset($key), function ($q1) use($key){
+            ->when($searchValue, function ($q1) use($key){
                 $q1->where(function ($q) use ($key) {
                     foreach ($key as $value) {
                         $q->orWhere('name', 'like', "%{$value}%");

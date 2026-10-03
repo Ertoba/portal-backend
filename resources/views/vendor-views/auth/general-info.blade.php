@@ -1,5 +1,5 @@
 @extends('layouts.landing.app')
-@section('title', translate('messages.vendor_registration'))
+@section('title', translate('messages.Vendor registration'))
 @push('css_or_js')
     <link rel="stylesheet" href="{{ asset('public/assets/admin/css/toastr.css') }}">
     <link rel="stylesheet" href="{{ asset('public/assets/admin/css/view-pages/vendor-registration.css') }}">
@@ -49,7 +49,6 @@
     </style>
 @endpush
 @section('content')
-    <!-- Page Hero Banner -->
     <section class="page-hero">
         <div class="container">
             <h1>{{ translate('messages.vendor') }} {{ translate('messages.registration') }}</h1>
@@ -61,18 +60,16 @@
 
     <section class="reg-section">
         <div class="reg-container" style="max-width:1060px">
-            @php($language = \App\CentralLogics\Helpers::get_business_settings('language'))
 
-            <!-- Stepper -->
             <div class="stepper" style="display:flex;align-items:center;justify-content:center;gap:20px;margin-bottom:32px;flex-wrap:wrap">
                 <div class="stepper-step active" id="show-step1">
                     <div class="stepper-circle">1</div>
-                    <div class="stepper-label">{{ translate('General Info') }}</div>
+                    <div class="stepper-label">{{ translate('General information') }}</div>
                 </div>
                 <div class="stepper-connector"></div>
                 <div class="stepper-step" id="show-step2">
                     <div class="stepper-circle">2</div>
-                    <div class="stepper-label">{{ translate('Business Plan') }}</div>
+                    <div class="stepper-label">{{ translate('Business plan') }}</div>
                 </div>
                 <div class="stepper-connector"></div>
                 <div class="stepper-step">
@@ -87,7 +84,7 @@
                     <div class="card __card mb-3">
                         <div class="card-header">
                             <h5 class="card-title">
-                                {{ translate('messages.vendor_info') }}
+                                {{ translate('Vendor information') }}
                             </h5>
                         </div>
                         <div class="card-body p-4">
@@ -101,7 +98,7 @@
                                         @foreach ($language as $lang)
                                             <li class="nav-item">
                                                 <a class="nav-link lang_link" href="#"
-                                                    id="{{ $lang }}-link">{{ \App\CentralLogics\Helpers::get_language_name($lang) . '(' . strtoupper($lang) . ')' }}</a>
+                                                    id="{{ $lang }}-link">{{ $language_labels[$lang] }}</a>
                                             </li>
                                         @endforeach
                                     </ul>
@@ -128,25 +125,25 @@
                                         <div class="col-lg-6">
                                             <div class="form-group mb-0">
                                                 <label class="input-label"
-                                                        for="default_name">{{ translate('messages.business_name') }}
-                                                    ({{ translate('messages.Default') }})<span
+                                                        for="default_name">{{ translate('messages.Business name') }}
+                                                    ({{ translate('Default') }})<span
                                                         class="text-danger">*</span>
                                                 </label>
                                                 <input type="text" name="name[]"
                                                         value="{{ old('name.0') }}" id="default_name"
                                                         class="form-control __form-control"
-                                                        placeholder="{{ translate('messages.business_name') }}"
+                                                        placeholder="{{ translate('messages.Business name') }}"
                                                         maxlength="250" required>
                                             </div>
                                         </div>
                                         <div class="col-lg-6">
                                             <div class="form-group mb-0">
                                                 <label class="input-label"
-                                                        for="address">{{ translate('messages.business_address') }}
-                                                    ({{ translate('messages.default') }})<span
+                                                        for="address">{{ translate('messages.Business address') }}
+                                                    ({{ translate('Default') }})<span
                                                         class="text-danger">*</span></label>
                                                 <textarea id="address" name="address[]"
-                                                            placeholder="{{ translate('Ex: ABC Company') }}"
+                                                            placeholder="{{ translate('Ex') . ': ' . translate('ABC company') }}"
                                                             class="form-control __form-control">{{ old('address.0') }}</textarea>
                                             </div>
                                         </div>
@@ -160,25 +157,25 @@
                                             <div class="col-lg-6">
                                                 <div class="form-group mb-0">
                                                     <label class="input-label"
-                                                            for="{{ $lang }}_name">{{ translate('messages.business_name') }}
+                                                            for="{{ $lang }}_name">{{ translate('messages.Business name') }}
                                                         ({{ strtoupper($lang) }})
                                                     </label>
                                                     <input type="text" name="name[]"
                                                             value="{{ old('name.' . $key + 1) }}"
                                                             id="{{ $lang }}_name"
                                                             class="form-control __form-control"
-                                                            placeholder="{{ translate('messages.business_name') }}">
+                                                            placeholder="{{ translate('messages.Business name') }}">
                                                 </div>
                                             </div>
                                             <div class="col-lg-6">
                                                 <div class="form-group mb-0">
                                                     <label class="input-label"
-                                                            for="address{{ $lang }}">{{ translate('messages.business_address') }}
+                                                            for="address{{ $lang }}">{{ translate('messages.Business address') }}
                                                         ({{ strtoupper($lang) }})
                                                     </label>
                                                     <textarea id="address{{ $lang }}"
                                                                 name="address[]"
-                                                                placeholder="{{ translate('Ex: ABC Company') }}"
+                                                                placeholder="{{ translate('Ex') . ': ' . translate('ABC company') }}"
                                                                 class="form-control __form-control">{{ old('address.' . $key + 1) }}</textarea>
                                                 </div>
                                             </div>
@@ -186,75 +183,73 @@
                                     </div>
                                 @endforeach
                             @endif
-                            @php($zones = \App\Models\Zone::active()->get(['id', 'name']))
 
-                            {{-- Zone / Module / Delivery time + Map --}}
                             <div class="row g-4 mb-4">
                                 <div class="col-lg-6">
                                     <div class="form-group mb-3">
                                         <label class="input-label d-flex align-items-center gap-1" for="choice_zones">
-                                            <span>{{ translate('messages.business_zone') }}<span class="text-danger">*</span></span>
+                                            <span>{{ translate('messages.Business zone') }}<span class="text-danger">*</span></span>
                                             <img src="{{ asset('/public/assets/admin/img/info-circle.svg') }}" class="reg-info-icon"
                                                  data-toggle="tooltip" data-placement="right"
                                                  title="{{ translate('messages.Select the zone from where the business will be operated') }}" alt="">
                                         </label>
                                         <select name="zone_id" id="choice_zones" required
                                                 class="form-control __form-control js-select2-custom js-example-basic-single"
-                                                data-placeholder="{{ translate('messages.select_zone') }}">
-                                            <option value="" selected disabled>{{ translate('messages.select_zone') }}</option>
+                                                data-placeholder="{{ translate('Select zone') }}">
+                                            <option value="" selected disabled>{{ translate('Select zone') }}</option>
                                             @foreach ($zones as $zone)
-                                                @if (auth('admin')?->user()?->zone_id)
-                                                    @if (auth('admin')->user()->zone_id == $zone->id)
-                                                        <option value="{{ $zone->id }}" selected>{{ $zone->name }}</option>
+                                                @if ($admin_zone_id)
+                                                    @if ($admin_zone_id == $zone->id)
+                                                        <option value="{{ $zone->id }}" selected>{{ $zone->display_name ?: $zone->name }}</option>
                                                     @endif
                                                 @else
-                                                    <option value="{{ $zone->id }}">{{ $zone->name }}</option>
+                                                    <option value="{{ $zone->id }}">{{ $zone->display_name ?: $zone->name }}</option>
                                                 @endif
                                             @endforeach
                                         </select>
                                     </div>
                                     <div class="form-group mb-3 overflow-hidden">
                                         <label for="module_id" class="input-label">
-                                            {{ translate('messages.business_module') }}<span class="text-danger">*</span>
-                                            <small class="text-danger">({{ translate('messages.Select_zone_first') }})</small>
+                                            {{ translate('Business module?') }}<span class="text-danger">*</span>
+                                            <small class="text-danger">({{ translate('messages.Select zone first') }})</small>
                                         </label>
                                         <select name="module_id" required id="module_id"
                                                 class="js-data-example-ajax form-control __form-control overflow-hidden"
-                                                data-placeholder="{{ translate('messages.select_module') }}">
+                                                data-placeholder="{{ translate('messages.Select module') }}">
                                         </select>
                                     </div>
                                     <div class="form-group mb-3 pickup-zone-container pickup-zone-tag" id="pickup-zone-container">
                                         <label class="input-label d-flex align-items-center gap-1" for="choice_zones">
-                                            <span>{{ translate('messages.pickup_zone') }}<span class="text-danger">*</span></span>
+                                            <span>{{ translate('Pickup zone') }}<span class="text-danger">*</span></span>
                                             <img src="{{ asset('/public/assets/admin/img/info-circle.svg') }}" class="reg-info-icon"
                                                  data-toggle="tooltip" data-placement="right"
                                                  title="{{ translate('messages.Select zones from where customer can choose their pickup locations for trip booking') }}" alt="">
                                         </label>
                                         <select name="pickup_zone_id[]" required class="form-control multiple-select2"
-                                                data-placeholder="{{ translate('messages.select_zone') }}" multiple="multiple">
-                                            <option value="" disabled>{{ translate('messages.select_zone') }}</option>
+                                                data-placeholder="{{ translate('Select zone') }}" multiple="multiple">
+                                            <option value="" disabled>{{ translate('Select zone') }}</option>
                                             @foreach ($zones as $zone)
-                                                @if (auth('admin')?->user()?->zone_id)
-                                                    @if (auth('admin')->user()->zone_id == $zone->id)
-                                                        <option value="{{ $zone->id }}" selected>{{ $zone->name }}</option>
+                                                @if ($admin_zone_id)
+                                                    @if ($admin_zone_id == $zone->id)
+                                                        <option value="{{ $zone->id }}" selected>{{ $zone->display_name ?: $zone->name }}</option>
                                                     @endif
                                                 @else
-                                                    <option value="{{ $zone->id }}">{{ $zone->name }}</option>
+                                                    <option value="{{ $zone->id }}">{{ $zone->display_name ?: $zone->name }}</option>
                                                 @endif
                                             @endforeach
                                         </select>
                                     </div>
                                     <div class="form-group mb-0">
                                         <label class="input-label module-select-time d-block mb-1">
-                                            {{ translate('messages.approx_delivery_time') }}<span class="text-danger">*</span>
+                                            {{ translate('Approximate delivery time') }}<span class="text-danger">*</span>
                                         </label>
                                         <div class="delivery-time-group">
-                                            <span class="delivery-time-label">{{ translate('messages.min') }}:</span>
+                                            <span class="delivery-time-label">{{ translate('messages.Min') }}:</span>
                                             <input type="number" id="minimum_delivery_time" name="minimum_delivery_time"
                                                    class="delivery-time-input" placeholder="10"
                                                    value="{{ old('minimum_delivery_time') }}">
                                             <span class="delivery-time-divider"></span>
-                                            <span class="delivery-time-label">{{ translate('messages.max') }}:</span>
+                                            <span class="delivery-time-label">{{ translate('messages.Max') }}:</span>
                                             <input type="number" name="maximum_delivery_time" id="max_delivery_time"
                                                    class="delivery-time-input" placeholder="20"
                                                    value="{{ old('maximum_delivery_time') }}">
@@ -269,41 +264,40 @@
                                 <div class="col-lg-6">
                                     <div class="rounded map_custom-controls position-relative">
                                         <input id="pac-input" class="controls rounded initial-8" type="text"
-                                               title="{{ translate('messages.search_your_location_here') }}"
-                                               placeholder="{{ translate('messages.search_here') }}"/>
+                                               title="{{ translate('Search your location') }}"
+                                               placeholder="{{ translate('Search') }}"/>
                                         <div class="h-280" id="map"></div>
                                         <div class="d-flex bg-white align-items-center gap-1 laglng-controller">
                                             <div id="latlng" class="d-flex">
                                                 <input type="text" class="border-0 outline-0" id="latitude" name="latitude"
-                                                       placeholder="{{ translate('messages.Ex:_-94.22213') }}"
+                                                       placeholder="{{ translate('messages.Ex') . ': -94.22213' }}"
                                                        value="{{ old('latitude') }}" required readonly>
                                                 <span class="text-gray1">|</span>
                                                 <input type="text" class="border-0 outline-0" name="longitude" id="longitude"
-                                                       placeholder="{{ translate('messages.Ex:_103.344322') }}"
+                                                       placeholder="{{ translate('messages.Ex') . ': 103.344322' }}"
                                                        value="{{ old('longitude') }}" required readonly>
                                             </div>
                                         </div>
                                         <div id="outOfZone" class="map-alert bg-dark d-flex align-items-center rounded-8 py-2 px-2 fs-12 text-white mb-2">
                                             <img src="{{ asset('public/assets/admin/img/icons/warning-cus.png') }}" alt="">
-                                            {{ translate('messages.Please place the marker inside the available zone area.') }}
+                                            {{ translate('messages.Please place the marker inside the available zones.') }}
                                         </div>
                                     </div>
                                 </div>
                             </div>
 
-                            {{-- Cover photo + Logo --}}
                             <div class="row g-4">
                                 <div class="col-sm-8">
                                     <div class="form-group mb-0">
-                                        <label class="input-label d-block mb-1">{{ translate('messages.business_cover') }} <span class="text-danger">*</span> <span style="font-weight:400;color:var(--text);font-size:.75rem">({{ translate('messages.ratio') }} 2:1)</span></label>
+                                        <label class="input-label d-block mb-1">{{ translate('Business cover') }} <span class="text-danger">*</span> <span style="font-weight:400;color:var(--text);font-size:.75rem">({{ translate('messages.Ratio') }} 2:1)</span></label>
                                         <div class="upload-area" id="coverUploadArea" onclick="document.getElementById('coverImageUpload').click()">
                                             <img id="coverImageViewer" class="preview-img" src="" alt="" style="display:none">
                                             <div class="upload-placeholder">
                                                 <div class="upload-icon">
                                                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
                                                 </div>
-                                                <p><strong>{{ translate('Drop Here') }}</strong></p>
-                                                <div class="upload-note">{{ translate('Drag & Drop or Click to upload') }} &middot; JPG, PNG ({{ translate('Max') }} 2MB)</div>
+                                                <p><strong>{{ translate('Drop here') }}</strong></p>
+                                                <div class="upload-note">{{ translate('Drag & drop or click to upload') }} &middot; JPG, PNG ({{ translate('Max') }} 2MB)</div>
                                             </div>
                                             <div class="upload-change">{{ translate('Click to change image') }}</div>
                                             <input type="file" name="cover_photo" id="coverImageUpload" class="single_file_input" accept="{{ IMAGE_EXTENSION }}" required>
@@ -312,15 +306,15 @@
                                 </div>
                                 <div class="col-sm-4">
                                     <div class="form-group mb-0">
-                                        <label class="input-label d-block mb-1">{{ translate('messages.business_logo') }} <span class="text-danger">*</span> <span style="font-weight:400;color:var(--text);font-size:.75rem">({{ translate('messages.ratio') }} 1:1)</span></label>
+                                        <label class="input-label d-block mb-1">{{ translate('Business logo') }} <span class="text-danger">*</span> <span style="font-weight:400;color:var(--text);font-size:.75rem">({{ translate('messages.Ratio') }} 1:1)</span></label>
                                         <div class="upload-area" id="logoUploadArea" onclick="document.getElementById('logoFileInput').click()">
                                             <img id="logoImageViewer" class="preview-img" src="" alt="" style="display:none">
                                             <div class="upload-placeholder">
                                                 <div class="upload-icon">
                                                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
                                                 </div>
-                                                <p><strong>{{ translate('Drop Here') }}</strong></p>
-                                                <div class="upload-note">{{ translate('Drag & Drop or Click to upload') }} &middot; JPG, PNG ({{ translate('Max') }} 2MB)</div>
+                                                <p><strong>{{ translate('Drop here') }}</strong></p>
+                                                <div class="upload-note">{{ translate('Drag & drop or click to upload') }} &middot; JPG, PNG ({{ translate('Max') }} 2MB)</div>
                                             </div>
                                             <div class="upload-change">{{ translate('Click to change image') }}</div>
                                             <input type="file" name="logo" id="logoFileInput" class="single_file_input" accept="{{ IMAGE_EXTENSION }}" required>
@@ -335,7 +329,7 @@
                         <div class="card-header">
                                     <div>
                                         <h5 class="card-title">
-                                            {{ translate('messages.owner_information') }}
+                                            {{ translate('Owner information') }}
                                         </h5>
                                     </div>
                                 </div>
@@ -344,33 +338,33 @@
                                         <div class="col-md-4 col-lg-4 col-sm-12">
                                             <div class="form-group">
                                                 <label class="input-label"
-                                                       for="f_name">{{ translate('messages.first_name') }}<span
+                                                       for="f_name">{{ translate('First name') }}<span
                                                         class="text-danger">*</span></label>
                                                 <input type="text" id="f_name" name="f_name"
                                                        class="form-control __form-control"
-                                                       placeholder="{{ translate('messages.first_name') }}"
+                                                       placeholder="{{ translate('First name') }}"
                                                        value="{{ old('f_name') }}" required>
                                             </div>
                                         </div>
                                         <div class="col-md-4 col-lg-4 col-sm-12">
                                             <div class="form-group">
                                                 <label class="input-label"
-                                                       for="l_name">{{ translate('messages.last_name') }}<span
+                                                       for="l_name">{{ translate('Last name') }}<span
                                                         class="text-danger">*</span></label>
                                                 <input type="text" id="l_name" name="l_name"
                                                        class="form-control __form-control"
-                                                       placeholder="{{ translate('messages.last_name') }}"
+                                                       placeholder="{{ translate('Last name') }}"
                                                        value="{{ old('l_name') }}" required>
                                             </div>
                                         </div>
                                         <div class="col-md-4 col-lg-4 col-sm-12">
                                             <div class="form-group">
                                                 <label class="input-label"
-                                                       for="phone">{{ translate('messages.phone') }}<span
+                                                       for="phone">{{ translate('Phone') }}<span
                                                         class="text-danger">*</span></label>
                                                 <input type="tel" id="phone" name="phone"
                                                        class="form-control __form-control"
-                                                       placeholder="{{ translate('messages.Ex:') }} 017********"
+                                                       placeholder="{{ translate('messages.Ex') }}: 017********"
                                                        value="{{ old('phone') }}" required>
                                             </div>
 
@@ -387,19 +381,19 @@
                             <div class="row g-4 align-items-start">
                                 <div class="col-md-8">
                                     <div class="form-group mb-3">
-                                        <label class="input-label" for="tin">{{ translate('Taxpayer Identification Number(TIN)') }}</label>
+                                        <label class="input-label" for="tin">{{ translate('Taxpayer identification Number(TIN)') }}</label>
                                         <input type="text" name="tin" id="tin"
-                                               placeholder="{{ translate('Type Your Taxpayer Identification Number(TIN)') }}"
+                                               placeholder="{{ translate('Type your taxpayer identification Number(TIN)') }}"
                                                class="form-control __form-control">
                                     </div>
                                     <div class="form-group mb-0">
-                                        <label class="input-label" for="tin_expire_date">{{ translate('Expire Date') }}</label>
+                                        <label class="input-label" for="tin_expire_date">{{ translate('Expire date') }}</label>
                                         <input type="date" name="tin_expire_date" id="tin_expire_date"
                                                class="form-control __form-control">
                                     </div>
                                 </div>
                                 <div class="col-md-4">
-                                    <label class="input-label mb-1 d-block">{{ translate('TIN Certificate') }}</label>
+                                    <label class="input-label mb-1 d-block">{{ translate('TIN certificate') }}</label>
                                     <div class="bg--secondary rounded single-document-uploaderwrap position-relative">
                                         <button type="button" id="doc_edit_btn"
                                             class="doc-action-btn doc-edit-btn" title="{{ translate('Change file') }}" style="display:none">
@@ -426,9 +420,9 @@
                                                         <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"></path>
                                                     </svg>
                                                     <p class="fs-12 mb-0">
-                                                        {{ translate('messages.Select_a_file_or') }} <span class="font-semibold">{{ translate('messages.Drag & Drop') }}</span> {{ translate('messages.here') }}
+                                                        {{ translate('messages.Select a file or') }} <span class="font-semibold">{{ translate('Drag & drop') }}</span> {{ translate('messages.Here.') }}
                                                     </p>
-                                                    <p class="fs-12 mb-0" style="color:var(--text);opacity:.6">{{ translate('pdf, doc, jpg. File size : max 2 MB') }}</p>
+                                                    <p class="fs-12 mb-0" style="color:var(--text);opacity:.6">pdf, doc, jpg. File size : max 2 MB</p>
                                                 </div>
                                             </div>
                                         </div>
@@ -441,7 +435,7 @@
                                 <div class="card-header">
                                     <div>
                                         <h5 class="card-title">
-                                            {{ translate('messages.account_information') }}
+                                            {{ translate('Account information') }}
                                         </h5>
                                     </div>
                                 </div>
@@ -454,7 +448,7 @@
                                                         class="text-danger">*</span></label>
                                                 <input type="email" id="email" name="email"
                                                        class="form-control __form-control"
-                                                       placeholder="{{ translate('messages.Ex:') }} ex@example.com"
+                                                       placeholder="{{ translate('messages.Ex') }}: ex@example.com"
                                                        value="{{ old('email') }}" required>
                                             </div>
                                         </div>
@@ -465,7 +459,7 @@
                                                 </label>
                                                 <label class="position-relative m-0 d-block">
                                                     <input type="password" name="password"
-                                                           placeholder="{{ translate('messages.password_length_placeholder', ['length' => '8+']) }}"
+                                                           placeholder="{{ translate('Minimum characters') }}: 8+"
                                                            class="form-control __form-control form-control __form-control-user"
                                                            minlength="6" id="exampleInputPassword" required
                                                            value="{{ old('password') }}">
@@ -492,7 +486,7 @@
                                                 </label>
                                                 <div id="password-rules" style="display:none;margin-top:6px">
                                                     <ul class="fs-12 d-flex flex-wrap gap-1 list-unstyled mb-0">
-                                                        <li id="rule-length"><i class="text-danger">&#10060;</i> {{ translate('8+ characters') }}</li>
+                                                        <li id="rule-length"><i class="text-danger">&#10060;</i> 8+ {{ translate('characters') }}</li>
                                                         <li id="rule-lower"><i class="text-danger">&#10060;</i> {{ translate('Lowercase letter') }}</li>
                                                         <li id="rule-upper"><i class="text-danger">&#10060;</i> {{ translate('Uppercase letter') }}</li>
                                                         <li id="rule-number"><i class="text-danger">&#10060;</i> {{ translate('Number') }}</li>
@@ -504,14 +498,14 @@
                                         <div class="col-md-4 col-sm-12 col-lg-4">
                                             <div class="form-group">
                                                 <label class="input-label"
-                                                       for="exampleRepeatPassword">{{ translate('messages.confirm_password') }}
+                                                       for="exampleRepeatPassword">{{ translate('Confirm password') }}
                                                     <span
                                                         class="text-danger">*</span></label>
                                                 <label class="position-relative m-0 d-block">
                                                     <input type="password" name="confirm-password"
                                                            class="form-control __form-control form-control __form-control-user"
                                                            minlength="6" id="exampleRepeatPassword"
-                                                           placeholder="{{ translate('messages.password_length_placeholder', ['length' => '8+']) }}"
+                                                           placeholder="{{ translate('Minimum characters') }}: 8+"
                                                            required value="{{ old('confirm-password') }}">
                                                     <span class="show-password">
                                                         <span class="icon-2">
@@ -535,7 +529,7 @@
                                                     </span>
                                                 </label>
                                                 <div id="confirm-pw-error" style="display:none;color:#e74c3c;font-size:.8rem;margin-top:4px">
-                                                    {{ translate('messages.password_not_matched') }}
+                                                    {{ translate('messages.Password not matched') }}
                                                 </div>
                                             </div>
                                         </div>
@@ -543,55 +537,35 @@
                                     <div class="row mt-5">
                                         <div class="col-md-6 col-lg-4">
                                             @include('admin-views.partials._recaptcha')
-                                            {{-- @php($recaptcha = \App\CentralLogics\Helpers::get_business_settings('recaptcha'))
-                                            @if (isset($recaptcha) && $recaptcha['status'] == 1)
-                                                <input type="hidden" name="g-recaptcha-response"
-                                                       id="g-recaptcha-response">
-                                            @else
-                                                <div class="row g-3">
-                                                    <div class="col-6">
-                                                        <input type="text" class="form-control"
-                                                               name="custome_recaptcha" id="custome_recaptcha" required
-                                                               placeholder="{{ translate('Enter recaptcha value') }}"
-                                                               autocomplete="off"
-                                                               value="{{ env('APP_DEBUG') ? session('six_captcha') : '' }}">
-                                                    </div>
-                                                    <div class="col-6 recap-img-div">
-                                                        <img src="{!! $custome_recaptcha->inline() ?? '' !!}"
-                                                             alt="image"
-                                                             class="recap-img"/>
-                                                    </div>
-                                                </div>
-                                            @endif --}}
                                         </div>
                                     </div>
                                 </div>
                             </div>
                             <div class="text-end pt-4 d-flex flex-wrap justify-content-end gap-3">
                                 <button type="reset" id='form-reset-btn'
-                                        class="btn-reset">{{ translate('Reset') }}</button>
+                                        class="btn-reset"><i class="tio-refresh"></i> {{ translate('Reset') }}</button>
                                 <button
-                                    type="{{ \App\CentralLogics\Helpers::subscription_check() == 1 ? 'button' : 'submit' }}"
+                                    type="{{ $subscription_check == 1 ? 'button' : 'submit' }}"
                                     id="show-business-plan-div"
                                     class="btn-next btn-disable">
-                                    <span class="btn-text">{{ \App\CentralLogics\Helpers::subscription_check() == 1 ? translate('Next') : translate('messages.submit') }}</span>
+                                    <i class="{{ $subscription_check == 1 ? 'tio-arrow-forward' : 'tio-checkmark-circle-outlined' }}"></i> <span class="btn-text">{{ $subscription_check == 1 ? translate('Next') : translate('messages.Submit') }}</span>
                                     <span class="btn-loader d-none"><span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span></span>
                                 </button>
                             </div>
 
                 </div>
 
-                @if (\App\CentralLogics\Helpers::subscription_check())
+                @if ($subscription_check)
                     <div class="d-none" id="business-plan-div">
                         <div class="card __card mb-3">
                             <div class="card-header border-0">
                                 <h5 class="card-title text-center">
-                                    {{ translate('Choose Your Business Plan') }}
+                                    {{ translate('Choose your business plan') }}
                                 </h5>
                             </div>
                             <div class="card-body p-4">
                                 <div class="row">
-                                    @if (\App\CentralLogics\Helpers::commission_check())
+                                    @if ($commission_check)
                                         <div class="col-sm-6">
                                             <label class="plan-check-item pb-3 pb-sm-0">
                                                 <input type="radio" name="business_plan" value="commission-base"
@@ -599,7 +573,7 @@
                                                 <div class="plan-check-item-inner">
                                                     <div
                                                         class="d-flex gap-3 justify-content-between align-items-center mb-10">
-                                                        <h5 class="mb-0">{{ translate('Commision_Base') }}</h5>
+                                                        <h5 class="mb-0">{{ translate('Commission base') }}</h5>
                                                         <span class="checkmark">
                                                             <svg xmlns="http://www.w3.org/2000/svg" width="16"
                                                                  height="16" fill="currentColor" class="bi bi-check2"
@@ -610,9 +584,9 @@
                                                         </span>
                                                     </div>
                                                     <p>
-                                                        {{ translate('vendor will pay') }} {{ $admin_commission }}%
+                                                        {{ translate('Vendor will pay') }} {{ $admin_commission }}%
                                                         {{ translate('commission to') }} {{ $business_name }}
-                                                        {{ translate('from each order. You will get access of all the features and options  in vendor panel , app and interaction with user.') }}
+                                                        {{ translate('from each order, with full access to the vendor panel, app and customer interaction.') }}
                                                     </p>
                                                 </div>
                                             </label>
@@ -625,7 +599,7 @@
                                             <div class="plan-check-item-inner">
                                                 <div
                                                     class="d-flex gap-3 justify-content-between align-items-center mb-10">
-                                                    <h5 class="mb-0">{{ translate('Subscription_Base') }}</h5>
+                                                    <h5 class="mb-0">{{ translate('Subscription base') }}</h5>
                                                     <span class="checkmark">
                                                         <svg xmlns="http://www.w3.org/2000/svg" width="16"
                                                              height="16" fill="currentColor" class="bi bi-check2"
@@ -636,7 +610,7 @@
                                                     </span>
                                                 </div>
                                                 <p>
-                                                    {{ translate('Run vendor by puchasing subsciption packages. You will have access the features of in vendor panel , app and interaction with user according to the subscription packages.') }}
+                                                    {{ translate('Buy a subscription package for access to the vendor panel, app features and customer interaction.') }}
                                                 </p>
                                             </div>
                                         </label>
@@ -646,7 +620,7 @@
                                     <br>
                                     <div class="card-header px-0 m-0 border-0 py-2">
                                         <h5 class="card-title text-center">
-                                            {{ translate('Choose Subscription Package') }}
+                                            {{ translate('Choose subscription package') }}
                                         </h5>
                                     </div>
                                     <div id='show_sub_packages'>
@@ -660,14 +634,14 @@
                             </div>
                             <div class="terms-check mt-3 px-4">
                                 <input type="checkbox" id="businessTerms" required />
-                                <label for="businessTerms">{{ translate('messages.i_agree_to_the') }} <a href="{{ route('terms-and-conditions') }}" target="_blank">{{ translate('messages.terms_and_condition') }}</a> {{ translate('messages.and') }} <a href="{{ route('privacy-policy') }}" target="_blank">{{ translate('messages.privacy_policy') }}</a></label>
+                                <label for="businessTerms">{{ translate('messages.I agree to the') }} <a href="{{ route('terms-and-conditions') }}" target="_blank">{{ translate('messages.Terms and condition') }}</a> {{ translate('messages.and') }} <a href="{{ route('privacy-policy') }}" target="_blank">{{ translate('Privacy policy') }}</a></label>
                             </div>
                             <div class="text-end pt-3 d-flex flex-wrap p-4 justify-content-end gap-3">
                                 <button type="button" id="back-to-form"
-                                        class="btn-back">{{ translate('Back') }}</button>
+                                        class="btn-back"><i class="tio-arrow-backward"></i> {{ translate('Back') }}</button>
                                 <button type="submit" id="generalSubmitBtn"
                                         class="btn-next btn-disable" disabled>
-                                    <span class="btn-text">{{ translate('Next') }}</span>
+                                    <i class="tio-arrow-forward"></i> <span class="btn-text">{{ translate('Next') }}</span>
                                     <span class="btn-loader d-none"><span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span></span>
                                 </button>
                             </div>
@@ -682,22 +656,22 @@
 
 <div class="d-none" id="default-text-data"
      data-default-filesize="{{ translate('File size must be less than') }}"
-     data-default-allowedformat="{{ translate('Invalid file type. Allowed: PDF, DOC, JPG, PNG') }}">
+     data-default-allowedformat="{{ translate('Invalid file type. Supported formats') . ': PDF, DOC, JPG, PNG' }}">
 </div>
 @endsection
 @push('script_2')
 
-    @php($default_location = \App\Models\BusinessSetting::where('key', 'default_location')->first())
-    @php($default_location = $default_location->value ? json_decode($default_location->value, true) : 0)
 
     <script>
          const getAllModules ="{{ route('restaurant.get-all-modules') }}";
          const getModuleType ="{{ route('restaurant.get-module-type') }}";
          const checkModuleTypeUrl ="{{ route('restaurant.check-module-type') }}";
         const estimatedPickupText =
-        "{{ translate('messages.Estimated_pickup_time') }} <span class='text-danger'>*</span>";
+        "{{ translate('messages.Estimated pickup time') }} <span class='text-danger'>*</span>";
         const approxDeliveryText =
-        "{{ translate('messages.approx_delivery_time') }} <span class='text-danger'>*</span>";
+        "{{ translate('Approximate delivery time') }} <span class='text-danger'>*</span>";
+        const approxServiceText =
+        "{{ translate('Approximate service time') }} <span class='text-danger'>*</span>";
 
         // Reset all button loaders
         function resetButtonLoaders() {
@@ -708,18 +682,18 @@
 
 
         window.mapConfig = {
-            mapApiKey: "{{ \App\CentralLogics\Helpers::get_business_settings('map_api_key') }}",
+            mapApiKey: "{{ $map_api_key }}",
             defaultLocation: {!! json_encode($default_location) !!},
             oldLat: parseFloat("{{ old('latitude') }}"),
             oldLng: parseFloat("{{ old('longitude') }}"),
             oldZoneId: "{{ old('zone_id') }}",
             oldAddress: @json(old('address.0')),
             translations: {
-                selectedLocation: "{{ translate('Selected Location') }}",
-                clickMap: "{{ translate('Click_the_map_inside_the_red_marked_area_to_get_Lat/Lng!!!') }}",
-                selectZone: "{{ translate('Select_Zone_From_The_Dropdown') }}",
-                geolocationError: "{{ translate('Error:_Your_browser_doesnot_support_geolocation.') }}",
-                outOfZone: "{{ translate('messages.out_of_coverage') }}",
+                selectedLocation: "{{ translate('Selected location') }}",
+                clickMap: "{{ translate('Click the map to set the latitude and longitude') }}",
+                selectZone: "{{ translate('Select zone from the dropdown') }}",
+                geolocationError: "{{ translate('Error: your browser does not support geolocation.') }}",
+                outOfZone: "{{ translate('messages.Out of coverage') }}",
             },
             urls: {
                 zoneCoordinates: "{{ route('admin.zone.get-coordinates', ['id' => ':coordinatesZoneId']) }}",
@@ -730,7 +704,6 @@
 
     <script src="{{ asset('public/assets/landing/js/owl.min.js') }}"></script>
     <script>
-        // Initialize package slider now that owl.min.js is loaded
         if (typeof window._initPackageSlider === 'function') window._initPackageSlider();
     </script>
     <script src="{{ asset('public/assets/admin/js/file-preview/pdf.min.js') }}"></script>
@@ -739,7 +712,7 @@
     <script src="{{ asset('public/assets/admin/js/view-pages/map-functionality.js') }}"></script>
 
     <script
-        src="https://maps.googleapis.com/maps/api/js?key={{ \App\CentralLogics\Helpers::get_business_settings('map_api_key') }}&libraries=drawing,places,marker,geometry&v=3.61&language={{ str_replace('_', '-', app()->getLocale()) }}&callback=initMap"
+        src="https://maps.googleapis.com/maps/api/js?key={{ $map_api_key }}&libraries=drawing,places,marker,geometry&v=3.61&language={{ str_replace('_', '-', app()->getLocale()) }}&callback=initMap"
         async defer>
     </script>
 
@@ -778,7 +751,7 @@ $("#form-id").on('submit', function(e) {
 
 function submitForm() {
 
-    @if (\App\CentralLogics\Helpers::subscription_check())
+    @if ($subscription_check)
     const radios = document.querySelectorAll('input[name="business_plan"]');
     let selectedValue = null;
     for (const radio of radios) {
@@ -789,7 +762,7 @@ function submitForm() {
     }
 
     if (!selectedValue) {
-        toastr.error("{{ translate('messages.please_select_business_plan') }}");
+        toastr.error("{{ translate('messages.Please select business plan') }}");
         return;
     }
 
@@ -804,7 +777,7 @@ function submitForm() {
         }
 
         if (!selectedpValue) {
-            toastr.error("{{ translate('You_must_select_a_package') }}");
+            toastr.error("{{ translate('You must select a package') }}");
             return;
         }
     }
@@ -813,7 +786,7 @@ function submitForm() {
     $('.btn-disable').prop('disabled', true);
 
     let formData = new FormData(document.getElementById('form-id'));
-    @if (!\App\CentralLogics\Helpers::subscription_check())
+    @if (!$subscription_check)
     formData.append('business_plan', 'commission-base');
     @endif
     $.ajaxSetup({
@@ -846,7 +819,7 @@ function submitForm() {
                     });
                 }
             } else {
-                toastr.success("{{ translate('your_store_registration_is_successful') }}", {
+                toastr.success("{{ translate('Your store registration is successful') }}", {
                     CloseButton: true,
                     ProgressBar: true
                 });
@@ -914,61 +887,61 @@ function submitForm() {
             const cover = $('input[name="cover_photo"]')[0];
             const tin_certificate_image = $('input[name="tin_certificate_image"]')[0];
 
-            const maxFileSize = 2 * 1024 * 1024; // 2MB in bytes
+            const maxFileSize = 2 * 1024 * 1024;
 
             if (!$('#default_name').val()) {
-                toastr.error("{{ translate('Vendor_name_is_required') }}");
+                toastr.error("{{ translate('Vendor name is required') }}");
                 e.preventDefault();
             } else if (!$('#address').val()) {
-                toastr.error("{{ translate('Vendor_address_is_required') }}");
+                toastr.error("{{ translate('Vendor address is required') }}");
                 e.preventDefault();
             } else if (!logo.files.length) {
-                toastr.error("{{ translate('Vendor_logo_required') }}");
+                toastr.error("{{ translate('Vendor logo required') }}");
                 e.preventDefault();
             } else if (!cover.files.length) {
-                toastr.error("{{ translate('Vendor_cover_photo_required') }}");
+                toastr.error("{{ translate('Vendor cover photo required') }}");
                 e.preventDefault();
             } else if (logo.files[0].size > maxFileSize) {
-                toastr.error("{{ translate('Vendor_logo_must_be_less_than_2MB') }}");
+                toastr.error("{{ translate('Vendor logo is too large.') }} {{ translate('Maximum size') }}: 2 MB");
                 e.preventDefault();
             } else if (tin_certificate_image.files.length && tin_certificate_image.files[0].size > maxFileSize) {
-                toastr.error("{{ translate('Tin_certificate_must_be_less_than_2MB') }}");
+                toastr.error("{{ translate('TIN certificate is too large.') }} {{ translate('Maximum size') }}: 2 MB");
                 e.preventDefault();
             } else if (cover.files[0].size > maxFileSize) {
-                toastr.error("{{ translate('Vendor_cover_photo_must_be_less_than_2MB') }}");
+                toastr.error("{{ translate('Vendor cover photo is too large.') }} {{ translate('Maximum size') }}: 2 MB");
                 e.preventDefault();
             } else if (!$('#choice_zones').val()) {
-                toastr.error("{{ translate('You_must_select_a_zone') }}");
+                toastr.error("{{ translate('You must select a zone') }}");
                 e.preventDefault();
             } else if (!$('#module_id').val()) {
-                toastr.error("{{ translate('You_must_select_a_module') }}");
+                toastr.error("{{ translate('You must select a module') }}");
                 e.preventDefault();
             } else if (!$('#latitude').val() || !$('#longitude').val()) {
-                toastr.error("{{ translate('Must_click_on_the_map_for_lat/long') }}");
+                toastr.error("{{ translate('Click the map to set the latitude and longitude') }}");
                 e.preventDefault();
             } else if (!$('#minimum_delivery_time').val()) {
-                toastr.error("{{ translate('minimum_time_is_required') }}");
+                toastr.error("{{ translate('Minimum time is required') }}");
                 e.preventDefault();
             } else if (!$('#max_delivery_time').val()) {
-                toastr.error("{{ translate('max_time_is_required') }}");
+                toastr.error("{{ translate('Max time is required') }}");
                 e.preventDefault();
             } else if (!$('#f_name').val()) {
-                toastr.error("{{ translate('first_name_is_required') }}");
+                toastr.error("{{ translate('First name is required') }}");
                 e.preventDefault();
             } else if (!$('#l_name').val()) {
-                toastr.error("{{ translate('last_name_is_required') }}");
+                toastr.error("{{ translate('Last name is required') }}");
                 e.preventDefault();
             } else if ($('#phone').val().length < 5) {
-                toastr.error("{{ translate('valid_phone_number_is_required') }}");
+                toastr.error("{{ translate('Valid phone number is required') }}");
                 e.preventDefault();
             } else if (!$('#email').val()) {
-                toastr.error("{{ translate('email_is_required') }}");
+                toastr.error("{{ translate('Email is required') }}");
                 e.preventDefault();
             } else if (!$('#exampleInputPassword').val()) {
-                toastr.error("{{ translate('password_is_required') }}");
+                toastr.error("{{ translate('The password is required') }}");
                 e.preventDefault();
             } else if ($('#exampleRepeatPassword').val() !== $('#exampleInputPassword').val()) {
-                toastr.error("{{ translate('confirm_password_does_not_match') }}");
+                toastr.error("{{ translate('Confirm password does not match') }}");
                 e.preventDefault();
             } else if (!isPasswordStrong($('#exampleRepeatPassword').val()) && !isPasswordStrong($('#exampleInputPassword').val())) {
                 toastr.error("{{ translate('Password format is invalid') }}");
@@ -1027,7 +1000,7 @@ function submitForm() {
                             @endif
 
 
-                            @if (\App\CentralLogics\Helpers::subscription_check())
+                            @if ($subscription_check)
                             $('#business-plan-div').removeClass('d-none');
                             $('#reg-form-div').addClass('d-none');
                             $('#show-step2').addClass('active');
@@ -1162,7 +1135,7 @@ function submitForm() {
                         }
 
                         if (file.size > 2 * 1024 * 1024) {
-                            toastr.error("{{ translate('messages.Image size must be less than 2 MB') }}");
+                            toastr.error("{{ translate('messages.Image is too large.') }} {{ translate('messages.Maximum size') }}: 2 MB");
                             $(this).val('');
                             $(imgViewerSelector).attr('src', '').hide();
                             areaElement.removeClass('has-preview');
@@ -1181,7 +1154,6 @@ function submitForm() {
                     }
                 });
 
-                // Drag-and-drop
                 areaElement.on('dragover', function (e) {
                     e.preventDefault();
                     $(this).css('border-color', 'var(--green)');
@@ -1195,7 +1167,6 @@ function submitForm() {
                     e.stopPropagation();
                     const file = e.originalEvent.dataTransfer.files[0];
                     if (file) {
-                        // Set the file to the input
                         const dt = new DataTransfer();
                         dt.items.add(file);
                         inputElement[0].files = dt.files;
@@ -1224,7 +1195,6 @@ function submitForm() {
                 var itemsToShow = [];
                 var remainingCount = 0;
 
-                // Get all selected items
                 var selectedItems = $element.select2("data");
 
                 var $tempContainer = $("<div>")
@@ -1326,7 +1296,7 @@ function submitForm() {
                         });
 
                         if (matchedItem.length > 0) {
-                            matchedItem.trigger("mouseup"); // Select the matched item
+                            matchedItem.trigger("mouseup");
                         }
 
                         $(this).val("");
@@ -1342,12 +1312,10 @@ function submitForm() {
                     maximumSelectionLength: limit,
                 });
 
-                // Bind change event to update display
                 $this.on("change", function () {
                     updateDisplay($this);
                 });
 
-                // Initial display update
                 updateDisplay($this);
 
                 $(window).on("resize", function () {
@@ -1357,7 +1325,6 @@ function submitForm() {
                     updateDisplay($this);
                 });
 
-                // Handle the click event for the remove icon
                 $(document).on(
                     "click",
                     ".select2-selection__rendered .close-icon",
@@ -1380,10 +1347,9 @@ function submitForm() {
         };
         $(".multiple-select2").select2DynamicDisplay();
 
-        // Initialize Select2 for zone dropdown
         if (typeof $.fn.select2 !== 'undefined') {
             $('#choice_zones').select2({
-                placeholder: "{{ translate('messages.select_zone') }}",
+                placeholder: "{{ translate('Select zone') }}",
                 allowClear: false
             });
         }
@@ -1436,12 +1402,10 @@ function submitForm() {
         new MutationObserver(updateArrows).observe(container, { childList: true, subtree: true });
         new ResizeObserver(updateArrows).observe(container);
 
-        // Initial update
         updateArrows();
     </script>
 
     <script>
-        // TIN uploader: show/hide action buttons based on file selection
         (function () {
             const wrapper = document.getElementById('doc-upload-wrapper');
             const editBtn  = document.getElementById('doc_edit_btn');
@@ -1460,7 +1424,6 @@ function submitForm() {
     </script>
 
     <script>
-        // Password show/hide toggle
         $(document).on('click', '.show-password', function () {
             const $input = $(this).closest('label').find('input[type="password"], input[type="text"]');
             const isHidden = $input.attr('type') === 'password';
@@ -1470,7 +1433,6 @@ function submitForm() {
     </script>
 
     <script>
-        // Language tab switching
         $(document).on('click', '.lang_link', function(e) {
             e.preventDefault();
             $('.lang_link').removeClass('active');
@@ -1502,7 +1464,6 @@ function submitForm() {
         });
     });
 
-    // Show loader on final form submit
     $('#form-id').on('submit', function() {
         var btn = $('#generalSubmitBtn');
         if (btn.length) {
@@ -1555,5 +1516,4 @@ function submitForm() {
         });
     </script>
 @endif
-{{-- recaptcha scripts end --}}
 @endpush

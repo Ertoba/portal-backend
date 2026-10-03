@@ -4,16 +4,15 @@
             class="table table-hover table-borderless table-thead-bordered table-nowrap table-align-middle card-table">
             <thead class="thead-light">
                 <tr>
-                    <th class="border-0">{{translate('sl')}}</th>
-                    <th class="border-0">{{translate('messages.received_at')}}</th>
-                    <th class="border-0">{{translate('messages.balance_before_transaction')}}</th>
-                    <th class="border-0">{{translate('messages.amount')}}</th>
+                    <th class="border-0">{{translate('SL')}}</th>
+                    <th class="border-0">{{translate('messages.Received at')}}</th>
+                    <th class="border-0">{{translate('messages.Balance before transaction')}}</th>
+                    <th class="border-0">{{translate('Amount')}}</th>
                     <th class="border-0">{{translate('messages.reference')}}</th>
-                    {{-- <th class="border-0">{{translate('messages.action')}}</th> --}}
                 </tr>
             </thead>
             <tbody>
-            @php($account_transaction = \App\Models\AccountTransaction::where('from_type', 'store')->where('type', 'collected')->where('from_id', $store->vendor->id)->paginate(25))
+            @php($account_transaction = $transactions)
             @foreach($account_transaction as $k=>$at)
                 <tr>
                     <td>{{$k+$account_transaction->firstItem()}}</td>
@@ -39,7 +38,7 @@
 <div class="empty--data">
     <img src="{{asset('/public/assets/admin/svg/illustrations/sorry.svg')}}" alt="public">
     <h5>
-        {{translate('no_data_found')}}
+        {{translate('No data found')}}
     </h5>
 </div>
 @endif

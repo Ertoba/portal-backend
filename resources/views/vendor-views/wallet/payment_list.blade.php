@@ -1,6 +1,6 @@
 @extends('layouts.vendor.app')
 
-@section('title',translate('messages.store_wallet'))
+@section('title',translate('Wallet payment list'))
 
 @push('css_or_js')
 
@@ -8,33 +8,21 @@
 
 @section('content')
     <div class="content container-fluid">
-        <!-- Page Header -->
         <div class="page-header">
             <div class="row align-items-center">
                 <div class="col-sm mb-2 mb-sm-0">
-                    <h2 class="page-header-title text-capitalize">
-                        <div class="card-header-icon d-inline-flex mr-2 img">
-                            <img src="{{asset('/public/assets/admin/img/image_90.png')}}" alt="public">
-                        </div>
-                        <span>
-                            {{translate('messages.store_wallet')}}
+                    <h1 class="page-header-title">
+                        <span class="page-header-icon">
+                            <img src="{{asset('/public/assets/admin/img/image_90.png')}}" alt="">
                         </span>
-                    </h2>
+                        <span>
+                            {{translate('messages.' . $wallet_title_key)}}
+                        </span>
+                    </h1>
+                    <p class="page-header-desc">{{ translate('Every payment that has reached you, and what it was for.') }}</p>
                 </div>
             </div>
         </div>
-        <!-- End Page Header -->
-        <?php
-        $wallet = \App\Models\StoreWallet::where('vendor_id',\App\CentralLogics\Helpers::get_vendor_id())->first();
-        if(isset($wallet)==false){
-            \Illuminate\Support\Facades\DB::table('store_wallets')->insert([
-                'vendor_id'=>\App\CentralLogics\Helpers::get_vendor_id(),
-                'created_at'=>now(),
-                'updated_at'=>now()
-            ]);
-            $wallet = \App\Models\StoreWallet::where('vendor_id',\App\CentralLogics\Helpers::get_vendor_id())->first();
-        }
-        ?>
         @include('vendor-views.wallet.partials._balance_data',['wallet'=>$wallet])
         <div class="card-body p-0">
             <div class="table-responsive">
@@ -47,11 +35,11 @@
                                 }' >
                     <thead class="thead-light">
                     <tr>
-                        <th>{{ translate('messages.sl') }}</th>
-                        <th>{{translate('messages.amount')}}</th>
-                        <th>{{translate('messages.Payment_Time')}}</th>
-                        <th>{{translate('messages.Payment_method')}}</th>
-                        <th>{{translate('messages.status')}}</th>
+                        <th>{{ translate('messages.SL') }}</th>
+                        <th>{{translate('Amount')}}</th>
+                        <th>{{translate('Payment time')}}</th>
+                        <th>{{translate('messages.Payment method')}}</th>
+                        <th>{{translate('messages.Status')}}</th>
                     </tr>
                     </thead>
                     <tbody>
@@ -66,13 +54,13 @@
                             </td>
                             <td>
                                 @if($wr->method)
-                                    {{ translate($wr->method) }}
+                                    {{ payment_method_label($wr->method) }}
                                 @else
-                                    {{ translate('Default_method') }}
+                                    {{ translate('Default method') }}
                                 @endif
                             </td>
                             <td>
-                                <label class="badge badge-soft-success">{{translate('messages.approved')}}</label>
+                                <label class="badge badge-soft-success">{{translate('Approved')}}</label>
                             </td>
 
                         </tr>
@@ -83,7 +71,7 @@
                     <div class="empty--data">
                         <img src="{{asset('/public/assets/admin/svg/illustrations/sorry.svg')}}" alt="public">
                         <h5>
-                            {{translate('no_data_found')}}
+                            {{translate('No data found')}}
                         </h5>
                     </div>
                 @endif
@@ -98,7 +86,7 @@
         <div class="modal-dialog" role="document">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="exampleModalLabel">{{translate('messages.Pay_Via_Online')}}  </h5>
+                    <h5 class="modal-title" id="exampleModalLabel">{{translate('Pay via online')}}  </h5>
                     <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                         <span aria-hidden="true">&times;</span>
                     </button>
@@ -107,29 +95,29 @@
                 <form action="{{ route('vendor.wallet.wallet_make_payment') }}" method="POST" class="needs-validation">
                     <div class="modal-body">
                         @csrf
-                        <input type="hidden" value="{{ \App\CentralLogics\Helpers::get_store_id() }}" name="store_id"/>
+                        <input type="hidden" value="{{ $store_id }}" name="store_id"/>
                         <input type="hidden" value="{{  abs($wallet->collected_cash) }}" name="amount"/>
-                        <h5 class="mb-5 ">{{ translate('Pay_Via_Online') }} &nbsp; <small>({{ translate('Faster_&_secure_way_to_pay_bill') }})</small></h5>
+                        <h5 class="mb-5 ">{{ translate('Pay via online') }} &nbsp; <small>({{ translate('Faster & secure way to pay bill') }})</small></h5>
                         <div class="row g-3">
                             @forelse ($data as $item)
                                 <div class="col-sm-6">
                                     <div class="d-flex gap-3 align-items-center">
                                         <input type="radio" required id="{{$item['gateway'] }}" name="payment_gateway" value="{{$item['gateway'] }}">
                                         <label for="{{$item['gateway'] }}" class="d-flex align-items-center gap-3 mb-0">
-                                            <img height="24" src="{{ asset('storage/app/public/payment_modules/gateway_image/'. $item['gateway_image']) }}" alt="">
+                                            <img height="24" src="{{ \App\CentralLogics\Helpers::get_full_url('payment_modules/gateway_image', $item['gateway_image'], $item['storage'] ?? 'public') }}" alt="">
                                             {{ $item['gateway_title'] }}
                                         </label>
                                     </div>
                                 </div>
                             @empty
-                                <h1>{{ translate('no_payment_gateway_found') }}</h1>
+                                <h2 class="h1">{{ translate('No payment gateway found') }}</h2>
                             @endforelse
                         </div>
                     </div>
 
                     <div class="modal-footer">
-                        <button id="reset_btn" type="reset" data-dismiss="modal" class="btn btn-secondary" >{{ translate('Close') }} </button>
-                        <button type="submit" class="btn btn-primary">{{ translate('Proceed') }}</button>
+                        <button id="reset_btn" type="reset" data-dismiss="modal" class="btn btn-secondary" ><i class="tio-clear"></i> {{ translate('Close') }} </button>
+                        <button type="submit" class="btn btn-primary"><i class="tio-arrow-forward"></i> {{ translate('Proceed') }}</button>
                     </div>
                 </form>
             </div>
@@ -142,7 +130,7 @@
         <div class="modal-dialog" role="document">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="exampleModalLabel">{{translate('messages.Adjust_Wallet')}}  </h5>
+                    <h5 class="modal-title" id="exampleModalLabel">{{translate('Adjust wallet')}}  </h5>
                     <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                         <span aria-hidden="true">&times;</span>
                     </button>
@@ -151,16 +139,18 @@
                 <form action="{{ route('vendor.wallet.make_wallet_adjustment') }}" method="POST" class="needs-validation">
                     <div class="modal-body">
                         @csrf
-                        <h5 class="mb-5 ">{{ translate('This_will_adjust_the_collected_cash_on_your_earning') }} </h5>
+                        <h5 class="mb-5 ">{{ translate('This will adjust the collected cash on your earning') }} </h5>
                     </div>
 
                     <div class="modal-footer">
-                        <button id="reset_btn" type="reset" data-dismiss="modal" class="btn btn-secondary" >{{ translate('Close') }} </button>
-                        <button type="submit" class="btn btn-primary">{{ translate('Proceed') }}</button>
+                        <button id="reset_btn" type="reset" data-dismiss="modal" class="btn btn-secondary" ><i class="tio-clear"></i> {{ translate('Close') }} </button>
+                        <button type="submit" class="btn btn-primary"><i class="tio-arrow-forward"></i> {{ translate('Proceed') }}</button>
                     </div>
                 </form>
             </div>
         </div>
+    </div>
+    </div>
     </div>
 @endsection
 @push('script_2')
@@ -172,7 +162,6 @@
     $('#submit_button').attr("disabled","true");
     let method_id = this.value;
 
-    // Set header if need any otherwise remove setup part
     $.ajaxSetup({
         headers: {
             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
@@ -207,7 +196,7 @@
 $('.payment-warning').on('click',function (event ){
             event.preventDefault();
             toastr.info(
-                "{{ translate('messages.Currently,_there_are_no_payment_options_available._Please_contact_admin_regarding_any_payment_process_or_queries.') }}", {
+                "{{ translate('messages.Currently, there are no payment options available. Please contact admin regarding any payment process or queries.') }}", {
                     CloseButton: true,
                     ProgressBar: true
                 });

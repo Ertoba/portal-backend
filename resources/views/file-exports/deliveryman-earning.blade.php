@@ -1,5 +1,5 @@
 <div class="row">
-    <div class="col-lg-12 text-center "><h1 >{{ translate('delivery_man_earning_list') }}</h1></div>
+    <div class="col-lg-12 text-center "><h1 >{{ translate('Deliveryman earning list') }}</h1></div>
     <div class="col-lg-12">
 
 
@@ -7,18 +7,18 @@
     <table>
         <thead>
             <tr>
-                <th>{{ translate('delivery_man_info') }}</th>
+                <th>{{ translate('Deliveryman information') }}</th>
                 <th></th>
                 <th>
-                    {{ translate('name')  }}- {{ $data['dm']->f_name.' '.$data['dm']->l_name}}
+                    {{ translate('Name')  }}- {{ $data['dm']->f_name.' '.$data['dm']->l_name}}
                     <br>
-                    {{ translate('phone')  }}- {{ $data['dm']->phone}}
+                    {{ translate('Phone')  }}- {{ $data['dm']->phone}}
                     <br>
                     {{ translate('email')  }}- {{ $data['dm']->email}}
                     <br>
-                    {{ translate('total_order')  }}- {{ $data['dm']->order_count }}
+                    {{ translate('Total order')  }}- {{ $data['dm']->order_count }}
                     <br>
-                    {{ translate('total_earning')  }}- {{$data['dm']->wallet->total_earning}}
+                    {{ translate('Total earning')  }}- {{$data['dm']->wallet->total_earning}}
 
                 </th>
                 <th></th>
@@ -28,10 +28,10 @@
                 <th></th>
             </tr>
             <tr>
-                <th>{{ translate('Filter_Criteria') }}</th>
+                <th>{{ translate('Filter criteria') }}</th>
                 <th></th>
                 <th>
-                    {{ translate('date')  }}- {{ $data['date'] ??translate('N/A') }}
+                    {{ translate('Date')  }}- {{ $data['date'] ??translate('N/A') }}
 
                 </th>
                 <th></th>
@@ -41,13 +41,12 @@
                 <th></th>
             </tr>
         <tr>
-            <th>{{ translate('sl') }}</th>
-            <th>{{translate('messages.order_id')}}</th>
-            <th>{{translate('messages.date')}}</th>
-            {{-- <th>{{translate('messages.distance')}}</th> --}}
-            <th>{{translate('messages.delivery_fee_earned')}}</th>
-            <th>{{translate('messages.tips')}}</th>
-            <th>{{translate('messages.total_earning')}}</th>
+            <th>{{ translate('SL') }}</th>
+            <th>{{translate('messages.Order ID')}}</th>
+            <th>{{translate('messages.Date')}}</th>
+            <th>{{translate('messages.Delivery fee earned')}}</th>
+            <th>{{translate('Tips')}}</th>
+            <th>{{translate('messages.Total earning')}}</th>
         </thead>
         <tbody>
         @foreach($data['earnings'] as $key => $earning)
@@ -59,9 +58,6 @@
                 <td>
                     {{ \App\CentralLogics\Helpers::date_format($earning->created_at ) }}
                 </td>
-                {{-- <td>
-                    {{ $earning->order->distance }} km
-                </td> --}}
                 <td>{{ \App\CentralLogics\Helpers::format_currency($earning->original_delivery_charge) }}</td>
                 <td>{{ \App\CentralLogics\Helpers::format_currency($earning->dm_tips) }}</td>
                 <td>{{ \App\CentralLogics\Helpers::format_currency($earning->original_delivery_charge + $earning->dm_tips) }}</td>

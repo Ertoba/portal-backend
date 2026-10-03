@@ -25,9 +25,6 @@ class GenerateVendorRoute extends Command
      */
     protected $description = 'Generate vendor formatted routes';
 
-    /**
-     * Execute the console command.
-     */
 
     public function handle(): int
     {
@@ -60,9 +57,6 @@ class GenerateVendorRoute extends Command
                     $formattedRoutes= $this->genetateRouteJsonFileFormate($formattedRoutes,$bladePath,$routeName, $uri);
 
                 }
-                // else{
-                //     info("Route excluded: " . $route->getName() . " - " . $uri);
-                // }
             }
         }
         $formattedRoutes= $this->manualyAddedBladePath($formattedRoutes);
@@ -100,9 +94,16 @@ class GenerateVendorRoute extends Command
             $uri = $route->uri();
             $action = $route->getAction();
 
+            // $action['controller'] is a plain "Class@method" string for the classic
+            // Controller::class.'@method' route syntax, but this codebase also defines routes as
+            // array-callables ([Controller::class, 'method']) — and on at least one of them (the
+            // same condition already found and fixed in GenerateAdminRoute) the resolved value has
+            // no '@' at all, which made explode() return a single element and crashed the WHOLE
+            // command on an undefined index. Skip anything that doesn't look like "Class@method"
+            // instead of crashing on it.
             $controller = $action['controller'] ?? null;
-            if ($controller) {
-                list($controllerClass, $method) = explode('@', $controller);
+            if ($controller && is_string($controller) && str_contains($controller, '@')) {
+                list($controllerClass, $method) = explode('@', $controller, 2);
 
                 if (class_exists($controllerClass) && method_exists($controllerClass, $method)) {
                     $reflectionMethod = new \ReflectionMethod($controllerClass, $method);
@@ -137,8 +138,8 @@ class GenerateVendorRoute extends Command
         $action = $route->getAction();
         $controller = $action['controller'] ?? null;
 
-        if ($controller) {
-            list($controllerClass, $method) = explode('@', $controller);
+        if ($controller && is_string($controller) && str_contains($controller, '@')) {
+            list($controllerClass, $method) = explode('@', $controller, 2);
 
             if (class_exists($controllerClass) && method_exists($controllerClass, $method)) {
                 return $this->extractViewPathFromMethod($controllerClass, $method, 0);
@@ -190,6 +191,31 @@ class GenerateVendorRoute extends Command
                 return $viewBasePaths;
             }
             return str_replace('.', '/', $bladePath);
+        }
+
+        // A style used by controllers like Vendor\Promotion\BundleController:
+        // `view(self::VIEW_PATH.'.list', ...)` — a class constant concatenated with a literal
+        // suffix, rather than one literal string. The plain-literal regex above only matches when
+        // the character right after `view(` is a quote, so it silently skipped every route built
+        // this way (the same gap already found and fixed in GenerateAdminRoute, which is why
+        // Bundle never showed up in the admin search page index either despite its routes existing
+        // and being reachable).
+        if (preg_match('/view\(\s*(?:self|static|' . preg_quote($controllerClass, '/') . ')::([A-Za-z0-9_]+)\s*\.\s*[\'"](.*?)[\'"]/', $methodBody, $constMatches)) {
+            $constName = $constMatches[1];
+            $suffix = $constMatches[2];
+
+            try {
+                $reflectionClass = new \ReflectionClass($controllerClass);
+                // defined()/constant() can't see a private/protected constant from outside its
+                // class (VIEW_PATH is private) — ReflectionClass::getConstant() correctly bypasses
+                // visibility for introspection, which is exactly what this needs.
+                if ($reflectionClass->hasConstant($constName)) {
+                    $bladePath = $reflectionClass->getConstant($constName) . $suffix;
+
+                    return str_replace('.', '/', $bladePath);
+                }
+            } catch (\ReflectionException $exception) {
+            }
         }
 
         if (preg_match('/view\(\s*([\\\\A-Za-z0-9_]+)::([A-Za-z0-9_]+)\s*\[\s*VIEW\s*\]/', $methodBody, $enumMatches)) {
@@ -319,6 +345,8 @@ class GenerateVendorRoute extends Command
             'vendor-views.business-settings.restaurant-index' => ['vendor-panel/business-settings/store-setup'],
             'vendor-views.order.list' => ['vendor-panel/order/list/all','vendor-panel/order/list/pending','vendor-panel/order/list/confirmed','vendor-panel/order/list/cooking','vendor-panel/order/list/ready_for_delivery','vendor-panel/order/list/item_on_the_way','vendor-panel/order/list/delivered','vendor-panel/order/list/refunded','vendor-panel/order/list/scheduled'],
 
+            'service::vendor.dashboard' => ['vendor-panel/service/dashboard'],
+
         ];
 
         foreach ($array as $bladePath => $value) {
@@ -386,7 +414,7 @@ class GenerateVendorRoute extends Command
             }
 
             $uniqueWords = array_filter($uniqueWords, function ($word) {
-                return strtolower($word) !== 'rental';
+                return strtolower($word) !== 'rental' && !str_contains($word, '::');
             });
 
             $routeName = ucwords(implode(' ', $uniqueWords));

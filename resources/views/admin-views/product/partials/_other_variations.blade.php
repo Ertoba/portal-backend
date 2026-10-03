@@ -2,8 +2,8 @@
                     <div class="card shadow--card-2 border-0">
                         <div class="card-header border-0 pb-0">
                             <div class="mb-0">
-                                <h3 class="text-dark mb-1">
-                                    {{ translate('messages.Attributes') }}
+                                <h3 class="text-dark mb-0">
+                                    {{ translate('messages.attributes') }}
                                 </h3>
                                 <p class="fs-12 mb-0">
                                     {{ translate('messages.Enable and manage different attributs of a product.') }}
@@ -12,14 +12,14 @@
                         @if (isset($openai_config) && data_get($openai_config, 'status') == 1)
                         <button type="button" class="btn bg-white text-primary opacity-1 generate_btn_wrapper p-0 mb-2 other_variation_setup_auto_fill"
                             id="other_variation_setup_auto_fill" data-route="{{ route('admin.product.generate-other-variation-data') }}"
-                            data-error="{{ translate('Please provide an item name and description so the AI can generate a suitable variations.') }}"
+                            data-error="{{ translate('Please provide an item name and description so the AI can generate suitable variations.') }}"
                             data-lang="en">
                             <div class="btn-svg-wrapper">
                                 <img width="18" height="18" class=""
                                     src="{{ asset('public/assets/admin/img/svg/blink-right-small.svg') }}" alt="">
                             </div>
                             <span class="ai-text-animation d-none" role="status">
-                                {{ translate('Just_a_second') }}
+                                {{ translate('Just a second') }}
                             </span>
                             <span class="btn-text">{{ translate('Generate') }}</span>
                         </button>
@@ -31,12 +31,12 @@
                                     <div class="col-12">
                                         <div class="form-group mb-0 error-wrapper">
                                             <label class="input-label"
-                                                for="exampleFormControlSelect1">{{ translate('messages.attribute') }}<span
+                                                for="exampleFormControlSelect1">{{ translate('Attribute') }}<span
                                                     class="input-label-secondary"></span></label>
                                             <select name="attribute_id[]" id="choice_attributes"
-                                            data-placeholder="{{ translate('messages.Select_attribute') }}"
+                                            data-placeholder="{{ translate('messages.Select attribute') }}"
                                                 class="form-control js-select2-custom" multiple="multiple">
-                                                @foreach (\App\Models\Attribute::orderBy('name')->get() as $attribute)
+                                                @foreach (\App\CentralLogics\Helpers::cached_list(\App\Models\Attribute::class, orderBy: 'name') as $attribute)
                                                     <option value="{{ $attribute['id'] }}">{{ $attribute['name'] }}</option>
                                                 @endforeach
                                             </select>

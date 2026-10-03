@@ -8,16 +8,14 @@
 </div>
 <div class="modal-body">
     <div class="d-flex flex-row">
-        <!-- Product gallery-->
         <div class="d-flex align-items-center justify-content-center active">
             <img class="img-responsive initial--20 onerror-image"
             src="{{ $product['image_full_url'] }}"
                 data-onerror-image="{{ asset('public/assets/admin/img/160x160/img2.jpg') }}"
-                data-zoom="{{ asset('storage/app/public/product') }}/{{ $product['image'] }}" alt="Product image"
+                data-zoom="{{ $product['image_full_url'] ?? '' }}" alt="Product image"
                 width="">
             <div class="cz-image-zoom-pane"></div>
         </div>
-        <!-- Product details-->
         <div class="details pl-2">
             <a href="{{ route($panel . '.item.view', $product->id) }}" class="h3 mb-2 product-title">{{ $product->name }}</a>
             @if (isset($product->module_id) && $product->module->module_type == 'food')
@@ -51,13 +49,11 @@
                         id="set-discount-amount">{{ \App\CentralLogics\Helpers::get_product_discount($product) }}</strong>
                 </div>
             @endif
-            <!-- Product panels-->
-            {{-- <div class="sharethis-inline-share-buttons"></div> --}}
         </div>
     </div>
     <div class="row pt-2">
         <div class="col-12">
-            <h2>{{ translate('messages.description') }}</h2>
+            <h2>{{ translate('messages.Description') }}</h2>
             <span class="d-block text-dark">
                 {!! $product->description !!}
             </span>
@@ -65,7 +61,7 @@
 
             @if (in_array($product->module->module_type ,['food','grocery']))
                 @if (count($product->nutritions) )
-                    <h4 class="mt-2"> {{ translate('messages.Nutrition_Details') }}</h4>
+                    <h4 class="mt-2"> {{ translate('Nutrition details') }}</h4>
                     <span class="d-block text-dark text-break">
                         @foreach($product->nutritions as $nutrition)
                         {{$nutrition->nutrition}}{{ !$loop->last ? ',' : '.'}}
@@ -73,7 +69,7 @@
                     </span>
                 @endif
                 @if (count($product->allergies))
-                    <h4 class="mt-2"> {{ translate('messages.Allergie_Ingredients') }}</h4>
+                    <h4 class="mt-2"> {{ translate('Allergen ingredients') }}</h4>
                     <span class="d-block text-dark text-break">
                         @foreach($product->allergies as $allergy)
                         {{$allergy->allergy}}{{ !$loop->last ? ',' : '.'}}
@@ -84,7 +80,7 @@
 
             @if (in_array($product->module->module_type ,['pharmacy']))
                 @if ($product->generic->pluck('generic_name')->first())
-                    <h4 class="mt-2"> {{ translate('generic_name') }}</h4>
+                    <h4 class="mt-2"> {{ translate('Generic name') }}</h4>
                     <span class="d-block text-dark text-break">
                         {{ $product->generic->pluck('generic_name')->first() }}
                     </span>
@@ -126,14 +122,14 @@
                             @if (isset($choice->price) == false)
                                 <div class="h3 p-0 pt-2">{{ $choice->name }} <small style="font-size: 12px"
                                         class="text-muted">
-                                        ({{ $choice->required == 'on' ? translate('messages.Required') : translate('messages.optional') }})
+                                        ({{ $choice->required == 'on' ? translate('messages.Required.') : translate('Optional') }})
                                     </small>
                                 </div>
                                 @if ($choice->min != 0 && $choice->max != 0)
                                     <small class="d-block mb-3">
-                                        {{ translate('You_need_to_select_minimum_ ') }} {{ $choice->min }}
-                                        {{ translate('to_maximum_ ') }} {{ $choice->max }}
-                                        {{ translate('options') }}
+                                        {{ translate('You need to select minimum') }}  {{ $choice->min }}
+                                        {{ translate('To maximum') }}  {{ $choice->max }}
+                                        {{ translate('Options') }}
                                     </small>
                                 @endif
 
@@ -181,7 +177,6 @@
                     @endforeach
                 @endif
 
-                <!-- Quantity + Add to cart -->
                 <div class="d-flex justify-content-between">
                     <div class="product-description-label mt-2 text-dark h3">{{ translate('messages.quantity') }}:
                     </div>
@@ -207,11 +202,11 @@
                 </div>
                 <?php $add_ons = $product->add_ons ? (json_decode($product->add_ons) ?: []) : []; ?>
                 @if (count($add_ons) > 0 && $add_ons[0])
-                    <div class="h3 p-0 pt-2">{{ translate('messages.addon') }}
+                    <div class="h3 p-0 pt-2">{{ translate('Addon') }}
                     </div>
 
                     <div class="d-flex justify-content-left flex-wrap">
-                        @foreach (\App\Models\AddOn::withoutGlobalScope(\App\Scopes\StoreScope::class)->whereIn('id', $add_ons)->active()->get() as $key => $add_on)
+                        @foreach ($product_addons as $key => $add_on)
                              <div class="flex-column pb-2">
                                 <input type="hidden" name="addon-price{{ $add_on->id }}"
                                     value="{{ $add_on->price }}">
@@ -238,7 +233,7 @@
                 @endif
                 <div class="row no-gutters d-none mt-2 text-dark" id="chosen_price_div">
                     <div class="col-2">
-                        <div class="product-description-label">{{ translate('Total Price') }}:</div>
+                        <div class="product-description-label">{{ translate('Total price') }}:</div>
                     </div>
                     <div class="col-10">
                         <div class="product-price">
@@ -248,12 +243,12 @@
                 </div>
 
                 <div id="stock-warning" class="text-danger small mt-2 {{ $initiallyOutOfStock ? '' : 'd-none' }}">
-                    {{ translate('messages.out_of_stock') }}
+                    {{ translate('Out of stock') }}
                 </div>
                 <div class="d-flex justify-content-center mt-2">
                     <button class="btn btn--primary h--45px update_order_item" type="button" id="add-to-cart-btn" {{ $initiallyOutOfStock ? 'disabled' : '' }}>
                         <i class="tio-shopping-cart"></i>
-                        {{ translate('messages.add_to_cart') }}
+                        {{ translate('messages.Add to cart') }}
                     </button>
                 </div>
             </form>
@@ -298,8 +293,8 @@
             if (availableStock <= 0 || qty > availableStock) {
                 $btn.prop('disabled', true);
                 $warn.removeClass('d-none').text(availableStock <= 0
-                    ? "{{ translate('messages.out_of_stock') }}"
-                    : "{{ translate('messages.requested_quantity_exceeds_stock') }}");
+                    ? "{{ translate('Out of stock') }}"
+                    : "{{ translate('messages.Requested quantity exceeds stock') }}");
                 return;
             }
         }
@@ -308,22 +303,20 @@
     }
     checkAddToCartStock();
 
-    // Update price when input changes (like variant selection)
     $('#add-to-cart-form input').on('change', function () {
         getVariantPrice();
         checkAddToCartStock();
     });
 
-    // Handle "plus" (step up)
     $('.addon-stepup').on('click', function () {
         const input = this.parentNode.querySelector('input[type=number]');
         input.stepUp();
-        input.dispatchEvent(new Event('change')); // manually trigger change
+        input.dispatchEvent(new Event('change'));
         getVariantPrice();
     });
      document.querySelectorAll('.addon-chek').forEach(checkbox => {
         checkbox.addEventListener('change', function () {
-            const id = this.getAttribute('id'); // e.g., addon3
+            const id = this.getAttribute('id');
             const qtyLabel = document.querySelector(`label.addon-quantity-input[for="${id}"]`);
             if (qtyLabel) {
                 qtyLabel.classList.toggle('d-none', !this.checked);
@@ -332,7 +325,6 @@
          getVariantPrice();
     });
 
-    // Handle "minus" (step down)
     $('.addon-stepdown').on('click', function () {
         const input = this.parentNode.querySelector('input[type=number]');
         input.stepDown();

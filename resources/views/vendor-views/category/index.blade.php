@@ -1,44 +1,44 @@
 @extends('layouts.vendor.app')
 
-@section('title', translate('messages.Main_Category'))
+@section('title', translate('Main category'))
 
 @push('css_or_js')
 @endpush
 
 @section('content')
     <div class="content container-fluid">
-        <!-- Page Header -->
         <div class="page-header">
             <h1 class="page-header-title">
                 <span class="page-header-icon">
-                    <img src="{{ asset('public/assets/admin/img/category.png') }}" class="w--20" alt="">
+                    <img src="{{ asset('public/assets/admin/img/outline/category.svg') }}" class="w--26" alt="">
                 </span>
                 <span>
-                    {{ translate('messages.Main Category List') }} <span class="badge badge-soft-dark ml-2"
+                    {{ translate('Main category list') }} <span class="badge badge-soft-dark ml-2"
                         id="itemCount">{{ $categories->total() }}</span>
                 </span>
             </h1>
+            <p class="page-header-desc">{{ translate('The top-level groups customers browse your store by.') }}</p>
         </div>
-        <!-- End Page Header -->
         <div class="row">
             <div class="col-md-12">
                 <div class="card">
                     <div class="card-header py-2 border-0">
                         <div class="search--button-wrapper justify-content-end">
+                            @include('partials._table-head', [
+                                'subtitle' => translate('messages.Categories your items are grouped under.'),
+                            ])
+
                             <form class="search-form">
 
-                                <!-- Search -->
                                 <div class="input-group input--group">
                                     <input type="search" value="{{ request()?->search ?? null }}" name="search"
                                         class="form-control min-h-40px"
-                                        placeholder="{{ translate('messages.search_main_categories') }}"
-                                        aria-label="{{ translate('messages.ex_:_categories') }}">
+                                        placeholder="{{ translate('messages.Search main categories') }}"
+                                        aria-label="{{ translate('Ex') }}: Categories">
                                     <button type="submit" class="btn btn--secondary py-2 min-h-40px"><i
                                             class="tio-search"></i></button>
                                 </div>
-                                <!-- End Search -->
                             </form>
-                            <!-- Unfold -->
                             <div class="hs-unfold mr-2">
                                 <a class="js-hs-unfold-invoker btn btn-sm btn-white dropdown-toggle h--40px"
                                     href="javascript:"
@@ -46,31 +46,30 @@
                                         "target": "#usersExportDropdown",
                                         "type": "css-animation"
                                     }'>
-                                    <i class="tio-download-to mr-1"></i> {{ translate('messages.export') }}
+                                    <i class="tio-download-to mr-1"></i> {{ translate('messages.Export') }}
                                 </a>
 
                                 <div id="usersExportDropdown"
                                     class="hs-unfold-content dropdown-unfold dropdown-menu dropdown-menu-sm-right">
 
-                                    <span class="dropdown-header">{{ translate('messages.download_options') }}</span>
+                                    <span class="dropdown-header">{{ translate('messages.Download options') }}</span>
                                     <a id="export-excel" class="dropdown-item"
                                         href="{{ route('vendor.category.export-categories', ['type' => 'excel', request()->getQueryString()]) }}">
                                         <img class="avatar avatar-xss avatar-4by3 mr-2"
                                             src="{{ asset('public/assets/admin/svg/components/excel.svg') }}"
                                             alt="Image Description">
-                                        {{ translate('messages.excel') }}
+                                        Excel
                                     </a>
                                     <a id="export-csv" class="dropdown-item"
                                         href="{{ route('vendor.category.export-categories', ['type' => 'csv', request()->getQueryString()]) }}">
                                         <img class="avatar avatar-xss avatar-4by3 mr-2"
                                             src="{{ asset('public/assets/admin/svg/components/placeholder-csv-format.svg') }}"
                                             alt="Image Description">
-                                        {{ translate('messages.csv') }}
+                                        CSV
                                     </a>
 
                                 </div>
                             </div>
-                            <!-- End Unfold -->
                         </div>
                     </div>
                     <div class="card-body p-0">
@@ -82,41 +81,49 @@
                                     "entries": "#datatableEntries",
                                     "isResponsive": false,
                                     "isShowPaging": false,
-                                    "paging":false,
+                                    "paging":false
                                 }'>
                                 <thead class="thead-light">
                                     <tr>
-                                        <th class="w-33p px-4 border-0">{{ translate('messages.#') }}</th>
-                                        <th class="w-33p border-0">
-                                            {{ translate('messages.Main_Category_Name') }}
+                                        <th class="px-4 border-0">
+                                            {{ translate('Main category name') }}
                                         </th>
+                                        <th class="border-0 col--numeric">{{ translate('Subcategories') }}</th>
 
                                         @if ($categoryWiseTax)
-                                            <th class="border-0 ">{{ translate('messages.Vat/Tax') }}</th>
+                                            <th class="border-0 ">{{ translate('VAT/tax') }}</th>
                                         @endif
-                                        <th class="w-33p border-0 text-center">
-                                            {{ translate('messages.priority') }}
+                                        <th class="border-0 text-center">{{ translate('messages.Status') }}</th>
+                                        <th class="border-0 text-center">
+                                            {{ translate('messages.Priority') }}
                                         </th>
                                     </tr>
                                 </thead>
 
                                 <tbody id="table-div">
-                                    @foreach ($categories as $key => $category)
+                                    @foreach ($categories as $category)
                                         <tr>
-                                            <td class="px-4">{{ $key + $categories->firstItem() }}</td>
-                                            <td class="">
+                                            <td class="px-4">
                                                 <div class="media-area d-flex gap-2 align-items-center">
                                                     <div class="w-40px min-w-40 h-40px rounded overflow-hidden border">
-                                                        <img src="{{  $category['image_full_url'] }}" alt="" class="w-100 rounded object-cover">
+                                                        <img src="{{  $category['image_full_url'] }}" alt="{{ $category['name'] }}" class="w-100 rounded object-cover onerror-image"
+                                                             data-onerror-image="{{ asset('public/assets/admin/img/160x160/img2.jpg') }}">
                                                     </div>
                                                     <div>
-                                                        <span class="fs-14 line--limit-2 text-title max-w-250 min-w-160">
-                                                            {{ Str::limit($category['name'], 20, '...') }}
+                                                        <span class="fs-14 line--limit-2 text-title max-w-250 min-w-160" title="{{ $category['name'] }}">
+                                                            {{ Str::limit($category['name'], 30, '...') }}
                                                         </span>
-                                                        <p class="m-0">{{ translate('ID') }} #{{ $category->id }}</p>
+                                                        <p class="m-0">ID #{{ $category->id }}</p>
                                                     </div>
                                                 </div>
 
+                                            </td>
+                                            <td class="col--numeric" data-order="{{ $category->childes_count }}">
+                                                @if ($category->childes_count)
+                                                    {{ $category->childes_count }}
+                                                @else
+                                                    <span class="text-muted font-size-sm">{{ translate('messages.N/A') }}</span>
+                                                @endif
                                             </td>
 
 
@@ -133,19 +140,24 @@
                                                         </span>
                                                         <br>
                                                     @empty
-                                                        <span> {{ translate('messages.no_tax') }} </span>
+                                                        <span> {{ translate('messages.No tax') }} </span>
                                                     @endforelse
                                                 </span>
                                             </td>
                                             @endif
-                                            <td class="px-4 text-center">
+                                            <td class="text-center">
+                                                <span class="badge badge-soft-{{ $category->status ? 'success' : 'danger' }}">
+                                                    {{ $category->status ? translate('messages.Active') : translate('messages.Inactive') }}
+                                                </span>
+                                            </td>
+                                            <td class="text-center">
                                                 <span class="d-inline-block {{ $category->priority == 0 ? 'text-title' : '' }} {{ $category->priority == 1 ? 'text-info' : '' }} {{ $category->priority == 2 ? 'text-success' : '' }}">
                                                     @if ($category->priority == 2)
-                                                        {{ translate('messages.high') }}
+                                                        {{ translate('messages.High') }}
                                                     @elseif ($category->priority == 1)
                                                         {{ translate('messages.medium') }}
                                                     @else
-                                                        {{ translate('messages.normal') }}
+                                                        {{ translate('messages.Normal') }}
                                                     @endif
                                                 </span>
                                             </td>
@@ -156,14 +168,12 @@
                         </div>
                     </div>
                     <div class="card-footer page-area">
-                        <!-- Pagination -->
                         {!! $categories->links() !!}
-                        <!-- Pagination -->
                         @if (count($categories) === 0)
                             <div class="empty--data">
                                 <img src="{{ asset('/public/assets/admin/svg/illustrations/sorry.svg') }}" alt="public">
                                 <h5>
-                                    {{ translate('no_data_found') }}
+                                    {{ translate('No data found') }}
                                 </h5>
                             </div>
                         @endif

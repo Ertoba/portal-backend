@@ -2,23 +2,25 @@
 
 namespace App\Mail;
 
-use App\CentralLogics\Helpers;
-use App\Models\BusinessSetting;
 use App\Models\EmailTemplate;
+use App\Mail\Concerns\BuildsTemplatedMail;
+use App\Mail\Concerns\QueueableMailable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Queue\SerializesModels;
+use App\Support\Notification\NotificationText;
+use App\Services\System\BusinessSettingService;
 
-class AddFundToWallet extends Mailable
+class AddFundToWallet extends Mailable implements ShouldQueue
 {
-    use Queueable, SerializesModels;
+    use BuildsTemplatedMail, Queueable, QueueableMailable, SerializesModels;
 
     /**
      * Create a new message instance.
      *
      * @return void
      */
-
     protected $wallet;
 
     public function __construct($wallet)
@@ -33,15 +35,18 @@ class AddFundToWallet extends Mailable
      */
     public function build()
     {
-        $company_name = BusinessSetting::where('key', 'business_name')->first()->value;
-        $data=EmailTemplate::where('type','user')->where('email_type', 'add_fund')->first();
-        $template=$data?$data->email_template:6;
         $wallet = $this->wallet;
         $user_name = $wallet->user->f_name;
-        $title = Helpers::text_variable_data_format( value:$data['title']??'',user_name:$user_name??'',transaction_id:$transaction_id??'');
-        $body = Helpers::text_variable_data_format( value:$data['body']??'',user_name:$user_name??'',transaction_id:$transaction_id??'');
-        $footer_text = Helpers::text_variable_data_format( value:$data['footer_text']??'',user_name:$user_name??'',transaction_id:$transaction_id??'');
-        $copyright_text = Helpers::text_variable_data_format( value:$data['copyright_text']??'',user_name:$user_name??'',transaction_id:$transaction_id??'');
-        return $this->subject(translate('Add_Fund_To_Wallet'))->view('email-templates.new-email-format-'.$template, ['company_name'=>$company_name,'data'=>$data,'title'=>$title,'body'=>$body,'footer_text'=>$footer_text,'copyright_text'=>$copyright_text,'wallet'=>$wallet,'transaction_id'=>$wallet->transaction_id,'time'=>$wallet->created_at,'amount'=>$wallet->credit]);
+
+        return $this->templatedMail(
+            template: EmailTemplate::where('type', 'user')->where('email_type', 'add_fund')->first(),
+            fallbackTemplate: 6,
+            subject: translate('Add fund to wallet'),
+            placeholders: [
+                'user_name' => $user_name ?? '',
+                'transaction_id' => $wallet->transaction_id ?? '',
+            ],
+            viewData: ['wallet' => $wallet, 'transaction_id' => $wallet->transaction_id, 'time' => $wallet->created_at, 'amount' => $wallet->credit],
+        );
     }
 }

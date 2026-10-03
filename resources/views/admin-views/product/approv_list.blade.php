@@ -1,517 +1,455 @@
 @extends('layouts.admin.app')
 
-@section('title',translate('New_Item_requests'))
+@section('title', translate('New item requests'))
 
 @push('css_or_js')
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <link rel="stylesheet" href="{{ asset('public/assets/admin/css/view-pages/item-list.css') }}">
 @endpush
 
 @section('content')
-    <div class="content container-fluid">
-        <!-- Page Header -->
+    @php
+        $module_type = Config::get('module.current_module_type');
+        $has_veg = (bool) config('module.'.$module_type.'.veg_non_veg');
+        $drawer_clear = request()->fullUrlWithoutQuery([
+            'store_id', 'zone_id', 'category_id', 'sub_category_id',
+            'status', 'kind', 'type', 'from_date', 'to_date', 'page',
+        ]);
+    @endphp
+
+    <div class="content container-fluid itm">
         <div class="page-header">
             <div class="row align-items-center g-2">
-                <div class="col-md-9 col-12">
+                <div class="col-md-7 col-12">
                     <h1 class="page-header-title">
                         <span class="page-header-icon">
-                            <img src="{{asset('public/assets/admin/img/items.png')}}" class="w--22" alt="">
+                            <img src="{{ asset('public/assets/admin/img/items.png') }}" class="w--22" alt="">
                         </span>
-                        <span>
-                            {{translate('messages.New_Item_requests')}} <span class="badge badge-soft-dark ml-2" id="foodCount">{{$items->total()}}</span>
-                        </span>
+                        <span>{{ translate('New item requests') }}</span>
                     </h1>
+                    <p class="page-header-desc">{{ translate('New items stores have submitted, waiting for you to approve or turn down.') }}</p>
                 </div>
-
+                <div class="col-md-5 col-12">
+                    <div class="itm-actions">
+                        <a class="itm-action itm-action--info" href="{{ route('admin.item.list', ['module_id' => request('module_id')]) }}">
+                            <span class="itm-action__icon"><i class="tio-format-points"></i></span>
+                            <span class="itm-action__label">{{ translate('Item list') }}</span>
+                            <i class="itm-action__go tio-chevron-right"></i>
+                        </a>
+                    </div>
+                </div>
             </div>
-
         </div>
-        @php
-            $pharmacy =0;
-            if (Config::get('module.current_module_type') == 'pharmacy'){
-                $pharmacy =1;
-            }
-            @endphp
-        <!-- End Page Header -->
-        <div class="card mb-3">
-            <!-- Header -->
-            <div class="card-header py-2 border-0">
-                <h1>{{ translate('search_data') }}</h1>
-            </div>
 
-            <div class="row mr-1 ml-2 mb-2">
-                <div class="col-sm-6 col-md-3">
-                    <div class="select-item">
-                        <select name="store_id" id="store" data-url="{{url()->full()}}" data-placeholder="{{translate('messages.select_store')}}" class="js-data-example-ajax form-control store-filter" required title="Select Store" oninvalid="this.setCustomValidity('{{translate('messages.please_select_store')}}')">
-                            @if($store)
-                            <option value="{{$store->id}}" data-verified="{{ (int) $store->verified_seller }}" selected>{{$store->name}}</option>
-                            @else
-                            <option value="all" selected>{{translate('messages.all_stores')}}</option>
+        <div id="approval-index" data-ajax-region
+             data-ajax-url="{{ url()->full() }}"
+             data-ajax-links=".page-link, .list-reset-search"
+             data-ajax-forms=".search-form">
+
+            @include('admin-views.product.partials._approval-summary', [
+                'summary' => $summary,
+                'filters' => $filters,
+            ])
+
+            <div class="card">
+                <div class="card-header py-2 border-0">
+                    <div class="search--button-wrapper">
+                        @include('partials._table-head', [
+                            'subtitle' => translate('messages.Item submissions from vendors that need your approval.'),
+                            'count' => null,
+                        ])
+
+                        <form class="search-form">
+                            @if(request('module_id'))
+                                <input type="hidden" name="module_id" value="{{ request('module_id') }}">
                             @endif
-                        </select>
-                    </div>
-                </div>
-
-                <div class="col-sm-6 col-md-3">
-                    @if(!auth('admin')?->user()?->zone_id)
-                        <div class="select-item">
-                            <select name="zone_id" class="form-control js-select2-custom set-filter"
-                                    data-url="{{url()->full()}}" data-filter="zone_id">
-                                <option value="all" {{!request('zone_id')?'selected':''}}>{{ translate('messages.All_Zones') }}</option>
-                                @foreach(\App\Models\Zone::orderBy('name')->get(['id','name']) as $z)
-                                    <option
-                                            value="{{$z['id']}}" {{request()?->zone_id == $z['id']?'selected':''}}>
-                                        {{$z['name']}}
-                                    </option>
-                                @endforeach
-                            </select>
-                        </div>
-                    @endif
-                </div>
-
-                <div class="col-sm-6 col-md-3">
-                    <div class="select-item">
-
-                        <select name="category_id" id="category_id" data-placeholder="{{ translate('messages.select_category') }}"
-                                class="js-data-example-ajax form-control set-filter" id="category_id"
-                                data-url="{{url()->full()}}" data-filter="category_id">
-                            @if($category)
-                                <option value="{{$category->id}}" selected>{{$category->name}}</option>
-                            @else
-                                <option value="all" selected>{{translate('messages.all_category')}}</option>
-                            @endif
-                        </select>
-                    </div>
-                </div>
-                <div class="col-sm-6 col-md-3">
-                    <div class="select-item">
-                        <select name="sub_category_id" class="form-control js-select2-custom set-filter" data-placeholder="{{ translate('messages.select_sub_category') }}" id="sub-categories" data-url="{{url()->full()}}" data-filter="sub_category_id">
-                            @if (count($sub_categories) == 0 && $category )
-                            <option selected>{{translate('messages.No_Subcategory')}}</option>
-                            @else
-                            <option value="all" selected>{{translate('messages.all_sub_category')}}</option>
-                           @endif
-                            @foreach($sub_categories as $z)
-                                <option
-                                        value="{{$z['id']}}" {{ request()?->sub_category_id == $z['id']?'selected':''}}>
-                                    {{$z['name']}}
-                                </option>
+                            @foreach(['store_id', 'zone_id', 'category_id', 'sub_category_id', 'from_date', 'to_date'] as $scalar)
+                                @if($filters[$scalar])
+                                    <input type="hidden" name="{{ $scalar }}" value="{{ $filters[$scalar] }}">
+                                @endif
                             @endforeach
-                        </select>
-                    </div>
-                </div>
+                            @foreach(['status', 'kind', 'type'] as $group)
+                                @foreach($filters[$group] as $value)
+                                    <input type="hidden" name="{{ $group }}[]" value="{{ $value }}">
+                                @endforeach
+                            @endforeach
+                            <div class="input-group input--group">
+                                <input id="datatableSearch" name="search" type="search" class="form-control h--40px"
+                                       value="{{ $filters['search'] }}"
+                                       placeholder="{{ translate('messages.Search by item or store name') }}"
+                                       aria-label="{{ translate('messages.Search by item or store name') }}">
+                                <button type="submit" class="btn btn--primary h--40px"><i class="tio-search"></i></button>
+                            </div>
+                        </form>
 
+                        @if($filters['search'])
+                            <a class="btn btn--primary ml-2 list-reset-search" href="{{ request()->fullUrlWithoutQuery(['search', 'page']) }}">
+                                <i class="tio-refresh"></i> {{ translate('messages.Reset') }}
+                            </a>
+                        @endif
 
-            </div>
-            <form  class="search-form" method="get" >
-            <div class="row mr-1 ml-2 mb-5">
-
-                <div class="col-sm-6 col-md-3">
-                    <div class="select-item">
-                        <select name="filter" class="form-control js-select2-custom set-filter"
-                        data-url="{{url()->full()}}" data-filter="filter">
-                            <option {{ !isset($filter)? 'selected' : '' }} >{{ translate('messages.All_Types') }}</option>
-                            <option value="pending" {{ isset($filter) && $filter == 'pending' ? 'selected' : '' }} >{{ translate('messages.pending') }}</option>
-                            <option value="rejected" {{ isset($filter) && $filter == 'rejected' ? 'selected' : '' }} >{{ translate('messages.rejected') }}</option>
-                            <option value="custom" {{ isset($filter) && $filter == 'custom' ? 'selected' : '' }} >{{ translate('messages.Custom_Date') }}</option>
-                        </select>
-                    </div>
-                </div>
-                @if (isset($filter) && $filter == 'custom')
-                <div class="col-sm-6 col-md-3">
-                    <input type="date" name="from" id="from_date" class="form-control"
-                        placeholder="{{ translate('Start Date') }}"
-                    value="{{ request()?->from ?? ''}}" required>
-                </div>
-                <div class="col-sm-6 col-md-3">
-                    <input type="date" name="to" id="to_date" class="form-control"
-                    placeholder="{{ translate('End Date') }}"
-                        value="{{ request()?->to ?? ''}}"  required>
-                    </div>
-                <div class="col-sm-6 col-md-3 ml-auto">
-                    <button type="submit"
-                        class="btn btn-primary btn-block h--45px">{{ translate('Filter') }}</button>
-                    </div>
-                    @endif
-
-                </div>
-            </form>
-
-        </div>
-        <!-- Card -->
-        <div class="card">
-            <!-- Header -->
-            <div class="card-header py-2 border-0">
-                <div class="search--button-wrapper justify-content-end">
-                    <form class="search-form">
-                    {{-- @csrf --}}
-                        <!-- Search -->
-                        <div class="input-group input--group">
-                            <input id="datatableSearch" name="search" value="{{ request()?->search ?? null }}" type="search" class="form-control h--40px" placeholder="{{translate('ex_:_search_item_name')}}" aria-label="{{translate('messages.search_here')}}">
-                            <button type="submit" class="btn btn--primary h--40px"><i class="tio-search"></i></button>
+                        <div class="hs-unfold mr-2">
+                            <a class="btn btn-sm btn-white h--40px filter-button-show" href="javascript:;"
+                               role="button" aria-expanded="false" aria-controls="datatableFilterSidebar">
+                                <i class="tio-filter-list mr-1"></i> {{ translate('messages.Filter') }}
+                                @if($filter_count)
+                                    <span class="badge badge-success badge-pill ml-1">{{ $filter_count }}</span>
+                                @endif
+                            </a>
                         </div>
-                        <!-- End Search -->
-                    </form>
-                    @if(request()->input('search'))
-                    <button type="reset" class="btn btn--primary ml-2 location-reload-to-base" data-url="{{url()->full()}}">{{translate('messages.reset')}}</button>
-                    @endif
-                    <!-- Unfold -->
-                    <div class="hs-unfold mr-2">
-                        <a class="js-hs-unfold-invoker btn btn-sm btn-white dropdown-toggle min-height-40" href="javascript:;"
-                            data-hs-unfold-options='{
+
+                        <div class="hs-unfold mr-2">
+                            <a class="js-hs-unfold-invoker btn btn-sm btn-white dropdown-toggle min-height-40 w-max-content" href="javascript:;"
+                               data-hs-unfold-options='{
                                     "target": "#usersExportDropdown",
                                     "type": "css-animation"
                                 }'>
-                            <i class="tio-download-to mr-1"></i> {{ translate('messages.export') }}
-                        </a>
-
-                        <div id="usersExportDropdown"
-                            class="hs-unfold-content dropdown-unfold dropdown-menu dropdown-menu-sm-right">
-
-                            <span class="dropdown-header">{{ translate('messages.download_options') }}</span>
-                            <a id="export-excel" class="dropdown-item" href="{{ route('admin.item.export', ['type' => 'excel', 'table'=>'TempProduct' , request()->getQueryString()]) }}">
-                                <img class="avatar avatar-xss avatar-4by3 mr-2"
-                                    src="{{ asset('public/assets/admin') }}/svg/components/excel.svg"
-                                    alt="Image Description">
-                                {{ translate('messages.excel') }}
-                            </a>
-                            <a id="export-csv" class="dropdown-item" href="{{ route('admin.item.export', ['type' => 'csv',  'table'=>'TempProduct' , request()->getQueryString()]) }}">
-                                <img class="avatar avatar-xss avatar-4by3 mr-2"
-                                    src="{{ asset('public/assets/admin') }}/svg/components/placeholder-csv-format.svg"
-                                    alt="Image Description">
-                                {{ translate('messages.csv') }}
+                                <i class="tio-download-to mr-1"></i> {{ translate('messages.Export') }}
                             </a>
 
+                            <div id="usersExportDropdown" class="hs-unfold-content dropdown-unfold dropdown-menu dropdown-menu-sm-right">
+                                <span class="dropdown-header">{{ translate('messages.Download options') }}</span>
+                                <a id="export-excel" class="dropdown-item"
+                                   href="{{ route('admin.item.export', array_merge(request()->query(), ['type' => 'excel', 'table' => 'TempProduct'])) }}">
+                                    <img class="avatar avatar-xss avatar-4by3 mr-2"
+                                         src="{{ asset('public/assets/admin') }}/svg/components/excel.svg" alt="">
+                                    Excel
+                                </a>
+                                <a id="export-csv" class="dropdown-item"
+                                   href="{{ route('admin.item.export', array_merge(request()->query(), ['type' => 'csv', 'table' => 'TempProduct'])) }}">
+                                    <img class="avatar avatar-xss avatar-4by3 mr-2"
+                                         src="{{ asset('public/assets/admin') }}/svg/components/placeholder-csv-format.svg" alt="">
+                                    CSV
+                                </a>
+                            </div>
                         </div>
                     </div>
-                    <!-- End Unfold -->
-
-
                 </div>
-                <!-- End Row -->
-            </div>
-            <!-- End Header -->
 
-            <!-- Table -->
-            <div class="table-responsive datatable-custom" id="table-div">
-                <table id="datatable" class="table table-borderless table-thead-bordered table-nowrap table-align-middle card-table"
-                    data-hs-datatables-options='{
-                        "columnDefs": [{
-                            "targets": [7,8],
-                            "width": "5%",
-                            "orderable": false
-                        }],
-                        "order": [],
-                        "info": {
-                        "totalQty": "#datatableWithPaginationInfoTotalQty"
-                        },
-
-                        "entries": "#datatableEntries",
-
-                        "isResponsive": false,
-                        "isShowPaging": false,
-                        "paging":false
-                    }'>
-                    <thead class="bg-table-head">
-                    <tr>
-                        <th class="text-title border-0">{{translate('sl')}}</th>
-                        <th class="text-title border-0">{{translate('messages.name')}}</th>
-                        <th class="text-title border-0">{{translate('messages.category')}}</th>
-                        <th class="text-title border-0">{{translate('messages.store')}}</th>
-                        <th class="text-title border-0">{{translate('messages.price')}}</th>
-                        <!-- <th class="text-title border-0">{{translate('messages.Vat/Tax')}}</th> -->
-                        <th class="text-title border-0">{{translate('messages.status')}}</th>
-                        <th class="text-title border-0 text-center">{{translate('messages.action')}}</th>
-                    </tr>
-                    </thead>
-
-                    <tbody id="set-rows">
-                    @foreach($items as $key=>$item)
+                <div class="table-responsive datatable-custom">
+                    <table id="datatable"
+                           class="table table-hover table-borderless table-thead-bordered table-nowrap table-align-middle card-table"
+                           data-hs-datatables-options='{
+                                "columnDefs": [{
+                                    "targets": [-1],
+                                    "orderable": false
+                                }],
+                                "order": [],
+                                "isResponsive": false,
+                                "isShowPaging": false,
+                                "paging": false
+                            }'>
+                        <thead class="thead-light">
                         <tr>
-                            <td>{{$key+$items->firstItem()}}</td>
-                            <td>
-                                <a class="media align-items-center" href="{{route('admin.item.requested_item_view',['id'=> $item['id']])}}">
-                                    <img class="avatar avatar-lg mr-3 onerror-image"
-
-                                    src="{{ $item['image_full_url'] }}"
-
-                                    data-onerror-image="{{asset('public/assets/admin/img/160x160/img2.jpg')}}" alt="{{$item->name}} image">
-                                    <div class="media-body">
-                                        <h5 class="text-hover-primary mb-0">{{Str::limit($item['name'],20,'...')}}</h5>
-                                    </div>
-                                </a>
-                            </td>
-                            <td>
-                            {{Str::limit($item->category?$item->category->name:translate('messages.category_deleted'),20,'...')}}
-                            </td>
-
-                            <td>
-                                @if ($item->store)
-                                <a href="{{route('admin.store.view', $item->store->id)}}" class="table-rest-info" alt="view store"> {{  Str::limit($item->store->name, 20, '...') }}</a>
-                                @else
-                                {{  translate('messages.store deleted!') }}
-                                @endif
-
-                            </td>
-                            <td>
-                                <div class="mw--85px">
-                                    {{\App\CentralLogics\Helpers::format_currency($item['price'])}}
-                                </div>
-                            </td>
-                            <!-- <td>
-                                <div class="color-677788 fs-12">
-                                    <span>VAT: <strong>(5%)</strong></span> <br>
-                                    <span>GST: <strong>(7%)</strong></span>
-                                </div>
-                            </td> -->
-                            <td>
-                                @if ($item->is_rejected == 1)
-                                <span class="badge badge-soft-danger text-capitalize">
-                                    {{ translate('messages.rejected') }}
-                                </span>
-                                @else
-                                <span class="badge badge-soft-info text-capitalize">
-                                    {{ translate('messages.pending') }}
-                                </span>
-                                @endif
-                            </td>
-                            <td>
-                                <div class="btn--container justify-content-center">
-                                    <a class="ml-2 btn btn-sm btn--warning btn-outline-warning action-btn" data-toggle="tooltip" data-placement="top"
-                                    data-original-title="{{ translate('messages.View') }}" href="{{route('admin.item.requested_item_view',['id'=> $item['id']])}}">
-                                        <i class="tio-invisible"></i>
-                                    </a>
-                                    <a class="btn action-btn btn--primary btn-outline-primary request_alert" data-toggle="tooltip" data-placement="top"
-                                    data-original-title="{{ translate('messages.approve') }}"
-                                    data-url="{{route('admin.item.approved',[ 'id'=> $item['id']])}}" data-message="{{translate('messages.you_want_to_approve_this_product')}}"
-                                        href="javascript:"><i class="tio-done font-weight-bold"></i> </a>
-                                    @if($item->is_rejected == 0)
-                                        <a class="btn action-btn btn--danger btn-outline-danger cancelled_status" data-toggle="tooltip" data-placement="top"
-                                        data-original-title="{{ translate('messages.deny') }}" data-url="{{ route('admin.item.deny', ['id'=> $item['id']]) }}" data-message="{{ translate('you_want_to_deny_this_product') }}"
-                                        href="javascript:"><i class="tio-clear font-weight-bold"></i></a>
-                                    @endif
-                                    <a class="btn action-btn btn--primary btn-outline-primary"
-                                        href="{{route('admin.item.edit',[$item['id'], 'temp_product' => true])}}" title="{{translate('messages.edit_item')}}"><i class="tio-edit"></i>
-                                    </a>
-                                    <a class="btn action-btn btn--danger btn-outline-danger form-alert" href="javascript:"
-                                        data-id="food-{{$item['id']}}" data-message="{{translate('messages.Want_to_delete_this_item')}}" title="{{translate('messages.delete_item')}}"><i class="tio-delete-outlined"></i>
-                                    </a>
-                                    <form action="{{route('admin.item.delete',[$item['id']])}}"
-                                            method="post" id="food-{{$item['id']}}">
-                                        @csrf @method('delete')
-                                        <input type="hidden" value="1" name="temp_product" >
-                                    </form>
-                                </div>
-                            </td>
+                            <th class="border-0">{{ translate('messages.item') }}</th>
+                            <th class="border-0">{{ translate('messages.Category') }}</th>
+                            <th class="border-0">{{ translate('messages.Store') }}</th>
+                            <th class="border-0 col--numeric">{{ translate('messages.price') }}</th>
+                            <th class="border-0">{{ translate('messages.Request') }}</th>
+                            <th class="border-0">{{ translate('messages.Submitted') }}</th>
+                            <th class="border-0">{{ translate('messages.Status') }}</th>
+                            <th class="border-0 text-center">{{ translate('messages.Action') }}</th>
                         </tr>
-                    @endforeach
-                    </tbody>
-                </table>
+                        </thead>
+
+                        <tbody id="set-rows">
+                        @foreach($items as $item)
+                            @include('admin-views.product.partials._approval-row', [
+                                'item' => $item,
+                                'has_veg' => $has_veg,
+                            ])
+                        @endforeach
+                        </tbody>
+                    </table>
+                </div>
+
                 @if(count($items) !== 0)
-                <hr>
+                    <hr>
                 @endif
                 <div class="page-area">
-                        <tfoot class="border-top">
-                        {!! $items->withQueryString()->links() !!}
+                    {!! $items->links() !!}
                 </div>
+
                 @if(count($items) === 0)
-                <div class="empty--data">
-                    <img src="{{asset('/public/assets/admin/svg/illustrations/sorry.svg')}}" alt="public">
-                    <h5>
-                        {{translate('no_data_found')}}
-                    </h5>
-                </div>
+                    <div class="empty--data">
+                        <img src="{{ asset('/public/assets/admin/svg/illustrations/sorry.svg') }}" alt="">
+                        @if($filters['search'] || $filter_count)
+                            <h5>{{ translate('messages.No request matches these filters.') }}</h5>
+                            <p class="text-muted font-size-sm">{{ translate('messages.Clear the search or widen the filters to see more requests.') }}</p>
+                        @else
+                            <h5>{{ translate('messages.Nothing is waiting for approval.') }}</h5>
+                            <p class="text-muted font-size-sm">{{ translate('messages.Requests appear here as soon as a store submits an item.') }}</p>
+                        @endif
+                    </div>
                 @endif
             </div>
-            <!-- End Table -->
         </div>
-        <!-- End Card -->
     </div>
 
+    <div id="datatableFilterSidebar" class="filter-drawer sidebar sidebar-bordered sidebar-box-shadow">
+        <div class="card card-lg sidebar-card sidebar-footer-fixed">
+            @include('partials._filter-drawer-head', [
+                'fd_title' => translate('messages.Request filter'),
+                'fd_subtitle' => translate('messages.Narrow the approval queue down by store, zone, category, decision and date.'),
+            ])
+
+            <form class="card-body sidebar-body sidebar-scrollbar" method="get" id="approval_filter_form">
+                @if(request('module_id'))
+                    <input type="hidden" name="module_id" value="{{ request('module_id') }}">
+                @endif
+                <input type="hidden" name="search" value="{{ $filters['search'] }}" id="filter-search-value">
+
+                <small class="text-cap mb-3">{{ translate('messages.Store') }}</small>
+                <div class="form-group">
+                    <select name="store_id" id="store" class="form-control js-data-example-ajax"
+                            data-url="{{ route('admin.store.get-stores') }}"
+                            data-placeholder="{{ translate('Select store') }}">
+                        @if($store)
+                            <option value="{{ $store->id }}" data-verified="{{ (int) $store->verified_seller }}" selected>{{ $store->name }}</option>
+                        @else
+                            <option value="all" selected>{{ translate('All stores') }}</option>
+                        @endif
+                    </select>
+                </div>
+
+                @if(! auth('admin')?->user()?->zone_id)
+                    <small class="text-cap mb-3">{{ translate('messages.Zone') }}</small>
+                    <div class="form-group">
+                        <select name="zone_id" class="form-control js-select2-custom">
+                            <option value="all">{{ translate('All zones') }}</option>
+                            @foreach(\App\CentralLogics\Helpers::zones_dropdown() as $z)
+                                <option value="{{ $z['id'] }}" {{ $filters['zone_id'] == $z['id'] ? 'selected' : '' }}>{{ $z['name'] }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                @endif
+
+                <hr class="my-4">
+
+                <small class="text-cap mb-3">{{ translate('messages.Category') }}</small>
+                <div class="form-group">
+                    <select name="category_id" id="category_id" class="form-control js-data-example-ajax"
+                            data-url="{{ route('admin.category.get-all') }}"
+                            data-placeholder="{{ translate('Select category') }}">
+                        @if($category)
+                            <option value="{{ $category->id }}" selected>{{ $category->name }}</option>
+                        @else
+                            <option value="all" selected>{{ translate('messages.All category') }}</option>
+                        @endif
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="fd-sublabel" for="sub-categories">{{ translate('Subcategory') }}</label>
+                    <select name="sub_category_id" id="sub-categories" class="form-control js-data-example-ajax"
+                            data-url="{{ route('admin.item.get-categories') }}"
+                            data-placeholder="{{ translate('Select subcategory') }}">
+                        @if($sub_category)
+                            <option value="{{ $sub_category->id }}" selected>{{ $sub_category->name }}</option>
+                        @else
+                            <option value="all" selected>{{ translate('All subcategory') }}</option>
+                        @endif
+                    </select>
+                </div>
+
+                <hr class="my-4">
+
+                <small class="text-cap mb-3">{{ translate('messages.Status') }}</small>
+                <div class="fd-grid">
+                    <div class="custom-control custom-checkbox mb-2">
+                        <input type="checkbox" id="filterStatusPending" name="status[]" class="custom-control-input"
+                               value="pending" {{ in_array('pending', $filters['status']) ? 'checked' : '' }}>
+                        <label class="custom-control-label" for="filterStatusPending">{{ translate('Pending') }}</label>
+                    </div>
+                    <div class="custom-control custom-checkbox mb-2">
+                        <input type="checkbox" id="filterStatusRejected" name="status[]" class="custom-control-input"
+                               value="rejected" {{ in_array('rejected', $filters['status']) ? 'checked' : '' }}>
+                        <label class="custom-control-label" for="filterStatusRejected">{{ translate('messages.rejected') }}</label>
+                    </div>
+                </div>
+
+                <hr class="my-4">
+
+                <small class="text-cap mb-3">{{ translate('messages.Request') }}</small>
+                <div class="fd-grid">
+                    <div class="custom-control custom-checkbox mb-2">
+                        <input type="checkbox" id="filterKindNew" name="kind[]" class="custom-control-input"
+                               value="new" {{ in_array('new', $filters['kind']) ? 'checked' : '' }}>
+                        <label class="custom-control-label" for="filterKindNew">{{ translate('messages.Brand new items') }}</label>
+                    </div>
+                    <div class="custom-control custom-checkbox mb-2">
+                        <input type="checkbox" id="filterKindUpdate" name="kind[]" class="custom-control-input"
+                               value="update" {{ in_array('update', $filters['kind']) ? 'checked' : '' }}>
+                        <label class="custom-control-label" for="filterKindUpdate">{{ translate('messages.Edits to live items') }}</label>
+                    </div>
+                </div>
+
+                @if($has_veg)
+                    <hr class="my-4">
+
+                    <small class="text-cap mb-3">{{ translate('messages.Item type') }}</small>
+                    <div class="fd-grid">
+                        <div class="custom-control custom-checkbox mb-2">
+                            <input type="checkbox" id="filterTypeVeg" name="type[]" class="custom-control-input"
+                                   value="veg" {{ in_array('veg', $filters['type']) ? 'checked' : '' }}>
+                            <label class="custom-control-label" for="filterTypeVeg">{{ translate('Veg') }}</label>
+                        </div>
+                        <div class="custom-control custom-checkbox mb-2">
+                            <input type="checkbox" id="filterTypeNonVeg" name="type[]" class="custom-control-input"
+                                   value="non_veg" {{ in_array('non_veg', $filters['type']) ? 'checked' : '' }}>
+                            <label class="custom-control-label" for="filterTypeNonVeg">{{ translate('Non veg') }}</label>
+                        </div>
+                    </div>
+                @endif
+
+                <hr class="my-4">
+
+                <small class="text-cap mb-3">{{ translate('messages.Date between') }}</small>
+                <div class="fd-daterange">
+                    <div class="fd-daterange__field">
+                        <label class="fd-sublabel" for="request_from_date">{{ translate('messages.from') }}</label>
+                        <input type="date" name="from_date" class="form-control" id="request_from_date" value="{{ $filters['from_date'] }}">
+                    </div>
+                    <div class="fd-daterange__field">
+                        <label class="fd-sublabel" for="request_to_date">{{ translate('messages.to') }}</label>
+                        <input type="date" name="to_date" class="form-control" id="request_to_date" value="{{ $filters['to_date'] }}">
+                    </div>
+                </div>
+
+                <div class="card-footer sidebar-footer">
+                    <div class="row gx-2">
+                        <div class="col">
+                            <a class="btn btn-block btn-white" href="{{ $drawer_clear }}">
+                                <i class="tio-clear-circle-outlined"></i> {{ translate('Clear all') }}
+                            </a>
+                        </div>
+                        <div class="col">
+                            <button type="submit" class="btn btn-block btn-primary"><i class="tio-filter-list"></i> {{ translate('messages.Filter') }}</button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <input type="hidden" id="current_module_id" value="{{ Config::get('module.current_module_id') }}">
 @endsection
 
 @push('script_2')
     <script>
         "use strict";
-        $(document).on('ready', function () {
-            // INITIALIZATION OF DATATABLES
-            // =======================================================
-        let datatable = $.HSCore.components.HSDatatables.init($('#datatable'), {
-          select: {
-            style: 'multi',
-            classMap: {
-              checkAll: '#datatableCheckAll',
-              counter: '#datatableCounter',
-              counterInfo: '#datatableCounterInfo'
+
+        function ajaxSelect2(selector, extraData) {
+            let $select = $(selector);
+
+            if (! $select.length) {
+                return;
             }
-          },
-          language: {
-            zeroRecords: '<div class="text-center p-4">' +
-                '<img class="w-7rem mb-3" src="{{asset('public/assets/admin/svg/illustrations/sorry.svg')}}" alt="Image Description">' +
 
-                '</div>'
-          }
-        });
+            $select.select2({
+                ajax: {
+                    url: $select.data('url'),
+                    data: function (params) {
+                        return $.extend({ q: params.term, page: params.page }, extraData());
+                    },
+                    processResults: function (data) {
+                        return { results: data };
+                    },
+                    __port: function (params, success, failure) {
+                        let $request = $.ajax(params);
 
-        $('#datatableSearch').on('mouseup', function (e) {
-          let $input = $(this),
-            oldValue = $input.val();
+                        $request.then(success);
+                        $request.fail(failure);
 
-          if (oldValue == "") return;
-
-          setTimeout(function(){
-            let newValue = $input.val();
-
-            if (newValue == ""){
-              // Gotcha
-              datatable.search('').draw();
-            }
-          }, 1);
-        });
-
-        $('#toggleColumn_index').change(function (e) {
-          datatable.columns(0).visible(e.target.checked)
-        })
-        $('#toggleColumn_name').change(function (e) {
-          datatable.columns(1).visible(e.target.checked)
-        })
-
-        $('#toggleColumn_type').change(function (e) {
-          datatable.columns(2).visible(e.target.checked)
-        })
-
-        $('#toggleColumn_vendor').change(function (e) {
-          datatable.columns(3).visible(e.target.checked)
-        })
-
-        $('#toggleColumn_status').change(function (e) {
-          datatable.columns(5).visible(e.target.checked)
-        })
-        $('#toggleColumn_price').change(function (e) {
-          datatable.columns(4).visible(e.target.checked)
-        })
-        $('#toggleColumn_action').change(function (e) {
-          datatable.columns(6).visible(e.target.checked)
-        })
-
-            // INITIALIZATION OF SELECT2
-            // =======================================================
-            $('.js-select2-custom').each(function () {
-                let select2 = $.HSCore.components.HSSelect2.init($(this));
+                        return $request;
+                    }
+                }
             });
+        }
+
+        function initApprovalDatatable($root) {
+            $root.find('#datatable').each(function () {
+                $.HSCore.components.HSDatatables.init($(this));
+            });
+        }
+
+        $(document).on('ready', function () {
+            initApprovalDatatable($(document));
         });
 
-        $('#store').select2({
-            ajax: {
-                url: '{{ route('admin.store.get-stores') }}',
-                data: function (params) {
-                    return {
-                        q: params.term, // search term
-                        all:true,
-                        module_id:{{Config::get('module.current_module_id')}},
-                        page: params.page
-                    };
-                },
-                processResults: function (data) {
-                    return {
-                    results: data
-                    };
-                },
-                __port: function (params, success, failure) {
-                    let $request = $.ajax(params);
+        ajaxSelect2('#store', function () {
+            return { all: true, module_id: $('#current_module_id').val() };
+        });
 
-                    $request.then(success);
-                    $request.fail(failure);
+        ajaxSelect2('#category_id', function () {
+            return { all: true, module_id: $('#current_module_id').val(), position: 0 };
+        });
 
-                    return $request;
-                }
+        ajaxSelect2('#sub-categories', function () {
+            return {
+                module_id: $('#current_module_id').val(),
+                parent_id: $('#category_id').val(),
+                sub_category: true
+            };
+        });
+
+        $(document).on('change', '#category_id', function () {
+            $('#sub-categories').val(null).trigger('change');
+        });
+
+        $(document).on('change', '#request_from_date, #request_to_date', function () {
+            let from = $('#request_from_date').val();
+            let to = $('#request_to_date').val();
+
+            if (from && to && from > to) {
+                $(this).val('');
+                toastr.error('{{ translate('messages.Invalid date range') }}');
             }
         });
 
-        $('#category_id').select2({
-            ajax: {
-                url: '{{route("admin.category.get-all")}}',
-                data: function (params) {
-                    return {
-                        q: params.term, // search term
-                        all:true,
-                        module_id:{{Config::get('module.current_module_id')}},
-                        page: params.page
-                    };
-                },
-                processResults: function (data) {
-                    return {
-                    results: data
-                    };
-                },
-                __port: function (params, success, failure) {
-                    let $request = $.ajax(params);
+        $(document).on('click', '.deny-request', function () {
+            let $trigger = $(this);
 
-                    $request.then(success);
-                    $request.fail(failure);
-
-                    return $request;
-                }
-            }
-        });
-
-        $(".request_alert").on("click", function () {
-            const url = $(this).data('url');
-            const message = $(this).data('message');
             Swal.fire({
-                title: '{{translate('messages.are_you_sure')}}',
-                text: message,
+                title: '{{ translate('messages.Are you sure?') }}',
+                html: $trigger.data('message') + '<br/><label>{{ translate('messages.Enter a reason') }}</label>',
                 type: 'warning',
+                input: 'text',
+                inputPlaceholder: '{{ translate('messages.Enter a reason') }}',
                 showCancelButton: true,
                 cancelButtonColor: 'default',
                 confirmButtonColor: '#FC6A57',
-                cancelButtonText: '{{translate('messages.no')}}',
-                confirmButtonText: '{{translate('messages.yes')}}',
-                reverseButtons: true
-            }).then((result) => {
-                if (result.value) {
-                    location.href = url;
+                cancelButtonText: '{{ translate('messages.Cancel') }}',
+                confirmButtonText: '{{ translate('messages.Submit') }}',
+                reverseButtons: true,
+                preConfirm: function (note) {
+                    if (window.AppAjax) {
+                        window.AppAjax.action({
+                            origin: $trigger,
+                            url: $trigger.data('url'),
+                            method: 'get',
+                            data: { note: note || '' }
+                        });
+
+                        return;
+                    }
+
+                    window.location.href = $trigger.data('url') + '&note=' + encodeURIComponent(note || '');
+                },
+                allowOutsideClick: function () {
+                    return ! Swal.isLoading();
                 }
-            })
-        })
+            });
+        });
 
-        $(".cancelled_status").on("click", function () {
-            const route = $(this).data('url');
-            const message = $(this).data('message');
-            const processing = false;
-            Swal.fire({
-                    //text: message,
-                    title: '{{ translate('messages.Are you sure ?') }}',
-                    type: 'warning',
-                    showCancelButton: true,
-                    cancelButtonColor: 'default',
-                    confirmButtonColor: '#FC6A57',
-                    cancelButtonText: '{{ translate('messages.Cancel') }}',
-                    confirmButtonText: '{{ translate('messages.submit') }}',
-                    inputPlaceholder: "{{ translate('Enter_a_reason') }}",
-                    input: 'text',
-                    html: message + '<br/>'+'<label>{{ translate('Enter_a_reason') }}</label>',
-                    inputValue: processing,
-                    preConfirm: (note) => {
-                        location.href = route + '&note=' + note;
-                    },
-                    allowOutsideClick: () => !Swal.isLoading()
-                })
-        })
+        $(document).on('ajax:success', '.search-form', function () {
+            $('#filter-search-value').val($(this).find('[name="search"]').val());
+        });
 
-        $('#from_date,#to_date').change(function() {
-    let fr = $('#from_date').val();
-    let to = $('#to_date').val();
-    if (fr != '' && to != '') {
-        if (fr > to) {
-            $('#from_date').val('');
-            $('#to_date').val('');
-            toastr.error('Invalid date range!', Error, {
-                CloseButton: true,
-                ProgressBar: true
+        if (window.AppAjax) {
+            window.AppAjax.onMount(function ($root) {
+                initApprovalDatatable($root);
             });
         }
-    }
-
-})
     </script>
 @endpush

@@ -7,19 +7,19 @@
     <table>
         <thead>
             <tr>
-                <th>{{ translate('customer_information') }} -</th>
+                <th>{{ translate('Customer information') }} -</th>
                 <th></th>
                 <th></th>
                 <th> 
-                    {{ translate('customer_id' )}} : {{ translate($data['customer_id']) }}
+                    {{ translate('Customer ID')}} : {{ translate($data['customer_id']) }}
                     <br>
-                    {{ translate('name' )}} : {{ $data['customer_name'] }}
+                    {{ translate('Name')}} : {{ $data['customer_name'] }}
                     <br>
-                    {{ translate('phone' )}} : {{ $data['customer_phone'] }}
+                    {{ translate('Phone')}} : {{ $data['customer_phone'] }}
                     <br>
                     {{ translate('email' )}} : {{ $data['customer_email'] }}
                     <br>
-                    {{ translate('total_orders' )}} : {{ $data['orders']->count() }}
+                    {{ translate('Total orders' )}} : {{ $data['orders']->count() }}
 
                 </th>
                 <th></th>
@@ -28,18 +28,18 @@
                 <th></th>
             </tr>
             <tr>
-                <th>{{ translate('messages.sl') }}</th>
-                <th>{{ translate('messages.order_id') }}</th>
-                <th>{{ translate('messages.store_name') }}</th>
-                <th>{{ translate('messages.item_price') }}</th>
-                <th>{{ translate('messages.item_discount') }}</th>
-                <th>{{ translate('messages.coupon_discount') }}</th>
-                <th>{{ translate('messages.discounted_amount') }}</th>
+                <th>{{ translate('messages.SL') }}</th>
+                <th>{{ translate('messages.Order ID') }}</th>
+                <th>{{ translate('Store name') }}</th>
+                <th>{{ translate('Item price') }}</th>
+                <th>{{ translate('Item discount') }}</th>
+                <th>{{ translate('Coupon discount') }}</th>
+                <th>{{ translate('Discounted amount') }}</th>
                 <th>{{ translate('messages.tax') }}</th>
-                <th>{{ translate('messages.total_amount') }}</th>
-                <th>{{ translate('messages.payment_status') }}</th>
-                <th>{{ translate('messages.order_status') }}</th>
-                <th>{{ translate('messages.order_type') }}</th>
+                <th>{{ translate('Total amount') }}</th>
+                <th>{{ translate('Payment status') }}</th>
+                <th>{{ translate('Order status') }}</th>
+                <th>{{ translate('Order type') }}</th>
             </tr>
         </thead>
         <tbody>
@@ -51,10 +51,10 @@
                     @if($order->store)
                         {{$order->store->name}}
                     @else
-                        {{ translate('messages.not_found') }}
+                        {{ translate('No data found') }}
                     @endif
                 </td>
-                <td>{{ \App\CentralLogics\Helpers::number_format_short($order['order_amount']-$order['dm_tips']-$order['total_tax_amount']-\App\CentralLogics\DeliveryFeeLogic::adjustedFeeForOrder($order)['adjusted']+$order['coupon_discount_amount'] + $order['store_discount_amount'] + ($order->orderProDiscount?->amount_saved ?? 0)) }}</td>
+                <td>{{ \App\CentralLogics\Helpers::number_format_short($order['order_amount']-$order['dm_tips']-$order['total_tax_amount']-app(\App\Services\Order\OrderService::class)->adjustedFeeForOrder($order)['adjusted']+$order['coupon_discount_amount'] + $order['store_discount_amount'] + ($order->orderProDiscount?->amount_saved ?? 0)) }}</td>
                 <td>{{ \App\CentralLogics\Helpers::number_format_short($order->details->sum('discount_on_item')) }}</td>
                 <td>{{ \App\CentralLogics\Helpers::number_format_short($order['coupon_discount_amount']) }}</td>
                 <td>{{ \App\CentralLogics\Helpers::number_format_short($order['coupon_discount_amount'] + $order['store_discount_amount'] + ($order->orderProDiscount?->amount_saved ?? 0)) }}</td>

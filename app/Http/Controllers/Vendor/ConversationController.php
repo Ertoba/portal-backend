@@ -11,82 +11,171 @@ use App\Models\User;
 use App\Models\DeliveryMan;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use App\Support\Notification\SendNotification;
+use App\Support\Notification\NotificationMessages;
+use Illuminate\Support\Facades\Log;
 
 class ConversationController extends Controller
 {
     public function list(Request $request)
     {
         $vendor = Helpers::get_vendor_data();
-        $vendor = UserInfo::where('vendor_id',$vendor->id)->first();
-        if($vendor){
-            $conversations = Conversation::with(['sender','receiver', 'last_message'])->WhereUser($vendor->id);
-            if($request->query('key')) {
-                $key = explode(' ', $request->get('key'));
-                $conversations = $conversations->where(function($qu)use($key){
-                    $qu->whereHas('sender',function($query)use($key){
-                        foreach ($key as $value) {
-                            $query->where('f_name', 'like', "%{$value}%")
-                            ->orWhere('l_name', 'like', "%{$value}%")
-                            ->orWhere('phone', 'like', "%{$value}%");
-                        }
-                    })
-                    ->orWhereHas('receiver',function($query1)use($key){
-                        foreach ($key as $value) {
-                            $query1->where('f_name', 'like', "%{$value}%")
-                            ->orWhere('l_name', 'like', "%{$value}%")
-                            ->orWhere('phone', 'like', "%{$value}%");
-                        }
-                    });
-                });
+
+        // toBase()->value('id') rather than first(): only the id and an existence check are
+        // used here, but hydrating the UserInfo ran its HasStorage global scope — and the
+        // conversations' receiver eager-load hydrates that same row again, so the storages
+        // query fired twice. toBase() keeps the where clauses and drops the hydration;
+        // Eloquent's own value() still hydrates internally, so it is not enough.
+        $vendor_user_info_id = UserInfo::where('vendor_id',$vendor->id)->toBase()->value('id');
+
+        if (! $vendor_user_info_id) {
+            $conversations = new \Illuminate\Pagination\LengthAwarePaginator([], 0, 8);
+            $total_conversations = 0;
+            $unread_conversations = 0;
+
+            if ($request->ajax()) {
+                return response()->json([
+                    'html' => view('vendor-views.messages.data', compact('conversations'))->render(),
+                    'has_more' => false,
+                    'total' => 0,
+                ]);
             }
-            $conversations = $conversations->orderBy('last_message_time', 'DESC')
-            ->latest()
-            ->paginate(8);
-        }else{
-            $conversations = [];
+
+            return view('vendor-views.messages.index', compact('conversations', 'total_conversations', 'unread_conversations'));
         }
 
+        $conversations = Conversation::with([
+            'sender' => fn ($query) => $query->whereKeyNot($vendor_user_info_id),
+            'receiver' => fn ($query) => $query->whereKeyNot($vendor_user_info_id),
+            'sender.user',
+            'receiver.user',
+            'last_message',
+        ])->WhereUser($vendor_user_info_id);
+        if($request->query('key')) {
+            $key = explode(' ', $request->input('key'));
+            $conversations = $conversations->where(function($qu)use($key){
+                $qu->whereHas('sender',function($query)use($key){
+                    foreach ($key as $value) {
+                        $query->where('f_name', 'like', "%{$value}%")
+                        ->orWhere('l_name', 'like', "%{$value}%")
+                        ->orWhere('phone', 'like', "%{$value}%");
+                    }
+                })
+                ->orWhereHas('receiver',function($query1)use($key){
+                    foreach ($key as $value) {
+                        $query1->where('f_name', 'like', "%{$value}%")
+                        ->orWhere('l_name', 'like', "%{$value}%")
+                        ->orWhere('phone', 'like', "%{$value}%");
+                    }
+                });
+            });
+        }
+        if ($request->boolean('unread')) {
+            $this->scopeUnread($conversations, $vendor_user_info_id);
+        }
+
+        $conversations = $conversations->orderBy('last_message_time', 'DESC')
+        ->latest()
+        ->paginate(8);
+
+        $this->attachOwnSide($conversations->getCollection(), $vendor_user_info_id);
 
         if ($request->ajax()) {
-            // dd($conversations);
-
             $view = view('vendor-views.messages.data',compact('conversations'))->render();
-            return response()->json(['html'=>$view]);
+
+            return response()->json([
+                'html' => $view,
+                'has_more' => $conversations->hasMorePages(),
+                'total' => $conversations->total(),
+            ]);
         }
 
-        return view('vendor-views.messages.index', compact('conversations'));
+        $total_conversations = ($request->query('key') || $request->boolean('unread'))
+            ? Conversation::WhereUser($vendor_user_info_id)->count()
+            : $conversations->total();
+        $unread_conversations = $this->scopeUnread(Conversation::WhereUser($vendor_user_info_id), $vendor_user_info_id)->count();
+
+        return view('vendor-views.messages.index', compact('conversations', 'total_conversations', 'unread_conversations'));
+    }
+
+    private function attachOwnSide($conversations, $vendorUserInfoId): void
+    {
+        $self = null;
+
+        foreach ($conversations as $conversation) {
+            foreach (['sender', 'receiver'] as $side) {
+                if ((int) $conversation->{$side.'_id'} !== (int) $vendorUserInfoId) {
+                    continue;
+                }
+
+                $self ??= UserInfo::withoutEagerLoads()->find($vendorUserInfoId);
+
+                $conversation->setRelation($side, $self);
+            }
+        }
+    }
+
+    private function scopeUnread($query, $vendor_user_info_id)
+    {
+        $vendor_user_info_id = (int) $vendor_user_info_id;
+
+        return $query->where('unread_message_count', '>', 0)
+            ->whereHas('last_message', function ($builder) use ($vendor_user_info_id) {
+                $builder->whereColumn('messages.sender_id', DB::raw(
+                    "CASE WHEN conversations.sender_id = {$vendor_user_info_id} THEN conversations.receiver_id ELSE conversations.sender_id END"
+                ));
+            });
     }
 
     public function view($conversation_id,$user_id)
     {
-        $conversation = Conversation::find($conversation_id);
+        $vendor = Helpers::get_vendor_data();
+        $vendorUserInfoId = UserInfo::where('vendor_id', $vendor?->id)->toBase()->value('id');
+
+        if (! $vendorUserInfoId) {
+            abort(404);
+        }
+
+        $conversation = Conversation::with(['last_message', 'receiver', 'sender'])
+            ->WhereUser($vendorUserInfoId)
+            ->find($conversation_id);
+
+        if (! $conversation) {
+            abort(404);
+        }
+
         $lastmessage = $conversation->last_message;
         if($lastmessage && $lastmessage->sender_id == $user_id ) {
             $conversation->unread_message_count = 0;
             $conversation->save();
         }
         Message::where(['conversation_id' => $conversation->id])->where('sender_id',$user_id)->update(['is_seen' => 1]);
-        $convs = Message::where(['conversation_id' => $conversation_id])->get();
-        // Message::where(['conversation_id' => $conversation_id])->update(['is_seen' => 1]);
-        $conversation= Conversation::find($conversation_id);
+        $convs = Message::with('order')->where(['conversation_id' => $conversation_id])->get();
+        // Re-fetching the same row was redundant: $conversation is that row and the only
+        // change since — unread_message_count — was written through this instance. Only
+        // ->receiver and ->sender are read below, and both resolve identically.
         $receiver = $conversation->receiver;
         $sender = $conversation->sender;
-        $vendor = Helpers::get_vendor_data();
-        $vendor = UserInfo::where('vendor_id',$vendor->id)->first();
+        $vendor = UserInfo::find($vendorUserInfoId);
 
-        if($receiver->user_id){
-            $user = User::find($receiver->user_id);
+        if($receiver?->user_id){
+            $user = User::withStorage()->find($receiver->user_id);
             $user_type = 'user';
-        }elseif($receiver->deliveryman_id){
-            $user = DeliveryMan::find($receiver->deliveryman_id);
+        }elseif($receiver?->deliveryman_id){
+            $user = DeliveryMan::withStorage()->find($receiver->deliveryman_id);
             $user_type = 'delivery_man';
-        }elseif($sender->user_id){
-            $user = User::find($sender->user_id);
+        }elseif($sender?->user_id){
+            $user = User::withStorage()->find($sender->user_id);
             $user_type = 'user';
         }else{
-            $user = DeliveryMan::find($sender->deliveryman_id);
+            $user = $sender?->deliveryman_id ? DeliveryMan::withStorage()->find($sender->deliveryman_id) : null;
             $user_type = 'delivery_man';
+        }
+
+        if (! $user || ! $vendor) {
+            abort(404);
         }
 
         return response()->json([
@@ -192,24 +281,18 @@ class ConversationController extends Controller
             $conversation->last_message_time = Carbon::now()->toDateTimeString();
             $conversation->save();
             {
-                $data = [
-                    'title' =>translate('messages.message_from')." ".$sender->f_name,
-                    'description' => $message->message ?? translate('attachment'),
-                    'order_id' => '',
-                    'image' => '',
-                    'message' => $message,
-                    'type'=> 'message',
-                    'conversation_id'=> $conversation->id,
-                    'sender_type'=> 'vendor'
-                ];
-                Helpers::send_push_notif_to_device($fcm_token, $data);
+                $data = NotificationMessages::chatMessage(translate('messages.Message from')." ".$sender->f_name, $message, ['conversation_id' => $conversation->id, 'sender_type' => 'vendor']);
+                SendNotification::sendToDevice($fcm_token, $data);
             }
 
         } catch (\Exception $e) {
-            info($e->getMessage());
+            Log::error('vendor.conversation_controller.store_failed', [
+                'error' => $e->getMessage(),
+                'file' => $e->getFile().':'.$e->getLine(),
+            ]);
         }
         $vendor = UserInfo::where('vendor_id',$vendor->id)->first();
-        $convs = Message::where(['conversation_id' => $conversation->id])->get();
+        $convs = Message::with('order')->where(['conversation_id' => $conversation->id])->get();
         return response()->json([
             'view' => view('vendor-views.messages.partials._conversations', compact('convs', 'user', 'receiver','user_type','vendor'))->render()
         ]);

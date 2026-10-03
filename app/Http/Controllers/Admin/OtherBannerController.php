@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Rules\ImageFile;
+use App\Rules\VideoFile;
 use Illuminate\Http\Request;
 use App\CentralLogics\Helpers;
 use App\Http\Controllers\Controller;
@@ -13,27 +15,47 @@ use Illuminate\Support\Facades\Config;
 
 class OtherBannerController extends Controller
 {
+    const COMBINED_PROMOTIONAL_BANNER_MODULE_TYPES = ['grocery', 'food', 'ecommerce', 'pharmacy', 'service'];
+
     function promotional_index()
     {
         $module_type = Config::get('module.current_module_type');
+
+        if (in_array($module_type, self::COMBINED_PROMOTIONAL_BANNER_MODULE_TYPES)) {
+            $module_id = Config::get('module.current_module_id');
+            $bottom_section_banner = ModuleWiseBanner::withStorage()->where('module_id', $module_id)->where('key', 'bottom_section_banner')->first();
+
+            return view('admin-views.other-banners.promotional-index', compact('bottom_section_banner'));
+        }
+
         return view("admin-views.other-banners.{$module_type}-index");
     }
     function promotional_why_choose()
     {
         $module_id = Config::get('module.current_module_id');
-        $banners = ModuleWiseWhyChoose::where('module_id',$module_id)->get();
+        $banners = ModuleWiseWhyChoose::withStorage()->where('module_id',$module_id)->get();
         return view("admin-views.other-banners.parcel-why-choose",compact('banners'));
     }
     function promotional_video()
     {
-        $module_type = Config::get('module.current_module_type');
-        return view("admin-views.other-banners.parcel-video");
+        // One query for the whole section instead of a lookup per key, with translations
+        // eager-loaded: ModuleWiseBanner::getValueAttribute() reads $this->translations, so
+        // every untranslated row would otherwise fetch its own on first access.
+        $videoBanners = ModuleWiseBanner::withoutGlobalScope('translate')
+            ->withStorage()
+            ->with('translations')
+            ->where('module_id', Config::get('module.current_module_id'))
+            ->where('type', 'video_banner_content')
+            ->get()
+            ->keyBy('key');
+
+        return view("admin-views.other-banners.parcel-video", compact('videoBanners'));
     }
 
     function promotional_store(Request $request)
     {
         $request->validate([
-            'image' => 'required|max:2048',
+            'image' => ImageFile::rules('required'),
         ]);
 
         $module_id = Config::get('module.current_module_id');
@@ -48,7 +70,7 @@ class OtherBannerController extends Controller
             $banner->value = Helpers::upload('promotional_banner/', 'png', $request->file('image'));
             $banner->save();
 
-            Toastr::success(translate('messages.banner_setup_updated'));
+            Toastr::success(translate('messages.Banner setup updated'));
             return back();
         }
         $banner = ModuleWiseBanner::firstOrNew([
@@ -59,23 +81,30 @@ class OtherBannerController extends Controller
         $banner->value = Helpers::upload('promotional_banner/', 'png', $request->file('image'));
         $banner->save();
 
-        Toastr::success(translate('messages.banner_setup_updated'));
+        Toastr::success(translate('messages.Banner setup updated'));
         return back();
     }
 
     function promotional_edit($id)
     {
-        $banner = ModuleWiseBanner::find($id);
+        $banner = ModuleWiseBanner::withStorage()->find($id);
+
+        if (! $banner) {
+            Toastr::warning(translate('No data found'));
+
+            return back();
+        }
+
         return view("admin-views.other-banners.parcel-promotional-edit", compact('banner'));
     }
 
     function promotional_update(Request $request,$id)
     {
-        $banner = ModuleWiseBanner::find($id);
+        $banner = ModuleWiseBanner::withStorage()->find($id);
         $banner->value = $request->has('image') ? Helpers::update('promotional_banner/', $banner->value, 'png', $request->file('image')) : $banner->value;
         $banner->save();
 
-        Toastr::success(translate('messages.banner_updated'));
+        Toastr::success(translate('messages.Banner updated'));
         return redirect()->route('admin.promotional-banner.add-new');
     }
 
@@ -88,18 +117,18 @@ class OtherBannerController extends Controller
         $banner = ModuleWiseBanner::findOrFail($request->id);
         $banner->status = $request->status;
         $banner->save();
-        Toastr::success(translate('messages.banner_status_updated'));
+        Toastr::success(translate('messages.Banner status updated'));
         return back();
     }
 
     public function promotional_destroy(ModuleWiseBanner $banner)
     {
         if (getEnvMode() == 'demo' && $banner->id == 1) {
-            Toastr::warning(translate('messages.you_can_not_delete_this_banner_please_add_a_new_banner_to_delete'));
+            Toastr::warning(translate('messages.You can not delete this banner please add a new banner to delete'));
             return back();
         }
         $banner->delete();
-        Toastr::success(translate('messages.banner_deleted_successfully'));
+        Toastr::success(translate('Deleted successfully'));
         return back();
     }
 
@@ -108,10 +137,10 @@ class OtherBannerController extends Controller
         $request->validate([
             'title' => 'required',
             'short_description' => 'required',
-            'image' => 'required',
+            'image' => ImageFile::rules('required'),
         ]);
         if($request->title[array_search('default', $request->lang)] == ''){
-            Toastr::error(translate('default_data_is_required'));
+            Toastr::error(translate('Default data is required'));
             return back();
         }
         $module_id = Config::get('module.current_module_id');
@@ -125,19 +154,19 @@ class OtherBannerController extends Controller
         Helpers::add_or_update_translations(request: $request, key_data: 'title', name_field: 'title', model_name: 'ModuleWiseWhyChoose', data_id: $banner->id, data_value: $banner->title);
         Helpers::add_or_update_translations(request: $request, key_data: 'short_description', name_field: 'short_description', model_name: 'ModuleWiseWhyChoose', data_id: $banner->id, data_value: $banner->short_description);
 
-        Toastr::success(translate('messages.banner_added_successfully'));
+        Toastr::success(translate('Added successfully'));
         return back();
     }
 
     function why_choose_edit($id)
     {
-        $banner = ModuleWiseWhyChoose::withoutGlobalScope('translate')->find($id);
+        $banner = ModuleWiseWhyChoose::withoutGlobalScope('translate')->withStorage()->with('translations')->find($id);
         return view("admin-views.other-banners.parcel-why-choose-edit", compact('banner'));
     }
 
     function why_choose_update(Request $request,$id)
     {
-        $banner = ModuleWiseWhyChoose::find($id);
+        $banner = ModuleWiseWhyChoose::withStorage()->find($id);
         $banner->title = $request->title[array_search('default', $request->lang)];
         $banner->short_description = $request->short_description[array_search('default', $request->lang)];
         $banner->image = $request->has('image') ? Helpers::update('why_choose/', $banner->image, 'png', $request->file('image')) : $banner->image;
@@ -146,7 +175,7 @@ class OtherBannerController extends Controller
         Helpers::add_or_update_translations(request: $request, key_data: 'title', name_field: 'title', model_name: 'ModuleWiseWhyChoose', data_id: $banner->id, data_value: $banner->title);
         Helpers::add_or_update_translations(request: $request, key_data: 'short_description', name_field: 'short_description', model_name: 'ModuleWiseWhyChoose', data_id: $banner->id, data_value: $banner->short_description);
 
-        Toastr::success(translate('messages.banner_updated'));
+        Toastr::success(translate('messages.Banner updated'));
         return redirect()->route('admin.promotional-banner.add-why-choose');
     }
 
@@ -159,25 +188,25 @@ class OtherBannerController extends Controller
         $banner = ModuleWiseWhyChoose::findOrFail($request->id);
         $banner->status = $request->status;
         $banner->save();
-        Toastr::success(translate('messages.banner_status_updated'));
+        Toastr::success(translate('messages.Banner status updated'));
         return back();
     }
 
     public function why_choose_destroy(ModuleWiseWhyChoose $banner)
     {
         if (getEnvMode() == 'demo' && $banner->id == 1) {
-            Toastr::warning(translate('messages.you_can_not_delete_this_banner_please_add_a_new_banner_to_delete'));
+            Toastr::warning(translate('messages.You can not delete this banner please add a new banner to delete'));
             return back();
         }
         $banner->delete();
-        Toastr::success(translate('messages.banner_deleted_successfully'));
+        Toastr::success(translate('Deleted successfully'));
         return back();
     }
 
     function video_content_store(Request $request)
     {
         if (getEnvMode() == 'demo') {
-            Toastr::info(translate('messages.update_option_is_disable_for_demo'));
+            Toastr::info(translate('messages.Update option is disable for demo'));
             return back();
         }
 
@@ -189,12 +218,12 @@ class OtherBannerController extends Controller
             'content3_title.0' => 'required',
             'content3_subtitle.0' => 'required',
         ], [
-            'content1_title.0.required' => translate('messages.default_content1_title_is_required'),
-            'content1_subtitle.0.required' => translate('messages.condefault_tent1_subtitle_is_required'),
-            'content2_title.0.required' => translate('messages.default_content2_title_is_required'),
-            'content2_subtitle.0.required' => translate('messages.condefault_tent2_subtitle_is_required'),
-            'content3_title.0.required' => translate('messages.default_content3_title_is_required'),
-            'content3_subtitle.0.required' => translate('messages.condefault_tent3_subtitle_is_required'),
+            'content1_title.0.required' => translate('messages.Content') . ' 1: ' . translate('messages.Default title is required'),
+            'content1_subtitle.0.required' => translate('messages.Content') . ' 1: ' . translate('messages.Default subtitle is required'),
+            'content2_title.0.required' => translate('messages.Content') . ' 2: ' . translate('messages.Default title is required'),
+            'content2_subtitle.0.required' => translate('messages.Content') . ' 2: ' . translate('messages.Default subtitle is required'),
+            'content3_title.0.required' => translate('messages.Content') . ' 3: ' . translate('messages.Default title is required'),
+            'content3_subtitle.0.required' => translate('messages.Content') . ' 3: ' . translate('messages.Default subtitle is required'),
         ]);
 
         $module_id = Config::get('module.current_module_id');
@@ -259,13 +288,13 @@ class OtherBannerController extends Controller
         $content3_subtitle->save();
         Helpers::add_or_update_translations(request: $request, key_data: 'content3_subtitle', name_field: 'content3_subtitle', model_name: 'ModuleWiseBanner', data_id: $content3_subtitle->id, data_value: $content3_subtitle->value);
 
-        Toastr::success(translate('messages.video_/_image_content_setup_updated'));
+        Toastr::success(translate('messages.Video / image content setup updated'));
         return back();
     }
     function video_image_store(Request $request)
     {
         if (getEnvMode() == 'demo') {
-            Toastr::info(translate('messages.update_option_is_disable_for_demo'));
+            Toastr::info(translate('messages.Update option is disable for demo'));
             return back();
         }
 
@@ -273,7 +302,7 @@ class OtherBannerController extends Controller
             'section_title' => 'required',
             'banner_type' => 'required',
             'banner_video' => 'required_if:banner_type,video',
-            'banner_video_content' => 'nullable|file|mimes:mp4,webm,ogg|max:5120'
+            'banner_video_content' => VideoFile::rules('nullable', 5120),
         ]);
 
         $module_id = Config::get('module.current_module_id');
@@ -325,7 +354,7 @@ class OtherBannerController extends Controller
         $banner_video_content->save();
 
 
-        Toastr::success(translate('messages.video_/_image_content_setup_updated'));
+        Toastr::success(translate('messages.Video / image content setup updated'));
         return back();
     }
 }

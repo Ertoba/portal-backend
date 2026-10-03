@@ -1,18 +1,19 @@
 @extends('layouts.admin.app')
 
-@section('title',translate('messages.banner'))
+@section('title',translate('Banner'))
 
 @section('content')
 <div class="content container-fluid">
     <div class="page-header">
         <h1 class="page-header-title">
             <span class="page-header-icon">
-                <img src="{{asset('public/assets/admin/img/3rd-party.png')}}" class="w--26" alt="">
+                <img src="{{asset('public/assets/admin/img/outline/3rd-party.svg')}}" class="w--26" alt="">
             </span>
             <span>
-                {{translate('messages.Other_Promotional_Content_Setup')}}
+                {{translate('messages.Other Promotional Content Setup')}}
             </span>
         </h1>
+        <p class="page-header-desc">{{ translate('Change this promotional block shown in the parcel module.') }}</p>
     </div>
     <div class="mb-20 mt-2">
         <div class="js-nav-scroller hs-nav-scroller-horizontal">
@@ -33,7 +34,7 @@
                                             <span class="d-flex g-1">
                                                 <img src="{{asset('public/assets/admin/img/other-banner.png')}}" class="h-85" alt="">
                                                 <h3 class="form-label d-block mb-2">
-                                                    {{translate('messages.Promotional_Banner_Edit')}}
+                                                    {{translate('messages.Promotional Banner Edit')}}
                                                 </h3>
                                             </span>
                                         </div>
@@ -48,15 +49,15 @@
                                             </label>
                                             <div class="text-center mt-5">
                                                 <h3 class="form-label d-block mt-2">
-                                                {{translate('Banner_Image_Ratio_4:1')}}
+                                                Banner Image Ratio 4:1
                                             </h3>
-                                            <p>{{translate('image_format_:_jpg_,_png_,_jpeg_|_maximum_size:_2_MB')}}</p>
+                                            <p>{{'JPG, PNG, JPEG' . ' image, max ' . 2 . ' MB'}}</p>
 
                                             </div>
                                         </div>
                                     </div>
                                     <div class="btn--container justify-content-end mt-20">
-                                        <button type="submit" class="btn btn--primary mb-2">{{translate('messages.Update')}}</button>
+                                        <button type="submit" class="btn btn--primary mb-2"><i class="tio-save"></i> {{translate('Update')}}</button>
                                     </div>
                                 </div>
                             </form>

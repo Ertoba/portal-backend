@@ -31,6 +31,5 @@ class ModuleZone extends Migration
      */
     public function down()
     {
-        //
     }
 }

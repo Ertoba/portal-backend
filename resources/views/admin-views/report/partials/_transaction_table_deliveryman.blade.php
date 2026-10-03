@@ -21,13 +21,13 @@
             <tr>
                 <th class="border-0">{{ translate('SL') }}</th>
                 @if($type === 'order')
-                    <th class="table-column-pl-0 border-0">{{ translate('messages.Order_ID') }}</th>
-                    <th class="border-0">{{ translate('messages.Order_Date') }}</th>
-                    <th class="border-0">{{ translate('messages.Delivery_Man') }}</th>
-                    <th class="border-0 text-center">{{ translate('messages.Delivery_Charge') }}</th>
+                    <th class="table-column-pl-0 border-0">{{ translate('messages.Order ID') }}</th>
+                    <th class="border-0">{{ translate('Order date') }}</th>
+                    <th class="border-0">{{ translate('Deliveryman') }}</th>
+                    <th class="border-0 text-center">{{ translate('Delivery charge') }}</th>
                     <th class="border-0 text-right">{{ translate('messages.Tips') }}</th>
-                    <th class="border-0 text-right">{{ translate('messages.Commission_Paid') }}</th>
-                    <th class="border-0 text-right">{{ translate('messages.Net_Profit') }}</th>
+                    <th class="border-0 text-right">{{ translate('Commission paid') }}</th>
+                    <th class="border-0 text-right">{{ translate('Net profit') }}</th>
                 @endif
             </tr>
         </thead>
@@ -72,7 +72,7 @@
     <div class="empty--data py-5 w-100">
         <img src="{{ asset('public/assets/admin/svg/illustrations/sorry.svg') }}" alt="public">
         <h5>
-            {{ translate('no_data_found') }}
+            {{ translate('No data found') }}
         </h5>
     </div>
 @endif

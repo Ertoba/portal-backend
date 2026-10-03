@@ -171,6 +171,9 @@
         html += ' data-item-id="' + line.itemId + '"';
         html += ' data-item-campaign-id=""';
         html += ' data-quantity="' + quantity + '"';
+        if (line.stockLimit !== null && line.stockLimit !== undefined) {
+            html += ' data-stock-limit="' + line.stockLimit + '"';
+        }
         html += ' data-unit-price="' + unit + '"';
         html += ' data-addon-total="' + addon + '"';
         html += " data-variation='" + variationJson + "'";
@@ -183,7 +186,7 @@
         html += '</div></td>';
         html += '<td><div class="product-quantity w-105px mx-auto"><div class="input-group bg-white rounded border d-flex flex-nowrap justify-content-center align-items-center">';
         html += '<span class="input-group-btn w-30px"><button class="btn px-2 btn-number w-30px decrease-quantity-button" type="button" data-type="minus" data-key="' + uid + '"><i class="tio-remove fs-16"></i></button></span>';
-        html += '<input type="number" class="w-30px p-0 border-0 text-center fs-18 update-Quantity text-dark" name="qty[' + uid + ']" value="' + quantity + '" min="1">';
+        html += '<input type="number" class="w-30px p-0 border-0 text-center fs-18 update-Quantity text-dark" name="qty[' + uid + ']" value="' + quantity + '" min="1"' + (line.stockLimit !== null && line.stockLimit !== undefined ? ' max="' + line.stockLimit + '"' : '') + '>';
         html += '<span class="input-group-btn w-30px"><button class="btn px-2 btn-number increase-quantity-button w-30px" type="button" data-type="plus" data-key="' + uid + '"><i class="tio-add fs-16"></i></button></span>';
         html += '</div></div></td>';
         html += '<td class="fs-14 text-right text-dark"><div id="item_total_price_' + uid + '">' + total + '</div></td>';
@@ -207,6 +210,12 @@
         if ($existing && $existing.length) {
             var current = parseInt($existing.find('.update-Quantity').val(), 10) || 1;
             var next = current + Math.max(1, parseInt(line.quantity, 10) || 1);
+            var existingLimit = stockLimitFor($existing);
+            if (existingLimit !== null && next > existingLimit) {
+                warnStockLimit(existingLimit);
+                highlightRow($existing);
+                return;
+            }
             $existing.find('.update-Quantity').val(next);
             $existing.attr('data-quantity', next);
             refreshRowTotal($existing);
@@ -239,10 +248,35 @@
             if (!itemId) return;
             var addons = normalizeAddOns($row.attr('data-add-ons'));
             var orderDetailsId = $row.attr('data-order-details-id');
+            var quantity = Math.max(1, parseInt($row.find('.update-Quantity').val(), 10) || 1);
+
+            // A BOGO bundle is shown as ONE row but is stored as one line per member, so its row
+            // expands back into every member here. Its quantity control counts BUNDLES, so each
+            // member is posted at one bundle's worth times that count -- the free member included,
+            // which is what keeps it free. Posting the row as-is sent only the first member and
+            // dropped the rest, and the bundle count landed as that member's line quantity.
+            var bogoLines = safeParseJson($row.attr('data-bogo-lines'), null);
+            if (bogoLines && bogoLines.length) {
+                bogoLines.forEach(function (line) {
+                    var lineAddons = normalizeAddOns(JSON.stringify(line.add_ons || []));
+                    carts.push({
+                        order_details_id: line.order_details_id || null,
+                        item_id: parseInt(line.item_id, 10),
+                        quantity: Math.max(1, (parseInt(line.unit_quantity, 10) || 1) * quantity),
+                        variation: line.variation || [],
+                        variant: line.variant || [],
+                        add_on_ids: lineAddons.ids,
+                        add_on_qtys: lineAddons.qtys,
+                        unavailable: 0
+                    });
+                });
+                return;
+            }
+
             carts.push({
                 order_details_id: orderDetailsId ? parseInt(orderDetailsId, 10) : null,
                 item_id: parseInt(itemId, 10),
-                quantity: Math.max(1, parseInt($row.find('.update-Quantity').val(), 10) || 1),
+                quantity: quantity,
                 variation: safeParseJson($row.attr('data-variation'), []),
                 variant: safeParseJson($row.attr('data-variant'), []),
                 add_on_ids: addons.ids,
@@ -873,7 +907,7 @@
                         var isAvailable = item.is_available !== false;
                         var outOfStock = item.tracks_stock && (item.stock === null || item.stock <= 0);
                         var itemClass = isAvailable ? 'cursor-pointer js-quick-view' : 'unavailable';
-                        html += '<div class="search-item d-flex align-items-sm-center gap-2 p-2 border rounded ' + itemClass + '" data-product-id="' + item.id + '" data-available="' + (isAvailable ? 1 : 0) + '" data-has-variations="' + (item.has_variations ? 1 : 0) + '" data-has-addons="' + (item.has_addons ? 1 : 0) + '" data-name="' + safeName + '" data-image="' + (item.image || '') + '" data-price="' + safePrice + '">';
+                        html += '<div class="search-item d-flex align-items-sm-center gap-2 p-2 border rounded ' + itemClass + '" data-product-id="' + item.id + '" data-available="' + (isAvailable ? 1 : 0) + '" data-has-variations="' + (item.has_variations ? 1 : 0) + '" data-has-addons="' + (item.has_addons ? 1 : 0) + '" data-name="' + safeName + '" data-image="' + (item.image || '') + '" data-price="' + safePrice + '" data-tracks-stock="' + (item.tracks_stock ? 1 : 0) + '" data-stock="' + (item.stock === null || item.stock === undefined ? '' : item.stock) + '">';
                         html += '<div class="list-items-media"><div class="thumb d-center position-relative rounded overflow-hidden w-65px h-65px">';
                         html += '<img width="65" height="65" src="' + item.image + '" alt="image" class="rounded onerror-image" data-onerror-image="' + imgItemPlaceholder + '">';
                         if (!isAvailable) {
@@ -966,11 +1000,12 @@
         reindexStagedRows();
     }
 
-    function addItemDirectly(productId, name, image, formattedPrice) {
+    function addItemDirectly(productId, name, image, formattedPrice, stockLimit) {
         stageAddLine({
             itemId: productId,
             name: name || '',
             image: image,
+            stockLimit: (stockLimit === undefined ? null : stockLimit),
             quantity: 1,
             variation: [],
             variant: [],
@@ -990,6 +1025,12 @@
         var name = $item.attr('data-name') || '';
         var image = $item.attr('data-image') || '';
         var price = $item.attr('data-price') || '';
+        var tracksStock = parseInt($item.attr('data-tracks-stock'), 10) === 1;
+        var rawStock = $item.attr('data-stock');
+        var stockLimit = tracksStock && rawStock !== '' && rawStock !== undefined ? parseInt(rawStock, 10) : null;
+        if (stockLimit !== null && isNaN(stockLimit)) {
+            stockLimit = null;
+        }
         $('#food_search').val('');
         $('#search-dropdown').hide();
         $('#food-search-result').empty();
@@ -997,7 +1038,7 @@
         if (hasVariations || hasAddons) {
             quickView(productId);
         } else {
-            addItemDirectly(productId, name, image, price);
+            addItemDirectly(productId, name, image, price, stockLimit);
         }
     });
 
@@ -1012,6 +1053,22 @@
         }
     });
 
+    function stockLimitFor($row) {
+        var raw = $row.attr('data-stock-limit');
+        if (raw === undefined || raw === null || raw === '') {
+            return null;
+        }
+        var parsed = parseInt(raw, 10);
+        return isNaN(parsed) ? null : parsed;
+    }
+
+    function warnStockLimit(limit) {
+        toastr.error(
+            (t.stock_limit_exceeded || 'Requested quantity exceeds stock') + ' (' + limit + ')',
+            { CloseButton: true, ProgressBar: true }
+        );
+    }
+
     $(document).on('click', '#data-view .increase-quantity-button, #data-view .decrease-quantity-button', function () {
         var $btn = $(this);
         var $row = $btn.closest('tr');
@@ -1023,6 +1080,11 @@
         var min = parseInt($input.attr('min'), 10) || 1;
         var next = $btn.hasClass('increase-quantity-button') ? current + 1 : Math.max(min, current - 1);
         if (next === current) {
+            return;
+        }
+        var limit = stockLimitFor($row);
+        if (limit !== null && next > limit) {
+            warnStockLimit(limit);
             return;
         }
         $input.val(next);
@@ -1040,6 +1102,12 @@
         if (qty < 1) {
             qty = 1;
             $input.val(qty);
+        }
+        var limit = stockLimitFor($row);
+        if (limit !== null && qty > limit) {
+            qty = Math.max(1, limit);
+            $input.val(qty);
+            warnStockLimit(limit);
         }
         $row.attr('data-quantity', qty);
         refreshRowTotal($row);

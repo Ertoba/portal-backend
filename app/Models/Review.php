@@ -2,13 +2,17 @@
 
 namespace App\Models;
 
+use App\Traits\Model\HasStorageTrait;
+use App\Traits\Model\InvalidatesCacheTrait;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Support\Str;
 
 class Review extends Model
 {
-    use HasFactory;
+    use HasFactory, HasStorageTrait, InvalidatesCacheTrait;
+
+    protected static array $cacheTags = ['store'];
     protected $casts = [
         'item_id' => 'integer',
         'user_id' => 'integer',
@@ -44,10 +48,17 @@ class Review extends Model
         return $query->where('status',1);
     }
 
+    public function getAttachmentFullUrlAttribute(): array
+    {
+        return $this->attachmentUrls($this->attachment);
+    }
+
     protected static function boot()
     {
         parent::boot();
         static::saved(function ($review) {
+            self::recordStorageDisk($review, 'attachment', 'attachment');
+
             if($review->review_id == null){
                 $review->review_id = $review->generateReviewId($review->order_id);
                 $review->save();

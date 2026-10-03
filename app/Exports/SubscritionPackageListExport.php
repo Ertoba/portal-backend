@@ -18,7 +18,6 @@ class SubscritionPackageListExport implements  FromView, ShouldAutoSize, WithSty
 
     use Exportable;
     protected $data;
-    // protected $search;
 
     public function __construct($data) {
         $this->data = $data;
@@ -54,12 +53,11 @@ class SubscritionPackageListExport implements  FromView, ShouldAutoSize, WithSty
         ];
         $sheet->getStyle('A1:F1')->applyFromArray($styleArray);
         return [
-            // Define the style for cells with data
             'A1:F'.$this->data['data']->count() +3 => [
                 'borders' => [
                     'allBorders' => [
                         'borderStyle' => Border::BORDER_THIN,
-                        'color' => ['argb' => '000000'], // Specify the color of the border (optional)
+                        'color' => ['argb' => '000000'],
                     ],
                 ],
             ],
@@ -71,7 +69,7 @@ class SubscritionPackageListExport implements  FromView, ShouldAutoSize, WithSty
     {
         return [
             AfterSheet::class => function(AfterSheet $event) {
-                $event->sheet->getStyle('A1:F1') // Adjust the range as per your needs
+                $event->sheet->getStyle('A1:F1')
                     ->getAlignment()
                     ->setHorizontal(Alignment::HORIZONTAL_CENTER)
                     ->setVertical(Alignment::VERTICAL_CENTER);

@@ -1,21 +1,24 @@
 @extends('layouts.admin.app')
 
-@section('title',translate('messages.admin_landing_page'))
+@section('title',translate('Admin landing page'))
 
 @section('content')
 <div class="content container-fluid">
     <div class="page-header pb-0">
         <div class="d-flex flex-wrap justify-content-between">
-            <h1 class="page-header-title">
-                <span class="page-header-icon">
-                    <img src="{{asset('public/assets/admin/img/landing.png')}}" class="w--20" alt="">
-                </span>
-                <span>
-                    {{ translate('messages.admin_landing_pages') }}
-                </span>
-            </h1>
+            <div>
+                <h1 class="page-header-title">
+                    <span class="page-header-icon">
+                        <img src="{{asset('public/assets/admin/img/outline/landing.svg')}}" class="w--26" alt="">
+                    </span>
+                    <span>
+                        {{ translate('messages.Admin landing pages') }}
+                    </span>
+                </h1>
+                <p class="page-header-desc">{{ translate('The colours the admin landing page is drawn in.') }}</p>
+            </div>
             <div class="text--primary-2 py-1 d-flex flex-wrap align-items-center" type="button" data-toggle="modal" data-target="#how-it-works">
-                <strong class="mr-2">{{translate('See_how_it_works!')}}</strong>
+                <strong class="mr-2">{{translate('See how it works')}}</strong>
                 <div>
                     <i class="tio-info-outined"></i>
                 </div>
@@ -31,7 +34,6 @@
     @php($backgroundChange = \App\Models\BusinessSetting::where(['key' => 'backgroundChange'])->first())
     @php($backgroundChange = isset($backgroundChange->value) ? json_decode($backgroundChange->value, true) : null)
     @php($currentColor = $backgroundChange['primary_1_hex'] ?? '#EF7822')
-    @php($defaultColor = '#EF7822')
 
     <div class="card my-2">
         <div class="card-header">
@@ -49,7 +51,6 @@
                 @csrf
 
                 <div class="d-flex align-items-center gap-4 mb-4">
-                    {{-- Color Swatch --}}
                     <div>
                         <label for="header-bg" style="display:block;width:72px;height:72px;border-radius:12px;border:2px solid #e7eaf3;cursor:pointer;overflow:hidden;box-shadow:0 2px 6px rgba(0,0,0,.08);position:relative">
                             <input id="header-bg" name="header-bg" type="color" value="{{ $currentColor }}"
@@ -58,7 +59,6 @@
                         </label>
                     </div>
 
-                    {{-- Hex Input --}}
                     <div>
                         <label class="form-label mb-1" style="font-size:.8rem;font-weight:600;color:#8c98a4">{{ translate('HEX Code') }}</label>
                         <div class="input-group" style="max-width:200px">
@@ -70,7 +70,6 @@
                     </div>
                 </div>
 
-                {{-- Preset Colors --}}
                 <div class="mb-4">
                     <label class="form-label mb-2" style="font-size:.8rem;font-weight:600;color:#8c98a4">{{ translate('Quick Presets') }}</label>
                     <div class="d-flex flex-wrap gap-2">
@@ -97,7 +96,7 @@
                             <i class="tio-refresh mr-1"></i> {{ translate('Reset') }}
                         </button>
                         <button type="submit" class="btn btn--primary" style="min-width:120px">
-                            {{ translate('messages.submit') }}
+                            <i class="tio-checkmark-circle-outlined"></i> {{ translate('messages.Submit') }}
                         </button>
                     </div>
                 </div>
@@ -106,7 +105,6 @@
     </div>
 </div>
 
-<!-- How it Works -->
 @include('admin-views.business-settings.landing-page-settings.partial.how-it-work')
 
 @endsection

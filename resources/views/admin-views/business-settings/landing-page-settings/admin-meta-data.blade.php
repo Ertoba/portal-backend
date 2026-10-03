@@ -1,29 +1,30 @@
 @extends('layouts.admin.app')
 
-@section('title',translate('messages.admin_landing_page'))
+@section('title',translate('Admin landing page'))
 
 @push('css_or_js')
-    <!-- Custom styles for this page -->
     <link href="{{asset('public/assets/admin/css/croppie.css')}}" rel="stylesheet">
 
 @endpush
 
 @section('content')
 <div class="content container-fluid">
-    <!-- Page Heading -->
 
      <div class="page-header pb-0">
         <div class="d-flex flex-wrap justify-content-between">
-            <h1 class="page-header-title">
-                <span class="page-header-icon">
-                    <img src="{{asset('public/assets/admin/img/landing.png')}}" class="w--20" alt="">
-                </span>
-                <span>
-                    {{ translate('messages.admin_landing_pages') }}
-                </span>
-            </h1>
+            <div>
+                <h1 class="page-header-title">
+                    <span class="page-header-icon">
+                        <img src="{{asset('public/assets/admin/img/outline/landing.svg')}}" class="w--26" alt="">
+                    </span>
+                    <span>
+                        {{ translate('messages.Admin landing pages') }}
+                    </span>
+                </h1>
+                <p class="page-header-desc">{{ translate('The title, description and preview image search engines show for the admin landing page.') }}</p>
+            </div>
             <div class="text--primary-2 py-1 d-flex flex-wrap align-items-center" type="button" data-toggle="modal" data-target="#how-it-works">
-                <strong class="mr-2">{{translate('See_how_it_works!')}}</strong>
+                <strong class="mr-2">{{translate('See how it works')}}</strong>
                 <div>
                     <i class="tio-info-outined"></i>
                 </div>

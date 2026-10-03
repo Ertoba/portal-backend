@@ -1,6 +1,6 @@
 <div class="row">
     <div class="col-lg-12 text-center ">
-        <h1> {{ translate('Parcel_Cancellation_Reason_List') }}
+        <h1> {{ translate('Parcel cancellation reason list') }}
         </h1>
     </div>
     <div class="col-lg-12">
@@ -8,11 +8,11 @@
         <table>
             <thead>
                 <tr>
-                    <th>{{ translate('Filter_Criteria') }}</th>
+                    <th>{{ translate('Filter criteria') }}</th>
                     <th></th>
                     <th>
 
-                        {{ translate('Search_Bar_Content') }}: {{ $data['search'] ?? translate('N/A') }}
+                        {{ translate('Search bar content') }}: {{ $data['search'] ?? translate('N/A') }}
 
                     </th>
                     <th> </th>
@@ -24,16 +24,16 @@
                         {{ translate('SL') }}
                     </th>
                     <th class="fs-14 text-title font-semibold top-border-table">
-                        {{ translate('messages.reason') }}
+                        {{ translate('messages.Reason') }}
                     </th>
                     <th class="fs-14 text-title font-semibold top-border-table">
-                        {{ translate('messages.cancellation_type') }}
+                        {{ translate('messages.Cancellation type') }}
                     </th>
                     <th class="fs-14 text-title font-semibold top-border-table">
-                        {{ translate('messages.user_type') }}
+                        {{ translate('User type') }}
                     </th>
                     <th class="fs-14 text-title font-semibold top-border-table">
-                        {{ translate('messages.status') }}
+                        {{ translate('messages.Status') }}
                     </th>
 
                 </tr>

@@ -1,6 +1,6 @@
 <div class="row">
     <div class="col-lg-12 text-center ">
-        <h1> {{ Config::get('module.current_module_type') == 'food' ? translate('Food_List') : translate('Item_List') }}
+        <h1> {{ Config::get('module.current_module_type') == 'food' ? translate('Food list') : translate('Item list') }}
         </h1>
     </div>
     <div class="col-lg-12">
@@ -8,7 +8,7 @@
         <table>
             <thead>
                 <tr>
-                    <th>{{ translate('Filter_Criteria') }}</th>
+                    <th>{{ translate('Filter criteria') }}</th>
                     <th></th>
                     <th></th>
                     <th>
@@ -23,15 +23,15 @@
                         <br>
                         {{ translate('Module') }}: {{ $data['module_name'] ?? translate('N/A') }}
                         <br>
-                        {{ translate('category') }}: {{ $data['category'] ?? translate('N/A') }}
+                        {{ translate('Category') }}: {{ $data['category'] ?? translate('N/A') }}
 
 
                         @isset($data['filter'])
 
                         <br>
-                        {{ translate('filter') }}:
+                        {{ translate('Filter') }}:
                             @if ($data['filter'] == 'custom' && isset($data['from'] , $data['to']))
-                            {{ translate('custom_date') }} : {{ $data['from'] }} to {{ $data['to'] }}
+                            {{ translate('Custom date') }} : {{ $data['from'] }} to {{ $data['to'] }}
 
                         @else
                             {{ translate($data['filter']) ?? translate('N/A') }}
@@ -42,7 +42,7 @@
 
 
                         <br>
-                        {{ translate('Search_Bar_Content') }}: {{ $data['search'] ?? translate('N/A') }}
+                        {{ translate('Search bar content') }}: {{ $data['search'] ?? translate('N/A') }}
                     </th>
                     <th> </th>
                     <th></th>
@@ -52,39 +52,39 @@
 
 
                 <tr>
-                    <th>{{ translate('sl') }}</th>
+                    <th>{{ translate('SL') }}</th>
                     <th>{{ translate('Image') }}</th>
-                    <th>{{ translate('Item_Name') }}</th>
+                    <th>{{ translate('Item name') }}</th>
                     <th>{{ translate('Description') }}</th>
-                    <th>{{ translate('Category_Name') }}</th>
-                    <th>{{ translate('Sub_Category_Name') }}</th>
+                    <th>{{ translate('Category name') }}</th>
+                    <th>{{ translate('Subcategory name') }}</th>
                     @if (Config::get('module.current_module_type') == 'food')
-                        <th>{{ translate('Food_Type') }}</th>
+                        <th>{{ translate('Food type') }}</th>
                     @else
-                        <th>{{ translate('Available_Stock') }} </th>
+                        <th>{{ translate('Available stock') }} </th>
                     @endif
-                    <th>{{ translate('Price') }}</th>
-                    <th>{{ translate('Available_Variations') }} </th>
+                    <th>{{ translate('price') }}</th>
+                    <th>{{ translate('Available Variations') }} </th>
 
 
                     @if (Config::get('module.current_module_type') == 'food')
-                        <th>{{ translate('Available_Addons') }} </th>
+                        <th>{{ translate('Available addons') }} </th>
                     @else
-                        <th>{{ translate('Item_Unit') }}</th>
+                        <th>{{ translate('Item unit') }}</th>
                     @endif
                     <th>{{ translate('Discount') }} </th>
-                    <th>{{ translate('Discount_Type') }} </th>
+                    <th>{{ translate('Discount type') }} </th>
 
 
-                    <th>{{ translate('Available_From') }} </th>
-                    <th>{{ translate('Available_Till') }} </th>
-                    <th>{{ translate('Store_Name') }} </th>
+                    <th>{{ translate('Available from') }} </th>
+                    <th>{{ translate('Available till') }} </th>
+                    <th>{{ translate('Store name') }} </th>
                     <th>{{ translate('Tags') }} </th>
 
 
                     <th>{{ translate('Status') }} </th>
                     @if ($data['productWiseTax'])
-                        <th class="border-0 w--1">{{ translate('messages.Vat/Tax') }}</th>
+                        <th class="border-0 w--1">{{ translate('VAT/tax') }}</th>
                     @endif
             </thead>
             <tbody>
@@ -101,7 +101,7 @@
                             {{ \App\CentralLogics\Helpers::get_sub_category_name($item->category_ids) ?? translate('N/A') }}
                         </td>
                         @if (Config::get('module.current_module_type') == 'food')
-                            <td> {{ $item->veg == 1 ? translate('Veg') : translate('Non_Veg') }}</td>
+                            <td> {{ $item->veg == 1 ? translate('Veg') : translate('Non veg') }}</td>
                         @else
                             <td>{{ max((int) $item->stock, 0) }}</td>
                         @endif
@@ -138,12 +138,12 @@
                         @if (isset($data['table']) && $data['table'] == 'TempProduct')
                             <td>
                                 @php($tagids = json_decode($item?->tag_ids) ?? [])
-                                @php($tags = \App\Models\Tag::whereIn('id', $tagids)->get('tag'))
+                                @php($tags = \App\CentralLogics\Helpers::tags_by_ids($tagids))
                                 @forelse($tags as $c)
                                 {{ $c->tag . ',' }} @empty {{ translate('N/A') }}
                                 @endforelse
                             </td>
-                            <td> {{ $item->is_rejected == 1 ? translate('Rejected') : translate('Pending') }}</td>
+                            <td> {{ $item->is_rejected == 1 ? translate('rejected') : translate('Pending') }}</td>
                         @else
                             <td>
                                 @forelse ($item->tags as $c)
@@ -163,7 +163,7 @@
                                             </span> </span>
                                         <br>
                                     @empty
-                                        <span> {{ translate('messages.no_tax') }} </span>
+                                        <span> {{ translate('messages.No tax') }} </span>
                                     @endforelse
                                 </span>
                             </td>

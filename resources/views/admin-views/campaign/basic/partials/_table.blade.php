@@ -21,11 +21,11 @@
     </td>
     <td>
         <div class="btn--container justify-content-center">
-            <a class="btn action-btn btn-outline-primary btn--primary"
-                href="{{route('admin.campaign.edit',['basic',$campaign['id']])}}" title="{{translate('messages.edit_campaign')}}"><i class="tio-edit"></i>
+            <a class="btn action-btn action-btn--edit"
+                href="{{route('admin.campaign.edit',['basic',$campaign['id']])}}" title="{{translate('messages.Edit campaign')}}"><i class="tio-edit"></i>
             </a>
-            <a class="btn action-btn btn-outline-danger btn--danger form-alert" href="javascript:" data-id="campaign-{{$campaign['id']}}" data-message="{{translate('messages.Want_to_delete_this_item')}}"
-               title="{{translate('messages.delete_campaign')}}"><i class="tio-delete-outlined"></i>
+            <a class="btn action-btn action-btn--delete form-alert" href="javascript:" data-id="campaign-{{$campaign['id']}}" data-message="{{translate('Want to delete this item?')}}"
+               title="{{translate('messages.Delete campaign')}}"><i class="tio-delete-outlined"></i>
             </a>
             <form action="{{route('admin.campaign.delete',[$campaign['id']])}}"
                             method="post" id="campaign-{{$campaign['id']}}">

@@ -5,7 +5,7 @@
         {{$key+1}}
     </td>
     <td class="table-column-pl-0">
-        <a href="{{route('admin.transactions.order.details',['id' => $order['id'],'module_id'=>$order['module_id']])}}">{{$order['id']}}</a>
+        <a href="{{route('admin.order.details',['id' => $order['id'],'module_id'=>$order['module_id']])}}">{{$order['id']}}</a>
     </td>
     <td>
         <div>
@@ -24,12 +24,12 @@
         <div>{{$customer_details['contact_person_number']}}</div>
         
         @elseif($order->customer)
-        <a class="text-body text-capitalize" href="{{route('admin.transactions.customer.view',[$order['user_id']])}}">
+        <a class="text-body text-capitalize" href="{{route('admin.users.customer.view',[$order['user_id']])}}">
             <strong>{{$order->customer['f_name'].' '.$order->customer['l_name']}}</strong>
             <div>{{$order->customer['phone']}}</div>
         </a>
         @else
-            <label class="badge badge-danger">{{translate('messages.invalid_customer_data')}}</label>
+            <label class="badge badge-danger">{{translate('messages.Invalid customer data')}}</label>
         @endif
     </td>
     <td>
@@ -60,10 +60,10 @@
 
     <td>
         <div class="btn--container justify-content-center">
-            <a class="ml-2 btn btn-sm btn--warning btn-outline-warning action-btn" href="{{route('admin.transactions.order.details',['id' => $order['id'],'module_id'=>$order['module_id']])}}">
-                <i class="tio-invisible"></i>
+            <a class="ml-2 btn btn-sm action-btn action-btn--view" href="{{route('admin.order.details',['id' => $order['id'],'module_id'=>$order['module_id']])}}">
+                <i class="tio-visible-outlined"></i>
             </a>
-            <a class="ml-2 btn btn-sm btn--primary btn-outline-primary action-btn" href="{{route('admin.transactions.order.generate-invoice',['id'=>$order['id']])}}">
+            <a class="ml-2 btn btn-sm btn--primary btn-outline-primary action-btn" href="{{route('admin.order.generate-invoice',['id'=>$order['id']])}}">
                 <i class="tio-print"></i>
             </a>
         </div>

@@ -4,9 +4,9 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Support\Carbon;
+use App\Traits\Model\HasTranslationsTrait;
 
 /**
  * Class Unit
@@ -18,7 +18,7 @@ use Illuminate\Support\Carbon;
  */
 class Unit extends Model
 {
-    use HasFactory;
+    use HasFactory, HasTranslationsTrait;
 
     /**
      * The attributes that are mass assignable.
@@ -32,36 +32,16 @@ class Unit extends Model
     /**
      * @return MorphMany
      */
-    public function translations(): MorphMany
-    {
-        return $this->morphMany(Translation::class, 'translationable');
-    }
-
     /**
      * @param $value
      * @return mixed
      */
-    public function getUnitAttribute($value){
-        if (count($this->translations) > 0) {
-            foreach ($this->translations as $translation) {
-                if ($translation['key'] == 'unit') {
-                    return $translation['value'];
-                }
-            }
-        }
-
-        return $value;
+    public function getUnitAttribute($value)
+    {
+        return $this->translatedAttribute('unit', $value);
     }
 
     /**
      * @return void
      */
-    protected static function booted(): void
-    {
-        static::addGlobalScope('translate', function (Builder $builder) {
-            $builder->with(['translations' => function($query){
-                return $query->where('locale', app()->getLocale());
-            }]);
-        });
-    }
 }

@@ -1,5 +1,5 @@
 <div class="row">
-    <div class="col-lg-12 text-center "><h1 >{{ translate('limited_stock_report') }}</h1></div>
+    <div class="col-lg-12 text-center "><h1 >{{ translate('Limited stock report') }}</h1></div>
     <div class="col-lg-12">
 
 
@@ -7,15 +7,15 @@
     <table>
         <thead>
             <tr>
-                <th>{{ translate('Search_Criteria') }}</th>
+                <th>{{ translate('Search criteria') }}</th>
                 <th></th>
                 <th></th>
                 <th>
-                    {{ translate('zone' )}} - {{ $data['zone']??translate('all') }}
+                    {{ translate('Zone' )}} - {{ $data['zone']??translate('All') }}
                     <br>
-                    {{ translate('store' )}} - {{ $data['store']??translate('all') }}
+                    {{ translate('Store' )}} - {{ $data['store']??translate('All') }}
                     <br>
-                    {{ translate('Search_Bar_Content')  }}- {{ $data['search'] ??translate('N/A') }}
+                    {{ translate('Search bar content')  }}- {{ $data['search'] ??translate('N/A') }}
 
                 </th>
                 <th> </th>
@@ -24,16 +24,16 @@
                 <th></th>
                 </tr>
         <tr>
-            <th>{{ translate('sl') }}</th>
-            <th>{{translate('item_image')}}</th>
-            <th>{{translate('item_name')}}</th>
-            <th>{{ translate('current_stock') }}</th>
-            <th>{{ translate('category_name') }}</th>
-            <th>{{translate('unit')}}</th>
+            <th>{{ translate('SL') }}</th>
+            <th>{{translate('Item image')}}</th>
+            <th>{{translate('Item name')}}</th>
+            <th>{{ translate('Current stock') }}</th>
+            <th>{{ translate('Category name') }}</th>
+            <th>{{translate('Unit')}}</th>
             <th>{{translate('variation')}}</th>
             <th>{{translate('price')}}</th>
-            <th>{{translate('store_name')}}</th>
-            <th>{{translate('module_name')}}</th>
+            <th>{{translate('Store name')}}</th>
+            <th>{{translate('Module name')}}</th>
         </thead>
         <tbody>
         @foreach($data['items'] as $key => $item)
@@ -64,7 +64,7 @@
                     @if($item->store)
                     {{ $item->store->name }}
                     @else
-                    {{translate('messages.store_deleted')}}
+                    {{translate('messages.Store deleted')}}
                     @endif
                 </td>
                 <td>

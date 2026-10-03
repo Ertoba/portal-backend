@@ -12,9 +12,6 @@ use Illuminate\Foundation\Http\FormRequest;
  */
 class UnitUpdateRequest extends FormRequest
 {
-    /**
-     * Determine if the user is authorized to make this request.
-     */
     public function authorize(): bool
     {
         return true;
@@ -36,7 +33,7 @@ class UnitUpdateRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'unit.0.required'=>translate('default_unit_is_required'),
+            'unit.0.required'=>translate('Default unit is required'),
         ];
     }
 }

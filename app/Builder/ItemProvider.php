@@ -18,9 +18,6 @@ use Modules\Builder\ValueObjects\StorefrontScope;
 
 class ItemProvider implements ItemProviderContract
 {
-    // `variations`, `food_variations`, `add_ons` are needed by ItemCardResource
-    // so the storefront card knows whether to open the variation/food modal
-    // instead of instant-adding. Excluding them silently breaks the routing.
     private const SELECT = ['id', 'name', 'slug', 'image', 'avg_rating', 'rating_count', 'price', 'discount', 'discount_type', 'veg', 'category_id', 'store_id', 'module_id', 'variations', 'food_variations', 'add_ons'];
 
     public function search(?StorefrontScope $scope, ?string $query, int $limit = 20): array
@@ -147,9 +144,6 @@ class ItemProvider implements ItemProviderContract
 
     public function priceRange(?StorefrontScope $scope): array
     {
-        // Reflects the price extents of the active items currently in scope
-        // (zone + module). Independent of any user-applied filters so the
-        // slider extents stay stable as the user filters within them.
         $row = $this->baseQuery($scope)
             ->selectRaw('MIN(price) as min_price, MAX(price) as max_price')
             ->first();
@@ -206,14 +200,6 @@ class ItemProvider implements ItemProviderContract
         return ItemDetailResource::fromOne($item);
     }
 
-    /**
-     * Single entry point for "fetch item view data for a modal." Returns
-     * the food shape for food items and the multi-axis shape for everything
-     * else; the caller dispatches off `moduleType`. This collapses what
-     * used to be two separate Inertia props (`foodDetails` keyed on
-     * `?food_id=` and `itemDetails` keyed on `?cart_item_id=`) into one
-     * uniform contract.
-     */
     public function view(?StorefrontScope $scope, int $itemId): ?array
     {
         if ($itemId <= 0) {
@@ -285,8 +271,6 @@ class ItemProvider implements ItemProviderContract
             return null;
         }
 
-        // Restrict to food module: every storefront food-modal call MUST be
-        // for an item served by a food module.
         $moduleType = $item->module?->module_type;
         if ($moduleType !== 'food') {
             return null;
@@ -319,8 +303,6 @@ class ItemProvider implements ItemProviderContract
 
     public function listReviews(?StorefrontScope $scope, int $itemId, int $page = 1, int $perPage = 10): array
     {
-        // Verify the item is in scope (so a customer can't enumerate
-        // reviews for items outside the active store/zone).
         $exists = $this->baseQuery($scope)->whereKey($itemId)->exists();
         if (!$exists) {
             return ['reviews' => [], 'page' => $page, 'perPage' => $perPage, 'total' => 0, 'hasMore' => false];
@@ -334,9 +316,6 @@ class ItemProvider implements ItemProviderContract
             ->where('status', 1)
             ->latest()
             ->with([
-                // Mirror ItemDetailResource::detailReviews so the
-                // reviewer identity surfaces across tenants and the
-                // store reply attribution resolves.
                 'customer' => fn ($q) => $q->withoutGlobalScope(\App\Scopes\HostScope::class),
                 'store:id,name',
             ]);
@@ -380,10 +359,8 @@ class ItemProvider implements ItemProviderContract
         $storeId  = $scope?->subTenantId;
         $zoneIds  = $scope?->regionId ? [(int) $scope->regionId] : null;
 
-        // Eager-load `module` (resource reads module_type for routing) and
-        // `store.discount` (ItemPricing applies store-wide discounts) so the
-        // resource transformer doesn't trigger an N+1 query per card.
         return Item::query()
+            ->withStorage()
             ->with(['module', 'store.discount'])
             ->active($zoneIds, $moduleId)
             ->type($type)
@@ -478,7 +455,7 @@ class ItemProvider implements ItemProviderContract
             return [];
         }
 
-        return Category::query()
+        return Category::withStorage()
             ->whereIn('id', $categoryIds)
             ->when($scope?->moduleId, fn (Builder $query) => $query->where('module_id', $scope->moduleId))
             ->orderByDesc('priority')

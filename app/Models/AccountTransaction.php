@@ -19,21 +19,7 @@ class   AccountTransaction extends Model
         'updated_at' => 'datetime'
     ];
 
-    // public function getStoreAttribute()
-    // {
-    //     if($this->from_type == 'store'){
-    //         return Store::find($this->from_id);
-    //     }
-    //     return null;
-    // }
 
-    // public function getDeliverymanAttribute()
-    // {
-    //     if($this->from_type == 'deliveryman'){
-    //         return DeliveryMan::find($this->from_id);
-    //     }
-    //     return null;
-    // }
 
     public function store()
     {

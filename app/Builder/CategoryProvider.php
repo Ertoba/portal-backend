@@ -2,9 +2,9 @@
 
 namespace App\Builder;
 
+use App\Services\Item\CategoryService;
 use App\Builder\Resources\ItemCardResource;
 use App\Builder\Support\CardContext;
-use App\CentralLogics\CategoryLogic;
 use App\Models\Category;
 use App\Models\Item;
 use App\Models\Module;
@@ -20,7 +20,7 @@ class CategoryProvider implements CategoryProviderContract
     {
         $moduleId = $scope?->moduleId;
 
-        $categories = Category::query()
+        $categories = Category::withStorage()
             ->select(['id', 'name', 'slug', 'module_id', 'priority', 'image'])
             ->where('parent_id', 0)
             ->where('position', 0)
@@ -36,11 +36,6 @@ class CategoryProvider implements CategoryProviderContract
             ->orderBy('name')
             ->get();
 
-        // Every direct child (any status) of the top-level categories, mapped
-        // childId => parentId. The product-by-category page counts items whose
-        // category is the parent OR a direct child of it regardless of the
-        // child's own status, so disabled children must feed the parent's
-        // aggregate even though they're left out of the chip list below.
         $childParentMap = Category::query()
             ->whereIn('parent_id', $categories->pluck('id')->all())
             ->pluck('parent_id', 'id');
@@ -57,9 +52,6 @@ class CategoryProvider implements CategoryProviderContract
             ->groupBy('category_id')
             ->pluck('item_count', 'category_id');
 
-        // Map host rows into the canonical CategoryDTO (the module owns the
-        // shape; the typed constructor validates), then emit toArray() for the
-        // Inertia wire. Leaf children carry image=null, children=[].
         return $categories->map(function (Category $category) use ($directCounts, $childParentMap) {
             $children = $category->childes
                 ->map(fn (Category $child) => new CategoryDTO(
@@ -153,7 +145,7 @@ class CategoryProvider implements CategoryProviderContract
             Config::set('module.current_module_data', $module);
 
             $data = ! empty($categoryIds)
-                ? CategoryLogic::category_products(
+                ? app(CategoryService::class)->getItemsForCategories(
                     $categoryIds,
                     \json_encode([(int) $zoneId]),
                     $limit,
@@ -248,13 +240,22 @@ class CategoryProvider implements CategoryProviderContract
                 });
             })
             ->when($moduleId, fn (Builder $query) => $query->where('module_id', $moduleId))
-            // Single-store storefronts scope every listing to their own store
-            // (see ItemProvider::baseQuery). The category card counts must do
-            // the same, otherwise they include other stores' items and read
-            // higher than what the product-by-category page actually lists.
             ->when($storeId, fn (Builder $query) => $query->where('store_id', $storeId))
             ->active()
             ->type($type);
+    }
+
+    public function translatedNamesByIds(array $ids): array
+    {
+        $ids = collect($ids)->filter(fn ($id) => is_numeric($id))->map(fn ($id) => (int) $id)->unique()->all();
+        if ($ids === []) {
+            return [];
+        }
+
+        return Category::whereIn('id', $ids)
+            ->get(['id', 'name'])
+            ->mapWithKeys(fn (Category $category) => [(int) $category->id => (string) $category->name])
+            ->all();
     }
 
     public function findIdBySlug(?StorefrontScope $scope, string $slug): ?int
@@ -281,7 +282,8 @@ class CategoryProvider implements CategoryProviderContract
         $query = \trim((string) $query);
         $limit = \max(1, \min($limit, 100));
 
-        return Category::with('translations')
+        return Category::withStorage()
+            ->with('translations')
             ->where('status', 1)
             ->where('parent_id', 0)
             ->when($moduleId, fn ($q) => $q->where('module_id', $moduleId))

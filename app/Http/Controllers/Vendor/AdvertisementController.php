@@ -10,23 +10,20 @@ use App\CentralLogics\Helpers;
 use Illuminate\Support\Carbon;
 use App\Http\Controllers\Controller;
 use Brian2694\Toastr\Facades\Toastr;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use App\Http\Requests\Admin\AdvertisementStoreRequest;
 use App\Http\Requests\Admin\AdvertisementUpdateRequest;
+use App\Support\Notification\SendNotification;
+use Illuminate\Support\Facades\Log;
 
 class AdvertisementController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
     public function index(Request $request)
     {
-        $key = explode(' ', $request['search']);
+        $key = explode(' ', $request['search'] ?? '');
        $total_adds= Advertisement::where('store_id',Helpers::get_store_id())->count();
 
        $adds=Advertisement::where('store_id',Helpers::get_store_id())
-
         ->when($request?->type == 'pending'  || $request?->ads_type === 'pending',function($query){
             $query->where('status','pending');
         })
@@ -57,9 +54,6 @@ class AdvertisementController extends Controller
     }
 
 
-    /**
-     * Show the form for creating a new resource.
-     */
     public function create()
     {
         $language = getWebConfig('language');
@@ -79,9 +73,6 @@ class AdvertisementController extends Controller
     }
 
 
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(AdvertisementStoreRequest $request)
     {
         $dateRange = $request->dates;
@@ -131,21 +122,21 @@ class AdvertisementController extends Controller
 
         Helpers::add_or_update_translations(request: $request, key_data:'description' , name_field:'description' , model_name: 'Advertisement' ,data_id: $advertisement->id,data_value: $advertisement->description);
         try {
-            if(Helpers::getNotificationStatusData('admin','advertisement_add','mail_status' ) && config('mail.status') && Helpers::get_mail_status('new_advertisement_mail_status_admin') == '1'){
-                Mail::to(Admin::where('role_id', 1)->first()?->getRawOriginal('email'))->send(new \App\Mail\AdminAdversitementMail($advertisement?->store?->name,'new_advertisement' ,$advertisement->id));
+            if(SendNotification::canSendMail('new_advertisement_mail_status_admin', 'admin', 'advertisement_add')){
+                SendNotification::mail(Admin::where('role_id', 1)->first()?->getRawOriginal('email'), new \App\Mail\AdminAdversitementMail($advertisement?->store?->name,'new_advertisement' ,$advertisement->id));
         }
         } catch (\Throwable $th) {
-            //throw $th;
+            Log::warning('vendor.advertisement_controller.store_failed', [
+                'error' => $th->getMessage(),
+                'file' => $th->getFile().':'.$th->getLine(),
+            ]);
         }
 
-        return response()->json(['type'=> 'vendor' ,'message'=>translate('messages.Advertisement_Added_Successfully') ], 200);
+        return response()->json(['type'=> 'vendor' ,'message'=>translate('Added successfully') ], 200);
 
     }
 
 
-    /**
-     * Display the specified resource.
-     */
     public function show($advertisement,Request $request)
     {
         $request_page_type=$request?->request_page_type ?? null;
@@ -174,16 +165,13 @@ class AdvertisementController extends Controller
         $language = getWebConfig('language');
         $defaultLang = str_replace('_', '-', app()->getLocale());
 
-        $advertisement= Advertisement::where('store_id',Helpers::get_store_id())->where('id',$advertisement)->with('store')->withoutGlobalScope('translate')->firstOrFail();
+        $advertisement= Advertisement::where('store_id',Helpers::get_store_id())->where('id',$advertisement)->withStorage()->with('store.storage')->withoutGlobalScope('translate')->with('translations')->firstOrFail();
         return view("vendor-views.advertisement.details",compact('advertisement','nextId','previousId','request_page_type','language','defaultLang'));
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
     public function edit(Request $request, $advertisement)
     {
-        $advertisement =Advertisement::where('store_id',Helpers::get_store_id())->withoutGlobalScope('translate')->where('id',$advertisement)->with('store')->firstOrFail();
+        $advertisement =Advertisement::where('store_id',Helpers::get_store_id())->withoutGlobalScope('translate')->withStorage()->with('translations')->where('id',$advertisement)->with('store.storage')->firstOrFail();
         $language = getWebConfig('language');
         $defaultLang = str_replace('_', '-', app()->getLocale());
         $request_page_type=$request?->request_page_type ;
@@ -199,7 +187,10 @@ class AdvertisementController extends Controller
         $rating=  round($rating,1);
 
 
-        return view("vendor-views.advertisement.edit",compact('advertisement','request_page_type','language','defaultLang','review','rating' ));
+        // edit.blade.php asked Request::is('.../copy-advertisement/*') on four lines
+        $is_copy = $request->is('vendor-panel/advertisement/copy-advertisement/*');
+
+        return view("vendor-views.advertisement.edit",compact('advertisement','request_page_type','language','defaultLang','review','rating','is_copy' ));
     }
 
     public function status(Request $request)
@@ -214,15 +205,14 @@ class AdvertisementController extends Controller
         $advertisement->status = in_array($request->status,['paused','approved']) ? $request->status : $advertisement->status;
         $advertisement->pause_note = $request?->pause_note ?? null;
         $advertisement->cancellation_note = $request?->cancellation_note ?? null;
-        // $advertisement->is_updated =0;
         $advertisement?->save();
         if( $request->status == 'paused'){
             $email_type='advertisement_pause';
-            Toastr::success( translate('messages.Advertisement_Paused_Successfully'));
+            Toastr::success( translate('Updated successfully'));
         }
         elseif($request->status == 'approved' && $request?->approved == null){
             $email_type='advertisement_resume';
-            Toastr::success(translate('messages.Advertisement_Resumed_Successfully'));
+            Toastr::success(translate('Updated successfully'));
         }
 
 
@@ -230,9 +220,6 @@ class AdvertisementController extends Controller
     }
 
 
-    /**
-     * Update the specified resource in storage.
-     */
     public function update(AdvertisementUpdateRequest $request, Advertisement $advertisement)
     {
         $dateRange = $request->dates;
@@ -256,11 +243,11 @@ class AdvertisementController extends Controller
 
         if( $advertisement->add_type != $request->advertisement_type){
             if($request->advertisement_type == 'video_promotion' &&  !$request->has('video_attachment')){
-                return response([ 'file_required' => 1 , 'message' => translate('You_must_need_to_add_a_promotional_video_file')], 200);
+                return response([ 'file_required' => 1 , 'message' => translate('You must need to add a promotional video file')], 200);
             }
 
             if($request->advertisement_type == 'store_promotion' &&  (!$request->has('cover_image') || !$request->has('profile_image'))  ){
-                return response([ 'file_required' => 1 , 'message' => translate('You_must_need_to_add_cover_&_profile_image')], 200);
+                return response([ 'file_required' => 1 , 'message' => translate('You must need to add cover & profile image')], 200);
             }
 
             if($advertisement->cover_image && $request->advertisement_type == 'video_promotion')
@@ -288,22 +275,22 @@ class AdvertisementController extends Controller
         Helpers::add_or_update_translations(request: $request, key_data:'description' , name_field:'description' , model_name: 'Advertisement' ,data_id: $advertisement->id,data_value: $advertisement->description);
 
         try {
-            if(Helpers::getNotificationStatusData('admin','advertisement_update','mail_status' ) && config('mail.status') && Helpers::get_mail_status('update_advertisement_mail_status_admin') == '1'){
-                    Mail::to(Admin::where('role_id', 1)->first()?->getRawOriginal('email'))->send(new \App\Mail\AdminAdversitementMail($advertisement?->store?->name,'update_advertisement' ,$advertisement->id));
+            if(SendNotification::canSendMail('update_advertisement_mail_status_admin', 'admin', 'advertisement_update')){
+                    SendNotification::mail(Admin::where('role_id', 1)->first()?->getRawOriginal('email'), new \App\Mail\AdminAdversitementMail($advertisement?->store?->name,'update_advertisement' ,$advertisement->id));
             }
         } catch (\Throwable $th) {
-            //throw $th;
+            Log::warning('vendor.advertisement_controller.update_failed', [
+                'error' => $th->getMessage(),
+                'file' => $th->getFile().':'.$th->getLine(),
+            ]);
         }
-        return response()->json(['message' => translate('messages.Advertisement_Updated_Successfully')], 200);
+        return response()->json(['message' => translate('Updated successfully')], 200);
     }
 
 
 
 
 
-    /**
-     * Remove the specified resource from storage.
-     */
     public function destroy(string $id)
     {
         $advertisement =Advertisement::where('store_id',Helpers::get_store_id())->where('id',$id)->first();
@@ -333,7 +320,7 @@ class AdvertisementController extends Controller
             $advertisement->priority = $newPriority++;
             $advertisement->save();
         }
-        Toastr::success(translate('messages.Advertisement_deleted_successfully'));
+        Toastr::success(translate('Deleted successfully'));
         return back();
     }
 
@@ -341,6 +328,7 @@ class AdvertisementController extends Controller
 
     public function copyAdd(Request $request, Advertisement $advertisement)
     {
+        $advertisement->loadMissing(['storage', 'store.storage']);
 
         $language = getWebConfig('language');
         $defaultLang = str_replace('_', '-', app()->getLocale());
@@ -357,7 +345,10 @@ class AdvertisementController extends Controller
         $rating=  round($rating,1);
 
 
-        return view("vendor-views.advertisement.edit",compact('advertisement','request_page_type','language','defaultLang','review','rating' ));
+        // edit.blade.php asked Request::is('.../copy-advertisement/*') on four lines
+        $is_copy = $request->is('vendor-panel/advertisement/copy-advertisement/*');
+
+        return view("vendor-views.advertisement.edit",compact('advertisement','request_page_type','language','defaultLang','review','rating','is_copy' ));
 
     }
 
@@ -439,15 +430,18 @@ class AdvertisementController extends Controller
             Helpers::add_or_update_translations(request: $request, key_data:'description' , name_field:'description' , model_name: 'Advertisement' ,data_id: $newAdvertisement->id,data_value: $newAdvertisement->description);
 
             try {
-                if(Helpers::getNotificationStatusData('admin','advertisement_add','mail_status') && config('mail.status') && Helpers::get_mail_status('new_advertisement_mail_status_admin') == '1'){
-                    Mail::to(Admin::where('role_id', 1)->first()?->getRawOriginal('email'))->send(new \App\Mail\AdminAdversitementMail($advertisement?->store?->name,'new_advertisement' ,$advertisement->id));
+                if(SendNotification::canSendMail('new_advertisement_mail_status_admin', 'admin', 'advertisement_add')){
+                    SendNotification::mail(Admin::where('role_id', 1)->first()?->getRawOriginal('email'), new \App\Mail\AdminAdversitementMail($advertisement?->store?->name,'new_advertisement' ,$advertisement->id));
             }
             } catch (\Throwable $th) {
-                //throw $th;
+                Log::warning('vendor.advertisement_controller.copy_add_post_failed', [
+                    'error' => $th->getMessage(),
+                    'file' => $th->getFile().':'.$th->getLine(),
+                ]);
             }
 
 
-            return response()->json(['message' => translate('messages.Advertisement_Copied_Successfully')], 200);
+            return response()->json(['message' => translate('messages.Advertisement Copied Successfully')], 200);
 
     }
 
@@ -479,6 +473,10 @@ class AdvertisementController extends Controller
                     Storage::disk($newDisk)->put($newPath, $fileContents);
                 }
             } catch (\Exception $e) {
+                Log::warning('vendor.advertisement_controller.copy_attachment_failed', [
+                    'error' => $e->getMessage(),
+                    'file' => $e->getFile().':'.$e->getLine(),
+                ]);
             }
 
             return $newFileName ?? null;

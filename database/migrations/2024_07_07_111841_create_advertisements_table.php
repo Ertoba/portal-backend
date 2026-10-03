@@ -7,9 +7,6 @@ use Illuminate\Database\Migrations\Migration;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::create('advertisements', function (Blueprint $table) {
@@ -40,9 +37,6 @@ return new class extends Migration
         DB::statement('ALTER TABLE advertisements AUTO_INCREMENT = 1000000;');
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('advertisements');

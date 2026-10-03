@@ -1,6 +1,6 @@
 @extends('layouts.admin.app')
 
-@section('title',translate('messages.add_new_condition'))
+@section('title',translate('messages.Add new condition'))
 
 @push('css_or_js')
     <meta name="csrf-token" content="{{ csrf_token() }}">
@@ -8,18 +8,17 @@
 
 @section('content')
     <div class="content container-fluid">
-        <!-- Page Header -->
         <div class="page-header">
             <h1 class="page-header-title">
                 <span class="page-header-icon">
-                    <img src="{{asset('public/assets/admin/img/condition.png')}}" class="w--20" alt="">
+                    <img src="{{asset('public/assets/admin/img/outline/condition.svg')}}" class="w--26" alt="">
                 </span>
                 <span>
-                    {{translate('messages.Common_Condition_Setup')}}
+                    {{translate('messages.Common Condition Setup')}}
                 </span>
             </h1>
+            <p class="page-header-desc">{{ translate('The wear labels stores pick from when listing a second-hand item, such as new or used.') }}</p>
         </div>
-        <!-- End Page Header -->
         <div class="card">
             <div class="card-body">
                 <form action="{{route('admin.common-condition.store')}}" method="post">
@@ -30,12 +29,11 @@
                     </div>
                     <div class="bg-light2 rounded p-20">
                         @if($language)
-                            @php($defaultLang = $language[0])
                             <ul class="nav nav-tabs mb-4">
                                 <li class="nav-item">
                                     <a class="nav-link lang_link active"
                                     href="#"
-                                    id="default-link">{{translate('messages.default')}}</a>
+                                    id="default-link">{{translate('Default')}}</a>
                                 </li>
                                 @foreach ($language as $lang)
                                     <li class="nav-item">
@@ -46,27 +44,27 @@
                                 @endforeach
                             </ul>
                             <div class="form-group lang_form" id="default-form">
-                                <label class="input-label" for="exampleFormControlInput1">{{translate('messages.name')}} ({{ translate('messages.default') }})</label>
-                                <input type="text" name="name[]" class="form-control" placeholder="{{translate('messages.new_condition')}}" maxlength="191">
+                                <label class="input-label" for="exampleFormControlInput1">{{translate('Name')}} ({{ translate('Default') }})</label>
+                                <input type="text" name="name[]" class="form-control" placeholder="{{translate('messages.New condition')}}" maxlength="191">
                             </div>
                             <input type="hidden" name="lang[]" value="default">
                             @foreach($language as $lang)
                                 <div class="form-group d-none lang_form" id="{{$lang}}-form">
-                                    <label class="input-label" for="exampleFormControlInput1">{{translate('messages.name')}} ({{strtoupper($lang)}})</label>
-                                    <input type="text" name="name[]" class="form-control" placeholder="{{translate('messages.new_condition')}}" maxlength="191">
+                                    <label class="input-label" for="exampleFormControlInput1">{{translate('Name')}} ({{strtoupper($lang)}})</label>
+                                    <input type="text" name="name[]" class="form-control" placeholder="{{translate('messages.New condition')}}" maxlength="191">
                                 </div>
                                 <input type="hidden" name="lang[]" value="{{$lang}}">
                             @endforeach
                         @else
                             <div class="form-group">
-                                <label class="input-label" for="exampleFormControlInput1">{{translate('messages.name')}}</label>
-                                <input type="text" name="name" class="form-control" placeholder="{{translate('messages.new_condition')}}" value="{{old('name')}}" maxlength="191">
+                                <label class="input-label" for="exampleFormControlInput1">{{translate('Name')}}</label>
+                                <input type="text" name="name" class="form-control" placeholder="{{translate('messages.New condition')}}" value="{{old('name')}}" maxlength="191">
                             </div>
                             <input type="hidden" name="lang[]" value="default">
                         @endif
                         <div class="btn--container justify-content-end mt-20">
-                            <button type="reset" id="reset_btn" class="btn btn--reset">{{translate('messages.reset')}}</button>
-                            <button type="submit" class="btn btn--primary">{{isset($condition)?translate('messages.update'):translate('messages.add')}}</button>
+                            <button type="reset" id="reset_btn" class="btn btn--reset"><i class="tio-refresh"></i> {{translate('messages.Reset')}}</button>
+                            <button type="submit" class="btn btn--primary"><i class="{{ isset($condition) ? 'tio-save' : 'tio-add-circle' }}"></i> {{isset($condition)?translate('Update'):translate('Add')}}</button>
                         </div>
                     </div>
                 </form>
@@ -75,43 +73,45 @@
         <div class="card mt-20">
             <div class="card-header py-2 border-0">
                 <div class="search--button-wrapper">
-                    <h5 class="card-title title-clr fs-16 fw-semibold">{{translate('messages.Common_Conditions')}}<span class="badge badge-soft-dark ml-2" id="itemCount">{{$conditions->total()}}</span></h5>
+                    @include('partials._table-head', [
+                        'title'    => translate('Common conditions'),
+                        'subtitle' => translate('messages.Item conditions such as new or used that vendors can choose.'),
+                        'count'    => $conditions->total(),
+                        'count_id' => 'itemCount',
+                    ])
                     <form  class="search-form">
-                        <!-- Search -->
                         <div class="input-group input--group">
-                            <input id="datatableSearch" name="search" value="{{ request()?->search ?? null }}"  type="search" class="form-control" placeholder="{{translate('messages.search_by_name')}}" aria-label="{{translate('messages.Common_Conditions')}}">
+                            <input id="datatableSearch" name="search" value="{{ request()?->search ?? null }}"  type="search" class="form-control" placeholder="{{translate('messages.Search by name')}}" aria-label="{{translate('Common conditions')}}">
                             <button type="submit" class="btn btn--secondary"><i class="tio-search"></i></button>
                         </div>
-                        <!-- End Search -->
                     </form>
-                    <!-- Unfold -->
                     <div class="hs-unfold mr-2">
                         <a class="js-hs-unfold-invoker btn btn-sm btn-white dropdown-toggle min-height-40" href="javascript:;"
                             data-hs-unfold-options='{
                                     "target": "#usersExportDropdown",
                                     "type": "css-animation"
                                 }'>
-                            <i class="tio-download-to mr-1"></i> {{ translate('messages.export') }}
+                            <i class="tio-download-to mr-1"></i> {{ translate('messages.Export') }}
                         </a>
 
                         <div id="usersExportDropdown"
                             class="hs-unfold-content dropdown-unfold dropdown-menu dropdown-menu-sm-right">
 
-                            <span class="dropdown-header">{{ translate('messages.download_options') }}</span>
+                            <span class="dropdown-header">{{ translate('messages.Download options') }}</span>
                             <a id="export-excel" class="dropdown-item" href="
                                 {{ route('admin.campaign.basic_campaign_export', ['type' => 'excel', request()->getQueryString()]) }}
                                 ">
                                 <img class="avatar avatar-xss avatar-4by3 mr-2"
                                     src="{{ asset('public/assets/admin') }}/svg/components/excel.svg"
                                     alt="Image Description">
-                                {{ translate('messages.excel') }}
+                                Excel
                             </a>
                             <a id="export-csv" class="dropdown-item" href="
                             {{ route('admin.campaign.basic_campaign_export', ['type' => 'csv', request()->getQueryString()]) }}">
                                 <img class="avatar avatar-xss avatar-4by3 mr-2"
                                     src="{{ asset('public/assets/admin') }}/svg/components/placeholder-csv-format.svg"
                                     alt="Image Description">
-                                {{ translate('messages.csv') }}
+                                CSV
                             </a>
                         </div>
                     </div>
@@ -126,15 +126,15 @@
                             "entries": "#datatableEntries",
                             "isResponsive": false,
                             "isShowPaging": false,
-                            "paging":false,
+                            "paging":false
                         }'>
                         <thead class="thead-light">
                             <tr>
-                                <th class="border-0">{{translate('sl')}}</th>
-                                <th class="border-0 w--1">{{translate('messages.Common_Condition_Name')}}</th>
-                                <th class="border-0 text-center">{{translate('messages.Total_Products')}}</th>
-                                <th class="border-0 text-center">{{translate('messages.status')}}</th>
-                                <th class="border-0 text-center">{{translate('messages.action')}}</th>
+                                <th class="border-0">{{translate('SL')}}</th>
+                                <th class="border-0 w--1">{{translate('messages.Common Condition Name')}}</th>
+                                <th class="border-0 text-center">{{translate('messages.Total Products')}}</th>
+                                <th class="border-0 text-center">{{translate('messages.Status')}}</th>
+                                <th class="border-0 text-center">{{translate('messages.Action')}}</th>
                             </tr>
                         </thead>
 
@@ -155,7 +155,7 @@
                                     data-id="{{ $condition->id }}"
                                     data-url="{{route('admin.common-condition.view',$condition->id)}}"
                                     data-target="#offcanvas_common_condition">
-                                        {{ $condition->items()->count()}}
+                                        {{ $condition->items_count }}
                                     </span>
                                 </td>
                                 <td>
@@ -168,16 +168,16 @@
                                 </td>
                                 <td>
                                     <div class="btn--container justify-content-center">
-                                        <button type="#0" class="btn action-btn btn-theme-dark btn-outline-base offcanvas-trigger data-info-show"
+                                        <button type="#0" class="btn action-btn action-btn--view offcanvas-trigger data-info-show"
                                         data-id="{{ $condition->id }}"
                                     data-url="{{route('admin.common-condition.view',$condition->id)}}"
                                         data-target="#offcanvas_common_condition">
-                                            <i class="tio-visible"></i>
+                                            <i class="tio-visible-outlined"></i>
                                         </button>
-                                        <a class="btn action-btn btn-theme btn-outline-base"
-                                            href="{{route('admin.common-condition.edit',[$condition['id']])}}" title="{{translate('messages.edit_condition')}}"><i class="tio-edit"></i>
+                                        <a class="btn action-btn action-btn--edit"
+                                            href="{{route('admin.common-condition.edit',[$condition['id']])}}" title="{{translate('messages.Edit condition')}}"><i class="tio-edit"></i>
                                         </a>
-                                        <a class="btn action-btn btn--danger btn-outline-danger form-alert" href="javascript:" data-id="condition-{{$condition['id']}}" data-message="{{ translate('messages.Want to delete this condition') }}"  title="{{translate('messages.delete_condition')}}"><i class="tio-delete-outlined"></i>
+                                        <a class="btn action-btn action-btn--delete form-alert" href="javascript:" data-id="condition-{{$condition['id']}}" data-message="{{ translate('Want to delete this condition?') }}"  title="{{translate('messages.Delete condition')}}"><i class="tio-delete-outlined"></i>
                                         </a>
                                         <form action="{{route('admin.common-condition.delete',[$condition['id']])}}" method="post" id="condition-{{$condition['id']}}">
                                             @csrf @method('delete')
@@ -200,7 +200,7 @@
             <div class="empty--data">
                 <img src="{{asset('/public/assets/admin/svg/illustrations/sorry.svg')}}" alt="public">
                 <h5>
-                    {{translate('no_data_found')}}
+                    {{translate('No data found')}}
                 </h5>
             </div>
             @endif

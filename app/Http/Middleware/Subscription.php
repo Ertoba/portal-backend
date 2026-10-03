@@ -25,18 +25,18 @@ class Subscription
 
 
             elseif($store->store_business_model == 'unsubscribed') {
-                Toastr::error(translate('messages.your_subscription_is_expired.You_can_only_process_your_on_going_orders.'));
+                Toastr::error(translate('messages.Your subscription is expired. You can only process your on going orders.'));
                 return back();
             }
             elseif($store->store_business_model == 'none') {
-                Toastr::error(translate('Please_chose_a_business_plan_to_continue_your_services'));
+                Toastr::error(translate('Please chose a business plan to continue your services'));
                 return back();
             }
 
 
             elseif($store->store_business_model == 'subscription') {
                     if($store->store_sub == null){
-                        Toastr::error(translate('messages.you_are_not_subscribed_to_any_package'));
+                        Toastr::error(translate('messages.You are not subscribed to any package'));
                         return back();
                     } else {
                     $store_sub=$store?->store_sub;
@@ -51,7 +51,7 @@ class Subscription
                         if ($modulePermissons[$module] == 1) {
                             return $next($request);
                         } else {
-                            Toastr::error(translate('messages.your_package_does_not_include_this_section'));
+                            Toastr::error(translate('messages.Your package does not include this section'));
                             return back();
                         }
                     }

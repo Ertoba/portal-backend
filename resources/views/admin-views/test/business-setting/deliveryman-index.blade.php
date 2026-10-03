@@ -1,22 +1,22 @@
 @extends('layouts.admin.app')
 
-@section('title', translate('messages.delivery_man_settings'))
+@section('title', translate('messages.Delivery man settings'))
 
 
 @section('content')
 @php use App\CentralLogics\Helpers; @endphp
     <div class="content container-fluid">
-        <!-- Page Header -->
         <div class="page-header">
             <div class="d-flex align-items-center justify-content-between gap-1 w-100">
                 <h1 class="page-header-title mr-3">
                     <span class="page-header-icon">
-                        <img src="{{ asset('public/assets/admin/img/business.png') }}" class="w--26" alt="">
+                        <img src="{{ asset('public/assets/admin/img/outline/business.svg') }}" class="w--26" alt="">
                     </span>
                     <span>
-                        {{translate('business_setup')}}
+                        {{translate('Business setup')}}
                     </span>
                 </h1>
+                <p class="page-header-desc">{{ translate('How deliverymen are assigned orders, what they may see and how they are paid.') }}</p>
                 @if (!(Request::is('admin/business-settings/language') || Request::is('admin/business-settings/business-setup/refund-settings') || Request::is('admin/business-settings/business-setup/automated-message')))
                 <div class="d-flex flex-wrap justify-content-end align-items-center flex-grow-1">
                     <div class="blinkings active">
@@ -25,9 +25,9 @@
                             <h6><img src="{{asset('/public/assets/admin/img/notes.png')}}" alt=""> {{translate('Note')}}</h6>
                             <div>
                                 @if (Request::is('admin/business-settings/business-setup/refund-settings'))
-                                {{ translate('messages.*If_the_Admin_enables_the_‘Refund_Request_Mode’,_customers_can_request_a_refund.') }}
+                                *{{ translate('messages.If the Admin enables the \'Refund Request Mode\', customers can request a refund.') }}
                                 @else
-                                {{translate('messages.don’t_forget_to_click_the_‘Save Information’_button_below_to_save_changes.')}}
+                                {{translate('messages.don\'t forget to click the \'Save Information\' button below to save changes.')}}
                                 @endif
                             </div>
                         </div>
@@ -37,9 +37,7 @@
             </div>
             @include('admin-views.business-settings.partials.nav-menu')
         </div>
-        <!-- Page Header -->
 
-        <!-- End Page Header -->
         <form action="{{ route('admin.business-settings.update-dm') }}" method="post" enctype="multipart/form-data">
             @csrf
             <div class="row g-2">
@@ -53,9 +51,9 @@
                                         <div class="form-group mb-0">
                                             <span class="d-flex align-items-center mb-2">
                                                 <span class="text-dark pr-1">
-                                                    {{ translate('messages.Deliveryman_self_registration') }}
+                                                    {{ translate('messages.Deliveryman Self Registration?') }}
                                                 </span>
-                                                <span class="form-label-secondary" data-toggle="tooltip" data-placement="right" data-original-title="{{ translate('messages.With_this_feature,_deliverymen_can_register_themselves_from_the_Customer_App,_Website_or_Deliveryman_App_or_Admin_Landing_Page._The_admin_will_receive_an_email_notification_and_can_accept_or_reject_the_request.') }}">
+                                                <span class="form-label-secondary" data-toggle="tooltip" data-placement="right" data-original-title="{{ translate('messages.Deliverymen can register themselves from any app or the website. You get an email to accept or reject.') }}">
                                                     <i class="tio-info text-light-gray"></i>
                                                 </span>
                                             </span>
@@ -71,10 +69,10 @@
                                                        data-type="toggle"
                                                        data-image-on="{{ asset('/public/assets/admin/img/modal/dm-self-reg-on.png') }}"
                                                        data-image-off="{{ asset('/public/assets/admin/img/modal/dm-self-reg-off.png') }}"
-                                                       data-title-on="{{ translate('messages.Want_to_enable') }} <strong>{{ translate('messages.Deliveryman_Self_Registration?') }}</strong>"
-                                                       data-title-off="{{ translate('messages.Want_to_disable') }} <strong>{{ translate('messages.Deliveryman_Self_Registration?') }}</strong>"
-                                                       data-text-on="<p>{{ translate('messages.If_you_enable_this,_users_can_register_as_Deliverymen_from_the_Customer_App,_Website_or_Deliveryman_App_or_Admin_Landing_Page.') }}</p>"
-                                                       data-text-off="<p>{{ translate('messages.If_you_disable_this,_this_feature_will_be_hidden_from_the_Customer_App,_Website_or_Deliveryman_App_or_Admin_Landing_Page.') }}</p>"
+                                                       data-title-on="{{ translate('messages.Want to enable') }} <strong>{{ translate('messages.Deliveryman Self Registration?') }}</strong>"
+                                                       data-title-off="{{ translate('messages.Want to disable') }} <strong>{{ translate('messages.Deliveryman Self Registration?') }}</strong>"
+                                                       data-text-on="<p>{{ translate('messages.Users can register as deliverymen from any app or the website.') }}</p>"
+                                                       data-text-off="<p>{{ translate('messages.The feature is hidden from the deliveryman apps and the website.') }}</p>"
                                                        class="status toggle-switch-input dynamic-checkbox-toggle"
 
                                                        value="1"
@@ -93,7 +91,7 @@
                                                 for="dm_maximum_orders">
                                                 <div class="d-flex align-items-center">
                                                     <span class="line--limit-1 flex-grow pr-1">{{ translate('Maximum Assigned Order Limit') }} </span>
-                                                    <span class="form-label-secondary" data-toggle="tooltip" data-placement="right" data-original-title="{{ translate('messages.Set_the_maximum_order_limit_a_Deliveryman_can_take_at_a_time.') }}">
+                                                    <span class="form-label-secondary" data-toggle="tooltip" data-placement="right" data-original-title="{{ translate('messages.Set the maximum order limit a Deliveryman can take at a time.') }}">
                                                         <i class="tio-info text-light-gray"></i>
                                                     </span>
                                                 </div>
@@ -104,13 +102,12 @@
                                         </div>
                                     </div>
                                     <div class="col-sm-6 col-lg-4">
-                                        @php($canceled_by_deliveryman = Helpers::get_business_settings('canceled_by_deliveryman'))
                                         <div class="form-group mb-0">
                                             <label class="input-label text-capitalize d-flex align-items-center"><span
-                                                    class="line--limit-1 pr-1">{{ translate('messages.Can_A_Deliveryman_Cancel_Order?') }}</span>
+                                                    class="line--limit-1 pr-1">{{ translate('messages.Can A Deliveryman Cancel Order?') }}</span>
                                                 <span class="form-label-secondary"
                                                 data-toggle="tooltip" data-placement="right"
-                                                data-original-title="{{ translate('messages.Admin_can_enable/disable_Deliveryman’s_order_cancellation_option_in_the_respective_app.') }}"><i class="tio-info text-light-gray"></i></span></label>
+                                                data-original-title="{{ translate('messages.Admin can enable/disable Deliveryman\'s order cancellation option in the respective app.') }}"><i class="tio-info text-light-gray"></i></span></label>
 
                                             <label
                                                 class="toggle-switch h--45px toggle-switch-sm d-flex justify-content-between border rounded px-3 py-0 form-control">
@@ -135,7 +132,7 @@
                                         <i class="tio-light-on"></i>
                                     </span>
                                     <span>
-                                        {{ translate('You may setup') }} <strong>{{ translate(' Registration Form ') }}</strong> {{ translate('from') }} <strong class="text-primary">{{ translate('Deliveryman Registration Form') }}</strong> {{ translate('page to work properly.') }}
+                                        {{ translate('You may setup') }} <strong> {{ translate('Registration Form') }} </strong> {{ translate('from') }} <strong class="text-primary">{{ translate('Deliveryman Registration Form') }}</strong> {{ translate('Page to work properly.') }}
                                     </span>
                                 </div>
                             </div>
@@ -166,10 +163,10 @@
                                                     data-type="toggle"
                                                     data-image-on="{{ asset('/public/assets/admin/img/modal/dm-tips-on.png') }}"
                                                     data-image-off="{{ asset('/public/assets/admin/img/modal/dm-tips-off.png') }}"
-                                                    data-title-on="{{ translate('messages.Want_to_enable') }} <strong>{{ translate('messages.Tips_for_Deliveryman_feature?') }}</strong>"
-                                                    data-title-off="{{ translate('messages.Want_to_disable') }} <strong>{{ translate('messages.Tips_for_Deliveryman_feature?') }}</strong>"
-                                                    data-text-on="<p>{{ translate('messages.If_you_enable_this,_Customers_can_give_tips_to_a_deliveryman_during_checkout.') }}</p>"
-                                                    data-text-off="<p>{{ translate('messages.If_you_disable_this,_the_Tips_for_Deliveryman_feature_will_be_hidden_from_the_Customer_App_and_Website.') }}</p>"
+                                                    data-title-on="{{ translate('messages.Want to enable') }} <strong>{{ translate('messages.Tips for Deliveryman feature?') }}</strong>"
+                                                    data-title-off="{{ translate('messages.Want to disable') }} <strong>{{ translate('messages.Tips for Deliveryman feature?') }}</strong>"
+                                                    data-text-on="<p>{{ translate('messages.If you enable this, Customers can give tips to a deliveryman during checkout.') }}</p>"
+                                                    data-text-off="<p>{{ translate('If you disable this, the tips for deliveryman feature will be hidden from the customer app and website.') }}</p>"
                                                     class="status toggle-switch-input dynamic-checkbox-toggle"
                                                     value="1"
                                                 name="dm_tips_status" id="dm_tips_status"
@@ -187,7 +184,7 @@
                                         <i class="tio-info"></i>
                                     </span>
                                     <span class="color-656566">
-                                        {{ translate('Admins do not receive any commission from tips given to deliverymen; these goes entirely to the deliveryman earning.') }}
+                                        {{ translate('Admins do not receive any commission from tips given to deliverymen; these go entirely to the deliveryman earning.') }}
                                     </span>
                                 </div>
                             </div>
@@ -210,9 +207,9 @@
                                         <div class="form-group mb-0">
                                             <span class="d-flex align-items-center mb-2">
                                                 <span class="text-dark pr-1">
-                                                    {{ translate('messages.Show Earnings in App') }}
+                                                    {{ translate('messages.Show Earnings in App?') }}
                                                 </span>
-                                                <span class="form-label-secondary" data-toggle="tooltip" data-placement="right" data-original-title="{{ translate('messages.With_this_feature,_Deliverymen_can_see_their_earnings_on_a_specific_order_while_accepting_it.') }}">
+                                                <span class="form-label-secondary" data-toggle="tooltip" data-placement="right" data-original-title="{{ translate('messages.With this feature, Deliverymen can see their earnings on a specific order while accepting it.') }}">
                                                     <i class="tio-info text-light-gray"></i>
                                                 </span>
                                             </span>
@@ -228,10 +225,10 @@
                                                         data-type="toggle"
                                                         data-image-on="{{ asset('/public/assets/admin/img/modal/show-earning-in-apps-on.png') }}"
                                                         data-image-off="{{ asset('/public/assets/admin/img/modal/show-earning-in-apps-off.png') }}"
-                                                        data-title-on="{{ translate('messages.Want_to_enable') }} <strong>{{ translate('messages.Show_Earnings_in_App?') }}</strong>"
-                                                        data-title-off="{{ translate('messages.Want_to_disable') }} <strong>{{ translate('messages.Show_Earnings_in_App?') }}</strong>"
-                                                        data-text-on="<p>{{ translate('messages.If_you_enable_this,_Deliverymen_can_see_their_earning_per_order_request_from_the_Order_Details_page_in_the_Deliveryman_App.') }}</p>"
-                                                        data-text-off="<p>{{ translate('messages.If_you_disable_this,_the_feature_will_be_hidden_from_the_Deliveryman_App.') }}</p>"
+                                                        data-title-on="{{ translate('messages.Want to enable') }} <strong>{{ translate('messages.Show Earnings in App?') }}</strong>"
+                                                        data-title-off="{{ translate('messages.Want to disable') }} <strong>{{ translate('messages.Show Earnings in App?') }}</strong>"
+                                                        data-text-on="<p>{{ translate('messages.Deliverymen can see their earning per order on the Order Details page.') }}</p>"
+                                                        data-text-off="<p>{{ translate('If you disable this, the feature will be hidden from the deliveryman app.') }}</p>"
                                                         class="status toggle-switch-input dynamic-checkbox-toggle"
     
                                                         value="1"
@@ -250,7 +247,7 @@
                                                 <span class="text-dark pr-1">
                                                     {{ translate('messages.Take Picture for Delivery Completing') }}
                                                 </span>
-                                                <span class="form-label-secondary" data-toggle="tooltip" data-placement="right" data-original-title="{{ translate('messages.If_enabled,_deliverymen_will_see_an_option_to_take_pictures_of_the_delivered_products_when_he_swipes_the_delivery_confirmation_slide.') }}">
+                                                <span class="form-label-secondary" data-toggle="tooltip" data-placement="right" data-original-title="{{ translate('messages.Deliverymen can photograph delivered products when swiping to confirm delivery.') }}">
                                                     <i class="tio-info text-light-gray"></i>
                                                 </span>
                                             </span>
@@ -266,10 +263,10 @@
                                                         data-type="toggle"
                                                         data-image-on="{{ asset('/public/assets/admin/img/modal/dm-self-reg-on.png') }}"
                                                         data-image-off="{{ asset('/public/assets/admin/img/modal/dm-self-reg-off.png') }}"
-                                                        data-title-on="{{ translate('messages.Want_to_enable') }} <strong>{{ translate('messages.picture_upload_before_complete?') }}</strong>"
-                                                        data-title-off="{{ translate('messages.Want_to_disable') }} <strong>{{ translate('messages.picture_upload_before_complete?') }}</strong>"
-                                                        data-text-on="<p>{{ translate('messages.If_you_enable_this,_delivery_man_can_upload_order_proof_before_order_delivery.') }}</p>"
-                                                        data-text-off="<p>{{ translate('messages.If_you_disable_this,_this_feature_will_be_hidden_from_the_delivery_man_app.') }}</p>"
+                                                        data-title-on="{{ translate('messages.Want to enable') }} <strong>{{ translate('messages.Picture upload before complete?') }}</strong>"
+                                                        data-title-off="{{ translate('messages.Want to disable') }} <strong>{{ translate('messages.Picture upload before complete?') }}</strong>"
+                                                        data-text-on="<p>{{ translate('messages.If you enable this, delivery man can upload order proof before order delivery.') }}</p>"
+                                                        data-text-off="<p>{{ translate('If you disable this, this feature will be hidden from the deliveryman app.') }}</p>"
                                                         class="status toggle-switch-input dynamic-checkbox-toggle"
                                                         value="1"
                                                     name="dm_picture_upload_status" id="dm_picture_upload_status"
@@ -303,7 +300,7 @@
                                                 <span class="text-dark pr-1">
                                                     {{ translate('messages.Suspend on Cash In Hand Overflow') }}
                                                 </span>
-                                                <span class="form-label-secondary" data-toggle="tooltip" data-placement="right" data-original-title="{{ translate('messages.If_enabled,_delivery_men_will_be_automatically_suspended_by_the_system_when_their_‘Cash_in_Hand’_limit_is_exceeded.') }}">
+                                                <span class="form-label-secondary" data-toggle="tooltip" data-placement="right" data-original-title="{{ translate('messages.If enabled, delivery men will be automatically suspended by the system when their \'Cash in Hand\' limit is exceeded.') }}">
                                                     <i class="tio-info text-light-gray"></i>
                                                 </span>
                                             </span>
@@ -319,10 +316,10 @@
                                                        data-type="toggle"
                                                        data-image-on="{{ asset('/public/assets/admin/img/modal/show-earning-in-apps-on.png') }}"
                                                        data-image-off="{{ asset('/public/assets/admin/img/modal/show-earning-in-apps-off.png') }}"
-                                                       data-title-on="{{ translate('Want_to_enable') }} <strong>{{ translate('Cash_In_Hand_Overflow') }}</strong>?"
-                                                       data-title-off="{{ translate('Want_to_disable') }} <strong>{{ translate('Cash_In_Hand_Overflow') }}</strong>?"
-                                                       data-text-on="<p>{{ translate('If_enabled,_delivery_men_have_to_provide_collected_cash_by_themselves.') }}</p>"
-                                                       data-text-off="<p>{{ translate('If_disabled,_delivery_men_do_not_have_to_provide_collected_cash_by_themselves.') }}</p>"
+                                                       data-title-on="{{ translate('Want to enable') }} <strong>{{ translate('Cash in hand overflow') }}</strong>?"
+                                                       data-title-off="{{ translate('Want to disable') }} <strong>{{ translate('Cash in hand overflow') }}</strong>?"
+                                                       data-text-on="<p>{{ translate('If enabled, delivery men have to provide collected cash by themselves.') }}</p>"
+                                                       data-text-off="<p>{{ translate('If disabled, delivery men do not have to provide collected cash by themselves.') }}</p>"
                                                        class="status toggle-switch-input dynamic-checkbox-toggle"
                                                        value="1"
                                                        name="cash_in_hand_overflow_delivery_man" id="cash_in_hand_overflow"
@@ -339,9 +336,9 @@
                                             <label class="d-flex text-capitalize"
                                                    for="dm_max_cash_in_hand">
                                                 <span class="line--limit-1">
-                                                    {{translate('Cash In hand Max Amount($)')}} ({{ \App\CentralLogics\Helpers::currency_symbol() }})
+                                                    {{translate('Cash In hand Max Amount')}} ({{ \App\CentralLogics\Helpers::currency_symbol() }})
                                                 </span>
-                                                <span data-toggle="tooltip" data-placement="right" data-original-title="{{translate('Deliveryman_can_not_accept_any_orders_when_the_Cash_In_Hand_limit_exceeds_and_must_deposit_the_amount_to_the_admin_before_accepting_new_orders')}}" class="input-label-secondary"><i class="tio-info text-light-gray"></i></span>
+                                                <span data-toggle="tooltip" data-placement="right" data-original-title="{{translate('Over the cash-in-hand limit, a deliveryman must deposit with the admin before accepting orders.')}}" class="input-label-secondary"><i class="tio-info text-light-gray"></i></span>
                                             </label>
                                             <input type="number" name="dm_max_cash_in_hand" class="form-control"
                                                    id="dm_max_cash_in_hand" min="0" step=".001"
@@ -354,13 +351,13 @@
                                             <label class="text-capitalize"
                                                    for="min_amount_to_pay_dm">
                                                 <span>
-                                                    {{ translate('Minimum Payable Amount($)') }} ({{ \App\CentralLogics\Helpers::currency_symbol() }})
+                                                    {{ translate('Minimum Payable Amount') }} ({{ \App\CentralLogics\Helpers::currency_symbol() }})
 
                                                 </span>
 
                                                 <span class="form-label-secondary"
                                                       data-toggle="tooltip" data-placement="right"
-                                                      data-original-title="{{ translate('Enter_the_minimum_cash_amount_delivery_men_can_pay') }}"><i class="tio-info text-light-gray"></i></span>
+                                                      data-original-title="{{ translate('Enter the minimum cash amount delivery men can pay') }}"><i class="tio-info text-light-gray"></i></span>
                                             </label>
                                             <input type="number" name="min_amount_to_pay_dm" class="form-control"
                                                    id="min_amount_to_pay_dm" min="0" step=".001"
@@ -391,12 +388,12 @@
                         <div class="card-body">
                             <div class="d-flex align-items-center justify-content-between gap-2 flex-sm-nowrap flex-wrap">
                                 <div>
-                                    <h4 class="mb-1">{{translate('Loyalty Point')}}</h4>
+                                    <h4 class="mb-1">{{translate('Loyalty point')}}</h4>
                                     <p class="fs-12 m-0">{{translate('If enabled, deliverymen will earn a certain number of points for each successful delivery.')}}</p>
                                 </div>
                                 <div class="d-flex flex-sm-nowrap flex-wrap justify-content-end justify-content-end align-items-center gap-3">
                                     <div class="view_toggle_btn fz--14px info-dark cursor-pointer text-decoration-underline font-semibold d-flex align-items-center gap-1">
-                                        {{ translate('messages.view') }}
+                                        {{ translate('messages.View') }}
                                         <i class="tio-chevron-down fs-22"></i>
                                     </div>
                                     <div class="mb-0">
@@ -428,7 +425,7 @@
                                             <div class="form-group mb-0">
                                                 <label class="form-label text-capitalize" for="dm_loyality_point_conversion_rate">
                                                     <div class="d-flex align-items-center">
-                                                        <span class="line--limit-1 flex-grow pr-1">{{ \App\CentralLogics\Helpers::currency_symbol() }} {{ translate('1.00 Equivalent To Points') }} </span>
+                                                        <span class="line--limit-1 flex-grow pr-1">{{ \App\CentralLogics\Helpers::currency_symbol() }} 1.00 {{ translate('Equivalent To Points') }} </span>
                                                     </div>
                                                 </label>
                                                 <input type="number" name="dm_loyality_point_conversion_rate"  min="0" max="999999999"  class="form-control" id="dm_loyality_point_conversion_rate" placeholder="100" value="{{ $dm_loyality_point_conversion_rate ?? ''}}" {{ $dm_loyality_point_status == 1 ? 'required':'readonly' }}>
@@ -464,7 +461,7 @@
                                 </div>
                                 <div class="d-flex flex-sm-nowrap flex-wrap justify-content-end justify-content-end align-items-center gap-3">
                                     <div class="view_toggle_btn fz--14px info-dark cursor-pointer text-decoration-underline font-semibold d-flex align-items-center gap-1">
-                                        {{ translate('messages.view') }}
+                                        {{ translate('messages.View') }}
                                         <i class="tio-chevron-down fs-22"></i>
                                     </div>
                                     <div class="mb-0">
@@ -485,7 +482,7 @@
                                         <div class="col-md-6 col-lg-4">
                                             <div>
                                                 <h4 class="mb-1">{{translate('Who Share the Code')}}</h4>
-                                                <p class="fs-12 m-0">{{translate('Set the reward amount that drivers will earn for each successful referral. The reward will be given to the person who uses the referral code during signup and completes their first order.')}}</p>
+                                                <p class="fs-12 m-0">{{translate('Reward for the person who signs up with a rider referral code and completes their first order.')}}</p>
                                             </div>
                                         </div>
                                         <div class="col-md-6 col-lg-8">
@@ -505,7 +502,7 @@
                                         <div class="col-md-6 col-lg-4">
                                             <div>
                                                 <h4 class="mb-1">{{translate('Who Use the Code')}}</h4>
-                                                <p class="fs-12 m-0">{{translate('Set the reward amount that drivers receive when signing up with a referral code & completes first order')}}</p>
+                                                <p class="fs-12 m-0">{{translate('Set the reward amount that riders receive when signing up with a referral code & completes first order')}}</p>
                                             </div>
                                         </div>
                                         <div class="col-md-6 col-lg-8">
@@ -526,8 +523,8 @@
                         </div>
                     </div>
                     <div class="btn--container justify-content-end mt-4">
-                        <button type="reset" id="reset_btn" class="btn min-w-120px btn--reset location-reload">{{ translate('messages.reset') }}</button>
-                        <button type="submit" id="submit" class="btn min-w-120px btn--primary"><i class="tio-save"></i> {{ translate('messages.save_information') }}</button>
+                        <button type="reset" id="reset_btn" class="btn min-w-120px btn--reset location-reload"><i class="tio-refresh"></i> {{ translate('messages.Reset') }}</button>
+                        <button type="submit" id="submit" class="btn min-w-120px btn--primary"><i class="tio-save"></i> {{ translate('Save information') }}</button>
                     </div>
                 </div>
             </div>

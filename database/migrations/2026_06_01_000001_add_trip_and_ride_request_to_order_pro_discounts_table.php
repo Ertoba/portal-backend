@@ -10,8 +10,8 @@ return new class extends Migration
     {
         Schema::table('order_pro_discounts', function (Blueprint $table) {
             $table->unsignedBigInteger('order_id')->nullable()->change();
-            $table->unsignedBigInteger('trip_id')->nullable()->after('order_id');
-            $table->unsignedBigInteger('ride_request_id')->nullable()->after('trip_id');
+            $table->unsignedBigInteger('trip_id')->nullable();
+            $table->unsignedBigInteger('ride_request_id')->nullable();
 
             $table->index('trip_id');
             $table->index('ride_request_id');

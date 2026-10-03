@@ -1,182 +1,124 @@
 @extends('layouts.vendor.app')
 
-@section('title',translate('messages.Order List'))
+@section('title',translate('Order list'))
 
 @push('css_or_js')
     <meta name="csrf-token" content="{{ csrf_token() }}">
 @endpush
 
 @section('content')
+    @php
+        $list_titles = [
+            'all' => translate('All'),
+            'pending' => translate('Pending'),
+            'confirmed' => translate('messages.confirmed'),
+            'cooking' => translate('Cooking'),
+            'ready_for_delivery' => translate('Ready for delivery'),
+            'item_on_the_way' => translate('Item on the way'),
+            'delivered' => translate('Delivered'),
+            'searching_for_deliverymen' => translate('messages.searching_for_deliverymen'),
+            'refund_requested' => translate('messages.Refund requested'),
+            'refunded' => translate('Refunded'),
+            'scheduled' => translate('Scheduled'),
+        ];
+        $order_status_labels = [
+            'pending' => translate('Pending'),
+            'confirmed' => translate('messages.confirmed'),
+            'accepted' => translate('Accepted'),
+            'processing' => translate('Processing'),
+            'handover' => translate('messages.handover'),
+            'picked_up' => translate('Out for delivery'),
+            'delivered' => translate('Delivered'),
+            'canceled' => translate('Canceled'),
+            'failed' => translate('Payment failed'),
+            'refund_requested' => translate('messages.Refund requested'),
+            'refunded' => translate('Refunded'),
+            'refund_request_canceled' => translate('messages.Refund request canceled'),
+        ];
+        $order_status_badges = [
+            'pending' => 'badge-soft-primary',
+            'confirmed' => 'badge-soft-info',
+            'accepted' => 'badge-soft-info',
+            'processing' => 'badge-soft-warning',
+            'handover' => 'badge-soft-warning',
+            'picked_up' => 'badge-soft-warning',
+            'delivered' => 'badge-soft-success',
+            'canceled' => 'badge-soft-danger',
+            'failed' => 'badge-soft-danger',
+            'refund_requested' => 'badge-soft-warning',
+            'refunded' => 'badge-soft-info',
+            'refund_request_canceled' => 'badge-soft-secondary',
+        ];
+        $payment_status_badges = [
+            'paid' => 'badge-soft-success',
+            'partially_paid' => 'badge-soft-warning',
+        ];
+        $payment_status_labels = [
+            'paid' => translate('messages.paid'),
+            'partially_paid' => translate('messages.Partially paid'),
+        ];
+    @endphp
+
     <div class="content container-fluid">
-        <!-- Page Header -->
         <div class="page-header">
             <h1 class="page-header-title text-capitalize">
                 <span class="page-header-icon">
                     <img src="{{asset('public/assets/admin/img/order.png')}}" class="w--26" alt="">
                 </span>
                 <span>
-                    {{translate(str_replace('_',' ',$status))}} {{translate('messages.orders')}}
+                    {{ $list_titles[$status] ?? '' }} {{translate('messages.Orders')}}
                     <span class="badge badge-soft-dark ml-2">{{$orders->total()}}</span>
                 </span>
             </h1>
+            <p class="page-header-desc">{{ translate('Your orders at this stage, with the customer and deliveryman on each.') }}</p>
         </div>
-        <!-- End Page Header -->
 
-        <!-- Card -->
         <div class="card">
-            <!-- Header -->
             <div class="card-header py-2 border-0">
                 <div class="search--button-wrapper justify-content-end">
-                        <form class="search-form min--260">
+                    @include('partials._table-head', [
+                        'subtitle' => translate('messages.Your orders at this stage, with customer, amount and delivery progress.'),
+                    ])
 
-                            <!-- Search -->
-                            <div class="input-group input--group">
-                                <input  type="search" value="{{  request()?->search ?? null }}" name="search" class="form-control" placeholder="{{translate('messages.ex_:_search_order_id')}}" aria-label="{{translate('messages.search')}}" >
-                                <button type="submit" class="btn btn--secondary"><i class="tio-search"></i></button>
-                            </div>
-                            <!-- End Search -->
-                        </form>
-                        <!-- Unfold -->
-                        <div class="hs-unfold mr-2">
-                            <a class="js-hs-unfold-invoker btn btn-sm btn-white dropdown-toggle h--40px" href="javascript:"
-                                data-hs-unfold-options='{
-                                    "target": "#usersExportDropdown",
-                                    "type": "css-animation"
-                                }'>
-                                <i class="tio-download-to mr-1"></i> {{translate('messages.export')}}
+                    <form class="search-form min--260">
+                        <div class="input-group input--group">
+                            <input  type="search" value="{{  request()?->search ?? null }}" name="search" class="form-control" placeholder="{{translate('messages.Ex') . ' : ' . translate('Search order ID')}}" aria-label="{{translate('messages.Search')}}" >
+                            <button type="submit" class="btn btn--secondary"><i class="tio-search"></i></button>
+                        </div>
+                    </form>
+
+                    <div class="hs-unfold">
+                        <a class="js-hs-unfold-invoker btn btn-sm btn-white dropdown-toggle h--40px" href="javascript:"
+                            data-hs-unfold-options='{
+                                "target": "#usersExportDropdown",
+                                "type": "css-animation"
+                            }'>
+                            <i class="tio-download-to mr-1"></i> {{translate('messages.Export')}}
+                        </a>
+
+                        <div id="usersExportDropdown"
+                                class="hs-unfold-content dropdown-unfold dropdown-menu dropdown-menu-sm-right">
+                            <span
+                                class="dropdown-header">{{translate('messages.Download options')}}</span>
+                            <a id="export-excel" class="dropdown-item" href="javascript:">
+                                <img class="avatar avatar-xss avatar-4by3 mr-2"
+                                        src="{{asset('public/assets/admin/svg/components/excel.svg')}}"
+                                        alt="Image Description">
+                                Excel
                             </a>
-
-                            <div id="usersExportDropdown"
-                                    class="hs-unfold-content dropdown-unfold dropdown-menu dropdown-menu-sm-right">
-                           
-
-                                <span
-                                    class="dropdown-header">{{translate('messages.download_options')}}</span>
-                                <a id="export-excel" class="dropdown-item" href="javascript:">
-                                    <img class="avatar avatar-xss avatar-4by3 mr-2"
-                                            src="{{asset('public/assets/admin/svg/components/excel.svg')}}"
-                                            alt="Image Description">
-                                    {{translate('messages.excel')}}
-                                </a>
-                                <a id="export-csv" class="dropdown-item" href="javascript:">
-                                    <img class="avatar avatar-xss avatar-4by3 mr-2"
-                                            src="{{asset('public/assets/admin/svg/components/placeholder-csv-format.svg')}}"
-                                            alt="Image Description">
-                                    .{{translate('messages.csv')}}
-                                </a>
-
-                            </div>
+                            <a id="export-csv" class="dropdown-item" href="javascript:">
+                                <img class="avatar avatar-xss avatar-4by3 mr-2"
+                                        src="{{asset('public/assets/admin/svg/components/placeholder-csv-format.svg')}}"
+                                        alt="Image Description">
+                                .csv
+                            </a>
                         </div>
-                        <!-- End Unfold -->
-
-                        <!-- Unfold -->
-                        <div class="hs-unfold">
-
-
-                            <div id="showHideDropdown" class="hs-unfold-content dropdown-unfold dropdown-menu dropdown-menu-right dropdown-card">
-                                <div class="card card-sm">
-                                    <div class="card-body">
-                                        <div class="d-flex justify-content-between align-items-center mb-3">
-                                            <span class="mr-2">{{translate('messages.order')}}</span>
-
-                                            <!-- Checkbox Switch -->
-                                            <label class="toggle-switch toggle-switch-sm" for="toggleColumn_order">
-                                                <input type="checkbox" class="toggle-switch-input"
-                                                        id="toggleColumn_order" checked>
-                                                <span class="toggle-switch-label">
-                                                <span class="toggle-switch-indicator"></span>
-                                                </span>
-                                            </label>
-                                            <!-- End Checkbox Switch -->
-                                        </div>
-
-                                        <div class="d-flex justify-content-between align-items-center mb-3">
-                                            <span class="mr-2">{{translate('messages.date')}}</span>
-
-                                            <!-- Checkbox Switch -->
-                                            <label class="toggle-switch toggle-switch-sm" for="toggleColumn_date">
-                                                <input type="checkbox" class="toggle-switch-input"
-                                                        id="toggleColumn_date" checked>
-                                                <span class="toggle-switch-label">
-                                                <span class="toggle-switch-indicator"></span>
-                                                </span>
-                                            </label>
-                                            <!-- End Checkbox Switch -->
-                                        </div>
-
-                                        <div class="d-flex justify-content-between align-items-center mb-3">
-                                            <span class="mr-2">{{translate('messages.customer')}}</span>
-
-                                            <!-- Checkbox Switch -->
-                                            <label class="toggle-switch toggle-switch-sm"
-                                                    for="toggleColumn_customer">
-                                                <input type="checkbox" class="toggle-switch-input"
-                                                        id="toggleColumn_customer" checked>
-                                                <span class="toggle-switch-label">
-                                                <span class="toggle-switch-indicator"></span>
-                                                </span>
-                                            </label>
-                                            <!-- End Checkbox Switch -->
-                                        </div>
-
-                                        <div class="d-flex justify-content-between align-items-center mb-3">
-                                            <span
-                                                class="mr-2 text-capitalize">{{translate('messages.total_amount')}}</span>
-
-                                            <!-- Checkbox Switch -->
-                                            <label class="toggle-switch toggle-switch-sm"
-                                                    for="toggleColumn_payment_status">
-                                                <input type="checkbox" class="toggle-switch-input"
-                                                        id="toggleColumn_payment_status" checked>
-                                                <span class="toggle-switch-label">
-                                                <span class="toggle-switch-indicator"></span>
-                                                </span>
-                                            </label>
-                                            <!-- End Checkbox Switch -->
-                                        </div>
-
-                                        <div class="d-flex justify-content-between align-items-center mb-3">
-                                            <span class="mr-2">{{translate('messages.order_status')}}</span>
-
-                                            <!-- Checkbox Switch -->
-                                            <label class="toggle-switch toggle-switch-sm" for="toggleColumn_order_status">
-                                                <input type="checkbox" class="toggle-switch-input"
-                                                        id="toggleColumn_order_status" checked>
-                                                <span class="toggle-switch-label">
-                                                <span class="toggle-switch-indicator"></span>
-                                                </span>
-                                            </label>
-                                            <!-- End Checkbox Switch -->
-                                        </div>
-
-                                        <div class="d-flex justify-content-between align-items-center">
-                                            <span class="mr-2">{{translate('messages.actions')}}</span>
-
-                                            <!-- Checkbox Switch -->
-                                            <label class="toggle-switch toggle-switch-sm"
-                                                    for="toggleColumn_actions">
-                                                <input type="checkbox" class="toggle-switch-input"
-                                                        id="toggleColumn_actions" checked>
-                                                <span class="toggle-switch-label">
-                                                <span class="toggle-switch-indicator"></span>
-                                                </span>
-                                            </label>
-                                            <!-- End Checkbox Switch -->
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <!-- End Unfold -->
                     </div>
                 </div>
-                <!-- End Row -->
             </div>
-            <!-- End Header -->
             <div class="card-body p-0">
-                <!-- Table -->
                 <div class="table-responsive datatable-custom">
-                    <table id="datatable" class="table table-hover table-borderless table-thead-bordered table-nowrap table-align-middle card-table"
+                    <table id="datatable" class="table table-hover table-borderless table-thead-bordered table-nowrap table-align-middle card-table table--wrap-head"
                         data-hs-datatables-options='{
                                     "order": [],
                                     "orderCellsTop": true,
@@ -184,125 +126,129 @@
                                 }'>
                         <thead class="thead-light">
                         <tr>
-                            <th class="border-0">
-                                {{translate('messages.#')}}
-                            </th>
-                            <th class="border-0 table-column-pl-0">{{translate('messages.order_id')}}</th>
-                            <th class="border-0">{{translate('messages.order_date')}}</th>
-                            <th class="border-0">{{translate('messages.customer_information')}}</th>
-                            <th class="border-0">{{translate('messages.total_amount')}}</th>
-                            <th class="border-0 text-center">{{translate('messages.order_status')}}</th>
+                            <th class="border-0">{{translate('messages.Order ID')}}</th>
+                            <th class="border-0">{{translate('Order date')}}</th>
+                            @if($status == 'scheduled')
+                                <th class="border-0">{{translate('Scheduled at')}}</th>
+                            @endif
+                            <th class="border-0">{{translate('Customer information')}}</th>
+                            <th class="border-0">{{translate('Deliveryman')}}</th>
+                            <th class="border-0 text-center">{{translate('messages.Items')}}</th>
+                            <th class="border-0">{{translate('messages.Payment')}}</th>
+                            <th class="border-0 col--numeric">{{translate('Total amount')}}</th>
+                            <th class="border-0 text-center">{{translate('Order status')}}</th>
                             <th class="border-0 text-center">{{translate('messages.actions')}}</th>
                         </tr>
                         </thead>
 
                         <tbody id="set-rows">
-                        @foreach($orders as $key=>$order)
+                        @foreach($orders as $order)
+                            @php
+                                $guest_details = $order->is_guest ? json_decode($order['delivery_address'], true) : null;
+                                $item_quantity = $order->details->sum('quantity');
+                            @endphp
                             <tr class="status-{{$order['order_status']}} class-all">
-                                <td class="">
-                                    {{$key+$orders->firstItem()}}
-                                </td>
-                                <td class="table-column-pl-0">
-                                    <a href="{{route('vendor.order.details',['id'=>$order['id']])}}">
-                                        {{$order['id']}}
-                                        @if ($order->edited)
-                                            <div class="text-info fs-12 font-weight-medium">{{translate('messages.(Edited)')}}</div>
-                                        @endif
-                                    </a>
-                                </td>
-                                <td>
+                                <td data-order="{{$order['id']}}">
                                     <div>
-                                        {{date('d M Y',strtotime($order['created_at']))}}
+                                        <a class="font-weight-bold" href="{{route('vendor.order.details',['id'=>$order['id']])}}">
+                                            #{{$order['id']}}
+                                        </a>
                                     </div>
-                                    <div class="d-block text-uppercase">
-                                        {{date(config('timeformat'),strtotime($order['created_at']))}}
-                                    </div>
+                                    @if($order->edited || $order->is_pos || ($order->scheduled && $status != 'scheduled'))
+                                        <div class="cell-chips mt-1">
+                                            @if($order->is_pos)
+                                                <span class="cell-chip">{{ translate('messages.POS') }}</span>
+                                            @endif
+                                            @if($order->scheduled && $status != 'scheduled')
+                                                <span class="cell-chip">{{ translate('Scheduled') }}</span>
+                                            @endif
+                                            @if($order->edited)
+                                                <span class="cell-chip">{{ translate('Edited') }}</span>
+                                            @endif
+                                        </div>
+                                    @endif
                                 </td>
+                                <td data-order="{{$order['created_at']}}">
+                                    <span class="table-when">
+                                        <span class="table-when__day">{{ \App\CentralLogics\Helpers::date_format($order['created_at']) }}</span>
+                                        <span class="table-when__ago text-uppercase" title="{{ \App\CentralLogics\Helpers::time_date_format($order['created_at']) }}">
+                                            {{ \App\CentralLogics\Helpers::time_format($order['created_at']) }}
+                                        </span>
+                                    </span>
+                                </td>
+                                @if($status == 'scheduled')
+                                    <td data-order="{{$order['schedule_at']}}">
+                                        @if($order['schedule_at'])
+                                            <span class="table-when">
+                                                <span class="table-when__day">{{ \App\CentralLogics\Helpers::date_format($order['schedule_at']) }}</span>
+                                                <span class="table-when__ago text-uppercase" title="{{ \App\CentralLogics\Helpers::time_date_format($order['schedule_at']) }}">
+                                                    {{ \App\CentralLogics\Helpers::time_format($order['schedule_at']) }}
+                                                </span>
+                                            </span>
+                                        @else
+                                            <span class="text-muted">{{translate('messages.N/A')}}</span>
+                                        @endif
+                                    </td>
+                                @endif
                                 <td>
                                     @if($order->is_guest)
-                                    @php($customer_details = json_decode($order['delivery_address'],true))
-                                    <strong>{{$customer_details['contact_person_name']}}</strong>
-                                    <div>{{$customer_details['contact_person_number']}}</div>
+                                        <strong>{{ $guest_details['contact_person_name'] ?? translate('messages.guest') }}</strong>
+                                        @if(!empty($guest_details['contact_person_number']))
+                                            <a class="d-block text-body" href="tel:{{$guest_details['contact_person_number']}}">{{$guest_details['contact_person_number']}}</a>
+                                        @endif
+                                        <div class="cell-chips mt-1"><span class="cell-chip">{{translate('messages.guest')}}</span></div>
                                     @elseif($order->customer)
-
-                                    <strong>
-                                        {{$order->customer['f_name'].' '.$order->customer['l_name']}}
-                                    </strong>
-                                    <div>
-                                        {{$order->customer['phone']}}
-                                    </div>
+                                        <strong>{{$order->customer['f_name'].' '.$order->customer['l_name']}}</strong>
+                                        <a class="d-block text-body" href="tel:{{$order->customer['phone']}}">{{$order->customer['phone']}}</a>
                                     @else
-                                        <label
-                                            class="badge badge-danger">{{translate('messages.invalid_customer_data')}}</label>
+                                        <span class="badge badge-soft-danger">{{translate('messages.Invalid customer data')}}</span>
                                     @endif
                                 </td>
                                 <td>
-                                    <div class="text-right mw--85px">
-                                        <div>
-                                            {{\App\CentralLogics\Helpers::format_currency($order['order_amount'])}}
-                                        </div>
-                                        @if($order->payment_status=='paid')
-                                        <strong class="text-success">
-                                            {{translate('messages.paid')}}
-                                        </strong>
-                                        @elseif($order->payment_status=='partially_paid')
-                                        <strong class="text-success">
-                                            {{translate('messages.partially_paid')}}
-                                        </strong>
-                                        @else
-                                        <strong class="text-danger">
-                                            {{translate('messages.unpaid')}}
-                                        </strong>
+                                    @if($order->delivery_man)
+                                        <strong>{{$order->delivery_man['f_name'].' '.$order->delivery_man['l_name']}}</strong>
+                                        <a class="d-block text-body" href="tel:{{$order->delivery_man['phone']}}">{{$order->delivery_man['phone']}}</a>
+                                        @if($order['order_type'] == 'take_away')
+                                            <div class="cell-chips mt-1"><span class="cell-chip">{{translate('messages.Take away')}}</span></div>
                                         @endif
-                                    </div>
+                                    @elseif($order['order_type'] == 'take_away')
+                                        <span class="text-muted">{{translate('messages.Take away')}}</span>
+                                    @else
+                                        <span class="text-muted">{{translate('messages.Unassigned')}}</span>
+                                    @endif
                                 </td>
-                                <td class="text-capitalize text-center">
-                                    @if($order['order_status']=='pending')
-                                        <span class="badge badge-soft-info">
-                                        {{translate('messages.pending')}}
+                                <td class="text-center" data-order="{{$item_quantity}}">
+                                    {{$item_quantity}}
+                                </td>
+                                <td>
+                                    <div>{{ payment_method_label($order['payment_method']) ?: translate('messages.N/A') }}</div>
+                                    <span class="badge {{ $payment_status_badges[$order->payment_status] ?? 'badge-soft-danger' }} mt-1">
+                                        {{ $payment_status_labels[$order->payment_status] ?? translate('messages.unpaid') }}
+                                    </span>
+                                </td>
+                                <td class="col--numeric" data-order="{{$order['order_amount']}}">
+                                    {{\App\CentralLogics\Helpers::format_currency($order['order_amount'])}}
+                                </td>
+                                <td class="text-center">
+                                    <div>
+                                        <span class="badge {{ $order_status_badges[$order['order_status']] ?? 'badge-soft-secondary' }}">
+                                            {{ $order_status_labels[$order['order_status']] ?? ucfirst(str_replace('_',' ',$order['order_status'])) }}
                                         </span>
-                                    @elseif($order['order_status']=='confirmed')
-                                        <span class="badge badge-soft-info">
-                                        {{translate('messages.confirmed')}}
-                                        </span>
-                                    @elseif($order['order_status']=='processing')
-                                        <span class="badge badge-soft-warning">
-                                        {{translate('messages.processing')}}
-                                        </span>
-                                    @elseif($order['order_status']=='picked_up')
-                                        <span class="badge badge-soft-warning">
-                                        {{translate('messages.out_for_delivery')}}
-                                        </span>
-                                    @elseif($order['order_status']=='delivered')
-                                        <span class="badge badge-soft-success">
-                                        {{translate('messages.delivered')}}
-                                        </span>
-                                    @elseif($order['order_status']=='failed')
-                                        <span class="badge badge-soft-danger">
-                                        {{translate('messages.payment_failed')}}
-                                        </span>
-                                    @else
-                                        <span class="badge badge-soft-danger">
-                                        {{str_replace('_',' ',$order['order_status'])}}
-                                        </span>
-                                    @endif
-                                    @if($order['order_type']=='take_away')
-                                        <div class="text-info mt-1">
-                                            {{translate('messages.take_away')}}
-                                        </div>
-                                    @else
-                                        <div class="text-title mt-1">
-                                        {{translate('messages.home Delivery')}}
-                                        </div>
-                                    @endif
-                                    <div class="mt-1">
-                                        @include('partials.delivery-type-badge', ['order' => $order])
                                     </div>
+                                    @if(in_array($order->delivery_type, ['express', 'slightly_delay'], true))
+                                        <div class="cell-chips mt-1">
+                                            @include('partials.delivery-type-badge', ['order' => $order])
+                                        </div>
+                                    @endif
                                 </td>
                                 <td>
                                     <div class="btn--container justify-content-center">
-                                        <a class="btn btn-sm btn--warning btn-outline-warning action-btn" href="{{route('vendor.order.details',['id'=>$order['id']])}}"><i class="tio-visible-outlined"></i></a>
-                                        <a class="btn btn-sm btn--primary btn-outline-primary action-btn" target="_blank" href="{{route('vendor.order.generate-invoice',[$order['id']])}}"><i class="tio-print"></i></a>
+                                        <a class="btn btn-sm action-btn action-btn--view" href="{{route('vendor.order.details',['id'=>$order['id']])}}" title="{{translate('View details')}}">
+                                            <i class="tio-visible-outlined"></i>
+                                        </a>
+                                        <a class="btn btn-sm action-btn action-btn--print" target="_blank" href="{{route('vendor.order.generate-invoice',[$order['id']])}}" title="{{translate('messages.Print invoice')}}">
+                                            <i class="tio-print"></i>
+                                        </a>
                                     </div>
                                 </td>
                             </tr>
@@ -313,21 +259,18 @@
                     <div class="empty--data">
                         <img src="{{asset('/public/assets/admin/svg/illustrations/sorry.svg')}}" alt="public">
                         <h5>
-                            {{translate('no_data_found')}}
+                            {{translate('No data found')}}
                         </h5>
                     </div>
                     @endif
                 </div>
-                <!-- End Table -->
             </div>
-            <!-- Footer -->
-            <div class="card-footer">
+            <div class="page-area">
                 {!! $orders->links() !!}
             </div>
-            <!-- End Footer -->
         </div>
-        <!-- End Card -->
 
+    </div>
 @endsection
 
 @push('script_2')
@@ -338,10 +281,6 @@
             let datatable = $.HSCore.components.HSDatatables.init($('#datatable'), {
                 dom: 'Bfrtip',
                 buttons: [
-                    {
-                        extend: 'copy',
-                        className: 'd-none'
-                    },
                     {
                         extend: 'excel',
                         className: 'd-none',
@@ -358,34 +297,13 @@
                             window.location.href = '{{route("vendor.order.export",['status'=>$status,'file_type'=>'csv','type'=>'order', request()->getQueryString()])}}';
                         }
                     },
-                    {
-                        extend: 'pdf',
-                        className: 'd-none'
-                    },
-                    {
-                        extend: 'print',
-                        className: 'd-none'
-                    },
                 ],
-                select: {
-                    style: 'multi',
-                    selector: 'td:first-child input[type="checkbox"]',
-                    classMap: {
-                        checkAll: '#datatableCheckAll',
-                        counter: '#datatableCounter',
-                        counterInfo: '#datatableCounterInfo'
-                    }
-                },
                 language: {
                     zeroRecords: '<div class="text-center p-4">' +
                         '<img class="w-7rem mb-3" src="{{asset('public/assets/admin')}}/svg/illustrations/sorry.svg" alt="Image Description">' +
 
                         '</div>'
                 }
-            });
-
-            $('#export-copy').click(function () {
-                datatable.button('.buttons-copy').trigger()
             });
 
             $('#export-excel').click(function () {
@@ -395,38 +313,6 @@
             $('#export-csv').click(function () {
                 datatable.button('.buttons-csv').trigger()
             });
-
-            $('#export-pdf').click(function () {
-                datatable.button('.buttons-pdf').trigger()
-            });
-
-            $('#export-print').click(function () {
-                datatable.button('.buttons-print').trigger()
-            });
-
-            $('#toggleColumn_order').change(function (e) {
-                datatable.columns(1).visible(e.target.checked)
-            })
-
-            $('#toggleColumn_date').change(function (e) {
-                datatable.columns(2).visible(e.target.checked)
-            })
-
-            $('#toggleColumn_customer').change(function (e) {
-                datatable.columns(3).visible(e.target.checked)
-            })
-
-            $('#toggleColumn_payment_status').change(function (e) {
-                datatable.columns(4).visible(e.target.checked)
-            })
-
-            $('#toggleColumn_order_status').change(function (e) {
-                datatable.columns(5).visible(e.target.checked)
-            })
-
-            $('#toggleColumn_actions').change(function (e) {
-                datatable.columns(6).visible(e.target.checked)
-            })
 
         });
     </script>

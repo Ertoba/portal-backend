@@ -1,5 +1,5 @@
 @extends('layouts.admin.app')
-@section('title', translate('messages.Admin_Earning_Report'))
+@section('title', translate('Admin earning report'))
 
 @section('admin_earning_report')
     active
@@ -17,13 +17,6 @@
     @php
         $activeTab = request()->tab ?: 'all';
         $parcelOrderTypes = $activeTab == 'parcel' ? ['order_types' => ['parcel']] : [];
-        $reportOverviewTitle = match ($activeTab) {
-            'parcel' => 'Comprehensive Financial Overview and Analytics for Parcel',
-            'rental' => 'Comprehensive Financial Overview and Analytics for Rental',
-            'ride-share' => 'Comprehensive Financial Overview and Analytics for Rides',
-            default => 'Comprehensive Financial Overview and Analytics for Orders',
-        };
-
         match ($activeTab) {
             'parcel' => $moduleTypes = ['parcel'],
             'rental' => $moduleTypes = ['rental'],
@@ -40,18 +33,19 @@
 
 
     <div class="content container-fluid">
-        <!-- Page Header -->
-        <div class="page-header pb-0">
+        <div class="page-header">
             <div>
                 <h1 class="page-header-title text-capitalize">
-                    {{translate('messages.Admin_Earning_Report') }}
+                    <span class="page-header-icon">
+                        <img src="{{ asset('public/assets/admin/img/outline/report.svg') }}" class="w--26" alt="">
+                    </span>
+                    <span>
+                        {{ translate('Admin earning report') }}
+                    </span>
                 </h1>
-                <p>
-                    {{ $reportOverviewTitle }}
-                </p>
+                <p class="page-header-desc">{{ translate('What you kept from every order, broken down by commission, fees and charges.') }}</p>
             </div>
         </div>
-        <!-- End Page Header -->
 
         @include('admin-views.report.partials._report_module_tabs')
 
@@ -59,9 +53,11 @@
 
         @if (request()->tab === 'rental' && addon_published_status('Rental'))
             @include('rental::admin.report.earning-report.content')
+        @elseif (request()->tab === 'service' && addon_published_status('Service'))
+            @include('service::admin.report.earning-report.content')
         @else
         <div class="card card-body mb-20">
-            <h3 class="mb-20">{{ translate('messages.Filter_Data') }}</h3>
+            <h3 class="mb-20">{{ translate('Filter data') }}</h3>
             <form method="GET">
                 <input type="hidden" name="tab" value="{{ request()->tab }}">
                 <div class="__bg-F8F9FC-card">
@@ -71,10 +67,10 @@
                                 {{ translate('messages.Module') }}
                             </label>
                              <select name="module_id" id="module_id" class="form-control js-select2-custom"
-                                title="{{ translate('messages.select_modules') }}">
+                                title="{{ translate('messages.Select modules') }}">
                                 <option value="" {{ !request('module_id') ? 'selected' : '' }}>
-                                    {{ translate('messages.all_modules') }}</option>
-                                @foreach (\App\Models\Module::whereIn('module_type', $moduleTypes)->get(['id', 'module_name']) as $module)
+                                    {{ translate('All modules') }}</option>
+                                @foreach (\App\CentralLogics\Helpers::modules_list()->whereIn('module_type', $moduleTypes) as $module)
                                     <option value="{{ $module->id }}"
                                         {{ request('module_id') == $module->id ? 'selected' : '' }}>
                                         {{ $module['module_name'] }}
@@ -84,32 +80,32 @@
                         </div>
                         <div class="col-lg-3 col-sm-6">
                             <label for="" class="input-label text-capitalize">
-                                {{ translate('messages.Date_Range') }}
+                                {{ translate('Date range') }}
                             </label>
                             <select name="filter" id="filter" class="form-control custom-select date-type-select">
-                                <option value="all" selected>{{ translate('messages.All_Time') }}</option>
+                                <option value="all" selected>{{ translate('All time') }}</option>
                                 <option {{ request()->filter == 'this_week' ? 'selected' : '' }} value="this_week">{{
-                                    translate('messages.This_Week') }}</option>
+                                    translate('This week') }}</option>
                                 <option {{ request()->filter == 'this_month' ? 'selected' : '' }} value="this_month">
-                                    {{ translate('messages.This_Month') }}</option>
+                                    {{ translate('This month') }}</option>
                                 <option {{ request()->filter == 'this_year' ? 'selected' : '' }} value="this_year">
-                                    {{ translate('messages.This_Year') }}</option>
+                                    {{ translate('This year') }}</option>
                                 <option {{ request()->filter == 'previous_year' ? 'selected' : '' }} value="previous_year">
-                                    {{ translate('messages.Previous_Year') }}</option>
+                                    {{ translate('Previous year') }}</option>
                                 <option {{ request()->filter == 'custom' ? 'selected' : '' }} value="custom">
-                                    {{ translate('messages.Custom_Range') }}</option>
+                                    {{ translate('Custom range') }}</option>
                             </select>
                         </div>
                         <div class="col-lg-3 col-sm-6 custom-date-div d--none">
                             <label for="" class="input-label text-capitalize">
-                                {{ translate('messages.Start_Date') }} <span class="text-danger">*</span>
+                                {{ translate('Start date') }} <span class="text-danger">*</span>
                             </label>
                             <input type="date" id="start_date" name="from" value="{{ request()->from }}"
                                 class="form-control">
                         </div>
                         <div class="col-lg-3 col-sm-6 custom-date-div d--none">
                             <label for="" class="input-label text-capitalize">
-                                {{ translate('messages.End_Date') }} <span class="text-danger">*</span>
+                                {{ translate('End date') }} <span class="text-danger">*</span>
                             </label>
                             <input type="date" id="end_date" name="to" value="{{ request()->to }}"
                                 class="form-control">
@@ -119,39 +115,39 @@
 
                 <div class="btn--container mt-4 justify-content-end">
                     <button id="resetbtn" type="reset" data-url="{{ $resetReportUrl }}"
-                        class="btn btn--reset {{ request()->has('filter') ? 'redirect-url' : ''}} ">{{ translate('messages.reset') }}</button>
-                    <button type="submit" class="btn btn--primary">{{ translate('messages.filter') }}</button>
+                        class="btn btn--reset {{ request()->has('filter') ? 'redirect-url' : ''}} "><i class="tio-refresh"></i> {{ translate('messages.Reset') }}</button>
+                    <button type="submit" class="btn btn--primary"><i class="tio-filter-list"></i> {{ translate('messages.Filter') }}</button>
                 </div>
             </form>
         </div>
 
         <div class="card card-body mb-20">
             <div class="mb-3">
-                <h3 class="mb-1">{{ translate('messages.Earnings_Summary') }}</h3>
-                <p class="fs-12 mb-0">{{ translate('messages.Breakdown of Revenue Sources and Performance') }}</p>
+                <h3 class="mb-1">{{ translate('Earnings summary') }}</h3>
+                <p class="fs-12 mb-0">{{ translate('Breakdown of revenue sources and performance') }}</p>
             </div>
 
             <div id="admin_earning_symmary"> </div>
 
 
-            <h4 class="mb-3">{{ translate('messages.Earnings_Breakdown') }}</h4>
+            <h4 class="mb-3">{{ translate('Earnings breakdown') }}</h4>
             <div id="admin_earning_breakdown"> </div>
 
-            <h4 class="mb-3">{{ translate('messages.Expenses_Breakdown') }}</h4>
+            <h4 class="mb-3">{{ translate('Expenses breakdown') }}</h4>
             <div id="admin_expense_breakdown"></div>
         </div>
         <div class="row g-3">
             <div class="col-12">
                 <div class="card h-100">
                     <div class="card-header border-0 pb-0">
-                        <h3 class="mb-1 text-title">{{ translate('messages.Earnings Trend') }}</h3>
+                        <h3 class="mb-1 text-title">{{ translate('Earnings trend') }}</h3>
                     </div>
                     <div class="card-body px-3 px-sm-4 pt-2 pb-3">
                         <div class="report-chart-frame">
-                            <div class="report-chart-y-axis">{{ translate('messages.Earning_Amount') }}</div>
+                            <div class="report-chart-y-axis">{{ translate('Earning amount') }}</div>
                             <div class="report-chart-body">
                                 <div id="earning-trend-chart" class="w-100"></div>
-                                <div class="report-chart-x-axis">{{ translate('messages.Time_Period') }}</div>
+                                <div class="report-chart-x-axis">{{ translate('Time period') }}</div>
                             </div>
                         </div>
                     </div>
@@ -160,14 +156,14 @@
             <div class="col-lg-6">
                 <div class="card h-100">
                     <div class="card-header border-0 pb-0">
-                        <h3 class="mb-1 text-title">{{ translate('messages.Earnings vs Expenses') }}</h3>
+                        <h3 class="mb-1 text-title">{{ translate('Earnings vs expenses') }}</h3>
                     </div>
                     <div class="card-body px-3 px-sm-4 pt-2 pb-3">
                         <div class="report-chart-frame">
-                            <div class="report-chart-y-axis">{{ translate('messages.Amount') }}</div>
+                            <div class="report-chart-y-axis">{{ translate('Amount') }}</div>
                             <div class="report-chart-body">
                                 <div id="monthly-earning-expense-graph" class="w-100"></div>
-                                <div class="report-chart-x-axis">{{ translate('messages.Time_Period') }}</div>
+                                <div class="report-chart-x-axis">{{ translate('Time period') }}</div>
                             </div>
                         </div>
                     </div>
@@ -176,7 +172,7 @@
             <div class="col-lg-6">
                 <div class="card h-100">
                     <div class="card-header border-0 pb-0">
-                        <h3 class="mb-1 text-title">{{ translate('messages.Earnings by Source') }}</h3>
+                        <h3 class="mb-1 text-title">{{ translate('Earnings by source') }}</h3>
                     </div>
                     <div class="card-body px-3 px-sm-4 pt-2 pb-3">
                         <div id="earnings-pie-chart" class="chartjs-custom mx-auto" style="max-width:400px;"></div>
@@ -194,26 +190,22 @@
 
             <div class="col-12">
                 <div class="card card-body recent-transactions-card">
-                    <!-- Header -->
                     <div class="border-0 recent-transaction-header">
                         <div class="d-flex justify-content-between align-items-center gap-2 flex-wrap mb-1">
-                            <h3 class="0">{{ translate('messages.Recent_Transactions') }}</h3>
+                            <h3 class="0">{{ translate('Recent transactions') }}</h3>
                             <div class="search--button-wrapper justify-content-end">
                                 <form id="transaction-search-form" class="">
-                                    <!-- Search -->
                                     <div class="input--group input-group input-group-merge input-group-flush">
                                         <input id="datatableSearch_" type="search" name="report_search" class="form-control" value=""
-                                            placeholder="{{ translate('Search By Order ID') }}" aria-label="Search"
+                                            placeholder="{{ translate('Search by order ID') }}" aria-label="Search"
                                             required>
                                         <button type="submit" class="btn btn--secondary">
                                             <i class="tio-search"></i>
                                         </button>
                                     </div>
-                                    <!-- End Search -->
                                 </form>
                                 <div
                                     class="d-flex flex-wrap gpa-3 justify-content-sm-end align-items-sm-center ml-0 mr-0 flex-grow-0">
-                                    <!-- Unfold -->
                                     <div class="hs-unfold ml-3">
                                         <a class="js-hs-unfold-invoker btn btn-sm btn-white dropdown-toggle btn export-btn font--sm"
                                             href="javascript:;"
@@ -223,32 +215,30 @@
                                                     "boundary": "viewport"
                                                 }'
                                             data-hs-unfold-target="#usersExportDropdown" data-hs-unfold-invoker="">
-                                            <i class="tio-download-to mr-1"></i> {{ translate('export') }}
+                                            <i class="tio-download-to mr-1"></i> {{ translate('Export') }}
                                         </a>
     
                                         <div id="usersExportDropdown"
                                             class="hs-unfold-content dropdown-unfold dropdown-menu dropdown-menu-sm-right">
-                                            <span class="dropdown-header">{{ translate('download_options') }}</span>
+                                            <span class="dropdown-header">{{ translate('Download options') }}</span>
                                             <a id="export-excel" class="dropdown-item" href="javascript:;">
                                                 <img class="avatar avatar-xss avatar-4by3 mr-2"
                                                     src="{{ asset('public/assets/admin') }}/svg/components/excel.svg"
                                                     alt="Image Description">
-                                                {{ translate('messages.excel') }}
+                                                Excel
                                             </a>
                                             <a id="export-csv" class="dropdown-item" href="javascript:;">
                                                 <img class="avatar avatar-xss avatar-4by3 mr-2"
                                                     src="{{ asset('public/assets/admin') }}/svg/components/placeholder-csv-format.svg"
                                                     alt="Image Description">
-                                                .{{ translate('messages.csv') }}
+                                                .csv
                                             </a>
                                         </div>
                                     </div>
-                                    <!-- End Unfold -->
                                 </div>
                             </div>
                         </div>
                         <div class="js-nav-scroller hs-nav-scroller-horizontal">
-                            <!-- Nav -->
                             <ul class="nav mb-0 nav-tabs border-0 nav--tabs nav--pills transaction-nav-tabs">
                                 <li class="nav-item">
                                     <a class="nav-link active transaction-tab" data-type="order" href="#"
@@ -257,11 +247,11 @@
                                 @if (request()->tab != 'parcel')
                                 <li class="nav-item">
                                     <a class="nav-link transaction-tab" data-type="subscription" href="#"
-                                        aria-disabled="true">{{ translate('messages.Subscription_Earnings') }}</a>
+                                        aria-disabled="true">{{ translate('Subscription earnings') }}</a>
                                 </li>
                                 <li class="nav-item">
                                     <a class="nav-link transaction-tab" data-type="pro_customer" href="#"
-                                        aria-disabled="true">{{ translate('messages.Pro_Customer_Subscription') }}</a>
+                                        aria-disabled="true">{{ translate('Pro customer subscription') }}</a>
                                 </li>
 
                                 @endif
@@ -270,16 +260,10 @@
                                         aria-disabled="true">{{ translate('messages.Expenses') }}</a>
                                 </li>
                             </ul>
-                            <!-- End Nav -->
                         </div>
-                        <!-- End Row -->
                     </div>
-                    <!-- End Header -->
 
-                    <!-- Table -->
                     <div id="transaction_table_container"></div>
-                    <!-- End Table -->
-                    <!-- End Footer -->
 
                 </div>
             </div>
@@ -304,9 +288,9 @@
 
         let earningsChart = null;
         const chartAxisLabels = {
-            timePeriod: "{{ translate('messages.Time_Period') }}",
-            earningAmount: "{{ translate('messages.Earning_Amount') }}",
-            amount: "{{ translate('messages.Amount') }}"
+            timePeriod: "{{ translate('Time period') }}",
+            earningAmount: "{{ translate('Earning amount') }}",
+            amount: "{{ translate('Amount') }}"
         };
         const reportCurrencySymbol = @json(\App\CentralLogics\Helpers::currency_symbol());
         const reportCurrencyPosition = @json(\App\CentralLogics\Helpers::get_business_settings('currency_symbol_position') ?? 'left');
@@ -347,33 +331,33 @@
             const colors = [];
 
             if (!earnings.is_parcel) {
-                labels.push('{{ translate('Order Commission') }}');
+                labels.push('{{ translate('Order commission') }}');
                 data.push(earnings.order_commission || 0);
                 colors.push('#04BB7B');
             }
 
             if (!earnings.is_parcel) {
-                labels.push('{{ translate('Subscription Packages') }}');
+                labels.push('{{ translate('Subscription packages') }}');
                 data.push(earnings.subscription_earning || 0);
                 colors.push('#8B5CF6');
             }
 
             if (!earnings.is_parcel && (earnings.pro_customer_subscription || 0) > 0) {
-                labels.push('{{ translate('Pro Customer Subscription') }}');
+                labels.push('{{ translate('Pro customer subscription') }}');
                 data.push(earnings.pro_customer_subscription || 0);
                 colors.push('#3B82F6');
             }
 
-            labels.push('{{ translate('Additional Fees') }}');
+            labels.push('{{ translate('Additional fees') }}');
             data.push(earnings.additional_charge || 0);
             colors.push('#EC4899');
 
-            labels.push('{{ translate('Delivery Fee Commission') }}');
+            labels.push('{{ translate('Delivery fee commission') }}');
             data.push(earnings.delivery_fee_comission || 0);
             colors.push('#F59E0B');
 
             if ((earnings.express_charge || 0) > 0) {
-                labels.push('{{ translate('Express Delivery Charge') }}');
+                labels.push('{{ translate('Express delivery charge') }}');
                 data.push(earnings.express_charge || 0);
                 colors.push('#0EA5E9');
             }
@@ -815,13 +799,13 @@
             currentTransactionSearch = '';
             $('#datatableSearch_').val('');
 
-            let placeholder = "{{ translate('messages.Search_by_Transaction_ID') }}";
+            let placeholder = "{{ translate('Search by transaction ID') }}";
             if (currentTransactionType === 'subscription') {
-                placeholder = "{{ translate('messages.Search_by_Transaction_ID_or_Store_Name') }}";
+                placeholder = "{{ translate('Search by transaction ID or store name') }}";
             } else if (currentTransactionType === 'pro_customer') {
-                placeholder = "{{ translate('messages.Search_by_Transaction_ID_or_Customer_Name') }}";
+                placeholder = "{{ translate('Search by transaction ID or customer name') }}";
             } else {
-                placeholder = "{{ translate('messages.Search_by_Txn_ID_or_Order_ID') }}";
+                placeholder = "{{ translate('Search by transaction ID or order ID') }}";
             }
             $('#datatableSearch_').attr('placeholder', placeholder);
 

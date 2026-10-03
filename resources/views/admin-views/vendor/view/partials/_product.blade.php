@@ -26,11 +26,11 @@
     </td>
     <td>
         <div class="btn--container justify-content-center">
-            <a class="btn action-btn btn--primary btn-outline-primary"
-               href="{{route('admin.item.edit',[$food['id']])}}" title="{{translate('messages.edit_item')}}"><i class="tio-edit"></i>
+            <a class="btn action-btn action-btn--edit"
+               href="{{route('admin.item.edit',[$food['id']])}}" title="{{translate('messages.Edit item')}}"><i class="tio-edit"></i>
             </a>
-            <a class="btn action-btn btn--danger btn-outline-danger form-alert" href="javascript:"
-               data-id="food-{{$food['id']}}" data-message="{{ translate('messages.Want to delete this item ?') }}" title="{{translate('messages.delete_item')}}"><i class="tio-delete-outlined"></i>
+            <a class="btn action-btn action-btn--delete form-alert" href="javascript:"
+               data-id="food-{{$food['id']}}" data-message="{{ translate('Want to delete this item?') }}" title="{{translate('Delete item')}}"><i class="tio-delete-outlined"></i>
             </a>
         </div>
         <form action="{{route('admin.item.delete',[$food['id']])}}"

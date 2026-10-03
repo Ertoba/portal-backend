@@ -10,7 +10,7 @@ use App\Exports\UnitExport;
 use App\Http\Controllers\BaseController;
 use App\Http\Requests\Admin\UnitAddRequest;
 use App\Http\Requests\Admin\UnitUpdateRequest;
-use App\Services\UnitService;
+use App\Services\Item\UnitService;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -47,16 +47,20 @@ class UnitController extends BaseController
             searchValue: request()?->search,
             dataLimit: config('default_pagination')
         );
+        $unitIds = $units->pluck('id')->all();
+        $usageStats = $this->unitService->getUsageStats(unitIds: $unitIds);
+        $moduleUsage = $this->unitService->getModuleUsage(unitIds: $unitIds);
+        $translatedLocales = $this->unitService->getTranslatedLocales(unitIds: $unitIds);
         $language = getWebConfig('language');
         $defaultLang = str_replace('_', '-', app()->getLocale());
-        return view(UnitViewPath::INDEX[VIEW], compact('units','language','defaultLang'));
+        return view(UnitViewPath::INDEX[VIEW], compact('units','language','defaultLang','usageStats','moduleUsage','translatedLocales'));
     }
 
     public function add(UnitAddRequest $request): RedirectResponse
     {
-        $unit = $this->unitRepo->add(data: $this->unitService->getAddData(request: $request));
+        $unit = $this->unitRepo->add(data: $this->unitService->getAddData($request->all()));
         $this->translationRepo->addByModel(request: $request, model: $unit, modelPath: 'App\Models\Unit', attribute: 'unit');
-        Toastr::success(translate('messages.unit_added_successfully'));
+        Toastr::success(translate('Added successfully'));
         return back();
     }
 
@@ -70,16 +74,16 @@ class UnitController extends BaseController
 
     public function update(UnitUpdateRequest $request, $id): RedirectResponse
     {
-        $unit = $this->unitRepo->update(id: $id ,data: $this->unitService->getAddData(request: $request));
+        $unit = $this->unitRepo->update(id: $id ,data: $this->unitService->getAddData($request->all()));
         $this->translationRepo->updateByModel(request: $request, model: $unit, modelPath: 'App\Models\Unit', attribute: 'unit');
-        Toastr::success(translate('messages.unit_updated_successfully'));
+        Toastr::success(translate('Updated successfully'));
         return back();
     }
 
     public function delete(Request $request): RedirectResponse
     {
         $this->unitRepo->delete(id: $request['id']);
-        Toastr::success(translate('messages.unit_deleted_successfully'));
+        Toastr::success(translate('Deleted successfully'));
         return back();
     }
 
@@ -110,9 +114,13 @@ class UnitController extends BaseController
             searchValue: $request['search'],
             dataLimit: 50
         );
+        $unitIds = $units->pluck('id')->all();
+        $usageStats = $this->unitService->getUsageStats(unitIds: $unitIds);
+        $moduleUsage = $this->unitService->getModuleUsage(unitIds: $unitIds);
+        $translatedLocales = $this->unitService->getTranslatedLocales(unitIds: $unitIds);
 
         return response()->json([
-            'view'=>view(UnitViewPath::SEARCH[VIEW],compact('units'))->render()
+            'view'=>view(UnitViewPath::SEARCH[VIEW],compact('units','usageStats','moduleUsage','translatedLocales'))->render()
         ]);
     }
 }

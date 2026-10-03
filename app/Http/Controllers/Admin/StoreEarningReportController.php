@@ -4,14 +4,16 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Store;
-use App\Traits\ReportGeneratorTrait;
+use App\Traits\Report\ReportGeneratorTrait;
 use Illuminate\Http\Request;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\StoreEarningTransactionExport;
 
 class StoreEarningReportController extends Controller
 {
-    use ReportGeneratorTrait;
+    use ReportGeneratorTrait {
+        getStoreEarningTransactions as generateStoreEarningTransactions;
+    }
 
     public function getStoreEarningReport(Request $request)
     {
@@ -26,7 +28,7 @@ class StoreEarningReportController extends Controller
     {
         $store_id = $request->query('store_id', 'all');
         [$filter, $from, $to] = $this->resolveDateFilter($request);
-        $summary = $this->get_store_earning_summary_data(
+        $summary = $this->getStoreEarningSummaryData(
             store_id: $store_id,
             filter: $filter,
             from: $from,
@@ -42,7 +44,7 @@ class StoreEarningReportController extends Controller
     {
         $store_id = $request->query('store_id', 'all');
         [$filter, $from, $to] = $this->resolveDateFilter($request);
-        $summary = $this->get_store_earning_summary_data(
+        $summary = $this->getStoreEarningSummaryData(
             store_id: $store_id,
             filter: $filter,
             from: $from,
@@ -58,7 +60,7 @@ class StoreEarningReportController extends Controller
     {
         $store_id = $request->query('store_id', 'all');
         [$filter, $from, $to] = $this->resolveDateFilter($request);
-        $summary = $this->get_store_earning_summary_data(
+        $summary = $this->getStoreEarningSummaryData(
             store_id: $store_id,
             filter: $filter,
             from: $from,
@@ -75,7 +77,7 @@ class StoreEarningReportController extends Controller
         $store_id = $request->query('store_id', 'all');
         $module_id = $request->query('module_id', 'all');
         [$filter, $from, $to] = $this->resolveDateFilter($request);
-        $trends = $this->get_store_earning_trend_data(
+        $trends = $this->getStoreEarningTrendData(
             store_id: $store_id,
             filter: $filter,
             from: $from,
@@ -94,7 +96,7 @@ class StoreEarningReportController extends Controller
         $type = $request->query('type', 'order');
 
         if ($type === 'expense') {
-            $transactions = $this->get_store_expense_transactions(
+            $transactions = $this->getStoreExpenseTransactions(
                 request: $request,
                 store_id: $store_id,
                 filter: $filter,
@@ -102,7 +104,7 @@ class StoreEarningReportController extends Controller
                 to: $to
             );
         } elseif ($type === 'subscription') {
-            $transactions = $this->get_store_subscription_transactions(
+            $transactions = $this->getStoreSubscriptionTransactions(
                 request: $request,
                 store_id: $store_id,
                 filter: $filter,
@@ -110,7 +112,7 @@ class StoreEarningReportController extends Controller
                 to: $to
             );
         } else {
-            $transactions = $this->get_store_earning_transactions(
+            $transactions = $this->generateStoreEarningTransactions(
                 request: $request,
                 store_id: $store_id,
                 filter: $filter,
@@ -140,7 +142,7 @@ class StoreEarningReportController extends Controller
         }
 
         if ($type === 'expense') {
-            $transactions = $this->get_store_expense_transactions(
+            $transactions = $this->getStoreExpenseTransactions(
                 request: $request,
                 store_id: $store_id,
                 filter: $filter,
@@ -150,7 +152,7 @@ class StoreEarningReportController extends Controller
             );
             $title = 'Store_Expense_Report';
         } elseif ($type === 'subscription') {
-            $transactions = $this->get_store_subscription_transactions(
+            $transactions = $this->getStoreSubscriptionTransactions(
                 request: $request,
                 store_id: $store_id,
                 filter: $filter,
@@ -160,7 +162,7 @@ class StoreEarningReportController extends Controller
             );
             $title = 'Store_Subscription_Report';
         } else {
-            $transactions = $this->get_store_earning_transactions(
+            $transactions = $this->generateStoreEarningTransactions(
                 request: $request,
                 store_id: $store_id,
                 filter: $filter,

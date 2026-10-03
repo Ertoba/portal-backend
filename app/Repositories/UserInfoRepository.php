@@ -26,18 +26,18 @@ class UserInfoRepository implements UserInfoRepositoryInterface
 
     public function getFirstWhere(array $params, array $relations = []): ?Model
     {
-        return $this->userInfo->where($params)->first();
+        return $this->userInfo->with($relations)->where($params)->first();
     }
 
-    public function getList(array $orderBy = [], array $relations = [], int|string $dataLimit = DEFAULT_DATA_LIMIT, int $offset = null): Collection|LengthAwarePaginator
+    public function getList(array $orderBy = [], array $relations = [], int|string $dataLimit = DEFAULT_DATA_LIMIT, ?int $offset = null): Collection|LengthAwarePaginator
     {
-        return $this->userInfo->paginate($dataLimit);
+        return $this->userInfo->with($relations)->paginate($dataLimit);
     }
 
-    public function getListWhere(string $searchValue = null, array $filters = [], array $relations = [], int|string $dataLimit = DEFAULT_DATA_LIMIT, int $offset = null): Collection|LengthAwarePaginator
+    public function getListWhere(?string $searchValue = null, array $filters = [], array $relations = [], int|string $dataLimit = DEFAULT_DATA_LIMIT, ?int $offset = null): Collection|LengthAwarePaginator
     {
-        $key = explode(' ', $searchValue);
-        return $this->userInfo->where(function ($query) use ($key) {
+        $key = explode(' ', $searchValue ?? '');
+        return $this->userInfo->with($relations)->where(function ($query) use ($key) {
             foreach ($key as $value) {
                 $query->orWhere('name', 'like', "%{$value}%");
             }

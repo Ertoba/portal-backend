@@ -18,7 +18,6 @@ class ZoneExport implements  FromView, ShouldAutoSize, WithStyles ,WithHeadings,
 
     use Exportable;
     protected $data;
-    // protected $search;
 
     public function __construct($data) {
         $this->data = $data;
@@ -54,12 +53,11 @@ class ZoneExport implements  FromView, ShouldAutoSize, WithStyles ,WithHeadings,
         ];
         $sheet->getStyle('A1:H1')->applyFromArray($styleArray);
         return [
-            // Define the style for cells with data
             'A1:H'.$this->data['data']->count() +3 => [
                 'borders' => [
                     'allBorders' => [
                         'borderStyle' => Border::BORDER_THIN,
-                        'color' => ['argb' => '000000'], // Specify the color of the border (optional)
+                        'color' => ['argb' => '000000'],
                     ],
                 ],
             ],
@@ -71,7 +69,7 @@ class ZoneExport implements  FromView, ShouldAutoSize, WithStyles ,WithHeadings,
     {
         return [
             AfterSheet::class => function(AfterSheet $event) {
-                $event->sheet->getStyle('A1:H1') // Adjust the range as per your needs
+                $event->sheet->getStyle('A1:H1')
                     ->getAlignment()
                     ->setHorizontal(Alignment::HORIZONTAL_CENTER)
                     ->setVertical(Alignment::VERTICAL_CENTER);

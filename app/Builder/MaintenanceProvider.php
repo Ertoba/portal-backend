@@ -6,34 +6,17 @@ use App\CentralLogics\Helpers;
 use App\Models\BusinessSetting;
 use App\Models\DataSetting;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\Cache;
+use App\Support\Cache\ApiCache;
 use Modules\Builder\Contracts\MaintenanceProvider as MaintenanceProviderContract;
 use Modules\Builder\ValueObjects\MaintenanceState;
 use Modules\Builder\ValueObjects\StorefrontScope;
 
-/**
- * 6amMart maintenance adapter.
- *
- * Mirrors the host's admin maintenance feature (Business Settings → Maintenance
- * Mode), but enforces it for the builder storefront when the dedicated
- * `vendor_storefront` system is selected. The master switch is the
- * `maintenance_mode` business setting; the systems list, duration window, and
- * message body live in the `data_settings` rows of type `maintenance_mode`
- * (read through the same `data_settings_maintenance_mode` cache the mobile API
- * config uses, so admin saves stay consistent).
- *
- * Duration semantics match App\Http\Middleware\MaintenanceMode exactly:
- *   - 'until_change'  → active while the master switch is on
- *   - dated window    → active only when now() is between start and end
- */
 class MaintenanceProvider implements MaintenanceProviderContract
 {
-    /** The system key this storefront is gated by (admin checkbox). */
     private const SYSTEM_KEY = 'vendor_storefront';
 
     public function state(?StorefrontScope $scope = null): MaintenanceState
     {
-        // Master switch off → never in maintenance.
         if (! (int) (Helpers::get_business_settings('maintenance_mode') ?? 0)) {
             return MaintenanceState::inactive();
         }
@@ -58,10 +41,10 @@ class MaintenanceProvider implements MaintenanceProviderContract
             body:    $message['message_body'] ?? null,
             endDate: $this->endDate($duration),
             phone:   ! empty($message['business_number'])
-                ? (BusinessSetting::where('key', 'phone')->value('value') ?: null)
+                ? (Helpers::get_business_settings('phone', false) ?: null)
                 : null,
             email:   ! empty($message['business_email'])
-                ? (BusinessSetting::where('key', 'email')->value('value') ?: null)
+                ? (Helpers::get_business_settings('email', false) ?: null)
                 : null,
         );
     }
@@ -75,7 +58,7 @@ class MaintenanceProvider implements MaintenanceProviderContract
      */
     private function maintenanceData(): array
     {
-        return Cache::rememberForever('data_settings_maintenance_mode', function () {
+        return ApiCache::remember('data_settings', 'maintenance_mode', function () {
             return DataSetting::where('type', 'maintenance_mode')
                 ->whereIn('key', [
                     'maintenance_system_setup',
@@ -87,12 +70,6 @@ class MaintenanceProvider implements MaintenanceProviderContract
         });
     }
 
-    /**
-     * Replicates the host MaintenanceMode middleware window logic:
-     * "until_change" is always live; a dated window is live only between its
-     * start and end. A malformed/missing window is treated as not-active
-     * (fail-open) so a half-saved config never traps every storefront.
-     */
     private function withinWindow(array $duration): bool
     {
         if (($duration['maintenance_duration'] ?? null) === 'until_change') {
@@ -112,7 +89,6 @@ class MaintenanceProvider implements MaintenanceProviderContract
         }
     }
 
-    /** ISO end timestamp for the countdown, or null for an open-ended window. */
     private function endDate(array $duration): ?string
     {
         if (($duration['maintenance_duration'] ?? null) === 'until_change') {
@@ -131,7 +107,6 @@ class MaintenanceProvider implements MaintenanceProviderContract
         }
     }
 
-    /** Decode a value that may already be an array (cache) or a JSON string. */
     private function decode(mixed $value, mixed $fallback): mixed
     {
         if (\is_array($value)) {

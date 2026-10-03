@@ -11,9 +11,11 @@ use App\Exports\CouponExport;
 use App\Http\Controllers\BaseController;
 use App\Http\Requests\Admin\CouponAddRequest;
 use App\Http\Requests\Admin\CouponUpdateRequest;
+use App\Models\Store;
 use App\Models\User;
+use App\CentralLogics\Helpers;
 use App\Models\Zone;
-use App\Services\CouponService;
+use App\Services\Marketing\CouponService;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -39,7 +41,7 @@ class CouponController extends BaseController
     public function index(?Request $request): View|Collection|LengthAwarePaginator|RedirectResponse|null
     {
         if (Config::get('module.current_module_type') === 'parcel') {
-            Toastr::error(translate('messages.coupon_is_not_available_for_parcel_module'));
+            Toastr::error(translate('messages.Coupon is not available for parcel module'));
             return back();
         }
 
@@ -51,21 +53,35 @@ class CouponController extends BaseController
         $coupons = $this->couponRepo->getListWhere(
             searchValue: $request['search'],
             filters: ['created_by'=>'admin','module_id'=>Config::get('module.current_module_id')],
-            relations: ['module'],
+            relations: ['module', 'store:id,name'],
             dataLimit: config('default_pagination'),
         );
         $customer = $request['customer'];
         $language = getWebConfig('language');
         $defaultLang = str_replace('_', '-', app()->getLocale());
         $zones = $this->zoneRepo->getList();
-        return view(CouponViewPath::INDEX[VIEW], compact('coupons','language','defaultLang','zones','customer'));
+
+        $customerIds = (array) old('customer_ids', []);
+        if (! $customerIds && is_numeric($customer)) {
+            $customerIds = [$customer];
+        }
+        $selected_customers = Helpers::customers_by_ids($customerIds);
+
+        $storeIds = array_values(array_filter((array) old('store_ids', []), function ($id) {
+            return is_numeric($id);
+        }));
+        $selected_stores = $storeIds
+            ? Store::whereIn('id', $storeIds)->get(['id', 'name'])
+            : collect();
+
+        return view(CouponViewPath::INDEX[VIEW], compact('coupons','language','defaultLang','zones','customer','selected_customers','selected_stores'));
     }
 
     public function add(CouponAddRequest $request): RedirectResponse
     {
-        $coupon = $this->couponRepo->add(data: $this->couponService->getAddData(request: $request,moduleId: Config::get('module.current_module_id')));
+        $coupon = $this->couponRepo->add(data: $this->couponService->getAddData($request->all(),moduleId: Config::get('module.current_module_id')));
         $this->translationRepo->addByModel(request: $request, model: $coupon, modelPath: 'App\Models\Coupon', attribute: 'title');
-        Toastr::success(translate('messages.coupon_added_successfully'));
+        Toastr::success(translate('Added successfully'));
         return back();
     }
 
@@ -75,14 +91,16 @@ class CouponController extends BaseController
         $language = getWebConfig('language');
         $defaultLang = str_replace('_', '-', app()->getLocale());
         $zones = $this->zoneRepo->getList();
-        return view(CouponViewPath::UPDATE[VIEW], compact('coupon','language','defaultLang','zones'));
+        $selected_customers = Helpers::customers_by_ids(json_decode($coupon->customer_id));
+
+        return view(CouponViewPath::UPDATE[VIEW], compact('coupon','language','defaultLang','zones','selected_customers'));
     }
 
     public function update(CouponUpdateRequest $request, $id): RedirectResponse
     {
-        $coupon = $this->couponRepo->update(id: $id ,data: $this->couponService->getAddData(request: $request, moduleId: Config::get('module.current_module_id')));
+        $coupon = $this->couponRepo->update(id: $id ,data: $this->couponService->getAddData($request->all(), moduleId: Config::get('module.current_module_id')));
         $this->translationRepo->updateByModel(request: $request, model: $coupon, modelPath: 'App\Models\Coupon', attribute: 'title');
-        Toastr::success(translate('messages.coupon_updated_successfully'));
+        Toastr::success(translate('Updated successfully'));
         return back();
     }
 
@@ -90,18 +108,18 @@ class CouponController extends BaseController
     {
         $coupon = $this->couponRepo->getFirstWhere(params: ['id' => $request['id']]);
         if ($request['status'] == 1 && Carbon::parse($coupon->expire_date)->startOfDay() < Carbon::today()) {
-            Toastr::warning(translate('messages.this_coupon_is_expired_and_cannot_be_activated'));
+            Toastr::warning(translate('messages.This coupon is expired and cannot be activated'));
             return back();
         }
         $this->couponRepo->update(id: $request['id'] ,data: ['status'=>$request['status']]);
-        Toastr::success(translate('messages.coupon_status_updated'));
+        Toastr::success(translate('messages.Coupon status updated'));
         return back();
     }
 
     public function delete(Request $request): RedirectResponse
     {
         $this->couponRepo->delete(id: $request['id']);
-        Toastr::success(translate('messages.coupon_deleted_successfully'));
+        Toastr::success(translate('Deleted successfully'));
         return back();
     }
 

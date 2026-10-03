@@ -12,7 +12,6 @@
 <body>
     @inertia
 
-    {{-- Demo-only Website Builder promo modal (Builder storefront + setup pages). --}}
     @if ((function_exists('getEnvMode') ? getEnvMode() : config('app.app_mode')) === 'demo')
         @include('partials.builder-demo-promo')
     @endif

@@ -5,29 +5,12 @@
     @csrf
     <div>
         <div class="custom-offcanvas-header bg--secondary d-flex justify-content-between align-items-center px-3 py-3">
-            <h3 class="mb-0">{{ translate('Edit_Faq') }}</h3>
+            <h3 class="mb-0">{{ translate('Edit FAQ') }}</h3>
             <button type="button"
                 class="btn-close w-25px h-25px border rounded-circle d-center bg--secondary offcanvas-close fz-15px p-0"
                 aria-label="Close">&times;</button>
         </div>
         <div class="custom-offcanvas-body p-20">
-            {{-- <div class="bg--secondary rounded p-20 mb-20">
-                <div class="mb-15">
-                    <h4 class="mb-0">{{ translate('Availability') }}</h4>
-                    <p class="fz-12px">{{ translate('If_you_turn_off_this_status_your_tax_calculation_will_effect') }}
-                    </p>
-                </div>
-                <label class="border d-flex align-items-center bg-white-n justify-content-between rounded p-10px px-3">
-                    {{ translate('Status') }}
-                    <div class="toggle-switch ml-auto justify-content-end toggle-switch-sm" for="status">
-                        <input type="checkbox" name="status" value="1"
-                            {{ $faq['status'] ? 'checked' : '' }} class="toggle-switch-input" id="status">
-                        <span class="toggle-switch-label">
-                            <span class="toggle-switch-indicator"></span>
-                        </span>
-                    </div>
-                </label>
-            </div> --}}
 
 
 
@@ -38,7 +21,7 @@
                     <ul class="nav nav-tabs mb-4 border-0">
                         <li class="nav-item">
                             <a class="nav-link lang_link1 active" href="#"
-                                id="default-link">{{ translate('messages.default') }}</a>
+                                id="default-link">{{ translate('Default') }}</a>
                         </li>
                         @foreach ($language as $lang)
                             <li class="nav-item">
@@ -55,7 +38,7 @@
                                 <div class="col-md-12">
                                     <label class="input-label"
                                         for="exampleFormControlInput1">{{ translate('Question') }}
-                                        ({{ translate('messages.default') }})
+                                        ({{ translate('Default') }})
 
                                         <span class="form-label-secondary text-danger" data-toggle="tooltip"
                                             data-placement="right"
@@ -65,7 +48,7 @@
                                     </label>
                                     <input id="Reviewer_name" data-maxlength="150" type="text" name="question[]"
                                         class="form-control" value="{{ $faq?->getRawOriginal('question') }}"
-                                        placeholder="{{ translate('Ex: John') }}" required>
+                                        placeholder="{{ translate('Enter question') }}" required>
 
                                     <div class="d-flex justify-content-end">
                                         <span class="text-body-light text-counting text-right d-block mt-1">0/150</span>
@@ -74,7 +57,7 @@
                                 <div class="col-md-12">
                                     <label class="input-label"
                                         for="exampleFormControlInput1">{{ translate('messages.Answer') }}
-                                        ({{ translate('messages.default') }})
+                                        ({{ translate('Default') }})
                                         <span class="form-label-secondary text-danger" data-toggle="tooltip"
                                             data-placement="right"
                                             data-original-title="{{ translate('messages.Required.') }}"> *
@@ -84,7 +67,7 @@
 
                                     <textarea id="Reviewer_review" data-maxlength="100"
                                           type="text"
-                                        name="answer[]" class="form-control" placeholder="{{ translate('Ex: John') }}" required>{{ $faq?->getRawOriginal('answer') }}</textarea>
+                                        name="answer[]" class="form-control" placeholder="{{ translate('Enter answer') }}" required>{{ $faq?->getRawOriginal('answer') }}</textarea>
 
                                     <div class="d-flex justify-content-end">
                                         <span class="text-body-light text-counting text-right d-block mt-1">0/500</span>
@@ -129,12 +112,12 @@
                                     <div class="col-md-12">
 
                                         <label class="input-label"
-                                            for="exampleFormControlInput1">{{ translate('answer') }}
+                                            for="exampleFormControlInput1">{{ translate('Answer') }}
                                             ({{ strtoupper($lang) }})
                                         </label>
                                         <textarea type="text" name="answer[]"
                                             class="form-control"
-                                            data-maxlength="500" placeholder="{{ translate('messages.answer') }}"
+                                            data-maxlength="500" placeholder="{{ translate('messages.Answer') }}"
                                             maxlength="191">{{ $translate[$lang]['answer'] ?? '' }}</textarea>
                                         <div class="d-flex justify-content-end">
                                             <span class="text-body-light text-counting text-right d-block mt-1">0/500</span>
@@ -158,7 +141,7 @@
     <div
         class="align-items-center bg-white bottom-0 d-flex gap-3 justify-content-center mt-auto offcanvas-footer p-3 position-sticky">
         <button type="button"
-            class="btn w-100 btn--secondary offcanvas-close h--40px">{{ translate('Cancel') }}</button>
-        <button type="submit" class="btn w-100 btn--primary h--40px">{{ translate('Update') }}</button>
+            class="btn w-100 btn--secondary offcanvas-close h--40px"><i class="tio-clear-circle-outlined"></i> {{ translate('Cancel') }}</button>
+        <button type="submit" class="btn w-100 btn--primary h--40px"><i class="tio-save"></i> {{ translate('Update') }}</button>
     </div>
 </form>

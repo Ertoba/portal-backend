@@ -1,6 +1,6 @@
 @extends('layouts.admin.app')
 
-@section('title',\App\Models\BusinessSetting::where(['key'=>'business_name'])->first()->value??translate('messages.dashboard'))
+@section('title',\App\CentralLogics\Helpers::get_business_settings('business_name', false)??translate('Dashboard'))
 
 @push('css_or_js')
     <meta name="csrf-token" content="{{ csrf_token() }}">
@@ -8,26 +8,25 @@
 
 @section('content')
     <div class="content container-fluid">
-        @if(auth('admin')->user()->role_id == 1)
-        @php($mod = \App\Models\Module::find(Config::get('module.current_module_id')))
-        <!-- Page Header -->
+        @if(auth('admin')->user()->role_id == 1 || \App\CentralLogics\Helpers::module_permission_check('dashboard'))
         <div class="page-header">
             <div class="row align-items-center py-2">
                 <div class="col-sm mb-2 mb-sm-0">
                     <div class="d-flex align-items-center">
-                        <img class="onerror-image" data-onerror-image="{{asset('/public/assets/admin/img/grocery.svg')}}" src="{{$mod->icon_full_url }}"
+                        <img class="onerror-image" data-onerror-image="{{asset('/public/assets/admin/img/grocery.svg')}}" src="{{ Config::get('module.current_module_icon') }}"
                         width="38" alt="img">
                         <div class="w-0 flex-grow pl-2">
-                            <h1 class="page-header-title mb-0">{{translate($mod->module_name)}} {{translate('messages.Dashboard')}}.</h1>
-                            <p class="page-header-text m-0">{{translate('Hello, Here You Can Manage Your')}} {{translate($mod->module_name)}} {{translate('orders by Zone.')}}</p>
+                            <h1 class="page-header-title mb-0">{{translate(Config::get('module.current_module_name'))}} {{translate('Dashboard')}}.</h1>
+                            <p class="page-header-desc">{{ translate('Today\'s orders, earnings and anything waiting on you, across this module.') }}</p>
+                            <p class="page-header-text m-0">{{ translate('Hello, here you can manage your orders by zone.') }}</p>
                         </div>
                     </div>
                 </div>
 
                 <div class="col-sm-auto min--280">
                     <select name="zone_id" class="form-control js-select2-custom fetch_data_zone_wise">
-                        <option value="all">{{ translate('messages.All_Zones') }}</option>
-                        @foreach(\App\Models\Zone::orderBy('name')->get() as $zone)
+                        <option value="all">{{ translate('All zones') }}</option>
+                        @foreach(\App\CentralLogics\Helpers::zones_dropdown() as $zone)
                             <option
                                 value="{{$zone['id']}}" {{$params['zone_id'] == $zone['id']?'selected':''}}>
                                 {{$zone['name']}}
@@ -37,9 +36,7 @@
                 </div>
             </div>
         </div>
-        <!-- End Page Header -->
 
-        <!-- Stats -->
         <div class="card mb-3">
             <div class="card-body pt-0">
                 <div class="d-flex flex-wrap align-items-center justify-content-end">
@@ -47,15 +44,15 @@
                         <div class="statistics-btn-grp">
                             <label>
                                 <input type="radio" name="statistics" value="this_year" {{$params['statistics_type'] == 'this_year'?'checked':''}} class="order_stats_update" hidden>
-                                <span>{{ translate('This_Year') }}</span>
+                                <span>{{ translate('This year') }}</span>
                             </label>
                             <label>
                                 <input type="radio" name="statistics" value="this_month" {{$params['statistics_type'] == 'this_month'?'checked':''}} class="order_stats_update" hidden>
-                                <span>{{ translate('This_Month') }}</span>
+                                <span>{{ translate('This month') }}</span>
                             </label>
                             <label>
                                 <input type="radio" name="statistics" value="this_week" {{$params['statistics_type'] == 'this_week'?'checked':''}} class="order_stats_update" hidden>
-                                <span>{{ translate('This_Week') }}</span>
+                                <span>{{ translate('This week') }}</span>
                             </label>
                         </div>
                     </div>
@@ -64,7 +61,7 @@
                     <div class="col-sm-6 col-lg-3">
                         <div class="__dashboard-card-2">
                             <img src="{{asset('/public/assets/admin/img/dashboard/pharmacy/items.svg')}}" alt="dashboard/pharmacy">
-                            <h6 class="name">{{ translate('messages.items') }}</h6>
+                            <h6 class="name">{{ translate('messages.Items') }}</h6>
                             <h3 class="count">{{ $data['total_items'] }}</h3>
                                 <div class="subtxt">{{ $data['new_items'] }} {{ translate('newly added') }}</div>
                         </div>
@@ -72,7 +69,7 @@
                     <div class="col-sm-6 col-lg-3">
                         <div class="__dashboard-card-2">
                             <img src="{{asset('/public/assets/admin/img/dashboard/pharmacy/orders.svg')}}" alt="dashboard/pharmacy">
-                            <h6 class="name">{{ translate('messages.orders') }}</h6>
+                            <h6 class="name">{{ translate('messages.Orders') }}</h6>
                             <h3 class="count">{{ $data['total_orders'] }}</h3>
                                 <div class="subtxt">{{ $data['new_orders'] }} {{ translate('newly added') }}</div>
                         </div>
@@ -80,7 +77,7 @@
                     <div class="col-sm-6 col-lg-3">
                         <div class="__dashboard-card-2">
                             <img src="{{asset('/public/assets/admin/img/dashboard/pharmacy/stores.svg')}}" alt="dashboard/pharmacy">
-                            <h6 class="name">{{ translate('messages.stores') }}</h6>
+                            <h6 class="name">{{ translate('messages.Stores') }}</h6>
                             <h3 class="count">{{ $data['total_stores'] }}</h3>
                                 <div class="subtxt">{{ $data['new_stores'] }} {{ translate('newly added') }}</div>
                         </div>
@@ -100,7 +97,7 @@
                                     <div class="d-flex justify-content-between align-items-center">
                                         <h6 class="card-subtitle d-flex justify-content-between m-0 align-items-center text-hover--primary">
                                             <img src="{{asset('/public/assets/admin/img/dashboard/grocery/unassigned.svg')}}" alt="dashboard" class="oder--card-icon">
-                                            <span>{{translate('messages.unassigned_orders')}}</span>
+                                            <span>{{translate('messages.Unassigned orders')}}</span>
                                         </h6>
                                         <span class="card-title text-3F8CE8">
                                             {{$data['searching_for_dm']}}
@@ -114,7 +111,7 @@
                                     <div class="d-flex justify-content-between align-items-center">
                                         <h6 class="card-subtitle d-flex justify-content-between m-0 align-items-center text-hover--primary">
                                             <img src="{{asset('/public/assets/admin/img/dashboard/grocery/accepted.svg')}}" alt="dashboard" class="oder--card-icon">
-                                            <span>{{translate('Accepted by Delivery Man')}}</span>
+                                            <span>{{translate('Accepted by deliveryman')}}</span>
                                         </h6>
                                         <span class="card-title text-success">
                                             {{$data['accepted_by_dm']}}
@@ -141,7 +138,7 @@
                                     <div class="d-flex justify-content-between align-items-center">
                                         <h6 class="card-subtitle d-flex justify-content-between m-0 align-items-center text-hover--primary">
                                             <img src="{{asset('/public/assets/admin/img/dashboard/grocery/out-for.svg')}}" alt="dashboard" class="oder--card-icon">
-                                            <span>{{translate('Out for Delivery')}}</span>
+                                            <span>{{translate('Out for delivery')}}</span>
                                         </h6>
                                         <span class="card-title text-success">
                                             {{$data['picked_up']}}
@@ -155,7 +152,7 @@
                                     <div class="d-flex justify-content-between align-items-center">
                                         <h6 class="card-subtitle d-flex justify-content-between m-0 align-items-center text-hover--primary">
                                             <img src="{{asset('/public/assets/admin/img/dashboard/grocery/delivered.svg')}}" alt="dashboard" class="oder--card-icon">
-                                            <span>{{translate('messages.delivered')}}</span>
+                                            <span>{{translate('Delivered')}}</span>
                                         </h6>
                                         <span class="card-title text-success">
                                             {{$data['delivered']}}
@@ -169,7 +166,7 @@
                                     <div class="d-flex justify-content-between align-items-center">
                                         <h6 class="card-subtitle d-flex justify-content-between m-0 align-items-center text-hover--primary">
                                             <img src="{{asset('/public/assets/admin/img/order-status/canceled.svg')}}" alt="dashboard" class="oder--card-icon">
-                                            <span>{{translate('messages.canceled')}}</span>
+                                            <span>{{translate('Canceled')}}</span>
                                         </h6>
                                         <span class="card-title text-danger">
                                             {{$data['canceled']}}
@@ -183,7 +180,7 @@
                                     <div class="d-flex justify-content-between align-items-center">
                                         <h6 class="card-subtitle d-flex justify-content-between m-0 align-items-center text-hover--primary">
                                             <img src="{{asset('/public/assets/admin/img/order-status/refunded.svg')}}" alt="dashboard" class="oder--card-icon">
-                                            <span>{{translate('messages.refunded')}}</span>
+                                            <span>{{translate('Refunded')}}</span>
                                         </h6>
                                         <span class="card-title text-danger">
                                             {{$data['refunded']}}
@@ -197,7 +194,7 @@
                                     <div class="d-flex justify-content-between align-items-center">
                                         <h6 class="card-subtitle d-flex justify-content-between m-0 align-items-center text-hover--primary">
                                             <img src="{{asset('/public/assets/admin/img/order-status/payment-failed.svg')}}" alt="dashboard" class="oder--card-icon">
-                                            <span>{{translate('messages.payment_failed')}}</span>
+                                            <span>{{translate('Payment failed')}}</span>
                                         </h6>
                                         <span class="card-title text-danger">
                                             {{$data['refund_requested']}}
@@ -211,9 +208,7 @@
                 </div>
             </div>
         </div>
-        <!-- End Stats -->
 
-        <!-- End Row -->
 
         <div class="row g-2">
             <div class="col-lg-8 col--xl-8">
@@ -222,7 +217,7 @@
                         <div class="d-flex flex-wrap justify-content-between align-items-center __gap-12px">
                             <div class="__gross-amount" id="gross_sale">
                                 <h6>{{\App\CentralLogics\Helpers::format_currency(array_sum($total_sell))}}</h6>
-                                <span>{{ translate('messages.Gross Sale') }}</span>
+                                <span>{{ translate('Gross sale') }}</span>
                             </div>
                             <div class="chart--label __chart-label p-0 move-left-100 ml-auto">
                                 <span class="indicator chart-bg-2"></span>
@@ -253,12 +248,10 @@
                 </div>
             </div>
             <div class="col-lg-4 col--xl-4">
-                <!-- Card -->
                 <div class="card h-100">
-                    <!-- Header -->
                     <div class="card-header border-0">
                         <h5 class="card-header-title">
-                            {{translate('User Statistics')}}
+                            {{translate('User statistics')}}
                         </h5>
                         <div id="stat_zone">
 
@@ -285,105 +278,87 @@
                             </option>
                         </select>
                     </div>
-                    <!-- End Header -->
 
-                    <!-- Body -->
                     <div class="card-body" id="user-overview-board">
                         <div class="position-relative pie-chart">
                             <div id="dognut-pie"></div>
-                            <!-- Total Orders -->
                             <div class="total--orders">
                                 <h3 class="text-uppercase mb-xxl-2">{{ $data['customer'] + $data['stores'] + $data['delivery_man'] }}</h3>
-                                <span class="text-capitalize">{{translate('messages.total_users')}}</span>
+                                <span class="text-capitalize">{{translate('messages.Total users')}}</span>
                             </div>
-                            <!-- Total Orders -->
                         </div>
                         <div class="d-flex flex-wrap justify-content-center mt-4">
                             <div class="chart--label">
                                 <span class="indicator chart-bg-1"></span>
                                 <span class="info">
-                                    {{translate('messages.customer')}} {{$data['customer']}}
+                                    {{translate('messages.Customer')}} {{$data['customer']}}
                                 </span>
                             </div>
                             <div class="chart--label">
                                 <span class="indicator chart-bg-2"></span>
                                 <span class="info">
-                                    {{translate('messages.store')}} {{$data['stores']}}
+                                    {{translate('messages.Store')}} {{$data['stores']}}
                                 </span>
                             </div>
                             <div class="chart--label">
                                 <span class="indicator chart-bg-3"></span>
                                 <span class="info">
-                                    {{translate('messages.delivery_man')}} {{$data['delivery_man']}}
+                                    {{translate('Deliveryman')}} {{$data['delivery_man']}}
                                 </span>
                             </div>
                         </div>
 
                     </div>
-                    <!-- End Body -->
                 </div>
             </div>
 
             <div class="col-lg-4 col-md-6">
-                <!-- Card -->
                 <div class="card h-100" id="top-restaurants-view">
                     @include('admin-views.partials._top-restaurants',['top_restaurants'=>$data['top_restaurants']])
                 </div>
-                <!-- End Card -->
             </div>
 
             <div class="col-lg-4 col-md-6">
-                <!-- Card -->
                 <div class="card h-100" id="popular-restaurants-view">
                     @include('admin-views.partials._popular-restaurants',['popular'=>$data['popular']])
                 </div>
-                <!-- End Card -->
             </div>
 
             <div class="col-lg-4 col-md-6">
-                <!-- Card -->
                 <div class="card h-100" id="top-selling-foods-view">
                     @include('admin-views.partials._top-selling-foods',['top_sell'=>$data['top_sell']])
                 </div>
-                <!-- End Card -->
             </div>
 
             <div class="col-lg-4 col-md-6">
-                <!-- Card -->
                 <div class="card h-100" id="top-rated-foods-view">
                     @include('admin-views.partials._top-rated-foods',['top_rated_foods'=>$data['top_rated_foods']])
                 </div>
-                <!-- End Card -->
             </div>
 
             <div class="col-lg-4 col-md-6">
-                <!-- Card -->
                 <div class="card h-100" id="top-deliveryman-view">
                     @include('admin-views.partials._top-deliveryman',['top_deliveryman'=>$data['top_deliveryman']])
                 </div>
-                <!-- End Card -->
             </div>
 
             <div class="col-lg-4 col-md-6">
-                <!-- Card -->
                 <div class="card h-100" id="top-customer-view">
                     @include('admin-views.partials._top-customer',['top_customers'=>$data['top_customers']])
                 </div>
-                <!-- End Card -->
             </div>
 
         </div>
         @else
-        <!-- Page Header -->
         <div class="page-header">
             <div class="row align-items-center">
                 <div class="col-sm mb-2 mb-sm-0">
                     <h1 class="page-header-title">{{translate('messages.welcome')}}, {{auth('admin')->user()->f_name}}.</h1>
-                    <p class="page-header-text">{{translate('messages.employee_welcome_message')}}</p>
+                    <p class="page-header-desc">{{ translate('Today\'s orders, earnings and anything waiting on you, across this module.') }}</p>
+                    <p class="page-header-text">{{translate('messages.Employee welcome message')}}</p>
                 </div>
             </div>
         </div>
-        <!-- End Page Header -->
         @endif
     </div>
 @endsection
@@ -393,16 +368,13 @@
     <script src="{{asset('public/assets/admin')}}/vendor/chart.js.extensions/chartjs-extensions.js"></script>
     <script src="{{asset('public/assets/admin')}}/vendor/chartjs-plugin-datalabels/dist/chartjs-plugin-datalabels.min.js"></script>
 
-    <!-- Apex Charts -->
     <script src="{{asset('/public/assets/admin/js/apex-charts/apexcharts.js')}}"></script>
-    <!-- Apex Charts -->
 
 @endpush
 
 
 @push('script_2')
 
-    <!-- Dognut Pie Chart -->
     <script>
         "use strict";
         let options;
@@ -413,7 +385,7 @@
                 width: 320,
                 type: 'donut',
             },
-            labels: ['{{ translate('Customer') }}', '{{ translate('Store') }}', '{{ translate('Delivery man') }}'],
+            labels: ['{{ translate('Customer') }}', '{{ translate('Store') }}', '{{ translate('Deliveryman') }}'],
             dataLabels: {
                 enabled: false,
                 style: {
@@ -441,13 +413,13 @@
         chart.render();
         options = {
             series: [{
-                name: '{{ translate('Gross Sale') }}',
+                name: '{{ translate('Gross sale') }}',
                 data: [{{ implode(",",$total_sell) }}]
             },{
-                name: '{{ translate('Admin Comission') }}',
+                name: '{{ translate('Admin commission') }}',
                 data: [{{ implode(",",$commission) }}]
             },{
-                name: '{{ translate('Delivery Comission') }}',
+                name: '{{ translate('Delivery commission') }}',
                 data: [{{ implode(",",$delivery_commission) }}]
             }],
             chart: {

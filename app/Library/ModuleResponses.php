@@ -1,6 +1,5 @@
 <?php
 
-//default responses
 const DEFAULT_200 = [
     'response_code' => 'default_200',
     'message' => 'Successfully loaded'
@@ -48,7 +47,7 @@ const NO_CHANGES_FOUND = [
 
 const DEFAULT_204 = [
     'response_code' => 'default_204',
-    'message' => 'Information not found'
+    'message' => 'No data found'
 ];
 
 const NO_DATA_200 = [
@@ -77,7 +76,7 @@ const DEFAULT_USER_REMOVED_401 = [
 
 const USER_404 = [
     'response_code' => 'user_404',
-    'message' => 'User not found'
+    'message' => 'No data found'
 ];
 
 const DEFAULT_USER_UNDER_REVIEW_DISABLED_401 = [
@@ -96,7 +95,7 @@ const DEFAULT_403 = [
 ];
 const WITHDRAW_METHOD_INFO_EXIST_403 = [
     'response_code' => 'withdraw_method_info_exist_403',
-    'message' => 'Your withdraw method info already exists.'
+    'message' => 'Your withdraw method information already exists.'
 ];
 
 const DEFAULT_NOT_ACTIVE = [
@@ -107,7 +106,7 @@ const DEFAULT_NOT_ACTIVE = [
 
 const DEFAULT_404 = [
     'response_code' => 'default_404',
-    'message' => 'Resource not found'
+    'message' => 'No data found'
 ];
 
 const TRIP_REQUEST_PAUSED_404 = [
@@ -149,12 +148,12 @@ const DEFAULT_LAT_LNG_400 = [
 
 const DEFAULT_STORE_200 = [
     'response_code' => 'default_store_200',
-    'message' => 'Successfully added'
+    'message' => 'Added successfully'
 ];
 
 const DEFAULT_UPDATE_200 = [
     'response_code' => 'default_update_200',
-    'message' => 'Successfully updated'
+    'message' => 'Updated successfully'
 ];
 
 const DEFAULT_RESTORE_200 = [
@@ -164,7 +163,7 @@ const DEFAULT_RESTORE_200 = [
 
 const DEFAULT_STATUS_UPDATE_200 = [
     'response_code' => 'default_status_update_200',
-    'message' => 'Successfully status updated'
+    'message' => 'Updated successfully'
 ];
 
 const TOO_MANY_ATTEMPT_403 = [
@@ -178,7 +177,6 @@ const REGISTRATION_200 = [
     'message' => 'Successfully registered'
 ];
 
-//auth module
 const AUTH_LOGIN_200 = [
     'response_code' => 'auth_login_200',
     'message' => 'Successfully logged in'
@@ -191,7 +189,7 @@ const AUTH_LOGOUT_200 = [
 
 const ACCOUNT_DELETED_200 = [
     'response_code' => 'account_deleted_200',
-    'message' => 'Your account is deleted successfully'
+    'message' => 'Deleted successfully'
 ];
 
 const AUTH_LOGIN_401 = [
@@ -232,7 +230,6 @@ const ACCESS_DENIED = [
 ];
 
 
-//user management module
 const USER_ROLE_CREATE_400 = [
     'response_code' => 'user_role_create_400',
     'message' => 'Invalid or missing information'
@@ -240,12 +237,12 @@ const USER_ROLE_CREATE_400 = [
 
 const USER_ROLE_CREATE_200 = [
     'response_code' => 'user_role_create_200',
-    'message' => 'Successfully added'
+    'message' => 'Added successfully'
 ];
 
 const USER_ROLE_UPDATE_200 = [
     'response_code' => 'user_role_update_200',
-    'message' => 'Successfully updated'
+    'message' => 'Updated successfully'
 ];
 
 const USER_ROLE_UPDATE_400 = [
@@ -255,12 +252,12 @@ const USER_ROLE_UPDATE_400 = [
 
 const DRIVER_STORE_200 = [
     'response_code' => 'driver_store_200',
-    'message' => 'Successfully added'
+    'message' => 'Added successfully'
 ];
 
 const DRIVER_UPDATE_200 = [
     'response_code' => 'driver_store_200',
-    'message' => 'Successfully updated'
+    'message' => 'Updated successfully'
 ];
 
 const DRIVER_DELETE_200 = [
@@ -284,7 +281,7 @@ const DRIVER_403 = [
 ];
 const CUSTOMER_STORE_200 = [
     'response_code' => 'customer_store_200',
-    'message' => 'Successfully added'
+    'message' => 'Added successfully'
 ];
 
 const CUSTOMER_VERIFICATION_400 = [
@@ -302,7 +299,7 @@ const DRIVER_404 = [
 ];
 const CUSTOMER_UPDATE_200 = [
     'response_code' => 'customer_store_200',
-    'message' => 'Successfully updated'
+    'message' => 'Updated successfully'
 ];
 
 const CUSTOMER_DELETE_200 = [
@@ -311,12 +308,12 @@ const CUSTOMER_DELETE_200 = [
 ];
 const EMPLOYEE_STORE_200 = [
     'response_code' => 'employee_store_200',
-    'message' => 'Successfully added'
+    'message' => 'Added successfully'
 ];
 
 const EMPLOYEE_UPDATE_200 = [
     'response_code' => 'employee_store_200',
-    'message' => 'Successfully updated'
+    'message' => 'Updated successfully'
 ];
 
 const EMPLOYEE_DELETE_200 = [
@@ -326,39 +323,37 @@ const EMPLOYEE_DELETE_200 = [
 
 const CUSTOMER_FUND_STORE_200 = [
     'response_code' => 'customer_fund_store_200',
-    'message' => 'Successfully added'
+    'message' => 'Added successfully'
 ];
 
 
 
 
-// Vehicle Brand
 
 const BRAND_CREATE_200 = [
     'response_code' => 'brand_create_200',
-    'message' => 'Brand successfully added'
+    'message' => 'Added successfully'
 ];
 
 const BRAND_UPDATE_200 = [
     'response_code' => 'brand_update_200',
-    'message' => 'Brand successfully updated'
+    'message' => 'Updated successfully'
 ];
 
 const BRAND_DELETE_200 = [
     'response_code' => 'brand_update_200',
-    'message' => 'Brand successfully deleted'
+    'message' => 'Deleted successfully'
 ];
 
-// Vehicle Model
 
 const MODEL_CREATE_200 = [
     'response_code' => 'model_create_200',
-    'message' => 'Model successfully added'
+    'message' => 'Added successfully'
 ];
 
 const MODEL_UPDATE_200 = [
     'response_code' => 'model_update_200',
-    'message' => 'Model successfully updated'
+    'message' => 'Updated successfully'
 ];
 
 const MODEL_EXISTS_400 = [
@@ -366,11 +361,10 @@ const MODEL_EXISTS_400 = [
     'message' => 'Model already exists!'
 ];
 
-// Vehicle Category
 
 const CATEGORY_CREATE_200 = [
     'response_code' => 'category_create_200',
-    'message' => 'Category successfully added'
+    'message' => 'Added successfully'
 ];
 
 const NO_ACTIVE_CATEGORY_IN_ZONE_404 = [
@@ -380,7 +374,7 @@ const NO_ACTIVE_CATEGORY_IN_ZONE_404 = [
 
 const CATEGORY_UPDATE_200 = [
     'response_code' => 'category_update_200',
-    'message' => 'Category successfully updated'
+    'message' => 'Updated successfully'
 ];
 
 const PARCEL_REFUND_ALREADY_EXIST_200 = [
@@ -390,10 +384,9 @@ const PARCEL_REFUND_ALREADY_EXIST_200 = [
 
 const PARCEL_REFUND_CREATE_200 = [
     'response_code' => 'parcel_refund_create_200',
-    'message' => 'Parcel refund request successfully added'
+    'message' => 'Added successfully'
 ];
 
-// Vehicle
 
 const VEHICLE_CREATE_200 = [
     'response_code' => 'vehicle_create_200',
@@ -402,7 +395,7 @@ const VEHICLE_CREATE_200 = [
 
 const VEHICLE_UPDATE_200 = [
     'response_code' => 'vehicle_update_200',
-    'message' => 'Your vehicle information has been updated successfully.'
+    'message' => 'Updated successfully'
 ];
 
 
@@ -419,17 +412,17 @@ const VEHICLE_DRIVER_EXISTS_403 = [
 
 const LEVEL_CREATE_200 = [
     'response_code' => 'level_create_200',
-    'message' => 'Level successfully added'
+    'message' => 'Added successfully'
 ];
 
 const LEVEL_UPDATE_200 = [
     'response_code' => 'level_update_200',
-    'message' => 'Level successfully updated'
+    'message' => 'Updated successfully'
 ];
 
 const LEVEL_DELETE_200 = [
     'response_code' => 'level_delete_200',
-    'message' => 'Level successfully deleted'
+    'message' => 'Deleted successfully'
 ];
 
 const LEVEL_CREATE_403 = [
@@ -450,20 +443,19 @@ const LEVEL_DELETE_403 = [
 
 const BUSINESS_SETTING_UPDATE_200 = [
     'response_code' => 'business_setting_update_200',
-    'message' => 'Settings successfully updated'
+    'message' => 'Updated successfully'
 ];
 
 const SYSTEM_SETTING_UPDATE_200 = [
     'response_code' => 'system_setting_update_200',
-    'message' => 'Settings successfully updated'
+    'message' => 'Updated successfully'
 ];
 
 
-// Zone
 
 const ZONE_STORE_200 = [
     'response_code' => 'zone_store_200',
-    'message' => 'Zone successfully added'
+    'message' => 'Added successfully'
 ];
 const ZONE_STORE_INSTRUCTION_200 = [
     'response_code' => 'zone_store_200',
@@ -472,17 +464,17 @@ const ZONE_STORE_INSTRUCTION_200 = [
 
 const ZONE_UPDATE_200 = [
     'response_code' => 'zone_update_200',
-    'message' => 'Zone successfully updated'
+    'message' => 'Updated successfully'
 ];
 
 const ZONE_DESTROY_200 = [
     'response_code' => 'zone_destroy_200',
-    'message' => 'Zone successfully deleted'
+    'message' => 'Deleted successfully'
 ];
 
 const ZONE_404 = [
     'response_code' => 'zone_404',
-    'message' => 'Zone not found'
+    'message' => 'No data found'
 ];
 
 const ZONE_RESOURCE_404 = [
@@ -495,26 +487,25 @@ const ROUTE_NOT_FOUND_404 = [
     'message' => 'Route not found your selected pickup & destination address'
 ];
 
-// Area
 
 const AREA_STORE_200 = [
     'response_code' => 'area_store_200',
-    'message' => 'Area successfully added'
+    'message' => 'Added successfully'
 ];
 
 const AREA_UPDATE_200 = [
     'response_code' => 'area_update_200',
-    'message' => 'Area successfully updated'
+    'message' => 'Updated successfully'
 ];
 
 const AREA_DESTROY_200 = [
     'response_code' => 'area_destroy_200',
-    'message' => 'Area successfully deleted'
+    'message' => 'Deleted successfully'
 ];
 
 const AREA_404 = [
     'response_code' => 'area_404',
-    'message' => 'Area resource not found'
+    'message' => 'No data found'
 ];
 
 const AREA_RESOURCE_404 = [
@@ -523,26 +514,25 @@ const AREA_RESOURCE_404 = [
 ];
 
 
-// Pick Hour
 
 const PICK_HOUR_STORE_200 = [
     'response_code' => 'pick_hour_store_200',
-    'message' => 'Pick Hour successfully added'
+    'message' => 'Added successfully'
 ];
 
 const PICK_HOUR_UPDATE_200 = [
     'response_code' => 'pick_hour_update_200',
-    'message' => 'Pick Hour successfully updated'
+    'message' => 'Updated successfully'
 ];
 
 const PICK_HOUR_DESTROY_200 = [
     'response_code' => 'pick_hour_destroy_200',
-    'message' => 'Pick Hour successfully deleted'
+    'message' => 'Deleted successfully'
 ];
 
 const PICK_HOUR_404 = [
     'response_code' => 'pick_hour_404',
-    'message' => 'Pick Hour resource not found'
+    'message' => 'No data found'
 ];
 
 const PICK_HOUR_RESOURCE_404 = [
@@ -552,49 +542,48 @@ const PICK_HOUR_RESOURCE_404 = [
 
 const SOCIAL_MEDIA_LINK_STORE_200 = [
     'response_code' => 'social_media_link_store_200',
-    'message' => 'Social media link successfully added'
+    'message' => 'Added successfully'
 ];
 
 const SOCIAL_MEDIA_LINK_UPDATE_200 = [
     'response_code' => 'social_media_link_update_200',
-    'message' => 'Social media link successfully updated'
+    'message' => 'Updated successfully'
 ];
 
 const SOCIAL_MEDIA_LINK_DELETE_200 = [
     'response_code' => 'social_media_link_delete_200',
-    'message' => 'Social media link successfully deleted'
+    'message' => 'Deleted successfully'
 ];
 
 const TESTIMONIAL_DELETE_200 = [
     'response_code' => 'testimonial_delete_200',
-    'message' => 'Testimonial successfully deleted'
+    'message' => 'Deleted successfully'
 ];
 const OUR_SOLUTION_DELETE_200 = [
     'response_code' => 'our_solution_delete_200',
-    'message' => 'Our Solution successfully deleted'
+    'message' => 'Deleted successfully'
 ];
 
 
-// Banner
 
 const BANNER_STORE_200 = [
     'response_code' => 'banner_store_200',
-    'message' => 'Banner successfully added'
+    'message' => 'Added successfully'
 ];
 
 const BANNER_UPDATE_200 = [
     'response_code' => 'banner_update_200',
-    'message' => 'Banner successfully updated'
+    'message' => 'Updated successfully'
 ];
 
 const BANNER_DESTROY_200 = [
     'response_code' => 'banner_destroy_200',
-    'message' => 'Banner successfully deleted'
+    'message' => 'Deleted successfully'
 ];
 
 const BANNER_404 = [
     'response_code' => 'banner_404',
-    'message' => 'Banner resource not found'
+    'message' => 'No data found'
 ];
 
 const BANNER_RESOURCE_404 = [
@@ -602,26 +591,25 @@ const BANNER_RESOURCE_404 = [
     'message' => 'No provider or service is available within this area'
 ];
 
-// Milestone
 
 const MILESTONE_STORE_200 = [
     'response_code' => 'milestone_store_200',
-    'message' => 'Milestone successfully added'
+    'message' => 'Added successfully'
 ];
 
 const MILESTONE_UPDATE_200 = [
     'response_code' => 'milestone_update_200',
-    'message' => 'Milestone successfully updated'
+    'message' => 'Updated successfully'
 ];
 
 const MILESTONE_DESTROY_200 = [
     'response_code' => 'milestone_destroy_200',
-    'message' => 'Milestone successfully deleted'
+    'message' => 'Deleted successfully'
 ];
 
 const MILESTONE_404 = [
     'response_code' => 'milestone_404',
-    'message' => 'Milestone resource not found'
+    'message' => 'No data found'
 ];
 
 const MILESTONE_RESOURCE_404 = [
@@ -629,53 +617,51 @@ const MILESTONE_RESOURCE_404 = [
     'message' => 'No'
 ];
 
-// Discount
 
 const DISCOUNT_STORE_200 = [
     'response_code' => 'discount_store_200',
-    'message' => 'Discount successfully added'
+    'message' => 'Added successfully'
 ];
 
 const DISCOUNT_UPDATE_200 = [
     'response_code' => 'discount_update_200',
-    'message' => 'Discount successfully updated'
+    'message' => 'Updated successfully'
 ];
 
 const DISCOUNT_DESTROY_200 = [
     'response_code' => 'discount_destroy_200',
-    'message' => 'Discount successfully deleted'
+    'message' => 'Deleted successfully'
 ];
 
 const DISCOUNT_404 = [
     'response_code' => 'discount_404',
-    'message' => 'Discount resource not found'
+    'message' => 'No data found'
 ];
 
 const DISCOUNT_RESOURCE_404 = [
     'response_code' => 'discount_404',
-    'message' => 'Discount is not found'
+    'message' => 'No data found'
 ];
 
-// BONUS
 
 const BONUS_STORE_200 = [
     'response_code' => 'bonus_store_200',
-    'message' => 'Bonus successfully added'
+    'message' => 'Added successfully'
 ];
 
 const BONUS_UPDATE_200 = [
     'response_code' => 'bonus_update_200',
-    'message' => 'Bonus successfully updated'
+    'message' => 'Updated successfully'
 ];
 
 const BONUS_DESTROY_200 = [
     'response_code' => 'bonus_destroy_200',
-    'message' => 'Bonus successfully deleted'
+    'message' => 'Deleted successfully'
 ];
 
 const BONUS_404 = [
     'response_code' => 'BONUS_404',
-    'message' => 'Bonus resource not found'
+    'message' => 'No data found'
 ];
 
 const BONUS_RESOURCE_404 = [
@@ -684,21 +670,20 @@ const BONUS_RESOURCE_404 = [
 ];
 
 
-// COUPON
 
 const COUPON_STORE_200 = [
     'response_code' => 'coupon_store_200',
-    'message' => 'Coupon successfully added'
+    'message' => 'Added successfully'
 ];
 
 const COUPON_UPDATE_200 = [
     'response_code' => 'coupon_update_200',
-    'message' => 'Coupon successfully updated'
+    'message' => 'Updated successfully'
 ];
 
 const COUPON_DESTROY_200 = [
     'response_code' => 'coupon_destroy_200',
-    'message' => 'Coupon successfully deleted'
+    'message' => 'Deleted successfully'
 ];
 
 
@@ -708,32 +693,31 @@ const COUPON_USAGE_LIMIT_406 = [
 ];
 
 
-// Configuration
 
 const CONFIGURATION_UPDATE_200 = [
     'response_code' => 'configuration_update_200',
-    'message' => 'Configuration successfully updated'
+    'message' => 'Updated successfully'
 ];
 
 const LANDING_PAGE_UPDATE_200 = [
     'response_code' => 'landing_page_update_200',
-    'message' => 'Landing page successfully updated'
+    'message' => 'Updated successfully'
 ];
 
 
 const ROLE_STORE_200 = [
     'response_code' => 'role_store_200',
-    'message' => 'Role successfully added'
+    'message' => 'Added successfully'
 ];
 
 const ROLE_UPDATE_200 = [
     'response_code' => 'role_update_200',
-    'message' => 'Role successfully updated'
+    'message' => 'Updated successfully'
 ];
 
 const ROLE_DESTROY_200 = [
     'response_code' => 'role_destroy_200',
-    'message' => 'Role successfully deleted'
+    'message' => 'Deleted successfully'
 ];
 
 const ROLE_DESTROY_403 = [
@@ -741,71 +725,67 @@ const ROLE_DESTROY_403 = [
     'message' => 'Role delete restricted when users assigned in this role'
 ];
 
-//trip fare
 
 const TRIP_FARE_STORE_200 = [
     'response_code' => 'trip_fare_store_200',
-    'message' => 'Trip fare successfully added'
+    'message' => 'Added successfully'
 ];
 
 const TRIP_FARE_UPDATE_200 = [
     'response_code' => 'trip_fare_update_200',
-    'message' => 'Trip fare successfully updated'
+    'message' => 'Updated successfully'
 ];
 
 const TRIP_FARE_DESTROY_200 = [
     'response_code' => 'trip_fare_destroy_200',
-    'message' => 'Trip fare successfully deleted'
+    'message' => 'Deleted successfully'
 ];
 
-//trip fare
 
 const PARCEL_FARE_STORE_200 = [
     'response_code' => 'parcel_fare_store_200',
-    'message' => 'Parcel fare successfully added'
+    'message' => 'Added successfully'
 ];
 
 const PARCEL_FARE_UPDATE_200 = [
     'response_code' => 'parcel_fare_update_200',
-    'message' => 'Parcel fare successfully updated'
+    'message' => 'Updated successfully'
 ];
 
 const PARCEL_FARE_DESTROY_200 = [
     'response_code' => 'parcel_fare_destroy_200',
-    'message' => 'Parcel fare successfully deleted'
+    'message' => 'Deleted successfully'
 ];
 
 
-// Parcel Category
 
 const PARCEL_CATEGORY_UPDATE_200 = [
     'response_code' => 'parcel_category_update_200',
-    'message' => 'Parcel category successfully updated'
+    'message' => 'Updated successfully'
 ];
 
 
 const PARCEL_CATEGORY_STORE_200 = [
     'response_code' => 'parcel_category_store_200',
-    'message' => 'Parcel category successfully added'
+    'message' => 'Added successfully'
 ];
 
 const PARCEL_CATEGORY_DESTROY_200 = [
     'response_code' => 'parcel_category_destroy_200',
-    'message' => 'Parcel category successfully deleted'
+    'message' => 'Deleted successfully'
 ];
 
 
-// Parcel Weight
 
 const PARCEL_WEIGHT_UPDATE_200 = [
     'response_code' => 'parcel_weight_update_200',
-    'message' => 'Parcel weight successfully updated'
+    'message' => 'Updated successfully'
 ];
 
 
 const PARCEL_WEIGHT_STORE_200 = [
     'response_code' => 'parcel_weight_store_200',
-    'message' => 'Parcel weight successfully added'
+    'message' => 'Added successfully'
 ];
 
 const PARCEL_WEIGHT_EXISTS_403 = [
@@ -814,7 +794,7 @@ const PARCEL_WEIGHT_EXISTS_403 = [
 ];
 const PARCEL_WEIGHT_DESTROY_200 = [
     'response_code' => 'parcel_weight_destroy_200',
-    'message' => 'Parcel weight successfully deleted'
+    'message' => 'Deleted successfully'
 ];
 
 const PARCEL_WEIGHT_404 = [
@@ -823,7 +803,6 @@ const PARCEL_WEIGHT_404 = [
 ];
 
 
-//TRIP
 
 const TRIP_REQUEST_STORE_200 = [
     'response_code' => 'trip_request_store_200',
@@ -832,7 +811,7 @@ const TRIP_REQUEST_STORE_200 = [
 
 const TRIP_REQUEST_DELETE_200 = [
     'response_code' => 'trip_request_delete_200',
-    'message' => 'Trip request deleted successfully'
+    'message' => 'Deleted successfully'
 ];
 
 const TRIP_REQUEST_DRIVER_403 = [
@@ -842,11 +821,11 @@ const TRIP_REQUEST_DRIVER_403 = [
 
 const TRIP_REQUEST_404 = [
     'response_code' => 'trip_request_404',
-    'message' => 'Trip request not found'
+    'message' => 'No data found'
 ];
 const PARCEL_REFUND_REQUEST_404 = [
     'response_code' => 'parcel_refund_request_403',
-    'message' => 'Parcel refund request not found'
+    'message' => 'No data found'
 ];
 
 const PARCEL_REFUND_REQUEST_APPROVED_200 = [
@@ -902,21 +881,19 @@ const REVIEW_SUBMIT_403 = [
 
 const REVIEW_404 = [
     'response_code' => 'review_404',
-    'message' => 'Review not found'
+    'message' => 'No data found'
 ];
 const LANGUAGE_UPDATE_FAIL_200 = [
     'response_code' => 'language_status_update_fail_200',
     'message' => 'Default language status can not be changed or deleted'
 ];
 
-// otp
 
 const OTP_MISMATCH_404 = [
     'response_code' => 'otp_mismatch_404',
     'message' => 'OTP is not matched'
 ];
 
-//BID
 
 const BIDDING_LIMIT_429 = [
     'response_code' => 'bidding_limit_429',
@@ -930,7 +907,7 @@ const RAISING_BID_FARE_403 = [
 
 const BIDDING_ACTION_200 = [
     'response_code' => 'bidding_action_200',
-    'message' => 'Bidding action successfully updated'
+    'message' => 'Updated successfully'
 ];
 
 const BIDDING_SUBMITTED_403 = [
@@ -977,7 +954,6 @@ const PARCEL_WEIGHT_400 = [
     'message' => 'Parcel weight is not acceptable'
 ];
 
-//Wallet Errors
 const INSUFFICIENT_FUND_403 = [
     'response_code' => 'insufficient_fund_403',
     'message' => 'You have insufficient balance on wallet'
@@ -1012,15 +988,15 @@ const WITHDRAW_REQUEST_AMOUNT_403 = [
 
 const WITHDRAW_METHOD_INFO_STORE_200 = [
     'response_code' => 'withdraw_method_info_store_200',
-    'message' => 'Withdraw method info saved successfully'
+    'message' => 'Saved successfully'
 ];
 const WITHDRAW_METHOD_INFO_UPDATE_200 = [
     'response_code' => 'withdraw_method_info_update_200',
-    'message' => 'Withdraw method info updated successfully'
+    'message' => 'Updated successfully'
 ];
 const WITHDRAW_METHOD_INFO_DELETE_200 = [
     'response_code' => 'withdraw_method_info_delete_200',
-    'message' => 'Withdraw method info deleted successfully'
+    'message' => 'Deleted successfully'
 ];
 
 const WITHDRAW_METHOD_INFO_REQUEST_EXIST_403 = [
@@ -1052,7 +1028,7 @@ const COUPON_APPLIED_200 = [
 
 const COUPON_REMOVED_200 = [
     'response_code' => 'coupon_removed_200',
-    'message' => 'Coupon removed successfully'
+    'message' => 'Deleted successfully'
 ];
 
 const REFERRAL_CODE_NOT_MATCH_403 = [
@@ -1067,7 +1043,7 @@ const SELF_REGISTRATION_400 = [
 
 const LAST_LOCATION_404 = [
     'response_code' => 'last_location_404',
-    'message' => 'User last location not found'
+    'message' => 'No data found'
 ];
 
 const VEHICLE_CATEGORY_404 = [
@@ -1088,10 +1064,9 @@ const VEHICLE_NOT_REGISTERED_404 = [
 
 const CHANNEL_NOT_FOUND_404 = [
     'response_code' => 'channel_404',
-    'message' => 'Channel not found'
+    'message' => 'No data found'
 ];
 
-//safety alert
 const SAFETY_ALERT_STORE_200 = [
     'response_code' => 'safety_alert_store_200',
     'message' => 'Safety alert sent'
@@ -1104,7 +1079,7 @@ const SAFETY_ALERT_ALREADY_EXIST_400 = [
 
 const SAFETY_ALERT_NOT_FOUND_404 = [
     'response_code' => 'safety_alert_404',
-    'message' => 'Safety alert not found'
+    'message' => 'No data found'
 ];
 
 const SAFETY_ALERT_RESEND_200 = [
@@ -1128,9 +1103,7 @@ const SAFETY_ALERT_UNDO_200 = [
 
 
 
-//// Demandium
 
-//default responses
 /* const DEFAULT_200 = [
     'response_code' => 'default_200',
     'message' => 'successfully data fetched'
@@ -1172,7 +1145,7 @@ const OTP_VERIFICATION_FAIL_403 = [
 
 /* const DEFAULT_204 = [
     'response_code' => 'default_204',
-    'message' => 'information not found'
+    'message' => 'No data found'
 ];
 
 const DEFAULT_400 = [
@@ -1201,7 +1174,7 @@ const DEFAULT_403 = [
 ];
 const DEFAULT_404 = [
     'response_code' => 'default_404',
-    'message' => 'resource not found'
+    'message' => 'No data found'
 ];
 
 const DEFAULT_DELETE_200 = [
@@ -1221,7 +1194,7 @@ const DEFAULT_PAID_200 = [
 
 const DEFAULT_STORE_200 = [
     'response_code' => 'default_store_200',
-    'message' => 'successfully added'
+    'message' => 'Added successfully'
 ]; */
 
 const DEFAULT_CART_STORE_200 = [
@@ -1236,7 +1209,7 @@ const DEFAULT_CART_ALREADY_ADDED_200 = [
 
 /* const DEFAULT_UPDATE_200 = [
     'response_code' => 'default_update_200',
-    'message' => 'successfully updated'
+    'message' => 'Updated successfully'
 ];
 
 const DEFAULT_STATUS_UPDATE_200 = [
@@ -1349,7 +1322,6 @@ const REFERRAL_CODE_INVALID_400 = [
 ];
 
 
-//user management module
 /* const USER_ROLE_CREATE_400 = [
     'response_code' => 'user_role_create_400',
     'message' => 'invalid or missing information'
@@ -1357,12 +1329,12 @@ const REFERRAL_CODE_INVALID_400 = [
 
 const USER_ROLE_CREATE_200 = [
     'response_code' => 'user_role_create_200',
-    'message' => 'successfully added'
+    'message' => 'Added successfully'
 ];
 
 const USER_ROLE_UPDATE_200 = [
     'response_code' => 'user_role_update_200',
-    'message' => 'successfully updated'
+    'message' => 'Updated successfully'
 ];
 
 const USER_ROLE_UPDATE_400 = [
@@ -1374,25 +1346,24 @@ const USER_INACTIVE_400 = [
     'message' => 'This user is not active!'
 ];
 
-//zone management module
 /* const ZONE_STORE_200 = [
     'response_code' => 'zone_store_200',
-    'message' => 'successfully added'
+    'message' => 'Added successfully'
 ];
 
 const ZONE_UPDATE_200 = [
     'response_code' => 'zone_update_200',
-    'message' => 'successfully updated'
+    'message' => 'Updated successfully'
 ];
 
 const ZONE_DESTROY_200 = [
     'response_code' => 'zone_destroy_200',
-    'message' => 'successfully deleted'
+    'message' => 'Deleted successfully'
 ];
 
 const ZONE_404 = [
     'response_code' => 'zone_404',
-    'message' => 'resource not found'
+    'message' => 'No data found'
 ];
 
 const ZONE_RESOURCE_404 = [
@@ -1400,28 +1371,26 @@ const ZONE_RESOURCE_404 = [
     'message' => 'No provider or service is available within this zone'
 ]; */
 
-//category management module
 const CATEGORY_STORE_200 = [
     'response_code' => 'category_store_200',
-    'message' => 'successfully added'
+    'message' => 'Added successfully'
 ];
 
 /* const CATEGORY_UPDATE_200 = [
     'response_code' => 'category_update_200',
-    'message' => 'successfully updated'
+    'message' => 'Updated successfully'
 ]; */
 
 const CATEGORY_DESTROY_200 = [
     'response_code' => 'category_destroy_200',
-    'message' => 'successfully deleted'
+    'message' => 'Deleted successfully'
 ];
 
 const CATEGORY_204 = [
     'response_code' => 'category_404',
-    'message' => 'resource not found'
+    'message' => 'No data found'
 ];
 
-//discount section
 const DISCOUNT_CREATE_200 = [
     'response_code' => 'discount_create_200',
     'message' => 'successfully added discount'
@@ -1432,11 +1401,10 @@ const DISCOUNT_CREATE_200 = [
     'message' => 'successfully updated discount'
 ]; */
 
-//service management module
 
 const SERVICE_STORE_200 = [
     'response_code' => 'service_store_200',
-    'message' => 'successfully added'
+    'message' => 'Added successfully'
 ];
 
 const SERVICE_REQUEST_STORE_200 = [
@@ -1454,10 +1422,9 @@ const SERVICE_REMOVE_FAVORITE_200 = [
     'message' => 'service removed as favorite successfully'
 ];
 
-//coupon section
 /* const COUPON_UPDATE_200 = [
     'response_code' => 'coupon_update_200',
-    'message' => 'successfully updated'
+    'message' => 'Updated successfully'
 ];
 const COUPON_APPLIED_200 = [
     'response_code' => 'coupon_applied_200',
@@ -1482,18 +1449,17 @@ const COUPON_INVALID = [
 
 const CAMPAIGN_UPDATE_200 = [
     'response_code' => 'coupon_update_200',
-    'message' => 'successfully updated'
+    'message' => 'Updated successfully'
 ];
 
-//banner section
 const BANNER_CREATE_200 = [
     'response_code' => 'banner_create_200',
-    'message' => 'successfully added'
+    'message' => 'Added successfully'
 ];
 
 /* const BANNER_UPDATE_200 = [
     'response_code' => 'banner_update_200',
-    'message' => 'successfully updated'
+    'message' => 'Updated successfully'
 ]; */
 
 const COUPON_NOT_VALID_FOR_CART=[
@@ -1506,10 +1472,9 @@ const COUPON_IS_VALID_FOR_FIRST_TIME=[
     'message' => 'this coupon is valid for first-time bookings only.'
 ];
 
-//provider management module
 const PROVIDER_STORE_200 = [
     'response_code' => 'provider_store_200',
-    'message' => 'successfully added'
+    'message' => 'Added successfully'
 ];
 const PROVIDER_REGISTERED_200 = [
     'response_code' => 'provider_store_200',
@@ -1532,7 +1497,6 @@ const PROVIDER_REMOVE_FAVORITE_200 = [
 ];
 
 
-//transaction
 const COLLECT_CASH_SUCCESS_200 = [
     'response_code' => 'collect_cash_success_200',
     'message' => 'cash collected successfully'
@@ -1543,7 +1507,6 @@ const COLLECT_CASH_FAIL_200 = [
     'message' => 'failed to collect the cash'
 ];
 
-//booking
 const BOOKING_PLACE_SUCCESS_200 = [
     'response_code' => 'booking_place_success_200',
     'message' => 'Booking Placed successfully'
@@ -1554,7 +1517,7 @@ const BOOKING_PLACE_FAIL_200 = [
 ];
 const BOOKING_STATUS_UPDATE_SUCCESS_200 = [
     'response_code' => 'status_update_success_200',
-    'message' => 'booking status updated successfully'
+    'message' => 'Updated successfully'
 ];
 const BOOKING_IGNORE_SUCCESS_200 = [
     'response_code' => 'booking_ignore_success_200',
@@ -1570,7 +1533,7 @@ const BOOKING_ALREADY_CANCELED_200 = [
 ];
 const PAYMENT_STATUS_UPDATE_SUCCESS_200 = [
     'response_code' => 'payment_status_update_success_200',
-    'message' => 'payment status updated successfully'
+    'message' => 'Updated successfully'
 ];
 const BOOKING_STATUS_UPDATE_FAIL_200 = [
     'response_code' => 'status_update_fail_200',
@@ -1590,7 +1553,7 @@ const SERVICEMAN_ASSIGN_SUCCESS_200 = [
 
 const SERVICE_SCHEDULE_UPDATE_200 = [
     'response_code' => 'service_schedule_update_200',
-    'message' => 'Service schedule updated successfully'
+    'message' => 'Updated successfully'
 ];
 
 const MINIMUM_BOOKING_AMOUNT_200 = [
@@ -1635,7 +1598,6 @@ const BOOKING_ALREADY_EDITED = [
 ];
 
 
-//Random
 const DEFAULT_STATUS_FAILED_200 = [
     'response_code' => 'default_status_change_failed_200',
     'message' => 'Minimum one method must be selected as default'
@@ -1724,7 +1686,7 @@ const OFFLINE_PAYMENT_SUCCESS_200 = [
 
 const PAYMENT_METHOD_UPDATE_200 = [
     'response_code' => 'payment_method_update_200',
-    'message' => 'payment method updated successfully'
+    'message' => 'Updated successfully'
 ];
 
 const SUBSCRIBE_NEWSLETTER_200 = [
@@ -1738,7 +1700,6 @@ const SERVICE_LOCATION_400 = [
 ];
 
 
-//new
 const SERVICE_ADD_CART_SUCCESS_200 = [
     'response_code' => 'service_add_cart_success_200',
     'message' => 'Service added to your cart successfully'

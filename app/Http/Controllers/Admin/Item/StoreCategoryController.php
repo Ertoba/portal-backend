@@ -7,8 +7,9 @@ use App\Exports\StoreCategoryExport;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreCategoryAddRequest;
 use App\Http\Requests\StoreCategoryUpdateRequest;
+use App\Models\Store;
 use App\Models\StoreCategory;
-use App\Services\StoreCategoryService;
+use App\Services\Store\StoreCategoryService;
 use Brian2694\Toastr\Facades\Toastr;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -24,7 +25,7 @@ class StoreCategoryController extends Controller
     {
         $this->middleware(function ($request, $next) {
             if (!Helpers::storeCategoryStatus()) {
-                Toastr::warning(translate('messages.Store_category_feature_is_disabled'));
+                Toastr::warning(translate('messages.Store category feature is disabled'));
                 return back();
             }
             return $next($request);
@@ -33,20 +34,32 @@ class StoreCategoryController extends Controller
 
     public function index(Request $request): View
     {
-        $categories = $this->service->buildQuery([
-            'search' => $request['search'] ?? null,
-            'priority' => $request->query('priority'),
-            'store_id' => $request->query('store_id'),
+        $filters = $this->service->adminListFilters(array_merge($request->all(), [
             'module_id' => Config::get('module.current_module_id'),
-        ])
-            ->with('store')
+        ]));
+
+        $categories = $this->service->buildQuery($filters)
+            ->withStorage()
+            ->with(['store' => fn ($query) => $query->select(['id', 'name', 'zone_id'])->with('zone:id,name')])
             ->latest()
             ->paginate(config('default_pagination'))
             ->appends($request->all());
 
+        $summary = $this->service->adminSummary($filters);
+        $filter_count = $this->service->adminListFilterCount($filters);
+        $translated_locales = $this->service->getTranslatedLocales($categories->pluck('id')->all());
+        $store = $filters['store_id'] ? Store::find($filters['store_id']) : null;
         $language = getWebConfig('language');
 
-        return view('admin-views.store-category.index', compact('categories', 'language'));
+        return view('admin-views.store-category.index', compact(
+            'categories',
+            'language',
+            'filters',
+            'summary',
+            'filter_count',
+            'translated_locales',
+            'store'
+        ));
     }
 
     public function store(StoreCategoryAddRequest $request): RedirectResponse
@@ -57,9 +70,9 @@ class StoreCategoryController extends Controller
             priority: $request->filled('priority') ? (int) $request->priority : 0,
             image: $request->file('image')
         );
-        $this->service->saveFormTranslations($category, $request);
+        $this->service->saveFormTranslations($category, ['lang' => $request->lang, 'name' => $request->name]);
 
-        Toastr::success(translate('messages.Store_category_added_successfully'));
+        Toastr::success(translate('Added successfully'));
         return back();
     }
 
@@ -85,30 +98,30 @@ class StoreCategoryController extends Controller
             image: $request->file('image'),
             storeId: (int) $request->store_id
         );
-        $this->service->saveFormTranslations($category, $request);
+        $this->service->saveFormTranslations($category, ['lang' => $request->lang, 'name' => $request->name]);
 
-        Toastr::success(translate('messages.Store_category_updated_successfully'));
+        Toastr::success(translate('Updated successfully'));
         return back();
     }
 
     public function updateStatus(Request $request): RedirectResponse
     {
         $this->service->updateStatus(StoreCategory::findOrFail($request['id']), (int) $request['status']);
-        Toastr::success(translate('messages.Store_category_status_updated'));
+        Toastr::success(translate('messages.Store category status updated'));
         return back();
     }
 
     public function updatePriority(Request $request, $id): RedirectResponse
     {
         $this->service->updatePriority(StoreCategory::findOrFail($id), (int) ($request->priority ?? 0));
-        Toastr::success(translate('messages.Store_category_priority_updated'));
+        Toastr::success(translate('messages.Store category priority updated'));
         return back();
     }
 
     public function delete(Request $request): RedirectResponse
     {
         $this->service->delete(StoreCategory::findOrFail($request['id']));
-        Toastr::success(translate('messages.Store_category_removed_successfully'));
+        Toastr::success(translate('Deleted successfully'));
         return back();
     }
 
@@ -119,16 +132,13 @@ class StoreCategoryController extends Controller
         $categories = StoreCategory::active()
             ->where('store_id', $storeId)
             ->orderBy('priority', 'desc')
-            ->get(['id', 'name']);
+            ->get(['id', 'name'])
+            ->makeHidden('image_full_url');
 
-        // Drives the "Store Category *" asterisk + required attribute on the
-        // product form. Independent of `status` — any row counts.
         $hasCategories = $storeId
             ? \App\CentralLogics\Helpers::hasAnyStoreCategory($storeId)
             : false;
 
-        // Preserve the original array shape for old callers via top-level
-        // `categories`, while also exposing the flag for new callers.
         return response()->json([
             'categories' => $categories,
             'has_categories' => $hasCategories,
@@ -137,16 +147,15 @@ class StoreCategoryController extends Controller
 
     public function exportList(Request $request): BinaryFileResponse
     {
-        $categories = $this->service->buildQuery([
-            'search' => $request->query('search'),
-            'priority' => $request->query('priority'),
-            'store_id' => $request->query('store_id'),
+        $filters = $this->service->adminListFilters(array_merge($request->query(), [
             'module_id' => Config::get('module.current_module_id'),
-        ])->with('store')->latest()->get();
+        ]));
+
+        $categories = $this->service->buildQuery($filters)->with('store')->latest()->get();
 
         $data = [
             'data' => $categories,
-            'search' => $request->query('search'),
+            'search' => $filters['search'],
             'categoryWiseTax' => false,
             'showStore' => true,
         ];

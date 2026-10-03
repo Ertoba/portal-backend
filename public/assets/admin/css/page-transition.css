@@ -1,0 +1,58 @@
+/* Smooth cross-document page transitions for admin/vendor/landing full-page navigation.
+   PJAX (fullscreen-only) shows its own top bar; this covers normal reloads.
+   Chrome/Edge cross-fade; other browsers navigate normally (graceful fallback). */
+@view-transition {
+    navigation: auto;
+}
+
+::view-transition-old(root),
+::view-transition-new(root) {
+    animation-duration: 240ms;
+    animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    ::view-transition-old(root),
+    ::view-transition-new(root) {
+        animation: none;
+    }
+}
+
+/* Top loading bar for normal (non-PJAX) page navigation. inset-inline-start follows dir for RTL.
+   Colour resolves against whichever palette the panel exposes:
+   bootstrap (--bs-primary) -> admin v2 (--v2-primary) -> admin (--primary-clr) -> landing (--primary). */
+#page-progress-bar {
+    position: fixed;
+    top: 0;
+    inset-inline-start: 0;
+    height: 3px;
+    width: 0;
+    background: var(--bs-primary, var(--v2-primary, var(--primary-clr, var(--primary, #1450a3))));
+    box-shadow: 0 0 8px rgba(var(--bs-primary-rgb, var(--primary-clr-rgb, var(--primary-rgb, 20, 80, 163))), 0.6);
+    z-index: 100000;
+    opacity: 0;
+    pointer-events: none;
+    transition: width 8s cubic-bezier(0.1, 0.7, 0.3, 1), opacity 200ms ease;
+}
+
+#page-progress-bar.active {
+    opacity: 1;
+    width: 92%;
+}
+
+#page-progress-bar.done {
+    width: 100%;
+    opacity: 0;
+    transition: width 200ms ease, opacity 300ms ease 150ms;
+}
+
+/* Sit below the demo announcement bar (fixed, top:0) so they don't collide */
+body.demo #page-progress-bar {
+    top: 50px;
+}
+
+@media (max-width: 486px) {
+    body.demo #page-progress-bar {
+        top: 96px;
+    }
+}

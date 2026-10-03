@@ -10,7 +10,7 @@
         <li class="nav-item">
             <a class="nav-link text-capitalize {{ request()->routeIs('admin.pro-customer.terms-and-conditions') ? 'active' : '' }}"
                 href="{{ route('admin.pro-customer.terms-and-conditions') }}">
-                {{ translate('messages.Terms_and_Conditions') }}
+                {{ translate('Terms & conditions') }}
             </a>
         </li>
     </ul>

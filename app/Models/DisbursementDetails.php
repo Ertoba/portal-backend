@@ -4,11 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use App\Traits\ReportFilter;
+use App\Traits\Report\ReportFilterTrait;
 
 class DisbursementDetails extends Model
 {
-    use HasFactory, ReportFilter;
+    use HasFactory, ReportFilterTrait;
 
     protected $casts = [
         'disbursement_id' => 'integer',

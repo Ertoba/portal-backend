@@ -1,5 +1,5 @@
 <div class="row">
-    <div class="col-lg-12 text-center "><h1 >{{ translate('reviews') }}</h1></div>
+    <div class="col-lg-12 text-center "><h1 >{{ translate('Reviews') }}</h1></div>
     <div class="col-lg-12">
 
 
@@ -21,11 +21,11 @@
                 <th></th>
                 </tr>
             <tr>
-                <th>{{ translate('Search_Criteria') }}</th>
+                <th>{{ translate('Search criteria') }}</th>
                 <th></th>
                 <th></th>
                 <th>
-                    {{ translate('Search_Bar_Content')  }}: : {{  $data['search']  ??translate('N/A') }}
+                    {{ translate('Search bar content')  }}: : {{  $data['search']  ??translate('N/A') }}
                 </th>
                 <th> </th>
                 <th></th>
@@ -33,13 +33,13 @@
                 <th></th>
                 </tr>
         <tr>
-            <th class="border-0">{{translate('messages.#')}}</th>
-            <th class="border-0">{{translate('messages.Review_Id')}}</th>
+            <th class="border-0">#</th>
+            <th class="border-0">{{translate('Review ID')}}</th>
             <th class="border-0">{{translate('messages.item')}}</th>
-            <th class="border-0">{{translate('messages.order_id')}}</th>
-            <th class="border-0">{{translate('messages.reviewer')}}</th>
+            <th class="border-0">{{translate('messages.Order ID')}}</th>
+            <th class="border-0">{{translate('messages.Reviewer')}}</th>
             <th class="border-0">{{translate('messages.review')}}</th>
-            <th class="border-0">{{translate('messages.date')}}</th>
+            <th class="border-0">{{translate('messages.Date')}}</th>
         </thead>
         <tbody>
         @foreach($data['data'] as $key => $review)
@@ -56,7 +56,7 @@
                     <span class="d-block font-size-sm text-body">({{Str::limit($review->customer->phone)}})</span>
                 </div>
             @else
-                {{translate('messages.customer_not_found')}}
+                {{translate('No data found')}}
             @endif
         </td>
         <td>

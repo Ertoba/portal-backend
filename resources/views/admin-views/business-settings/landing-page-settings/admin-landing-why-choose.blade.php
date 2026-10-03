@@ -1,21 +1,24 @@
 @extends('layouts.admin.app')
 
-@section('title',translate('messages.admin_landing_page'))
+@section('title',translate('Admin landing page'))
 
 @section('content')
 <div class="content container-fluid">
     <div class="page-header pb-0">
         <div class="d-flex flex-wrap justify-content-between">
-            <h1 class="page-header-title">
-                <span class="page-header-icon">
-                    <img src="{{asset('public/assets/admin/img/landing.png')}}" class="w--20" alt="">
-                </span>
-                <span>
-                    {{ translate('messages.admin_landing_pages') }}
-                </span>
-            </h1>
+            <div>
+                <h1 class="page-header-title">
+                    <span class="page-header-icon">
+                        <img src="{{asset('public/assets/admin/img/outline/landing.svg')}}" class="w--26" alt="">
+                    </span>
+                    <span>
+                        {{ translate('messages.Admin landing pages') }}
+                    </span>
+                </h1>
+                <p class="page-header-desc">{{ translate('The reasons to choose you, listed on the admin landing page.') }}</p>
+            </div>
             <div class="text--primary-2 py-1 d-flex flex-wrap align-items-center" type="button" data-toggle="modal" data-target="#how-it-works">
-                <strong class="mr-2">{{translate('See_how_it_works!')}}</strong>
+                <strong class="mr-2">{{translate('See how it works')}}</strong>
                 <div>
                     <i class="tio-info-outined"></i>
                 </div>
@@ -28,15 +31,13 @@
         </div>
     </div>
     @php($why_choose_title=\App\Models\DataSetting::withoutGlobalScope('translate')->where('type','admin_landing_page')->where('key','why_choose_title')->first())
-    @php($language=\App\Models\BusinessSetting::where('key','language')->first())
-    @php($language = $language->value ?? null)
-    @php($defaultLang = str_replace('_', '-', app()->getLocale()))
+    @php($language = \App\CentralLogics\Helpers::get_business_settings('language', false) ?? null)
     @if($language)
         <ul class="nav nav-tabs mb-4 border-0">
             <li class="nav-item">
                 <a class="nav-link lang_link active"
                 href="#"
-                id="default-link">{{translate('messages.default')}}</a>
+                id="default-link">{{translate('Default')}}</a>
             </li>
             @foreach (json_decode($language) as $lang)
                 <li class="nav-item">
@@ -56,17 +57,17 @@
                         @if ($language)
                             <div class="row g-3 lang_form" id="default-form">
                                 <div class="col-sm-12">
-                                    <label for="why_choose_title" class="form-label">{{translate('Title')}} ({{ translate('messages.default') }})<span
+                                    <label for="why_choose_title" class="form-label">{{translate('Title')}} ({{ translate('Default') }})<span
                                                         class="form-label-secondary" data-toggle="tooltip"
                                                         data-placement="right"
-                                                        data-original-title="{{ translate('Write_the_title_within_80_characters') }}">
+                                                        data-original-title="{{ translate('Character limit') }}: 80">
                                                         <img src="{{ asset('public/assets/admin/img/info-circle.svg') }}"
                                                             alt="">
                                                     </span><span class="form-label-secondary text-danger"
                                                                  data-toggle="tooltip" data-placement="right"
                                                                  data-original-title="{{ translate('messages.Required.')}}"> *
                                                 </span></label>
-                                                <input required id="why_choose_title" type="text" maxlength="80" name="why_choose_title[]" class="form-control" value="{{$why_choose_title?->getRawOriginal('value')}}" placeholder="{{translate('messages.title_here...')}}">
+                                                <input required id="why_choose_title" type="text" maxlength="80" name="why_choose_title[]" class="form-control" value="{{$why_choose_title?->getRawOriginal('value')}}" placeholder="{{translate('Enter title')}}">
                                 </div>
                             </div>
                             <input type="hidden" name="lang[]" value="default">
@@ -88,11 +89,11 @@
                                             <label for="why_choose_title{{$lang}}" class="form-label">{{translate('Title')}} ({{strtoupper($lang)}})<span
                                                 class="form-label-secondary" data-toggle="tooltip"
                                                 data-placement="right"
-                                                data-original-title="{{ translate('Write_the_title_within_80_characters') }}">
+                                                data-original-title="{{ translate('Character limit') }}: 80">
                                                 <img src="{{ asset('public/assets/admin/img/info-circle.svg') }}"
                                                     alt="">
                                             </span></label>
-                                                <input id="why_choose_title{{$lang}}" type="text" maxlength="80" name="why_choose_title[]" class="form-control" value="{{ $why_choose_title_translate[$lang]['value']?? '' }}" placeholder="{{translate('messages.title_here...')}}">
+                                                <input id="why_choose_title{{$lang}}" type="text" maxlength="80" name="why_choose_title[]" class="form-control" value="{{ $why_choose_title_translate[$lang]['value']?? '' }}" placeholder="{{translate('Enter title')}}">
                                         </div>
                                     </div>
                                     <input type="hidden" name="lang[]" value="{{$lang}}">
@@ -103,18 +104,18 @@
                                         <label for="why_choose_title" class="form-label">{{translate('Title')}}<span
                                                         class="form-label-secondary" data-toggle="tooltip"
                                                         data-placement="right"
-                                                        data-original-title="{{ translate('Write_the_title_within_80_characters') }}">
+                                                        data-original-title="{{ translate('Character limit') }}: 80">
                                                         <img src="{{ asset('public/assets/admin/img/info-circle.svg') }}"
                                                             alt="">
                                                     </span></label>
-                                                <input id="why_choose_title" type="text" maxlength="80" name="why_choose_title[]" class="form-control" placeholder="{{translate('messages.title_here...')}}">
+                                                <input id="why_choose_title" type="text" maxlength="80" name="why_choose_title[]" class="form-control" placeholder="{{translate('Enter title')}}">
                                     </div>
                                 </div>
                                 <input type="hidden" name="lang[]" value="default">
                             @endif
                         <div class="btn--container justify-content-end mt-20">
-                            <button type="reset" class="btn btn--reset mb-2">{{translate('Reset')}}</button>
-                            <button type="submit"   class="btn btn--primary mb-2">{{translate('Save')}}</button>
+                            <button type="reset" class="btn btn--reset mb-2"><i class="tio-refresh"></i> {{translate('Reset')}}</button>
+                            <button type="submit"   class="btn btn--primary mb-2"><i class="tio-save"></i> {{translate('Save')}}</button>
                         </div>
                     </div>
                 </div>
@@ -122,7 +123,7 @@
                 <form action="{{ route('admin.business-settings.admin-landing-page-settings-update', 'special-criteria-list') }}" method="POST" enctype="multipart/form-data">
                     @csrf
                 <h5 class="card-title mb-3 mt-3">
-                    <span class="card-header-icon mr-2"><i class="tio-settings-outlined"></i></span> <span>{{translate('Special Criteria List Section ')}}</span>
+                    <span class="card-header-icon mr-2"><i class="tio-settings-outlined"></i></span> <span>{{translate('Special Criteria List Section')}} </span>
                 </h5>
                 <div class="card mb-3">
                     <div class="card-body">
@@ -130,10 +131,10 @@
                             <div class="row g-3">
                                 @if ($language)
                                 <div class="col-sm-6 lang_form default-form">
-                                    <label for="title" class="form-label">{{translate('Title')}} ({{ translate('messages.default') }})<span
+                                    <label for="title" class="form-label">{{translate('Title')}} ({{ translate('Default') }})<span
                                                         class="form-label-secondary" data-toggle="tooltip"
                                                         data-placement="right"
-                                                        data-original-title="{{ translate('Write_the_title_within_40_characters') }}">
+                                                        data-original-title="{{ translate('Character limit') }}: 40">
                                                         <img src="{{ asset('public/assets/admin/img/info-circle.svg') }}"
                                                             alt="">
                                                     </span>
@@ -141,7 +142,7 @@
                                               data-toggle="tooltip" data-placement="right"
                                               data-original-title="{{ translate('messages.Required.')}}"> *
                                                 </span></label>
-                                                <input required id="title" type="text" maxlength="40" name="title[]" class="form-control char-count-input" placeholder="{{translate('messages.title_here...')}}">
+                                                <input required id="title" type="text" maxlength="40" name="title[]" class="form-control char-count-input" placeholder="{{translate('Enter title')}}">
                                                 <small class="char-count text-muted d-block text-right mt-1"><span class="current">0</span>/40</small>
                                 </div>
                                 <input type="hidden" name="lang[]" value="default">
@@ -150,11 +151,11 @@
                                         <label for="title{{$lang}}" class="form-label">{{translate('Title')}} ({{strtoupper($lang)}})<span
                                                         class="form-label-secondary" data-toggle="tooltip"
                                                         data-placement="right"
-                                                        data-original-title="{{ translate('Write_the_title_within_40_characters') }}">
+                                                        data-original-title="{{ translate('Character limit') }}: 40">
                                                         <img src="{{ asset('public/assets/admin/img/info-circle.svg') }}"
                                                             alt="">
                                                     </span></label>
-                                                <input id="title{{$lang}}" type="text" maxlength="40" name="title[]" class="form-control char-count-input" placeholder="{{translate('messages.title_here...')}}">
+                                                <input id="title{{$lang}}" type="text" maxlength="40" name="title[]" class="form-control char-count-input" placeholder="{{translate('Enter title')}}">
                                                 <small class="char-count text-muted d-block text-right mt-1"><span class="current">0</span>/40</small>
                                     </div>
                                         <input type="hidden" name="lang[]" value="{{$lang}}">
@@ -164,11 +165,11 @@
                                     <label for="title" class="form-label">{{translate('Title')}}<span
                                                         class="form-label-secondary" data-toggle="tooltip"
                                                         data-placement="right"
-                                                        data-original-title="{{ translate('Write_the_title_within_40_characters') }}">
+                                                        data-original-title="{{ translate('Character limit') }}: 40">
                                                         <img src="{{ asset('public/assets/admin/img/info-circle.svg') }}"
                                                             alt="">
                                                     </span></label>
-                                                <input id="title" type="text" maxlength="40" name="title[]" class="form-control char-count-input" placeholder="{{translate('messages.title_here...')}}">
+                                                <input id="title" type="text" maxlength="40" name="title[]" class="form-control char-count-input" placeholder="{{translate('Enter title')}}">
                                                 <small class="char-count text-muted d-block text-right mt-1"><span class="current">0</span>/40</small>
                                 </div>
                                     <input type="hidden" name="lang[]" value="default">
@@ -176,14 +177,14 @@
                                 <div class="col-sm-6">
                                     <div>
 
-                                        <label class="form-label mb-3">{{translate('Criteria Icon/ Image')}}<span class="form-label-secondary" data-toggle="tooltip" data-placement="right" data-original-title="{{ translate(IMAGE_FORMAT.' ' . 'Less Than 2MB') }}">
+                                        <label class="form-label mb-3">{{translate('Criteria Icon/ Image')}}<span class="form-label-secondary" data-toggle="tooltip" data-placement="right" data-original-title="{{ IMAGE_FORMAT.' ' . 'Less Than 2MB' }}">
                                             <img src="{{asset('public/assets/admin/img/info-circle.svg')}}" alt="">
                                         </span>
                                             <span class="form-label-secondary text-danger"
                                                   data-toggle="tooltip" data-placement="right"
                                                   data-original-title="{{ translate('messages.Required.')}}"> *
                                                 </span><div class="fs-12 opacity-70">
-                                                {{ translate(IMAGE_FORMAT.' ' . 'Less Than 2MB') }}
+                                                {{ IMAGE_FORMAT.' ' . 'Less Than 2MB' }}
                                             </div></label>
                                     </div>
                                     <label class="upload-img-3 m-0">
@@ -195,15 +196,14 @@
                                 </div>
                             </div>
                             <div class="btn--container justify-content-end mt-20">
-                                <button type="reset" class="btn btn--reset mb-2">{{translate('Reset')}}</button>
-                                <button type="submit"   class="btn btn--primary mb-2">{{translate('Add')}}</button>
+                                <button type="reset" class="btn btn--reset mb-2"><i class="tio-refresh"></i> {{translate('Reset')}}</button>
+                                <button type="submit"   class="btn btn--primary mb-2"><i class="tio-add-circle"></i> {{translate('Add')}}</button>
                             </div>
                         </div>
                         </div>
                     </form>
-                    @php($criterias=\App\Models\AdminSpecialCriteria::all())
+                    @php($criterias=\App\CentralLogics\Helpers::cached_list(\App\Models\AdminSpecialCriteria::class))
                     <div class="card-body p-0">
-                        <!-- Table -->
                         <div class="table-responsive datatable-custom">
                             <table id="columnSearchDatatable"
                                     class="table table-borderless table-thead-bordered table-nowrap table-align-middle card-table"
@@ -215,11 +215,11 @@
                                     }'>
                                 <thead class="thead-light">
                                 <tr>
-                                    <th class="border-0">{{translate('sl')}}</th>
+                                    <th class="border-0">{{translate('SL')}}</th>
                                     <th class="border-0">{{translate('Title')}}</th>
                                     <th class="border-0">{{translate('Image')}}</th>
                                     <th class="border-0">{{translate('Status')}}</th>
-                                    <th class="text-center border-0">{{translate('messages.action')}}</th>
+                                    <th class="text-center border-0">{{translate('messages.Action')}}</th>
                                 </tr>
                                 </thead>
                                 <tbody>
@@ -260,13 +260,13 @@
 
                                         <td>
                                             <div class="btn--container justify-content-center">
-                                                <a class="btn action-btn btn--primary btn-outline-primary" href="{{route('admin.business-settings.criteria-edit',[$criteria['id']])}}">
+                                                <a class="btn action-btn action-btn--edit" href="{{route('admin.business-settings.criteria-edit',[$criteria['id']])}}">
                                                     <i class="tio-edit"></i>
                                                 </a>
-                                                <a class="btn action-btn btn--danger btn-outline-danger form-alert" href="javascript:"
+                                                <a class="btn action-btn action-btn--delete form-alert" href="javascript:"
                                                    data-id="criteria-{{$criteria['id']}}"
-                                                   data-message="{{ translate('Want to delete this criteria ?') }}"
-                                                   title="{{translate('messages.delete_criteria')}}"><i class="tio-delete-outlined"></i>
+                                                   data-message="{{ translate('Want to delete this criteria?') }}"
+                                                   title="{{translate('messages.Delete criteria')}}"><i class="tio-delete-outlined"></i>
                                                 </a>
                                                 <form action="{{route('admin.business-settings.criteria-delete',[$criteria['id']])}}" method="post" id="criteria-{{$criteria['id']}}">
                                                     @csrf @method('delete')
@@ -279,13 +279,12 @@
                             </table>
 
                         </div>
-                        <!-- End Table -->
                     </div>
                     @if(count($criterias) === 0)
                     <div class="empty--data">
                         <img src="{{asset('/public/assets/admin/svg/illustrations/sorry.svg')}}" alt="public">
                         <h5>
-                            {{translate('no_data_found')}}
+                            {{translate('No data found')}}
                         </h5>
                     </div>
                     @endif
@@ -296,7 +295,6 @@
         </div>
     </div>
 
-    <!-- How it Works -->
     @include('admin-views.business-settings.landing-page-settings.partial.how-it-work')
 @endsection
 

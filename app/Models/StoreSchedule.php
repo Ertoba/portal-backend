@@ -2,12 +2,15 @@
 
 namespace App\Models;
 
+use App\Traits\Model\InvalidatesCacheTrait;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class StoreSchedule extends Model
 {
-    use HasFactory;
+    use HasFactory, InvalidatesCacheTrait;
+
+    protected static array $cacheTags = ['store'];
 
     /**
      * The table associated with the model.

@@ -8,6 +8,8 @@ class EcommerceItemDetails extends Model
 {
     use HasFactory;
 
+    protected $guarded = ['id'];
+
     protected $casts = [
         'brand_id' => 'integer',
     ];

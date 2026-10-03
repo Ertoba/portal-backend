@@ -2,12 +2,16 @@
 
 namespace App\Models;
 
+use App\Traits\Item\MissingAddonRelationsTrait;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Modules\Rental\Entities\Trips;
+use Modules\RideShare\Entities\TripManagement\RideRequest;
+use Modules\Service\Entities\ServiceBooking;
 
 class OrderProDiscount extends Model
 {
-    use HasFactory;
+    use MissingAddonRelationsTrait, HasFactory;
 
     protected $guarded = ['id'];
 
@@ -15,6 +19,7 @@ class OrderProDiscount extends Model
         'order_id'                            => 'integer',
         'trip_id'                             => 'integer',
         'ride_request_id'                     => 'integer',
+        'service_booking_id'                  => 'integer',
         'user_id'                             => 'integer',
         'subscription_id'                     => 'integer',
         'plan_id'                             => 'integer',
@@ -35,12 +40,29 @@ class OrderProDiscount extends Model
 
     public function trip()
     {
-        return $this->belongsTo(\Modules\Rental\Entities\Trips::class, 'trip_id');
+        if (! addon_published_status('Rental')) {
+            return $this->missingAddonRelation('trip_id');
+        }
+
+        return $this->belongsTo(Trips::class, 'trip_id');
     }
 
     public function rideRequest()
     {
-        return $this->belongsTo(\Modules\RideShare\Entities\TripManagement\RideRequest::class, 'ride_request_id');
+        if (! addon_published_status('RideShare')) {
+            return $this->missingAddonRelation('ride_request_id');
+        }
+
+        return $this->belongsTo(RideRequest::class, 'ride_request_id');
+    }
+
+    public function serviceBooking()
+    {
+        if (! service_addon_active()) {
+            return $this->missingAddonRelation('service_booking_id');
+        }
+
+        return $this->belongsTo(ServiceBooking::class, 'service_booking_id');
     }
 
     public function user()

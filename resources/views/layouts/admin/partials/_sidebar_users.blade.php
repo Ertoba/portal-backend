@@ -2,104 +2,83 @@
     <aside class="js-navbar-vertical-aside navbar navbar-vertical-aside navbar-vertical navbar-vertical-fixed navbar-expand-xl navbar-bordered  ">
         <div class="navbar-vertical-container">
             <div class="navbar-brand-wrapper justify-content-between">
-                <!-- Logo -->
-                @php($store_logo = \App\Models\BusinessSetting::where(['key' => 'logo'])->first())
                 <a class="navbar-brand" href="{{ route('admin.users.dashboard') }}" aria-label="Front">
                        <img class="navbar-brand-logo initial--36 onerror-image onerror-image" data-onerror-image="{{ asset('public/assets/admin/img/160x160/img2.jpg') }}"
-                    src="{{\App\CentralLogics\Helpers::get_full_url('business', $store_logo?->value?? '', $store_logo?->storage[0]?->value ?? 'public','favicon')}}"
+                    src="{{\App\CentralLogics\Helpers::logoFullUrl()}}"
                     alt="Logo">
                     <img class="navbar-brand-logo-mini initial--36 onerror-image onerror-image" data-onerror-image="{{ asset('public/assets/admin/img/160x160/img2.jpg') }}"
-                    src="{{\App\CentralLogics\Helpers::get_full_url('business', $store_logo?->value?? '', $store_logo?->storage[0]?->value ?? 'public','favicon')}}"
+                    src="{{\App\CentralLogics\Helpers::logoFullUrl()}}"
                     alt="Logo">
                 </a>
 
-                <!-- End Logo -->
 
-                <!-- Navbar Vertical Toggle -->
                 <button type="button" class="js-navbar-vertical-aside-toggle-invoker navbar-vertical-aside-toggle btn btn-icon btn-xs btn-ghost-dark">
                     <i class="tio-clear tio-lg"></i>
                 </button>
-                <!-- End Navbar Vertical Toggle -->
 
                 <div class="navbar-nav-wrap-content-left">
-                    <!-- Navbar Vertical Toggle -->
                     <button type="button" class="js-navbar-vertical-aside-toggle-invoker close">
                         <i class="tio-first-page navbar-vertical-aside-toggle-short-align" data-toggle="tooltip"
                         data-placement="right" title="Collapse"></i>
                         <i class="tio-last-page navbar-vertical-aside-toggle-full-align"
                         data-template='<div class="tooltip d-none d-sm-block" role="tooltip"><div class="arrow"></div><div class="tooltip-inner"></div></div>'></i>
                     </button>
-                    <!-- End Navbar Vertical Toggle -->
                 </div>
 
             </div>
 
-            <!-- Content -->
             <div class="navbar-vertical-content bg--005555" id="navbar-vertical-content">
                 <form autocomplete="off"   class="sidebar--search-form">
                     <div class="search--form-group">
                         <button type="button" class="btn"><i class="tio-search"></i></button>
-                        <input  autocomplete="false" name="qq" type="text" class="form-control form--control" placeholder="{{ translate('Search Menu...') }}" id="search">
+                        <input  autocomplete="false" name="qq" type="text" class="form-control form--control" placeholder="{{ translate('Search menu') }}" id="search">
 
                         <div id="search-suggestions" class="flex-wrap mt-1"></div>
                     </div>
                 </form>
                 <ul class="navbar-nav navbar-nav-lg nav-tabs">
-                    <!-- Dashboards -->
                     <li class="navbar-vertical-aside-has-menu {{ Request::is('admin/users') ? 'show active' : '' }}">
-                        <a class="js-navbar-vertical-aside-menu-link nav-link" href="{{ route('admin.users.dashboard') }}" title="{{ translate('messages.dashboard') }}">
+                        <a class="js-navbar-vertical-aside-menu-link nav-link" href="{{ route('admin.users.dashboard') }}" title="{{ translate('Dashboard') }}">
                             <i class="tio-home-vs-1-outlined nav-icon"></i>
                             <span class="navbar-vertical-aside-mini-mode-hidden-elements text-truncate">
-                                {{ translate('User Overview') }}
+                                {{ translate('User overview') }}
                             </span>
                         </a>
                     </li>
-                    <!-- End Dashboards -->
 
                     @if (\App\CentralLogics\Helpers::module_permission_check('cashback'))
                     <li class="nav-item">
-                        <small class="nav-subtitle" title="{{ translate('messages.Promotion_section') }}">{{ translate('messages.Promotion_management') }}</small>
+                        <small class="nav-subtitle" title="{{ translate('messages.Promotion section') }}">{{ translate('Promotion management') }}</small>
                         <small class="tio-more-horizontal nav-subtitle-replacer"></small>
                     </li>
                     <li class="navbar-vertical-aside-has-menu {{ Request::is('admin/users/cashback*') ? 'active' : '' }}">
-                        <a class="js-navbar-vertical-aside-menu-link nav-link" href="{{ route('admin.users.cashback.add-new') }}" title="{{ translate('messages.cashback') }}">
+                        <a class="js-navbar-vertical-aside-menu-link nav-link" href="{{ route('admin.users.cashback.add-new') }}" title="{{ translate('messages.CashBack') }}">
                             <i class="tio-settings-back nav-icon"></i>
-                            <span class="navbar-vertical-aside-mini-mode-hidden-elements text-truncate">{{ translate('messages.cashback') }}</span>
+                            <span class="navbar-vertical-aside-mini-mode-hidden-elements text-truncate">{{ translate('messages.CashBack') }}</span>
                         </a>
                     </li>
                     @endif
 
-                <!-- DeliveryMan -->
                 @if (\App\CentralLogics\Helpers::module_permission_check('deliveryman'))
                 <li class="nav-item">
-                    <small class="nav-subtitle" title="{{ translate('messages.deliveryman_section') }}">{{ translate('messages.deliveryman_management') }}</small>
+                    <small class="nav-subtitle" title="{{ translate('messages.Deliveryman section') }}">{{ translate('Deliveryman management') }}</small>
                     <small class="tio-more-horizontal nav-subtitle-replacer"></small>
                 </li>
-                <li
-                    class="navbar-vertical-aside-has-menu {{ Request::is('admin/users/delivery-man/vehicle*') ? 'active' : '' }}">
-                    <a class="js-navbar-vertical-aside-menu-link nav-link"
-                        href="{{ route('admin.users.delivery-man.vehicle.list') }}"
-                        title="{{ translate('messages.vehicles_category') }}">
-                        <i class="tio-car nav-icon"></i>
-                        <span class="navbar-vertical-aside-mini-mode-hidden-elements text-truncate">
-                            {{ translate('messages.vehicles_category') }}
-                        </span>
-                    </a>
-                </li>
+                {{-- Vehicles Category moved to Settings › Delivery Management on 2026-09-08. --}}
                 <li class="navbar-vertical-aside-has-menu {{ Request::is('admin/users/delivery-man/add') ? 'active' : '' }}">
-                    <a class="js-navbar-vertical-aside-menu-link nav-link" href="{{ route('admin.users.delivery-man.add') }}" title="{{ translate('messages.add_delivery_man') }}">
+                    <a class="js-navbar-vertical-aside-menu-link nav-link" href="{{ route('admin.users.delivery-man.add') }}" title="{{ translate('Add deliveryman') }}">
                         <i class="tio-running nav-icon"></i>
                         <span class="navbar-vertical-aside-mini-mode-hidden-elements text-truncate">
-                            {{ translate('messages.add_delivery_man') }}
+                            {{ translate('Add deliveryman') }}
                         </span>
                     </a>
                 </li>
 
                 <li class="navbar-vertical-aside-has-menu {{ Request::is('admin/users/delivery-man/new') || Request::is('admin/users/delivery-man/deny')  ? 'active' : '' }}">
-                    <a class="js-navbar-vertical-aside-menu-link nav-link" href="{{ route('admin.users.delivery-man.new') }}" title="{{ translate('messages.new_delivery_man') }}">
+                    <a class="js-navbar-vertical-aside-menu-link nav-link" href="{{ route('admin.users.delivery-man.new') }}" title="{{ translate('New deliveryman') }}">
                         <i class="tio-man nav-icon"></i>
                         <span class="navbar-vertical-aside-mini-mode-hidden-elements text-truncate">
-                            {{ translate('messages.new_delivery_man') }}
+                            {{ translate('New deliveryman') }}
 
                             <span class="badge badge-soft-info badge-pill ml-1">
                                 {{ \App\Models\DeliveryMan::where('application_status','pending')->count() }}
@@ -110,57 +89,55 @@
 
 
                 <li class="navbar-vertical-aside-has-menu {{ Request::is('admin/users/delivery-man') ||  Request::is('admin/users/delivery-man/edit*') ||  Request::is('admin/users/delivery-man/preview*') ? 'active' : '' }}">
-                    <a class="js-navbar-vertical-aside-menu-link nav-link" href="{{ route('admin.users.delivery-man.list') }}" title="{{ translate('messages.deliveryman_list') }}">
+                    <a class="js-navbar-vertical-aside-menu-link nav-link" href="{{ route('admin.users.delivery-man.list') }}" title="{{ translate('Deliveryman list') }}">
                         <i class="tio-filter-list nav-icon"></i>
                         <span class="navbar-vertical-aside-mini-mode-hidden-elements text-truncate">
-                            {{ translate('messages.deliveryman_list') }}
+                            {{ translate('Deliveryman list') }}
                         </span>
                     </a>
                 </li>
 
                 <li class="navbar-vertical-aside-has-menu {{ Request::is('admin/users/delivery-man/reviews') ? 'active' : '' }}">
-                    <a class="js-navbar-vertical-aside-menu-link nav-link" href="{{ route('admin.users.delivery-man.reviews.list') }}" title="{{ translate('messages.reviews') }}">
+                    <a class="js-navbar-vertical-aside-menu-link nav-link" href="{{ route('admin.users.delivery-man.reviews.list') }}" title="{{ translate('messages.Reviews') }}">
                         <i class="tio-star-outlined nav-icon"></i>
                         <span class="navbar-vertical-aside-mini-mode-hidden-elements text-truncate">
-                            {{ translate('messages.reviews') }}
+                            {{ translate('messages.Reviews') }}
                         </span>
                     </a>
                 </li>
                 @endif
-                <!-- End DeliveryMan -->
 
-                 <!-- Rider-->
                 @if (addon_published_status('RideShare'))
                     @if(\App\CentralLogics\Helpers::module_permission_check('rider'))
                     <li class="nav-item">
-                        <small class="nav-subtitle" title="{{ translate('messages.rider_handle') }}">{{ translate('messages.rider') }}
+                        <small class="nav-subtitle" title="{{ translate('messages.Rider handle') }}">{{ translate('Rider') }}
                             {{ translate('management') }}</small>
                         <small class="tio-more-horizontal nav-subtitle-replacer"></small>
                     </li>
 
                     <li class="navbar-vertical-aside-has-menu {{ Request::is('admin/users/rider*') && !Request::is('admin/users/rider/vehicle*') ? 'active' : '' }}">
-                        <a class="js-navbar-vertical-aside-menu-link nav-link nav-link-toggle" href="javascript:" title="{{ translate('messages.rider_Setup') }}">
+                        <a class="js-navbar-vertical-aside-menu-link nav-link nav-link-toggle" href="javascript:" title="{{ translate('Rider setup') }}">
                             <i class="tio-user nav-icon"></i>
-                            <span class="navbar-vertical-aside-mini-mode-hidden-elements text-truncate">{{ translate('messages.rider_Setup') }}</span>
+                            <span class="navbar-vertical-aside-mini-mode-hidden-elements text-truncate">{{ translate('Rider setup') }}</span>
                         </a>
                         <ul class="js-navbar-vertical-aside-submenu nav nav-sub"  style="display:{{ Request::is('admin/users/rider*') && !Request::is('admin/users/rider/vehicle*') ? 'block' : 'none' }}">
                             <li class="nav-item {{ Request::is('admin/users/rider') ||  Request::is('admin/users/rider/edit*') ||  Request::is('admin/users/rider/preview*') ? 'active' : '' }}">
-                                <a class="nav-link " href="{{ route('admin.users.rider.list') }}" title="{{ translate('messages.Rider_List') }}">
+                                <a class="nav-link " href="{{ route('admin.users.rider.list') }}" title="{{ translate('Rider list') }}">
                                     <span class="tio-circle nav-indicator-icon"></span>
-                                    <span class="text-truncate">{{ translate('messages.Rider_List') }}</span>
+                                    <span class="text-truncate">{{ translate('Rider list') }}</span>
                                 </a>
                             </li>
                             <li class="nav-item {{ Request::is('admin/users/rider/add') ? 'active' : '' }}">
-                                <a class="nav-link " href="{{ route('admin.users.rider.add') }}" title="{{ translate('messages.Add_New_Rider') }}">
+                                <a class="nav-link " href="{{ route('admin.users.rider.add') }}" title="{{ translate('Add new rider') }}">
                                     <span class="tio-circle nav-indicator-icon"></span>
-                                    <span class="text-truncate">{{ translate('messages.Add_New_Rider') }}</span>
+                                    <span class="text-truncate">{{ translate('Add new rider') }}</span>
                                 </a>
                             </li>
                             <li class="nav-item {{ Request::is('admin/users/rider/new') || Request::is('admin/users/rider/deny')  ? 'active' : '' }}">
-                                <a class="nav-link " href="{{ route('admin.users.rider.new') }}" title="{{ translate('messages.New_Rider') }}">
+                                <a class="nav-link " href="{{ route('admin.users.rider.new') }}" title="{{ translate('New rider') }}">
                                     <span class="tio-circle nav-indicator-icon"></span>
                                     <span class="navbar-vertical-aside-mini-mode-hidden-elements text-truncate">
-                                        {{ translate('messages.New_Rider') }}
+                                        {{ translate('New rider') }}
 
                                         <span class="badge badge-soft-info badge-pill ml-1">
                                             {{ \App\Models\DeliveryMan::rider()->where('application_status','pending')->count() }}
@@ -169,21 +146,21 @@
                                 </a>
                             </li>
                             <li class="nav-item {{ Request::is('admin/users/rider/level') || Request::is('admin/users/rider/level/edit*') ? 'active' : '' }}">
-                                <a class="nav-link " href="{{ route('admin.users.rider.level.index') }}" title="{{ translate('messages.rider_level') }}">
+                                <a class="nav-link " href="{{ route('admin.users.rider.level.index') }}" title="{{ translate('Rider level') }}">
                                     <span class="tio-circle nav-indicator-icon"></span>
-                                    <span class="text-truncate">{{ translate('messages.rider_level') }}</span>
+                                    <span class="text-truncate">{{ translate('Rider level') }}</span>
                                 </a>
                             </li>
                             <li class="nav-item {{ Request::is('admin/users/rider/level/create') ? 'active' : '' }}">
-                                <a class="nav-link " href="{{ route('admin.users.rider.level.create') }}" title="{{ translate('messages.add_rider_level') }}">
+                                <a class="nav-link " href="{{ route('admin.users.rider.level.create') }}" title="{{ translate('Add rider level') }}">
                                     <span class="tio-circle nav-indicator-icon"></span>
-                                    <span class="text-truncate">{{ translate('messages.add_rider_level') }}</span>
+                                    <span class="text-truncate">{{ translate('Add rider level') }}</span>
                                 </a>
                             </li>
                             <li class="nav-item {{ Request::is('admin/users/rider/reviews') ? 'active' : '' }}">
-                                <a class="nav-link " href="{{ route('admin.users.rider.reviews.list') }}" title="{{ translate('messages.reviews') }}">
+                                <a class="nav-link " href="{{ route('admin.users.rider.reviews.list') }}" title="{{ translate('messages.Reviews') }}">
                                     <span class="tio-circle nav-indicator-icon"></span>
-                                    <span class="text-truncate">{{ translate('messages.reviews') }}</span>
+                                    <span class="text-truncate">{{ translate('messages.Reviews') }}</span>
                                 </a>
                             </li>
 
@@ -192,33 +169,33 @@
                     @endif
                     @if(\App\CentralLogics\Helpers::module_permission_check('ride_vehicle'))
                     <li class="navbar-vertical-aside-has-menu {{ Request::is('admin/users/rider/vehicle*') ? 'active' : '' }}">
-                        <a class="js-navbar-vertical-aside-menu-link nav-link nav-link-toggle" href="javascript:" title="{{ translate('messages.Vehicle_Setup') }}">
+                        <a class="js-navbar-vertical-aside-menu-link nav-link nav-link-toggle" href="javascript:" title="{{ translate('Vehicle setup') }}">
                             <i class="tio-car nav-icon"></i>
-                            <span class="navbar-vertical-aside-mini-mode-hidden-elements text-truncate">{{ translate('messages.Vehicle_Setup') }}</span>
+                            <span class="navbar-vertical-aside-mini-mode-hidden-elements text-truncate">{{ translate('Vehicle setup') }}</span>
                         </a>
                         <ul class="js-navbar-vertical-aside-submenu nav nav-sub"  style="display:{{ Request::is('admin/users/rider/vehicle*') ? 'block' : 'none' }}">
                             <li class="nav-item {{ Request::is('admin/users/rider/vehicle/brand') || Request::is('admin/users/rider/vehicle/category') || Request::is('admin/users/rider/vehicle/model') ? 'active' : '' }}">
-                                <a class="nav-link " href="{{ route('admin.users.rider.vehicle.brand.index') }}" title="{{ translate('messages.Attribute_Setup') }}">
+                                <a class="nav-link " href="{{ route('admin.users.rider.vehicle.brand.index') }}" title="{{ translate('Attribute setup') }}">
                                     <span class="tio-circle nav-indicator-icon"></span>
-                                    <span class="text-truncate">{{ translate('messages.Attribute_Setup') }}</span>
+                                    <span class="text-truncate">{{ translate('Attribute setup') }}</span>
                                 </a>
                             </li>
                             <li class="nav-item @yield('rider_new_vehicle_edit') {{ Request::is('admin/users/rider/vehicle/create') ? 'active' : '' }}">
-                                <a class="nav-link " href="{{ route('admin.users.rider.vehicle.create') }}" title="{{ translate('messages.Add_Vehicle') }}">
+                                <a class="nav-link " href="{{ route('admin.users.rider.vehicle.create') }}" title="{{ translate('Add vehicle') }}">
                                     <span class="tio-circle nav-indicator-icon"></span>
-                                    <span class="text-truncate">{{ translate('messages.Add_Vehicle') }}</span>
+                                    <span class="text-truncate">{{ translate('Add vehicle') }}</span>
                                 </a>
                             </li>
                             <li class="nav-item {{ Request::is('admin/users/rider/vehicle') || Request::is('admin/users/rider/vehicle/show*') ? 'active' : '' }}">
-                                <a class="nav-link " href="{{ route('admin.users.rider.vehicle.index') }}" title="{{ translate('messages.Vehicle_List') }}">
+                                <a class="nav-link " href="{{ route('admin.users.rider.vehicle.index') }}" title="{{ translate('Vehicle list') }}">
                                     <span class="tio-circle nav-indicator-icon"></span>
-                                    <span class="text-truncate">{{ translate('messages.Vehicle_List') }}</span>
+                                    <span class="text-truncate">{{ translate('Vehicle list') }}</span>
                                 </a>
                             </li>
                             <li class="nav-item {{ Request::is('admin/users/rider/vehicle/request/list*') || Request::is('admin/users/rider/vehicle/request/details*') ? 'active' : '' }}">
-                                <a class="nav-link " href="{{ route('admin.users.rider.vehicle.request.list',['status'=>'pending']) }}" title="{{ translate('messages.Vehicle_Request') }}">
+                                <a class="nav-link " href="{{ route('admin.users.rider.vehicle.request.list',['status'=>'pending']) }}" title="{{ translate('Vehicle request') }}">
                                     <span class="tio-circle nav-indicator-icon"></span>
-                                    <span class="text-truncate">{{ translate('messages.Vehicle_Request') }}</span>
+                                    <span class="text-truncate">{{ translate('Vehicle request') }}</span>
                                 </a>
                             </li>
 
@@ -226,15 +203,12 @@
                     </li>
                     @endif
                 @endif
-                <!-- End Rider -->
 
-                <!-- Customer Section -->
                 @if (\App\CentralLogics\Helpers::module_permission_check('customer_management'))
                 <li class="nav-item">
-                    <small class="nav-subtitle" title="{{ translate('messages.customer_section') }}">{{ translate('messages.customer_management') }}</small>
+                    <small class="nav-subtitle" title="{{ translate('messages.Customer section') }}">{{ translate('Customer management') }}</small>
                     <small class="tio-more-horizontal nav-subtitle-replacer"></small>
                 </li>
-                <!-- Custommer -->
 
                 <li class="navbar-vertical-aside-has-menu @yield('customer') {{ (Request::is('admin/users/customer/list') || Request::is('admin/users/customer/view*')) ? 'active' : '' }}">
                     <a class="js-navbar-vertical-aside-menu-link nav-link" href="{{ route('admin.users.customer.list') }}" title="{{ translate('messages.customers') }}">
@@ -247,18 +221,18 @@
 
                 <li class="navbar-vertical-aside-has-menu {{ Request::is('admin/users/customer/wallet*') ? 'active' : '' }}">
 
-                    <a class="js-navbar-vertical-aside-menu-link nav-link nav-link-toggle" href="javascript:" title="{{ translate('messages.customer_wallet') }}">
+                    <a class="js-navbar-vertical-aside-menu-link nav-link nav-link-toggle" href="javascript:" title="{{ translate('Customer wallet') }}">
                         <i class="tio-wallet nav-icon"></i>
                         <span class="navbar-vertical-aside-mini-mode-hidden-elements text-truncate  text-capitalize">
-                            {{ translate('messages.customer_wallet') }}
+                            {{ translate('Customer wallet') }}
                         </span>
                     </a>
 
                     <ul class="js-navbar-vertical-aside-submenu nav nav-sub" style="display:{{ Request::is('admin/users/customer/wallet*') ? 'block' : 'none' }}">
                         <li class="nav-item {{ Request::is('admin/users/customer/wallet/add-fund') ? 'active' : '' }}">
-                            <a class="nav-link " href="{{ route('admin.users.customer.wallet.add-fund') }}" title="{{ translate('messages.add_fund') }}">
+                            <a class="nav-link " href="{{ route('admin.users.customer.wallet.add-fund') }}" title="{{ translate('Add fund') }}">
                                 <span class="tio-circle nav-indicator-icon"></span>
-                                <span class="text-truncate text-capitalize">{{ translate('messages.add_fund') }}</span>
+                                <span class="text-truncate text-capitalize">{{ translate('Add fund') }}</span>
                             </a>
                         </li>
 
@@ -270,19 +244,19 @@
                         </li>
 
                         <li class="nav-item {{ Request::is('admin/users/customer/wallet/bonus*') ? 'active' : '' }}">
-                            <a class="nav-link " href="{{ route('admin.users.customer.wallet.bonus.add-new') }}" title="{{ translate('messages.bonus') }}">
+                            <a class="nav-link " href="{{ route('admin.users.customer.wallet.bonus.add-new') }}" title="{{ translate('messages.Bonus') }}">
                                 <span class="tio-circle nav-indicator-icon"></span>
-                                <span class="text-truncate text-capitalize">{{ translate('messages.bonus') }}</span>
+                                <span class="text-truncate text-capitalize">{{ translate('messages.Bonus') }}</span>
                             </a>
                         </li>
                     </ul>
                 </li>
 
                 <li class="navbar-vertical-aside-has-menu {{ Request::is('admin/users/customer/loyalty-point*') ? 'active' : '' }}">
-                    <a class="js-navbar-vertical-aside-menu-link nav-link  nav-link-toggle" href="javascript:" title="{{ translate('messages.customer_loyalty_point') }}">
+                    <a class="js-navbar-vertical-aside-menu-link nav-link  nav-link-toggle" href="javascript:" title="{{ translate('Customer loyalty point') }}">
                         <i class="tio-medal nav-icon"></i>
                         <span class="navbar-vertical-aside-mini-mode-hidden-elements text-truncate  text-capitalize">
-                            {{ translate('messages.customer_loyalty_point') }}
+                            {{ translate('Customer loyalty point') }}
                         </span>
                     </a>
 
@@ -296,59 +270,56 @@
                     </ul>
                 </li>
 
-                <!-- End Custommer -->
                 <li class="navbar-vertical-aside-has-menu {{ Request::is('admin/users/customer/subscribed') ? 'active' : '' }}">
-                    <a class="js-navbar-vertical-aside-menu-link nav-link" href="{{ route('admin.users.customer.subscribed') }}" title="{{translate('subscribed_emails')}}">
+                    <a class="js-navbar-vertical-aside-menu-link nav-link" href="{{ route('admin.users.customer.subscribed') }}" title="{{translate('Subscribed emails')}}">
                         <i class="tio-email-outlined nav-icon"></i>
                         <span class="navbar-vertical-aside-mini-mode-hidden-elements text-truncate">
-                            {{ translate('messages.subscribed_mail_list') }}
+                            {{ translate('messages.Subscribed mail list') }}
                         </span>
                     </a>
                 </li>
                 <li class="navbar-vertical-aside-has-menu {{ Request::is('admin/users/contact/contact-list') ? 'active' : '' }}">
-                    <a class="nav-link " href="{{ route('admin.users.contact.contact-list') }}" title="{{ translate('messages.contact_messages') }}">
+                    <a class="nav-link " href="{{ route('admin.users.contact.contact-list') }}" title="{{ translate('Contact messages') }}">
                         <span class="tio-message nav-icon"></span>
-                        <span class="text-truncate">{{ translate('messages.contact_messages') }}</span>
+                        <span class="text-truncate">{{ translate('Contact messages') }}</span>
                     </a>
                 </li>
 
                 @endif
-                <!-- End customer Section -->
 
 
 
-                <!-- Employee-->
 
                 <li class="nav-item">
-                    <small class="nav-subtitle" title="{{ translate('messages.employee_handle') }}">{{ translate('messages.employee') }}
+                    <small class="nav-subtitle" title="{{ translate('messages.Employee handle') }}">{{ translate('Employee') }}
                         {{ translate('management') }}</small>
                     <small class="tio-more-horizontal nav-subtitle-replacer"></small>
                 </li>
 
                 @if (\App\CentralLogics\Helpers::module_permission_check('employee_role'))
                 <li class="navbar-vertical-aside-has-menu {{ Request::is('admin/users/custom-role*') ? 'active' : '' }}">
-                    <a class="js-navbar-vertical-aside-menu-link nav-link" href="{{ route('admin.users.custom-role.create') }}" title="{{ translate('messages.employee_Role') }}">
+                    <a class="js-navbar-vertical-aside-menu-link nav-link" href="{{ route('admin.users.custom-role.list') }}" title="{{ translate('messages.Employee role') }}">
                         <i class="tio-incognito nav-icon"></i>
-                        <span class="navbar-vertical-aside-mini-mode-hidden-elements text-truncate">{{ translate('messages.employee_Role') }}</span>
+                        <span class="navbar-vertical-aside-mini-mode-hidden-elements text-truncate">{{ translate('messages.Employee role') }}</span>
                     </a>
                 </li>
                 @endif
 
                 @if (\App\CentralLogics\Helpers::module_permission_check('employee'))
                 <li class="navbar-vertical-aside-has-menu {{ Request::is('admin/users/employee*') ? 'active' : '' }}">
-                    <a class="js-navbar-vertical-aside-menu-link nav-link nav-link-toggle" href="javascript:" title="{{ translate('messages.Employee') }}">
+                    <a class="js-navbar-vertical-aside-menu-link nav-link nav-link-toggle" href="javascript:" title="{{ translate('Employee') }}">
                         <i class="tio-user nav-icon"></i>
-                        <span class="navbar-vertical-aside-mini-mode-hidden-elements text-truncate">{{ translate('messages.employees') }}</span>
+                        <span class="navbar-vertical-aside-mini-mode-hidden-elements text-truncate">{{ translate('Employees') }}</span>
                     </a>
                     <ul class="js-navbar-vertical-aside-submenu nav nav-sub"  style="display:{{ Request::is('admin/users/employee*') ? 'block' : 'none' }}">
                         <li class="nav-item {{ Request::is('admin/users/employee/store') ? 'active' : '' }}">
-                            <a class="nav-link " href="{{ route('admin.users.employee.add-new') }}" title="{{ translate('messages.add_new_Employee') }}">
+                            <a class="nav-link " href="{{ route('admin.users.employee.add-new') }}" title="{{ translate('messages.Add new employee') }}">
                                 <span class="tio-circle nav-indicator-icon"></span>
-                                <span class="text-truncate">{{ translate('messages.add_new') }}</span>
+                                <span class="text-truncate">{{ translate('Add new') }}</span>
                             </a>
                         </li>
                         <li class="nav-item @yield('employee_list')">
-                            <a class="nav-link " href="{{ route('admin.users.employee.list') }}" title="{{ translate('messages.Employee_list') }}">
+                            <a class="nav-link " href="{{ route('admin.users.employee.list') }}" title="{{ translate('messages.Employee list') }}">
                                 <span class="tio-circle nav-indicator-icon"></span>
                                 <span class="text-truncate">{{ translate('messages.list') }}</span>
                             </a>
@@ -357,7 +328,6 @@
                     </ul>
                 </li>
                 @endif
-                <!-- End Employee -->
 
 
                 <li class="nav-item py-5">
@@ -367,7 +337,6 @@
                     @includeIf('layouts.admin.partials._logout_modal')
                 </ul>
             </div>
-            <!-- End Content -->
         </div>
     </aside>
 </div>

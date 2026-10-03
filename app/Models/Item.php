@@ -2,24 +2,29 @@
 
 namespace App\Models;
 
+use App\Services\Promotion\BundleService;
+use App\Traits\Model\InvalidatesCacheTrait;
 use App\Scopes\ZoneScope;
 use App\Scopes\StoreScope;
-use App\Traits\GeneratesSlug;
-use App\Traits\HasProductVideoPreview;
-use App\Traits\ItemFilter;
-use App\Traits\ReportFilter;
+use App\Traits\Model\SlugTrait;
+use App\Traits\Model\HasProductVideoPreviewTrait;
+use App\Traits\Item\ItemFilterTrait;
+use App\Traits\Report\ReportFilterTrait;
 use App\CentralLogics\Helpers;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Modules\TaxModule\Entities\Taxable;
+use App\Traits\Model\HasTranslationsTrait;
+use App\Traits\Model\HasStorageTrait;
 
 class Item extends Model
 {
-    use HasFactory, ReportFilter, HasProductVideoPreview, GeneratesSlug, ItemFilter;
+    use HasFactory, ReportFilterTrait, HasProductVideoPreviewTrait, SlugTrait, ItemFilterTrait, HasTranslationsTrait, HasStorageTrait, InvalidatesCacheTrait;
+
+    protected static array $cacheTags = ['item'];
     protected $guarded = ['id'];
-    protected $with = ['translations','storage','storeCategory'];
+    protected $with = ['storeCategory'];
     protected $casts = [
         'tax' => 'float',
         'price' => 'float',
@@ -49,7 +54,7 @@ class Item extends Model
         'is_halal' => 'integer',
     ];
 
-    protected $appends = ['unit_type', 'image_full_url', 'images_full_url', 'video_full_url', 'video_size', 'video_preview_type', 'video_embed_url', 'video_preview_url', 'video_thumbnail_url', 'video_preview_modal_type', 'video_preview_modal_url', 'has_video_preview', 'has_video_source'];
+    protected $appends = ['unit_type', 'video_size', 'video_preview_type', 'video_embed_url', 'video_preview_url', 'video_thumbnail_url', 'video_preview_modal_type', 'video_preview_modal_url', 'has_video_preview', 'has_video_source'];
 
     public function scopeRecommended($query)
     {
@@ -75,30 +80,29 @@ class Item extends Model
 
     public function scopeDiscounted($query)
     {
-        // return $query->where('discount','>',0);
 
         $nowDate = now()->format('Y-m-d');
         $nowTime = now()->format('H:i');
+        // flash_sales keeps start_date/end_date as DATETIME, unlike discounts which uses
+        // DATE, so "starts on or before today" is everything before tomorrow midnight.
+        $tomorrow = now()->addDay()->format('Y-m-d');
 
-        return $query->where(function ($query) use ($nowDate, $nowTime) {
+        return $query->where(function ($query) use ($nowDate, $nowTime, $tomorrow) {
             $query->where('discount', '>', 0)
+                // Bare comparisons, not whereDate()/whereTime(): a column wrapped in a
+                // function cannot use an index. discounts dates are DATE, times are TIME.
                 ->orWhereHas('store.discount', function ($q) use ($nowDate, $nowTime) {
-                    $q->whereDate('start_date', '<=', $nowDate)
-                        ->whereDate('end_date', '>=', $nowDate)
-                        ->whereTime('start_time', '<=', $nowTime)
-                        ->whereTime('end_time', '>=', $nowTime);
+                    $q->where('start_date', '<=', $nowDate)
+                        ->where('end_date', '>=', $nowDate)
+                        ->where('start_time', '<=', $nowTime)
+                        ->where('end_time', '>=', $nowTime);
                 })
-                ->orWhereHas('flashSaleItems.flashSale', function ($q) use ($nowDate, $nowTime) {
+                ->orWhereHas('flashSaleItems.flashSale', function ($q) use ($nowDate, $tomorrow) {
                     $q->where('is_publish', 1)
-                        ->whereDate('start_date', '<=', $nowDate)
-                        ->whereDate('end_date', '>=', $nowDate);
+                        ->where('start_date', '<', $tomorrow)
+                        ->where('end_date', '>=', $nowDate);
                 });
         });
-    }
-
-    public function translations()
-    {
-        return $this->morphMany(Translation::class, 'translationable');
     }
 
     public function scopeModule($query, $module_id)
@@ -109,39 +113,67 @@ class Item extends Model
 
     public function scopeActive($query , $zone_ids = null ,$module_id = null)
     {
+        $module_id = $module_id && is_numeric($module_id) ? $module_id : null;
+        $current_module_data = config('module.current_module_data');
+        $zone_module_id = $module_id ?? ($current_module_data['id'] ?? null);
+
         return $query
         ->where('status', 1)->where('is_approved', 1)
-            ->whereHas('store', function ($query) use ($zone_ids) {
+            ->when($module_id, function ($query) use ($module_id) {
+                $query->where('module_id', $module_id);
+            })
+            ->whereHas('store', function ($query) use ($zone_ids, $zone_module_id) {
                 $query->where('status', 1)
                     ->where(function ($query) {
                         $query->where('store_business_model', 'commission')
                             ->orWhereHas('store_sub', function ($query) {
-                                $query->where(function ($query) {
-                                    $query->where('max_order', 'unlimited')->orWhere('max_order', '>', 0);
+                                $query->where('max_order', 'unlimited')->orWhere('max_order', '>', 0);
+                            });
+                    })
+                    ->when($zone_ids && is_array($zone_ids), function ($query) use ($zone_ids, $zone_module_id) {
+                        $query->whereIn('zone_id', $zone_ids)
+                            ->whereHas('zone.modules', function ($query) use ($zone_module_id) {
+                                $query->when($zone_module_id, function ($query) use ($zone_module_id) {
+                                    $query->where('modules.id', $zone_module_id);
                                 });
                             });
-                    })->when($zone_ids && is_array($zone_ids) , function ($query) use ($zone_ids) {
-                        $query->whereIn('zone_id', $zone_ids);
-                    }) ;
+                    });
             })
-            ->whereHas('module', function ($query) use ($module_id){
-                $query->where('status', 1)->when($module_id && is_numeric($module_id), function ($query) use ($module_id) {
-                    $query->where('id', $module_id);
-                });
+            ->whereHas('module', function ($query) {
+                $query->where('status', 1);
             })
             ->whereHas('category', function ($q) {
-                $q->where(function ($q) {
-                    $q->where([
-                            ['parent_id', '=', 0],
-                            ['status', '=', 1],
-                        ])
-                    ->orWhere(function ($q) {
-                        $q->where('parent_id', '!=', 0)
-                            ->whereHas('parent', fn ($p) => $p->where('status', 1));
+                $q->where('status', 1)
+                    ->where(function ($q) {
+                        $q->where('parent_id', 0)
+                            ->orWhereHas('parent', fn ($p) => $p->where('status', 1));
                     });
-                });
             });
     }
+    public function scopeServableIn($query, array $zoneIds, mixed $moduleId = null)
+    {
+        return $query
+            ->whereHas('module.zones', fn ($q) => $q->whereIn('zones.id', $zoneIds))
+            ->whereHas('store', function ($q) use ($zoneIds, $moduleId) {
+                $q->whereIn('zone_id', $zoneIds)
+                    ->whereHas('zone.modules', fn ($zone) => $zone->when($moduleId, fn ($m) => $m->where('modules.id', $moduleId)));
+            });
+    }
+
+    public function scopeOrderCountsByCommonCondition($query, array $zoneIds, mixed $moduleId = null, string $type = 'all')
+    {
+        $conditionItems = \Illuminate\Support\Facades\DB::table('pharmacy_item_details')
+            ->select('common_condition_id', 'item_id')
+            ->whereNotNull('common_condition_id')
+            ->distinct();
+
+        return $query->withoutGlobalScope('translate')
+            ->joinSub($conditionItems, 'condition_items', 'condition_items.item_id', '=', 'items.id')
+            ->where(fn ($q) => $q->servableIn($zoneIds, $moduleId)->active()->type($type))
+            ->groupBy('condition_items.common_condition_id')
+            ->selectRaw('condition_items.common_condition_id as common_condition_id, SUM(items.order_count) as order_count');
+    }
+
     public function scopePopular($query)
     {
         return $query->orderBy('order_count', 'desc');
@@ -171,14 +203,6 @@ class Item extends Model
         return $this->belongsTo(Module::class, 'module_id');
     }
 
-    // public function scopeHasRunningFlashSale($query)
-    // {
-    //     return $query->whereHas('flashSaleItems', function ($query) {
-    //         $query->whereHas('flashSale', function ($query) {
-    //             $query->Running();
-    //         });
-    //     });
-    // }
 
         public function rating()
     {
@@ -204,41 +228,16 @@ class Item extends Model
 
     public function getNameAttribute($value)
     {
-        if (count($this->translations) > 0) {
-            foreach ($this->translations as $translation) {
-                if ($translation['key'] == 'name') {
-                    return $translation['value'];
-                }
-            }
-        }
-
-        return $value;
+        return $this->translatedAttribute('name', $value);
     }
 
     public function getDescriptionAttribute($value)
     {
-        if (count($this->translations) > 0) {
-            foreach ($this->translations as $translation) {
-                if ($translation['key'] == 'description') {
-                    return $translation['value'];
-                }
-            }
-        }
-
-        return $value;
+        return $this->translatedAttribute('description', $value);
     }
     public function getImageFullUrlAttribute()
     {
-        $value = $this->image;
-        if (count($this->storage) > 0) {
-            foreach ($this->storage as $storage) {
-                if ($storage['key'] == 'image') {
-                    return Helpers::get_full_url('product', $value, $storage['value'],'default');
-                }
-            }
-        }
-
-        return Helpers::get_full_url('product', $value, 'public');
+        return $this->storageFullUrl('product', 'image', $this->image, 'default', 'product');
     }
     public function getImagesFullUrlAttribute()
     {
@@ -301,15 +300,7 @@ class Item extends Model
         }
 
         static::addGlobalScope(new ZoneScope);
-        static::addGlobalScope('storage', function ($builder) {
-            $builder->with('storage');
-        });
 
-        static::addGlobalScope('translate', function (Builder $builder) {
-            $builder->with(['translations' => function ($query) {
-                return $query->where('locale', app()->getLocale());
-            }]);
-        });
     }
 
 
@@ -333,6 +324,16 @@ class Item extends Model
     {
         $query->whereNot(function ($q) use ($time) {
             $q->where('available_time_starts', '<=', $time)->where('available_time_ends', '>=', $time);
+        });
+    }
+
+    public function scopeAvailableNow($query)
+    {
+        $now = now()->format('H:i:s');
+
+        return $query->where(function ($q) use ($now) {
+            $q->whereRaw('(available_time_starts < available_time_ends AND TIME(?) BETWEEN available_time_starts AND available_time_ends)', [$now])
+                ->orWhereRaw('(available_time_starts > available_time_ends AND (TIME(?) >= available_time_starts OR TIME(?) <= available_time_ends))', [$now, $now]);
         });
     }
 
@@ -368,7 +369,7 @@ class Item extends Model
                     } elseif ($item == 'new_arrivals') {
                         $q->reorder()->latest();
                     } elseif ($item == 'top_rated') {
-                        $q->reorder()->orderBy('avg_rating', 'desc');
+                        $q->where('avg_rating', '>', 0)->reorder()->orderBy('avg_rating', 'desc');
                     } elseif ($item == 'veg') {
                         $q->where('veg', 1);
                     } elseif ($item == 'non_veg') {
@@ -397,6 +398,67 @@ class Item extends Model
                     }
                 }
             });
+    }
+
+    public function scopeFilterList($query,$filter,$min,$max,$category_ids,$rating_count,$withCount,$search,$store_category_id = null){
+        $key = $search ? explode(' ', $search ?? ''):[];
+
+        $query =  $query->withCount(array_unique($withCount));
+
+           $query = $query->when(isset($category_ids) && (count($category_ids)>0), function($query)use($category_ids){
+                $query->whereHas('category',function($q)use($category_ids){
+                    $q->where(function ($q) use ($category_ids) {
+                            $q->whereIn('id', $category_ids)->orWhereIn('parent_id', $category_ids);
+                        });
+                    });
+            })
+            ->when(is_numeric($store_category_id), function($query)use($store_category_id){
+                $query->where('store_category_id', $store_category_id);
+            })
+            ->when($search, function ($query) use ($key) {
+                return $query->where(function ($q) use ($key) {
+                    foreach ($key as $value) {
+                        $q->where('name', 'like', "%{$value}%");
+                    }
+                });
+            })
+            ->when($max, function($query)use($min,$max){
+                $query->whereBetween('price',[$min,$max]);
+            })
+            ->when($rating_count, function($query) use ($rating_count){
+                $query->where('avg_rating', '>=' , $rating_count);
+            })
+            ->when($filter && in_array('top_rated',$filter),function ($qurey){
+                $qurey->orderByDesc('reviews_count');
+            })
+            ->when($filter && in_array('most_loved',$filter),function ($qurey){
+                $qurey->having('whislists_count' ,'>',0);
+            })
+            ->when($filter && in_array('popular',$filter),function ($qurey){
+                  $qurey->popular();
+            })
+            ->when($filter && in_array('available_now', $filter) && !in_array('un_available_now', $filter), function ($query) {
+                $query->Available(now()->format('H:i:s'));
+            })
+            ->when($filter && in_array('un_available_now', $filter)&& !in_array('available_now', $filter), function ($query) {
+                $query->UnAvailable(now()->format('H:i:s'));
+            })
+            ->when($filter && in_array('latest',$filter),function ($qurey){
+                $qurey->whereBetween('created_at', [now()->subYear(), now()]);            })
+           ->when($filter && in_array('high',$filter),function ($qurey){
+                $qurey->orderByDesc('price');
+            })
+            ->when($filter && in_array('low',$filter),function ($qurey){
+                $qurey->orderBy('price');
+            })
+            ->when($filter && in_array('z_to_a',$filter),function ($qurey){
+                $qurey->orderByDesc('name');
+            })
+            ->when($filter && in_array('a_to_z',$filter),function ($qurey){
+                $qurey->orderBy('name');
+            });
+
+            return $query;
     }
 
     public function scopeApplySorting($query, $sortBy)
@@ -534,10 +596,6 @@ class Item extends Model
     {
         return $this->belongsToMany(Nutrition::class);
     }
-    public function storage()
-    {
-        return $this->morphMany(Storage::class, 'data');
-    }
     protected static function boot()
     {
         parent::boot();
@@ -546,69 +604,16 @@ class Item extends Model
             $item->save();
         });
         static::saved(function ($model) {
-            $offerFields = ['discount', 'discount_type', 'status', 'is_approved', 'price', 'store_id', 'module_id'];
-            foreach ($offerFields as $field) {
-                if ($model->isDirty($field)) {
-                    self::flushOfferFeaturedCache();
-                    break;
-                }
+            self::recordStorageDisk($model, 'image', 'image');
+            self::recordStorageDisk($model, 'images', 'images');
+            self::recordStorageDisk($model, 'video', 'video');
+
+            $bundles = app(BundleService::class);
+
+            if ($bundles->itemPricingChanged($model)) {
+                $bundles->repriceLinesForItem($model);
             }
         });
-        static::deleted(fn () => self::flushOfferFeaturedCache());
-
-        static::saved(function ($model) {
-            if ($model->isDirty('image')) {
-                $value = Helpers::getDisk();
-
-                DB::table('storages')->updateOrInsert([
-                    'data_type' => get_class($model),
-                    'data_id' => $model->id,
-                    'key' => 'image',
-                ], [
-                    'value' => $value,
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
-            }
-            if ($model->isDirty('images')) {
-                $value = Helpers::getDisk();
-
-                DB::table('storages')->updateOrInsert([
-                    'data_type' => get_class($model),
-                    'data_id' => $model->id,
-                    'key' => 'images',
-                ], [
-                    'value' => $value,
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
-            }
-            if ($model->isDirty('video')) {
-                $value = Helpers::getDisk();
-
-                DB::table('storages')->updateOrInsert([
-                    'data_type' => get_class($model),
-                    'data_id' => $model->id,
-                    'key' => 'video',
-                ], [
-                    'value' => $value,
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
-            }
-        });
-    }
-
-    public static function flushOfferFeaturedCache(): void
-    {
-        try {
-            $keys = DB::table('cache')->where('key', 'like', '%offer.featured.%')->pluck('key');
-            $appName = strtolower(str_replace('=', '', (string) env('APP_NAME').'_cache'));
-            foreach ($keys as $key) {
-                \Illuminate\Support\Facades\Cache::forget(str_replace($appName, '', $key));
-            }
-        } catch (\Throwable) {
-        }
     }
 
     public function taxVats()

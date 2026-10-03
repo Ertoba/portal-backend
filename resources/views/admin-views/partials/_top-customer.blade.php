@@ -1,9 +1,9 @@
 <div class="card-header border-0 order-header-shadow">
     <h5 class="card-title d-flex justify-content-between">
-        <span>{{ translate('messages.top_customers') }}</span>
+        <span>{{ translate('messages.Top customers') }}</span>
     </h5>
     <a href="{{ route('admin.users.customer.list') }}"
-        class="fz-12px font-medium text-006AE5">{{ translate('view_all') }}</a>
+        class="fz-12px font-medium text-006AE5">{{ translate('View all') }}</a>
 </div>
 
 <div class="card-body">
@@ -29,12 +29,6 @@
 
         </div>
     @else
-        <!-- <div class="empty--data">
-            <img src="{{ asset('/public/assets/admin/svg/illustrations/empty-state.svg') }}" alt="public">
-            <h5>
-                {{ translate('no_data_found') }}
-            </h5>
-        </div> -->
         <div class="empty--data d-flex flex-column align-items-center justify-content-center h-100 w-100">
             <img src="{{ asset('/public/assets/admin/img/no-customer.png') }}" alt="public">
             <h5 class="secondary-clr">

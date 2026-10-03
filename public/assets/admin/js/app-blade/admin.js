@@ -304,10 +304,26 @@ $(document).on("ready", function () {
     // INITIALIZATION OF SELECT2
     // =======================================================
     $(".js-select2-custom").each(function () {
+        let $select = $(this);
         let verifiedConfig = window.hsSelect2VerifiedTemplate
             ? { templateResult: window.hsSelect2VerifiedTemplate, templateSelection: window.hsSelect2VerifiedTemplate }
             : {};
-        let select2 = $.HSCore.components.HSSelect2.init($(this), verifiedConfig);
+
+        let remoteUrl = $select.data("ajax-url");
+        if (remoteUrl) {
+            verifiedConfig.ajax = {
+                url: remoteUrl,
+                delay: 250,
+                data: function (params) {
+                    return { q: params.term, page: params.page };
+                },
+                processResults: function (data) {
+                    return { results: data };
+                },
+            };
+        }
+
+        let select2 = $.HSCore.components.HSSelect2.init($select, verifiedConfig);
     });
 
     // INITIALIZATION OF DATERANGEPICKER
@@ -363,7 +379,7 @@ $(document).on("ready", function () {
         let clipboard = $.HSCore.components.HSClipboard.init(this);
     });
 });
-let tour = new Tour({
+let tour = typeof Tour === "function" ? new Tour({
     backdrop: true,
     delay: true,
     redirect: true,
@@ -430,9 +446,10 @@ let tour = new Tour({
     onShow: function () {
         $("body").css("overflow", "hidden");
     },
-});
+}) : null;
 $(document).on("click", ".instruction-Modal-Close", function () {
     $("#instruction-modal").hide();
+    if (!tour) return;
     tour.init();
     tour.start();
 });
@@ -496,7 +513,7 @@ function getUrlParameter(sParam) {
     }
 }
 
-$.fn.select2DynamicDisplay = function () {
+$.fn.select2DynamicDisplay = function (options) {
     const limit = 50;
     function updateDisplay($element) {
         var $rendered = $element
@@ -546,7 +563,7 @@ $.fn.select2DynamicDisplay = function () {
 
         $tempContainer.remove();
 
-        const $searchForm = $rendered.find(".select2-search");
+        const $searchForm = $rendered.find(".select2-search").detach();
 
         var html = "";
         itemsToShow.forEach(function (item) {
@@ -561,11 +578,15 @@ $.fn.select2DynamicDisplay = function () {
                                     </li>`;
         }
 
+        $rendered.html(html);
+
         if (selectedItems.length < limit) {
-            html += $searchForm.prop("outerHTML");
+            $rendered.append($searchForm);
         }
 
-        $rendered.html(html);
+        if ($element.data("dynamicRemote")) {
+            return;
+        }
 
         function debounce(func, wait) {
             let timeout;
@@ -617,13 +638,33 @@ $.fn.select2DynamicDisplay = function () {
     }
     return this.each(function () {
         var $this = $(this);
+        var settings = $.extend({ tags: true, maximumSelectionLength: limit }, options || {});
 
-        $this.select2({
-            tags: true,
-            maximumSelectionLength: limit,
-        });
+        var remoteUrl = $this.data("ajax-url");
+        if (!settings.ajax && remoteUrl) {
+            settings.tags = false;
+            settings.ajax = {
+                url: remoteUrl,
+                delay: 250,
+                data: function (params) {
+                    return { q: params.term, page: params.page };
+                },
+                processResults: function (data) {
+                    return { results: data };
+                },
+            };
+        }
 
-        $this.on("change", function () {
+        $this.data("dynamicRemote", !!settings.ajax);
+
+        if ($this.hasClass("select2-hidden-accessible")) {
+            $this.select2("destroy");
+        }
+        $this.off("change.dynamicDisplay");
+
+        $this.select2(settings);
+
+        $this.on("change.dynamicDisplay", function () {
         let selected_items = $this.val() || [];
 
         if (selected_items.includes("all") && selected_items.length > 1) {
@@ -634,6 +675,15 @@ $.fn.select2DynamicDisplay = function () {
             $this.val(selected_items.filter(v => v !== "all")).trigger("change.select2");
         }
             updateDisplay($this);
+            // Picking a result from an AJAX-backed dropdown (data-ajax-url — see remoteUrl
+            // above) makes select2 redraw its own default .select2-selection__choice markup
+            // as the last step of ITS OWN selection handling, which runs after this same
+            // 'change' event and so overwrites the custom .name chip updateDisplay() just
+            // wrote — a manually-added option (the tags:true path above) never hits that
+            // internal redraw and was never affected. Deferred one tick, this always runs
+            // after whatever select2 does internally, so the custom markup is what's left
+            // on screen regardless of which path added the selection.
+            setTimeout(function () { updateDisplay($this); }, 0);
         });
 
         // Initial display update

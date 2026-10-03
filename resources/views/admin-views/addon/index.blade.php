@@ -1,24 +1,23 @@
 @extends('layouts.admin.app')
 
-@section('title', translate('messages.add_new_addon'))
+@section('title', translate('messages.Add new addon'))
 
 @push('css_or_js')
 @endpush
 
 @section('content')
     <div class="content container-fluid">
-        <!-- Page Header -->
         <div class="page-header">
             <h1 class="page-header-title">
                 <span class="page-header-icon">
                     <img src="{{ asset('public/assets/admin/img/addon.png') }}" class="w--20" alt="">
                 </span>
                 <span>
-                    {{ translate('messages.add_new_addon') }}
+                    {{ translate('messages.Add new addon') }}
                 </span>
             </h1>
+            <p class="page-header-desc">{{ translate('Extras a customer can add to an item, such as a sauce, a topping or a larger size.') }}</p>
         </div>
-        <!-- End Page Header -->
         <div class="card">
             <div class="card-body">
                 <form action="{{ isset($addon) ? route('admin.addon.update', [$addon['id']]) : route('admin.addon.store') }}"
@@ -28,7 +27,7 @@
                         <ul class="nav nav-tabs mb-4">
                             <li class="nav-item">
                                 <a class="nav-link lang_link active offcanvas-close" href="#"
-                                    id="default-link">{{ translate('messages.default') }}</a>
+                                    id="default-link">{{ translate('Default') }}</a>
                             </li>
                             @foreach ($language as $lang)
                                 <li class="nav-item">
@@ -43,29 +42,29 @@
                             @if ($language)
                                 <div class="form-group lang_form" id="default-form">
                                     <label class="input-label"
-                                        for="exampleFormControlInput1">{{ translate('messages.name') }}
-                                        ({{ translate('messages.default') }})</label>
+                                        for="exampleFormControlInput1">{{ translate('Name') }}
+                                        ({{ translate('Default') }})</label>
                                     <input type="text" name="name[]" class="form-control"
-                                        placeholder="{{ translate('messages.new_addon') }}" maxlength="191">
+                                        placeholder="{{ translate('messages.New addon') }}" maxlength="191">
                                 </div>
                                 <input type="hidden" name="lang[]" value="default">
                                 @foreach ($language as $lang)
                                     <div class="form-group d-none lang_form" id="{{ $lang }}-form">
                                         <label class="input-label"
-                                            for="exampleFormControlInput1">{{ translate('messages.name') }}
+                                            for="exampleFormControlInput1">{{ translate('Name') }}
                                             ({{ strtoupper($lang) }})
                                         </label>
                                         <input type="text" name="name[]" class="form-control"
-                                            placeholder="{{ translate('messages.new_addon') }}" maxlength="191">
+                                            placeholder="{{ translate('messages.New addon') }}" maxlength="191">
                                     </div>
                                     <input type="hidden" name="lang[]" value="{{ $lang }}">
                                 @endforeach
                             @else
                                 <div class="form-group">
                                     <label class="input-label"
-                                        for="exampleFormControlInput1">{{ translate('messages.name') }}</label>
+                                        for="exampleFormControlInput1">{{ translate('Name') }}</label>
                                     <input type="text" name="name" class="form-control"
-                                        placeholder="{{ translate('messages.new_addon') }}" value="{{ old('name') }}"
+                                        placeholder="{{ translate('messages.New addon') }}" value="{{ old('name') }}"
                                         maxlength="191">
                                 </div>
                                 <input type="hidden" name="lang[]" value="default">
@@ -74,10 +73,10 @@
                         <div class="col-sm-6 col-lg-4">
                             <div class="form-group">
                                 <label class="input-label"
-                                    for="exampleFormControlSelect1">{{ translate('messages.store') }}<span
+                                    for="exampleFormControlSelect1">{{ translate('messages.Store') }}<span
                                         class="input-label-secondary"></span></label>
                                 <select name="store_id" id="store_id" class="js-data-example-ajax form-control"
-                                    data-placeholder="{{ translate('messages.select_store') }}">
+                                    data-placeholder="{{ translate('Select store') }}">
 
                                 </select>
                             </div>
@@ -97,7 +96,7 @@
                                 <span class="mb-2 d-block title-clr fw-normal">{{ translate('Category') }}</span>
                                 <select name="category_id" required class="form-control js-select2-custom"
                                     placeholder="Select Category">
-                                    <option selected disabled value=""> {{ translate('messages.select_category') }}</option>
+                                    <option selected disabled value=""> {{ translate('Select category') }}</option>
                                     @foreach ($addonCategories as $addonCategory)
                                         <option value="{{ $addonCategory->id }}"> {{ $addonCategory->name }}
                                         </option>
@@ -112,9 +111,9 @@
                             <div class="col-sm-6 col-lg-4">
                                 <div class="form-group">
                                     <span
-                                        class="mb-2 d-block title-clr fw-normal">{{ translate('Select Tax Rate') }}</span>
+                                        class="mb-2 d-block title-clr fw-normal">{{ translate('Select tax rate') }}</span>
                                     <select name="tax_ids[]" required id="tax__rate" class="form-control js-select2-custom"
-                                        multiple="multiple" placeholder="Type & Select Tax Rate">
+                                        multiple="multiple" placeholder="{{ translate('Type & select tax rate') }}">
                                         @foreach ($taxVats as $taxVat)
                                             <option value="{{ $taxVat->id }}"> {{ $taxVat->name }}
                                                 ({{ $taxVat->tax_rate }}%)
@@ -131,42 +130,44 @@
 
                     <div class="btn--container justify-content-end">
                         <button type="reset" id="reset_btn"
-                            class="btn btn--reset">{{ translate('messages.reset') }}</button>
+                            class="btn btn--reset"><i class="tio-refresh"></i> {{ translate('messages.Reset') }}</button>
                         <button type="submit"
-                            class="btn btn--primary">{{ isset($addon) ? translate('messages.update') : translate('messages.add') }}</button>
+                            class="btn btn--primary"><i class="{{ isset($addon) ? 'tio-save' : 'tio-add-circle' }}"></i> {{ isset($addon) ? translate('Update') : translate('Add') }}</button>
                     </div>
 
                 </form>
             </div>
         </div>
 
-        <div class="card mt-1">
+        <div class="card mt-3">
             <div class="card-header py-2 border-0">
                 <div class="search--button-wrapper justify-content-end">
-                    <h5 class="card-title"> {{ translate('messages.addon_list') }}<span
-                            class="badge badge-soft-dark ml-2" id="itemCount">{{ $addons->total() }}</span>
-                    </h5>
+
+                    @include('partials._table-head', [
+                        'title'    => translate('Addon list'),
+                        'subtitle' => translate('messages.Optional extras customers can add to items at checkout.'),
+                        'count'    => $addons->total(),
+                        'count_id' => 'itemCount',
+                    ])
                     <div class="min--220">
                         <select name="store_id" id="store" data-url="{{ route('admin.addon.add-new') }}"
-                            data-placeholder="{{ translate('messages.select_store') }}"
+                            data-placeholder="{{ translate('Select store') }}"
                             class="js-data-example-ajax form-control store-filter" title="Select Restaurant">
                             @if (isset($store))
                                 <option value="{{ $store->id }}" data-verified="{{ (int) $store->verified_seller }}" selected>{{ $store->name }}</option>
                             @else
-                                <option value="all" selected>{{ translate('messages.all_stores') }}</option>
+                                <option value="all" selected>{{ translate('All stores') }}</option>
                             @endif
                         </select>
                     </div>
                     <form class="search-form">
-                        <!-- Search -->
                         <div class="input-group input--group">
                             <input type="search" name="search" value="{{ request()->search ?? null }}"
                                 class="form-control min-height-45"
-                                placeholder="{{ translate('messages.ex_:_addons_name') }}" aria-label="Search addons">
+                                placeholder="{{ translate('messages.Ex') . ' : ' . translate('messages.addons name') }}" aria-label="Search addons">
                             <button type="submit" class="btn btn--secondary min-height-45"><i class="tio-search"></i>
                             </button>
                         </div>
-                        <!-- End Search -->
                     </form>
                     <div class="hs-unfold">
                         <a class="js-hs-unfold-invoker btn btn-sm btn-white dropdown-toggle min-height-40"
@@ -175,12 +176,12 @@
                                     "target": "#usersExportDropdown",
                                     "type": "css-animation"
                                 }'>
-                            <i class="tio-download-to mr-1"></i> {{ translate('messages.export') }}
+                            <i class="tio-download-to mr-1"></i> {{ translate('messages.Export') }}
                         </a>
                     </div>
                     <div id="usersExportDropdown"
                         class="hs-unfold-content dropdown-unfold dropdown-menu dropdown-menu-sm-right">
-                        <span class="dropdown-header">{{ translate('messages.download_options') }}</span>
+                        <span class="dropdown-header">{{ translate('messages.Download options') }}</span>
                         <a id="export-excel" class="dropdown-item"
                             href="
                             {{ route('admin.addon.export', ['type' => 'excel', request()->getQueryString()]) }}
@@ -188,7 +189,7 @@
                             <img class="avatar avatar-xss avatar-4by3 mr-2"
                                 src="{{ asset('public/assets/admin') }}/svg/components/excel.svg"
                                 alt="Image Description">
-                            {{ translate('messages.excel') }}
+                            Excel
                         </a>
                         <a id="export-csv" class="dropdown-item"
                             href="
@@ -196,15 +197,13 @@
                             <img class="avatar avatar-xss avatar-4by3 mr-2"
                                 src="{{ asset('public/assets/admin') }}/svg/components/placeholder-csv-format.svg"
                                 alt="Image Description">
-                            {{ translate('messages.csv') }}
+                            CSV
                         </a>
                     </div>
 
 
-                    <!-- End Unfold -->
                 </div>
             </div>
-        </div>
         <div class="card-body p-0">
             <div class="table-responsive datatable-custom">
                 <table id=""
@@ -218,16 +217,16 @@
                             }'>
                     <thead class="thead-light">
                         <tr>
-                            <th>{{ translate('sl') }}</th>
-                            <th>{{ translate('messages.name') }}</th>
+                            <th>{{ translate('SL') }}</th>
+                            <th>{{ translate('Name') }}</th>
                             <th>{{ translate('messages.price') }}</th>
-                            <th>{{ translate('messages.store') }}</th>
+                            <th>{{ translate('messages.Store') }}</th>
                             @if ($productWiseTax)
-                            <th>{{ translate('messages.Vat/Tax') }}</th>
+                            <th>{{ translate('VAT/tax') }}</th>
                             @endif
 
-                            <th class="text-center">{{ translate('messages.status') }}</th>
-                            <th class="text-center">{{ translate('messages.action') }}</th>
+                            <th class="text-center">{{ translate('messages.Status') }}</th>
+                            <th class="text-center">{{ translate('messages.Action') }}</th>
                         </tr>
                     </thead>
 
@@ -241,7 +240,7 @@
                                     </span>
                                 </td>
                                 <td>{{ \App\CentralLogics\Helpers::format_currency($addon['price']) }}</td>
-                                <td>{{ Str::limit($addon->store ? $addon->store->name : translate('messages.store_deleted'), 25, '...') }}
+                                <td>{{ Str::limit($addon->store ? $addon->store->name : translate('messages.Store deleted'), 25, '...') }}
                                 </td>
 
 
@@ -272,12 +271,12 @@
                                 </td>
                                 <td>
                                     <div class="btn--container justify-content-center">
-                                        <a class="btn btn-sm text-end action-btn info--outline text--info info-hover offcanvas-trigger get_data data-info-show" data-target="#offcanvas__customBtn3" data-id="{{ $addon['id'] }}"  data-url="{{route('admin.addon.edit',[$addon['id']])}}" href="javascript:"
-                                            title="{{ translate('messages.edit_addon') }}"><i class="tio-edit"></i></a>
-                                        <a class="btn action-btn btn--danger btn-outline-danger form-alert"
+                                        <a class="btn btn-sm text-end action-btn action-btn--edit offcanvas-trigger get_data data-info-show" data-target="#offcanvas__customBtn3" data-id="{{ $addon['id'] }}"  data-url="{{route('admin.addon.edit',[$addon['id']])}}" href="javascript:"
+                                            title="{{ translate('Edit addon') }}"><i class="tio-edit"></i></a>
+                                        <a class="btn action-btn action-btn--delete form-alert"
                                             data-id="addon-{{ $addon['id'] }}"
-                                            data-message="{{ translate('Want to delete this addon ?') }}"
-                                            href="javascript:" title="{{ translate('messages.delete_addon') }}"><i
+                                            data-message="{{ translate('Want to delete this addon?') }}"
+                                            href="javascript:" title="{{ translate('messages.Delete addon') }}"><i
                                                 class="tio-delete-outlined"></i></a>
                                         <form action="{{ route('admin.addon.delete', [$addon['id']]) }}" method="post"
                                             id="addon-{{ $addon['id'] }}">
@@ -301,7 +300,7 @@
             <div class="empty--data">
                 <img src="{{ asset('/public/assets/admin/svg/illustrations/sorry.svg') }}" alt="public">
                 <h5>
-                    {{ translate('no_data_found') }}
+                    {{ translate('No data found') }}
                 </h5>
             </div>
         @endif

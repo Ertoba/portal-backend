@@ -20,33 +20,33 @@
                                     </div>
                                     <div class="text-dark mb-3">
                                         <h3 class="lh-base">
-                                            {{ translate('how_to_get_the_tiktok_pixel_id') }}
+                                            {{ translate('How to get the tiktok pixel id') }}
                                         </h3>
                                         <p class="opacity-75">
-                                            {{ translate('from_the_tiktok_business_account_click_on_tools_in_the_menu_and_select_events.') }}
-                                            {{ translate('access_the_events_manager_by_clicking_on_connect_data_sources_in_the_top_right_corner.') }}
-                                            {{ translate('from_the_popup,_choose_the_web_option_and_click_next.') }}
-                                            {{ translate('now,_create_your_pixel_by_selecting_manual_setup.') }}
-                                            {{ translate('to_find_your_pixel_id,_go_to_data_sources_in_the_left-hand_menu,_where_you_can_view_and_copy_your_pixel_id.') }}
+                                            {{ translate('from the tiktok business account click on tools in the menu and select events.') }}
+                                            {{ translate('Access the Events Manager by clicking on connect data sources in the top right corner.') }}
+                                            {{ translate('from the popup, choose the web option and click next.') }}
+                                            {{ translate('Now, create your pixel by selecting manual setup.') }}
+                                            {{ translate('Find your pixel ID under Data sources in the left-hand menu.') }}
                                         </p>
                                     </div>
 
                                     <div class="text-dark mb-3">
                                         <h3 class="lh-base">
-                                            {{ translate('where_to_use_the_tiktok_pixel_id') }}
+                                            {{ translate('Where to use the tiktok pixel id') }}
                                         </h3>
                                         <p class="opacity-75">
-                                            {{ translate('go_to_the_marketing_tools_section_in_your_admin_panel_and_complete_the_steps:') }}
+                                            {{ translate('Go to the marketing tools section in your admin panel and complete the steps') }}:
                                         </p>
                                         <ol class="d-flex flex-column gap-2 opacity-75">
                                             <li>
-                                                {{ translate('navigate_to_the_tiktok_pixel_id_section_under_marketing_tools.') }}
+                                                {{ translate('Navigate to the tiktok pixel id section under marketing tools.') }}
                                             </li>
                                             <li>
-                                                {{ translate('turn_on_the_toggle_button.') }}
+                                                {{ translate('Turn on the toggle button.') }}
                                             </li>
                                             <li>
-                                                {{ translate('paste_your_tiktok_pixel_id_into_the_input_box_and_click_submit.') }}
+                                                {{ translate('Paste your tiktok pixel id into the input box and click submit.') }}
                                             </li>
                                         </ol>
                                     </div>

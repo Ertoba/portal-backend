@@ -29,9 +29,5 @@ enum CashBack
         VIEW => ''
     ];
 
-    // const SEARCH = [
-    //     URI => 'search',
-    //     VIEW => 'admin-views.promotions.cashback.partials._table'
-    // ];
 
 }

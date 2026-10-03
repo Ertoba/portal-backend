@@ -10,10 +10,10 @@ return new class extends Migration
     {
         Schema::table('orders', function (Blueprint $table) {
             if (!Schema::hasColumn('orders', 'delivery_type')) {
-                $table->string('delivery_type', 32)->nullable()->after('delivery_charge');
+                $table->string('delivery_type', 32)->nullable();
             }
             if (!Schema::hasColumn('orders', 'delivery_type_charge')) {
-                $table->decimal('delivery_type_charge', 10, 4)->default(0)->after('delivery_type');
+                $table->decimal('delivery_type_charge', 10, 4)->default(0);
             }
         });
 

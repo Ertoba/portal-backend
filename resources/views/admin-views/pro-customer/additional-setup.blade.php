@@ -1,6 +1,6 @@
 @extends('layouts.admin.app')
 
-@section('title', translate('messages.Additional_Setup'))
+@section('title', translate('Additional setup'))
 @section('pro_customer_additional_setup', 'active')
 
 @section('content')
@@ -9,27 +9,30 @@
 <div class="content container-fluid">
     <div class="page-header mb-2">
         <div class="d-flex flex-wrap justify-content-between align-items-start">
-            <h1 class="page-header-title text-capitalize fs-24">
-                <span>{{ translate('messages.Additional_Setup') }}</span>
-            </h1>
+            <div>
+                <h1 class="page-header-title">
+                    <i class="tio-star"></i>
+                    <span>{{ translate('Additional setup') }}</span>
+                </h1>
+                <p class="page-header-desc">{{ translate('The smaller rules behind your Pro membership, from trials to renewal reminders.') }}</p>
+            </div>
         </div>
     </div>
 
     @include('admin-views.pro-customer.partials._additional-tabs')
 
     <div id="pro-faq-section">
-        {{-- Card 1: Add FAQ --}}
         <div class="card p-xxl-20 p-3 mb-15">
             <form action="{{ route('admin.pro-customer.faq.store') }}" method="post">
                 @csrf
-                <h3 class="mb-3 fs-16 text-capitalize">{{ translate('messages.Add_FAQ') }}</h3>
+                <h3 class="mb-3 fs-16 text-capitalize">{{ translate('messages.Add FAQ') }}</h3>
                 <div class="bg-light2 p-xl-20 p-3 rounded">
                     <div class="card-body p-0">
                         @if ($language)
                             <div class="js-nav-scroller hs-nav-scroller-horizontal">
                                 <ul class="nav nav-tabs mb-4">
                                     <li class="nav-item">
-                                        <a class="nav-link lang_link active" href="#" id="default-link-faq-create">{{ translate('messages.default') }}</a>
+                                        <a class="nav-link lang_link active" href="#" id="default-link-faq-create">{{ translate('Default') }}</a>
                                     </li>
                                     @foreach ($language as $lang)
                                         <li class="nav-item">
@@ -45,7 +48,7 @@
                         <input type="hidden" name="lang[]" value="default">
                         <div class="lang_form" id="default-form-faq-create">
                             @include('admin-views.pro-customer.partials._faq-fields', [
-                                'localeLabel'      => translate('messages.default'),
+                                'localeLabel'      => translate('Default'),
                                 'localeKey'        => 'default',
                                 'questionRequired' => true,
                                 'maxPriority'      => $createMaxPriority,
@@ -70,24 +73,24 @@
                     </div>
                 </div>
                 <div class="btn--container justify-content-end mt-4">
-                    <button type="reset" class="btn btn--reset text-capitalize">{{ translate('messages.Reset') }}</button>
-                    <button type="submit" class="btn btn--primary text-capitalize">{{ translate('messages.Add') }}</button>
+                    <button type="reset" class="btn btn--reset text-capitalize"><i class="tio-refresh"></i> {{ translate('messages.Reset') }}</button>
+                    <button type="submit" class="btn btn--primary text-capitalize"><i class="tio-add-circle"></i> {{ translate('Add') }}</button>
                 </div>
             </form>
         </div>
 
-        {{-- Card 2: FAQ List --}}
         <div id="pro-faq-list" class="card p-xxl-20 p-3">
             <div class="search--button-wrapper mb-3">
-                <h5 class="card-title d-flex align-items-center text-capitalize mb-0">
-                    {{ translate('messages.FAQ_List') }}
-                    <span class="badge badge-soft-dark ml-2">{{ $faqs->total() }}</span>
-                </h5>
+                @include('partials._table-head', [
+                    'title'    => translate('FAQ list'),
+                    'subtitle' => translate('messages.Questions shown to customers on the pro membership page.'),
+                    'count'    => $faqs->total(),
+                ])
                 <form class="search-form" method="get" action="{{ route('admin.pro-customer.additional-setup') }}">
                     <div class="input-group input--group">
                         <input id="datatableSearch_" type="search" name="search"
                             value="{{ request()->search ?? '' }}" class="form-control"
-                            placeholder="{{ translate('messages.Search_Here') }}">
+                            placeholder="{{ translate('Search') }}">
                         <button type="submit" class="btn btn--secondary"><i class="tio-search"></i></button>
                     </div>
                 </form>
@@ -129,23 +132,23 @@
                                 </td>
                                 <td>
                                     <div class="btn--container justify-content-center">
-                                        <a class="btn action-btn btn--primary btn-outline-primary"
+                                        <a class="btn action-btn action-btn--view"
                                             href="javascript:"
                                             data-toggle="modal"
                                             data-target="#quick_view_faq_{{ $faq->id }}"
-                                            title="{{ translate('messages.Quick_View') }}">
-                                            <i class="tio-visible"></i>
+                                            title="{{ translate('Quick view') }}">
+                                            <i class="tio-visible-outlined"></i>
                                         </a>
-                                        <a class="btn action-btn btn--primary btn-outline-primary offcanvas-trigger"
+                                        <a class="btn action-btn action-btn--edit offcanvas-trigger"
                                             href="javascript:"
                                             data-target="#offcanvas__editfaq-{{ $faq->id }}"
-                                            title="{{ translate('messages.Edit') }}">
+                                            title="{{ translate('Edit') }}">
                                             <i class="tio-edit"></i>
                                         </a>
-                                        <a class="btn action-btn btn--danger btn-outline-danger form-alert"
+                                        <a class="btn action-btn action-btn--delete form-alert"
                                             href="javascript:"
                                             data-id="pro-faq-delete-{{ $faq->id }}"
-                                            data-message="{{ translate('messages.Want_to_delete_this_FAQ') }}?"
+                                            data-message="{{ translate('Want to delete this FAQ?') }}"
                                             title="{{ translate('messages.Delete') }}">
                                             <i class="tio-delete-outlined"></i>
                                         </a>
@@ -164,8 +167,8 @@
                 <div class="empty--data text-center py-5 my-4 bg-light2 rounded">
                     <img src="{{ asset('public/assets/admin/img/no-data.png') }}" alt="empty"
                         style="max-width:140px;height:auto;" class="mb-3">
-                    <h5 class="fs-16 mb-1 text-capitalize">{{ translate('messages.No_FAQs_Yet') }}</h5>
-                    <p class="fs-12 gray-dark mb-0">{{ translate('messages.Add_your_first_FAQ_above_to_help_pro_customers_understand_the_program.') }}</p>
+                    <h5 class="fs-16 mb-1 text-capitalize">{{ translate('messages.No FAQs Yet') }}</h5>
+                    <p class="fs-12 gray-dark mb-0">{{ translate('messages.Add your first FAQ above to help pro customers understand the program.') }}</p>
                 </div>
             @endif
             <div class="page-area mt-3">{!! $faqs->links() !!}</div>
@@ -200,14 +203,12 @@
             bindCounter(this);
         });
 
-        // Intercept search form — append fragment so browser auto-scrolls after reload
         $(document).on('submit', '.search-form', function (e) {
             e.preventDefault();
             var params = $(this).serialize();
             window.location.href = $(this).attr('action') + (params ? '?' + params : '') + '#pro-faq-list';
         });
 
-        // Intercept pagination links — append fragment
         $(document).on('click', '.page-area a[href]', function () {
             var href = $(this).attr('href');
             if (href && href !== '#' && href.indexOf('#') === -1) {

@@ -2,6 +2,8 @@
 
 namespace App\Http\Requests\Admin;
 
+use App\Rules\VideoFile;
+use App\Rules\ImageFile;
 use Carbon\Carbon;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\ValidationException;
@@ -9,9 +11,6 @@ use App\CentralLogics\Helpers;
 use Illuminate\Contracts\Validation\Validator;
 class AdvertisementUpdateRequest extends FormRequest
 {
-    /**
-     * Determine if the user is authorized to make this request.
-     */
     public function authorize(): bool
     {
         return true;
@@ -31,9 +30,9 @@ class AdvertisementUpdateRequest extends FormRequest
             'store_id' => 'required',
             'dates' => 'required',
             'advertisement_type' => 'required|in:video_promotion,store_promotion',
-            'cover_image' => 'nullable|image|mimes:jpg,png,jpeg,webp|max:2048',
-            'profile_image' => 'nullable|image|mimes:jpg,png,jpeg,webp|max:2048',
-            'video_attachment' => 'nullable|file|mimes:mp4,mkv,webm|max:5120',
+            'cover_image' => ImageFile::rules('nullable'),
+            'profile_image' => ImageFile::rules('nullable'),
+            'video_attachment' => VideoFile::rules('nullable'),
 
 
         ];
@@ -42,8 +41,8 @@ class AdvertisementUpdateRequest extends FormRequest
     public function messages()
     {
         return [
-            'store_id.required' => translate('messages.Please_select_a_store'),
-            'title.0.required'=>translate('default_title_is_required'),
+            'store_id.required' => translate('messages.Please select a store'),
+            'title.0.required'=>translate('Default title is required'),
         ];
     }
 

@@ -21,7 +21,7 @@
         @if($item->store)
         {{Str::limit($item->store->name,25,'...')}}
         @else
-        {{translate('messages.store_deleted')}}
+        {{translate('messages.Store deleted')}}
         @endif
     </td>
     <td>

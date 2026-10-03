@@ -8,18 +8,17 @@
 
 @section('content')
     <div class="content container-fluid">
-        <!-- Page Header -->
         <div class="page-header">
             <h1 class="page-header-title">
                 <span class="page-header-icon">
-                    <img src="{{asset('public/assets/admin/img/campaign.png')}}" class="w--26" alt="">
+                    <img src="{{asset('public/assets/admin/img/outline/campaign.svg')}}" class="w--26" alt="">
                 </span>
                 <span>
                     {{translate('messages.Add new campaign')}}
                 </span>
             </h1>
+            <p class="page-header-desc">{{ translate('A promotion customers see as its own banner, gathering stores under one offer.') }}</p>
         </div>
-        <!-- End Page Header -->
         <div class="card">
             <div class="card-body">
                 <form enctype="multipart/form-data" class="custom-validation" data-ajax="true" id="campaign-form">
@@ -29,15 +28,13 @@
                     <div class="row g-3">
                         <div class="col-lg-8">
                             <div class="bg-1079801A rounded p-xxl-20 p-3 h-100">
-                                @php($language=\App\Models\BusinessSetting::where('key','language')->first())
-                                @php($language = $language->value ?? null)
-                                @php($defaultLang = str_replace('_', '-', app()->getLocale()))
+                                @php($language = \App\CentralLogics\Helpers::get_business_settings('language', false) ?? null)
                                 @if($language)
                                     <ul class="nav nav-tabs mb-4">
                                         <li class="nav-item">
                                             <a class="nav-link lang_link active"
                                             href="#"
-                                            id="default-link">{{translate('messages.default')}}</a>
+                                            id="default-link">{{translate('Default')}}</a>
                                         </li>
                                         @foreach (json_decode($language) as $lang)
                                             <li class="nav-item">
@@ -49,13 +46,13 @@
                                     </ul>
                                     <div class="lang_form" id="default-form">
                                         <div class="form-group mb-2 error-wrapper">
-                                            <label class="input-label" for="default_title">{{translate('messages.title')}} ({{ translate('messages.default') }})</label>
-                                            <input type="text" name="title[]" maxlength="75" id="default_title" class="form-control" placeholder="{{translate('messages.new_campaign')}}"  required>
+                                            <label class="input-label" for="default_title">{{translate('messages.Title')}} ({{ translate('Default') }})</label>
+                                            <input type="text" name="title[]" maxlength="75" id="default_title" class="form-control" placeholder="{{translate('messages.New campaign')}}"  required>
                                             <span class="text-right text-counting color-A7A7A7 d-block mt-1">75</span>
                                         </div>
                                         <input type="hidden" name="lang[]" value="default">
                                         <div class="form-group mb-2 error-wrapper">
-                                            <label class="input-label" for="exampleFormControlInput1">{{translate('messages.short_description')}} ({{ translate('messages.default') }})</label>
+                                            <label class="input-label" for="exampleFormControlInput1">{{translate('Short description')}} ({{ translate('Default') }})</label>
                                             <textarea type="text" name="description[]" maxlength="150" class="form-control ckeditor" required></textarea>
                                             <span class="text-right text-counting color-A7A7A7 d-block mt-1">150</span>
                                         </div>
@@ -63,13 +60,13 @@
                                     @foreach(json_decode($language) as $lang)
                                         <div class="d-none lang_form" id="{{$lang}}-form">
                                             <div class="form-group mb-2 error-wrapper">
-                                                <label class="input-label" for="{{$lang}}_title">{{translate('messages.title')}} ({{strtoupper($lang)}})</label>
-                                                <input type="text" name="title[]" maxlength="75" id="{{$lang}}_title" class="form-control" placeholder="{{translate('messages.new_campaign')}}"  >
+                                                <label class="input-label" for="{{$lang}}_title">{{translate('messages.Title')}} ({{strtoupper($lang)}})</label>
+                                                <input type="text" name="title[]" maxlength="75" id="{{$lang}}_title" class="form-control" placeholder="{{translate('messages.New campaign')}}"  >
                                                 <span class="text-right text-counting color-A7A7A7 d-block mt-1">75</span>
                                             </div>
                                             <input type="hidden" name="lang[]" value="{{$lang}}">
                                             <div class="form-group mb-2 error-wrapper">
-                                                <label class="input-label" for="exampleFormControlInput1">{{translate('messages.short_description')}} ({{strtoupper($lang)}})</label>
+                                                <label class="input-label" for="exampleFormControlInput1">{{translate('Short description')}} ({{strtoupper($lang)}})</label>
                                                 <textarea type="text" maxlength="150" name="description[]" class="form-control ckeditor"></textarea>
                                                 <span class="text-right text-counting color-A7A7A7 d-block mt-1">150</span>
                                             </div>
@@ -78,13 +75,13 @@
                                 @else
                                 <div id="default-form">
                                     <div class="form-group mb-2 error-wrapper">
-                                        <label class="input-label" for="exampleFormControlInput1">{{translate('messages.title')}} ({{ translate('messages.default') }})</label>
-                                        <input type="text" name="title[]" maxlength="150" class="form-control" placeholder="{{translate('messages.new_food')}}">
+                                        <label class="input-label" for="exampleFormControlInput1">{{translate('messages.Title')}} ({{ translate('Default') }})</label>
+                                        <input type="text" name="title[]" maxlength="150" class="form-control" placeholder="{{translate('messages.New food')}}">
                                         <span class="text-right text-counting color-A7A7A7 d-block mt-1">75</span>
                                     </div>
                                     <input type="hidden" name="lang[]" value="en">
                                     <div class="form-group mb-2 error-wrapper">
-                                        <label class="input-label" for="exampleFormControlInput1">{{translate('messages.short_description')}}</label>
+                                        <label class="input-label" for="exampleFormControlInput1">{{translate('Short description')}}</label>
                                         <textarea type="text" name="description[]" maxlength="150" class="form-control ckeditor"></textarea>
                                         <span class="text-right text-counting color-A7A7A7 d-block mt-1">150</span>
                                     </div>
@@ -146,72 +143,37 @@
                         <div class="col-lg-12">
                             <div class="bg-1079801A d-center rounded py-lg-4 py-3 px-2">
                                 <div class="row g-3 w-100">
-                                    {{-- <div class="col-sm-12">
-                                        <div>
-                                            <label class="input-label">{{translate('messages.module')}}</label>
-                                            <select name="module_id" id="module_id" required class="form-control js-select2-custom"  data-placeholder="{{translate('messages.select_module')}}" id="module_select">
-                                                <option value="" selected disabled>{{translate('messages.select_module')}}</option>
-                                                @foreach(\App\Models\Module::notParcel()->get() as $module)
-                                                    <option value="{{$module->id}}">{{$module->module_name}}</option>
-                                                @endforeach
-                                            </select>
-                                            <small class="text-danger">{{translate('messages.module_change_warning')}}</small>
-                                        </div>
-                                    </div> --}}
                                     <div class="col-sm-6">
                                         <div class="error-wrapper">
-                                            <label class="input-label" for="title">{{translate('messages.start_date')}}</label>
+                                            <label class="input-label" for="title">{{translate('Start date')}}</label>
                                             <input type="date" id="date_from" class="form-control" required="" name="start_date">
                                         </div>
                                     </div>
                                     <div class="col-sm-6">
                                         <div class="error-wrapper">
-                                            <label class="input-label" for="title">{{translate('messages.end_date')}}</label>
+                                            <label class="input-label" for="title">{{translate('End date')}}</label>
                                             <input type="date" id="date_to" class="form-control" required="" name="end_date">
                                         </div>
                                     </div>
                                     <div class="col-sm-6">
                                         <div class="error-wrapper">
-                                            <label class="input-label text-capitalize" for="title">{{translate('messages.daily_start_time')}}</label>
+                                            <label class="input-label text-capitalize" for="title">{{translate('Daily start time')}}</label>
                                             <input type="time" id="start_time" class="form-control" name="start_time">
                                         </div>
                                     </div>
                                     <div class="col-sm-6">
                                         <div class="error-wrapper">
-                                            <label class="input-label text-capitalize" for="title">{{translate('messages.daily_end_time')}}</label>
+                                            <label class="input-label text-capitalize" for="title">{{translate('Daily end time')}}</label>
                                             <input type="time" id="end_time" class="form-control" name="end_time">
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                        <!-- <div class="row g-3">
-                            <div class="col-lg-12">
-                            </div>
-                            <div class="col-lg-6">
-                                <div class="error-wrapper">
-                                    <div class="form-group mb-0 h-100 d-flex flex-column">
-                                        <label>
-                                            {{translate('messages.campaign_image')}}
-                                            <small class="text-danger">* ( {{translate('messages.ratio')}} 900x300 )</small>
-                                        </label>
-                                        <div class="text-center py-3 my-auto">
-                                            <img class="initial--4" id="viewer"
-                                                 src="{{asset('public/assets/admin/img/900x400/img1.jpg')}}" alt="campaign image"/>
-                                        </div>
-                                        <div class="custom-file">
-                                            <input type="file" name="image" id="customFileEg1" class="custom-file-input"
-                                                   accept=".webp, .jpg, .png, .jpeg, .gif, .bmp, .tif, .tiff|image/*" required>
-                                            <label class="custom-file-label" for="customFileEg1">{{translate('messages.choose_file')}}</label>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div> -->
                     </div>
                     <div class="btn--container justify-content-end mt-20">
-                        <button type="reset" id="reset_btn" class="btn btn--reset">{{translate('messages.reset')}}</button>
-                        <button type="submit" class="btn btn--primary">{{translate('messages.submit')}}</button>
+                        <button type="reset" id="reset_btn" class="btn btn--reset"><i class="tio-refresh"></i> {{translate('messages.Reset')}}</button>
+                        <button type="submit" class="btn btn--primary"><i class="tio-checkmark-circle-outlined"></i> {{translate('messages.Submit')}}</button>
                     </div>
                 </form>
             </div>

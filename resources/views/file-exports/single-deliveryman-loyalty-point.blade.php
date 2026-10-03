@@ -1,6 +1,6 @@
 <div class="row">
     <div class="col-lg-12 text-center ">
-        <h1>{{ translate('delivery_man_loyalty_point_transaction_history') }}</h1>
+        <h1>{{ translate('Delivery man loyalty point transaction history') }}</h1>
     </div>
     <div class="col-lg-12">
 
@@ -9,19 +9,19 @@
         <table>
             <thead>
                 <tr>
-                    <th>{{ translate('delivery_man_info') }}</th>
+                    <th>{{ translate('Deliveryman information') }}</th>
                     <th></th>
                     <th></th>
                     <th>
-                        {{ translate('name')  }}- {{ $data['dm']->f_name . ' ' . $data['dm']->l_name}}
+                        {{ translate('Name')  }}- {{ $data['dm']->f_name . ' ' . $data['dm']->l_name}}
                         <br>
-                        {{ translate('phone')  }}- {{ $data['dm']->phone}}
+                        {{ translate('Phone')  }}- {{ $data['dm']->phone}}
                         <br>
                         {{ translate('email')  }}- {{ $data['dm']->email}}
                         <br>
-                        {{ translate('total_rating')  }}- {{ count($data['dm']->rating)}}
+                        {{ translate('Total rating')  }}- {{ count($data['dm']->rating)}}
                         <br>
-                        {{ translate('average_review')  }}-
+                        {{ translate('Average review')  }}-
                         {{count($data['dm']->rating) > 0 ? number_format($data['dm']->rating[0]->average, 1, '.', ' ') : 0}}
 
                     </th>
@@ -30,26 +30,13 @@
                     <th></th>
                     <th></th>
                 </tr>
-                {{-- <tr>
-                    <th>{{ translate('Search_Criteria') }}</th>
-                    <th></th>
-                    <th></th>
-                    <th>
-                        {{ translate('Search_Bar_Content') }}- {{ $data['search'] ??translate('N/A') }}
-
-                    </th>
-                    <th> </th>
-                    <th></th>
-                    <th></th>
-                    <th></th>
-                </tr> --}}
                 <tr>
                     <th>{{ translate('SL') }}</th>
                     <th>{{translate('messages.Transaction ID')}}</th>
                     <th>{{translate('messages.Date')}}</th>
-                    <th>{{translate('messages.Transaction Type')}}</th>
+                    <th>{{translate('Transaction type')}}</th>
                     <th>{{translate('messages.Point')}}</th>
-                    <th>{{translate('messages.Reference')}}</th>
+                    <th>{{translate('messages.reference')}}</th>
 
             </thead>
             <tbody>
@@ -81,7 +68,7 @@
                                         class="btn px-3 fs-12 py-1 badge-soft-success">{{ translate('credit') }}</span>
                                 @else
                                     <span type="button"
-                                        class="btn px-3 fs-12 py-1 badge-soft-danger">{{ translate('Debit') }}</span>
+                                        class="btn px-3 fs-12 py-1 badge-soft-danger">{{ translate('debit') }}</span>
                                 @endif
                             </div>
                         </td>

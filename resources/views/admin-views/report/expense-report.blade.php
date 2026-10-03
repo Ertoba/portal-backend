@@ -1,42 +1,41 @@
 @extends('layouts.admin.app')
 
-@section('title', translate('messages.expense_report'))
+@section('title', translate('Expense report'))
 
 @push('css_or_js')
 @endpush
 
 @section('content')
     <div class="content container-fluid">
-        <!-- Page Header -->
         <div class="page-header">
             <h1 class="page-header-title">
                 <span class="page-header-icon">
-                    <img src="{{ asset('public/assets/admin/img/report.png') }}" class="w--22" alt="">
+                    <img src="{{ asset('public/assets/admin/img/outline/report.svg') }}" class="w--26" alt="">
                 </span>
                 <span>
-                    {{ translate('messages.expense_report') }}
+                    {{ translate('Expense report') }}
                 </span>
             </h1>
+            <p class="page-header-desc">{{ translate('What your discounts, coupons and free deliveries have actually cost you.') }}</p>
         </div>
-        <!-- End Page Header -->
 
         <div class="light-card mb-3 d-flex gap-3 rounded align-items-center p-3 fs-12">
             <img width="18" src="{{ asset('public/assets/admin/img/icons/intel.png') }}" alt="">
-            {{ translate('This report will show all the orders in which the admin discount has been used. The admin discount are: Free delivery over, store discount, Coupon discount, Pro customer discount & item discounts(partial according to order commission).') }}
+            {{ translate('Orders that used an admin discount: free delivery, store discount, coupon, pro-customer and item discounts.') }}
         </div>
 
         <div class="card mb-20">
             <div class="card-body">
-                <h4 class="mb-3">{{ translate('Filter Data') }}</h4>
+                <h4 class="mb-3">{{ translate('Filter data') }}</h4>
                 <form action="{{ route('admin.transactions.report.set-date') }}" method="post">
                     @csrf
                     <div class="row g-3">
                         <div class="col-sm-6 col-md-3">
                             <select name="module_id" class="form-control js-select2-custom set-filter" data-url="{{ url()->full() }}" data-filter="module_id"
-                                title="{{ translate('messages.select_modules') }}">
+                                title="{{ translate('messages.Select modules') }}">
                                 <option value="" {{ !request('module_id') ? 'selected' : '' }}>
-                                    {{ translate('messages.all_modules') }}</option>
-                                @foreach (\App\Models\Module::WithoutAdditionalModules()->where('module_type', '!=', 'parcel')->get(['id', 'module_name']) as $module)
+                                    {{ translate('All modules') }}</option>
+                                @foreach (\App\CentralLogics\Helpers::modules_list()->whereNotIn('module_type', ['rental', 'ride-share', 'service'])->where('module_type', '!=', 'parcel') as $module)
                                     <option value="{{ $module->id }}"
                                         {{ request('module_id') == $module->id ? 'selected' : '' }}>
                                         {{ $module['module_name'] }}
@@ -46,8 +45,8 @@
                         </div>
                         <div class="col-sm-6 col-md-3">
                             <select name="zone_id" class="form-control js-select2-custom set-filter" data-url="{{ url()->full() }}" data-filter="zone_id">
-                                <option value="all">{{ translate('messages.All_Zones') }}</option>
-                                @foreach (\App\Models\Zone::orderBy('name')->get() as $z)
+                                <option value="all">{{ translate('All zones') }}</option>
+                                @foreach (\App\CentralLogics\Helpers::zones_dropdown() as $z)
                                     <option value="{{ $z['id'] }}"
                                         {{ isset($zone) && $zone->id == $z['id'] ? 'selected' : '' }}>
                                         {{ $z['name'] }}
@@ -57,44 +56,47 @@
                         </div>
                         <div class="col-sm-6 col-md-3">
                             <select name="store_id"
-                                data-placeholder="{{ translate('messages.select_vendor') }}"
+                                data-placeholder="{{ translate('Select vendor') }}"
                                 class="js-data-example-ajax form-control set-filter" data-url="{{ url()->full() }}" data-filter="store_id">
                                 @if (isset($store))
                                     <option value="{{ $store->id }}" data-verified="{{ (int) $store->verified_seller }}" selected>{{ $store->name }}</option>
                                 @else
-                                    <option value="all" selected>{{ translate('messages.all_vendors') }}</option>
+                                    <option value="all" selected>{{ translate('messages.All vendors') }}</option>
                                 @endif
                             </select>
                         </div>
                         <div class="col-sm-6 col-md-3">
                             <select name="customer_id"
-                                data-placeholder="{{ translate('messages.select_customer') }}"
+                                data-placeholder="{{ translate('Select customer') }}"
                                 class="js-data-example-ajax-2 form-control set-filter" data-url="{{ url()->full() }}" data-filter="customer_id">
                                 @if (isset($customer))
                                     <option value="{{ $customer->id }}" selected>{{ $customer->f_name . ' ' .$customer->l_name }}</option>
                                 @else
-                                    <option value="all" selected>{{ translate('messages.all_customers') }}</option>
+                                    <option value="all" selected>{{ translate('All customers') }}</option>
                                 @endif
                             </select>
                         </div>
                         <div class="col-sm-6 col-md-3">
                             <select class="form-control js-select2-custom set-filter" data-url="{{ url()->full() }}" data-filter="type" name="type">
-                                <option value="all" {{ isset($type) && $type == 'all' ? 'selected' : '' }}>{{ translate('messages.All Type') }}</option>
+                                <option value="all" {{ isset($type) && $type == 'all' ? 'selected' : '' }}>{{ translate('All type') }}</option>
                                 @php
                                     // Types whose creation paths are reachable for non-parcel orders.
-                                    // Audited from OrderLogic.php (`create_transaction` outside the
-                                    // `if $type == 'parcel'` block) + cashbackToWallet.
+                                    // Audited from OrderTransactionsTrait.php (`createOrderTransaction` outside the
+                                    // `if $type == 'parcel'` block) + creditCashbackToWallet.
                                     $orderTypes = [
+                                        'bogo_discount'            => 'messages.BOGO discount',
+                                        'bundle_discount'          => 'messages.Bundle discount',
                                         'CashBack'                 => 'messages.CashBack',
-                                        'coupon_discount'          => 'messages.coupon_discount',
+                                        'coupon_discount'          => 'messages.Coupon discount',
                                         'discount_on_product'      => 'messages.discount_on_product',
-                                        'extra_discount'           => 'messages.extra_discount',
+                                        'extra_discount'           => 'messages.Extra discount',
                                         'flash_sale_discount'      => 'messages.flash_sale_discount',
-                                        'free_delivery'            => 'messages.free_delivery',
+                                        'free_delivery'            => 'messages.Free delivery',
+                                        'happy_hour_discount'      => 'messages.Happy hour discount',
                                         'pro_discount_on_product'  => 'messages.pro_discount_on_product',
                                         'pro_free_delivery'        => 'messages.pro_free_delivery',
                                         'pro_partial_free_delivery'=> 'messages.pro_partial_free_delivery',
-                                        'referral_discount'        => 'messages.referral_discount',
+                                        'referral_discount'        => 'messages.Referral discount',
                                     ];
                                 @endphp
                                 @foreach ($orderTypes as $value => $label)
@@ -105,17 +107,17 @@
                         <div class="col-sm-6 col-md-3">
                             <select class="form-control js-select2-custom set-filter" data-url="{{ url()->full() }}" data-filter="filter" name="filter">
                                 <option value="all_time" {{ isset($filter) && $filter == 'all_time' ? 'selected' : '' }}>
-                                    {{ translate('messages.All Time') }}</option>
+                                    {{ translate('All time') }}</option>
                                 <option value="this_year" {{ isset($filter) && $filter == 'this_year' ? 'selected' : '' }}>
-                                    {{ translate('messages.This Year') }}</option>
+                                    {{ translate('This year') }}</option>
                                 <option value="previous_year"
                                     {{ isset($filter) && $filter == 'previous_year' ? 'selected' : '' }}>
-                                    {{ translate('messages.Previous Year') }}</option>
+                                    {{ translate('Previous year') }}</option>
                                 <option value="this_month"
                                     {{ isset($filter) && $filter == 'this_month' ? 'selected' : '' }}>
-                                    {{ translate('messages.This Month') }}</option>
+                                    {{ translate('This month') }}</option>
                                 <option value="this_week" {{ isset($filter) && $filter == 'this_week' ? 'selected' : '' }}>
-                                    {{ translate('messages.This Week') }}</option>
+                                    {{ translate('This week') }}</option>
                                 <option value="custom" {{ isset($filter) && $filter == 'custom' ? 'selected' : '' }}>
                                     {{ translate('messages.Custom') }}</option>
                             </select>
@@ -124,21 +126,21 @@
                             <div class="col-sm-6 col-md-3">
 
                                 <input type="date" name="from" id="from_date" class="form-control"
-                                    placeholder="{{ translate('Start Date') }}"
+                                    placeholder="{{ translate('Start date') }}"
                                     {{ session()->has('from_date') ? 'value=' . session('from_date') : '' }} required>
 
                             </div>
                             <div class="col-sm-6 col-md-3">
 
                                 <input type="date" name="to" id="to_date" class="form-control"
-                                    placeholder="{{ translate('End Date') }}"
+                                    placeholder="{{ translate('End date') }}"
                                     {{ session()->has('to_date') ? 'value=' . session('to_date') : '' }} required>
 
                             </div>
                         @endif
                         <div class="col-sm-6 col-md-3 ml-auto">
                             <div class="d-flex justify-content-end">
-                                <button type="submit" class="btn btn--primary h--45px min-w-100px">{{ translate('Filter') }}</button>
+                                <button type="submit" class="btn btn--primary h--45px min-w-100px"><i class="tio-filter-list"></i> {{ translate('Filter') }}</button>
                             </div>
                         </div>
                     </div>
@@ -150,29 +152,23 @@
             $to = session('to_date') . ' 23:59:59';
         @endphp
 
-        <!-- End Stats -->
-        <!-- Card -->
         <div class="card mt-3">
-            <!-- Header -->
             <div class="card-header border-0 py-2">
                 <div class="search--button-wrapper">
                     <h3 class="card-title d-flex align-items-center gap-2">
-                        {{ translate('messages.expense_lists') }}
+                        {{ translate('messages.Expense lists') }}
                         <span class="badge badge-soft-secondary" id="countItems">{{ $expense->total() }}</span>
                     </h3>
                     <form class="search-form theme-style">
-                        <!-- Search -->
                         <div class="input--group input-group input-group-merge input-group-flush">
-                            <input name="search" type="search" value="{{ request()?->search ?? null}}" class="form-control" placeholder="{{ translate('Search by Order ID') }}">
+                            <input name="search" type="search" value="{{ request()?->search ?? null}}" class="form-control" placeholder="{{ translate('Search by order ID') }}">
                             <button type="submit" class="btn btn--secondary"><i class="tio-search"></i></button>
                         </div>
-                        <!-- End Search -->
                     </form>
 
                     @if(request()->input('search'))
-                        <button type="reset" class="btn btn--primary ml-2 location-reload-to-base" data-url="{{url()->full()}}">{{translate('messages.reset')}}</button>
+                        <button type="reset" class="btn btn--primary ml-2 location-reload-to-base" data-url="{{url()->full()}}"><i class="tio-refresh"></i> {{translate('messages.Reset')}}</button>
                     @endif
-                    <!-- Static Export Button -->
                     <div class="hs-unfold ml-3">
                         <a class="js-hs-unfold-invoker btn btn-sm btn-white dropdown-toggle btn export-btn font--sm"
                             href="javascript:;"
@@ -181,46 +177,43 @@
                                 &quot;type&quot;: &quot;css-animation&quot;
                             }"
                             data-hs-unfold-target="#usersExportDropdown" data-hs-unfold-invoker="">
-                            <i class="tio-download-to mr-1"></i> {{ translate('export') }}
+                            <i class="tio-download-to mr-1"></i> {{ translate('Export') }}
                         </a>
 
                         <div id="usersExportDropdown"
                             class="hs-unfold-content dropdown-unfold dropdown-menu dropdown-menu-sm-right hs-unfold-content-initialized hs-unfold-css-animation animated hs-unfold-reverse-y hs-unfold-hidden">
 
-                            <span class="dropdown-header">{{ translate('download_options') }}</span>
+                            <span class="dropdown-header">{{ translate('Download options') }}</span>
                             <a id="export-excel" class="dropdown-item" href="{{route('admin.transactions.report.expense-export', ['export_type'=>'excel',request()->getQueryString()])}}">
                                 <img class="avatar avatar-xss avatar-4by3 mr-2"
                                     src="{{ asset('public/assets/admin') }}/svg/components/excel.svg"
                                     alt="Image Description">
-                                {{ translate('messages.excel') }}
+                                Excel
                             </a>
                             <a id="export-csv" class="dropdown-item" href="{{route('admin.transactions.report.expense-export', ['export_type'=>'csv',request()->getQueryString()])}}">
                                 <img class="avatar avatar-xss avatar-4by3 mr-2"
                                     src="{{ asset('public/assets/admin') }}/svg/components/placeholder-csv-format.svg"
                                     alt="Image Description">
-                                {{ translate('messages.csv') }}
+                                CSV
                             </a>
                         </div>
                     </div>
-                    <!-- Static Export Button -->
                 </div>
             </div>
-            <!-- End Header -->
 
-            <!-- Body -->
             <div class="card-body p-0">
                 <div class="table-responsive">
                     <table class="table table-borderless middle-align __txt-14px">
                         <thead class="thead-light white--space-false">
                             <tr>
-                                <th class="border-0">{{translate('sl')}}</th>
-                                <th class="border-0">{{translate('messages.order_id')}}</th>
-                                <th class="border-0">{{translate('Date & Time')}}</th>
-                                <th class="border-0">{{ translate('Expense Type') }}</th>
-                                <th class="text-center" >{{ translate('Customer Name') }}</th>
+                                <th class="border-0">{{translate('SL')}}</th>
+                                <th class="border-0">{{translate('messages.Order ID')}}</th>
+                                <th class="border-0">{{translate('Date & time')}}</th>
+                                <th class="border-0">{{ translate('Expense type') }}</th>
+                                <th class="text-center" >{{ translate('Customer name') }}</th>
                                 <th class="border-0 text-right pr-xl-5">
                                     <div class="pr-xl-5">
-                                        {{translate('expense amount')}}
+                                        {{translate('Expense amount')}}
                                     </div>
                                 </th>
                             </tr>
@@ -235,7 +228,7 @@
                                         <a class="text-dark" href="{{ route('admin.order.details', ['id' => $exp->order->id,'module_id'=>$exp->order->module_id]) }}">{{ $exp['order_id'] }}</a>
                                     </div>
                                     @else
-                                    <label class="badge badge-primary">{{translate('messages.Other_Expenses')}}</label>
+                                    <label class="badge badge-primary">{{translate('Other expenses')}}</label>
                                     @endif
                                 </td>
                                 <td>
@@ -249,7 +242,7 @@
                                     @elseif($exp->order?->customer)
                                         {{$exp->order?->customer['f_name'].' '.$exp->order?->customer['l_name']}}
                                     @else
-                                        <label class="badge badge-danger">{{translate('messages.invalid_customer_data')}}</label>
+                                        <label class="badge badge-danger">{{translate('messages.Invalid customer data')}}</label>
                                     @endif
                                 </td>
                                 <td class="text-right pr-xl-5">
@@ -262,7 +255,6 @@
                         </tbody>
                     </table>
                 </div>
-                <!-- End Table -->
 
 
                 @if (count($expense) !== 0)
@@ -275,14 +267,12 @@
                     <div class="empty--data">
                         <img src="{{ asset('/public/assets/admin/svg/illustrations/sorry.svg') }}" alt="public">
                         <h5>
-                            {{ translate('no_data_found') }}
+                            {{ translate('No data found') }}
                         </h5>
                     </div>
                 @endif
             </div>
-            <!-- End Body -->
         </div>
-        <!-- End Card -->
     </div>
 @endsection
 
@@ -332,7 +322,7 @@
 
             $('.js-data-example-ajax-2').select2({
                 ajax: {
-                    url: '{{ url('/') }}/admin/customer/select-list',
+                    url: '{{ route('admin.users.customer.select-list') }}',
                     data: function(params) {
                         return {
                             q: params.term, // search term

@@ -1,39 +1,95 @@
-@if(count($conversations) > 0)
-@foreach($conversations as $conv)
-@php($user= $conv->sender_type == 'vendor' ? $conv->receiver :  $conv->sender)
-@if (isset($user ) && $conv->last_message)
-    @php($unchecked=($conv->last_message->sender_id == $user->id) ? $conv->unread_message_count : 0)
-    <div
-        class="chat-user-info d-flex border-bottom p-3 align-items-center customer-list {{$unchecked ? 'conv-active' : ''}}"
-        onclick="viewConvs('{{route('vendor.message.view',['conversation_id'=>$conv->id,'user_id'=>$user->id])}}','customer-{{$user->id}}','{{ $conv->id }}','{{ $user->id }}')"
-        id="customer-{{$user->id}}">
-        <div class="chat-user-info-img d-none d-md-block">
+@forelse ($conversations as $conv)
+    @php
+        $user = $conv->sender_type == 'vendor' ? $conv->receiver : $conv->sender;
+        $lastMessage = $conv->last_message;
+    @endphp
+
+    @if ($user)
+        @php
+            $unread = $lastMessage?->sender_id == $user->id ? (int) $conv->unread_message_count : 0;
+            $isReply = $lastMessage && $lastMessage->sender_id != $user->id;
+            $preview = trim((string) ($lastMessage?->message ?? ''));
+            $hasAttachment = ! empty($lastMessage?->file_full_url);
+            $isDeliveryMan = (bool) $user->deliveryman_id;
+
+            $sentAt = $lastMessage?->created_at ?? $conv->last_message_time;
+            $sentAt = $sentAt ? \Carbon\Carbon::parse($sentAt) : null;
+            $stamp = match (true) {
+                ! $sentAt => '',
+                $sentAt->isToday() => \App\CentralLogics\Helpers::time_format($sentAt),
+                $sentAt->isYesterday() => translate('messages.yesterday'),
+                $sentAt->isCurrentYear() => $sentAt->translatedFormat('d M'),
+                default => $sentAt->translatedFormat('d M Y'),
+            };
+        @endphp
+
+        <div class="msg-item customer-list view-conv {{ $unread ? 'is-unread' : '' }}" id="customer-{{ $user->id }}"
+            role="button" tabindex="0" data-url="{{ route('vendor.message.view', ['conversation_id' => $conv->id, 'user_id' => $user->id]) }}"
+            data-conv-id="{{ $conv->id }}" data-sender-id="{{ $user->id }}"
+            aria-label="{{ trim($user->f_name . ' ' . $user->l_name) }}">
+
             @include('partials._user-avatar', [
-                'imageUrl'  => $user['image_full_url'],
+                'imageUrl' => $user['image_full_url'],
                 'proStatus' => $user['pro_status'] ?? false,
-                'size'      => 55,
+                'size' => 42,
+                'wrapperClass' => 'msg-item__avatar',
             ])
-        </div>
 
-        <div class="chat-user-info-content">
-            <h5 class="mb-0 d-flex justify-content-between">
-                <span class=" mr-3">{{$user['f_name'].' '.$user['l_name']}}</span> <span
-                    class="{{$unchecked ? 'badge badge-info' : ''}}">{{$unchecked ? $unchecked : ''}}</span>
-                    <small>{{date(config('timeformat'),strtotime($conv->last_message->created_at))}}</small>
-            </h5>
-            <small>{{ $user['phone'] }}</small>
-            <div class="text-title">{{ Str::limit($conv->last_message->message ??'', 35, '...') }}</div>
-        </div>
-    </div>
-@endif
-@endforeach
-@else
-    <div class="no-conversation-wrapper h-100 w-100 d-flex flex-column justify-content-center align-items-center text-center">
-        <img src="{{asset('public/assets/admin/img/conversation-no-data.svg')}}" 
-             style="max-width:120px; opacity:.6;" 
-             alt="No conversation">
+            <div class="msg-item__body">
+                <div class="msg-item__row">
+                    <h6 class="msg-item__name">{{ trim($user->f_name . ' ' . $user->l_name) ?: translate('No data found') }}</h6>
+                    <span class="msg-item__time">{{ $stamp }}</span>
+                </div>
 
-        <h5 class="mt-3 mb-1">{{translate('no conversation found')}}</h5>
-        <p class="text-muted mb-0">{{translate('start chat when customer message')}}</p>
+                <div class="msg-item__row">
+                    <p class="msg-item__preview">
+                        @if ($isReply)
+                            {{ translate('messages.You') }}:
+                        @endif
+
+                        @if ($preview !== '')
+                            {{ Str::limit($preview, 46, '...') }}
+                        @elseif ($hasAttachment)
+                            <i class="tio-image"></i>{{ translate('Attachment') }}
+                        @else
+                            {{ translate('messages.No messages yet') }}
+                        @endif
+                    </p>
+
+                    @if ($unread)
+                        <span class="msg-item__badge">{{ $unread > 99 ? '99+' : $unread }}</span>
+                    @endif
+                </div>
+
+                <div class="msg-item__meta">
+                    <span class="msg-chip {{ $isDeliveryMan ? 'msg-chip--deliveryman' : 'msg-chip--customer' }}">
+                        <i class="{{ $isDeliveryMan ? 'tio-bike' : 'tio-user-outlined' }}"></i>
+                        {{ $isDeliveryMan ? translate('Deliveryman') : translate('messages.Customer') }}
+                    </span>
+                    @if ($user->phone)
+                        <span class="msg-item__phone" dir="ltr">{{ $user->phone }}</span>
+                    @endif
+                </div>
+            </div>
+        </div>
+    @else
+        <div class="msg-item customer-list" aria-disabled="true">
+            <div class="msg-item__avatar">
+                <img class="rounded-circle" width="42" height="42"
+                    src="{{ asset('public/assets/admin/img/160x160/img1.jpg') }}" alt="">
+            </div>
+            <div class="msg-item__body">
+                <div class="msg-item__row">
+                    <h6 class="msg-item__name">{{ translate('No data found') }}</h6>
+                </div>
+                <p class="msg-item__preview">{{ translate('messages.This account is no longer available') }}</p>
+            </div>
+        </div>
+    @endif
+@empty
+    <div class="msg-empty">
+        <i class="tio-comment-outlined"></i>
+        <h6>{{ translate('No conversation found') }}</h6>
+        <p>{{ translate('messages.Conversations started by customers and delivery men will show up here') }}</p>
     </div>
-@endif
+@endforelse

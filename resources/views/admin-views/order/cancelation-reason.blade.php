@@ -7,16 +7,16 @@
 
 @section('content')
     <div class="content container-fluid">
-        <!-- Page Header -->
         <div class="page-header">
             <h1 class="page-header-title text-capitalize">
-                <div class="card-header-icon d-inline-flex mr-2 img">
-                    <img src="{{ asset('/public/assets/admin/img/email.png') }}" alt="public">
-                </div>
+                <span class="page-header-icon">
+                    <img src="{{ asset('/public/assets/admin/img/email.png') }}" alt="">
+                </span>
                 <span>
                     {{ translate('messages.order_cancellation_reasons') }}
                 </span>
             </h1>
+            <p class="page-header-desc">{{ translate('The reasons customers, stores and deliverymen choose from when calling off an order.') }}</p>
         </div>
 
         <div class="col-lg-12 pt-sm-3">
@@ -26,7 +26,7 @@
                     <div class="d-flex flex-wrap justify-content-between align-items-center mb-md-0 mb-3">
                         <div class="mx-1">
                             <h5 class="form-label mb-0">
-                                {{ translate('messages.add_an_order_cancellation_reason') }}
+                                {{ translate('messages.Add an order cancellation reason') }}
                             </h5>
                         </div>
                     </div>
@@ -43,18 +43,18 @@
                                 <label for="order_cancellation_reason"></label>
                                 <select name="user_type" id="order_cancellation_reason" class="form-control h--45px"
                                     required>
-                                    <option value="">{{ translate('messages.select_user_type') }}</option>
+                                    <option value="">{{ translate('messages.Select user type') }}</option>
                                     <option value="admin">{{ translate('messages.admin') }}</option>
-                                    <option value="store">{{ translate('messages.store') }}</option>
-                                    <option value="customer">{{ translate('messages.customer') }}</option>
-                                    <option value="deliveryman">{{ translate('messages.deliveryman') }}</option>
+                                    <option value="store">{{ translate('messages.Store') }}</option>
+                                    <option value="customer">{{ translate('messages.Customer') }}</option>
+                                    <option value="deliveryman">{{ translate('Deliveryman') }}</option>
                                 </select>
                             </div>
                         </div>
 
                         <div class="col-md-auto">
                             <button type="submit"
-                                class="btn btn--primary h--45px btn-block">{{ translate('messages.add_reason') }}</button>
+                                class="btn btn--primary h--45px btn-block"><i class="tio-add-circle"></i> {{ translate('messages.add_reason') }}</button>
                         </div>
                     </div>
                 </form>
@@ -66,12 +66,11 @@
                 <div class="d-flex flex-wrap justify-content-between align-items-center mb-md-0 mb-3">
                     <div class="mx-1">
                         <h5 class="form-label mb-4">
-                            {{ translate('messages.order_cancellation_reason_list') }}
+                            {{ translate('messages.Order cancellation reason list') }}
                         </h5>
                     </div>
                 </div>
 
-                <!-- Table -->
                 <div class="card-body p-0">
                     <div class="table-responsive datatable-custom">
                         <table id="columnSearchDatatable"
@@ -79,15 +78,15 @@
                             data-hs-datatables-options='{
                         "isResponsive": false,
                         "isShowPaging": false,
-                        "paging":false,
+                        "paging":false
                     }'>
                             <thead class="thead-light">
                                 <tr>
                                     <th class="border-0">{{ translate('messages.SL') }}</th>
                                     <th class="border-0">{{ translate('messages.Reason') }}</th>
-                                    <th class="border-0">{{ translate('messages.type') }}</th>
-                                    <th class="border-0">{{ translate('messages.status') }}</th>
-                                    <th class="border-0 text-center">{{ translate('messages.action') }}</th>
+                                    <th class="border-0">{{ translate('Type') }}</th>
+                                    <th class="border-0">{{ translate('messages.Status') }}</th>
+                                    <th class="border-0 text-center">{{ translate('messages.Action') }}</th>
                                 </tr>
                             </thead>
 
@@ -119,16 +118,16 @@
                                             <div class="btn--container justify-content-center">
 
                                                 <button
-                                                    class="btn action-btn btn--primary btn-outline-primary identifyingClass show-modal"
-                                                    data-id="{{ $reason['id'] }}" title="{{ translate('messages.edit') }}" data-data="{{ $reason->reason }}" data-type="{{ $reason->user_type }}">
+                                                    class="btn action-btn action-btn--edit identifyingClass show-modal"
+                                                    data-id="{{ $reason['id'] }}" title="{{ translate('Edit') }}" data-data="{{ $reason->reason }}" data-type="{{ $reason->user_type }}">
                                                     <i class="tio-edit"></i>
                                                 </button>
 
 
-                                                <a class="btn btn-sm btn--danger btn-outline-danger action-btn form-alert"
+                                                <a class="btn btn-sm action-btn action-btn--delete form-alert"
                                                     href="javascript:"
-                                                    data-id="order-cancellation-reason-{{ $reason['id'] }}" data-message="{{ translate('messages.want_to_delete_this_order_cancellation_reason') }}"
-                                                    title="{{ translate('messages.delete') }}">
+                                                    data-id="order-cancellation-reason-{{ $reason['id'] }}" data-message="{{ translate('messages.Want to delete this order cancellation reason') }}"
+                                                    title="{{ translate('messages.Delete') }}">
                                                     <i class="tio-delete-outlined"></i>
                                                 </a>
                                                 <form
@@ -144,7 +143,6 @@
                         </table>
                     </div>
                 </div>
-                <!-- End Table -->
             </div>
         </div>
     </div>
@@ -152,13 +150,12 @@
 
 
 
-    <!-- Modal -->
     <div class="modal fade" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
         aria-hidden="true">
         <div class="modal-dialog" role="document">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="exampleModalLabel">{{ translate('messages.order_cancellation_reason_Update') }}</label></h5>
+                    <h5 class="modal-title" id="exampleModalLabel">{{ translate('messages.order cancellation reason Update') }}</label></h5>
                     <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                         <span aria-hidden="true">&times;</span>
                     </button>
@@ -172,16 +169,16 @@
                             <label for="hiddenValuetype"></label>
                             <select name="user_type" id="hiddenValuetype" class="form-control h--45px"
                                 required>
-                                <option value="">{{ translate('messages.select_user_type') }}</option>
+                                <option value="">{{ translate('messages.Select user type') }}</option>
                                 <option value="admin">{{ translate('messages.admin') }}</option>
-                                <option value="store">{{ translate('messages.store') }}</option>
-                                <option value="customer">{{ translate('messages.customer') }}</option>
-                                <option value="deliveryman">{{ translate('messages.deliveryman') }}</option>
+                                <option value="store">{{ translate('messages.Store') }}</option>
+                                <option value="customer">{{ translate('messages.Customer') }}</option>
+                                <option value="deliveryman">{{ translate('Deliveryman') }}</option>
                             </select>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-dismiss="modal">{{ translate('Close') }}</button>
-                        <button type="submit" class="btn btn-primary">{{ translate('Save_changes') }}</button>
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal"><i class="tio-clear"></i> {{ translate('Close') }}</button>
+                        <button type="submit" class="btn btn-primary"><i class="tio-save"></i> {{ translate('Save changes') }}</button>
                     </div>
                 </form>
             </div>

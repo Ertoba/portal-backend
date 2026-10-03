@@ -34,10 +34,14 @@ class TransactionReportExport implements  FromView, ShouldAutoSize, WithStyles,W
         ]);
     }
 
+    private function rowCount(): int
+    {
+        return (int) ($this->data['order_transactions_count'] ?? $this->data['order_transactions']->count());
+    }
+
     public function columnWidths(): array
     {
         return [
-            // 'C' => 45,
         ];
     }
 
@@ -62,12 +66,11 @@ class TransactionReportExport implements  FromView, ShouldAutoSize, WithStyles,W
         ];
         $sheet->getStyle('A1:C1')->applyFromArray($styleArray);
         return [
-            // Define the style for cells with data
-            'A1:X'.$this->data['order_transactions']->count() +5 => [
+            'A1:X'.$this->rowCount() +5 => [
                 'borders' => [
                     'allBorders' => [
                         'borderStyle' => Border::BORDER_THIN,
-                        'color' => ['argb' => '000000'], // Specify the color of the border (optional)
+                        'color' => ['argb' => '000000'],
                     ],
                 ],
             ],
@@ -79,7 +82,7 @@ class TransactionReportExport implements  FromView, ShouldAutoSize, WithStyles,W
     {
         return [
             AfterSheet::class => function(AfterSheet $event) {
-                $event->sheet->getStyle('A1:X1') // Adjust the range as per your needs
+                $event->sheet->getStyle('A1:X1')
                     ->getAlignment()
                     ->setHorizontal(Alignment::HORIZONTAL_CENTER)
                     ->setVertical(Alignment::VERTICAL_CENTER);
@@ -96,7 +99,7 @@ class TransactionReportExport implements  FromView, ShouldAutoSize, WithStyles,W
                     ->setHorizontal(Alignment::HORIZONTAL_CENTER)
                     ->setVertical(Alignment::VERTICAL_CENTER);
 
-                $event->sheet->getStyle('A4:X'.$this->data['order_transactions']->count() +5)
+                $event->sheet->getStyle('A4:X'.$this->rowCount() +5)
                     ->getAlignment()
                     ->setHorizontal(Alignment::HORIZONTAL_CENTER)
                     ->setVertical(Alignment::VERTICAL_CENTER);

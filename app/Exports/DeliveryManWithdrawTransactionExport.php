@@ -34,9 +34,6 @@ class DeliveryManWithdrawTransactionExport implements FromView, ShouldAutoSize, 
     public function columnWidths(): array
     {
         return [
-            // 'A' => 55,
-            // 'B' => 45,
-            // 'C' => 45,
         ];
     }
 
@@ -63,12 +60,11 @@ class DeliveryManWithdrawTransactionExport implements FromView, ShouldAutoSize, 
         ];
         $sheet->getStyle('A1:C1')->applyFromArray($styleArray);
         return [
-            // Define the style for cells with data
             'A1:H'.$this->data['withdraw_requests']->count() + 3 => [
                 'borders' => [
                     'allBorders' => [
                         'borderStyle' => Border::BORDER_THIN,
-                        'color' => ['argb' => '000000'], // Specify the color of the border (optional)
+                        'color' => ['argb' => '000000'],
                     ],
                 ],
             ],
@@ -79,20 +75,20 @@ class DeliveryManWithdrawTransactionExport implements FromView, ShouldAutoSize, 
     {
         return [
             AfterSheet::class => function(AfterSheet $event) {
-                $event->sheet->getStyle('A1:H1') // Adjust the range as per your needs
+                $event->sheet->getStyle('A1:H1')
                     ->getAlignment()
                     ->setHorizontal(Alignment::HORIZONTAL_CENTER)
                     ->setVertical(Alignment::VERTICAL_CENTER);
-                $event->sheet->getStyle('A2:C2') // Adjust the range as per your needs
+                $event->sheet->getStyle('A2:C2')
                     ->getAlignment()
                     ->setHorizontal(Alignment::HORIZONTAL_CENTER)
                     ->setVertical(Alignment::VERTICAL_CENTER);
 
-                $event->sheet->getStyle('A3:H'.$this->data['withdraw_requests']->count() + 3) // Adjust the range as per your needs
+                $event->sheet->getStyle('A3:H'.$this->data['withdraw_requests']->count() + 3)
                     ->getAlignment()
                     ->setHorizontal(Alignment::HORIZONTAL_CENTER)
                     ->setVertical(Alignment::VERTICAL_CENTER);
-                $event->sheet->getStyle('D2:H2') // Adjust the range as per your needs
+                $event->sheet->getStyle('D2:H2')
                     ->getAlignment()
                     ->setHorizontal(Alignment::HORIZONTAL_LEFT)
                     ->setVertical(Alignment::VERTICAL_CENTER);

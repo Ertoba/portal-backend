@@ -11,5 +11,4 @@ return [
     App\Providers\InterfaceServiceProvider::class,
     App\Providers\FirebaseServiceProvider::class,
     App\Providers\ScheduleServiceProvider::class,
-    App\Providers\CheckoutPaymentRecoveryServiceProvider::class,
 ];

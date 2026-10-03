@@ -1,15 +1,19 @@
 @extends('layouts.admin.app')
 
-@section('title', translate('messages.Price_Setup'))
+@section('title', translate('Price setup'))
 @section('pro_customer_price_setup', 'active')
 
 @section('content')
 <div class="content container-fluid">
     <div class="page-header mb-1">
         <div class="d-flex flex-wrap justify-content-between align-items-start">
-            <h1 class="page-header-title text-capitalize fs-24">
-                <span>{{ translate('messages.Price_Setup') }}</span>
-            </h1>
+            <div>
+                <h1 class="page-header-title">
+                    <i class="tio-star"></i>
+                    <span>{{ translate('Price setup') }}</span>
+                </h1>
+                <p class="page-header-desc">{{ translate('What a Pro membership costs and the lengths customers can buy it for.') }}</p>
+            </div>
         </div>
     </div>
 
@@ -18,11 +22,11 @@
         <div class="card-body">
             <div class="d-flex gap-2 align-items-center justify-content-between mb-20">
                 <div>
-                    <h3 class="mb-1 fs-16">{{ translate('messages.subscription_price') }}</h3>
+                    <h3 class="mb-1 fs-16">{{ translate('messages.Subscription Price') }}</h3>
                     <p class="mb-0 gray-dark fs-12">{{ translate('messages.Manage subscription packages here') }}</p>
                 </div>
                 <button type="button" class="btn btn--primary text-nowrap px-3 offcanvas-trigger" data-target="#offcanvas__createplan">
-                    <i class="tio-add-circle"></i> {{ translate('messages.add_plan') }}
+                    <i class="tio-add-circle"></i> {{ translate('messages.Add Plan') }}
                 </button>
             </div>
 
@@ -42,13 +46,13 @@
                                     <div class="bg-white rounded p-2 d-flex align-items-center gap-4">
                                         <a href="javascript:" class="btn outline-none border-0 p-0 pe--12 text-danger form-alert"
                                             data-id="pro-plan-delete-{{ $plan->id }}"
-                                            data-message="{{ translate('messages.want_to_delete_this_plan') }}?"
-                                            title="{{ translate('messages.delete') }}">
+                                            data-message="{{ translate('Want to delete this plan?') }}"
+                                            title="{{ translate('messages.Delete') }}">
                                             <img src="{{ asset('public/assets/admin/img/trash-stroke.svg') }}" alt="img" class="svg">
                                         </a>
                                         <a href="javascript:" class="btn outline-none border-0 p-0 text-primary pro-plan-edit-trigger"
                                             data-target="#offcanvas__editplan-{{ $plan->id }}"
-                                            title="{{ translate('messages.edit') }}">
+                                            title="{{ translate('Edit') }}">
                                             <img src="{{ asset('public/assets/admin/img/bx-edit.svg') }}" alt="img" class="svg">
                                         </a>
                                         <label class="toggle-switch toggle-switch-sm mb-0">
@@ -68,7 +72,7 @@
                                 </form>
                                 <div class="pt-4 mt-1">
                                     <span class="badge {{ $plan->plan_type === 'free_trial' ? 'badge-soft-success' : 'badge-soft-primary' }} mb-2">
-                                        {{ $plan->plan_type === 'free_trial' ? translate('messages.Free_Trial') : translate('messages.Paid') }}
+                                        {{ $plan->plan_type === 'free_trial' ? translate('Free trial') : translate('messages.paid') }}
                                     </span>
                                     <h3 class="mb-2 fs-24 fw-500 lh-1">{{ $plan->plan_name }}</h3>
                                     <p class="mb-0 fs-32 font-semibold text-dark">
@@ -100,11 +104,11 @@
                             <div class="w-40px mx-auto mb-20">
                                 <img width="40" src="{{ asset('public/assets/admin/img/subscription-win-badge.png') }}" alt="img" class="rounded-circle">
                             </div>
-                            <h3 class="mb-1 fs-16">{{ translate('messages.add_subscription_plan') }}</h3>
+                            <h3 class="mb-1 fs-16">{{ translate('messages.Add Subscription Plan') }}</h3>
                             <p class="mb-0 gray-dark fs-12">{{ translate('messages.No subscription plans added yet') }}</p>
                         </div>
                         <button type="button" class="btn btn--primary text-nowrap px-3 offcanvas-trigger" data-target="#offcanvas__createplan">
-                            <i class="tio-add-circle"></i> {{ translate('messages.add_plan') }}
+                            <i class="tio-add-circle"></i> {{ translate('messages.Add Plan') }}
                         </button>
                     </div>
                 </div>
@@ -182,7 +186,7 @@
             $scope.find('.lang_link').removeClass('active').first().addClass('active');
             $scope.find('.lang_form').addClass('d-none').first().removeClass('d-none');
             if (window.toastr) {
-                toastr.error("{{ translate('messages.default_plan_name_is_required') }}");
+                toastr.error("{{ translate('messages.Default plan name is required') }}");
             }
             $default.trigger('focus');
         }

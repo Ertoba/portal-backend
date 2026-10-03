@@ -1,23 +1,22 @@
 @extends('layouts.admin.app')
 
-@section('title',translate('messages.flash_sales'))
+@section('title',translate('Flash sales'))
 
 @section('content')
     <div class="content container-fluid">
-        <!-- Page Header -->
         <div class="page-header">
             <h1 class="page-header-title">
                 <span class="page-header-icon">
-                    <img src="{{asset('public/assets/admin/img/condition.png')}}" class="w--26" alt="">
+                    <img src="{{asset('public/assets/admin/img/outline/condition.svg')}}" class="w--26" alt="">
                 </span>
                 <span>
-                    {{translate('messages.flash_sale_setup')}}
+                    {{translate('messages.Flash sale setup')}}
                 </span>
             </h1>
+            <p class="page-header-desc">{{ translate('A short, sharp discount window that customers see counting down in the app.') }}</p>
         </div>
         @php($language=\App\CentralLogics\Helpers::get_business_settings('language') ?? [])
 
-        <!-- End Page Header -->
         <div class="row g-3">
             <div class="col-12">
                 <div class="card">
@@ -29,7 +28,7 @@
                                         <li class="nav-item">
                                             <a class="nav-link lang_link active"
                                             href="#"
-                                            id="default-link">{{translate('messages.default')}}</a>
+                                            id="default-link">{{translate('Default')}}</a>
                                         </li>
                                         @foreach ($language as $lang)
                                             <li class="nav-item">
@@ -45,11 +44,11 @@
                                             <div class="lang_form" id="default-form">
                                                 <div class="form-group">
                                                     <label class="input-label"
-                                                        for="default_title">{{ translate('messages.title') }}
-                                                        ({{translate('messages.default')}}) <span class="text-danger">*</span>
+                                                        for="default_title">{{ translate('messages.Title') }}
+                                                        ({{translate('Default')}}) <span class="text-danger">*</span>
                                                     </label>
                                                     <input type="text" name="title[]" id="default_title"
-                                                        class="form-control" maxlength="100" placeholder="{{ translate('messages.ex_:_new_flash_sale') }}"
+                                                        class="form-control" maxlength="100" placeholder="{{ translate('messages.Ex') . ' : ' . translate('messages.new flash sale') }}"
                                                         required>
                                                 </div>
                                                 <input type="hidden" name="lang[]" value="default">
@@ -59,11 +58,11 @@
                                                 id="{{ $lang }}-form">
                                                 <div class="form-group">
                                                     <label class="input-label"
-                                                        for="{{ $lang }}_title">{{ translate('messages.title') }}
+                                                        for="{{ $lang }}_title">{{ translate('messages.Title') }}
                                                         ({{ strtoupper($lang) }})
                                                     </label>
                                                     <input type="text" maxlength="100" name="title[]" id="{{ $lang }}_title"
-                                                        class="form-control" placeholder="{{ translate('messages.ex_:_new_flash_sale') }}">
+                                                        class="form-control" placeholder="{{ translate('messages.Ex') . ' : ' . translate('messages.new flash sale') }}">
                                                 </div>
                                                 <input type="hidden" name="lang[]" value="{{ $lang }}">
                                             </div>
@@ -72,8 +71,8 @@
                                         <div class="col-xl-6">
                                             <div class="form-group">
                                                 <label class="input-label"
-                                                    for="default_title">{{ translate('messages.discount_Bearer') }}
-                                                    <span class="form-label-secondary" data-toggle="tooltip" data-placement="right" data-original-title="{{ translate('messages.Define_the_cost_amount_you_want_to_bear_for_this_Flash_Sale.The_total_bear_amount_should_be_100.') }}">
+                                                    for="default_title">{{ translate('messages.discount Bearer') }}
+                                                    <span class="form-label-secondary" data-toggle="tooltip" data-placement="right" data-original-title="{{ translate('messages.Define the cost amount you want to bear for this Flash Sale.') }} {{ translate('Total bear amount') }}: 100%">
                                                         <img src="{{asset('public/assets/admin/img/info-circle.svg')}}" alt="">
                                                     </span>
                                                 </label>
@@ -84,33 +83,33 @@
                                                 <input type="number"  min="{{\App\CentralLogics\Helpers::getDecimalPlaces() }}" step="{{\App\CentralLogics\Helpers::getDecimalPlaces() }}" max="100" name="admin_discount_percentage"
                                                         value=""
                                                         class="form-control" id="adminDiscount"
-                                                        placeholder="{{ translate('Ex_:_50') }}" required>
+                                                        placeholder="{{ translate('Ex') . ' : 50' }}" required>
                                                 </div>
                                                 <div class="col-lg-6">
-                                                    <label class="form-label">{{ translate('messages.store_owner') }}(%) <span class="text-danger">*</span></label>
+                                                    <label class="form-label">{{ translate('Store owner') }}(%) <span class="text-danger">*</span></label>
                                                 <input type="number"  min="{{ \App\CentralLogics\Helpers::getDecimalPlaces() }}" step="{{ \App\CentralLogics\Helpers::getDecimalPlaces() }}" max="100" name="vendor_discount_percentage"
                                                         value=""
                                                         class="form-control" id="storeDiscount"
-                                                        placeholder="{{ translate('Ex_:_50') }}" required>
+                                                        placeholder="{{ translate('Ex') . ' : 50' }}" required>
                                                 </div>
                                             </div>
                                         </div>
                                         <div class="col-xl-6">
                                             <div class="form-group">
                                                 <label class="input-label"
-                                                    for="default_title">{{ translate('messages.validity') }}
+                                                    for="default_title">{{ translate('messages.Validity') }}
                                                 </label>
                                             </div>
                                             <div class="row g-3 __bg-F8F9FC-card">
                                                 <div class="col-lg-6">
                                                     <div>
-                                                        <label class="input-label" for="title">{{translate('messages.start_date')}} <span class="text-danger">*</span></label>
+                                                        <label class="input-label" for="title">{{translate('Start date')}} <span class="text-danger">*</span></label>
                                                         <input type="datetime-local" id="from" class="form-control" required="" name="start_date">
                                                     </div>
                                                 </div>
                                                 <div class="col-lg-6">
                                                     <div>
-                                                        <label class="input-label" for="title">{{translate('messages.end_date')}} <span class="text-danger">*</span></label>
+                                                        <label class="input-label" for="title">{{translate('End date')}} <span class="text-danger">*</span></label>
                                                         <input type="datetime-local" id="to" class="form-control" required="" name="end_date">
                                                     </div>
                                                 </div>
@@ -119,8 +118,8 @@
                                     </div>
                             @endif
                             <div class="btn--container justify-content-end mt-5">
-                                <button type="reset" class="btn btn--reset">{{translate('messages.reset')}}</button>
-                                <button type="submit" class="btn btn--primary">{{translate('messages.submit')}}</button>
+                                <button type="reset" class="btn btn--reset"><i class="tio-refresh"></i> {{translate('messages.Reset')}}</button>
+                                <button type="submit" class="btn btn--primary"><i class="tio-checkmark-circle-outlined"></i> {{translate('messages.Submit')}}</button>
                             </div>
                         </form>
                     </div>
@@ -131,26 +130,26 @@
                 <div class="card">
                     <div class="card-header py-2 border-0">
                         <div class="search--button-wrapper">
-                            <h5 class="card-title">
-                                {{translate('messages.flash_sale_list')}}<span class="badge badge-soft-dark ml-2" id="itemCount">{{$flash_sales->total()}}</span>
-                            </h5>
+                            @include('partials._table-head', [
+                                'title'    => translate('messages.Flash sale list'),
+                                'subtitle' => translate('messages.Time-limited sales that highlight discounted items in the apps.'),
+                                'count'    => $flash_sales->total(),
+                                'count_id' => 'itemCount',
+                            ])
                             <form  class="search-form">
-                                <!-- Search -->
 
                                 <div class="input-group input--group">
                                     <input id="datatableSearch_" value="{{ request()?->search ?? null }}" type="search" name="search" class="form-control"
-                                            placeholder="{{translate('ex_:_flash_sale_title')}}" aria-label="Search" >
+                                            placeholder="{{translate('Ex') . ' : ' . translate('flash sale title')}}" aria-label="Search" >
                                     <button type="submit" class="btn btn--secondary"><i class="tio-search"></i></button>
                                 </div>
-                                <!-- End Search -->
                             </form>
                             @if(request()->input('search'))
-                            <button type="reset" class="btn btn--primary ml-2 location-reload-to-base" data-url="{{url()->full()}}">{{translate('messages.reset')}}</button>
+                            <button type="reset" class="btn btn--primary ml-2 location-reload-to-base" data-url="{{url()->full()}}"><i class="tio-refresh"></i> {{translate('messages.Reset')}}</button>
                             @endif
 
                         </div>
                     </div>
-                    <!-- Table -->
                     <div class="table-responsive datatable-custom">
                         <table id="columnSearchDatatable"
                                class="table table-borderless table-thead-bordered table-nowrap table-align-middle card-table"
@@ -161,12 +160,12 @@
                                }'>
                             <thead class="thead-light">
                             <tr class="text-center">
-                                <th class="border-0">{{translate('sl')}}</th>
-                                <th class="border-0">{{translate('messages.title')}}</th>
-                                <th class="border-0">{{translate('messages.duration')}}</th>
-                                <th class="border-0">{{translate('messages.active_products')}}</th>
+                                <th class="border-0">{{translate('SL')}}</th>
+                                <th class="border-0">{{translate('messages.Title')}}</th>
+                                <th class="border-0">{{translate('messages.Duration')}}</th>
+                                <th class="border-0">{{translate('messages.Active products')}}</th>
                                 <th class="border-0">{{translate('messages.publish')}}</th>
-                                <th class="border-0">{{translate('messages.action')}}</th>
+                                <th class="border-0">{{translate('messages.Action')}}</th>
                             </tr>
 
                             </thead>
@@ -189,7 +188,7 @@
                                     </td>
                                     <td class="text-center">
                                         <span class="font-size-sm text-body mr-3">
-                                            {{ $flash_sale->activeProducts->count()}}
+                                            {{ $flash_sale->active_products_count }}
                                         </span>
                                     </td>
                                     <td class="text-center">
@@ -199,10 +198,10 @@
                                                    data-type="status"
                                                    data-image-on='{{asset('/public/assets/admin/img/modal')}}/zone-status-on.png'
                                                    data-image-off="{{asset('/public/assets/admin/img/modal')}}/zone-status-off.png"
-                                                   data-title-on="{{translate('Want_to_publish_this_flash_sale?')}}"
-                                                   data-title-off="{{translate('Want_to_hide_this_flash_sale?')}}"
-                                                   data-text-on="<p>{{translate('If_you_publish_this_flash_sale,_Customers_can_see_all_stores_&_products_available_under_this_flash_sale_from_the_Customer_App_&_Website._other_flash_sales_will_be_turned_off.')}}</p>"
-                                                   data-text-off="<p>{{translate('If_you_hide_this_flash_sale,_Customers_Will_NOT_see_all_stores_&_products_available_under_this_flash_sale_from_the_Customer_App_&_Website.')}}</p>"
+                                                   data-title-on="{{translate('Want to publish this flash sale?')}}"
+                                                   data-title-off="{{translate('Want to hide this flash sale?')}}"
+                                                   data-text-on="<p>{{translate('Publishing shows every store and product in this flash sale to customers.')}}</p>"
+                                                   data-text-off="<p>{{translate('Hiding removes every store and product in this flash sale from customer view.')}}</p>"
                                                    id="is_publish-{{$flash_sale['id']}}">
                                             <span class="toggle-switch-label mx-auto">
                                                 <span class="toggle-switch-indicator"></span>
@@ -213,11 +212,11 @@
                                     </td>
                                     <td>
                                         <div class="btn--container justify-content-center">
-                                            <a class="btn p-2 btn--primary btn-outline-primary" href="{{route('admin.flash-sale.add-product',[$flash_sale['id']])}}" title="{{translate('messages.add-product')}}"><i class="tio-add"></i>{{ translate('messages.Add_new_product') }}
+                                            <a class="btn p-2 btn--primary btn-outline-primary" href="{{route('admin.flash-sale.add-product',[$flash_sale['id']])}}" title="{{translate('messages.add-product')}}"><i class="tio-add"></i>{{ translate('messages.Add New Product') }}
                                             </a>
-                                            <a class="btn action-btn btn--primary btn-outline-primary" href="{{route('admin.flash-sale.edit',[$flash_sale['id']])}}" title="{{translate('messages.edit')}}"><i class="tio-edit"></i>
+                                            <a class="btn action-btn action-btn--edit" href="{{route('admin.flash-sale.edit',[$flash_sale['id']])}}" title="{{translate('Edit')}}"><i class="tio-edit"></i>
                                             </a>
-                                            <a class="btn action-btn btn--danger btn-outline-danger form-alert" href="javascript:" data-id="flash_sale-{{$flash_sale['id']}}" data-message="{{ translate('Want to delete this flash_sale ?') }}" title="{{translate('messages.delete')}}"><i class="tio-delete-outlined"></i>
+                                            <a class="btn action-btn action-btn--delete form-alert" href="javascript:" data-id="flash_sale-{{$flash_sale['id']}}" data-message="{{ translate('Want to delete this flash sale?') }}" title="{{translate('messages.Delete')}}"><i class="tio-delete-outlined"></i>
                                             </a>
                                             <form action="{{route('admin.flash-sale.delete',[$flash_sale['id']])}}"
                                                     method="post" id="flash_sale-{{$flash_sale['id']}}">
@@ -240,13 +239,12 @@
                     <div class="empty--data">
                         <img src="{{asset('/public/assets/admin/svg/illustrations/sorry.svg')}}" alt="public">
                         <h5>
-                            {{translate('no_data_found')}}
+                            {{translate('No data found')}}
                         </h5>
                     </div>
                     @endif
                 </div>
             </div>
-            <!-- End Table -->
         </div>
     </div>
 

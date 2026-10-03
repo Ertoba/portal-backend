@@ -92,85 +92,89 @@ $(document).on('ready', function() {
         return data;
     }
 
-    $.HSCore.components.HSChartMatrixJS.init($('.js-chart-matrix'), {
-        data: {
-            datasets: [{
-                label: 'Commits',
-                data: generateHoursData(),
-                width: function(ctx) {
-                    let a = ctx.chart.chartArea;
-                    return (a.right - a.left) / 70;
-                },
-                height: function(ctx) {
-                    let a = ctx.chart.chartArea;
-                    return (a.bottom - a.top) / 10;
-                }
-            }]
-        },
-        options: {
-            tooltips: {
-                callbacks: {
-                    title: function() {
-                        return '';
-                    },
-                    label: function(item, data) {
-                        let v = data.datasets[item.datasetIndex].data[item.index];
+    let $chartMatrix = $('.js-chart-matrix');
 
-                        if (v.v.toFixed() > 0) {
-                            return '<span class="font-weight-bold">' + v.v.toFixed() +
-                                ' hours</span> on ' + v.d;
-                        } else {
-                            return '<span class="font-weight-bold">No time</span> on ' + v.d;
-                        }
-                    }
-                }
-            },
-            scales: {
-                xAxes: [{
-                    position: 'bottom',
-                    type: 'time',
-                    offset: true,
-                    time: {
-                        unit: 'week',
-                        round: 'week',
-                        displayFormats: {
-                            week: 'MMM'
-                        }
+    if ($chartMatrix.length && $.HSCore.components.HSChartMatrixJS) {
+        $.HSCore.components.HSChartMatrixJS.init($chartMatrix, {
+            data: {
+                datasets: [{
+                    label: 'Commits',
+                    data: generateHoursData(),
+                    width: function(ctx) {
+                        let a = ctx.chart.chartArea;
+                        return (a.right - a.left) / 70;
                     },
-                    ticks: {
-                        "labelOffset": 20,
-                        "maxRotation": 0,
-                        "minRotation": 0,
-                        "fontSize": 12,
-                        "fontColor": "rgba(22, 52, 90, 0.5)",
-                        "maxTicksLimit": 12,
-                    },
-                    gridLines: {
-                        display: false
-                    }
-                }],
-                yAxes: [{
-                    type: 'time',
-                    offset: true,
-                    time: {
-                        unit: 'day',
-                        parser: 'e',
-                        displayFormats: {
-                            day: 'ddd'
-                        }
-                    },
-                    ticks: {
-                        "fontSize": 12,
-                        "fontColor": "rgba(22, 52, 90, 0.5)",
-                        "maxTicksLimit": 2,
-                    },
-                    gridLines: {
-                        display: false
+                    height: function(ctx) {
+                        let a = ctx.chart.chartArea;
+                        return (a.bottom - a.top) / 10;
                     }
                 }]
+            },
+            options: {
+                tooltips: {
+                    callbacks: {
+                        title: function() {
+                            return '';
+                        },
+                        label: function(item, data) {
+                            let v = data.datasets[item.datasetIndex].data[item.index];
+
+                            if (v.v.toFixed() > 0) {
+                                return '<span class="font-weight-bold">' + v.v.toFixed() +
+                                    ' hours</span> on ' + v.d;
+                            } else {
+                                return '<span class="font-weight-bold">No time</span> on ' + v.d;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    xAxes: [{
+                        position: 'bottom',
+                        type: 'time',
+                        offset: true,
+                        time: {
+                            unit: 'week',
+                            round: 'week',
+                            displayFormats: {
+                                week: 'MMM'
+                            }
+                        },
+                        ticks: {
+                            "labelOffset": 20,
+                            "maxRotation": 0,
+                            "minRotation": 0,
+                            "fontSize": 12,
+                            "fontColor": "rgba(22, 52, 90, 0.5)",
+                            "maxTicksLimit": 12,
+                        },
+                        gridLines: {
+                            display: false
+                        }
+                    }],
+                    yAxes: [{
+                        type: 'time',
+                        offset: true,
+                        time: {
+                            unit: 'day',
+                            parser: 'e',
+                            displayFormats: {
+                                day: 'ddd'
+                            }
+                        },
+                        ticks: {
+                            "fontSize": 12,
+                            "fontColor": "rgba(22, 52, 90, 0.5)",
+                            "maxTicksLimit": 2,
+                        },
+                        gridLines: {
+                            display: false
+                        }
+                    }]
+                }
             }
-        }
-    });
+        });
+    }
 
 
     // INITIALIZATION OF CLIPBOARD

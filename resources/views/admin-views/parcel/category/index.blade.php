@@ -1,30 +1,28 @@
 @extends('layouts.admin.app')
 
-@section('title',translate('messages.parcel_category'))
+@section('title',translate('Parcel category'))
 
 
 @section('content')
     <div class="content container-fluid">
-        <!-- Page Header -->
         <div class="page-header">
             <h1 class="page-header-title">
                 <span class="page-header-icon">
                     <img src="{{asset('public/assets/admin/img/parcel.png')}}" class="w--26" alt="">
                 </span>
                 <span>
-                    {{translate('messages.parcel_category')}}
-                </span>
+                    {{translate('Parcel category')}}
+                <span class="badge badge-soft-dark ml-2" id="itemCount">{{ $parcel_categories->total() }}</span></span>
             </h1>
+            <p class="page-header-desc">{{ translate('The kinds of parcel customers can send, each with its own size limit and charge.') }}</p>
         </div>
-        <!-- End Page Header -->
 
         <div class="card">
             <div class="card-body">
                 <form action="{{route('admin.parcel.category.store')}}" method="post" enctype="multipart/form-data">
                     @csrf
                     <div class="row g-3">
-                    @php($language=\App\Models\BusinessSetting::where('key','language')->first())
-                    @php($language = $language->value ?? null)
+                    @php($language = \App\CentralLogics\Helpers::get_business_settings('language', false) ?? null)
                     @php($defaultLang = str_replace('_', '-', app()->getLocale()))
                     @if($language)
                     <div class="col-12">
@@ -32,7 +30,7 @@
                             <li class="nav-item">
                                 <a class="nav-link lang_link active"
                                 href="#"
-                                id="default-link">{{translate('messages.default')}}</a>
+                                id="default-link">{{translate('Default')}}</a>
                             </li>
                             @foreach (json_decode($language) as $lang)
                                 <li class="nav-item">
@@ -48,24 +46,24 @@
                         @if ($language)
                         <div class="lang_form" id="default-form">
                             <div class="form-group">
-                                <label class="input-label" for="default_name">{{translate('messages.name')}} ({{ translate('messages.default') }})</label>
-                                <input type="text" name="name[]" id="default_name" class="form-control" placeholder="{{translate('messages.new_item')}}"  >
+                                <label class="input-label" for="default_name">{{translate('Name')}} ({{ translate('Default') }})</label>
+                                <input type="text" name="name[]" id="default_name" class="form-control" placeholder="{{translate('messages.New item')}}"  >
                             </div>
                             <input type="hidden" name="lang[]" value="default">
                             <div class="form-group">
-                                <label class="input-label" for="description">{{translate('messages.short_description')}} ({{ translate('messages.default') }})</label>
+                                <label class="input-label" for="description">{{translate('Short description')}} ({{ translate('Default') }})</label>
                                 <textarea type="text" name="description[]" class="form-control ckeditor"  ></textarea>
                             </div>
                         </div>
                             @foreach(json_decode($language) as $lang)
                                 <div class="d-none lang_form" id="{{$lang}}-form">
                                     <div class="form-group">
-                                        <label class="input-label" for="{{$lang}}_name">{{translate('messages.name')}} ({{strtoupper($lang)}})</label>
-                                        <input type="text" name="name[]" id="{{$lang}}_name" class="form-control" placeholder="{{translate('messages.new_item')}}"  >
+                                        <label class="input-label" for="{{$lang}}_name">{{translate('Name')}} ({{strtoupper($lang)}})</label>
+                                        <input type="text" name="name[]" id="{{$lang}}_name" class="form-control" placeholder="{{translate('messages.New item')}}"  >
                                     </div>
                                     <input type="hidden" name="lang[]" value="{{$lang}}">
                                     <div class="form-group">
-                                        <label class="input-label" for="description">{{translate('messages.short_description')}} ({{strtoupper($lang)}})</label>
+                                        <label class="input-label" for="description">{{translate('Short description')}} ({{strtoupper($lang)}})</label>
                                         <textarea type="text" name="description[]" class="form-control ckeditor"  ></textarea>
                                     </div>
                                 </div>
@@ -73,32 +71,23 @@
                         @else
                             <div id="default-form">
                                 <div class="form-group">
-                                    <label class="input-label" for="exampleFormControlInput1">{{translate('messages.name')}} ({{ translate('messages.default') }})</label>
-                                    <input type="text" name="name[]" class="form-control" placeholder="{{translate('messages.new_item')}}" required>
+                                    <label class="input-label" for="exampleFormControlInput1">{{translate('Name')}} ({{ translate('Default') }})</label>
+                                    <input type="text" name="name[]" class="form-control" placeholder="{{translate('messages.New item')}}" required>
                                 </div>
                                 <input type="hidden" name="lang[]" value="default">
                                 <div class="form-group">
-                                    <label class="input-label" for="exampleFormControlInput1">{{translate('messages.short_description')}}</label>
+                                    <label class="input-label" for="exampleFormControlInput1">{{translate('Short description')}}</label>
                                     <textarea type="text" name="description[]" class="form-control ckeditor"></textarea>
                                 </div>
                             </div>
                         @endif
-                        {{-- <div class="form-group mb-0">
-                            <label class="input-label">{{translate('messages.module')}}</label>
-                            <select name="module_id" id="module_id" required class="form-control js-select2-custom"  data-placeholder="{{translate('messages.select_module')}}">
-                                    <option value="" selected disabled>{{translate('messages.select_module')}}</option>
-                                @foreach(\App\Models\Module::parcel()->get() as $module)
-                                    <option value="{{$module->id}}" >{{$module->module_name}}</option>
-                                @endforeach
-                            </select>
-                        </div> --}}
                         <input name="position" value="0" class="initial-hidden">
                     </div>
                     <div class="col-md-6">
                         <div class="h-100 d-flex flex-column">
                             <label class="text-center d-block mt-auto">
-                                {{translate('messages.image')}}
-                                <small class="text-danger">* ( {{translate('messages.ratio')}} 200x200)</small>
+                                {{translate('messages.Image')}}
+                                <small class="text-danger">* ( {{translate('messages.Ratio')}} 200x200)</small>
                             </label>
                             <div class="text-center py-3 my-auto">
                                 <img class="img--120" id="viewer"
@@ -108,28 +97,29 @@
                             <div class="custom-file">
                                 <input type="file" name="image" id="customFileEg1" class="custom-file-input"
                                     accept=".webp, .jpg, .png, .jpeg, .gif, .bmp, .tif, .tiff|image/*" required>
-                                <label class="custom-file-label" for="customFileEg1">{{translate('messages.choose_file')}}</label>
+                                <label class="custom-file-label" for="customFileEg1">{{translate('Choose file')}}</label>
                             </div>
                         </div>
                     </div>
+                    {{-- ONE charge, and it is ADDITIONAL: the delivery rule prices the parcel and this
+                         is added on top, like a weight band or a dimension class (owner decision
+                         2026-09-03). It replaces the per-km / minimum pair a category used to price
+                         with — those columns survive for rollback and nothing reads them. --}}
                     <div class="col-md-6">
                         <div class="form-group">
-                            <label  class="input-label text-capitalize">{{translate('messages.per_km_shipping_charge')}}</label>
-                            <input type="number" step=".01" min="0" placeholder="{{translate('messages.per_km_shipping_charge')}}" class="form-control" name="parcel_per_km_shipping_charge">
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label class="input-label text-capitalize">{{translate('messages.minimum_shipping_charge')}}</label>
-                            <input type="number" step=".01" min="0" placeholder="{{translate('messages.minimum_shipping_charge')}}" class="form-control" name="parcel_minimum_shipping_charge">
+                            <label class="input-label text-capitalize">{{ translate('Additional charge') }}
+                                ({{ \App\CentralLogics\Helpers::currency_symbol() }})
+                            </label>
+                            <input type="number" step=".01" min="0" class="form-control" name="charge"
+                                placeholder="{{ translate('Ex') }}: 50" value="0">
                         </div>
                     </div>
                     @if ($categoryWiseTax)
                     <div class="col-md-6">
 
-                                <span class="mb-2 d-block title-clr fw-normal">{{ translate('Select Tax Rate') }}</span>
+                                <span class="mb-2 d-block title-clr fw-normal">{{ translate('Select tax rate') }}</span>
                                 <select name="tax_ids[]" id="tax__rate" class="form-control js-select2-custom"
-                                    multiple="multiple" required placeholder="Type & Select Tax Rate">
+                                    multiple="multiple" required placeholder="{{ translate('Type & select tax rate') }}">
                                     @foreach ($taxVats as $taxVat)
                                         <option value="{{ $taxVat->id }}"> {{ $taxVat->name }}
                                             ({{ $taxVat->tax_rate }}%)
@@ -140,8 +130,8 @@
                             @endif
                     <div class="col-12">
                         <div class="btn--container justify-content-end">
-                            <button type="reset" id="reset_btn" class="btn btn--reset">{{translate('messages.reset')}}</button>
-                            <button type="submit" class="btn btn--primary">{{translate('messages.Add Parcel Category')}}</button>
+                            <button type="reset" id="reset_btn" class="btn btn--reset"><i class="tio-refresh"></i> {{translate('messages.Reset')}}</button>
+                            <button type="submit" class="btn btn--primary"><i class="tio-add-circle"></i> {{translate('messages.Add Parcel Category')}}</button>
                         </div>
                     </div>
                 </div>
@@ -152,10 +142,9 @@
         <div class="card mt-3">
             <div class="card-header py-2 border-0">
                 <div class="search--button-wrapper">
-                    <h5 class="card-title">
-                        {{translate('messages.parcel_category_list')}}
-                        <span class="badge badge-soft-dark ml-2" id="itemCount">{{$parcel_categories->total()}}</span>
-                    </h5>
+                    @include('partials._table-head', [
+                        'subtitle' => translate('messages.Parcel types customers choose from, each with its own delivery charge.'),
+                    ])
 
                 </div>
             </div>
@@ -165,22 +154,21 @@
                         class="table table-borderless table-thead-bordered table-align-middle" data-hs-datatables-options='{
                             "isResponsive": false,
                             "isShowPaging": false,
-                            "paging":false,
+                            "paging":false
                         }'>
                         <thead class="thead-light">
                             <tr>
                                 <th class="border-0">{{ translate('messages.SL') }}</th>
-                                <th class="border-0">{{translate('messages.id')}}</th>
-                                <th class="border-0">{{translate('messages.name')}}</th>
-                                <th class="border-0">{{translate('messages.module')}}</th>
-                                <th class="border-0">{{translate('messages.status')}}</th>
-                                <th class="border-0 text-center">{{translate('messages.orders_count')}}</th>
-                                <th class="border-0 text-center">{{translate('messages.per_km_shipping_charge')}}</th>
-                                <th class="border-0 text-center">{{translate('messages.minimum_shipping_charge')}}</th>
+                                <th class="border-0">ID</th>
+                                <th class="border-0">{{translate('Name')}}</th>
+                                <th class="border-0">{{translate('messages.Module')}}</th>
+                                <th class="border-0">{{translate('messages.Status')}}</th>
+                                <th class="border-0 text-center">{{translate('messages.Orders count')}}</th>
+                                <th class="border-0 text-center">{{translate('Additional charge')}}</th>
                                   @if ($categoryWiseTax)
-                                <th  class="border-0 ">{{ translate('messages.Vat/Tax') }}</th>
+                                <th  class="border-0 ">{{ translate('VAT/tax') }}</th>
                                 @endif
-                                <th class="border-0 text-center">{{translate('messages.action')}}</th>
+                                <th class="border-0 text-center">{{translate('messages.Action')}}</th>
                             </tr>
                         </thead>
 
@@ -214,12 +202,7 @@
                                 </td>
                                 <td>
                                     <div class="text-center">
-                                        {{$category->parcel_per_km_shipping_charge?\App\CentralLogics\Helpers::format_currency($category->parcel_per_km_shipping_charge): 'N/A'}}
-                                    </div>
-                                </td>
-                                <td>
-                                    <div class="text-center">
-                                        {{$category->parcel_minimum_shipping_charge?\App\CentralLogics\Helpers::format_currency($category->parcel_minimum_shipping_charge): 'N/A'}}
+                                        {{ \App\CentralLogics\Helpers::format_currency($category->charge) }}
                                     </div>
                                 </td>
                                       @if ($categoryWiseTax)
@@ -238,11 +221,11 @@
                                 @endif
                                 <td>
                                     <div class="btn--container justify-content-center">
-                                        <a class="btn action-btn btn--primary btn-outline-primary"
-                                            href="{{route('admin.parcel.category.edit',[$category['id']])}}" title="{{translate('messages.edit_category')}}"><i class="tio-edit"></i>
+                                        <a class="btn action-btn action-btn--edit"
+                                            href="{{route('admin.parcel.category.edit',[$category['id']])}}" title="{{translate('Edit category')}}"><i class="tio-edit"></i>
                                         </a>
-                                        <a class="btn action-btn btn--danger btn-outline-danger form-alert" href="javascript:"
-                                        data-id="category-{{$category['id']}}" data-message="{{ translate('Want to delete this category') }}" title="{{translate('messages.delete_category')}}"><i class="tio-delete-outlined"></i>
+                                        <a class="btn action-btn action-btn--delete form-alert" href="javascript:"
+                                        data-id="category-{{$category['id']}}" data-message="{{ translate('Want to delete this category?') }}" title="{{translate('messages.Delete category')}}"><i class="tio-delete-outlined"></i>
                                         </a>
                                         <form action="{{route('admin.parcel.category.destroy',[$category['id']])}}" method="post" id="category-{{$category['id']}}">
                                             @csrf @method('delete')
@@ -265,7 +248,7 @@
             <div class="empty--data">
                 <img src="{{asset('/public/assets/admin/svg/illustrations/sorry.svg')}}" alt="public">
                 <h5>
-                    {{translate('no_data_found')}}
+                    {{translate('No data found')}}
                 </h5>
             </div>
             @endif
@@ -279,11 +262,7 @@
     <script>
         "use strict";
         $(document).on('ready', function () {
-            // INITIALIZATION OF DATATABLES
-            // =======================================================
 
-            // INITIALIZATION OF SELECT2
-            // =======================================================
             $('.js-select2-custom').each(function () {
                 let select2 = $.HSCore.components.HSSelect2.init($(this));
             });

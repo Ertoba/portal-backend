@@ -16,10 +16,10 @@ class WalletMethodController extends Controller
 {
     public function index(Request $request)
     {
-        $key = explode(' ', $request['search']);
+        $key = explode(' ', $request['search'] ?? '');
         $withdrawal_methods = WithdrawalMethod::ofStatus(1)->get();
         $vendor_withdrawal_methods = DisbursementWithdrawalMethod::where('store_id', Helpers::get_store_id())
-            ->when( isset($key) , function($query) use($key){
+            ->when( $request['search'] , function($query) use($key){
                 $query->where(function ($q) use ($key) {
                     foreach ($key as $value) {
                         $q->orWhere('method_name', 'like', "%{$value}%");
@@ -29,7 +29,9 @@ class WalletMethodController extends Controller
             )
             ->latest()->paginate(config('default_pagination'));
 
-        return view('vendor-views.wallet-method.index', compact('withdrawal_methods','vendor_withdrawal_methods'));
+        $current_employee_id = auth('vendor_employee')->id();
+
+        return view('vendor-views.wallet-method.index', compact('withdrawal_methods','vendor_withdrawal_methods','current_employee_id'));
     }
 
     public function store(Request $request)
@@ -56,25 +58,25 @@ class WalletMethodController extends Controller
         ];
 
         DB::table('disbursement_withdrawal_methods')->insert($data);
-        Toastr::success(translate('Disbursement_method_stored.'));
+        Toastr::success(translate('Disbursement method stored.'));
         return redirect()->back();
     }
 
     public function default(Request $request)
     {
-        $method = DisbursementWithdrawalMethod::find($request->id);
+        $method = DisbursementWithdrawalMethod::where('store_id', Helpers::get_store_id())->findOrFail($request->id);
         $method->is_default = $request->default;
         $method->save();
         DisbursementWithdrawalMethod::whereNot('id', $request->id)->where('store_id',Helpers::get_store_id())->update(['is_default' => 0]);
-        Toastr::success(translate('messages.default_method_updated'));
+        Toastr::success(translate('messages.Default method updated'));
         return back();
     }
 
     public function delete(Request $request)
     {
-        $method = DisbursementWithdrawalMethod::find($request->id);
+        $method = DisbursementWithdrawalMethod::where('store_id', Helpers::get_store_id())->findOrFail($request->id);
         $method->delete();
-        Toastr::success(translate('messages.method_deleted_successfully'));
+        Toastr::success(translate('Deleted successfully'));
         return back();
     }
 

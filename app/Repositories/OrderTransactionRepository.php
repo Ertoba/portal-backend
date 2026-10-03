@@ -27,18 +27,18 @@ class OrderTransactionRepository implements OrderTransactionRepositoryInterface
 
     public function getFirstWhere(array $params, array $relations = []): ?Model
     {
-        return $this->transaction->where($params)->first();
+        return $this->transaction->with($relations)->where($params)->first();
     }
 
-    public function getList(array $orderBy = [], array $relations = [], int|string $dataLimit = DEFAULT_DATA_LIMIT, int $offset = null): Collection|LengthAwarePaginator
+    public function getList(array $orderBy = [], array $relations = [], int|string $dataLimit = DEFAULT_DATA_LIMIT, ?int $offset = null): Collection|LengthAwarePaginator
     {
-        return $this->transaction->paginate($dataLimit);
+        return $this->transaction->with($relations)->paginate($dataLimit);
     }
 
-    public function getListWhere(string $searchValue = null, array $filters = [], array $relations = [], int|string $dataLimit = DEFAULT_DATA_LIMIT, int $offset = null, array $orderBy = [], string $date = null): Collection|LengthAwarePaginator
+    public function getListWhere(?string $searchValue = null, array $filters = [], array $relations = [], int|string $dataLimit = DEFAULT_DATA_LIMIT, ?int $offset = null, array $orderBy = [], ?string $date = null): Collection|LengthAwarePaginator
     {
-        $key = explode(' ', $searchValue);
-        return $this->transaction->where($filters)
+        $key = explode(' ', $searchValue ?? '');
+        return $this->transaction->with($relations)->where($filters)
             ->where(function ($query) use ($key) {
                 foreach ($key as $value) {
                     $query->orWhere('order_id', 'like', "%{$value}%");

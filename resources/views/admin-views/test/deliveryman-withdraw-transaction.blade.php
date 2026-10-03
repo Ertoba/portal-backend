@@ -1,6 +1,6 @@
 @extends('layouts.admin.app')
 
-@section('title',translate('messages.new_page'))
+@section('title',translate('messages.New page'))
 
 @push('css_or_js')
 <meta name="csrf-token" content="{{ csrf_token() }}">
@@ -39,22 +39,22 @@
                                 "target": "#usersExportDropdown",
                                 "type": "css-animation"
                             }'>
-                        <i class="tio-download-to mr-1 text-title"></i> {{ translate('messages.export') }}
+                        <i class="tio-download-to mr-1 text-title"></i> {{ translate('messages.Export') }}
                     </a>
                     <div id="usersExportDropdown"
                         class="hs-unfold-content dropdown-unfold dropdown-menu dropdown-menu-sm-right">
-                        <span class="dropdown-header">{{ translate('messages.download_options') }}</span>
+                        <span class="dropdown-header">{{ translate('messages.Download options') }}</span>
                         <a id="export-excel" class="dropdown-item" href="{{route('admin.business-settings.module.export', ['type'=>'excel',request()->getQueryString()])}}">
                             <img class="avatar avatar-xss avatar-4by3 mr-2"
                                 src="{{ asset('public/assets/admin') }}/svg/components/excel.svg"
                                 alt="Image Description">
-                            {{ translate('messages.excel') }}
+                            Excel
                         </a>
                         <a id="export-csv" class="dropdown-item" href="{{route('admin.business-settings.module.export', ['type'=>'csv',request()->getQueryString()])}}">
                             <img class="avatar avatar-xss avatar-4by3 mr-2"
                                 src="{{ asset('public/assets/admin') }}/svg/components/placeholder-csv-format.svg"
                                 alt="Image Description">
-                            {{ translate('messages.csv') }}
+                            CSV
                         </a>
                     </div>
                 </div>
@@ -84,8 +84,8 @@
                         </td>
                         <td >
 
-                                <a href="javascript:void(0)" class="btn btn-sm btn--primary btn-outline-primary action-btn offcanvas-trigger" data-target="#transaction_quick_view">
-                                    <i class="tio-invisible"></i>
+                                <a href="javascript:void(0)" class="btn btn-sm action-btn action-btn--view offcanvas-trigger" data-target="#transaction_quick_view">
+                                    <i class="tio-visible-outlined"></i>
                                 </a>
                             </div>
                         </td>
@@ -126,8 +126,8 @@
                         </td>
                         <td class="px-3 py-4">
                             <div class="btn--container justify-content-center">
-                                <a href="javascript:void(0)" class="btn btn-sm btn--primary btn-outline-primary action-btn offcanvas-trigger" data-target="#transaction_quick_view">
-                                    <i class="tio-invisible"></i>
+                                <a href="javascript:void(0)" class="btn btn-sm action-btn action-btn--view offcanvas-trigger" data-target="#transaction_quick_view">
+                                    <i class="tio-visible-outlined"></i>
                                 </a>
                             </div>
                         </td>
@@ -168,8 +168,8 @@
                         </td>
                         <td class="px-3 py-4">
                             <div class="btn--container justify-content-center">
-                                <a href="javascript:void(0)" class="btn btn-sm btn--primary btn-outline-primary action-btn offcanvas-trigger" data-target="#transaction_quick_view">
-                                    <i class="tio-invisible"></i>
+                                <a href="javascript:void(0)" class="btn btn-sm action-btn action-btn--view offcanvas-trigger" data-target="#transaction_quick_view">
+                                    <i class="tio-visible-outlined"></i>
                                 </a>
                             </div>
                         </td>
@@ -210,8 +210,8 @@
                         </td>
                         <td class="px-3 py-4">
                             <div class="btn--container justify-content-center">
-                                <a href="javascript:void(0)" class="btn btn-sm btn--primary btn-outline-primary action-btn offcanvas-trigger" data-target="#transaction_quick_view">
-                                    <i class="tio-invisible"></i>
+                                <a href="javascript:void(0)" class="btn btn-sm action-btn action-btn--view offcanvas-trigger" data-target="#transaction_quick_view">
+                                    <i class="tio-visible-outlined"></i>
                                 </a>
                             </div>
                         </td>
@@ -221,7 +221,6 @@
         </div>
     </div>
 </div>
-<!-- Transaction Quick View Offcanvas -->
 <div id="transaction_quick_view" class="custom-offcanvas custom-offcanvas__xs d-flex flex-column justify-content-between">
     <div>
         <form action="#0" method="post">
@@ -241,12 +240,6 @@
                         <div class="btn bg-opacity-theme-10 py-1 fs-12 font-semibold px-2 rounded theme-border theme-clr">
                             Pending
                         </div>
-                        {{--<span class="badge badge-soft-success">
-                            Approved
-                        </span>--}}
-                        {{--<span class="badge badge-soft-danger">
-                            Denied
-                        </span>--}}
                     </div>
                     <div class="d-flex align-items-center justify-content-center gap-2 flex-wrap color-334257B2 fs-12">
                         Request time:
@@ -297,24 +290,16 @@
                         Store wallet adjustment partial
                     </div>
                 </div>
-                {{--<div>
-                    <h4 class="mb-2 text-title font-medium">Denied Note</h4>
-                    <div class="bg-light rounded p-3 d-flex align-items-center gap-2 fs-14 flex-wrap ">
-                        Store wallet adjustment partial
-                    </div>
-                </div>--}}
             </div>
         </div>
     <div class="offcanvas-footer py-3 px-sm-4 px-3 d-flex align-items-center justify-content-center gap-3">
-        <button type="reset" class="btn w-100 bg--soft-danger-10 text-danger fs-14 fw-medium h--40px">{{ translate('messages.Deny') }}</button>
-        <button type="submit" class="btn w-100 btn--primary h--40px">{{ translate('messages.Approve') }}</button>
+        <button type="reset" class="btn w-100 bg--soft-danger-10 text-danger fs-14 fw-medium h--40px"><i class="tio-clear-circle-outlined"></i> {{ translate('Deny') }}</button>
+        <button type="submit" class="btn w-100 btn--primary h--40px"><i class="tio-checkmark-circle-outlined"></i> {{ translate('Approve') }}</button>
     </div>
     </form>
 </div>
 <div id="offcanvasOverlay" class="offcanvas-overlay"></div>
-<!-- Transaction Quick View Offcanvas End -->
 
-<!-- Confiramtion Feature Modal -->
 <div class="modal shedule-modal fade" id="confirmation-modal-feature" tabindex="-1" aria-labelledby="exampleModalLabel"
     aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
@@ -335,8 +320,8 @@
                 </div>
             </div>
             <div class="modal-footer justify-content-center border-0 pt-0 gap-2">
-                <button type="button" class="btn min-w-120px btn--reset" data-dismiss="modal">No</button>
-                <button type="button" class="btn min-w-120px btn--primary">Yes</button>
+                <button type="button" class="btn min-w-120px btn--reset" data-dismiss="modal"><i class="tio-clear-circle-outlined"></i> No</button>
+                <button type="button" class="btn min-w-120px btn--primary"><i class="tio-checkmark-circle-outlined"></i> Yes</button>
             </div>
         </div>
     </div>

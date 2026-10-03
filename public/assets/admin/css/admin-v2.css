@@ -31,6 +31,23 @@ body.v2-chrome {
     --v2-panel-w:250px;
     --v2-topbar-h:56px;
 
+    /* Motion. One set of curves for the whole chrome so the sidebar, the
+       peek panel and the collapsing groups all decelerate the same way.
+       --v2-ease-out is the standard "arrive" curve; --v2-ease-in-out is for
+       something leaving that will come straight back. */
+    --v2-ease-out:cubic-bezier(.22,1,.36,1);
+    --v2-ease-in-out:cubic-bezier(.65,0,.35,1);
+    --v2-ease-back:cubic-bezier(.34,1.32,.5,1);
+    --v2-mode-dur:.3s;
+    --v2-peek-in:.26s;
+    --v2-peek-out:.2s;
+    /* Hover intent: brushing past the rail on the way to the page must not
+       fling the panel open, and crossing the seam from rail to panel must not
+       start closing it. */
+    --v2-peek-open-delay:.07s;
+    --v2-peek-close-delay:.12s;
+    --v2-collapse-dur:.28s;
+
     background: var(--v2-bg);
     /* Hide the legacy chrome wholesale when v2 is active */
 }
@@ -127,8 +144,78 @@ body.v2-chrome .v2-mode-btn {
     color: var(--v2-text-soft);
     cursor: pointer;
     flex-shrink: 0;
+    transition: background .16s linear, color .16s linear, transform .16s var(--v2-ease-out);
 }
 body.v2-chrome .v2-mode-btn:hover { background: var(--v2-hover); color: var(--v2-text); }
+body.v2-chrome .v2-mode-btn:active { transform: scale(.92); }
+body.v2-chrome .v2-mode-btn:focus-visible {
+    outline: 2px solid var(--v2-primary);
+    outline-offset: 2px;
+}
+
+/* ---- Sidebar collapse / expand glyph ----
+   One drawing that animates between the two states instead of two lucide
+   icons swapped by rewriting the node: the panel block slides back behind the
+   rail and the chevron turns to point the way the next click will go. The
+   node swap could only ever pop, and it re-ran createIcons() on every click.
+   Geometry follows lucide's own panel-left (18×18 frame at 3,3; divider at
+   x=9) so it sits with the other topbar glyphs. */
+body.v2-chrome .v2-mode-glyph {
+    width: 18px; height: 18px;
+    display: block;
+    flex: none;
+}
+body.v2-chrome .v2-mode-glyph__frame {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.7;
+    opacity: .9;
+}
+body.v2-chrome .v2-mode-glyph__fill {
+    fill: currentColor;
+    opacity: .2;
+    transform-box: fill-box;
+    transform-origin: left center;
+    transition:
+        transform var(--v2-mode-dur) var(--v2-ease-out),
+        opacity var(--v2-mode-dur) linear;
+}
+body.v2-chrome .v2-mode-glyph__divider {
+    stroke: currentColor;
+    stroke-width: 1.7;
+    stroke-linecap: round;
+    transition: transform var(--v2-mode-dur) var(--v2-ease-out);
+}
+body.v2-chrome .v2-mode-glyph__chev {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.7;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    transform-box: fill-box;
+    transform-origin: center;
+    transition: transform var(--v2-mode-dur) var(--v2-ease-back);
+}
+/* Compact: the block shrinks to rail width, the divider follows its right
+   edge, and the chevron flips and re-centres in the room that opens up. */
+body.v2-chrome.v2-mode-compact .v2-mode-glyph__fill { transform: scaleX(.43); opacity: .14; }
+body.v2-chrome.v2-mode-compact .v2-mode-glyph__divider { transform: translateX(-3.4px); }
+body.v2-chrome.v2-mode-compact .v2-mode-glyph__chev { transform: translateX(-1.7px) rotate(180deg); }
+/* Nudge the chevron the way it points. The compact pair has to come last:
+   the pinned hover rule outranks the compact resting rule on specificity. */
+body.v2-chrome .v2-mode-btn:hover .v2-mode-glyph__chev { transform: translateX(-.9px); }
+body.v2-chrome.v2-mode-compact .v2-mode-btn:hover .v2-mode-glyph__chev { transform: translateX(-.8px) rotate(180deg); }
+
+/* The glyph reads left-to-right — sidebar on the leading edge, chevron
+   pointing at it — so in RTL the whole drawing mirrors. */
+[dir="rtl"] body.v2-chrome .v2-mode-glyph { transform: scaleX(-1); }
+
+@media (prefers-reduced-motion: reduce) {
+    body.v2-chrome .v2-mode-btn,
+    body.v2-chrome .v2-mode-glyph__fill,
+    body.v2-chrome .v2-mode-glyph__divider,
+    body.v2-chrome .v2-mode-glyph__chev { transition: none; }
+}
 
 body.v2-chrome .v2-brand {
     display: flex;
@@ -599,6 +686,8 @@ body.v2-chrome .v2-rail-btns {
     flex-direction: column;
     align-items: center;
     gap: 3px;
+    /* offset parent for the sliding .v2-rail-marker */
+    position: relative;
     /* overflow stays visible so tooltips can extend past the rail's right edge.
        If the workspace has too many rail icons (e.g. Settings has 12) the rail
        container itself scrolls instead. */
@@ -619,7 +708,7 @@ body.v2-chrome .v2-rail-btn {
     place-items: center;
     color: var(--v2-text-soft);
     cursor: pointer;
-    transition: background .15s, color .15s, transform .12s;
+    transition: background .22s ease, color .22s ease, transform .12s;
 }
 body.v2-chrome .v2-rail-btn:hover { background: var(--v2-hover); color: var(--v2-text); }
 body.v2-chrome .v2-rail-btn.is-active {
@@ -629,6 +718,55 @@ body.v2-chrome .v2-rail-btn.is-active {
 }
 body.v2-chrome .v2-rail-btn.is-active:hover { background: var(--v2-module-deep); }
 body.v2-chrome .v2-rail-btn [data-lucide] { width: 20px; height: 20px; }
+
+/* ---- Sliding rail marker ("water drop") ----
+   One pill travels between rail icons instead of each icon cross-fading its own
+   background, which is what made switching read as a blink. Injected by JS; the
+   .has-rail-marker guard means the static .is-active background above stays the
+   fallback if that JS never runs. */
+body.v2-chrome .v2-rail.has-rail-marker .v2-rail-btn.is-active,
+body.v2-chrome .v2-rail.has-rail-marker .v2-rail-btn.is-active:hover {
+    background: transparent;
+    box-shadow: none;
+}
+body.v2-chrome .v2-rail.has-rail-marker .v2-rail-btn { z-index: 1; }
+body.v2-chrome .v2-rail-marker {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    width: 48px;
+    height: 44px;
+    margin-left: -24px;
+    pointer-events: none;
+    opacity: 0;
+    z-index: 0;
+    /* slight overshoot on arrival — the drop settling */
+    transition: transform .38s cubic-bezier(.34,1.32,.44,1), opacity .2s ease;
+    will-change: transform;
+}
+body.v2-chrome .v2-rail-marker.is-ready { opacity: 1; }
+/* first paint + resize reposition must not animate in from the top */
+body.v2-chrome .v2-rail-marker.is-instant { transition: none; }
+body.v2-chrome .v2-rail-marker-blob {
+    display: block;
+    width: 100%;
+    height: 100%;
+    border-radius: 10px;
+    background: var(--v2-module-deep);
+    box-shadow: 0 6px 14px rgba(1,102,74,.34);
+    transform-origin: center;
+}
+/* squash/stretch lives on the inner blob so it can run alongside the
+   outer element's translate without the two fighting over `transform` */
+body.v2-chrome .v2-rail-marker.is-travelling .v2-rail-marker-blob {
+    animation: v2-marker-drop .38s cubic-bezier(.34,1.32,.44,1);
+}
+@keyframes v2-marker-drop {
+    0%   { transform: scale(1, 1); border-radius: 10px; }
+    35%  { transform: scale(.84, 1.18); border-radius: 15px; }
+    70%  { transform: scale(1.07, .93); border-radius: 9px; }
+    100% { transform: scale(1, 1); border-radius: 10px; }
+}
 body.v2-chrome .v2-rail-btn .v2-pin-dot {
     position: absolute;
     top: 6px; right: 8px;
@@ -758,6 +896,38 @@ body.v2-chrome .v2-panel {
     overflow-y: auto;
 }
 body.v2-chrome .v2-panel-content[hidden] { display: none; }
+
+/* ---- Panel section swap ----
+   Un-hiding a .v2-panel-content restarts these animations, so a hovered section
+   flows in instead of popping. Header first, then the body blocks on a short
+   stagger, so the change ripples down the panel rather than landing all at once.
+   Keyframes end on `transform: none` (not translateY(0)) so the settled panel
+   does not leave behind a containing block for anything positioned inside it. */
+@keyframes v2-panel-in {
+    from { opacity: 0; transform: translateY(7px); }
+    to   { opacity: 1; transform: none; }
+}
+body.v2-chrome .v2-panel-content > .v2-panel-header {
+    animation: v2-panel-in .26s cubic-bezier(.22,1,.36,1) both;
+}
+body.v2-chrome .v2-panel-content > .v2-panel-body > * {
+    animation: v2-panel-in .28s cubic-bezier(.22,1,.36,1) both;
+}
+body.v2-chrome .v2-panel-content > .v2-panel-body > *:nth-child(1) { animation-delay: .03s; }
+body.v2-chrome .v2-panel-content > .v2-panel-body > *:nth-child(2) { animation-delay: .055s; }
+body.v2-chrome .v2-panel-content > .v2-panel-body > *:nth-child(3) { animation-delay: .075s; }
+body.v2-chrome .v2-panel-content > .v2-panel-body > *:nth-child(4) { animation-delay: .09s; }
+/* cap the stagger — a 12-group section must not take 12 steps to finish */
+body.v2-chrome .v2-panel-content > .v2-panel-body > *:nth-child(n+5) { animation-delay: .1s; }
+
+@media (prefers-reduced-motion: reduce) {
+    body.v2-chrome .v2-panel-content > .v2-panel-header,
+    body.v2-chrome .v2-panel-content > .v2-panel-body > *,
+    body.v2-chrome .v2-rail-marker.is-travelling .v2-rail-marker-blob {
+        animation: none;
+    }
+    body.v2-chrome .v2-rail-marker { transition: none; }
+}
 body.v2-chrome .v2-panel-header {
     padding: 18px 18px 6px;
     display: flex;
@@ -1000,7 +1170,59 @@ body.v2-chrome .v2-nav-children .v2-nav-item {
 }
 body.v2-chrome .v2-nav-children .v2-nav-item.is-active { color: var(--v2-primary); font-weight: 500; }
 
-/* ============ Compact mode (panel hover-to-peek) ============ */
+/* ---- Group / parent collapse ----
+   The toggles flip `display` (groups) and `hidden` (parents), which used to
+   land in a single frame — twelve links appearing at once. `_v2_sidebar_script`
+   now measures the box, pins it to that height and hands it this transition;
+   `is-sliding` is only present while a run is in flight, so the list goes back
+   to sizing itself the moment it settles. A permanently pinned height would
+   clip a count badge that changes later. */
+body.v2-chrome .v2-group-items.is-sliding,
+body.v2-chrome .v2-nav-children.is-sliding {
+    overflow: hidden;
+    /* The active item draws its accent bar 12px outside the list box
+       (.v2-nav-item.is-active::before), and `overflow: hidden` would clip it
+       for the length of the slide — the bar would blink out and back on every
+       collapse of the group the current page sits in. Widen the box by exactly
+       that much and give the space straight back, so the items do not move and
+       the bar travels with them. A transparent border rather than padding:
+       .v2-nav-children already carries a 22px padding-inline-start that a
+       padding declaration here would clobber. The 12px lands inside
+       .v2-panel-body's own padding, so nothing overflows the panel. */
+    border-inline-start: 12px solid transparent;
+    margin-inline-start: -12px;
+    will-change: height;
+    transition:
+        height var(--v2-collapse-dur) var(--v2-ease-out),
+        opacity calc(var(--v2-collapse-dur) * .7) linear;
+}
+
+/* The chevron is the only thing on screen that says which way the section is
+   about to go, so it gets a curve with a little overshoot — it settles rather
+   than stops. Both chevrons rotate around their own centre; without an origin
+   the 14px box rotates about the icon's top-left and visibly drifts. */
+body.v2-chrome .v2-group-header .v2-chev,
+body.v2-chrome .v2-nav-parent .v2-chev {
+    transform-origin: 50% 50%;
+    transition: transform var(--v2-collapse-dur) var(--v2-ease-back), color .15s linear;
+}
+body.v2-chrome .v2-group-header:hover .v2-chev,
+body.v2-chrome .v2-nav-parent:hover .v2-chev { color: var(--v2-text-soft); }
+
+@media (prefers-reduced-motion: reduce) {
+    body.v2-chrome .v2-group-items.is-sliding,
+    body.v2-chrome .v2-nav-children.is-sliding,
+    body.v2-chrome .v2-group-header .v2-chev,
+    body.v2-chrome .v2-nav-parent .v2-chev {
+        transition: none;
+    }
+}
+
+/* ============ Compact mode (panel hover-to-peek) ============
+ * Two motions live here and they are deliberately not the same one:
+ *   - the mode switch moves the content edge, once, on a click
+ *   - the peek slides the panel over the content, over and over, on hover
+ * ============================================================ */
 @media (min-width: 721px) {
     body.v2-chrome.v2-mode-compact #content,
     body.v2-chrome.v2-mode-compact main#content {
@@ -1011,21 +1233,94 @@ body.v2-chrome .v2-nav-children .v2-nav-item.is-active { color: var(--v2-primary
     body.v2-chrome.v2-mode-compact .free-trial {
         left: var(--v2-rail-w) !important;
     }
+
+    /* The content edge only ever moves on a mode switch, so the transition is
+       armed by the topbar button (body.v2-mode-anim) for the length of that
+       switch and taken off again. Left on permanently it would also animate
+       every unrelated width change — a table gaining a column, the free-trial
+       bar appearing, a chart re-rendering — and reflowing a full admin page at
+       60fps for those is not a trade worth making. It is also what keeps the
+       saved mode from animating in on every page load. */
+    body.v2-chrome.v2-mode-anim #content,
+    body.v2-chrome.v2-mode-anim main#content,
+    body.v2-chrome.v2-mode-anim .footer,
+    body.v2-chrome.v2-mode-anim .free-trial {
+        transition:
+            margin-left var(--v2-mode-dur) var(--v2-ease-out),
+            margin-right var(--v2-mode-dur) var(--v2-ease-out),
+            width var(--v2-mode-dur) var(--v2-ease-out),
+            left var(--v2-mode-dur) var(--v2-ease-out),
+            right var(--v2-mode-dur) var(--v2-ease-out);
+    }
+
     body.v2-chrome.v2-mode-compact .v2-panel {
-        width: 0;
         position: fixed;
         left: var(--v2-rail-w);
         top: var(--v2-topbar-h);
         height: calc(100vh - var(--v2-topbar-h));
         z-index: 1025;
-        overflow: hidden;
-        box-shadow: var(--v2-shadow-lg);
-        transition: width .18s ease;
+        /* Full width at all times. The peek used to animate `width` from 0,
+           which re-wrapped every label in the panel on every frame — the list
+           visibly reflowed as it opened, and the scrollbar flickered in at the
+           end. It slides out from behind the rail instead, so the whole peek
+           is one composited transform. */
+        width: var(--v2-panel-w);
+        transform: translateX(calc(-100% - 6px));
+        opacity: 0;
+        /* visibility, not pointer-events: it also takes the closed panel out
+           of the tab order, so Tab no longer walks an invisible nav. */
+        visibility: hidden;
+        box-shadow: none;
+        transition:
+            transform var(--v2-peek-out) var(--v2-ease-in-out) var(--v2-peek-close-delay),
+            opacity calc(var(--v2-peek-out) * .7) linear var(--v2-peek-close-delay),
+            box-shadow var(--v2-peek-out) linear var(--v2-peek-close-delay),
+            visibility 0s linear calc(var(--v2-peek-close-delay) + var(--v2-peek-out));
+    }
+    /* The rail paints above the panel, so the parked panel sits behind it
+       instead of sliding across it on the way out. */
+    body.v2-chrome.v2-mode-compact .v2-rail {
+        position: relative;
+        z-index: 1026;
     }
     body.v2-chrome.v2-mode-compact .v2-rail:hover ~ .v2-panel,
     body.v2-chrome.v2-mode-compact .v2-panel:hover {
-        width: var(--v2-panel-w);
-        overflow-y: auto;
+        transform: translateX(0);
+        opacity: 1;
+        visibility: visible;
+        box-shadow: var(--v2-shadow-lg);
+        transition:
+            transform var(--v2-peek-in) var(--v2-ease-out) var(--v2-peek-open-delay),
+            opacity calc(var(--v2-peek-in) * .6) linear var(--v2-peek-open-delay),
+            box-shadow var(--v2-peek-in) linear var(--v2-peek-open-delay),
+            visibility 0s linear var(--v2-peek-open-delay);
+    }
+    /* Keyboard entry, in its own rule on purpose: a browser without :has()
+       drops the entire rule the selector appears in, and the hover pair above
+       has to survive that. :focus-visible rather than :focus, or a mouse click
+       on a rail button would pin the panel open until the next click landed
+       somewhere else. */
+    body.v2-chrome.v2-mode-compact .v2-rail:has(:focus-visible) ~ .v2-panel,
+    body.v2-chrome.v2-mode-compact .v2-panel:has(:focus-visible) {
+        transform: translateX(0);
+        opacity: 1;
+        visibility: visible;
+        box-shadow: var(--v2-shadow-lg);
+        transition:
+            transform var(--v2-peek-in) var(--v2-ease-out),
+            opacity calc(var(--v2-peek-in) * .6) linear,
+            box-shadow var(--v2-peek-in) linear,
+            visibility 0s;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    body.v2-chrome.v2-mode-compact .v2-panel,
+    body.v2-chrome.v2-mode-anim #content,
+    body.v2-chrome.v2-mode-anim main#content,
+    body.v2-chrome.v2-mode-anim .footer,
+    body.v2-chrome.v2-mode-anim .free-trial {
+        transition: none;
     }
 }
 
@@ -1211,85 +1506,260 @@ body.v2-chrome .hs-unfold-overlay {
 }
 
 /* ============================================================
- * v2 tour (driver.js) — teal-themed popover overrides
+ * v2 tour (driver.js) — popover chrome
+ *
+ * driver.js rebuilds the popover DOM on every step (renderPopover
+ * removes the wrapper and calls createPopover again), so the tree
+ * below is re-assembled per step by the onPopoverRender hook in
+ * `layouts/admin/partials/_v2_tour.blade.php`. It moves driver's own
+ * title / description / footer nodes into:
+ *
+ *   .driver-popover.v2-tour-popover
+ *     ├── .driver-popover-close-btn        driver's, restyled
+ *     ├── .driver-popover-arrow            driver's, recoloured
+ *     ├── .v2-tour-head   → .v2-tour-badge + .v2-tour-heading
+ *     │                       (.v2-tour-eyebrow + driver's title)
+ *     ├── .v2-tour-track  → .v2-tour-track__fill
+ *     ├── .v2-tour-body   → driver's description
+ *     └── .driver-popover-footer → .v2-tour-skip + nav buttons
+ *
+ * driver.css is pulled from the CDN inside <body>, i.e. AFTER this
+ * file, so every rule here carries the `body.v2-chrome` prefix to
+ * out-specify it — `.driver-popover { all: unset }` and
+ * `.driver-popover * { font-family: … }` included.
  * ============================================================ */
 body.v2-chrome .driver-popover.v2-tour-popover {
+    --v2-tour-pad: 20px;
+    width: 380px;
+    min-width: 0;
+    max-width: calc(100vw - 24px);
+    padding: 0;
+    border: 0;
+    border-radius: 16px;
     background: var(--v2-panel);
     color: var(--v2-text);
-    border-radius: 12px;
-    border: 1px solid var(--v2-border);
-    box-shadow: var(--v2-shadow-lg);
-    padding: 18px 18px 14px;
-    max-width: 340px;
+    box-shadow:
+        0 20px 48px -14px rgba(9, 32, 26, .34),
+        0 6px 16px -8px rgba(9, 32, 26, .20);
+    animation: v2TourPopIn .24s cubic-bezier(.16, .84, .44, 1) both;
 }
-@media (max-width: 720px) {
-    body.v2-chrome .driver-popover.v2-tour-popover {
-        max-width: calc(100vw - 24px);
-        padding: 14px 14px 12px;
-    }
-    body.v2-chrome .v2-tour-popover .driver-popover-title { font-size: 14px; }
-    body.v2-chrome .v2-tour-popover .driver-popover-description { font-size: 12px; }
+/* driver.css forces Helvetica Neue onto every descendant. */
+body.v2-chrome .v2-tour-popover * { font-family: inherit; }
+
+/* translateY only, never scale(): driver measures the popover with
+   getBoundingClientRect() in the same tick this animation starts, and
+   a scaled box hands it a width ~1.5% short — enough to shift the
+   arrow off the element it points at. Translation leaves w/h intact. */
+@keyframes v2TourPopIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: none; }
+}
+
+/* ---- header: icon badge + step eyebrow + title ---- */
+body.v2-chrome .v2-tour-head {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: var(--v2-tour-pad);
+    padding-block-end: 14px;
+    padding-inline-end: 48px;   /* clear the close button */
+}
+body.v2-chrome .v2-tour-badge {
+    width: 36px;
+    height: 36px;
+    flex: none;
+    display: grid;
+    place-items: center;
+    border-radius: 11px;
+    background: var(--v2-primary-tint);
+    color: var(--v2-primary);
+    box-shadow: inset 0 0 0 1px rgba(16, 121, 128, .14);
+}
+body.v2-chrome .v2-tour-badge svg {
+    width: 19px;
+    height: 19px;
+}
+body.v2-chrome .v2-tour-heading {
+    min-width: 0;
+    padding-block-start: 1px;
+}
+body.v2-chrome .v2-tour-eyebrow {
+    display: block;
+    margin-block-end: 3px;
+    font-size: 10.5px;
+    font-weight: 700;
+    line-height: 1.2;
+    letter-spacing: .09em;
+    text-transform: uppercase;
+    color: var(--v2-primary);
 }
 body.v2-chrome .v2-tour-popover .driver-popover-title {
-    font-size: 15px;
-    font-weight: 600;
+    margin: 0;
+    padding: 0;
+    font-size: 15.5px;
+    font-weight: 650;
+    line-height: 1.3;
+    letter-spacing: -.01em;
     color: var(--v2-text);
-    margin-bottom: 6px;
-    padding-right: 24px;
+}
+
+/* ---- progress: doubles as the header's divider, so it never has to
+        round itself into the card's 16px corners ---- */
+body.v2-chrome .v2-tour-track {
+    height: 3px;
+    background: var(--v2-border);
+    overflow: hidden;
+}
+body.v2-chrome .v2-tour-track__fill {
+    display: block;
+    height: 100%;
+    background: var(--v2-primary);
+    border-start-end-radius: 3px;
+    border-end-end-radius: 3px;
+    transition: width .32s cubic-bezier(.16, .84, .44, 1);
+}
+
+/* ---- body ---- */
+body.v2-chrome .v2-tour-body {
+    padding: 14px var(--v2-tour-pad) 0;
 }
 body.v2-chrome .v2-tour-popover .driver-popover-description {
+    margin: 0;
     font-size: 13px;
-    line-height: 1.5;
+    line-height: 1.62;
     color: var(--v2-text-soft);
 }
-body.v2-chrome .v2-tour-popover .driver-popover-progress-text {
-    font-size: 11px;
-    color: var(--v2-text-muted);
-    font-weight: 500;
-}
+
+/* ---- footer ---- */
 body.v2-chrome .v2-tour-popover .driver-popover-footer {
-    margin-top: 14px;
+    margin: 0;
+    padding: 16px var(--v2-tour-pad) var(--v2-tour-pad);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+body.v2-chrome .v2-tour-popover .driver-popover-navigation-btns {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-grow: 1;
+    justify-content: flex-end;
+}
+body.v2-chrome .v2-tour-popover .driver-popover-navigation-btns button + button {
+    margin: 0;
+}
+/* Scoped to the navigation wrapper rather than written as
+   `button:not(.v2-tour-skip)`: the :not() would carry a fourth class and
+   out-specify the per-button rules below, so Back would lose its border. */
+body.v2-chrome .v2-tour-popover .driver-popover-navigation-btns button {
+    display: inline-flex;
+    align-items: center;
     gap: 6px;
-}
-body.v2-chrome .v2-tour-popover .driver-popover-prev-btn,
-body.v2-chrome .v2-tour-popover .driver-popover-next-btn {
-    background: var(--v2-primary);
-    color: #fff;
-    border: 1px solid var(--v2-primary);
-    border-radius: 8px;
-    padding: 6px 14px;
-    font-size: 13px;
-    font-weight: 500;
+    height: 34px;
+    padding: 0 14px;
+    border: 1px solid transparent;
+    border-radius: 9px;
+    font-size: 12.5px;
+    font-weight: 600;
+    line-height: 1;
     text-shadow: none;
-    box-shadow: none;
+    cursor: pointer;
+    transition: background-color .15s ease, border-color .15s ease, color .15s ease;
 }
-body.v2-chrome .v2-tour-popover .driver-popover-prev-btn:hover,
-body.v2-chrome .v2-tour-popover .driver-popover-next-btn:hover {
+/* driver.js reads `event.target.classList` to decide which button was
+   pressed, so a click landing on the label or the glyph would go nowhere.
+   Make the button the only hit target — a descendant selector, not `> *`:
+   driver.css sets `.driver-popover * { pointer-events: auto }`, which would
+   otherwise re-enable the <path> inside each <svg> and swallow the click. */
+body.v2-chrome .v2-tour-popover .driver-popover-footer button *,
+body.v2-chrome .v2-tour-popover .driver-popover-close-btn * {
+    pointer-events: none;
+}
+body.v2-chrome .v2-tour-popover .driver-popover-navigation-btns button svg {
+    width: 15px;
+    height: 15px;
+}
+body.v2-chrome .v2-tour-popover .driver-popover-navigation-btns .driver-popover-next-btn {
+    background: var(--v2-primary);
+    border-color: var(--v2-primary);
+    color: #fff;
+    box-shadow: 0 1px 2px rgba(16, 121, 128, .30);
+}
+body.v2-chrome .v2-tour-popover .driver-popover-navigation-btns .driver-popover-next-btn:hover,
+body.v2-chrome .v2-tour-popover .driver-popover-navigation-btns .driver-popover-next-btn:focus {
     background: var(--v2-primary-deep);
     border-color: var(--v2-primary-deep);
+    color: #fff;
 }
-body.v2-chrome .v2-tour-popover .driver-popover-prev-btn {
+body.v2-chrome .v2-tour-popover .driver-popover-navigation-btns .driver-popover-prev-btn {
     background: var(--v2-panel);
-    color: var(--v2-text-soft);
     border-color: var(--v2-border-strong);
+    color: var(--v2-text-soft);
 }
-body.v2-chrome .v2-tour-popover .driver-popover-prev-btn:hover {
+body.v2-chrome .v2-tour-popover .driver-popover-navigation-btns .driver-popover-prev-btn:hover,
+body.v2-chrome .v2-tour-popover .driver-popover-navigation-btns .driver-popover-prev-btn:focus {
+    background: var(--v2-hover);
+    border-color: var(--v2-border-strong);
+    color: var(--v2-text);
+}
+body.v2-chrome .v2-tour-popover .driver-popover-footer .v2-tour-skip {
+    all: unset;
+    box-sizing: border-box;
+    display: inline-flex;
+    align-items: center;
+    height: 34px;
+    padding: 0 6px;
+    border-radius: 8px;
+    font-size: 12.5px;
+    font-weight: 500;
+    color: var(--v2-text-muted);
+    cursor: pointer;
+    transition: color .15s ease;
+}
+body.v2-chrome .v2-tour-popover .driver-popover-footer .v2-tour-skip:hover {
+    color: var(--v2-text);
+}
+/* Chrome reports :focus-visible for the popover's programmatic focus even
+   when the step was advanced with the mouse, which would park a ring on
+   Next for the whole tour. `.v2-tour-kb` is set by the partial only after a
+   real key press. */
+body.v2-chrome.v2-tour-kb .v2-tour-popover button:focus-visible {
+    outline: 2px solid var(--v2-primary);
+    outline-offset: 2px;
+}
+
+/* ---- close ----
+   driver writes `display: block` inline, so the hook re-writes it to
+   `grid`; the rest is safe to declare here. */
+body.v2-chrome .v2-tour-popover .driver-popover-close-btn {
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    top: auto; right: auto; bottom: auto; left: auto;
+    inset-block-start: 13px;
+    inset-inline-end: 13px;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--v2-text-muted);
+    cursor: pointer;
+    transition: background-color .15s ease, color .15s ease;
+}
+body.v2-chrome .v2-tour-popover .driver-popover-close-btn:hover,
+body.v2-chrome .v2-tour-popover .driver-popover-close-btn:focus {
     background: var(--v2-hover);
     color: var(--v2-text);
-    border-color: var(--v2-border-strong);
 }
-body.v2-chrome .v2-tour-popover .driver-popover-close-btn {
-    color: var(--v2-text-muted);
-    font-size: 18px;
-    top: 10px;
-    right: 12px;
+body.v2-chrome .v2-tour-popover .driver-popover-close-btn svg {
+    width: 15px;
+    height: 15px;
 }
-body.v2-chrome .v2-tour-popover .driver-popover-close-btn:hover {
-    color: var(--v2-text);
-}
-body.v2-chrome .v2-tour-popover .driver-popover-arrow {
-    border-color: var(--v2-panel);
-}
+
+/* ---- arrow ----
+   Only the opaque side is recoloured. Setting `border-color` on the
+   base rule would out-specify driver's per-side `transparent` and
+   turn the triangle into a square. The 5px width is left alone: the
+   `align-center` offsets in driver.css are hardcoded to match it. */
 body.v2-chrome .v2-tour-popover .driver-popover-arrow-side-bottom {
     border-bottom-color: var(--v2-panel);
 }
@@ -1301,6 +1771,39 @@ body.v2-chrome .v2-tour-popover .driver-popover-arrow-side-left {
 }
 body.v2-chrome .v2-tour-popover .driver-popover-arrow-side-right {
     border-right-color: var(--v2-panel);
+}
+
+/* ---- RTL: only the direction-bearing glyphs mirror; the check on
+        the final step and the close × stay as drawn. ---- */
+[dir="rtl"] body.v2-chrome .v2-tour-popover .v2-tour-dir {
+    transform: scaleX(-1);
+}
+
+@media (max-width: 720px) {
+    /* 340px, not the desktop 380: driver flips the arrow to `align-end`
+       as soon as `element.left + popoverWidth + padding` reaches the
+       viewport edge, and a wider card trips that on the very first step —
+       leaving the arrow pointing at nothing. */
+    body.v2-chrome .driver-popover.v2-tour-popover {
+        --v2-tour-pad: 16px;
+        width: 340px;
+    }
+    body.v2-chrome .v2-tour-badge {
+        width: 32px;
+        height: 32px;
+        border-radius: 10px;
+    }
+    body.v2-chrome .v2-tour-badge svg { width: 17px; height: 17px; }
+    body.v2-chrome .v2-tour-popover .driver-popover-title { font-size: 14.5px; }
+    body.v2-chrome .v2-tour-popover .driver-popover-description { font-size: 12.5px; }
+    body.v2-chrome .v2-tour-popover .driver-popover-navigation-btns button {
+        padding: 0 12px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    body.v2-chrome .driver-popover.v2-tour-popover { animation: none; }
+    body.v2-chrome .v2-tour-track__fill { transition: none; }
 }
 
 /* ============================================================
@@ -1368,9 +1871,21 @@ body.v2-chrome .v2-tour-popover .driver-popover-arrow-side-right {
         right: var(--v2-rail-w) !important;
         left: 0 !important;
     }
+    /* The panel is anchored to the right edge here, so it parks behind the
+       rail in the other direction. Only the sign changes — timing, easing and
+       the delays all come from the LTR rules. */
     [dir="rtl"] body.v2-chrome.v2-mode-compact .v2-panel {
         left: auto;
         right: var(--v2-rail-w);
+        transform: translateX(calc(100% + 6px));
+    }
+    [dir="rtl"] body.v2-chrome.v2-mode-compact .v2-rail:hover ~ .v2-panel,
+    [dir="rtl"] body.v2-chrome.v2-mode-compact .v2-panel:hover {
+        transform: translateX(0);
+    }
+    [dir="rtl"] body.v2-chrome.v2-mode-compact .v2-rail:has(:focus-visible) ~ .v2-panel,
+    [dir="rtl"] body.v2-chrome.v2-mode-compact .v2-panel:has(:focus-visible) {
+        transform: translateX(0);
     }
 }
 
@@ -1489,4 +2004,34 @@ body.v2-chrome .v2-tour-popover .driver-popover-arrow-side-right {
        above the whole chrome — but only in v2, so the v1 layout is untouched. --- */
 body.v2-chrome .withdraw-info-sidebar-overlay { z-index: 1200; }
 body.v2-chrome .withdraw-info-sidebar { z-index: 1201; }
+
+/* --- Demo announcement bar × v2 chrome --------------------------------------
+   demo.css renders `.__announcement-bar` as position:fixed / top:0 / z-index:98
+   and adds `body.demo { padding-top:50px }` — both written for the LEGACY layout.
+   Under the v2 chrome that broke two ways:
+     • the fixed v2 topbar (z-index 1030, top:0) painted OVER the bar → the bar
+       looked "missing on top";
+     • v2 offsets content with its own margin-top (not body padding), so the
+       leftover 50px body padding showed as an empty GAP.
+   Fix: lift the bar above the topbar and shift the whole v2 chrome (topbar,
+   rail+panel shell, content) down by the bar's height so it's visible with no
+   gap. Scoped to `.demo`, so non-demo v2 pages are untouched. -------------------- */
+body.v2-chrome.demo { --v2-demo-bar-h: 50px; padding-top: 0 !important; }
+@media screen and (max-width: 486px) {
+    body.v2-chrome.demo { --v2-demo-bar-h: 96px; }
+}
+
+/* Bar above the topbar; keep it fixed even after demo.js adds .page-scrolled
+   (the legacy slide-away would re-open the gap since the chrome offset is fixed). */
+body.v2-chrome.demo .__announcement-bar { z-index: 1040 !important; }
+body.v2-chrome.demo.page-scrolled .__announcement-bar { transform: none !important; }
+
+/* Push the chrome down by the bar height. */
+body.v2-chrome.demo .v2-topbar { top: var(--v2-demo-bar-h); }
+body.v2-chrome.demo .v2-shell  { top: calc(var(--v2-topbar-h) + var(--v2-demo-bar-h)); }
+body.v2-chrome.demo #content,
+body.v2-chrome.demo main#content {
+    margin-top: calc(var(--v2-topbar-h) + var(--v2-demo-bar-h)) !important;
+    min-height: calc(100vh - var(--v2-topbar-h) - var(--v2-demo-bar-h)) !important;
+}
 

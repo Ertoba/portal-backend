@@ -14,7 +14,7 @@
     $landing_site_direction = session()->get('landing_site_direction');
     $country= \App\CentralLogics\Helpers::get_business_settings('country')  ;
     $countryCode= strtolower($country??'auto');
-   $metaData=  \App\Models\DataSetting::where('type','admin_landing_page')->whereIn('key',['meta_title','meta_description','meta_image'])->get()->keyBy('key')??[];
+   $metaData=  \App\CentralLogics\Helpers::landing_meta_data()??[];
 ?>
 <html dir="{{ $landing_site_direction }}" lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 
@@ -35,6 +35,7 @@
     <link rel="stylesheet" href="{{ asset('public/assets/admin/css/app-toast.css') }}">
     <link rel="stylesheet" href="{{ asset('public/assets/landing/css/landing.css') }}"/>
     <link rel="stylesheet" href="{{asset('public/assets/admin/intltelinput/css/intlTelInput.css')}}">
+    <link rel="stylesheet" href="{{ asset('public/assets/admin/css/page-transition.css') }}">
 
     @php($backgroundChange = \App\CentralLogics\Helpers::get_business_settings('backgroundChange') ?? [])
     @if (isset($backgroundChange['primary_1_hex']))
@@ -53,32 +54,37 @@
 
 <body>
 
-    @php($fixed_link = \App\Models\DataSetting::where(['key'=>'fixed_link','type'=>'admin_landing_page'])->first())
-    @php($fixed_link = isset($fixed_link->value)?json_decode($fixed_link->value, true):null)
+    <div id="page-progress-bar"></div>
 
-    <!-- Mobile menu overlay -->
+    {{-- One batched fetch (with translations eager-loaded, so ->value below doesn't lazy-query
+         per row) for every "admin_landing_page" text this layout needs -- used here and again
+         further down for the newsletter/footer titles. Was 4 separate single-row queries, each
+         followed by its own translation lookup on ->value access. --}}
+    @php($landingFixedTexts = \App\Models\DataSetting::with('translations')->where('type', 'admin_landing_page')->whereIn('key', ['fixed_link', 'fixed_newsletter_title', 'fixed_newsletter_sub_title', 'fixed_footer_article_title', 'download_user_app_links'])->get()->keyBy('key'))
+    @php($fixed_link = optional($landingFixedTexts->get('fixed_link'))->value)
+    @php($fixed_link = isset($fixed_link) ? json_decode($fixed_link, true) : null)
+
     <div class="mobile-menu" id="mobileMenu">
         <button class="close-mob" id="closeMob">&times;</button>
         <a href="{{route('home')}}" onclick="closeMobile()">{{ translate('messages.home') }}</a>
-        <a href="{{route('about-us')}}" onclick="closeMobile()">{{ translate('messages.about_us') }}</a>
-        <a href="{{route('privacy-policy')}}" onclick="closeMobile()">{{ translate('messages.privacy_policy') }}</a>
-        <a href="{{route('terms-and-conditions')}}" onclick="closeMobile()">{{ translate('messages.terms_and_condition') }}</a>
-        <a href="{{route('contact-us')}}" onclick="closeMobile()">{{ translate('messages.contact_us') }}</a>
+        <a href="{{route('about-us')}}" onclick="closeMobile()">{{ translate('About us') }}</a>
+        <a href="{{route('privacy-policy')}}" onclick="closeMobile()">{{ translate('Privacy policy') }}</a>
+        <a href="{{route('terms-and-conditions')}}" onclick="closeMobile()">{{ translate('messages.Terms and condition') }}</a>
+        <a href="{{route('contact-us')}}" onclick="closeMobile()">{{ translate('Contact us') }}</a>
         @if (isset($toggle_store_registration) && $toggle_store_registration)
-            <a href="{{ route('restaurant.create') }}" onclick="closeMobile()">{{ translate('messages.vendor_registration') }}</a>
+            <a href="{{ route('restaurant.create') }}" onclick="closeMobile()">{{ translate('messages.Vendor registration') }}</a>
         @endif
         @if (isset($toggle_dm_registration) && $toggle_dm_registration)
-            <a href="{{ route('deliveryman.create') }}" onclick="closeMobile()">{{ translate('messages.deliveryman_registration') }}</a>
+            <a href="{{ route('deliveryman.create') }}" onclick="closeMobile()">{{ translate('Deliveryman registration') }}</a>
         @endif
         @if (isset($toggle_rider_registration) && $toggle_rider_registration)
-            <a href="{{ route('rider.create') }}" onclick="closeMobile()">{{ translate('messages.rider_registration') }}</a>
+            <a href="{{ route('rider.create') }}" onclick="closeMobile()">{{ translate('Rider registration') }}</a>
         @endif
         @if (isset($fixed_link) && isset($fixed_link['web_app_url_status']) && $fixed_link['web_app_url_status'] && !empty($fixed_link['web_app_url']))
             <a href="{{ $fixed_link['web_app_url'] }}" target="_blank" onclick="closeMobile()" class="mob-browse-web">{{ translate('Browse web') }}</a>
         @endif
     </div>
 
-    <!-- Header -->
     <nav class="main-nav">
         <div class="container">
             <a href="{{route('home')}}" class="nav-logo max-w-70px-mobile">
@@ -86,10 +92,10 @@
             </a>
             <div class="nav-links gap-3 gap-lg-4">
                 <a href="{{route('home')}}" class="{{ Request::is('/') ? 'active-link' : '' }}">{{ translate('messages.home') }}</a>
-                <a href="{{route('about-us')}}" class="{{ Request::is('about-us') ? 'active-link' : '' }}">{{ translate('messages.about_us') }}</a>
-                <a href="{{route('privacy-policy')}}" class="{{ Request::is('privacy-policy') ? 'active-link' : '' }}">{{ translate('messages.privacy_policy') }}</a>
-                <a href="{{route('terms-and-conditions')}}" class="{{ Request::is('terms-and-conditions') ? 'active-link' : '' }}">{{ translate('messages.terms_and_condition') }}</a>
-                <a href="{{route('contact-us')}}" class="{{ Request::is('contact-us') ? 'active-link' : '' }}">{{ translate('messages.contact_us') }}</a>
+                <a href="{{route('about-us')}}" class="{{ Request::is('about-us') ? 'active-link' : '' }}">{{ translate('About us') }}</a>
+                <a href="{{route('privacy-policy')}}" class="{{ Request::is('privacy-policy') ? 'active-link' : '' }}">{{ translate('Privacy policy') }}</a>
+                <a href="{{route('terms-and-conditions')}}" class="{{ Request::is('terms-and-conditions') ? 'active-link' : '' }}">{{ translate('messages.Terms and condition') }}</a>
+                <a href="{{route('contact-us')}}" class="{{ Request::is('contact-us') ? 'active-link' : '' }}">{{ translate('Contact us') }}</a>
             </div>
             <div class="nav-right">
                 @php( $local = session()->has('landing_local')?session('landing_local'):null)
@@ -130,19 +136,19 @@
                         @if (isset($toggle_store_registration) && $toggle_store_registration)
                         <a href="{{ route('restaurant.create') }}" class="{{ Request::is('vendor*') ? 'active' : '' }}">
                             <span class="ji" style="background:rgba(255,107,0,.1);color:#FF6B00;">&#x1F3EA;</span>
-                            {{ translate('messages.vendor_registration') }}
+                            {{ translate('messages.Vendor registration') }}
                         </a>
                         @endif
                         @if (isset($toggle_dm_registration) && $toggle_dm_registration)
                         <a href="{{ route('deliveryman.create') }}" class="{{ Request::is('deliveryman*') ? 'active' : '' }}">
                             <span class="ji" style="background:rgba(0,190,101,.1);color:#00BE65;">&#x1F6F5;</span>
-                            {{ translate('messages.deliveryman_registration') }}
+                            {{ translate('Deliveryman registration') }}
                         </a>
                         @endif
                         @if (isset($toggle_rider_registration) && $toggle_rider_registration)
                         <a href="{{ route('rider.create') }}" class="{{ Request::is('rider*') ? 'active' : '' }}">
                             <span class="ji" style="background:rgba(0,121,227,.1);color:#0079E3;">&#x1F697;</span>
-                            {{ translate('messages.rider_registration') }}
+                            {{ translate('Rider registration') }}
                         </a>
                         @endif
                     </div>
@@ -156,20 +162,15 @@
 
     @yield('content')
 
-    <!-- Footer -->
     <footer class="footer">
-        @php($fixed_newsletter_title = \App\Models\DataSetting::where(['type' => 'admin_landing_page','key' => 'fixed_newsletter_title'])->first())
-        @php($fixed_newsletter_title = isset($fixed_newsletter_title->value) ? $fixed_newsletter_title->value: null)
-        @php($fixed_newsletter_sub_title = \App\Models\DataSetting::where(['type' => 'admin_landing_page','key' => 'fixed_newsletter_sub_title'])->first())
-        @php($fixed_newsletter_sub_title = isset($fixed_newsletter_sub_title->value) ? $fixed_newsletter_sub_title->value: null)
-        @php($fixed_footer_article_title = \App\Models\DataSetting::where(['type' => 'admin_landing_page','key' => 'fixed_footer_article_title'])->first())
-        @php($fixed_footer_article_title = isset($fixed_footer_article_title->value) ? $fixed_footer_article_title->value: null)
+        @php($fixed_newsletter_title = optional($landingFixedTexts->get('fixed_newsletter_title'))->value)
+        @php($fixed_newsletter_sub_title = optional($landingFixedTexts->get('fixed_newsletter_sub_title'))->value)
+        @php($fixed_footer_article_title = optional($landingFixedTexts->get('fixed_footer_article_title'))->value)
 
         <div class="container">
-            <!-- Newsletter -->
             <div class="newsletter-area">
-                <h2>{{ $fixed_newsletter_title ?? translate('Sign Up to Our Newsletter') }}</h2>
-                <p>{{ $fixed_newsletter_sub_title ?? translate('Receive Latest News, Updates and Many Other News Every Week') }}</p>
+                <h2>{{ $fixed_newsletter_title ?? translate('Sign up to our newsletter') }}</h2>
+                <p>{{ $fixed_newsletter_sub_title ?? translate('Receive latest news, updates and many other news every week') }}</p>
                 <form class="nl-form" method="post" action="{{route('newsletter.subscribe')}}">
                     @csrf
                     <input type="email" name="email" placeholder="{{ translate('Enter your email address') }}" required />
@@ -177,7 +178,6 @@
                 </form>
             </div>
 
-            <!-- Footer Grid -->
             <div class="footer-grid">
                 <div class="f-brand">
                     <a href="{{route('home')}}" class="nav-logo">
@@ -185,7 +185,7 @@
                     </a>
                     <p>{{ $fixed_footer_article_title }}</p>
                     <div class="f-social">
-                        @php($social_media = \App\Models\SocialMedia::where('status', 1)->get())
+                        @php($social_media = \App\CentralLogics\Helpers::social_media_active())
                         @if (isset($social_media))
                             @foreach ($social_media as $social)
                             <a href="{{ $social->link }}" target="_blank" aria-label="{{ $social->name }}">
@@ -194,10 +194,10 @@
                             @endforeach
                         @endif
                     </div>
-                    @php($landing_page_links_footer = \App\Models\DataSetting::where(['type' => 'admin_landing_page','key' => 'download_user_app_links'])->first())
-                    @php($landing_page_links_footer = isset($landing_page_links_footer->value) ? json_decode($landing_page_links_footer->value, true) : null)
-                    @php($footer_playstore_url = \App\Models\BusinessSetting::where('key', 'app_url_android')->value('value'))
-                    @php($footer_appstore_url = \App\Models\BusinessSetting::where('key', 'app_url_ios')->value('value'))
+                    @php($landing_page_links_footer = optional($landingFixedTexts->get('download_user_app_links'))->value)
+                    @php($landing_page_links_footer = isset($landing_page_links_footer) ? json_decode($landing_page_links_footer, true) : null)
+                    @php($footer_playstore_url = \App\CentralLogics\Helpers::get_business_settings('app_url_android', false))
+                    @php($footer_appstore_url = \App\CentralLogics\Helpers::get_business_settings('app_url_ios', false))
                     @if ((isset($landing_page_links_footer['playstore_url_status']) && $footer_playstore_url) || (isset($landing_page_links_footer['apple_store_url_status']) && $footer_appstore_url))
                     <div class="f-app-row">
                         @if (isset($landing_page_links_footer['playstore_url_status']) && $footer_playstore_url)
@@ -216,26 +216,26 @@
                     @endif
                 </div>
 
-                @php($landing_data_footer =\App\Models\DataSetting::where('type', 'admin_landing_page')->whereIn('key', ['shipping_policy_status','refund_policy_status','cancellation_policy_status'])->pluck('value','key')->toArray())
+                @php($landing_data_footer =\App\CentralLogics\Helpers::landing_policy_statuses())
                 <div>
-                    <h5>{{translate("messages.Suppport")}}</h5>
+                    <h5>{{translate("messages.Support")}}</h5>
                     <div class="f-links">
-                        <a href="{{route('privacy-policy')}}">{{ translate('messages.privacy_policy') }}</a>
-                        <a href="{{route('terms-and-conditions')}}">{{ translate('messages.terms_and_condition') }}</a>
+                        <a href="{{route('privacy-policy')}}">{{ translate('Privacy policy') }}</a>
+                        <a href="{{route('terms-and-conditions')}}">{{ translate('messages.Terms and condition') }}</a>
                         @if (isset($landing_data_footer['refund_policy_status']) && $landing_data_footer['refund_policy_status'] == 1)
-                        <a href="{{route('refund')}}">{{ translate('messages.Refund Policy') }}</a>
+                        <a href="{{route('refund')}}">{{ translate('Refund policy') }}</a>
                         @endif
                         @if (isset($landing_data_footer['shipping_policy_status']) && $landing_data_footer['shipping_policy_status'] == 1)
-                        <a href="{{route('shipping-policy')}}">{{ translate('messages.Shipping Policy') }}</a>
+                        <a href="{{route('shipping-policy')}}">{{ translate('Shipping policy') }}</a>
                         @endif
                         @if (isset($landing_data_footer['cancellation_policy_status']) && $landing_data_footer['cancellation_policy_status'] == 1)
-                        <a href="{{route('cancelation')}}">{{ translate('messages.Cancelation Policy') }}</a>
+                        <a href="{{route('cancelation')}}">{{ translate('Cancellation policy') }}</a>
                         @endif
                     </div>
                 </div>
 
                 <div>
-                    <h5>{{translate("messages.Contact_Us")}}</h5>
+                    <h5>{{translate('Contact us')}}</h5>
                     <div class="f-contact">
                         <a href="#">&#x1F4CD; {{ \App\CentralLogics\Helpers::get_settings('address') }}</a>
                         <a href="mailto:{{ \App\CentralLogics\Helpers::get_settings('email_address') }}">&#x2709;&#xFE0F; {{ \App\CentralLogics\Helpers::get_settings('email_address') }}</a>
@@ -255,10 +255,20 @@
     <script src="{{ asset('public/assets/landing/js/bootstrap.min.js') }}"></script>
     <script src="{{ asset('public/assets/landing/js/viewport.jquery.js') }}"></script>
     <script src="{{ asset('public/assets/landing/js/odometer.min.js') }}"></script>
+    <script>
+        window.APP_TOAST_I18N = {
+            success: "{{ translate('messages.success') }}",
+            info: "{{ translate('messages.Information') }}",
+            warning: "{{ translate('messages.warning') }}",
+            danger: "{{ translate('messages.error') }}",
+            close: "{{ translate('messages.Close') }}"
+        };
+    </script>
     <script src="{{ asset('public/assets/admin/js/toastr.js') }}"></script>
     <script src="{{ asset('public/assets/admin/js/app-toast.js') }}"></script>
     <script src="{{ asset('public/assets/admin/js/field-error-toast.js') }}"></script>
     <script src="{{ asset('public/assets/admin/intltelinput/js/intlTelInput.min.js')}}"></script>
+    <script src="{{ asset('public/assets/admin/js/page-transition.js') }}"></script>
     {!! Toastr::message() !!}
     @if ($errors->any())
         <script>
@@ -275,15 +285,12 @@
 
     <script>
         "use strict";
-        // Init Bootstrap tooltips
         $(function(){ $('[data-toggle="tooltip"]').tooltip(); });
 
-        // Mobile menu
         document.getElementById('mobBtn').addEventListener('click',()=>document.getElementById('mobileMenu').classList.add('open'));
         document.getElementById('closeMob').addEventListener('click',()=>document.getElementById('mobileMenu').classList.remove('open'));
         function closeMobile(){document.getElementById('mobileMenu').classList.remove('open')}
 
-        // Language dropdown close on outside click
         document.addEventListener('click',e=>{const sw=document.getElementById('langSw');if(sw&&!sw.contains(e.target))sw.classList.remove('open')})
     </script>
 

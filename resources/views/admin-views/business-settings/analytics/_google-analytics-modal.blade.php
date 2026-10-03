@@ -21,32 +21,32 @@
                                     </div>
                                     <div class="text-dark mb-3">
                                         <h3 class="lh-base">
-                                            {{ translate('how_to_get_the_google_analytics_measurement_id') }}
+                                            {{ translate('How to get the Google Analytics measurement id') }}
                                         </h3>
                                         <p class="opacity-75">
-                                            {{ translate('to_find_your_google_analytics_measurement_id,_log_into_your_google_analytics_account.') }}
-                                            {{ translate('go_to_admin_and_then_data_streams.') }}
-                                            {{ translate('select_your_web_data_stream_and_your_measurement_id_will_be_displayed.') }}
-                                            {{ translate('copy_it.') }}
+                                            {{ translate('to find your Google Analytics measurement id, log into your Google Analytics account.') }}
+                                            {{ translate('Go to admin and then data streams.') }}
+                                            {{ translate('Select your web data stream and your measurement id will be displayed.') }}
+                                            {{ translate('Copy it.') }}
                                         </p>
                                     </div>
 
                                     <div class="text-dark mb-3">
                                         <h3 class="lh-base">
-                                            {{ translate('where_to_use_the_google_analytics_measurement_id') }}
+                                            {{ translate('Where to use the Google Analytics measurement id') }}
                                         </h3>
                                         <p class="opacity-75">
-                                            {{ translate('open_the_marketing_tools_feature_in_your_admin_panel_and_follow_the_steps:') }}
+                                            {{ translate('Open the marketing tools feature in your admin panel and follow the steps') }}:
                                         </p>
                                         <ol class="d-flex flex-column gap-2 opacity-75">
                                             <li>
-                                                {{ translate('navigate_to_the_google_analytics_measurement_id_section_under_marketing_tools.') }}
+                                                {{ translate('Navigate to the Google Analytics measurement id section under marketing tools.') }}
                                             </li>
                                             <li>
-                                                {{ translate('turn_on_the_toggle_button.') }}
+                                                {{ translate('Turn on the toggle button.') }}
                                             </li>
                                             <li>
-                                                {{ translate('paste_your_google_analytics_measurement_id_into_the_input_box_and_click_submit.') }}
+                                                {{ translate('Paste your Google Analytics measurement id into the input box and click submit.') }}
                                             </li>
                                         </ol>
                                     </div>

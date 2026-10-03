@@ -1,16 +1,14 @@
 @extends('layouts.admin.app')
 
-@section('title', $store->name . "'s " . translate('messages.settings'))
+@section('title', $store->name . "'s " . translate('Settings'))
 
 @push('css_or_js')
-    <!-- Custom styles for this page -->
     <link href="{{ asset('public/assets/admin/css/croppie.css') }}" rel="stylesheet">
 @endpush
 
 @section('content')
     <div class="content container-fluid">
         @include('admin-views.vendor.view.partials._header', ['store' => $store])
-        <!-- Page Heading -->
         <div class="tab-content">
             <div class="tab-pane fade show active" id="vendor">
                         <form action="{{ route('admin.store.update-meta-data', [$store['id']]) }}" method="post"

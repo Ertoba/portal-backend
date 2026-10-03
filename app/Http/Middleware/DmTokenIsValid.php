@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Support\ApiEnvelope;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -23,7 +24,10 @@ class DmTokenIsValid
             'token' => 'required|exists:delivery_men,auth_token'
         ]);
         if ($validator->fails()) {
-            return response()->json(['errors' => Helpers::error_processor($validator)], 401);
+            return response()->json(
+                ApiEnvelope::make(config('response.unauthorized_401'), null, Helpers::error_processor($validator)),
+                401
+            );
         }
         $dm = DeliveryMan::where(['auth_token' => $request['token']])->firstOrFail();
         auth()->guard('delivery_men')->login($dm);

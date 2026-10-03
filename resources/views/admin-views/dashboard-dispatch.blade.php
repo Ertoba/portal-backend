@@ -1,6 +1,6 @@
 @extends('layouts.admin.app')
 
-@section('title', \App\CentralLogics\Helpers::get_business_settings('business_name') ?? translate('messages.dashboard'))
+@section('title', \App\CentralLogics\Helpers::get_business_settings('business_name') ?? translate('Dashboard'))
 
 @push('css_or_js')
     <meta name="csrf-token" content="{{ csrf_token() }}">
@@ -14,16 +14,15 @@
                 <div class="d-flex align-items-center flex-grow-1">
                     <img src="{{asset('/public/assets/admin/img/new-img/users.svg')}}" alt="img">
                     <div class="w-0 flex-grow pl-3">
-                        <h1 class="page-header-title mb-1">{{translate('Dispatch Overview')}}</h1>
+                        <h1 class="page-header-title mb-1">{{translate('Dispatch overview')}}</h1>
+                        <p class="page-header-desc">{{ translate('Live orders waiting to be assigned, and the deliverymen free to take them.') }}</p>
                         <p class="page-header-text text-dark m-0">
-                            {{translate('Monitor your')}}
-                            <span class="font-semibold">{{translate('Dispatch Management')}}</span>
-                            {{translate('statistics by zone')}}
+                            {{ translate('Monitor your dispatch management statistics by zone') }}
                         </p>
                     </div>
                 </div>
                 <div class="alert bg--10 font-bold fs-14" role="alert">
-                    {{ translate('This_section_only_contains_Order_Data') }}
+                    {{ translate('This section only contains order data') }}
                 </div>
             </div>
         </div>
@@ -38,7 +37,7 @@
                                     alt="new-img">
                                 <h4>{{$active_deliveryman}}</h4>
                             </div>
-                            <h4 class="subtitle text-capitalize mt-2">{{translate('messages.active_delivery_man')}}</h4>
+                            <h4 class="subtitle text-capitalize mt-2">{{translate('Active deliveryman')}}</h4>
                         </div>
                     </div>
                     <div class="col-sm-6">
@@ -50,7 +49,7 @@
                             <div class="d-flex justify-content-around gap-3 flex-grow-1">
                                 <div>
                                     <h4 class="title">{{ $inactive_deliveryman }}</h4>
-                                    <h4 class="subtitle text-capitalize">{{translate('messages.in_Active')}}</h4>
+                                    <h4 class="subtitle text-capitalize">{{translate('messages.Inactive')}}</h4>
                                 </div>
                                 <div>
                                     <h4 class="title">{{ $suspend_deliveryman }}</h4>
@@ -66,7 +65,7 @@
                                     alt="new-img">
                                 <h4>{{ $unavailable_deliveryman }}</h4>
                             </div>
-                            <h4 class="subtitle text-capitalize mt-2">{{ translate('Fully Booked Delivery Man')}}</h4>
+                            <h4 class="subtitle text-capitalize mt-2">{{ translate('Fully booked deliveryman')}}</h4>
                         </div>
                     </div>
                     <div class="col-sm-6">
@@ -76,7 +75,7 @@
                                     alt="new-img">
                                 <h4>{{$available_deliveryman}}</h4>
                             </div>
-                            <h4 class="subtitle text-capitalize mt-2">{{translate('Available to assign more order')}}</h4>
+                            <h4 class="subtitle text-capitalize mt-2">{{translate('Available to assign more orders')}}</h4>
                         </div>
                     </div>
                 </div>
@@ -90,7 +89,7 @@
                                     <h6 class="card-subtitle d-flex justify-content-between m-0 align-items-center">
                                         <img src="{{asset('public/assets/admin/img/dashboard/food/unassigned.svg')}}"
                                             alt="dashboard" class="oder--card-icon">
-                                        <span>{{translate('messages.unassigned_orders')}}</span>
+                                        <span>{{translate('messages.Unassigned orders')}}</span>
                                     </h6>
                                     <span class="card-title text-00A3FF">
                                         {{$data['searching_for_dm']}}
@@ -104,7 +103,7 @@
                                     <h6 class="card-subtitle d-flex justify-content-between m-0 align-items-center">
                                         <img src="{{asset('public/assets/admin/img/dashboard/food/accepted.svg')}}"
                                             alt="dashboard" class="oder--card-icon">
-                                        <span>{{translate('Accepted by Delivery Man')}}</span>
+                                        <span>{{translate('Accepted by deliveryman')}}</span>
                                     </h6>
                                     <span class="card-title text-success">
                                         {{$data['accepted_by_dm']}}
@@ -118,7 +117,7 @@
                                     <h6 class="card-subtitle d-flex justify-content-between m-0 align-items-center">
                                         <img src="{{asset('public/assets/admin/img/dashboard/food/out-for.svg')}}"
                                             alt="dashboard" class="oder--card-icon">
-                                        <span>{{translate('Out for Delivery')}}</span>
+                                        <span>{{translate('Out for delivery')}}</span>
                                     </h6>
                                     <span class="card-title text-success">
                                         {{$data['picked_up']}}
@@ -134,14 +133,14 @@
                 <div class="__map-wrapper-2 mt-3">
                     <div class="map-pop-deliveryman">
                         <form action="javascript:" id="search-form" class="map-pop-deliveryman-inner">
-                            <label>{{ translate('Currently Active Delivery Men') }} </label>
+                            <label>{{ translate('Currently active deliverymen') }} </label>
                             <div class="position-relative mx-auto">
                                 <i class="tio-search"></i>
                                 <input type="text" name="search" class="form-control"
-                                    placeholder="{{translate('Search Delivery Man ...')}}">
+                                    placeholder="{{translate('Search by deliveryman')}}">
                             </div>
                             <a href="{{ route('admin.users.delivery-man.list') }}"
-                                class="link font-semibold">{{ translate('View All Delivery Men') }}</a>
+                                class="link font-semibold">{{ translate('View all deliverymen') }}</a>
                         </form>
                     </div>
                     <div class="map-warper map-wrapper-2 rounded">

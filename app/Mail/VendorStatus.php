@@ -2,24 +2,27 @@
 
 namespace App\Mail;
 
-use App\CentralLogics\Helpers;
-use App\Models\BusinessSetting;
 use App\Models\EmailTemplate;
+use App\Mail\Concerns\BuildsTemplatedMail;
+use App\Mail\Concerns\QueueableMailable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Queue\SerializesModels;
+use App\Support\Notification\NotificationText;
+use App\Services\System\BusinessSettingService;
 
-class VendorStatus extends Mailable
+class VendorStatus extends Mailable implements ShouldQueue
 {
-    use Queueable, SerializesModels;
+    use BuildsTemplatedMail, Queueable, QueueableMailable, SerializesModels;
 
     /**
      * Create a new message instance.
      *
      * @return void
      */
-
     protected $status;
+
     protected $name;
 
     public function __construct($status, $name)
@@ -35,25 +38,25 @@ class VendorStatus extends Mailable
      */
     public function build()
     {
-        // return $this->view('email-templates.self-registration')->with(['status'=>$this->status, 'name'=>$this->name]);
-
-        $company_name = BusinessSetting::where('key', 'business_name')->first()->value;
-
         $status = $this->status;
-        if($status == 'suspended'){
-            $data=EmailTemplate::where('type','store')->where('email_type', 'suspend')->first();
-            $subject=translate('messages.your_account_has_been_suspended');
-        }else{
-            $data=EmailTemplate::where('type','store')->where('email_type', 'unsuspend')->first();
-            $subject=translate('messages.your_account_has_been_Open_Again');
+        if ($status == 'suspended') {
+            $data = EmailTemplate::where('type', 'store')->where('email_type', 'suspend')->first();
+            $subject = translate('messages.Your account has been suspended');
+        } else {
+            $data = EmailTemplate::where('type', 'store')->where('email_type', 'unsuspend')->first();
+            $subject = translate('Your account has been open again');
         }
-        $template=$data?$data->email_template:5;
         $url = '';
         $store_name = $this->name;
-        $title = Helpers::text_variable_data_format( value:$data['title']??'',store_name:$store_name??'');
-        $body = Helpers::text_variable_data_format( value:$data['body']??'',store_name:$store_name??'');
-        $footer_text = Helpers::text_variable_data_format( value:$data['footer_text']??'',store_name:$store_name??'');
-        $copyright_text = Helpers::text_variable_data_format( value:$data['copyright_text']??'',store_name:$store_name??'');
-        return $this->subject($subject)->view('email-templates.new-email-format-'.$template, ['company_name'=>$company_name,'data'=>$data,'title'=>$title,'body'=>$body,'footer_text'=>$footer_text,'copyright_text'=>$copyright_text,'url'=>$url]);
+
+        return $this->templatedMail(
+            template: $data,
+            fallbackTemplate: 5,
+            subject: $subject,
+            placeholders: [
+                'store_name' => $store_name ?? '',
+            ],
+            viewData: ['url' => $url],
+        );
     }
 }

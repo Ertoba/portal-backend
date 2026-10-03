@@ -1,6 +1,6 @@
 <div class="row">
     <div class="col-lg-12 text-center ">
-        <h1> {{ translate('Addon_List') }}
+        <h1> {{ translate('Addon list') }}
         </h1>
     </div>
     <div class="col-lg-12">
@@ -8,12 +8,12 @@
         <table>
             <thead>
                 <tr>
-                    <th>{{ translate('Filter_Criteria') }}</th>
+                    <th>{{ translate('Filter criteria') }}</th>
                     <th></th>
                     <th>
                         {{ translate('Store') }}: {{ $data['store'] ?? translate('N/A') }}
                         <br>
-                        {{ translate('Search_Bar_Content') }}: {{ $data['search'] ?? translate('N/A') }}
+                        {{ translate('Search bar content') }}: {{ $data['search'] ?? translate('N/A') }}
 
                     </th>
                     <th> </th>
@@ -21,14 +21,14 @@
 
 
                 <tr>
-                    <th>{{ translate('sl') }}</th>
-                    <th>{{ translate('Addon_Name') }}</th>
-                    <th>{{ translate('Price') }}</th>
-                    <th>{{ translate('Store_name') }}</th>
+                    <th>{{ translate('SL') }}</th>
+                    <th>{{ translate('Addon name') }}</th>
+                    <th>{{ translate('price') }}</th>
+                    <th>{{ translate('Store name') }}</th>
 
 
                     @if ($data['productWiseTax'])
-                        <th class="border-0 w--1">{{ translate('messages.Vat/Tax') }}</th>
+                        <th class="border-0 w--1">{{ translate('VAT/tax') }}</th>
                     @endif
 
             </thead>
@@ -54,7 +54,7 @@
                                             </span> </span>
                                         <br>
                                     @empty
-                                        <span> {{ translate('messages.no_tax') }} </span>
+                                        <span> {{ translate('messages.No tax') }} </span>
                                     @endforelse
                                 </span>
                             </td>

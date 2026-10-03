@@ -1,6 +1,6 @@
 @extends('layouts.admin.app')
 
-@section('title',translate('messages.edit_account_transaction'))
+@section('title',translate('messages.Edit account transaction'))
 
 @push('css_or_js')
 
@@ -10,11 +10,11 @@
 <div class="content container-fluid">
 
     <div class="d-sm-flex align-items-center justify-content-between mb-2">
-        {{translate('messages.account_transaction')}}
+        {{translate('messages.Account transaction')}}
     </div>
     <div class="card">
         <div class="card-header">
-            <h4 class="text-capitalize">{{translate('messages.add_account_transaction')}}</h4>
+            <h4 class="text-capitalize">{{translate('messages.Add account transaction')}}</h4>
         </div>
         <div class="card-body">
             <form action="{{route('admin.account-transaction.store')}}" method='post' id="add_transaction">
@@ -23,25 +23,25 @@
                 <div class="row">
                     <div class="col-md-4">
                         <div class="form-group">
-                        <label class="input-label" for="type">{{translate('messages.type')}}<span class="input-label-secondary"></span></label>
+                        <label class="input-label" for="type">{{translate('Type')}}<span class="input-label-secondary"></span></label>
                             <select name="type" id="type" class="form-control">
-                                <option value="deliveryman" {{$account_transaction->from_type=='deliveryman'?'selected':''}}>{{translate('messages.deliveryman')}}</option>
-                                <option value="store" {{$account_transaction->from_type=='deliveryman'?'selected':''}}>{{translate('messages.store')}}</option>
+                                <option value="deliveryman" {{$account_transaction->from_type=='deliveryman'?'selected':''}}>{{translate('Deliveryman')}}</option>
+                                <option value="store" {{$account_transaction->from_type=='deliveryman'?'selected':''}}>{{translate('messages.Store')}}</option>
                             </select>
                         </div>
                     </div>
                     <div class="col-md-4">
                         <div class="form-group">
-                            <label class="input-label" for="store">{{translate('messages.store')}}<span class="input-label-secondary"></span></label>
-                            <select id="store" name="store_id" data-placeholder="{{translate('messages.select_store')}}" class="form-control" title="Select Restaurant" {{$account_transaction->deliveryman?'disabled':''}}>
+                            <label class="input-label" for="store">{{translate('messages.Store')}}<span class="input-label-secondary"></span></label>
+                            <select id="store" name="store_id" data-placeholder="{{translate('Select store')}}" class="form-control" title="Select Restaurant" {{$account_transaction->deliveryman?'disabled':''}}>
 
                             </select>
                         </div>
                     </div>
                     <div class="col-md-4">
                         <div class="form-group">
-                            <label class="input-label" for="deliveryman">{{translate('messages.deliveryman')}}<span class="input-label-secondary"></span></label>
-                            <select id="deliveryman" name="deliveryman_id" data-placeholder="{{translate('messages.select_deliveryman')}}" class="form-control" title="Select deliveryman" {{$account_transaction->store?'disabled':''}}>
+                            <label class="input-label" for="deliveryman">{{translate('Deliveryman')}}<span class="input-label-secondary"></span></label>
+                            <select id="deliveryman" name="deliveryman_id" data-placeholder="{{translate('Select deliveryman')}}" class="form-control" title="Select deliveryman" {{$account_transaction->store?'disabled':''}}>
 
                             </select>
                         </div>
@@ -63,13 +63,13 @@
                     </div>
                     <div class="col-md-4">
                         <div class="form-group">
-                            <label class="input-label" for="amount">{{translate('messages.amount')}}<span class="input-label-secondary"></span></label>
+                            <label class="input-label" for="amount">{{translate('Amount')}}<span class="input-label-secondary"></span></label>
                             <input class="form-control" type="number" min=".01" step="0.01" name="amount" id="amount" value="{{$account_transaction->amount}}" max="999999999999.99">
                         </div>
                     </div>
                 </div>
                 <div class="form-group">
-                    <input class="btn btn-primary" type="submit" value="{{translate('messages.save')}}" >
+                    <input class="btn btn-primary" type="submit" value="{{translate('messages.Save')}}" >
                 </div>
             </form>
         </div>
@@ -152,7 +152,7 @@
                         });
                     }
                 } else {
-                    toastr.success('{{translate('messages.transaction_updated')}}', {
+                    toastr.success('{{translate('messages.Transaction updated')}}', {
                         CloseButton: true,
                         ProgressBar: true
                     });

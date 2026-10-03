@@ -26,27 +26,25 @@ class WalletBonusRepository implements WalletBonusRepositoryInterface
 
     public function getFirstWhere(array $params, array $relations = []): ?Model
     {
-        return $this->bonus->where($params)->first();
+        return $this->bonus->with($relations)->where($params)->first();
     }
 
-    public function getList(array $orderBy = [], array $relations = [], int|string $dataLimit = DEFAULT_DATA_LIMIT, int $offset = null): Collection|LengthAwarePaginator
+    public function getList(array $orderBy = [], array $relations = [], int|string $dataLimit = DEFAULT_DATA_LIMIT, ?int $offset = null): Collection|LengthAwarePaginator
     {
-        return $this->bonus->paginate($dataLimit);
+        return $this->bonus->with($relations)->paginate($dataLimit);
     }
 
-    public function getListWhere(string $searchValue = null, array $filters = [], array $relations = [], int|string $dataLimit = DEFAULT_DATA_LIMIT, int $offset = null): Collection|LengthAwarePaginator
+    public function getListWhere(?string $searchValue = null, array $filters = [], array $relations = [], int|string $dataLimit = DEFAULT_DATA_LIMIT, ?int $offset = null): Collection|LengthAwarePaginator
     {
         return $this->bonus->with($relations)->where($filters)
-
         ->when($searchValue !== null, function ($query) use ($searchValue) {
-            $key = explode(' ', $searchValue);
+            $key = explode(' ', $searchValue ?? '');
             $query->where(function ($query) use ($key) {
             foreach ($key as $value) {
                 $query->orWhere('title', 'like', "%{$value}%");
             }
         });
         })
-
         ->latest('end_date')->paginate($dataLimit);
     }
 
@@ -71,7 +69,7 @@ class WalletBonusRepository implements WalletBonusRepositoryInterface
 
     public function getFirstWithoutGlobalScopeWhere(array $params, array $relations = []): ?Model
     {
-        return $this->bonus->withoutGlobalScope('translate')->where($params)->first();
+        return $this->bonus->with($relations)->withoutGlobalScope('translate')->with('translations')->where($params)->first();
     }
 
 }

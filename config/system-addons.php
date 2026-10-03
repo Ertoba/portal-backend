@@ -1,5 +1,5 @@
 <?php return array (
-  'admin_panel' =>
+  'admin_panel' => 
   array (
     'active' => '0',
     'name' => '1',
@@ -10,7 +10,7 @@
     'domain' => '',
     'software_type' => 'product',
   ),
-  'vendor_panel' =>
+  'vendor_panel' => 
   array (
     'active' => '0',
     'name' => '',
@@ -21,7 +21,7 @@
     'domain' => '',
     'software_type' => 'addon',
   ),
-  'user_app' =>
+  'user_app' => 
   array (
     'active' => '0',
     'name' => '',
@@ -32,37 +32,37 @@
     'domain' => '',
     'software_type' => 'addon',
   ),
-  'vendor_app' =>
+  'vendor_app' => 
   array (
-    'active' => '1',
+    'active' => 0,
     'name' => '',
     'email' => '',
-    'username' => '',
-    'purchase_key' => '',
+    'username' => 'admin@admin.com',
+    'purchase_key' => '12345678',
     'software_id' => 'MzY3NzIxNzM=',
-    'domain' => '',
+    'domain' => 'localhost:8000',
     'software_type' => 'addon',
   ),
-  'deliveryman_app' =>
+  'deliveryman_app' => 
   array (
-    'active' => '1',
+    'active' => 1,
     'name' => '',
     'email' => '',
-    'username' => '',
-    'purchase_key' => '',
+    'username' => 'admin@admin.com',
+    'purchase_key' => '12345678',
     'software_id' => 'MzY3NzIxNDg=',
-    'domain' => '',
+    'domain' => 'localhost:8000',
     'software_type' => 'addon',
   ),
-  'react_web' =>
+  'react_web' => 
   array (
-    'active' => '1',
+    'active' => 1,
     'name' => '',
     'email' => '',
-    'username' => '',
-    'purchase_key' => '',
+    'username' => 'admin@admin.com',
+    'purchase_key' => '12345678',
     'software_id' => 'NDUzNzAzNTE=',
-    'domain' => '',
+    'domain' => 'localhost:8000',
     'software_type' => 'addon',
   ),
 );

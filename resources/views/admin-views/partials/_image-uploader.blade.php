@@ -1,20 +1,24 @@
 @php
-    $aspectRatio = match ($ratio ?? '1:1') {
+    $boxRatio = $boxRatio ?? ($ratio ?? '1:1');
+    $aspectRatio = match ($boxRatio) {
         '1:1' => 'ratio-1',
         '2:1' => 'ratio-2-1',
         '3:1' => 'ratio-3-1',
         '4:1' => 'ratio-4-1',
+        '5:1' => 'ratio-5-1',
+        '10:1' => 'ratio-10-1',
         '7:1' => 'ratio-7-1',
         default => 'ratio-1',
     };
-    $imageExtension = $imageExtension ?? IMAGE_EXTENSION;
+    $video = $video ?? false;
+    $imageExtension = $imageExtension ?? ($video ? VIDEO_EXTENSION : IMAGE_EXTENSION);
     $maxSize = $maxSize ?? MAX_FILE_SIZE;
     $isRequired = $isRequired ?? false;
     $existingImage = $existingImage ?? '';
     $ratio = $ratio ?? '1:1';
     $id = $id ?? 'image-input';
     $name = $name ?? 'image';
-    $imageFormat = $imageFormat ?? IMAGE_FORMAT;
+    $imageFormat = $imageFormat ?? ($video ? VIDEO_FORMAT : IMAGE_FORMAT);
     $pixel = isset($pixel) && $pixel !== '' ? $pixel . ' px' : null;
     $size = $pixel ?? $ratio;
     $textPosition = $textPosition ?? 'top';
@@ -24,7 +28,7 @@
     @if ($textPosition == 'top')
         <p class="mb-2 fs-12 gray-dark">
             {{ translate(($imageFormat) . '. Less Than ' . $maxSize . 'MB')}} <span
-                class="font-medium text-title">{{ translate('(' . $size . ')')}}</span>
+                class="font-medium text-title">({{ $size }})</span>
         </p>
     @endif
     <div class="upload-file_custom {{ $aspectRatio }} h-100px">
@@ -48,14 +52,21 @@
                     @endif
                 </h6>
             </div>
-            <img class="upload-file-img" loading="lazy" src="{{ $existingImage }}" data-default-src="" alt=""
-                style="display: none;">
+            @if ($video)
+                <video class="upload-file-img" preload="metadata" controls src="{{ $existingImage }}" data-default-src=""
+                    style="display: none;"></video>
+            @else
+                <img class="upload-file-img" loading="lazy" src="{{ $existingImage }}" data-default-src="" alt=""
+                    style="display: none;">
+            @endif
         </label>
         <div class="overlay">
             <div class="d-flex gap-1 justify-content-center align-items-center h-100">
+                @if (!$video)
                 <button type="button" class="btn btn-outline-info icon-btn view_btn">
                     <i class="tio-invisible"></i>
                 </button>
+                @endif
                 <button type="button" class="btn btn-outline-info icon-btn edit_btn">
                     <i class="tio-camera-enhance"></i>
                 </button>
@@ -65,7 +76,7 @@
     @if ($textPosition == 'bottom')
         <p class="mt-3 mb-2 fs-12 gray-dark">
             {{ translate(strtoupper($imageFormat) . '. Less Than ' . $maxSize . 'MB')}} <span
-                class="font-medium text-title">{{ translate('(' . $size . ')')}}</span>
+                class="font-medium text-title">({{ $size }})</span>
         </p>
     @endif
 </div>

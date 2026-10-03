@@ -1,23 +1,21 @@
 @extends('layouts.admin.app')
 
-@section('title', translate('messages.3rd Party Integration'))
+@section('title', translate('messages.Third-party integration'))
 
 
 @section('content')
 <div class="content container-fluid">
-    <!-- Page Header -->
     <div class="page-header">
         <div class="d-flex align-items-center justify-content-between gap-1 w-100">
             <h1 class="page-header-title">
                 <span>
-                    {{translate('3rd Party Integration')}}
+                    {{translate('Third-party integration')}}
                 </span>
             </h1>
+            <p class="page-header-desc">{{ translate('Connect a WhatsApp number so order updates and otps can go out through it.') }}</p>
         </div>
     </div>
-    <!-- Page Header -->
 
-    <!-- End Page Header -->
     <form action="" method="post" enctype="multipart/form-data">
         <div class="card">
             <div class="card-body">
@@ -63,8 +61,8 @@
                                 </label>
                                 <div class="provider-selection">
                                     <select name="" id="" class="custom-select">
-                                        <option value="whatsapp">{{ translate('messages.WhatsApp') }} </option>
-                                        <option value="thirdparty">{{ translate('messages.3rd Party') }} </option>
+                                        <option value="whatsapp">WhatsApp </option>
+                                        <option value="thirdparty">{{ translate('messages.Third-party') }} </option>
                                     </select>
                                 </div>
                             </div>
@@ -89,13 +87,13 @@
                 <div class="third-party-wrap">
                     <div>
                         <h4 class="mb-10px fs-16">
-                            {{ translate('Select 3rd Part Provider') }}
+                            {{ translate('Select third-party provider') }}
                         </h4>
                         <div class="bg-light rounded p-xxl-20 p-3 mb-3">
                             <div class="d-flex align-items-center justify-content-between gap-2">
                                 <div class="mb-0">
                                     <h3 class="mb-1">
-                                        {{ translate('TWILIO') }}
+                                        TWILIO
                                     </h3>
                                     <p class="mb-0 fs-12">
                                         {{ translate('Setup TWILIO as SMS gateway') }}
@@ -166,7 +164,7 @@
                             <div class="d-flex align-items-center justify-content-between gap-2">
                                 <div class="mb-0">
                                     <h3 class="mb-1">
-                                        {{ translate('Massage Bird') }}
+                                        {{ translate('MessageBird') }}
                                     </h3>
                                     <p class="mb-0 fs-12">
                                         {{ translate('Setup Alphanet SMS as SMS gateway') }}
@@ -184,7 +182,7 @@
                             <div class="d-flex align-items-center justify-content-between gap-2">
                                 <div class="mb-0">
                                     <h3 class="mb-1">
-                                        {{ translate('Watti') }}
+                                        Watti
                                     </h3>
                                     <p class="mb-0 fs-12">
                                         {{ translate('Setup RELEANS as SMS gateway') }}

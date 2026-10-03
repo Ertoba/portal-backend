@@ -1,6 +1,6 @@
 @extends('layouts.admin.app')
 
-@section('title',translate('messages.flash_sales'))
+@section('title',translate('Flash sale items'))
 
 @push('css_or_js')
 
@@ -8,18 +8,17 @@
 
 @section('content')
     <div class="content container-fluid">
-        <!-- Page Header -->
         <div class="page-header">
             <h1 class="page-header-title">
                 <span class="page-header-icon">
-                    <img src="{{asset('public/assets/admin/img/condition.png')}}" class="w--26" alt="">
+                    <img src="{{asset('public/assets/admin/img/outline/condition.svg')}}" class="w--26" alt="">
                 </span>
                 <span>
-                    {{translate('messages.flash_sale_product_setup')}}
+                    {{translate('messages.Flash sale product setup')}}
                 </span>
             </h1>
+            <p class="page-header-desc">{{ translate('Pick the items going into this flash sale and the discount each one carries.') }}</p>
         </div>
-        <!-- End Page Header -->
         <div class="row g-3">
             <div class="col-12">
                 <div class="card">
@@ -30,8 +29,8 @@
                             <div class="row g-3 mb-3">
                                 <div class="col-12 mb-0">
                                     <div class="form-group mb-0" id="item_wise">
-                                        <label class="input-label" for="exampleFormControlInput1">{{translate('messages.select_item')}} <span class="text-danger">*</span></label>
-                                        <select name="item_id" id="choice_item" class="form-control js-select2-custom" placeholder="{{translate('messages.select_item')}}" required>
+                                        <label class="input-label" for="exampleFormControlInput1">{{translate('messages.Select item')}} <span class="text-danger">*</span></label>
+                                        <select name="item_id" id="choice_item" class="form-control js-select2-custom" placeholder="{{translate('messages.Select item')}}" required>
 
                                         </select>
                                     </div>
@@ -39,41 +38,41 @@
                                 <div class="col-sm-4">
                                     <div class="form-group mb-0">
                                         <label class="input-label"
-                                            for="total_stock">{{ translate('messages.total_stock') }} <span class="text-danger">*</span></label>
-                                        <input type="number" placeholder="{{ translate('messages.Ex:_10') }}" class="form-control" name="stock" min="0" id="quantity" required>
+                                            for="total_stock">{{ translate('messages.Total stock') }} <span class="text-danger">*</span></label>
+                                        <input type="number" placeholder="{{ translate('messages.Ex') . ': 10' }}" class="form-control" name="stock" min="0" id="quantity" required>
                                     </div>
                                 </div>
                                 <div class="col-sm-4">
                                     <div class="form-group mb-0">
                                         <label class="input-label"
-                                            for="exampleFormControlInput1">{{ translate('messages.discount_type') }} <span class="text-danger">*</span><span
+                                            for="exampleFormControlInput1">{{ translate('Discount type') }} <span class="text-danger">*</span><span
                                                 class="input-label-secondary text--title" data-toggle="tooltip"
                                                 data-placement="right"
-                                                data-original-title="{{ translate('Admin_shares_the_same_percentage/amount_on_discount_as_he_takes_commissions_from_stores') }}">
+                                                data-original-title="{{ translate('Admin shares the same percentage/amount on discount as he takes commissions from stores') }}">
                                                 <i class="tio-info-outined"></i>
                                             </span>
                                         </label>
                                         <select name="discount_type" id="discount_type"
                                             class="form-control js-select2-custom">
-                                            <option value="percent">{{ translate('messages.percent') }}</option>
-                                            <option value="amount">{{ translate('messages.amount') }}</option>
+                                            <option value="percent">{{ translate('Percent') }}</option>
+                                            <option value="amount">{{ translate('Amount') }}</option>
                                         </select>
                                     </div>
                                 </div>
                                 <div class="col-sm-4">
                                     <div class="form-group mb-0">
                                         <label class="input-label"
-                                            for="exampleFormControlInput1">{{ translate('messages.discount') }} <span class="text-danger">*</span></label>
+                                            for="exampleFormControlInput1">{{ translate('Discount') }} <span class="text-danger">*</span></label>
                                         <input type="number" min="{{ \App\CentralLogics\Helpers::getDecimalPlaces() }}" max="9999999999999999999999" value="0" step="{{ \App\CentralLogics\Helpers::getDecimalPlaces() }}"
                                             name="discount" class="form-control" id="discount_amount"
-                                            placeholder="{{ translate('messages.Ex:') }} 100" required>
+                                            placeholder="{{ translate('messages.Ex') }}: 100" required>
                                     </div>
                                 </div>
                             </div>
 
                             <div class="btn--container justify-content-end">
-                                <button type="reset" class="btn btn--reset">{{translate('messages.reset')}}</button>
-                                <button type="submit" class="btn btn--primary">{{translate('messages.submit')}}</button>
+                                <button type="reset" class="btn btn--reset"><i class="tio-refresh"></i> {{translate('messages.Reset')}}</button>
+                                <button type="submit" class="btn btn--primary"><i class="tio-checkmark-circle-outlined"></i> {{translate('messages.Submit')}}</button>
                             </div>
                         </form>
                     </div>
@@ -84,22 +83,22 @@
                 <div class="card">
                     <div class="card-header py-2 border-0">
                         <div class="search--button-wrapper">
-                            <h5 class="card-title">
-                                {{translate('messages.flash_sale_product_list')}}<span class="badge badge-soft-dark ml-2" id="itemCount">{{$items->total()}}</span>
-                            </h5>
+                            @include('partials._table-head', [
+                                'title'    => translate('messages.Flash sale product list'),
+                                'subtitle' => translate('messages.Items taking part in this flash sale and their discounted prices.'),
+                                'count'    => $items->total(),
+                                'count_id' => 'itemCount',
+                            ])
                             <form  class="search-form">
-                                <!-- Search -->
 
                                 <div class="input-group input--group">
                                     <input id="datatableSearch_" value="{{ request()?->search ?? null }}" type="search" name="search" class="form-control"
-                                            placeholder="{{translate('ex_:_product_name')}}" aria-label="Search" >
+                                            placeholder="{{translate('Ex') . ' : ' . translate('Product name')}}" aria-label="Search" >
                                     <button type="submit" class="btn btn--secondary"><i class="tio-search"></i></button>
                                 </div>
-                                <!-- End Search -->
                             </form>
                         </div>
                     </div>
-                    <!-- Table -->
                     <div class="table-responsive datatable-custom">
                         <table id="columnSearchDatatable"
                                class="table table-borderless table-thead-bordered table-nowrap table-align-middle card-table"
@@ -110,15 +109,15 @@
                                }'>
                             <thead class="thead-light">
                             <tr class="text-center">
-                                <th class="border-0">{{translate('sl')}}</th>
-                                <th class="border-0">{{translate('messages.product')}}</th>
-                                <th class="border-0">{{translate('messages.store')}}</th>
-                                <th class="border-0">{{translate('messages.stock_for_this_sale')}}</th>
-                                <th class="border-0">{{translate('messages.Qty_Sold')}}</th>
-                                <th class="border-0">{{translate('messages.discount')}}</th>
+                                <th class="border-0">{{translate('SL')}}</th>
+                                <th class="border-0">{{translate('messages.Product')}}</th>
+                                <th class="border-0">{{translate('messages.Store')}}</th>
+                                <th class="border-0">{{translate('messages.Stock for this sale')}}</th>
+                                <th class="border-0">{{translate('Quantity sold')}}</th>
+                                <th class="border-0">{{translate('Discount')}}</th>
                                 <th class="border-0">{{translate('messages.price')}}</th>
-                                <th class="border-0">{{translate('messages.status')}}</th>
-                                <th class="border-0">{{translate('messages.action')}}</th>
+                                <th class="border-0">{{translate('messages.Status')}}</th>
+                                <th class="border-0">{{translate('messages.Action')}}</th>
                             </tr>
 
                             </thead>
@@ -132,6 +131,7 @@
                                         </span>
                                     </td>
                                     <td class="text-center">
+                                        @if ($item->item)
                                         <a class="media align-items-center" href="{{route('admin.item.view',[$item['item_id']])}}">
                                             <img class="avatar avatar-lg mr-3 onerror-image" src="{{ $item->item['image_full_url'] }}"
                                             data-onerror-image="{{asset('public/assets/admin/img/160x160/img2.jpg')}}" alt="{{$item->item->name}} image">
@@ -139,13 +139,16 @@
                                                 <h5 title="{{ $item->item['name'] }}" class="text-hover-primary mb-0">{{Str::limit($item->item['name'],20,'...')}}</h5>
                                             </div>
                                         </a>
+                                        @else
+                                            <span class="text--danger">{{ translate('messages.item deleted!') }}</span>
+                                        @endif
                                     </td>
-                                    <td class="text-center" title="{{ $item->item->store?$item->item->store->name:'' }}">
+                                    <td class="text-center" title="{{ $item->item?->store?->name }}">
 
-                                        @if ($item->item->store)
+                                        @if ($item->item?->store)
                                             <a href="{{route('admin.store.view', $item->item->store->id)}}" class="" > {{  Str::limit($item->item->store->name, 20, '...') }}</a>
                                         @else
-                                        {{Str::limit($item->item->store?$item->item->store->name:translate('messages.store deleted!'), 20, '...')}}
+                                        {{Str::limit(translate('messages.Store deleted'), 20, '...')}}
 
                                         @endif
                                         </td>
@@ -171,7 +174,7 @@
                                     </td>
                                     <td class="text-center">
                                         <div class="btn--container justify-content-center">
-                                            <a class="btn action-btn btn--danger btn-outline-danger form-control form-alert" href="javascript:" data-id="item-{{$item['id']}}" data-message="{{ translate('Want to delete this item ?') }}" title="{{translate('messages.delete')}}"><i class="tio-delete-outlined"></i>
+                                            <a class="btn action-btn action-btn--delete form-control form-alert" href="javascript:" data-id="item-{{$item['id']}}" data-message="{{ translate('Want to delete this item?') }}" title="{{translate('messages.Delete')}}"><i class="tio-delete-outlined"></i>
                                             </a>
                                             <form action="{{route('admin.flash-sale.delete-product',[$item['id']])}}"
                                                     method="post" id="item-{{$item['id']}}">
@@ -194,13 +197,12 @@
                     <div class="empty--data">
                         <img src="{{asset('/public/assets/admin/svg/illustrations/sorry.svg')}}" alt="public">
                         <h5>
-                            {{translate('no_data_found')}}
+                            {{translate('No data found')}}
                         </h5>
                     </div>
                     @endif
                 </div>
             </div>
-            <!-- End Table -->
         </div>
     </div>
 

@@ -3,7 +3,6 @@
 namespace App\Models;
 
 use App\CentralLogics\Helpers;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
@@ -22,8 +21,6 @@ class Message extends Model
         'order_amount' => 'float',
 
     ];
-
-    protected $appends = ['file_full_url'];
 
     public function sender()
     {

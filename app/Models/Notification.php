@@ -2,13 +2,14 @@
 
 namespace App\Models;
 
-use App\CentralLogics\Helpers;
 use Illuminate\Database\Eloquent\Model;
 use App\Scopes\ZoneScope;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use App\Traits\Model\HasStorageTrait;
+use App\Support\Notification\NotificationMessages;
 
 /**
  * Class Notification
@@ -25,6 +26,8 @@ use Illuminate\Support\Facades\DB;
  */
 class Notification extends Model
 {
+    use HasStorageTrait;
+
     /**
      * The attributes that are mass assignable.
      *
@@ -48,20 +51,12 @@ class Notification extends Model
         'updated_at' => 'datetime'
     ];
 
-    protected $appends = ['image_full_url'];
-
     /**
      * @return array
      */
     public function getDataAttribute(): array
     {
-        return [
-            "title"=> $this->title,
-            "description"=> $this->description,
-            "order_id"=> "",
-            "image"=> $this->image,
-            "type"=> "push_notification"
-        ];
+        return NotificationMessages::pushNotificationRecord($this->title, $this->description, $this->image);
     }
 
     /**
@@ -90,22 +85,9 @@ class Notification extends Model
         return date('Y-m-d H:i:s',strtotime($value));
     }
 
-    public function getImageFullUrlAttribute(){
-        $value = $this->image;
-        if (count($this->storage) > 0) {
-            foreach ($this->storage as $storage) {
-                if ($storage['key'] == 'image') {
-                    return Helpers::get_full_url('notification',$value,$storage['value']);
-                }
-            }
-        }
-
-        return Helpers::get_full_url('notification',$value,'public');
-    }
-
-    public function storage()
+    public function getImageFullUrlAttribute()
     {
-        return $this->morphMany(Storage::class, 'data');
+        return $this->storageFullUrl('notification', 'image', $this->image);
     }
 
     /**
@@ -113,28 +95,13 @@ class Notification extends Model
      */
     protected static function booted(): void
     {
-        static::addGlobalScope('storage', function ($builder) {
-            $builder->with('storage');
-        });
         static::addGlobalScope(new ZoneScope);
     }
     protected static function boot()
     {
         parent::boot();
         static::saved(function ($model) {
-            if($model->isDirty('image')){
-                $value = Helpers::getDisk();
-
-                DB::table('storages')->updateOrInsert([
-                    'data_type' => get_class($model),
-                    'data_id' => $model->id,
-                    'key' => 'image',
-                ], [
-                    'value' => $value,
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
-            }
+            self::recordStorageDisk($model, 'image', 'image');
         });
 
     }

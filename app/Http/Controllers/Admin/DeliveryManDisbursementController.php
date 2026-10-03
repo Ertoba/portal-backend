@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\CentralLogics\Helpers;
+use App\Services\System\BusinessSettingService;
 use App\Exports\DisbursementExport;
 use App\Http\Controllers\Controller;
 use App\Models\BusinessSetting;
@@ -20,24 +21,82 @@ class DeliveryManDisbursementController extends Controller
 {
     public function list(Request $request)
     {
-        $status = $request->status??'all';
-        $disbursements = Disbursement::
-        when($status!='all', function($q) use($status){
-            return $q->where('status',$status);
-        })
-        ->where('created_for','delivery_man')
-        ->latest()->paginate(config('default_pagination'));
-        return view('admin-views.dm-disbursement.index', compact('disbursements','status'));
+        $status = $request->status ?? 'all';
+        $key = $request->filled('search') ? explode(' ', $request['search']) : null;
+
+        $disbursements = Disbursement::where('created_for', 'delivery_man')
+            ->when($status != 'all', function ($q) use ($status) {
+                return $q->where('status', $status);
+            })
+            ->when($key, function ($q) use ($key) {
+                $q->where(function ($q) use ($key) {
+                    foreach ($key as $value) {
+                        $q->orWhere('title', 'like', "%{$value}%");
+                    }
+                });
+            })
+            ->withCount([
+                'details',
+                // "Settled" on the card is everything no longer pending — a
+                // canceled payout is resolved too, it just was not paid.
+                'details as pending_details_count' => function ($q) {
+                    $q->where('status', 'pending');
+                },
+            ])
+            ->latest()
+            ->paginate(config('default_pagination'))
+            ->appends($request->except('page'));
+
+        return view('admin-views.dm-disbursement.index', [
+            'disbursements' => $disbursements,
+            'status' => $status,
+            'batch_summary' => $this->batchSummary(),
+            'payout_summary' => $this->payoutSummary(),
+        ]);
+    }
+
+    /**
+     * Batch counts per status, for the tab counters. One grouped query rather
+     * than a count() per tab.
+     */
+    private function batchSummary()
+    {
+        return Disbursement::where('created_for', 'delivery_man')
+            ->selectRaw('status, COUNT(*) as batches')
+            ->groupBy('status')
+            ->pluck('batches', 'status');
+    }
+
+    /**
+     * Money is summed per payout, not per batch: a partially completed batch
+     * has part of its `total_amount` already paid, so that column cannot
+     * answer "how much is still owed".
+     *
+     * Pass a batch id for one run's breakdown, or nothing for the ledger.
+     */
+    private function payoutSummary($disbursement_id = null)
+    {
+        return DisbursementDetails::query()
+            ->when($disbursement_id, function ($q) use ($disbursement_id) {
+                $q->where('disbursement_id', $disbursement_id);
+            }, function ($q) {
+                $q->join('disbursements', 'disbursements.id', '=', 'disbursement_details.disbursement_id')
+                    ->where('disbursements.created_for', 'delivery_man');
+            })
+            ->selectRaw('disbursement_details.status as status, COUNT(*) as payouts, SUM(disbursement_details.disbursement_amount) as amount')
+            ->groupBy('disbursement_details.status')
+            ->get()
+            ->keyBy('status');
     }
 
     public function view(Request $request,$id)
     {
-        $key = explode(' ', $request['search']);
+        $key = explode(' ', $request['search'] ?? '');
         $delivery_man_id = $request->query('delivery_man_id', 'all');
         $payment_method_id = $request->query('payment_method_id', 'all');
-        $disbursement = Disbursement::findOrFail($id);
-        $disbursements=DisbursementDetails::with('delivery_man','withdraw_method')->where(['disbursement_id'=>$id])
-            ->when(isset($key) , function($q) use($key){
+        $disbursement = Disbursement::where('created_for', 'delivery_man')->findOrFail($id);
+        $disbursements=DisbursementDetails::with('delivery_man.storage','delivery_man.zone','withdraw_method')->where(['disbursement_id'=>$id])
+            ->when($request['search'] , function($q) use($key){
                 $q->whereHas('delivery_man', function ($q) use($key){
                     $q->where(function ($q) use ($key) {
                         foreach ($key as $value) {
@@ -59,17 +118,21 @@ class DeliveryManDisbursementController extends Controller
             })
             ->latest();
         $dm_ids = json_encode($disbursements->pluck('delivery_man_id')->toArray());
-        $disbursement_delivery_mans = $disbursements->paginate(config('default_pagination'));
-        return view('admin-views.dm-disbursement.view', compact('disbursement','disbursement_delivery_mans','delivery_man_id','dm_ids','payment_method_id'));
+        $disbursement_delivery_mans = $disbursements->paginate(config('default_pagination'))
+            ->appends($request->except('page'));
+        $delivery_men = DeliveryMan::where('type', 'zone_wise')->where('earning', 1)->active()->get(['id', 'f_name', 'l_name']);
+        $payout_summary = $this->payoutSummary($id);
+
+        return view('admin-views.dm-disbursement.view', compact('disbursement','disbursement_delivery_mans','delivery_man_id','dm_ids','payment_method_id','delivery_men','payout_summary'));
     }
     public function export(Request $request,$id,$type='excel')
     {
-        $key = explode(' ', $request['search']);
+        $key = explode(' ', $request['search'] ?? '');
         $delivery_man_id = $request->query('delivery_man_id', 'all');
         $payment_method_id = $request->query('payment_method_id', 'all');
-        $disbursement = Disbursement::findOrFail($id);
-        $disbursements=DisbursementDetails::where(['disbursement_id'=>$id])
-            ->when(isset($key) , function($q) use($key){
+        $disbursement = Disbursement::where('created_for', 'delivery_man')->findOrFail($id);
+        $disbursements=DisbursementDetails::with(['delivery_man','withdraw_method'])->where(['disbursement_id'=>$id])
+            ->when($request['search'] , function($q) use($key){
                 $q->whereHas('delivery_man', function ($q) use($key){
                     $q->where(function ($q) use ($key) {
                         foreach ($key as $value) {
@@ -96,8 +159,12 @@ class DeliveryManDisbursementController extends Controller
             'disbursements' =>$disbursements,
         ];
         if($type == 'pdf'){
-            $mpdf_view = View::make('admin-views.dm-disbursement.pdf', compact('disbursement','disbursements')
+            $logoFullUrl = Helpers::get_full_url(
+                'business',
+                Helpers::get_business_settings('logo', false),
+                app(BusinessSettingService::class)->findStorageDisk('logo')
             );
+            $mpdf_view = View::make('admin-views.dm-disbursement.pdf', compact('disbursement', 'disbursements', 'logoFullUrl'));
             Helpers::gen_mpdf(view: $mpdf_view,file_prefix: 'Disbursement',file_postfix: $id);
         }elseif($type == 'csv'){
             return Excel::download(new DisbursementExport($data), 'Disbursement.csv');
@@ -130,7 +197,7 @@ class DeliveryManDisbursementController extends Controller
 
         return response()->json([
             'status' => 'success',
-            'message' => translate('messages.status_updated')
+            'message' => translate('messages.Status updated')
         ]);
     }
 
@@ -145,7 +212,7 @@ class DeliveryManDisbursementController extends Controller
                 $this->syncDeliveryManDisbursementStatus($disbursement, $status);
                 self::check_status($disbursement->disbursement_id);
             });
-            Toastr::success(translate('messages.status_updated'));
+            Toastr::success(translate('messages.Status updated'));
             return back();
         } catch (\Throwable $e) {
             Toastr::error($e->getMessage());
@@ -170,7 +237,7 @@ class DeliveryManDisbursementController extends Controller
         $cashInHand = (float) ($wallet->collected_cash ?? 0);
 
         if (($totalEarning - ($totalWithdrawn + $pendingWithdraw + $cashInHand)) < 0) {
-            throw new \RuntimeException(translate('messages.balance_mismatched_total_earning_is_too_low'));
+            throw new \RuntimeException(translate('messages.Balance mismatched total earning is too low'));
         }
 
         if ($currentStatus === $status) {
@@ -180,7 +247,7 @@ class DeliveryManDisbursementController extends Controller
         if ($status === 'completed') {
             if ($currentStatus === 'pending') {
                 if ($pendingWithdraw < $amount) {
-                    throw new \RuntimeException(translate('messages.pending_withdraw_is_lower_than_disbursement_amount'));
+                    throw new \RuntimeException(translate('messages.Pending withdraw is lower than disbursement amount'));
                 }
 
                 $wallet->pending_withdraw = $pendingWithdraw - $amount;
@@ -199,12 +266,12 @@ class DeliveryManDisbursementController extends Controller
             $provideDmEarning->save();
         } elseif ($status === 'canceled') {
             if ($currentStatus === 'completed') {
-                throw new \RuntimeException(translate('messages.can_not_cancel_completed_disbursement_,_uncheck_completed_disbursements'));
+                throw new \RuntimeException(translate('Cannot cancel completed disbursement, uncheck completed disbursements'));
             }
 
             if ($currentStatus === 'pending') {
                 if ($pendingWithdraw < $amount) {
-                    throw new \RuntimeException(translate('messages.pending_withdraw_is_lower_than_disbursement_amount'));
+                    throw new \RuntimeException(translate('messages.Pending withdraw is lower than disbursement amount'));
                 }
 
                 $wallet->pending_withdraw = $pendingWithdraw - $amount;
@@ -212,7 +279,7 @@ class DeliveryManDisbursementController extends Controller
         } elseif ($status === 'pending') {
             if ($currentStatus === 'completed') {
                 if ($totalWithdrawn < $amount) {
-                    throw new \RuntimeException(translate('messages.total_withdrawn_is_lower_than_disbursement_amount'));
+                    throw new \RuntimeException(translate('messages.Total withdrawn is lower than disbursement amount'));
                 }
 
                 ProvideDMEarning::where('ref', $disbursement->id)
@@ -234,7 +301,7 @@ class DeliveryManDisbursementController extends Controller
             );
 
         if ($newBalance < 0) {
-            throw new \RuntimeException(translate('messages.balance_would_become_negative_after_this_status_change'));
+            throw new \RuntimeException(translate('messages.Balance would become negative after this status change'));
         }
 
         $wallet->save();
@@ -251,7 +318,7 @@ class DeliveryManDisbursementController extends Controller
         $disbursement = new Disbursement();
         $disbursement->id = $lastId + 1;
         $disbursement->title = 'Disbursement # '.$disbursement->id;
-        $minimum_amount = BusinessSetting::where(['key' => 'dm_disbursement_min_amount'])->first()?->value;
+        $minimum_amount = Helpers::get_business_settings('dm_disbursement_min_amount', false);
         foreach ($delivery_mans as $delivery_man){
             if(isset($delivery_man->wallet)){
 
@@ -286,7 +353,6 @@ class DeliveryManDisbursementController extends Controller
             DisbursementDetails::insert($disbursement_details);
         }
 
-        info("DM-----Disbursement");
         return true;
 
     }

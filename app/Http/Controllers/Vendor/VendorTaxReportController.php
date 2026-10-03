@@ -22,7 +22,7 @@ class VendorTaxReportController extends Controller
     {
 
         $dateRange = $request->dates ?? now()->subDays(6)->format('m/d/Y') . ' - ' . now()->format('m/d/Y');
-        $key = explode(' ', $request['search']);
+        $key = explode(' ', $request['search'] ?? '');
         list($startDate, $endDate) = explode(' - ', $dateRange);
         $startDate = Carbon::createFromFormat('m/d/Y', trim($startDate));
         $endDate = Carbon::createFromFormat('m/d/Y', trim($endDate));
@@ -32,7 +32,6 @@ class VendorTaxReportController extends Controller
 
         $store = Helpers::get_store_data();
 
-        // $start = microtime(true);
         $vendortaxData =   $this->getVendortaxData($store->id, $startDate, $endDate, $key);
         $summary =   $vendortaxData['summary'];
         $orders = $vendortaxData['orders'];
@@ -44,17 +43,14 @@ class VendorTaxReportController extends Controller
         $orders = $orders->paginate(config('default_pagination'))
             ->withQueryString();
 
-        // $time = microtime(true) - $start;
-        // dd("Query took {$time} seconds", $stores);
-// dd($startDate,$endDate);
 
-        return view('vendor-views.report.tax-report.vendor-tax-detail-report', compact('totalOrders', 'totalOrderAmount', 'totalTax', 'store', 'orders', 'startDate', 'endDate', 'taxSummary'));
+        return view('vendor-views.report.tax-report.vendor-tax-detail-report', compact('totalOrders', 'totalOrderAmount', 'totalTax', 'store', 'orders', 'startDate', 'endDate', 'dateRange', 'taxSummary'));
     }
 
     public function vendorTaxExport(Request $request)
     {
         $dateRange = $request->dates ?? now()->subDays(6)->format('m/d/Y') . ' - ' . now()->format('m/d/Y');
-        $key = explode(' ', $request['search']);
+        $key = explode(' ', $request['search'] ?? '');
         list($startDate, $endDate) = explode(' - ', $dateRange);
         $startDate = Carbon::createFromFormat('m/d/Y', trim($startDate));
         $endDate = Carbon::createFromFormat('m/d/Y', trim($endDate));
@@ -64,16 +60,12 @@ class VendorTaxReportController extends Controller
 
         $store = Helpers::get_store_data();
 
-        // $start = microtime(true);
         $vendortaxData =   $this->getVendortaxData($store->id, $startDate, $endDate, $key, true);
         $summary =   $vendortaxData['summary'];
         $orders = $vendortaxData['orders'];
-        // $taxSummary = $vendortaxData['taxSummary'];
 
         $orders = $orders->cursor();
 
-        // $time = microtime(true) - $start;
-        // dd("Query took {$time} seconds", $stores);
         $startDate = Carbon::parse($startDate)->format('d M, Y');
         $endDate = Carbon::parse($endDate)->format('d M, Y');
 
@@ -84,7 +76,6 @@ class VendorTaxReportController extends Controller
             'to' => $endDate,
             'summary' => $summary
         ];
-        // dd($request->export_type);
         if ($request->export_type == 'excel') {
             return Excel::download(new VendorTaxExport($data), $store->name . 's TaxExport.xlsx');
         } else if ($request->export_type == 'csv') {
@@ -112,7 +103,6 @@ class VendorTaxReportController extends Controller
                     ->select('id', 'order_id', 'tax_name', 'tax_amount','tax_on','tax_type','taxable_type');
             }
         ])
-
             ->where('store_id', $store_id)
             ->when(count($search), fn($q) => $q->where(function ($q) use ($search) {
                 foreach ($search as $value) {

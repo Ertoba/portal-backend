@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\Settings\BusinessRules;
 use App\CentralLogics\Helpers;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -18,23 +19,24 @@ use Modules\RideShare\Entities\UserManagement\UserLevel;
 use Modules\RideShare\Entities\UserManagement\UserLevelHistory;
 use Modules\RideShare\Entities\VehicleManagement\RiderVehicle;
 use Illuminate\Database\Eloquent\Builder;
-use App\Traits\DemoMaskable;
+use App\Traits\Model\DemoMaskableTrait;
+use App\Traits\Model\HasStorageTrait;
 
 class DeliveryMan extends Authenticatable
 {
-    use Notifiable,DemoMaskable;
+    use Notifiable, DemoMaskableTrait, HasStorageTrait;
 
     protected $casts = [
         'zone_id' => 'integer',
         'status'=>'boolean',
         'active'=>'integer',
         'available'=>'integer',
-        'earning'=>'float',
+        'earning'=>'integer',
         'store_id'=>'integer',
         'current_orders'=>'integer',
         'vehicle_id'=>'integer',
         'ref_by'=>'integer',
-        'loyalty_point'=>'float',
+        'loyalty_point'=>'integer',
     ];
 
     protected $guarded = [];
@@ -163,18 +165,43 @@ class DeliveryMan extends Authenticatable
         return $this->hasOne(UserLevelHistory::class, 'user_id')->latestOfMany();
     }
 
+    /**
+     * Ride-share reviews live in a module class that is not even autoloadable on a build
+     * without the RideShare addon -- referencing it (and the CUSTOMER/DRIVER constants it
+     * ships) blows up the moment any of these relations is actually queried or eager-loaded,
+     * e.g. DeliveryManController::getPreview()'s unconditional 'receivedReviews' eager load.
+     * Falling back to an always-empty self-relation keeps the relation queryable (count 0,
+     * empty collection) instead of a fatal "Class not found".
+     */
+    private function emptyReviewRelation()
+    {
+        return $this->hasMany(static::class, 'id', 'id')->whereRaw('1 = 0');
+    }
+
     public function givenReviews()
     {
+        if (!addon_published_status('RideShare')) {
+            return $this->emptyReviewRelation();
+        }
+
         return $this->hasMany(RideReview::class, 'given_by')->where('review_for', CUSTOMER);
     }
 
     public function receivedReviews()
     {
+        if (!addon_published_status('RideShare')) {
+            return $this->emptyReviewRelation();
+        }
+
         return $this->hasMany(RideReview::class, 'received_by')->where('review_for', DRIVER);
     }
 
     public function rideRating()
     {
+        if (!addon_published_status('RideShare')) {
+            return $this->emptyReviewRelation();
+        }
+
         return $this->hasMany(RideReview::class, 'received_by')->where('review_for', DRIVER)
         ->select(DB::raw('avg(rating) average, count(received_by) rating_count, received_by'))
             ->groupBy('received_by');
@@ -334,12 +361,12 @@ class DeliveryMan extends Authenticatable
 
     public function scopeAvailable($query)
     {
-        return $query->where('current_orders', '<' ,config('dm_maximum_orders')??1);
+        return $query->where('current_orders', '<' ,BusinessRules::dmMaximumOrders());
     }
 
     public function scopeUnavailable($query)
     {
-        return $query->where('current_orders', '>' ,config('dm_maximum_orders')??1);
+        return $query->where('current_orders', '>' ,BusinessRules::dmMaximumOrders());
     }
 
     public function scopeZonewise($query)
@@ -347,17 +374,9 @@ class DeliveryMan extends Authenticatable
         return $query->where('type','zone_wise');
     }
 
-    public function getImageFullUrlAttribute(){
-        $value = $this->image;
-        if (count($this->storage) > 0) {
-            foreach ($this->storage as $storage) {
-                if ($storage['key'] == 'image') {
-                    return Helpers::get_full_url('delivery-man',$value,$storage['value']);
-                }
-            }
-        }
-
-        return Helpers::get_full_url('delivery-man',$value,'public');
+    public function getImageFullUrlAttribute()
+    {
+        return $this->storageFullUrl('delivery-man', 'image', $this->image);
     }
     public function getIdentityImageFullUrlAttribute(){
         $images = [];
@@ -382,11 +401,6 @@ class DeliveryMan extends Authenticatable
         return (json_last_error() === JSON_ERROR_NONE);
     }
 
-    public function storage()
-    {
-        return $this->morphMany(Storage::class, 'data');
-    }
-
     public function scopeRider($query)
     {
         return $query->withoutGlobalScope('delivery_only')->where('is_ride', 1);
@@ -394,10 +408,8 @@ class DeliveryMan extends Authenticatable
 
     protected static function booted()
     {
-        static::addGlobalScope('storage', function ($builder) {
-            $builder->with('storage');
-        });
         static::addGlobalScope(new ZoneScope);
+
 
         if(!request()->is('api/*') && !request()->is('deliveryman-earning-report-invoice/*') && addon_published_status('RideShare')){
             static::addGlobalScope('delivery_only', function (Builder $builder) {
@@ -410,19 +422,7 @@ class DeliveryMan extends Authenticatable
     {
         parent::boot();
         static::saved(function ($model) {
-            if($model->isDirty('image')){
-                $value = Helpers::getDisk();
-
-                DB::table('storages')->updateOrInsert([
-                    'data_type' => get_class($model),
-                    'data_id' => $model->id,
-                    'key' => 'image',
-                ], [
-                    'value' => $value,
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
-            }
+            self::recordStorageDisk($model, 'image', 'image');
         });
 
     }

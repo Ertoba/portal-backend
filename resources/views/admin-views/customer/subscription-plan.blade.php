@@ -1,6 +1,6 @@
 @extends('layouts.admin.app')
 
-@section('title', translate('messages.Subscription_Plan'))
+@section('title', translate('Subscription plan'))
 
 @section('content')
 @php
@@ -24,9 +24,15 @@
 <div class="content container-fluid">
     <div class="page-header pb-2 mb-0">
         <div class="d-flex flex-wrap justify-content-between align-items-start">
-            <h1 class="page-header-title text-capitalize">
-                <span>{{ translate('messages.customer_id') }} <span class="gray-dark">#{{ $customer->id }}</span></span>
-            </h1>
+            <div>
+                <h1 class="page-header-title text-capitalize">
+                    <span class="page-header-icon">
+                        <img src="{{ asset('public/assets/admin/img/outline/group.svg') }}" class="w--26" alt="">
+                    </span>
+                    <span>{{ translate('Customer ID') }} <span class="gray-dark">#{{ $customer->id }}</span></span>
+                </h1>
+                <p class="page-header-desc">{{ translate('The plan this customer is on, what it covers and when it renews.') }}</p>
+            </div>
         </div>
     </div>
 
@@ -36,9 +42,9 @@
         <div class="card-body">
             <div class="d-flex flex-wrap gap-3 align-items-center justify-content-between mb-20">
                 <div>
-                    <h3 class="mb-1 fs-16">{{ translate('messages.Subscription_Plan') }}</h3>
+                    <h3 class="mb-1 fs-16">{{ translate('Subscription plan') }}</h3>
                     <p class="mb-0 gray-dark fs-12">
-                        {{ translate('messages.here_you_can_see_an_overview_of_subscription_plans') }}
+                        {{ translate('messages.Here you can see an overview of subscription plans.') }}
                     </p>
                 </div>
                 @if ($subscription)
@@ -46,8 +52,8 @@
                         @if ($isActive)
                             <button type="button" class="btn btn--cancel py-1 h-40 text-nowrap px-3 form-alert"
                                 data-id="pro-sub-cancel-{{ $subscription->id }}"
-                                data-message="{{ translate('messages.Cancel_this_subscription') }}?">
-                                {{ translate('messages.Cancel_Subscription') }}
+                                data-message="{{ translate('messages.Cancel this subscription') }}?">
+                                <i class="tio-clear-circle-outlined"></i> {{ translate('Cancel subscription') }}
                             </button>
                             <form action="{{ route('admin.pro-customer.subscription.cancel', $subscription->id) }}"
                                 method="post" id="pro-sub-cancel-{{ $subscription->id }}">
@@ -58,12 +64,12 @@
                             @if ($isCanceled)
                                 <button type="button" class="btn btn--primary h-40 text-nowrap px-3" data-toggle="modal"
                                     data-target="#plan_subscribe_modal">
-                                    {{ translate('messages.Subscribe_Now') }}
+                                    <i class="tio-checkmark-circle-outlined"></i> {{ translate('messages.Subscribe Now') }}
                                 </button>
                             @else
                                 <button type="button" class="btn btn--primary h-40 text-nowrap px-3" data-toggle="modal"
                                     data-target="#plan_modal_area">
-                                    {{ translate('messages.Shift_or_Renew_Subscription') }}
+                                    <i class="tio-autorenew"></i> {{ translate('messages.Shift or Renew Subscription') }}
                                 </button>
                             @endif
                         @endif
@@ -74,7 +80,6 @@
             @if ($subscription)
                 <div class="bg-light2 p-xxl-20 p-3">
                     <div class="row g-3">
-                        {{-- Plan name & price --}}
                         <div class="col-md-12 col-lg-4">
                             <div class="subscription-plan__card">
                                 <div>
@@ -88,7 +93,7 @@
                                     </div>
                                     @if ($subscription->plan_type === 'free_trial')
                                         <p class="mb-0 fs-32 font-semibold text-dark text-capitalize">
-                                            {{ translate('messages.Free_Trial') }}
+                                            {{ translate('Free trial') }}
                                             <span class="fs-20 font-weight-light gray-dark">/ {{ optional($subscription->plan)->duration ?? '-' }} {{ translate('messages.days') }}</span>
                                         </p>
                                     @else
@@ -101,23 +106,22 @@
                             </div>
                         </div>
 
-                        {{-- Plan validity --}}
                         <div class="col-lg-4 col-md-6">
                             <div class="bg-white subscription-plan__card p-3 rounded">
                                 <div class="mb-3 d-flex gap-2 align-items-center justify-content-start">
-                                    <h3 class="mb-0 fs-14 fw-medium lh-1">{{ translate('messages.Plan_Validity') }}</h3>
+                                    <h3 class="mb-0 fs-14 fw-medium lh-1">{{ translate('Plan validity') }}</h3>
                                     <span class="badge {{ $statusBadge }} px-2 rounded-pill fs-12 text-capitalize">
                                         {{ $subscription->status }}
                                     </span>
                                 </div>
                                 <div class="d-flex flex-column gap-1">
                                     <div class="d-flex gap-2 align-items-center">
-                                        <span class="fs-14 min-w-90">{{ translate('messages.Start_Date') }}</span>
+                                        <span class="fs-14 min-w-90">{{ translate('Start date') }}</span>
                                         <span>:</span>
                                         <span class="fs-14 text-dark">{{ $subscription->start_at ? \App\CentralLogics\Helpers::time_date_format($subscription->start_at) : '-' }}</span>
                                     </div>
                                     <div class="d-flex gap-2 align-items-center">
-                                        <span class="fs-14 min-w-90">{{ translate('messages.Expire_Date') }}</span>
+                                        <span class="fs-14 min-w-90">{{ translate('messages.Expire date') }}</span>
                                         <span>:</span>
                                         <span class="fs-14 text-dark">{{ $subscription->end_at ? \App\CentralLogics\Helpers::time_date_format($subscription->end_at) : '-' }}</span>
                                     </div>
@@ -125,7 +129,6 @@
                             </div>
                         </div>
 
-                        {{-- Transaction --}}
                         <div class="col-lg-4 col-md-6">
                             <div class="bg-white subscription-plan__card p-3 rounded">
                                 <div class="mb-3 d-flex gap-2 align-items-center justify-content-start flex-wrap">
@@ -143,7 +146,7 @@
                                 </div>
                                 <div class="d-flex flex-column gap-1">
                                     <div class="d-flex gap-2 align-items-center">
-                                        <span class="fs-14 min-w-90">{{ translate('messages.Payment_Date') }}</span>
+                                        <span class="fs-14 min-w-90">{{ translate('messages.Payment Date') }}</span>
                                         <span>:</span>
                                         <span class="fs-14 text-dark">
                                             @if ($latestTransaction)
@@ -154,13 +157,13 @@
                                         </span>
                                     </div>
                                     <div class="d-flex gap-2 align-items-center">
-                                        <span class="fs-14 min-w-90">{{ translate('messages.Paid_By') }}</span>
+                                        <span class="fs-14 min-w-90">{{ translate('Paid by') }}</span>
                                         <span>:</span>
                                         <span class="fs-14 text-dark text-capitalize">
                                             @if ($latestTransaction && $latestTransaction->payment_method)
                                                 {{ str_replace('_', ' ', $latestTransaction->payment_method) }}
                                             @elseif ($subscription->plan_type === 'free_trial')
-                                                {{ translate('messages.Free_Trial') }}
+                                                {{ translate('Free trial') }}
                                             @else
                                                 {{ translate('messages.N/A') }}
                                             @endif
@@ -175,14 +178,14 @@
                 <div class="empty--data text-center py-5 my-4">
                     <img src="{{ asset('public/assets/admin/img/empty.png') }}" alt="empty"
                         style="max-width:140px;height:auto;" class="mb-3">
-                    <h5 class="fs-16 mb-1 text-capitalize">{{ translate('messages.No_Subscription_Found') }}</h5>
+                    <h5 class="fs-16 mb-1 text-capitalize">{{ translate('messages.No Subscription Found') }}</h5>
                     <p class="fs-12 gray-dark mb-3">
-                        {{ translate('messages.this_customer_has_not_subscribed_to_any_pro_plan_yet') }}
+                        {{ translate('messages.This customer has not subscribed to any pro plan yet') }}
                     </p>
                     @if ($plans->count())
                         <button type="button" class="btn btn--primary h-40 px-4 text-capitalize" data-toggle="modal"
                             data-target="#plan_subscribe_modal">
-                            {{ translate('messages.Subscribe_Now') }}
+                            <i class="tio-checkmark-circle-outlined"></i> {{ translate('messages.Subscribe Now') }}
                         </button>
                     @endif
                 </div>
@@ -191,7 +194,6 @@
     </div>
 </div>
 
-{{-- Shift / Renew modal (existing subscription) --}}
 @if ($subscription && !$isCanceled && $plans->count())
     <div class="modal fade" id="plan_modal_area" tabindex="-1" role="dialog" aria-hidden="true">
         <div class="modal-dialog mx-auto modal-dialog-centered" role="document">
@@ -204,7 +206,7 @@
                 </div>
                 <div class="modal-body pb-4 px-4 pt-0">
                     <div class="mb-20">
-                        <h3 class="mb-3 fs-20 text-center">{{ translate('messages.Shift_or_Renew_Subscription') }}</h3>
+                        <h3 class="mb-3 fs-20 text-center">{{ translate('messages.Shift or Renew Subscription') }}</h3>
                         <div class="border rounded-10">
                             <div class="bg-plan rounded-10">
                                 <div class="rounded-4 bg-plan-gradient p-3 text-center plan-pro-head">
@@ -214,12 +216,12 @@
                                             alt="img" class="rounded-circle">
                                     </div>
                                     <h3 class="mb-1 fs-18 fw-medium lh-1">{{ $proBrand }}</h3>
-                                    <p class="mb-0 fs-14">{{ translate('messages.Save_more_on_every_order') }}</p>
+                                    <p class="mb-0 fs-14">{{ translate('messages.Save more on every order') }}</p>
                                 </div>
                                 @include('admin-views.pro-customer.partials._active-benefits-list', ['benefitItems' => $benefitItems])
                             </div>
                             <div class="p-20">
-                                <p class="fs-14 mb-10px">{{ translate('messages.Select_Duration') }}</p>
+                                <p class="fs-14 mb-10px">{{ translate('messages.Select Duration') }}</p>
                                 <select class="custom-select mb-10px js-plan-select">
                                     @foreach ($plans as $plan)
                                         <option value="{{ $plan->id }}"
@@ -228,7 +230,7 @@
                                             data-duration="{{ $plan->duration }}"
                                             data-type="{{ $plan->plan_type }}"
                                             {{ (int) $plan->id === (int) $currentPlanId ? 'selected' : '' }}>
-                                            {{ $plan->duration }} {{ translate('messages.Days') }}
+                                            {{ $plan->duration }} {{ translate('messages.days') }}
                                         </option>
                                     @endforeach
                                 </select>
@@ -244,11 +246,11 @@
                                 <div class="mt-4 text-center d-flex flex-column gap-2 align-items-center">
                                     <button type="button"
                                         class="max-w-260px w-100 btn p-0 btn--primary renew-btn text-white py-2 px-3 js-do-renew d-none">
-                                        {{ translate('messages.Renew_Subscription') }}
+                                        <i class="tio-autorenew"></i> {{ translate('Renew subscription') }}
                                     </button>
                                     <button type="button"
                                         class="max-w-260px w-100 btn p-0 btn--primary renew-btn text-white py-2 px-3 js-do-shift d-none">
-                                        {{ translate('messages.Shift_Subscription') }}
+                                        <i class="tio-sync"></i> {{ translate('messages.Shift Subscription') }}
                                     </button>
                                 </div>
                             </div>
@@ -259,7 +261,6 @@
         </div>
     </div>
 
-    {{-- Renew confirm modal --}}
     <div class="modal fade" id="plan_renew_subscription" tabindex="-1" role="dialog" aria-hidden="true">
         <div class="modal-dialog mx-auto modal-dialog-centered" role="document">
             <div class="modal-content">
@@ -274,7 +275,7 @@
                         action="{{ route('admin.pro-customer.subscription.renew', $subscription->id) }}">
                         @csrf
                         <input type="hidden" name="plan_id" id="renew_plan_id" value="{{ $currentPlanId }}">
-                        <h3 class="mb-3 fs-20 text-center text-capitalize">{{ translate('messages.Renew_Subscription') }}</h3>
+                        <h3 class="mb-3 fs-20 text-center text-capitalize">{{ translate('Renew subscription') }}</h3>
                         <div class="border rounded-10 p-4">
                             <div class="bg-plan w-fit-content mx-auto subscription-plan__card rounded-10 mb-4">
                                 <div class="d-flex align-items-center gap-3 rounded-0 bg-plan-gradient p-3 plan-pro-head">
@@ -288,7 +289,7 @@
                                         <p class="mb-0 fs-32 font-semibold text-dark">
                                             <span id="renew_plan_price_label">
                                                 @if ($subscription->plan_type === 'free_trial')
-                                                    <span class="fs-20 fw-medium text-capitalize">{{ translate('messages.Free_Trial') }}</span>
+                                                    <span class="fs-20 fw-medium text-capitalize">{{ translate('Free trial') }}</span>
                                                 @else
                                                     {{ \App\CentralLogics\Helpers::format_currency((float) $subscription->plan_price) }}
                                                 @endif
@@ -306,10 +307,10 @@
                                 ])
                             </div>
                             <div class="text-center pt-2">
-                                <p class="mb-3">{{ translate('messages.#Note_:_Ensure_payment_is_received_before_changing_or_renewing_the_subscription') }}</p>
+                                <p class="mb-3"># {{ translate('messages.Note : Ensure payment is received before changing or renewing the subscription.') }}</p>
                                 <button type="submit"
                                     class="max-w-260px w-100 btn p-0 btn--primary renew-btn text-white py-2 px-3 text-capitalize">
-                                    {{ translate('messages.Confirm_Renew') }}
+                                    <i class="tio-autorenew"></i> {{ translate('messages.Confirm Renew') }}
                                 </button>
                             </div>
                         </div>
@@ -319,7 +320,6 @@
         </div>
     </div>
 
-    {{-- Shift confirm modal --}}
     <div class="modal fade" id="plan_shift_subscription" tabindex="-1" role="dialog" aria-hidden="true">
         <div class="modal-dialog max-w-850px mx-auto modal-dialog-centered" role="document">
             <div class="modal-content">
@@ -334,7 +334,7 @@
                         action="{{ route('admin.pro-customer.subscription.shift', $subscription->id) }}">
                         @csrf
                         <input type="hidden" name="plan_id" id="shift_plan_id" value="">
-                        <h3 class="mb-3 fs-20 text-center text-capitalize">{{ translate('messages.Shift_Subscription') }}</h3>
+                        <h3 class="mb-3 fs-20 text-center text-capitalize">{{ translate('messages.Shift Subscription') }}</h3>
                         <div class="border rounded-10 p-4">
                             <div class="p-xl-1 d-flex align-items-center mb-4 gap-2 justify-content-center flex-md-nowrap flex-wrap">
                                 <div class="position-relative w-100 bg-light subscription-plan__card shift_subs-card rounded-10">
@@ -348,7 +348,7 @@
                                             <h3 class="mb-1 fs-24 fw-medium lh-1">{{ $subscription->plan_name }}</h3>
                                             <p class="mb-0 fs-32 font-semibold text-dark">
                                                 @if ($subscription->plan_type === 'free_trial')
-                                                    <span class="fs-20 fw-medium text-capitalize">{{ translate('messages.Free_Trial') }}</span>
+                                                    <span class="fs-20 fw-medium text-capitalize">{{ translate('Free trial') }}</span>
                                                 @else
                                                     {{ \App\CentralLogics\Helpers::format_currency((float) $subscription->plan_price) }}
                                                 @endif
@@ -384,10 +384,10 @@
                                 ])
                             </div>
                             <div class="text-center pb-2 pt-2">
-                                <p class="mb-3">{{ translate('messages.#Note_:_Ensure_payment_is_received_before_changing_or_renewing_the_subscription') }}</p>
+                                <p class="mb-3"># {{ translate('messages.Note : Ensure payment is received before changing or renewing the subscription.') }}</p>
                                 <button type="submit"
                                     class="max-w-260px w-100 btn p-0 btn--primary renew-btn text-white py-2 px-3 text-capitalize">
-                                    {{ translate('messages.Confirm_Shift') }}
+                                    <i class="tio-sync"></i> {{ translate('messages.Confirm Shift') }}
                                 </button>
                             </div>
                         </div>
@@ -398,7 +398,6 @@
     </div>
 @endif
 
-{{-- Subscribe Now modal (no existing subscription) --}}
 @if (($isCanceled || !$subscription) && $plans->count())
     <div class="modal fade" id="plan_subscribe_modal" tabindex="-1" role="dialog" aria-hidden="true">
         <div class="modal-dialog mx-auto modal-dialog-centered" role="document">
@@ -415,7 +414,7 @@
                         @csrf
                         <input type="hidden" name="plan_id" id="subscribe_plan_id"
                             value="{{ $plans->first()->id }}">
-                        <h3 class="mb-3 fs-20 text-center text-capitalize">{{ translate('messages.Subscribe_Now') }}</h3>
+                        <h3 class="mb-3 fs-20 text-center text-capitalize">{{ translate('messages.Subscribe Now') }}</h3>
                         <div class="border rounded-10">
                             <div class="bg-plan rounded-10">
                                 <div class="rounded-4 bg-plan-gradient p-3 text-center plan-pro-head">
@@ -425,11 +424,11 @@
                                             alt="img" class="rounded-circle">
                                     </div>
                                     <h3 class="mb-1 fs-18 fw-medium lh-1">{{ $proBrand }}</h3>
-                                    <p class="mb-0 fs-14">{{ translate('messages.Save_more_on_every_order') }}</p>
+                                    <p class="mb-0 fs-14">{{ translate('messages.Save more on every order') }}</p>
                                 </div>
                             </div>
                             <div class="p-20">
-                                <p class="fs-14 mb-10px">{{ translate('messages.Select_Plan') }}</p>
+                                <p class="fs-14 mb-10px">{{ translate('messages.Select Plan') }}</p>
                                 <select class="custom-select mb-10px js-subscribe-plan-select">
                                     @foreach ($plans as $plan)
                                         <option value="{{ $plan->id }}"
@@ -437,7 +436,7 @@
                                             data-price="{{ (float) $plan->price }}"
                                             data-duration="{{ $plan->duration }}"
                                             data-type="{{ $plan->plan_type }}">
-                                            {{ $plan->duration }} {{ translate('messages.Days') }}
+                                            {{ $plan->duration }} {{ translate('messages.days') }}
                                         </option>
                                     @endforeach
                                 </select>
@@ -445,7 +444,7 @@
                                     <div class="mb-0 d-flex gap-2 align-items-center flex-wrap">
                                         <h3 class="mb-0 fs-14 fw-medium lh-1 js-subscribe-plan-name"></h3>
                                         <span class="badge text-success bg-success bg-opacity-10 px-2 rounded-pill fs-12 js-subscribe-free-badge d-none">
-                                            {{ translate('messages.Free_Trial') }}
+                                            {{ translate('Free trial') }}
                                         </span>
                                     </div>
                                     <h3 class="m-0 fs-25 js-subscribe-plan-price"></h3>
@@ -458,10 +457,10 @@
                                     ])
                                 </div>
                                 <div class="text-center pt-2">
-                                    <p class="mb-3">{{ translate('messages.#Note_:_Ensure_payment_is_received_before_starting_the_subscription') }}</p>
+                                    <p class="mb-3"># {{ translate('messages.Note : Ensure payment is received before starting the subscription') }}</p>
                                     <button type="submit"
                                         class="max-w-260px w-100 btn p-0 btn--primary renew-btn text-white py-2 px-3 text-capitalize">
-                                        {{ translate('messages.Confirm_Subscription') }}
+                                        <i class="tio-checkmark-circle-outlined"></i> {{ translate('messages.Confirm Subscription') }}
                                     </button>
                                 </div>
                             </div>
@@ -479,7 +478,7 @@
 <script>
     "use strict";
     $(function () {
-        var freeTrialLabel = "{{ translate('messages.Free_Trial') }}";
+        var freeTrialLabel = "{{ translate('Free trial') }}";
         var currencySymbol = "{{ \App\CentralLogics\Helpers::currency_symbol() }}";
         var currentPlanId = {{ (int) ($currentPlanId ?? 0) }};
 

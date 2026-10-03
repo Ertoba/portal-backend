@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Admin;
 
+use App\Rules\ImageFile;
 use App\CentralLogics\Helpers;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Contracts\Validation\Validator;
@@ -27,9 +28,6 @@ use Illuminate\Validation\ValidationException;
  */
 class BannerUpdateRequest extends FormRequest
 {
-    /**
-     * Determine if the user is authorized to make this request.
-     */
     public function authorize(): bool
     {
         return true;
@@ -44,6 +42,7 @@ class BannerUpdateRequest extends FormRequest
     {
         return [
             'title' => 'required|max:191',
+            'image' => ImageFile::rules('nullable'),
             'banner_type' => 'required',
             'zone_id' => 'required',
             'store_id' => 'required_if:banner_type,store_wise',
@@ -55,10 +54,10 @@ class BannerUpdateRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'zone_id.required' => translate('messages.select_a_zone'),
-            'store_id.required_if'=> translate('messages.store is required when banner type is store wise'),
-            'item_id.required_if'=> translate('validation.required_if',['attribute'=>translate('messages.item'), 'other'=>translate('messages.banner_type'), 'value'=>translate('messages.item_wise')]),
-            'title.0.required'=>translate('default_data_is_required'),
+            'zone_id.required' => translate('messages.Select a zone'),
+            'store_id.required_if'=> translate('messages.Store is required when banner type is store wise'),
+            'item_id.required_if'=> translate('Item is required when banner type is item wise'),
+            'title.0.required'=>translate('Default data is required'),
         ];
     }
 

@@ -1,7 +1,8 @@
+@php($isService = $isService ?? false)
 @if(count($items) === 0)
     <div class="text-center py-4 px-3">
         <img src="{{ asset('public/assets/admin/img/empty.png') }}" alt="empty" class="mb-2" width="80">
-        <p class="mb-0 text-muted fs-12">{{ translate('No uncategorized items to assign.') }}</p>
+        <p class="mb-0 text-muted fs-12">{{ $isService ? translate('No uncategorized services to assign.') : translate('No uncategorized items to assign.') }}</p>
     </div>
 @else
     <ul class="assign-items-scroll">
@@ -14,21 +15,27 @@
                     </div>
                     <img class="rounded onerror-image"
                         style="width: 48px; height: 48px; object-fit: cover; flex-shrink: 0;"
-                        src="{{ $item->image_full_url }}"
+                        src="{{ $isService ? $item->thumbnail_full_url : $item->image_full_url }}"
                         data-onerror-image="{{ asset('public/assets/admin/img/100x100/img2.jpg') }}"
                         alt="{{ $item->name }}">
                     <div class="flex-grow-1 min-w-0">
-                        <div class="text-muted fs-11 mb-0">{{ translate('ID') }} #{{ $item->id }}</div>
+                        <div class="text-muted fs-11 mb-0">ID #{{ $item->id }}</div>
                         <h6 class="mb-0 fw-bold text-truncate fs-14">{{ Str::limit($item->name, 32, '...') }}</h6>
                         <div class="d-flex align-items-center gap-3 fs-12 text-muted mt-1">
-                            @if(!is_null($item->price))
-                                <span>{{ translate('Price') }} {{ \App\CentralLogics\Helpers::format_currency($item->price) }}</span>
+                            @if($isService)
+                                @if(!is_null($item->base_price))
+                                    <span>{{ translate('price') }} {{ \App\CentralLogics\Helpers::format_currency($item->base_price) }}</span>
+                                @endif
+                            @else
+                                @if(!is_null($item->price))
+                                    <span>{{ translate('price') }} {{ \App\CentralLogics\Helpers::format_currency($item->price) }}</span>
+                                @endif
+                                <span>{{ translate('variation') }}
+                                    {{ is_array($item->food_variations ?? null)
+                                        ? count($item->food_variations)
+                                        : (is_string($item->food_variations) ? count(json_decode($item->food_variations, true) ?: []) : 0) }}
+                                </span>
                             @endif
-                            <span>{{ translate('Variation') }}
-                                {{ is_array($item->food_variations ?? null)
-                                    ? count($item->food_variations)
-                                    : (is_string($item->food_variations) ? count(json_decode($item->food_variations, true) ?: []) : 0) }}
-                            </span>
                         </div>
                     </div>
                     <div class="form-check m-0">

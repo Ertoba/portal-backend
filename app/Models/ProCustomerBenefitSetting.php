@@ -13,7 +13,7 @@ class ProCustomerBenefitSetting extends Model
     protected $casts = ['settings' => 'array'];
 
     const DISCOUNT_MODULE_TYPES = [
-        'grocery', 'food', 'ecommerce', 'pharmacy', 'ride-share', 'rental',
+        'grocery', 'food', 'ecommerce', 'pharmacy', 'ride-share', 'rental', 'service',
     ];
 
     const DELIVERY_FEE_MODULE_TYPES = [

@@ -27,21 +27,21 @@ class EmployeeRepository implements EmployeeRepositoryInterface
 
     public function getFirstWhere(array $params, array $relations = []): ?Model
     {
-        return $this->employee->where($params)->first();
+        return $this->employee->with($relations)->where($params)->first();
     }
 
-    public function getList(array $orderBy = [], array $relations = [], int|string $dataLimit = DEFAULT_DATA_LIMIT, int $offset = null): Collection|LengthAwarePaginator
+    public function getList(array $orderBy = [], array $relations = [], int|string $dataLimit = DEFAULT_DATA_LIMIT, ?int $offset = null): Collection|LengthAwarePaginator
     {
-        return $this->employee->get();
+        return $this->employee->with($relations)->get();
     }
 
-    public function getListWhere(string $searchValue = null, array $filters = [], array $relations = [], int|string $dataLimit = DEFAULT_DATA_LIMIT, int $offset = null): Collection|LengthAwarePaginator
+    public function getListWhere(?string $searchValue = null, array $filters = [], array $relations = [], int|string $dataLimit = DEFAULT_DATA_LIMIT, ?int $offset = null): Collection|LengthAwarePaginator
     {
-        $key = explode(' ', $searchValue);
+        $key = explode(' ', $searchValue ?? '');
 
-        return $this->employee->zone()->where('role_id', '!=','1')
+        return $this->employee->with($relations)->zone()->where('role_id', '!=','1')
         ->where($filters)
-            ->when(isset($key), function ($query) use ($key) {
+            ->when($searchValue, function ($query) use ($key) {
                 $query->where(function ($query) use ($key) {
                     foreach ($key as $value) {
                         $query->orWhere('f_name', 'like', "%{$value}%");
@@ -53,15 +53,15 @@ class EmployeeRepository implements EmployeeRepositoryInterface
             })->latest()->paginate($dataLimit);
     }
 
-    public function getZoneWiseListWhere(string $zoneId = 'all', string $searchValue = null, array $filters = [], array $relations = [], int|string $dataLimit = DEFAULT_DATA_LIMIT, int $offset = null): Collection|LengthAwarePaginator
+    public function getZoneWiseListWhere(string $zoneId = 'all', ?string $searchValue = null, array $filters = [], array $relations = [], int|string $dataLimit = DEFAULT_DATA_LIMIT, ?int $offset = null): Collection|LengthAwarePaginator
     {
-        $key = explode(' ', $searchValue);
+        $key = explode(' ', $searchValue ?? '');
         return $this->employee->zone()->where('role_id', '!=','1')->with($relations)
         ->where($filters)
         ->when(is_numeric($zoneId), function($query) use($zoneId){
             return $query->where('zone_id', $zoneId);
         })
-            ->when(isset($key), function ($query) use ($key) {
+            ->when($searchValue, function ($query) use ($key) {
                 $query->where(function ($query) use ($key) {
                     foreach ($key as $value) {
                         $query->orWhere('f_name', 'like', "%{$value}%");
@@ -93,8 +93,8 @@ class EmployeeRepository implements EmployeeRepositoryInterface
 
     public function getSearchList(Request $request): Collection
     {
-        $key = explode(' ', $request['search']);
-        return $this->employee->zone()->where('role_id', '!=','1')
+        $key = explode(' ', $request['search'] ?? '');
+        return $this->employee->zone()->where('role_id', '!=','1')->with(['role', 'zones:id,name', 'storage'])
             ->where(function ($q) use ($key) {
                 foreach ($key as $value) {
                     $q->orWhere('f_name', 'like', "%{$value}%");
@@ -107,18 +107,27 @@ class EmployeeRepository implements EmployeeRepositoryInterface
 
     public function getFirstWithoutGlobalScopeWhere(array $params, array $relations = []): ?Model
     {
-        return $this->employee->withoutGlobalScope('translate')->where($params)->first(['id','name','modules']);
+        // Was a verbatim copy of CustomRoleRepository's version of this method, which is correct
+        // for AdminRole and wrong for Admin in three ways: `admin_roles` has `name` and `modules`
+        // columns and a `translations` relation, `admins` has none of them. It threw on the
+        // relation and, past that, on `Unknown column 'name'` — it could never have returned a
+        // row. No caller today, which is the only reason nobody noticed.
+        //
+        // The column list is dropped rather than guessed at: every other read on this repository
+        // returns the whole model, and inventing a subset for a method with no caller would be
+        // picking an intent that was never expressed.
+        return $this->employee->with($relations)->where($params)->first();
     }
 
     public function getFirstWhereExceptAdmin(array $params, array $relations = []): ?Model
     {
-        return $this->employee->zone()->where('role_id', '!=','1')->where($params)->first();
+        return $this->employee->with($relations)->zone()->where('role_id', '!=','1')->where($params)->first();
     }
 
     public function getExportList(Request $request): Collection
     {
-        $key = explode(' ', $request['search']);
-        return $this->employee->zone()->where('role_id', '!=','1')
+        $key = explode(' ', $request['search'] ?? '');
+        return $this->employee->with(['role', 'zones'])->zone()->where('role_id', '!=','1')
             ->where(function ($q) use ($key) {
                 foreach ($key as $value) {
                     $q->orWhere('f_name', 'like', "%{$value}%");

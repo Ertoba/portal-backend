@@ -2,7 +2,6 @@
 
 namespace App\Repositories;
 
-use App\CentralLogics\Helpers;
 use App\Contracts\Repositories\RiderRepositoryInterface;
 use App\Models\DeliveryMan;
 use Illuminate\Database\Eloquent\Collection;
@@ -11,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 use Modules\RideShare\Entities\UserManagement\RiderDetail;
+use App\Support\Storage\FileStorage;
 
 class RiderRepository implements RiderRepositoryInterface
 {
@@ -40,16 +40,16 @@ class RiderRepository implements RiderRepositoryInterface
         return $this->deliveryMan->with($relations)->rider()->where($params)->first();
     }
 
-    public function getList(array $orderBy = [], array $relations = [], int|string $dataLimit = DEFAULT_DATA_LIMIT, int $offset = null): Collection|LengthAwarePaginator
+    public function getList(array $orderBy = [], array $relations = [], int|string $dataLimit = DEFAULT_DATA_LIMIT, ?int $offset = null): Collection|LengthAwarePaginator
     {
-        return $this->deliveryMan->rider()->paginate($dataLimit);
+        return $this->deliveryMan->with($relations)->rider()->paginate($dataLimit);
     }
 
-    public function getListWhere(string $searchValue = null, array $filters = [], array $relations = [], int|string $dataLimit = DEFAULT_DATA_LIMIT, int $offset = null): Collection|LengthAwarePaginator
+    public function getListWhere(?string $searchValue = null, array $filters = [], array $relations = [], int|string $dataLimit = DEFAULT_DATA_LIMIT, ?int $offset = null): Collection|LengthAwarePaginator
     {
-        $key = explode(' ', $searchValue);
+        $key = explode(' ', $searchValue ?? '');
         $data = $this->deliveryMan->with($relations)->rider()->where($filters)
-            ->when(isset($key), function($query) use($key){
+            ->when($searchValue, function($query) use($key){
                 $query->where(function ($query) use ($key) {
                     foreach ($key as $value) {
                         $query->orWhere('f_name', 'like', "%{$value}%")
@@ -90,11 +90,11 @@ class RiderRepository implements RiderRepositoryInterface
     public function delete(string $id): bool
     {
         $deliveryMan = $this->deliveryMan->rider()->find($id);
-        Helpers::check_and_delete('delivery-man/' , $deliveryMan['image']);
+        FileStorage::delete('delivery-man/' , $deliveryMan['image']);
 
 
         foreach (json_decode($deliveryMan['identity_image'], true) as $img) {
-            Helpers::check_and_delete('delivery-man/' , $img);
+            FileStorage::delete('delivery-man/' , $img);
 
         }
 
@@ -108,17 +108,21 @@ class RiderRepository implements RiderRepositoryInterface
 
     public function getFirstWithoutGlobalScopeWhere(array $params, array $relations = []): ?Model
     {
-        return $this->deliveryMan->withoutGlobalScope('translate')->rider()->where($params)->first();
+        // No `translations` and no `translate` scope: DeliveryMan carries neither trait, because a
+        // rider's name is a person's name and not translatable content. Eager-loading the relation
+        // threw RelationNotFoundException on every rider edit screen, and dropping the scope that
+        // was never registered did nothing. `storage` is real and stays.
+        return $this->deliveryMan->with($relations)->with(['storage'])->rider()->where($params)->first();
     }
 
-    public function getZoneWiseListWhere(string $zoneId = 'all',string $searchValue = null, array $filters = [], array $relations = [], int|string $dataLimit = DEFAULT_DATA_LIMIT, int $offset = null): Collection|LengthAwarePaginator
+    public function getZoneWiseListWhere(string $zoneId = 'all',?string $searchValue = null, array $filters = [], array $relations = [], int|string $dataLimit = DEFAULT_DATA_LIMIT, ?int $offset = null): Collection|LengthAwarePaginator
     {
-        $key = explode(' ', $searchValue);
+        $key = explode(' ', $searchValue ?? '');
         $data = $this->deliveryMan->with($relations)->rider()->where($filters)
             ->when(is_numeric($zoneId), function($query) use($zoneId){
                 return $query->where('zone_id', $zoneId);
             })
-            ->when(isset($key), function($query) use($key){
+            ->when($searchValue, function($query) use($key){
                 $query->where(function ($query) use ($key) {
                     foreach ($key as $value) {
                         $query->orWhere('f_name', 'like', "%{$value}%")
@@ -156,14 +160,14 @@ class RiderRepository implements RiderRepositoryInterface
                         ->orWhere('phone', 'like', "%{$value}%")
                         ->orWhere('identity_number', 'like', "%{$value}%");
                 }
-            })->where('status', 1)->limit(8)->get(['id',DB::raw('CONCAT(f_name, " ", l_name) as text')]);
+            })->where('status', 1)->limit(8)->get(['id',DB::raw('CONCAT(f_name, " ", l_name) as text')])->makeHidden('image_full_url');
     }
 
-    public function getActiveFirstWhere(string $searchValue = null, array $filters = [], array $relations = []): ?Model
+    public function getActiveFirstWhere(?string $searchValue = null, array $filters = [], array $relations = []): ?Model
     {
-        $key = explode(' ', $searchValue);
+        $key = explode(' ', $searchValue ?? '');
         return $this->deliveryMan->with($relations)->rider()->where($filters)
-            ->when(isset($key), function($query) use($key){
+            ->when($searchValue, function($query) use($key){
                 $query->where(function ($query) use ($key) {
                     foreach ($key as $value) {
                         $query->orWhere('f_name', 'like', "%{$value}%")
@@ -177,9 +181,9 @@ class RiderRepository implements RiderRepositoryInterface
             ->Active()
             ->first();
     }
-    public function getFilterWiseListWhere(string $zoneId = 'all', string $searchValue = null, array $filters = [],  string $additionalFilter = null ,  string $jobType = null ,array $relations = [], int|string $dataLimit = DEFAULT_DATA_LIMIT, int $offset = null): Collection|LengthAwarePaginator
+    public function getFilterWiseListWhere(string $zoneId = 'all', ?string $searchValue = null, array $filters = [],  ?string $additionalFilter = null ,  ?string $jobType = null ,array $relations = [], int|string $dataLimit = DEFAULT_DATA_LIMIT, ?int $offset = null): Collection|LengthAwarePaginator
     {
-        $key = explode(' ', $searchValue);
+        $key = explode(' ', $searchValue ?? '');
         $data = $this->deliveryMan->with($relations)->rider()
             ->where($filters)
             ->when(is_numeric($zoneId), function($query) use($zoneId){
@@ -209,7 +213,7 @@ class RiderRepository implements RiderRepositoryInterface
             ->when(isset($additionalFilter) && $additionalFilter == 'deliveryman', function($query){
                 return $query->where('is_delivery', 1);
             })
-            ->when(isset($key), function($query) use($key){
+            ->when($searchValue, function($query) use($key){
                 $query->where(function ($query) use ($key) {
                     foreach ($key as $value) {
                         $query->orWhere('f_name', 'like', "%{$value}%")

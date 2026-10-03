@@ -3,7 +3,6 @@
 @section('title',$store->name."'s ".translate('messages.conversation'))
 
 @push('css_or_js')
-    <!-- Custom styles for this page -->
     <link href="{{asset('public/assets/admin/css/croppie.css')}}" rel="stylesheet">
 
 @endpush
@@ -11,20 +10,22 @@
 @section('content')
 <div class="content container-fluid">
     @include('admin-views.vendor.view.partials._header',['store'=>$store])
-    <!-- Page Heading -->
     <div class="tab-content">
         <div class="tab-pane fade show active" id="product">
             <div class="row pt-2">
                 <div class="content container-fluid">
-                    <!-- Page Header -->
                     <div class="page-header">
-                        <h1 class="page-header-title">{{ translate('messages.conversation_list') }}</h1>
+                        <h1 class="page-header-title">
+                            <i class="tio-chat"></i>
+                            <span>
+                                {{ translate('Conversation list') }}
+                            </span>
+                        </h1>
+                        <p class="page-header-desc">{{ translate('Every chat this store has had with a customer or with your team.') }}</p>
                     </div>
-                    <!-- End Page Header -->
 
                     <div class="row g-3">
                         <div class="col-lg-4 col-md-6">
-                            <!-- Card -->
                             <div class="card">
                                 <div class="card-header border-0">
                                     <div class="input-group input---group">
@@ -36,16 +37,13 @@
                                     </div>
                                 </div>
                                 <input type="hidden" id="vendor_id" value="{{ $store->id }}">
-                                <!-- Body -->
                                 <div class="card-body p-0" style="overflow-y: scroll;height: 600px" id="vendor-conversation-list">
                                     <div class="border-bottom"></div>
                                     @include('admin-views.vendor.view.partials._conversation_list')
 
 
                                 </div>
-                                <!-- End Body -->
                             </div>
-                            <!-- End Card -->
                         </div>
                         <div class="col-lg-8 col-nd-6" id="vendor-view-conversation">
                             <div class="card h-100">
@@ -54,14 +52,13 @@
                                     <div class="empty--data">
                                         <img width="64" class="mb-3" src="{{asset('/public/assets/admin/img/conversation-no-data.svg')}}" alt="public">
                                         <p class="fs-16 mb-20">
-                                            {{translate('Select a user to view the Conversation.')}}
+                                            {{translate('Select a user to view the conversation.')}}
                                         </p>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <!-- End Row -->
                 </div>
 
 

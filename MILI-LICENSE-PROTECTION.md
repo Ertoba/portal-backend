@@ -1,24 +1,24 @@
 # MILI License Protection
 
-The production entitlement implementation is private and must survive every
-6amMart update. The following files are protected merge boundaries:
+The current MILI entitlement implementation is the authoritative licensing boundary and must survive every upstream 6amMart update.
+
+Protected local files include:
 
 - `app/Services/MiliEntitlementService.php`
 - `config/mili.php`
-- `app/Http/Middleware/ActivationCheckMiddleware.php`
-- `app/CentralLogics/Helpers.php`
+- `app/Http/Middleware/MiliFeatureAccessMiddleware.php`
+- `app/Http/Middleware/InstallationMiddleware.php`
 - `app/Services/AddonService.php`
-- installer/update middleware and controllers
-- admin addon activation controllers/views
-- `routes/install.php` and `routes/web.php`
+- installer/update controllers and routes
+- admin add-on management controllers/views
+- MILI feature-gated admin, vendor and API routes
 
-Before a backend or Admin merge, run:
+The legacy external activation stack must remain absent. In particular, do not restore `ActivationCheckMiddleware`, `ActivationTrait`, remote 6amTech activation/license validation, purchase-code requirements, add-on external activation, or `actch:*` runtime middleware.
+
+Before every backend merge/deploy, run:
 
 ```bash
 bash tools/verify-mili-entitlement-protection.sh
 ```
 
-The merge must fail if protected files contain legacy external activation
-hosts, `license-check`, or purchase-code checks. No production rebuild or
-cache clear should run until this guard passes and the protected-file diff has
-been reviewed.
+A merge must fail if the legacy activation stack reappears. Fresh install, rebuild, deploy, cache clear and restart must continue without any external activation dependency.

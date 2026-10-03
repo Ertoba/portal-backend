@@ -1,5 +1,5 @@
 <div class="row">
-    <div class="col-lg-12 text-center "><h1 >{{ translate('Contact_messages') }}</h1></div>
+    <div class="col-lg-12 text-center "><h1 >{{ translate('Contact messages') }}</h1></div>
     <div class="col-lg-12">
 
 
@@ -7,7 +7,7 @@
     <table>
         <thead>
             <tr>
-                <th>{{ translate('Message_Analytics') }}</th>
+                <th>{{ translate('Message analytics') }}</th>
                 <th></th>
                 <th></th>
                 <th>
@@ -21,11 +21,11 @@
                 <th></th>
                 </tr>
             <tr>
-                <th>{{ translate('Search_Criteria') }}</th>
+                <th>{{ translate('Search criteria') }}</th>
                 <th></th>
                 <th></th>
                 <th>
-                    {{ translate('Search_Bar_Content')  }}: : {{ $search ??translate('N/A') }}
+                    {{ translate('Search bar content')  }}: : {{ $search ??translate('N/A') }}
                 </th>
                 <th> </th>
                 <th></th>
@@ -33,14 +33,14 @@
                 <th></th>
                 </tr>
         <tr>
-            <th>{{ translate('sl') }}</th>
+            <th>{{ translate('SL') }}</th>
             <th>{{ translate('Name') }}</th>
-            <th>{{ translate('Email') }}</th>
+            <th>{{ translate('email') }}</th>
             <th>{{ translate('Subject') }}</th>
-            <th>{{ translate('Message') }}</th>
+            <th>{{ translate('message') }}</th>
             <th>{{ translate('Reply') }}</th>
             <th>{{ translate('Seen') }}</th>
-            <th>{{ translate('Created_at') }} </th>
+            <th>{{ translate('Created at') }} </th>
         </thead>
         <tbody>
         @foreach($data as $key => $message)
@@ -51,7 +51,7 @@
         <td>{{ $message->subject }}</td>
         <td>{{ $message->message }}</td>
         <td>{{ $message->reply ?? translate('messages.N/A') }}</td>
-        <td>{{ $message->seen == 0 ? translate('unseen') : translate('seen') }}</td>
+        <td>{{ $message->seen == 0 ? translate('unseen') : translate('Seen') }}</td>
         <td>{{  \App\CentralLogics\Helpers::time_date_format($message->created_at)}}</td>
 
             </tr>

@@ -7,14 +7,14 @@
         </td>
     @else
         <td><a
-                href="{{ route('admin.transactions.order.details', $ot->order_id) }}">{{ $ot->order_id }}</a>
+                href="{{ route('admin.order.details', $ot->order_id) }}">{{ $ot->order_id }}</a>
         </td>
     @endif
     <td  class="text-capitalize">
         @if($ot->order->store)
             {{Str::limit($ot->order->store->name,25,'...')}}
         @else
-            <label class="badge badge-soft-success white-space-nowrap">{{ translate('messages.parcel_order') }}
+            <label class="badge badge-soft-success white-space-nowrap">{{ translate('messages.Parcel order') }}
         @endif
     </td>
     <td class="white-space-nowrap">
@@ -28,11 +28,11 @@
             <strong>{{ $delivery_address['contact_person_name'] }}</strong>
         @else
             <label class="badge badge-danger">{{ translate('messages.invalid') }}
-                {{ translate('messages.customer') }}
-                {{ translate('messages.data') }}</label>
+                {{ translate('messages.Customer') }}
+                {{ translate('messages.Data.') }}</label>
         @endif
     </td>
-    <td class="white-space-nowrap">{{ \App\CentralLogics\Helpers::format_currency($ot->order['order_amount'] - $ot->order['dm_tips']-\App\CentralLogics\DeliveryFeeLogic::adjustedFeeForOrder($ot->order)['adjusted'] - $ot['tax'] + $ot->order['coupon_discount_amount'] + $ot->order['store_discount_amount']) }}</td>
+    <td class="white-space-nowrap">{{ \App\CentralLogics\Helpers::format_currency($ot->order['order_amount'] - $ot->order['dm_tips']-app(\App\Services\Order\OrderService::class)->adjustedFeeForOrder($ot->order)['adjusted'] - $ot['tax'] + $ot->order['coupon_discount_amount'] + $ot->order['store_discount_amount']) }}</td>
     <td class="white-space-nowrap">{{ \App\CentralLogics\Helpers::format_currency($ot->order->details->sum('discount_on_item')) }}</td>
     <td class="white-space-nowrap">{{ \App\CentralLogics\Helpers::format_currency($ot->order['coupon_discount_amount']) }}</td>
     <td class="white-space-nowrap">  {{ \App\CentralLogics\Helpers::number_format_short($ot->order['coupon_discount_amount'] + $ot->order['store_discount_amount']) }}</td>
@@ -41,23 +41,23 @@
     <td class="white-space-nowrap">{{ \App\CentralLogics\Helpers::format_currency($ot->order_amount) }}</td>
     <td class="white-space-nowrap">{{ \App\CentralLogics\Helpers::format_currency($ot->admin_expense) }}</td>
     <td class="white-space-nowrap">{{ \App\CentralLogics\Helpers::format_currency($ot->order->store_discount_amount) }}</td>
-    <td class="white-space-nowrap">{{ \App\CentralLogics\Helpers::format_currency(($ot->admin_commission + $ot->admin_expense) - $ot->delivery_fee_comission) }}</td>
+    <td class="white-space-nowrap">{{ \App\CentralLogics\Helpers::format_currency(app(\App\Services\Order\OrderTransactionService::class)->adminItemCommission($ot)) }}</td>
     <td class="white-space-nowrap">{{ \App\CentralLogics\Helpers::format_currency($ot->delivery_fee_comission) }}</td>
-    <td class="white-space-nowrap">{{ \App\CentralLogics\Helpers::format_currency(($ot->admin_commission)) }}</td>
+    <td class="white-space-nowrap">{{ \App\CentralLogics\Helpers::format_currency(app(\App\Services\Order\OrderTransactionService::class)->adminNetIncome($ot)) }}</td>
     <td class="white-space-nowrap">{{ \App\CentralLogics\Helpers::format_currency($ot->store_amount - $ot->tax) }}</td>
     @if ($ot->received_by == 'admin')
         <td class="text-capitalize white-space-nowrap">{{ translate('messages.admin') }}</td>
     @elseif ($ot->received_by == 'deliveryman')
         <td class="text-capitalize white-space-nowrap">
-            <div>{{ translate('messages.delivery_man') }}</div>
+            <div>{{ translate('Deliveryman') }}</div>
             <div class="text-right mw--85px">
                 @if (isset($ot->delivery_man) && $ot->delivery_man->earning == 1)
                 <span class="badge badge-soft-primary">
-                    {{translate('messages.freelance')}}
+                    {{translate('Freelancer')}}
                 </span>
                 @elseif (isset($ot->delivery_man) && $ot->delivery_man->earning == 0 && $ot->delivery_man->type == 'restaurant_wise')
                 <span class="badge badge-soft-warning">
-                    {{translate('messages.restaurant')}}
+                    {{translate('messages.Restaurant')}}
                 </span>
                 @elseif (isset($ot->delivery_man) && $ot->delivery_man->earning == 0 && $ot->delivery_man->type == 'zone_wise')
                 <span class="badge badge-soft-success">
@@ -67,19 +67,19 @@
             </div>
         </td>
     @elseif ($ot->received_by == 'store')
-        <td class="text-capitalize white-space-nowrap">{{ translate('messages.store') }}</td>
+        <td class="text-capitalize white-space-nowrap">{{ translate('messages.Store') }}</td>
     @endif
     <td class="mw--85px text-capitalize min-w-120 ">
-            {{ translate(str_replace('_', ' ', $ot->order['payment_method'])) }}
+            {{ payment_method_label($ot->order['payment_method']) }}
     </td>
     <td class="text-capitalize white-space-nowrap">
         @if ($ot->status)
         <span class="badge badge-soft-danger">
-            {{translate('messages.refunded')}}
+            {{translate('Refunded')}}
           </span>
         @else
         <span class="badge badge-soft-success">
-            {{translate('messages.completed')}}
+            {{translate('messages.Completed')}}
           </span>
         @endif
     </td>

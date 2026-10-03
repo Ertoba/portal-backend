@@ -36,6 +36,16 @@ class Cart extends Model
         'price',
         'quantity',
         'variation',
+        // The BOGO columns are fillable so a bundle row survives mass assignment. The add path
+        // writes through Cart::insert(), which bypasses this list entirely, so their absence went
+        // unnoticed -- but anything routing a bundle row through Cart::create() or ->update()
+        // silently dropped them, which turns a free member into an ordinary line at full price
+        // and detaches a buy line from the group that priced it.
+        'bogo_offer_id',
+        'bogo_group_id',
+        'is_free_item',
+        'bundle_id',
+        'bundle_group_id',
     ];
 
     public function item()

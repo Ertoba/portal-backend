@@ -1,6 +1,6 @@
 @extends('layouts.admin.app')
 
-@section('title', translate('messages.subscription'))
+@section('title', translate('messages.Subscription'))
 
 @section('content')
 
@@ -10,9 +10,10 @@
         <div class="d-flex flex-wrap justify-content-between align-items-start">
             <h1 class="page-header-title text-capitalize">
                 <span>
-                    {{ translate('Subscription Plan') }}
+                    {{ translate('Subscription plan') }}
                 </span>
             </h1>
+            <p class="page-header-desc">{{ translate('The plan this customer is on, what it covers and when it renews.') }}</p>
         </div>
     </div>
 
@@ -23,17 +24,17 @@
                     <div class="">
                         <h3 class="mb-1 fs-16">{{ translate('Subscription plan') }}</h3>
                         <p class="mb-0 gray-dark fs-12">
-                            {{ translate('here you can see an overview of subscription plans.') }} 
+                            {{ translate('Here you can see an overview of subscription plans.') }} 
                         </p>
                     </div>
                 </div>
                 <div class="d-flex align-items-center gap-2 flex-wrap">
                     <button type="button" class="btn btn--cancel py-1 h-40 text-nowrap px-3 offcanvas-trigger"
                        data-target="#offcanvas__createplan">
-                        {{ translate('Cancel Subscription') }} 
+                        <i class="tio-clear-circle-outlined"></i> {{ translate('Cancel subscription') }} 
                     </button>
                     <button type="button" class="btn btn--primary h-40 text-nowrap px-3" data-toggle="modal" data-target="#plan_modal_area">
-                        {{ translate('Change / Renew Subscription') }} 
+                        <i class="tio-autorenew"></i> {{ translate('Change / Renew Subscription') }} 
                     </button>
                 </div>
             </div>
@@ -47,7 +48,7 @@
                                         <img width="36" src="{{asset('public/assets/admin/img/subscription-win-badge.png')}}" alt="img" class="rounded-circle">
                                     </div>
                                     <h3 class="mb-0 fs-24 fw-medium lh-1">
-                                        {{ translate('Monthly') }}
+                                        {{ translate('monthly') }}
                                     </h3>
                                 </div>
                                 <p class="mb-0 fs-32 font-semibold text-dark">
@@ -60,15 +61,15 @@
                         <div class="bg-white subscription-plan__card p-3 rounded">
                             <div class="mb-3 d-flex gap-2 align-items-center justify-content-start">
                                 <h3 class="mb-0 fs-14 fw-medium lh-1">
-                                    {{ translate('Plan Validity') }}
+                                    {{ translate('Plan validity') }}
                                 </h3>
                                 <span class="badge text-success bg-success bg-opacity-10 px-2 rounded-pill fs-12">
-                                    {{ translate('active') }}
+                                    {{ translate('Active') }}
                                 </span>
                             </div>
                             <div class="d-flex flex-column gap-1">
                                 <div class="d-flex gap-2 align-items-center">
-                                    <span class="fs-14 min-w-90">{{ translate('start date') }}</span>
+                                    <span class="fs-14 min-w-90">{{ translate('Start date') }}</span>
                                     <span>:</span>
                                     <span class="fs-14 text-dark">01 Jun 2026 12:00 am</span>
                                 </div>
@@ -90,12 +91,12 @@
                                     #5757756
                                 </span>
                                 <span class="badge text-danger bg-danger bg-opacity-10 px-2 rounded-pill fs-12">
-                                    {{ translate('expired') }}
+                                    {{ translate('Expired') }}
                                 </span>
                             </div>
                             <div class="d-flex flex-column gap-1">
                                 <div class="d-flex gap-2 align-items-center">
-                                    <span class="fs-14 min-w-90">{{ translate('Payment date') }}</span>
+                                    <span class="fs-14 min-w-90">{{ translate('Payment Date') }}</span>
                                     <span>:</span>
                                     <span class="fs-14 text-dark">31 Feb 2023 11:59 pM</span>
                                 </div>
@@ -113,12 +114,11 @@
     </div>
 
 
-    <button class="btn btn--primary" data-toggle="modal" data-target="#plan_renew-subscription">Renew subscription</button>
-    <button class="btn btn--primary" data-toggle="modal" data-target="#plan_shift-subscription">shift subscription</button>
+    <button class="btn btn--primary" data-toggle="modal" data-target="#plan_renew-subscription"><i class="tio-autorenew"></i> Renew subscription</button>
+    <button class="btn btn--primary" data-toggle="modal" data-target="#plan_shift-subscription"><i class="tio-sync"></i> shift subscription</button>
 </div>
 
 
-    <!-- shif renew modal -->
     <div class="modal fade" id="plan_modal_area" tabindex="-1" role="dialog" aria-labelledby="modalLabel"
         aria-hidden="true">
         <div class=" modal-dialog max-w-500px mx-auto modal-dialog-centered" role="document">
@@ -133,7 +133,7 @@
                         <form class="" method="post">
                             @method('put')
                             @csrf
-                            <h3 class="mb-3 fs-20 text-center"> {{ translate('Shift / Renew Subscription') }}</h3>
+                            <h3 class="mb-3 fs-20 text-center"> {{ translate('Shift or Renew Subscription') }}</h3>
                             <div class="border rounded-10">
                                 <div class="bg-plan rounded-10">
                                     <div class="rounded-4 bg-plan-gradient p-3 text-center plan-pro-head">
@@ -152,7 +152,7 @@
                                             <img width="20" src="{{asset('public/assets/admin/img/check-circle.svg')}}" alt="img" class="arrows">
                                             <div class="cont">
                                                 <h3 class="mb-1 fs-16 font-weight-light lh-1">
-                                                    {{ translate('Up-to 5% off on all orders') }}
+                                                    {{ translate('Maximum discount on all orders') }}: 5%
                                                 </h3>
                                                 <p class="mb-0 fs-12">
                                                     {{ translate('Applied automatically at checkout') }}
@@ -185,7 +185,7 @@
                                 </div>
                                 <div class="p-20">
                                     <p class="fs-14 mb-10px">
-                                        {{ translate('Select duration') }}
+                                        {{ translate('Select Duration') }}
                                     </p>
                                     <select name="" id="" class="custom-select mb-10px">
                                         <option value="1">30 days</option>
@@ -198,17 +198,17 @@
                                                 {{ translate('monthly') }}
                                             </h3>
                                             <span class="badge text-success bg-success bg-opacity-10 px-2 rounded-pill fs-12">
-                                                {{ translate('active') }}
+                                                {{ translate('Active') }}
                                             </span>
                                         </div>
                                         <h3 class="m-0 fs-25">$20.00</h3>
                                     </div>
                                     <div class="mt-4 text-center">
                                         <button type="button" class="max-w-260px w-100 btn btn--primary px-3">
-                                            {{ translate('Renew Subscription') }}
+                                            <i class="tio-autorenew"></i> {{ translate('Renew subscription') }}
                                         </button>
                                         <button type="button" class="max-w-260px w-100 btn btn--primary px-3">
-                                            {{ translate('Shift Subscription') }}
+                                            <i class="tio-sync"></i> {{ translate('Shift Subscription') }}
                                         </button>
                                     </div>
                                 </div>
@@ -220,7 +220,6 @@
         </div>
     </div>
 
-    <!-- Renew Subscription modal -->
     <div class="modal fade" id="plan_renew-subscription" tabindex="-1" role="dialog" aria-labelledby="modalLabel"
         aria-hidden="true">
         <div class=" modal-dialog max-w-500px mx-auto modal-dialog-centered" role="document">
@@ -235,7 +234,7 @@
                         <form class="" method="post">
                             @method('put')
                             @csrf
-                            <h3 class="mb-3 fs-20 text-center"> {{ translate('Renew Subscription') }}</h3>
+                            <h3 class="mb-3 fs-20 text-center"> {{ translate('Renew subscription') }}</h3>
                             <div class="border rounded-10 p-4">
                                 <div class="bg-plan max-w-353px mx-auto subscription-plan__card rounded-10 mb-4">
                                     <div class="d-flex align-items-center gap-3 rounded-0 bg-plan-gradient p-3 plan-pro-head">
@@ -244,7 +243,7 @@
                                         </div>
                                         <div class="text-start">
                                             <h3 class="mb-1 fs-24 fw-medium lh-1">
-                                                {{ translate('Monthly') }}
+                                                {{ translate('monthly') }}
                                             </h3>
                                             <p class="mb-0 fs-32 font-semibold text-dark">
                                                 $ 20.00 <span class="fs-20 font-weight-light gray-dark">/30 days</span>
@@ -254,10 +253,10 @@
                                 </div>
                                 <div class="text-center pt-2">
                                     <p class="mb-3">
-                                        {{ translate('#Note : Ensure payment is received before changing or renewing the subscription.') }}
+                                        # {{ translate('Note : Ensure payment is received before changing or renewing the subscription.') }}
                                     </p>
                                     <button type="button" class="max-w-260px w-100 btn p-0 btn btn--primary py-2 px-3">
-                                        {{ translate('confirm renew') }}
+                                        <i class="tio-autorenew"></i> {{ translate('Confirm Renew') }}
                                     </button>
                                 </div>
                             </div>
@@ -268,7 +267,6 @@
         </div>
     </div>
 
-    <!-- Renew Subscription modal -->
     <div class="modal fade" id="plan_shift-subscription" tabindex="-1" role="dialog" aria-labelledby="modalLabel"
         aria-hidden="true">
         <div class=" modal-dialog max-w-850px mx-auto modal-dialog-centered" role="document">
@@ -293,7 +291,7 @@
                                             </div>
                                             <div class="text-start">
                                                 <h3 class="mb-1 fs-24 fw-medium lh-1">
-                                                    {{ translate('Monthly') }}
+                                                    {{ translate('monthly') }}
                                                 </h3>
                                                 <p class="mb-0 fs-32 font-semibold text-dark">
                                                     $ 20.00 <span class="fs-20 font-weight-light gray-dark">/30 days</span>
@@ -312,7 +310,7 @@
                                             </div>
                                             <div class="text-start">
                                                 <h3 class="mb-1 fs-24 fw-medium lh-1">
-                                                    {{ translate('yearly') }}
+                                                    {{ translate('Yearly') }}
                                                 </h3>
                                                 <p class="mb-0 fs-32 font-semibold text-dark">
                                                     $ 120.00 <span class="fs-20 font-weight-light gray-dark">/365 days</span>
@@ -341,10 +339,10 @@
                                 </div>
                                 <div class="text-center pb-2 pt-2">
                                     <p class="mb-3">
-                                        {{ translate('#Note : Ensure payment is received before changing or renewing the subscription.') }}
+                                        # {{ translate('Note : Ensure payment is received before changing or renewing the subscription.') }}
                                     </p>
                                     <button type="button" class="max-w-260px w-100 btn btn btn--primary px-3">
-                                        {{ translate('confirm shift') }}
+                                        <i class="tio-sync"></i> {{ translate('Confirm Shift') }}
                                     </button>
                                 </div>
                             </div>

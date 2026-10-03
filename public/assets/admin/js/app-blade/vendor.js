@@ -56,10 +56,22 @@ $(document).on("ready", function () {
     // INITIALIZATION OF SELECT2
     // =======================================================
     $(".js-select2-custom").each(function () {
+        let $el = $(this);
         let verifiedConfig = window.hsSelect2VerifiedTemplate
             ? { templateResult: window.hsSelect2VerifiedTemplate, templateSelection: window.hsSelect2VerifiedTemplate }
             : {};
-        let select2 = $.HSCore.components.HSSelect2.init($(this), verifiedConfig);
+        // Select2 appends its dropdown to <body> by default, which renders behind a Bootstrap
+        // modal's backdrop/dialog for any select living inside one (e.g. the Rental provider
+        // panel's "Assign Driver" modal). Anchoring the dropdown to the modal itself keeps it in
+        // the modal's own stacking context instead. This is the initializer that actually wins:
+        // it runs on the jQuery "ready" event, after any page-specific select2 init that already
+        // ran synchronously at parse time, and re-creates the instance from scratch -- so a
+        // dropdownParent set only in a page script gets silently discarded here.
+        let $modal = $el.closest(".modal");
+        if ($modal.length) {
+            verifiedConfig.dropdownParent = $modal;
+        }
+        let select2 = $.HSCore.components.HSSelect2.init($el, verifiedConfig);
     });
 
     // INITIALIZATION OF DATERANGEPICKER
@@ -422,3 +434,5 @@ function initTextMaxLimit(selector = 'input[data-maxlength], textarea[data-maxle
     document.addEventListener('DOMContentLoaded', function () {
         initTextMaxLimit();
     });
+
+ 

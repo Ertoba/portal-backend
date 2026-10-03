@@ -119,7 +119,6 @@ class EmployeeListExport implements FromView, ShouldAutoSize, WithStyles, WithHe
 
                 $highestRow = $worksheet->getHighestRow();
 
-                // Alignment
                 $sheet->getStyle("A1:I{$highestRow}")
                     ->getAlignment()
                     ->setHorizontal(Alignment::HORIZONTAL_CENTER)

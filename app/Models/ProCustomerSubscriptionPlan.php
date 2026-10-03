@@ -2,13 +2,13 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Traits\Model\HasTranslationsTrait;
 
 class ProCustomerSubscriptionPlan extends Model
 {
-    use HasFactory;
+    use HasFactory, HasTranslationsTrait;
 
     protected $guarded = ['id'];
 
@@ -17,11 +17,6 @@ class ProCustomerSubscriptionPlan extends Model
         'duration' => 'integer',
         'status'   => 'integer',
     ];
-
-    public function translations()
-    {
-        return $this->morphMany(Translation::class, 'translationable');
-    }
 
     public function subscriptions()
     {
@@ -35,20 +30,7 @@ class ProCustomerSubscriptionPlan extends Model
 
     public function getPlanNameAttribute($value)
     {
-        foreach ($this->translations as $translation) {
-            if ($translation['key'] === 'plan_name') {
-                return $translation['value'];
-            }
-        }
-        return $value;
+        return $this->translatedAttribute('plan_name', $value);
     }
 
-    protected static function booted()
-    {
-        static::addGlobalScope('translate', function (Builder $builder) {
-            $builder->with(['translations' => function ($query) {
-                $query->where('locale', app()->getLocale());
-            }]);
-        });
-    }
 }

@@ -2,15 +2,17 @@
 
 namespace App\Models;
 
+use App\Traits\Model\InvalidatesCacheTrait;
 use App\CentralLogics\Helpers;
 use App\Scopes\ZoneScope;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use App\Traits\Model\HasTranslationsTrait;
+use App\Traits\Model\HasStorageTrait;
 
 /**
  * Class Banner
@@ -31,7 +33,9 @@ use Illuminate\Support\Facades\DB;
  */
 class Banner extends Model
 {
-    use HasFactory;
+    use HasFactory, HasTranslationsTrait, HasStorageTrait, InvalidatesCacheTrait;
+
+    protected static array $cacheTags = ['banner'];
     /**
      * The attributes that are mass assignable.
      *
@@ -67,20 +71,11 @@ class Banner extends Model
         'end_date' => 'date',
     ];
 
-    protected $appends = ['image_full_url'];
+    protected $appends = [];
 
     /**
      * @return MorphMany
      */
-    public function translations(): MorphMany
-    {
-        return $this->morphMany(Translation::class, 'translationable');
-    }
-
-    public function storage()
-    {
-        return $this->morphMany(Storage::class, 'data');
-    }
     public function store()
     {
         return $this->belongsTo(Store::class, 'data');
@@ -92,15 +87,7 @@ class Banner extends Model
      */
     public function getTitleAttribute($value): mixed
     {
-        if (count($this->translations) > 0) {
-            foreach ($this->translations as $translation) {
-                if ($translation['key'] == 'title') {
-                    return $translation['value'];
-                }
-            }
-        }
-
-        return $value;
+        return $this->translatedAttribute('title', $value);
     }
 
     /**
@@ -147,17 +134,9 @@ class Banner extends Model
         return $query->where('featured', '=', 1);
     }
 
-    public function getImageFullUrlAttribute(){
-        $value = $this->image;
-        if (count($this->storage) > 0) {
-            foreach ($this->storage as $storage) {
-                if ($storage['key'] == 'image') {
-                    return Helpers::get_full_url('banner',$value,$storage['value']);
-                }
-            }
-        }
-
-        return Helpers::get_full_url('banner',$value,'public');
+    public function getImageFullUrlAttribute()
+    {
+        return $this->storageFullUrl('banner', 'image', $this->image);
     }
 
     /**
@@ -166,47 +145,16 @@ class Banner extends Model
     protected static function booted(): void
     {
         static::addGlobalScope(new ZoneScope);
-        static::addGlobalScope('storage', function ($builder) {
-            $builder->with('storage');
-        });
-
-        static::addGlobalScope('translate', function (Builder $builder) {
-            $builder->with(['translations' => function ($query) {
-                return $query->where('locale', app()->getLocale());
-            }]);
-        });
     }
 
     protected static function boot()
     {
         parent::boot();
         static::saved(function ($model) {
-            Helpers::deleteCacheData('banners_');
 
-            if($model->isDirty('image')){
-                $value = Helpers::getDisk();
-
-                DB::table('storages')->updateOrInsert([
-                    'data_type' => get_class($model),
-                    'data_id' => $model->id,
-                    'key' => 'image',
-                ], [
-                    'value' => $value,
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
-            }
-        });
-        static::created(function () {
-            Helpers::deleteCacheData('banners_');
-        });
-        static::deleted(function(){
-            Helpers::deleteCacheData('banners_');
+            self::recordStorageDisk($model, 'image', 'image');
         });
 
-        static::updated(function(){
-            Helpers::deleteCacheData('banners_');
-        });
 
     }
 }

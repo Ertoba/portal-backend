@@ -49,10 +49,10 @@ abstract class AbstractSslCommerz implements SslCommerzInterface
 
         if (!$setLocalhost) {
             curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, true);
-            curl_setopt($curl, CURLOPT_SSL_VERIFYHOST, 2); // The default value for this option is 2. It means, it has to have the same name in the certificate as is in the URL you operate against.
+            curl_setopt($curl, CURLOPT_SSL_VERIFYHOST, 2);
         } else {
             curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, false);
-            curl_setopt($curl, CURLOPT_SSL_VERIFYHOST, 0); // When the verify value is 0, the connection succeeds regardless of the names in the certificate.
+            curl_setopt($curl, CURLOPT_SSL_VERIFYHOST, 0);
         }
 
         curl_setopt($curl, CURLOPT_URL, $this->getApiUrl());
@@ -74,7 +74,6 @@ abstract class AbstractSslCommerz implements SslCommerzInterface
             return $response;
         } else {
             return "FAILED TO CONNECT WITH SSLCOMMERZ API";
-            //return "cURL Error #:" . $err;
         }
     }
 
@@ -92,7 +91,6 @@ abstract class AbstractSslCommerz implements SslCommerzInterface
             return $sslcz;
         } else {
             if (isset($sslcz['GatewayPageURL']) && $sslcz['GatewayPageURL'] != "") {
-                // this is important to show the popup, return or echo to send json response back
                 if($this->getApiUrl() != null && $this->getApiUrl() == 'https://securepay.sslcommerz.com') {
                    $response = json_encode(['status' => 'SUCCESS', 'data' => $sslcz['GatewayPageURL'], 'logo' => $sslcz['storeLogo']]);
                 } else {

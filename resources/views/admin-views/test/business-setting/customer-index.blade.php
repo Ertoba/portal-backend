@@ -1,6 +1,6 @@
 @extends('layouts.admin.app')
 
-@section('title', translate('messages.customer_settings'))
+@section('title', translate('messages.Customer settings'))
 
 @push('css_or_js')
 @endpush
@@ -10,15 +10,16 @@
         <div class="page-header">
             <h1 class="page-header-title mr-3">
                 <span class="page-header-icon">
-                    <img src="{{ asset('public/assets/admin/img/business.png') }}" class="w--26" alt="">
+                    <img src="{{ asset('public/assets/admin/img/outline/business.svg') }}" class="w--26" alt="">
                 </span>
                 <span>
-                    {{ translate('business_setup') }}
+                    {{ translate('Business setup') }}
                 </span>
             </h1>
+            <p class="page-header-desc">{{ translate('What customers may do in the apps, from guest checkout to reviews and wallets.') }}</p>
             @include('admin-views.business-settings.partials.nav-menu')
         </div>
-        <form action="{{ route('admin.customer.update-settings') }}" method="post" enctype="multipart/form-data"
+        <form action="{{ route('admin.users.customer.update-settings') }}" method="post" enctype="multipart/form-data"
             id="update-settings">
             @csrf
             <div class="row g-3">
@@ -29,7 +30,7 @@
                                 <i class="tio-light-on"></i>
                             </span>
                             <span>
-                                {{ translate('See all customer & manage them from') }} <a href="javascript:void(0)" class="text-primary text-underline fw-semibold">{{ translate('All Customer List ') }}</a> {{ translate('page.') }}
+                                {{ translate('See and manage all customers') }}: <a href="javascript:void(0)" class="text-primary text-underline fw-semibold">{{ translate('All Customer List') }}</a>
                             </span>
                         </div>
                     </div>
@@ -47,8 +48,7 @@
                                     </div>
                                 </div>
                                 <div class="col-xxl-3 col-lg-4 col-md-5 col-sm-6">
-                                     @php($guest_checkout_status = \App\Models\BusinessSetting::where('key', 'guest_checkout_status')->first())
-                                    @php($guest_checkout_status = $guest_checkout_status ? $guest_checkout_status->value : 0)
+                                     @php($guest_checkout_status = \App\CentralLogics\Helpers::get_business_settings('guest_checkout_status', false) ?? 0)
                                     <div class="form-group mb-0">
                                         <label
                                             class="toggle-switch h--45px toggle-switch-sm d-flex justify-content-between border rounded px-3 py-0 form-control">
@@ -60,10 +60,10 @@
                                             <input type="checkbox" data-id="guest_checkout_status" data-type="toggle"
                                                     data-image-on="{{ asset('/public/assets/admin/img/modal/dm-tips-on.png') }}"
                                                     data-image-off="{{ asset('/public/assets/admin/img/modal/dm-tips-off.png') }}"
-                                                    data-title-on="<strong>{{ translate('messages.Want_to_enable_guest_checkout?') }}</strong>"
-                                                    data-title-off="<strong>{{ translate('messages.Want_to_disable_guest_checkout?') }}</strong>"
-                                                    data-text-on="<p>{{ translate('messages.If_you_enable_this,_guest_checkout_will_be_visible_when_customer_is_not_logged_in.') }}</p>"
-                                                    data-text-off="<p>{{ translate('messages.If_you_disable_this,_guest_checkout_will_not_be_visible_when_customer_is_not_logged_in.') }}</p>"
+                                                    data-title-on="<strong>{{ translate('messages.Want to enable guest checkout?') }}</strong>"
+                                                    data-title-off="<strong>{{ translate('messages.Want to disable guest checkout?') }}</strong>"
+                                                    data-text-on="<p>{{ translate('messages.If you enable this, guest checkout will be visible when customer is not logged in.') }}</p>"
+                                                    data-text-off="<p>{{ translate('messages.If you disable this, guest checkout will not be visible when customer is not logged in.') }}</p>"
                                                     class="status toggle-switch-input dynamic-checkbox-toggle" value="1"
                                                     name="guest_checkout_status" id="guest_checkout_status" {{ $guest_checkout_status == 1 ? 'checked' : '' }}>
                                             <span class="toggle-switch-label text">
@@ -89,7 +89,7 @@
                         <div class="card-body">
                             <div class="mb-20">
                                 <h4 class="mb-1">
-                                    {{ translate('General Setup') }}
+                                    {{ translate('General setup') }}
                                 </h4>
                                 <p class="mb-0 fs-12">
                                     {{ translate('Configure options to customize services for your customers.') }}
@@ -98,16 +98,15 @@
                             <div class="bg-light rounded p-xxl-20 p-3">
                                 <div class="row g-3">
                                     <div class="col-sm-6 col-lg-4">
-                                        @php($country_picker_status = \App\Models\BusinessSetting::where('key', 'country_picker_status')->first())
-                                        @php($country_picker_status = $country_picker_status ? $country_picker_status->value : 0)
+                                        @php($country_picker_status = \App\CentralLogics\Helpers::get_business_settings('country_picker_status', false) ?? 0)
                                         <div class="form-group mb-0">
                                             <span class="mb-10px d-flex align-items-center">
                                                 <span class="text-title">
-                                                    {{translate('messages.country_picker') }}
+                                                    {{translate('Country picker') }}
                                                 </span>
                                                 <span class="form-label-secondary text-danger d-flex" data-toggle="tooltip"
                                                         data-placement="right"
-                                                        data-original-title="{{ translate('messages.If_you_enable_this_option,_in_all_phone_no_field_will_show_a_country_picker_list.')}}"><i class="tio-info text-muted ps--3"></i>
+                                                        data-original-title="{{ translate('messages.If you enable this option, in all phone no field will show a country picker list.')}}"><i class="tio-info text-muted ps--3"></i>
                                                 </span>
                                             </span>
                                             <label class="toggle-switch h--45px toggle-switch-sm d-flex justify-content-between border rounded px-3 py-0 form-control">
@@ -119,10 +118,10 @@
                                                 <input type="checkbox" data-id="country_picker_status" data-type="toggle"
                                                        data-image-on="{{ asset('/public/assets/admin/img/modal/mail-success.png') }}"
                                                        data-image-off="{{ asset('/public/assets/admin/img/modal/mail-warning.png') }}"
-                                                       data-title-on="<strong>{{ translate('messages.Want_to_enable_country_picker?') }}</strong>"
-                                                       data-title-off="<strong>{{ translate('messages.Want_to_disable_country_picker?') }}</strong>"
-                                                       data-text-on="<p>{{ translate('messages.If_you_enable_this,_user_can_select_country_from_country_picker') }}</p>"
-                                                       data-text-off="<p>{{ translate('messages.If_you_disable_this,_user_can_not_select_country_from_country_picker,_default_country_will_be_selected') }}</p>"
+                                                       data-title-on="<strong>{{ translate('messages.Want to enable country picker?') }}</strong>"
+                                                       data-title-off="<strong>{{ translate('messages.Want to disable country picker?') }}</strong>"
+                                                       data-text-on="<p>{{ translate('messages.If you enable this, user can select country from country picker') }}</p>"
+                                                       data-text-off="<p>{{ translate('messages.If you disable this, user cannot select country from country picker, default country will be selected') }}</p>"
                                                        class="status toggle-switch-input dynamic-checkbox-toggle" value="1"
                                                        name="country_picker_status" id="country_picker_status" {{ $country_picker_status == 1 ? 'checked' : '' }}>
                                                 <span class="toggle-switch-label text">
@@ -132,16 +131,15 @@
                                         </div>
                                     </div>
                                     <div class="col-sm-6 col-lg-4">
-                                        @php($vnv = \App\Models\BusinessSetting::where('key', 'toggle_veg_non_veg')->first())
-                                        @php($vnv = $vnv ? $vnv->value : 0)
+                                        @php($vnv = \App\CentralLogics\Helpers::get_business_settings('toggle_veg_non_veg', false) ?? 0)
                                         <div class="form-group mb-0">
                                             <span class="mb-10px d-flex align-items-center">
                                                 <span class="text-title">
-                                                    {{ translate('messages.Customer’s_Food_Preference') }}
+                                                    {{ translate('messages.Customer\'s Food Preference') }}
                                                 </span>
                                                 <span class="form-label-secondary text-danger d-flex" data-toggle="tooltip"
                                                     data-placement="right"
-                                                    data-original-title="{{ translate('messages.If_this_feature_is_active,_customers_can_filter_food_according_to_their_preference_from_the_Customer_App_or_Website.') }}"><i class="tio-info text-muted ps--3"></i></span>
+                                                    data-original-title="{{ translate('messages.If this feature is active, customers can filter food according to their preference from the Customer App or Website.') }}"><i class="tio-info text-muted ps--3"></i></span>
                                             </span>
                                             <label
                                                 class="toggle-switch h--45px toggle-switch-sm d-flex justify-content-between border rounded px-3 py-0 form-control">
@@ -153,10 +151,10 @@
                                                     <input type="checkbox" data-id="vnv1" data-type="toggle"
                                                         data-image-on="{{ asset('/public/assets/admin/img/modal/veg-on.png') }}"
                                                         data-image-off="{{ asset('/public/assets/admin/img/modal/veg-off.png') }}"
-                                                        data-title-on="{{ translate('messages.Want_to_enable_the') }} <strong>{{ translate('messages.‘Veg/Non-Veg’_feature?') }}</strong>"
-                                                        data-title-off="{{ translate('messages.Want_to_disable') }} <strong>{{ translate('messages.the_Veg/Non-Veg_Feature?') }}</strong>"
-                                                        data-text-on="<p>{{ translate('messages.If_you_enable_this,_customers_can_filter_food_items_by_choosing_food_from_the_Veg/Non-Veg_feature.') }}</p>"
-                                                        data-text-off="<p>{{ translate('messages.If_you_disable_this,_the_Veg/Non-Veg_feature_will_be_hidden_in_the_Customer_App_&_Website.') }}</p>"
+                                                        data-title-on="{{ translate('messages.Want to enable the') }} <strong>{{ translate('messages.\'Veg/Non-Veg\' feature?') }}</strong>"
+                                                        data-title-off="{{ translate('messages.Want to disable') }} <strong>{{ translate('messages.the Veg/Non-Veg Feature?') }}</strong>"
+                                                        data-text-on="<p>{{ translate('messages.If you enable this, customers can filter food items by choosing food from the Veg/Non-Veg feature.') }}</p>"
+                                                        data-text-off="<p>{{ translate('If you disable this, the Veg/Non-Veg feature will be hidden in the customer app & website.') }}</p>"
                                                         class="status toggle-switch-input dynamic-checkbox-toggle" value="1"
                                                         name="vnv" id="vnv1" {{ $vnv == 1 ? 'checked' : '' }}>
                                                 <span class="toggle-switch-label text">
@@ -173,7 +171,7 @@
                                         <i class="tio-info"></i>
                                     </span>
                                     <span class="color-656566">
-                                        {{ translate('If you want to business multiple country you need to turn on country picker feature.') }}
+                                        {{ translate('To do business in multiple countries, you need to turn on the country picker feature.') }}
                                     </span>
                                 </div>
                             </div>
@@ -183,12 +181,12 @@
                         <div class="card-body">
                             <div class="d-flex align-items-center justify-content-between gap-2 flex-sm-nowrap flex-wrap">
                                 <div>
-                                    <h4 class="mb-1">{{translate('Customer Wallet')}}</h4>
+                                    <h4 class="mb-1">{{translate('Customer wallet')}}</h4>
                                     <p class="fs-12 m-0">{{translate('When active this feature customer can Earn & Buy through wallet. See customer wallet from Customers Details page.')}}</p>
                                 </div>
                                 <div class="d-flex flex-sm-nowrap flex-wrap justify-content-end justify-content-end align-items-center gap-3">
                                     <div class="view_toggle_btn fz--14px info-dark cursor-pointer text-decoration-underline font-semibold d-flex align-items-center gap-1">
-                                        {{ translate('messages.view') }}
+                                        {{ translate('messages.View') }}
                                         <i class="tio-chevron-down fs-22"></i>
                                     </div>
                                     <div class="mb-0">
@@ -214,10 +212,10 @@
                                     <div class="row g-3">
                                          <div class="col-sm-6 col-lg-4">
                                             <div class="form-group mb-0">
-                                                <span class="mb-2 d-flex align-items-center text-title">{{ translate('messages.refund_to_wallet') }}<span
+                                                <span class="mb-2 d-flex align-items-center text-title">{{ translate('messages.Refund to Wallet') }}<span
                                                     class="input-label-secondary" data-toggle="tooltip"
                                                     data-placement="right"
-                                                    data-original-title="{{ translate('messages.If_it’s_enabled,_Customers_will_automatically_receive_the_refunded_amount_in_their_wallets._But_if_it’s_disabled,_the_Admin_will_handle_the_Refund_Request_in_his_convenient_transaction_channel.') }}"><i class="tio-info text-muted ps--3"></i></span>
+                                                    data-original-title="{{ translate('messages.If it\'s enabled, Customers will automatically receive the refunded amount in their wallets. But if it\'s disabled, the Admin will handle the Refund Request in his convenient transaction channel.') }}"><i class="tio-info text-muted ps--3"></i></span>
                                                 </span>
                                                 <label
                                                     class="toggle-switch toggle-switch-sm d-flex justify-content-between border border-secondary rounded px-4 form-control {{ isset($data['wallet_status']) && $data['wallet_status'] == 1 ? '' : 'text-muted' }}">
@@ -227,10 +225,10 @@
                                                     data-id="refund_to_wallet" data-type="toggle"
                                                         data-image-on="{{ asset('/public/assets/admin/img/modal/refund-on.png') }}"
                                                         data-image-off="{{ asset('/public/assets/admin/img/modal/refund-off.png') }}"
-                                                        data-title-on="{{ translate('messages.Want_to_enable') }} <strong>{{ translate('messages.Refund_to_Wallet_feature?') }}</strong>"
-                                                        data-title-off="{{ translate('messages.Want_to_disable') }} <strong>{{ translate('messages.Refund_to_Wallet_feature?') }}</strong>"
-                                                        data-text-on="<p>{{ translate('messages.If_you_enable_this,_Customers_will_automatically_receive_the_refunded_amount_in_their_wallets.') }}</p>"
-                                                        data-text-off="<p>{{ translate('messages.If_you_disable_this,_the_Admin_will_handle_the_Refund_Request_in_his_convenient_transaction_channel.') }}</p>"
+                                                        data-title-on="{{ translate('messages.Want to enable') }} <strong>{{ translate('messages.Refund to Wallet feature?') }}</strong>"
+                                                        data-title-off="{{ translate('messages.Want to disable') }} <strong>{{ translate('messages.Refund to Wallet feature?') }}</strong>"
+                                                        data-text-on="<p>{{ translate('messages.If you enable this, Customers will automatically receive the refunded amount in their wallets.') }}</p>"
+                                                        data-text-off="<p>{{ translate('If you disable this, the admin will handle the refund request in his convenient transaction channel.') }}</p>"
                                                         class="status toggle-switch-input dynamic-checkbox-toggle "
                                                         name="refund_to_wallet" id="refund_to_wallet" value="1"
                                                         {{ isset($data['wallet_add_refund']) && $data['wallet_add_refund'] == 1 ? 'checked' : '' }}>
@@ -238,16 +236,16 @@
                                                         <span class="toggle-switch-indicator"></span>
                                                     </span>
                                                 </label>
-                                                <p class="mb-0 mt-2 fs-12 color-656565">{{ translate('To add fund for a customer visit') }} <a href="javascript:void(0)" class="text-primary text-underline fw-semibold">{{ translate('Add Fund') }}</a> {{ translate('page.') }}</p>
+                                                <p class="mb-0 mt-2 fs-12 color-656565">{{ translate('To add fund for a customer visit') }} <a href="javascript:void(0)" class="text-primary text-underline fw-semibold">{{ translate('Add fund') }}</a> {{ translate('Page') }}</p>
                                             </div>
                                         </div>
 
                                         <div class="col-sm-6 col-lg-4">
                                             <div class="form-group mb-0">
-                                                <span class="mb-2 d-flex align-items-center text-title">{{ translate('customer_can_add_fund_to_wallet') }}
+                                                <span class="mb-2 d-flex align-items-center text-title">{{ translate('Customer can add fund to wallet') }}
                                                     <span class="input-label-secondary" data-toggle="tooltip"
                                                         data-placement="right"
-                                                        data-original-title="{{ translate('messages.With_this_feature,_customers_can_add_fund_to_wallet_if_the_payment_module_is_available.') }}">
+                                                        data-original-title="{{ translate('messages.With this feature, customers can add fund to wallet if the payment module is available.') }}">
                                                         <i class="tio-info text-muted ps--3"></i>
                                                     </span>
                                                 </span>
@@ -259,10 +257,10 @@
                                                     type="checkbox" data-id="add_fund_status" data-type="toggle"
                                                         data-image-on="{{ asset('/public/assets/admin/img/modal/wallet-on.png') }}"
                                                         data-image-off="{{ asset('/public/assets/admin/img/modal/wallet-off.png') }}"
-                                                        data-title-on="{{ translate('messages.Want_to_enable') }} <strong>{{ translate('add_fund_to_Wallet_feature?') }}</strong>"
-                                                        data-title-off="{{ translate('messages.Want_to_disable') }} <strong>{{ translate('add_fund_to_Wallet_feature?') }}</strong>"
-                                                        data-text-on="<p>{{ translate('messages.If_you_enable_this,_Customers_can_add_fund_to_wallet_using_payment_module') }}</p>"
-                                                        data-text-off="<p>{{ translate('messages.If_you_disable_this,_add_fund_to_wallet_will_be_hidden_from_the_Customer_App_&_Website.') }}</p>"
+                                                        data-title-on="{{ translate('messages.Want to enable') }} <strong>{{ translate('Add fund to Wallet feature?') }}</strong>"
+                                                        data-title-off="{{ translate('messages.Want to disable') }} <strong>{{ translate('Add fund to Wallet feature?') }}</strong>"
+                                                        data-text-on="<p>{{ translate('messages.If you enable this, Customers can add fund to wallet using payment module') }}</p>"
+                                                        data-text-off="<p>{{ translate('If you disable this, add fund to wallet will be hidden from the customer app & website.') }}</p>"
                                                         class="status toggle-switch-input dynamic-checkbox-toggle "
                                                         name="add_fund_status" id="add_fund_status" value="1"
                                                         {{ isset($data['add_fund_status']) && $data['add_fund_status'] == 1 ? 'checked' : '' }}>
@@ -270,7 +268,7 @@
                                                         <span class="toggle-switch-indicator"></span>
                                                     </span>
                                                 </label>
-                                                <p class="mb-0 mt-2 fs-12 color-656565">{{ translate('To add fund for a customer visit') }} <a href="javascript:void(0)" class="text-primary text-underline fw-semibold">{{ translate('Add Fund') }}</a> {{ translate('page.') }}</p>
+                                                <p class="mb-0 mt-2 fs-12 color-656565">{{ translate('To add fund for a customer visit') }} <a href="javascript:void(0)" class="text-primary text-underline fw-semibold">{{ translate('Add fund') }}</a> {{ translate('Page') }}</p>
                                             </div>
                                         </div>
                                     </div>
@@ -292,12 +290,12 @@
                         <div class="card-body">
                             <div class="d-flex align-items-center justify-content-between gap-2 flex-sm-nowrap flex-wrap">
                                 <div>
-                                    <h4 class="mb-1">{{translate('Customer Loyalty Point')}}</h4>
-                                    <p class="fs-12 m-0">{{translate('If enabled customers will earn a certain amount of points after each purchase.')}}</p>
+                                    <h4 class="mb-1">{{translate('Customer loyalty point')}}</h4>
+                                    <p class="fs-12 m-0">{{translate('If enabled, customers will earn a certain amount of points after each purchase.')}}</p>
                                 </div>
                                 <div class="d-flex flex-sm-nowrap flex-wrap justify-content-end justify-content-end align-items-center gap-3">
                                     <div class="view_toggle_btn fz--14px info-dark cursor-pointer text-decoration-underline font-semibold d-flex align-items-center gap-1">
-                                        {{ translate('messages.view') }}
+                                        {{ translate('messages.View') }}
                                         <i class="tio-chevron-down fs-22"></i>
                                     </div>
                                     <div class="mb-0">
@@ -324,7 +322,7 @@
                                                     {{ translate('equivalent point amount') }}
                                                     <span class="input-label-secondary"
                                                         data-toggle="tooltip" data-placement="right"
-                                                        data-original-title="{{ translate('messages.Content Need') }}"><i class="tio-info text-muted"></i>
+                                                        data-original-title="{{ translate('Content need') }}"><i class="tio-info text-muted"></i>
                                                     </span>
                                                 </label>
                                                 <input {{ isset($data['loyalty_point_status']) && $data['loyalty_point_status'] == 1 ? 'required' : 'readonly' }}
@@ -335,10 +333,10 @@
                                         <div class="col-sm-6 col-lg-4">
                                             <div class="form-group mb-0">
                                                 <label class="input-label gap-0" for="item_purchase_point">
-                                                    {{ translate('Loyalty_Point_Earn_Per_Order') }} (%)
+                                                    {{ translate('Loyalty Point Earn Per Order') }} (%)
                                                     <span class="input-label-secondary"
                                                         data-toggle="tooltip" data-placement="right"
-                                                        data-original-title="{{ translate('messages.On_every_purchase_this_percent_of_amount_will_be_added_as_loyalty_point_on_his_account') }}"><i class="tio-info text-muted"></i>
+                                                        data-original-title="{{ translate('messages.On every purchase this percent of amount will be added as loyalty point on his account') }}"><i class="tio-info text-muted"></i>
                                                     </span>
                                                 </label>
                                                 <input {{ isset($data['loyalty_point_status']) && $data['loyalty_point_status'] == 1 ? 'required' : 'readonly' }} id="item_purchase_point"
@@ -348,10 +346,10 @@
                                         <div class="col-sm-6 col-lg-4">
                                             <div class="form-group mb-0">
                                                 <label class="input-label" for="minimum_transfer_point">
-                                                    {{ translate('Minimum_Point_Required_To_Convert') }}
+                                                    {{ translate('Minimum Point Required To Convert') }}
                                                     <span class="input-label-secondary"
                                                         data-toggle="tooltip" data-placement="right"
-                                                        data-original-title="{{ translate('messages.Content Need') }}"><i class="tio-info text-muted"></i>
+                                                        data-original-title="{{ translate('Content need') }}"><i class="tio-info text-muted"></i>
                                                     </span>
                                                 </label>
                                                 <input {{ isset($data['loyalty_point_status']) && $data['loyalty_point_status'] == 1 ? 'required' : 'readonly' }} id="minimum_transfer_point"
@@ -380,11 +378,11 @@
                             <div class="d-flex align-items-center justify-content-between gap-2 flex-sm-nowrap flex-wrap">
                                 <div>
                                     <h4 class="mb-1">{{translate('Customer Referral Earning Settings')}}</h4>
-                                    <p class="fs-12 m-0">{{translate('Customers will receive this wallet balance rewards for sharing their referral code')}}</p>
+                                    <p class="fs-12 m-0">{{translate('Customers will receive this wallet balance reward for sharing their referral code')}}</p>
                                 </div>
                                 <div class="d-flex flex-sm-nowrap flex-wrap justify-content-end justify-content-end align-items-center gap-3">
                                     <div class="view_toggle_btn fz--14px info-dark cursor-pointer text-decoration-underline font-semibold d-flex align-items-center gap-1">
-                                        {{ translate('messages.view') }}
+                                        {{ translate('messages.View') }}
                                         <i class="tio-chevron-down fs-22"></i>
                                     </div>
                                     <div class="mb-0">
@@ -411,11 +409,11 @@
                                                 <div class="text-left">
                                                     <h5 class="align-items-center">
                                                         <span>
-                                                            {{ translate('Who_Share_the_code') }}
+                                                            {{ translate('Who Share the Code') }}
                                                         </span>
                                                     </h5>
                                                     <p class="fs-12 color-656565">
-                                                        {{ translate('Customers_will_receive_this_wallet_balance_rewards_for_sharing_their_referral_code_with_friends,_who_use_the_code_when_signing_up_and_completing_their_first_order.') }}
+                                                        {{ translate('Wallet reward a customer earns when a friend signs up with their code and completes a first order.') }}
                                                     </p>
                                                 </div>
                                             </div>
@@ -436,8 +434,8 @@
                                                             <input {{ isset($data['wallet_status']) && $data['wallet_status'] == 1 ? '' : 'readonly' }}
                                                             id="ref_earning_exchange_rate" type="number" step=".001" min="0" max="99999999999"
                                                                 class="form-control" name="ref_earning_exchange_rate"
-                                                                value="{{ $data['ref_earning_exchange_rate'] ?? '0' }}" data-toggle="tooltip" data-placement="right" data-original-title="Refer amount add to wallet option is disabled. Kindly turn on the option from Customer Wallet section to complete this settings">
-                                                            <p class="text-danger mt-1 mb-0 fs-12">{{ translate('Must Turn on') }} <strong>{{ translate('Add Fund to Wallet') }}</strong> {{ translate('option, otherwise customer can’t receive the reward amount.') }} </p>
+                                                                value="{{ $data['ref_earning_exchange_rate'] ?? '0' }}" data-toggle="tooltip" data-placement="right" data-original-title="Turn on Refer amount in the Customer Wallet section to complete this setting.">
+                                                            <p class="text-danger mt-1 mb-0 fs-12">{{ translate('The customer cannot receive the reward amount unless this option is on') }}: <strong>{{ translate('Add fund to wallet') }}</strong> </p>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -449,11 +447,11 @@
 
                                                     <h5 class="align-items-center">
                                                         <span>
-                                                            {{ translate('Who_Use_the_code') }}
+                                                            {{ translate('Who Use the Code') }}
                                                         </span>
                                                     </h5>
                                                     <p class="fs-12 color-656565">
-                                                        {{ translate('By_applying_the_referral_code_during_signup_and_when_making_their_first_purchase,_customers_will_enjoy_a_discount_for_a_limited_time.') }}
+                                                        {{ translate('Customers who sign up with a referral code get a limited-time discount.') }}
                                                     </p>
                                                 </div>
                                             </div>
@@ -463,27 +461,27 @@
                                                         <div>
                                                             <div class="form-group">
                                                                 <span
-                                                                    class="mb-2 text-title d-flex align-items-center">{{ translate('Customer_will_get_Discount_on_first_order ') }}
+                                                                    class="mb-2 text-title d-flex align-items-center">{{ translate('Customer will get Discount on first order') }} 
                                                                     <span class="input-label-secondary" data-toggle="tooltip"
                                                                         data-placement="right"
-                                                                        data-original-title="{{ translate('messages.Configure_discounts_for_newly_registered_users_who_sign_up_with_a_referral_code._Customize_the_discount_type_and_amount_to_incentivize_referrals_and_encourage_user_engagement.') }}">
+                                                                        data-original-title="{{ translate('messages.Set the discount type and amount for users who sign up with a referral code.') }}">
                                                                         <i class="tio-info text-muted"></i>
                                                                     </span>
                                                                 </span>
                                                                 <label
                                                                     class="toggle-switch toggle-switch-sm d-flex justify-content-between border border-secondary rounded px-4 form-control {{ isset($data['wallet_status']) && $data['wallet_status'] == 1 ? '' : 'text-muted' }}">
                                                                     <span
-                                                                        class="pr-2">{{ translate('Status ') }}
+                                                                        class="pr-2">{{ translate('Status') }} 
                                                                     </span>
                                                                     <input {{ isset($data['wallet_status']) && $data['wallet_status'] == 1 ? '' : 'disabled' }}
                                                                     type="checkbox" data-id="new_customer_discount_status"
                                                                         data-type="toggle"
                                                                         data-image-on="{{ asset('/public/assets/admin/img/modal/basic_campaign_on.png') }}"
                                                                         data-image-off="{{ asset('/public/assets/admin/img/modal/basic_campaign_off.png') }}"
-                                                                        data-title-on="{{ translate('messages.Want_to_enable') }} <strong>{{ translate('messages.new_customer_discount?') }}</strong>"
-                                                                        data-title-off="{{ translate('messages.Want_to_disable') }} <strong>{{ translate('messages.new_customer_discount?') }}</strong>"
-                                                                        data-text-on="<p>{{ translate('messages.If_you_enable_this,_Customers_will_get_discount_on_first_order.') }}</p>"
-                                                                        data-text-off="<p>{{ translate('mo.If_you_disable_this,_Customers_won’t_get_any_discount_on_first_order.') }}</p>"
+                                                                        data-title-on="{{ translate('messages.Want to enable') }} <strong>{{ translate('messages.New customer discount?') }}</strong>"
+                                                                        data-title-off="{{ translate('messages.Want to disable') }} <strong>{{ translate('messages.New customer discount?') }}</strong>"
+                                                                        data-text-on="<p>{{ translate('messages.If you enable this, Customers will get discount on first order.') }}</p>"
+                                                                        data-text-off="<p>{{ translate('mo. If you disable this, Customers won\'t get any discount on first order.') }}</p>"
                                                                         class="status toggle-switch-input dynamic-checkbox-toggle "
                                                                         name="new_customer_discount_status"
                                                                         id="new_customer_discount_status" value="1"
@@ -499,7 +497,7 @@
                                                             <div class="col-md-6">
                                                                 <div class="form-group mb-0">
                                                                     <label class="input-label" for="new_customer_discount_amount">
-                                                                        {{ translate('Discount_Amount') }}
+                                                                        {{ translate('Discount amount') }}
 
                                                                         <span class="{{  data_get($data, 'new_customer_discount_amount_type') != 'amount'  ? '': 'd-none' }} " id="percentage">(%)</span>
                                                                         <span  class=" {{  data_get($data, 'new_customer_discount_amount_type') == 'amount' ? '': 'd-none' }} " id='cuttency_symbol'>({{ \App\CentralLogics\Helpers::currency_symbol() }})
@@ -509,7 +507,7 @@
                                                                         <span
                                                                             class="input-label-secondary" data-toggle="tooltip"
                                                                             data-placement="right"
-                                                                            data-original-title="{{ translate('Enter_the_discount_value_for_referral-based_new_user_registrations.') }}">
+                                                                            data-original-title="{{ translate('Enter the discount value for referral-based new user registrations.') }}">
                                                                             <i class="tio-info text-muted"></i>
                                                                         </span>
                                                                     </label>
@@ -530,10 +528,10 @@
                                                             <div class="col-md-6">
                                                                 <div class="form-group mb-0">
                                                                     <label class="input-label" for="new_customer_discount_amount_validity">
-                                                                        {{ translate('validity') }}
+                                                                        {{ translate('Validity') }}
                                                                         <span class="input-label-secondary" data-toggle="tooltip"
                                                                             data-placement="right"
-                                                                            data-original-title="{{ translate('Set_how_long_the_discount_remains_active_after_registration.') }}">
+                                                                            data-original-title="{{ translate('Set how long the discount remains active after registration.') }}">
                                                                             <i class="tio-info text-muted"></i>
                                                                         </span>
                                                                     </label>
@@ -543,7 +541,7 @@
                                                                             class="form-control border-0 rounded-0" name="new_customer_discount_amount_validity"
                                                                             value="{{ data_get($data, 'new_customer_discount_amount_validity') ?? '0' }}">
                                                                         <select name="new_customer_discount_validity_type" class="bg-modal-btn custom-select border-0 rounded-0 w-auto" id="new_customer_discount_validity_type"  {{ isset($data['wallet_status']) && $data['wallet_status'] == 1 &&  data_get($data, 'new_customer_discount_status') == 1 ? 'required' : 'disabled' }}>
-                                                                            <option {{ data_get($data, 'new_customer_discount_validity_type') == 'day' ? "selected": '' }} value="day">{{translate('messages.day')}}</option>
+                                                                            <option {{ data_get($data, 'new_customer_discount_validity_type') == 'day' ? "selected": '' }} value="day">{{translate('messages.Day')}}</option>
                                                                             <option {{ data_get($data, 'new_customer_discount_validity_type') == 'month' ? "selected": '' }}  value="month">{{translate('messages.month')}} </option>
                                                                             <option {{ data_get($data, 'new_customer_discount_validity_type') == 'year' ? "selected": '' }}  value="year">{{translate('messages.year')}} </option>
                                                                         </select>
@@ -568,16 +566,15 @@
                     <div class="col-lg-12">
                         <div class="btn--container justify-content-end mt-20">
                             <button type="reset" id="reset_btn"
-                                class="btn btn--reset location-reload">{{ translate('reset') }}</button>
+                                class="btn btn--reset location-reload"><i class="tio-refresh"></i> {{ translate('Reset') }}</button>
                             <button type="submit" id="submit"
-                                class="btn btn--primary">{{ translate('Save Information') }}</button>
+                                class="btn btn--primary"><i class="tio-save"></i> {{ translate('Save information') }}</button>
                         </div>
                     </div>
                 </div>
             </div>
         </form>
 
-        <!-- End Table -->
     </div>
 @endsection
 

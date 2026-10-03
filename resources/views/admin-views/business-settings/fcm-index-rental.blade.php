@@ -7,17 +7,16 @@
 
 @section('content')
     <div class="content container-fluid">
-        <!-- Page Header -->
         <div class="page-header">
             <h1 class="page-header-title">
                 <span class="page-header-icon">
-                    <img src="{{ asset('public/assets/admin/img/firebase.png') }}" class="w--26" alt="">
+                    <img src="{{ asset('public/assets/admin/img/outline/firebase.svg') }}" class="w--26" alt="">
                 </span>
-                <span>{{ translate('messages.firebase_push_notification_setup') }}
+                <span>{{ translate('messages.Firebase push notification setup') }}
                 </span>
             </h1>
+            <p class="page-header-desc">{{ translate('The wording of every push notification the rental apps send.') }}</p>
         </div>
-        <!-- End Page Header -->
         <?php
         $mod_type = 'rental';
         ?>
@@ -29,7 +28,7 @@
                             <a href="{{ route('admin.business-settings.fcm-index') }}"
                                 class="nav-link pb-2 px-0 pb-sm-3 active" data-slide="1">
                                 <img src="{{ asset('/public/assets/admin/img/notify.png') }}" alt="">
-                                <span>{{ translate('Push Notification') }}</span>
+                                <span>{{ translate('Push notification') }}</span>
                             </a>
                         </li>
                         <li class="nav-item">
@@ -63,8 +62,7 @@
             <div class="card-body">
                 <div class="tab-content">
                     <div class="tab-pane fade show active" id="push-notify">
-                        @php($language = \App\Models\BusinessSetting::where('key', 'language')->first())
-                        @php($language = $language->value ?? null)
+                        @php($language = \App\CentralLogics\Helpers::get_business_settings('language', false) ?? null)
                         @php($defaultLang = 'en')
                         <div class="row justify-content-between">
                             <div class="col-sm-auto mb-5">
@@ -84,9 +82,8 @@
                             <div class="col-sm-auto mb-5">
                                 <select name="module_type" class="form-control js-select2-custom set-filter"
                                     data-url="{{ url()->full() }}" data-filter="module_type"
-                                    title="{{ translate('messages.select_modules') }}">
+                                    title="{{ translate('messages.Select modules') }}">
                                     @foreach (config('module.module_type') as $module)
-                                        {{-- Hide addon-based module types whose addon isn't published --}}
                                         @continue($module === 'rental' && !addon_published_status('Rental'))
                                         @continue($module === 'ride-share' && !addon_published_status('RideShare'))
                                         <option value="{{ $module }}" {{ $mod_type == $module ? 'selected' : '' }}>
@@ -94,7 +91,7 @@
                                         </option>
                                     @endforeach
                                 </select>
-                                <small>{{ translate('*Select Module Here') }}</small>
+                                <small>*{{ translate('Select Module Here') }}</small>
                             </div>
                         </div>
                         <form action="{{ route('admin.business-settings.update-fcm-messages-rental') }}" method="post">
@@ -122,7 +119,7 @@
                                                 <div class="form-group">
                                                     <div class="d-flex flex-wrap justify-content-between mb-2">
                                                         <span class="d-block form-label">
-                                                            {{ translate('messages.trip_pending_messages') }}
+                                                            {{ translate('messages.Trip pending messages') }}
                                                             ({{ strtoupper($lang) }})
                                                         </span>
                                                         @if ($lang == 'en')
@@ -175,7 +172,7 @@
                                                 <div class="form-group">
                                                     <div class="d-flex flex-wrap justify-content-between mb-2">
                                                         <span class="d-block form-label">
-                                                            {{ translate('messages.trip_confirm_message') }}
+                                                            {{ translate('messages.Trip confirm message') }}
                                                         </span>
                                                         @if ($lang == 'en')
                                                             <label
@@ -229,7 +226,7 @@
                                                     <div class="form-group">
                                                         <div class="d-flex flex-wrap justify-content-between mb-2">
                                                             <span class="d-block form-label">
-                                                                {{ translate('messages.trip_ongoing_message') }}
+                                                                {{ translate('messages.Trip ongoing message') }}
                                                             </span>
                                                             @if ($lang == 'en')
                                                                 <label
@@ -281,7 +278,7 @@
                                                     <div class="form-group">
                                                         <div class="d-flex flex-wrap justify-content-between mb-2">
                                                             <span class="d-block form-label">
-                                                                {{ translate('messages.trip_complete_message') }}
+                                                                {{ translate('messages.Trip complete Message') }}
                                                             </span>
                                                             @if ($lang == 'en')
                                                                 <label
@@ -337,7 +334,7 @@
                                                 <div class="form-group">
                                                     <div class="d-flex flex-wrap justify-content-between mb-2">
                                                         <span class="d-block form-label">
-                                                            {{ translate('messages.trip_cancel_message') }}
+                                                            {{ translate('messages.Trip cancel message') }}
                                                         </span>
                                                         @if ($lang == 'en')
                                                             <label
@@ -381,9 +378,9 @@
                                 @endforeach
                             @endif
                             <div class="btn--container justify-content-end">
-                                <button type="reset" class="btn btn--reset">{{ translate('messages.reset') }}</button>
+                                <button type="reset" class="btn btn--reset"><i class="tio-refresh"></i> {{ translate('messages.Reset') }}</button>
                                 <button type="submit"
-                                    class="btn btn--primary">{{ translate('messages.submit') }}</button>
+                                    class="btn btn--primary"><i class="tio-checkmark-circle-outlined"></i> {{ translate('messages.Submit') }}</button>
                             </div>
                         </form>
                     </div>
@@ -391,7 +388,6 @@
             </div>
         </div>
 
-        <!-- Firebase Modal -->
         <div class="modal fade" id="push-notify-modal">
             <div class="modal-dialog status-warning-modal">
                 <div class="modal-content">
@@ -408,20 +404,20 @@
                                         <img src="{{ asset('/public/assets/admin/img/email-templates/3.png') }}"
                                             alt="" class="mb-20">
                                         <h5 class="modal-title">
-                                            {{ translate('Write_a_message_in_the_Notification_Body') }}</h5>
+                                            {{ translate('Write a message in the notification body') }}</h5>
                                     </div>
                                     <p>
-                                        {{ translate('you_can_add_your_message_using_placeholders_to_include_dynamic_content._Here_are_some_examples_of_placeholders_you_can_use:') }}
+                                        {{ translate('You can add your message using placeholders to include dynamic content. Here are some examples of placeholders you can use') }}:
                                     </p>
                                     <ul>
                                         <li>
-                                            {userName}: {{ translate('the_name_of_the_user.') }}
+                                            {userName}: {{ translate('the name of the user.') }}
                                         </li>
                                         <li>
-                                            {storeName}: {{ translate('the_name_of_the_store.') }}
+                                            {storeName}: {{ translate('the name of the store.') }}
                                         </li>
                                         <li>
-                                            {orderId}: {{ translate('the_order_id.') }}
+                                            {orderId}: {{ translate('The order id.') }}
                                         </li>
                                     </ul>
                                 </div>
@@ -436,7 +432,7 @@
                                     </div>
                                     <div class="text-center">
                                         <p>
-                                            {{ translate('Please check the documentation below for detailed instructions on setting up your mobile app to receive Firebase Cloud Messaging (FCM) notifications.') }}
+                                            {{ translate('See the documentation below to set up FCM notifications in your mobile app.') }}
                                         </p>
                                         <a href="https://docs.6amtech.com/docs-six-am-mart/mobile-apps/mandatory-setup"
                                             target="_blank">{{ translate('Click Here') }}</a>

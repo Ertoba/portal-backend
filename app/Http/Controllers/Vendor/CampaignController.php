@@ -10,18 +10,26 @@ use App\Http\Controllers\Controller;
 use App\Models\Admin;
 use App\Models\Store;
 use Brian2694\Toastr\Facades\Toastr;
-use Illuminate\Support\Facades\Mail;
+use App\Support\Notification\SendNotification;
+use Illuminate\Support\Facades\Log;
 
 
 class CampaignController extends Controller
 {
     function list(Request $request)
     {
-        $key = explode(' ', $request['search']);
+        $store = Helpers::get_store_data();
 
-        $campaigns=Campaign::with('stores')->running()->latest()->module(Helpers::get_store_data()->module_id)
-
-        ->when($key, function ($query) use ($key) {
+        $campaigns=Campaign::withStorage()
+        ->with(['stores' => function ($q) use ($store) {
+            $q->where('stores.id', $store->id)->without('storeConfig')->withoutGlobalScope('translate');
+        }])
+        ->withCount(['stores as joined_stores_count' => function ($q) {
+            $q->where('campaign_store.campaign_status', 'confirmed');
+        }])
+        ->running()->latest()->module($store->module_id)
+        ->when($request->filled('search'), function ($query) use ($request) {
+            $key = explode(' ', $request['search']);
             $query->where(function ($q) use ($key) {
                 foreach ($key as $value) {
                     $q->orWhere('title', 'like', "%{$value}%")
@@ -34,14 +42,13 @@ class CampaignController extends Controller
                 }
             });
         })
-
-        ->paginate(config('default_pagination'));
+        ->paginate(config('default_pagination'))->withQueryString();
         return view('vendor-views.campaign.list',compact('campaigns'));
     }
 
     function itemlist()
     {
-        $campaigns=ItemCampaign::where('store_id', Helpers::get_store_id())->latest()->paginate(config('default_pagination'));
+        $campaigns=ItemCampaign::withStorage()->where('store_id', Helpers::get_store_id())->latest()->paginate(config('default_pagination'));
         return view('vendor-views.campaign.item_list',compact('campaigns'));
     }
 
@@ -49,38 +56,41 @@ class CampaignController extends Controller
     {
         $campaign->stores()->detach($store);
         $campaign->save();
-        Toastr::success(translate('messages.store_remove_from_campaign'));
+        Toastr::success(translate('messages.Store remove from campaign'));
         return back();
     }
     public function addstore(Campaign $campaign, $store_id)
     {
         $campaign->stores()->attach($store_id,['campaign_status' => 'pending','updated_at' => now(),'created_at' => now()]);
         $campaign->save();
-        $store = Store::find($store_id);
+        $store = Store::with('vendor')->find($store_id);
         try
         {
             $admin= Admin::where('role_id', 1)->first();
-            $mail_status = Helpers::get_mail_status('campaign_request_mail_status_admin');
-            if(config('mail.status') && $mail_status == '1' &&  Helpers::getNotificationStatusData('admin','campaign_join_request','mail_status' )) {
-                Mail::to($admin?->getRawOriginal('email'))->send(new \App\Mail\CampaignRequestMail($store->name));
+            $mail_status = SendNotification::mailTemplateEnabled('campaign_request_mail_status_admin');
+            if(config('mail.status') && $mail_status &&  SendNotification::channelEnabled('admin','campaign_join_request','mail_status' )) {
+                SendNotification::mail($admin?->getRawOriginal('email'), new \App\Mail\CampaignRequestMail($store->name));
             }
-            $mail_status = Helpers::get_mail_status('campaign_request_mail_status_store');
-            if(config('mail.status') && $mail_status == '1' &&  Helpers::getNotificationStatusData('store','store_campaign_join_request','mail_status',$store->id )) {
-                Mail::to($store->vendor?->getRawOriginal('email'))->send(new \App\Mail\VendorCampaignRequestMail($store->name,'pending'));
+            $mail_status = SendNotification::mailTemplateEnabled('campaign_request_mail_status_store');
+            if(config('mail.status') && $mail_status &&  SendNotification::channelEnabled('store','store_campaign_join_request','mail_status',$store->id )) {
+                SendNotification::mail($store->vendor?->getRawOriginal('email'), new \App\Mail\VendorCampaignRequestMail($store->name,'pending'));
             }
         }
         catch(\Exception $e)
         {
-            info($e->getMessage());
+            Log::error('vendor.campaign_controller.addstore_failed', [
+                'error' => $e->getMessage(),
+                'file' => $e->getFile().':'.$e->getLine(),
+            ]);
         }
-        Toastr::success(translate('messages.store_added_to_campaign'));
+        Toastr::success(translate('messages.Store added to campaign'));
         return back();
     }
 
 
 
     public function searchItem(Request $request){
-        $key = explode(' ', $request['search']);
+        $key = explode(' ', $request['search'] ?? '');
         $campaigns=ItemCampaign::where('store_id', Helpers::get_store_id())
         ->where(function ($q) use ($key) {
             foreach ($key as $value) {

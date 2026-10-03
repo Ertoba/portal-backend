@@ -7,7 +7,8 @@ use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Madnest\Madzipper\Facades\Madzipper;
-use App\CentralLogics\Helpers;
+use App\Support\Notification\SendNotification;
+use App\Support\Notification\NotificationMessages;
 class DatabaseRefresh extends Command
 {
     /**
@@ -43,14 +44,8 @@ class DatabaseRefresh extends Command
     {
 
         try {
-            $data=[
-                'title' => 'demo_reset',
-                'description' => 'demo_reset',
-                'image' => '',
-                'order_id' => '',
-                'type' => 'demo_reset',
-            ];
-            Helpers::send_push_notif_for_demo_reset($data, $data['type'], 'demo_reset');
+            $data = NotificationMessages::demoReset();
+            SendNotification::pushSilentToTopic($data, $data['type'], 'demo_reset');
         } catch (\Throwable $th) {
             info('Failed_to_sent_demo_reset_notification');
         }

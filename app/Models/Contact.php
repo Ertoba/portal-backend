@@ -2,13 +2,13 @@
 
 namespace App\Models;
 
-use App\Traits\DemoMaskable;
+use App\Traits\Model\DemoMaskableTrait;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Contact extends Model
 {
-    use HasFactory, DemoMaskable;
+    use HasFactory, DemoMaskableTrait;
 
     protected $casts = [
         'seen'       => 'integer',

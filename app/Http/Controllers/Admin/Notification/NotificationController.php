@@ -10,8 +10,7 @@ use App\Exports\PushNotificationExport;
 use App\Http\Controllers\BaseController;
 use App\Http\Requests\Admin\NotificationAddRequest;
 use App\Http\Requests\Admin\NotificationUpdateRequest;
-use App\Services\NotificationService;
-use App\Traits\NotificationTrait;
+use App\Services\System\NotificationService;
 use Exception;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\JsonResponse;
@@ -22,10 +21,10 @@ use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\View\View;
 use Maatwebsite\Excel\Facades\Excel;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
+use App\Support\Notification\SendNotification;
 
 class NotificationController extends BaseController
 {
-    use NotificationTrait;
     public function __construct(
         protected NotificationRepositoryInterface $notificationRepo,
         protected NotificationService $notificationService,
@@ -45,6 +44,7 @@ class NotificationController extends BaseController
         $notifications = $this->notificationRepo->getListWhere(
             searchValue: $request['search'],
             filters: $target && $target != 'all' ? ['tergat' => $target] : [],
+            relations: ['storage', 'zone'],
             dataLimit: config('default_pagination'),
         );
         $zones = $this->zoneRepo->getList();
@@ -53,56 +53,54 @@ class NotificationController extends BaseController
 
     public function add(NotificationAddRequest $request): JsonResponse
     {
-        $notification = $this->notificationRepo->add(data: $this->notificationService->getAddData(request: $request));
-        $topic = $this->notificationService->getTopic(request: $request);
+        $notification = $this->notificationRepo->add(data: $this->notificationService->getAddData($request->all()));
+        $topic = $this->notificationService->getTopic($request->all());
         $notification->image = $notification->image ? $notification->toArray()['image_full_url'] :'';
 
         try {
-            $this->sendPushNotificationToTopic($notification, $topic, 'push_notification');
+            SendNotification::pushToTopic($notification, $topic, 'push_notification');
         } catch (Exception) {
-            Toastr::warning(translate('messages.push_notification_failed'));
+            Toastr::warning(translate('messages.Push notification failed'));
         }
 
         return response()->json();
     }
 
-    public function getUpdateView(string|int $id): View
+    public function getUpdateView(string|int $id): RedirectResponse
     {
-        $notification = $this->notificationRepo->getFirstWhere(params: ['id' => $id]);
-        $zones = $this->zoneRepo->getList();
-        return view(NotificationViewPath::UPDATE[VIEW], compact('notification','zones'));
+        return redirect()->route('admin.notification.add-new');
     }
 
     public function update(NotificationUpdateRequest $request, $id): RedirectResponse
     {
         $notification = $this->notificationRepo->getFirstWhere(params: ['id' => $id]);
-        $notification = $this->notificationRepo->update(id: $id ,data: $this->notificationService->getUpdateData(request: $request,notification: $notification));
+        $notification = $this->notificationRepo->update(id: $id ,data: $this->notificationService->getUpdateData($request->all(),notification: $notification));
 
-        $topic = $this->notificationService->getTopic(request: $request);
+        $topic = $this->notificationService->getTopic($request->all());
         $notification = $this->notificationRepo->getFirstWhere(params: ['id' => $id]);
         $notification->image = $notification->image ? $notification->toArray()['image_full_url'] :'';
 
         try {
-            $this->sendPushNotificationToTopic($notification, $topic, 'push_notification');
+            SendNotification::pushToTopic($notification, $topic, 'push_notification');
         } catch (Exception) {
-            Toastr::warning(translate('messages.push_notification_failed'));
+            Toastr::warning(translate('messages.Push notification failed'));
         }
 
-        Toastr::success(translate('messages.notification_updated_successfully'));
+        Toastr::success(translate('Updated successfully'));
         return back();
     }
 
     public function updateStatus(Request $request): RedirectResponse
     {
         $this->notificationRepo->update(id: $request['id'] ,data: ['status'=>$request['status']]);
-        Toastr::success(translate('messages.notification_status_updated'));
+        Toastr::success(translate('messages.Notification status updated'));
         return back();
     }
 
     public function delete(Request $request): RedirectResponse
     {
         $this->notificationRepo->delete(id: $request['id']);
-        Toastr::success(translate('messages.notification_deleted_successfully'));
+        Toastr::success(translate('Deleted successfully'));
         return back();
     }
 

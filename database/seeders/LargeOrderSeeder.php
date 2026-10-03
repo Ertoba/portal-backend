@@ -10,20 +10,12 @@ class LargeOrderSeeder extends Seeder
 {
     public function run()
     {
-        // $this->command->info('Starting large order data seeding...');
 
-        // DB::statement('SET FOREIGN_KEY_CHECKS=0');
 
-        // DB::table('orders')->truncate();
-        // DB::table('order_taxes')->truncate();
 
-        // $this->seedOrders();
 
-        //  $this->seedOrderTaxes();
 
-        //  DB::statement('SET FOREIGN_KEY_CHECKS=1');
 
-        // $this->command->info('Large order data seeding completed!');
     }
 
     protected function seedOrders()

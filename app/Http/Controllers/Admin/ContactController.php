@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Rules\PhoneNumber;
+use App\Support\Notification\SendNotification;
+use App\Mail\CustomerMessage;
 use App\Models\Contact;
 use Illuminate\Http\Request;
-use App\Models\BusinessSetting;
 use App\Http\Controllers\Controller;
 use Brian2694\Toastr\Facades\Toastr;
 use Illuminate\Support\Facades\Mail;
@@ -16,7 +18,7 @@ class ContactController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'mobile_number' => 'required',
+            'mobile_number' => PhoneNumber::rules(),
             'subject' => 'required',
             'message' => 'required',
             'email' => 'required|email:rfc,dns'
@@ -39,9 +41,9 @@ class ContactController extends Controller
 
     public function list(Request $request)
     {
-        $key = explode(' ', $request['search']);
+        $key = explode(' ', $request['search'] ?? '');
         $contacts = Contact::orderBy('name')
-        ->when(isset($key), function($query) use($key) {
+        ->when($request['search'], function($query) use($key) {
             $query->where(function ($q) use ($key) {
                 foreach ($key as $value) {
                     $q->orWhere('name', 'like', "%{$value}%")
@@ -50,16 +52,15 @@ class ContactController extends Controller
                 }
             });
         })
-
         ->paginate(config('default_pagination'));
         return view('admin-views.contacts.list', compact('contacts'));
 
     }
     public function exportList(Request $request)
     {
-        $key = explode(' ', $request['search']);
+        $key = explode(' ', $request['search'] ?? '');
         $contacts = Contact::orderBy('name')
-        ->when(isset($key), function($query) use($key) {
+        ->when($request['search'], function($query) use($key) {
             $query->where(function ($q) use ($key) {
                 foreach ($key as $value) {
                     $q->orWhere('name', 'like', "%{$value}%")
@@ -95,19 +96,25 @@ class ContactController extends Controller
     {
         $contact = Contact::findOrFail($request->id);
         $contact->delete();
-        Toastr::success(translate('messages.contact_deleted_successfully'));
+        Toastr::success(translate('Deleted successfully'));
         return back();
     }
 
     public function send_mail(Request $request, $id)
     {
         $contact = Contact::findOrFail($id);
-        $data = array('body' => $request['mail_body'], 'name' => $contact->name);
+
+        if (! config('mail.status')) {
+            Toastr::error(translate('messages.Mail is disabled in the configuration'));
+
+            return back();
+        }
+
         try {
-            Mail::send('email-templates.customer-message', $data, function ($message) use ($contact, $request) {
-                $message->to($contact['email'], BusinessSetting::where(['key' => 'business_name'])->first()->value)
-                    ->subject($request['subject']);
-            });
+            SendNotification::mail(
+                $contact['email'],
+                new CustomerMessage($request['mail_body'], $contact->name, $request['subject']),
+            );
 
             Contact::where(['id' => $id])->update([
                 'reply' => json_encode([

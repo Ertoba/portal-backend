@@ -1,49 +1,48 @@
 @extends('layouts.admin.app')
 
-@section('title', translate('messages.Store_Earning_Report'))
+@section('title', translate('Store earning report'))
 
 @section('store_earning_report')
     active
 @endsection
 @section('content')
-    @php
-        $activeTab = request()->tab ?: 'all';
-        $reportOverviewTitle = match ($activeTab) {
-            'parcel' => 'Comprehensive Financial Overview and Analytics for Store Parcel',
-            'rental' => 'Comprehensive Financial Overview and Analytics for Store Rental',
-            'ride-share' => 'Comprehensive Financial Overview and Analytics for Store Rides',
-            default => 'Comprehensive Financial Overview and Analytics for Store Orders',
-        };
-    @endphp
     <div class="content container-fluid">
-        <!-- Page Header -->
-        <div class="page-header pb-0">
+        <div class="page-header">
             <div>
                 <h1 class="page-header-title text-capitalize">
-                    {{translate('messages.Store_Earning_Report') }}
+                    <span class="page-header-icon">
+                        <img src="{{ asset('public/assets/admin/img/outline/report.svg') }}" class="w--26" alt="">
+                    </span>
+                    <span>
+                        {{ translate('Vendor earning report') }}
+                    </span>
                 </h1>
-                <p>
-                    {{ $reportOverviewTitle }}
-                </p>
+                <p class="page-header-desc">{{ translate('What each store earned, and what you took from it in commission.') }}</p>
             </div>
         </div>
-        <!-- End Page Header -->
 
-        <div class="js-nav-scroller hs-nav-scroller-horizontal mb-20">
+        <div class="js-nav-scroller hs-nav-scroller-horizontal mb-20 mt-2">
             <ul class="nav mb-0 nav-tabs border-0 nav--tabs nav--pills">
                 <li class="nav-item">
-                    <a class="nav-link {{ request()->tab !== 'rental' ? 'active' : '' }}"
+                    <a class="nav-link {{ !in_array(request()->tab, ['rental', 'service']) ? 'active' : '' }}"
                         href="{{ route('admin.transactions.report.store-earning-report') }}"
-                        aria-disabled="true">{{ translate('messages.Order Modules') }}</a>
+                        aria-disabled="true">{{ translate('Order modules') }}</a>
                 </li>
                 @if (addon_published_status('Rental'))
                     <li class="nav-item">
                         <a class="nav-link {{ request()->tab === 'rental' ? 'active' : '' }}"
                             href="{{ route('admin.transactions.report.store-earning-report', ['tab' => 'rental']) }}"
-                            aria-disabled="true">{{ translate('messages.Rental Module') }}</a>
+                            aria-disabled="true">{{ translate('Rental module') }}</a>
                     </li>
                 @endif
-            
+                @if (addon_published_status('Service'))
+                    <li class="nav-item">
+                        <a class="nav-link {{ request()->tab === 'service' ? 'active' : '' }}"
+                            href="{{ route('admin.transactions.report.store-earning-report', ['tab' => 'service']) }}"
+                            aria-disabled="true">{{ translate('Service module') }}</a>
+                    </li>
+                @endif
+
             </ul>
         </div>
 
@@ -62,6 +61,22 @@
                 'store_id' => $store_id,
                 'module_id' => $module_id,
                 'tab' => 'rental',
+            ])
+        @elseif (request()->tab === 'service' && addon_published_status('Service'))
+            @include('service::vendor.report.earning-report.content', [
+                'report_url' => route('admin.transactions.report.store-earning-report'),
+                'summary_url' => route('admin.transactions.service.report.provider-earning-summary'),
+                'breakdown_url' => route('admin.transactions.service.report.provider-earning-breakdown'),
+                'expense_url' => route('admin.transactions.service.report.provider-expense-breakdown'),
+                'trend_url' => route('admin.transactions.service.report.provider-earning-trend'),
+                'reset_url' => route('admin.transactions.report.store-earning-report', ['tab' => 'service']),
+                'transactions_export_url' => route('admin.transactions.service.report.provider-earning-export'),
+                'transactions_url' => route('admin.transactions.service.report.provider-earning-transactions'),
+                'show_store_select' => true,
+                'store' => $store,
+                'store_id' => $store_id,
+                'module_id' => $module_id,
+                'tab' => 'service',
             ])
         @else
             @include('admin-views.report.partials._store_earning_report_content', [

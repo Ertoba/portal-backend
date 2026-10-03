@@ -1,65 +1,67 @@
 @extends('layouts.vendor.app')
 
-@section('title', translate('messages.My_Category'))
+@section('title', translate('My category'))
 
 @push('css_or_js')
 @endpush
 
 @section('content')
     <div id="content-disable" class="content container-fluid">
-        <!-- Page Header -->
-        <div class="page-header d-flex flex-wrap align-items-center justify-content-between gap-2">
-            <h1 class="page-header-title mb-0">
-                <span class="page-header-icon">
-                    <img src="{{ asset('public/assets/admin/img/category.png') }}" class="w--20" alt="">
-                </span>
-                <span>
-                    {{ translate('messages.My_Category') }}
+        <div class="page-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <div>
+                <h1 class="page-header-title mb-0">
+                    <span class="page-header-icon">
+                        <img src="{{ asset('public/assets/admin/img/outline/category.svg') }}" class="w--26" alt="">
+                    </span>
+                    <span>
+                        {{ translate('My category') }}
+                        @if(count($categories) > 0)
+                            <span class="badge badge-soft-dark ml-2" id="itemCount">{{ $categories->total() }}</span>
+                        @endif
+                    </span>
+                </h1>
+                <p class="page-header-desc">{{ translate('The categories your store is filed under, which decides where customers find you.') }}</p>
+            </div>
+            <div class="page-header-actions">
+                <div class="d-flex flex-wrap  gap-2 ml-auto">
                     @if(count($categories) > 0)
-                        <span class="badge badge-soft-dark ml-2" id="itemCount">{{ $categories->total() }}</span>
+                        <form id="vendorStoreCategoryFilterForm" class="d-flex flex-wrap align-items-center gap-2 mb-0">
+
+
+                            <div class="input-group input--group w-340-lg">
+                                <input type="search" name="search" value="{{ request('search') }}" class="form-control h--40px"
+                                    placeholder="{{ translate('messages.Search categories') }}">
+                                <button type="submit" class="btn btn--primary h--40px"><i class="tio-search"></i></button>
+                            </div>
+                        </form>
+
+                        <div class="hs-unfold">
+                            <a class="js-hs-unfold-invoker btn btn-white text-title dropdown-toggle font-medium h--40px"
+                                href="javascript:;"
+                                data-hs-unfold-options='{"target":"#storeCategoryExportDropdown","type":"css-animation"}'>
+                                <i class="tio-download-to mr-1 text-title"></i> {{ translate('messages.Export') }}
+                            </a>
+                            <div id="storeCategoryExportDropdown" class="hs-unfold-content dropdown-unfold dropdown-menu dropdown-menu-sm-right">
+                                <span class="dropdown-header">{{ translate('messages.Download options') }}</span>
+                                <a class="dropdown-item" href="{{ route('vendor.store-category.export', array_merge(['type' => 'excel'], request()->query())) }}">
+                                    <img class="avatar avatar-xss avatar-4by3 mr-2" src="{{ asset('public/assets/admin') }}/svg/components/excel.svg" alt="excel">
+                                    Excel
+                                </a>
+                                <a class="dropdown-item" href="{{ route('vendor.store-category.export', array_merge(['type' => 'csv'], request()->query())) }}">
+                                    <img class="avatar avatar-xss avatar-4by3 mr-2" src="{{ asset('public/assets/admin') }}/svg/components/placeholder-csv-format.svg" alt="csv">
+                                    CSV
+                                </a>
+                            </div>
+                        </div>
                     @endif
-                </span>
-            </h1>
 
-            <div class="d-flex flex-wrap  gap-2 ml-auto">
-                @if(count($categories) > 0)
-                    <form id="vendorStoreCategoryFilterForm" class="d-flex flex-wrap align-items-center gap-2 mb-0">
-
-
-                        <div class="input-group input--group w-340-lg">
-                            <input type="search" name="search" value="{{ request('search') }}" class="form-control h--40px"
-                                placeholder="{{ translate('messages.search_categories') }}">
-                            <button type="submit" class="btn btn--primary h--40px"><i class="tio-search"></i></button>
-                        </div>
-                    </form>
-
-                    <div class="hs-unfold">
-                        <a class="js-hs-unfold-invoker btn btn-white text-title dropdown-toggle font-medium h--40px"
-                            href="javascript:;"
-                            data-hs-unfold-options='{"target":"#storeCategoryExportDropdown","type":"css-animation"}'>
-                            <i class="tio-download-to mr-1 text-title"></i> {{ translate('messages.export') }}
-                        </a>
-                        <div id="storeCategoryExportDropdown" class="hs-unfold-content dropdown-unfold dropdown-menu dropdown-menu-sm-right">
-                            <span class="dropdown-header">{{ translate('messages.download_options') }}</span>
-                            <a class="dropdown-item" href="{{ route('vendor.store-category.export', array_merge(['type' => 'excel'], request()->query())) }}">
-                                <img class="avatar avatar-xss avatar-4by3 mr-2" src="{{ asset('public/assets/admin') }}/svg/components/excel.svg" alt="excel">
-                                {{ translate('messages.excel') }}
-                            </a>
-                            <a class="dropdown-item" href="{{ route('vendor.store-category.export', array_merge(['type' => 'csv'], request()->query())) }}">
-                                <img class="avatar avatar-xss avatar-4by3 mr-2" src="{{ asset('public/assets/admin') }}/svg/components/placeholder-csv-format.svg" alt="csv">
-                                {{ translate('messages.csv') }}
-                            </a>
-                        </div>
-                    </div>
-                @endif
-
-                <a href="javascript:void(0)" class="btn btn--primary h--40px offcanvas-trigger create-category-trigger"
-                    data-target="#offcanvas__storeCategoryBtn" data-action="create">
-                    <i class="tio-add-circle mr-1"></i> {{ translate('Add My Category') }}
-                </a>
+                    <a href="javascript:void(0)" class="btn btn--primary h--40px offcanvas-trigger create-category-trigger"
+                        data-target="#offcanvas__storeCategoryBtn" data-action="create">
+                        <i class="tio-add-circle mr-1"></i> {{ translate('Add my category') }}
+                    </a>
+                </div>
             </div>
         </div>
-        <!-- End Page Header -->
 
         <div class="card">
             <div class="card-body p-0">
@@ -68,7 +70,7 @@
                         style="background-color: #FFF8E5; border: 1px solid #FFE6A8; border-radius: 8px;">
                         <i class="tio-info mt-1" style="color: #F2A93B;"></i>
                         <div class="fs-12 text-body">
-                            {{ translate('Once you create store categories, you must add your items to those categories. Without assigning items, they will not appear on your store details page. If you want to proceed with the main category, you can skip adding any store categories.') }}
+                            {{ translate('Items must be assigned to a store category to appear on your store page. Skip to use the main category.') }}
                         </div>
                     </div>
 
@@ -76,74 +78,86 @@
                         <table class="table table-borderless table-thead-bordered table-align-middle">
                             <thead class="thead-light">
                                 <tr>
-                                    <th class="text-center w-5p">{{ translate('SL') }}</th>
-                                    <th class="w-30p">{{ translate('Category Info') }}</th>
-                                    <th class="text-center w-15p">{{ translate('Priority Level') }}</th>
-                                    <th class="text-center w-10p">{{ translate('messages.status') }}</th>
-                                    <th class="text-center w-10p">{{ translate('messages.action') }}</th>
+                                    <th class="w-30p">{{ translate('Category information') }}</th>
+                                    <th class="col--numeric w-10p">{{ translate('messages.Items') }}</th>
+                                    <th class="text-center w-15p">{{ translate('Priority level') }}</th>
+                                    <th class="text-center w-10p">{{ translate('messages.Status') }}</th>
+                                    <th class="text-center w-10p">{{ translate('messages.Action') }}</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach ($categories as $key => $category)
+                                @foreach ($categories as $category)
+                                    @php($items_count = (int) ($category->items_count ?? 0))
                                     <tr>
-                                        <td class="text-center">{{ $key + $categories->firstItem() }}</td>
                                         <td>
                                             <div class="media-area d-flex gap-2 align-items-center">
                                                 <div class="w-40px min-w-40 h--40pxpx rounded overflow-hidden border">
-                                                    <img src="{{ $category['image_full_url'] }}" alt="" class="w-100 rounded object-cover">
+                                                    <img src="{{ $category['image_full_url'] }}" alt="{{ $category['name'] }}" class="w-100 rounded object-cover onerror-image"
+                                                         data-onerror-image="{{ asset('public/assets/admin/img/100x100/2.jpg') }}">
                                                 </div>
                                                 <div>
                                                     <span class="fs-14 line--limit-2 text-title max-w-250 min-w-160">
                                                         {{ Str::limit($category['name'], 32, '...') }}
                                                     </span>
-                                                    <p class="m-0 fs-12 text-muted">{{ translate('ID') }} #{{ $category->id }}</p>
+                                                    <p class="m-0 fs-12 text-muted">ID #{{ $category->id }}</p>
                                                 </div>
                                             </div>
+                                        </td>
+                                        <td class="col--numeric" data-order="{{ $items_count }}">
+                                            <span class="{{ $items_count ? 'text-title font-semibold' : 'text-muted' }}"
+                                                  title="{{ $items_count
+                                                        ? translate('messages.Total items')
+                                                        : translate('messages.No item filed under this category yet') }}">{{ $items_count }}</span>
                                         </td>
                                         <td>
                                             <form action="{{ route('vendor.store-category.priority', $category->id) }}" class="priority-form">
                                                 <select name="priority" class="form-control form--control-select priority-select mx-auto {{ $category->priority == 0 ? 'text-title' : '' }} {{ $category->priority == 1 ? 'text-info' : '' }} {{ $category->priority == 2 ? 'text-success' : '' }}">
-                                                    <option value="0" {{ $category->priority == 0 ? 'selected' : '' }}>{{ translate('messages.normal') }}</option>
+                                                    <option value="0" {{ $category->priority == 0 ? 'selected' : '' }}>{{ translate('messages.Normal') }}</option>
                                                     <option value="1" {{ $category->priority == 1 ? 'selected' : '' }}>{{ translate('messages.medium') }}</option>
-                                                    <option value="2" {{ $category->priority == 2 ? 'selected' : '' }}>{{ translate('messages.high') }}</option>
+                                                    <option value="2" {{ $category->priority == 2 ? 'selected' : '' }}>{{ translate('messages.High') }}</option>
                                                 </select>
                                             </form>
                                         </td>
                                         <td class="text-center">
-                                            <label class="toggle-switch toggle-switch-sm" for="stocksCheckbox{{ $category->id }}">
-                                                <input type="checkbox"
-                                                    data-url="{{ route('vendor.store-category.status', ['id' => $category->id, 'status' => $category->status ? 0 : 1]) }}"
-                                                    class="toggle-switch-input redirect-url"
-                                                    id="stocksCheckbox{{ $category->id }}"
-                                                    {{ $category->status ? 'checked' : '' }}>
-                                                <span class="toggle-switch-label mx-auto">
-                                                    <span class="toggle-switch-indicator"></span>
+                                            <div class="status-toggle" data-status="{{ $category->status ? 1 : 0 }}">
+                                                <label class="toggle-switch toggle-switch-sm" for="stocksCheckbox{{ $category->id }}">
+                                                    <input type="checkbox"
+                                                        data-url="{{ route('vendor.store-category.status', ['id' => $category->id, 'status' => $category->status ? 0 : 1]) }}"
+                                                        class="toggle-switch-input redirect-url"
+                                                        id="stocksCheckbox{{ $category->id }}"
+                                                        {{ $category->status ? 'checked' : '' }}>
+                                                    <span class="toggle-switch-label">
+                                                        <span class="toggle-switch-indicator"></span>
+                                                    </span>
+                                                </label>
+                                                <span class="status-toggle__text" aria-live="polite">
+                                                    {{ $category->status ? translate('messages.Active') : translate('messages.Inactive') }}
                                                 </span>
-                                            </label>
+                                            </div>
                                         </td>
                                         <td>
                                             <div class="btn--container justify-content-center">
-                                                <a class="btn action-btn btn--warning btn-outline-warning assign-items-trigger"
+                                                <a class="btn action-btn action-btn--open assign-items-trigger"
                                                     href="javascript:void(0)"
                                                     data-url="{{ route('vendor.store-category.items', $category->id) }}"
                                                     data-target="#offcanvas__assignItemsBtn"
-                                                    title="{{ translate('Assign Items') }}">
+                                                    title="{{ translate('Assign items') }}">
                                                     <i class="tio-add-circle-outlined"></i>
                                                 </a>
-                                                <a class="btn action-btn btn-outline-theme-dark offcanvas-trigger data-info-show"
+                                                <a class="btn action-btn action-btn--edit offcanvas-trigger data-info-show"
                                                     href="javascript:void(0)"
                                                     data-id="{{ $category['id'] }}"
                                                     data-url="{{ route('vendor.store-category.edit', [$category['id']]) }}"
                                                     data-target="#offcanvas__storeCategoryBtn"
                                                     data-action="edit"
-                                                    title="{{ translate('Edit My Category') }}">
+                                                    title="{{ translate('Edit my category') }}">
                                                     <i class="tio-edit"></i>
                                                 </a>
-                                                <a class="btn action-btn btn--danger btn-outline-danger form-alert"
+                                                <a class="btn action-btn action-btn--delete form-alert"
                                                     href="javascript:"
                                                     data-id="store-category-{{ $category['id'] }}"
-                                                    data-message="{{ translate('messages.Want_to_delete_this_category') }}"
-                                                    title="{{ translate('Delete My Category') }}">
+                                                    data-message="{{ translate('Want to delete this category?') }}"
+                                                    title="{{ translate('Delete my category') }}">
                                                     <i class="tio-delete-outlined"></i>
                                                 </a>
                                                 <form action="{{ route('vendor.store-category.delete') }}" method="post" id="store-category-{{ $category['id'] }}">
@@ -160,9 +174,9 @@
                 @else
                     <div class="my-category-empty p-4 p-md-5 text-center">
                         <img src="{{ asset('public/assets/admin/img/empty-my-category.svg') }}"
-                            alt="{{ translate('No My Category') }}"
+                            alt="{{ translate('No my category') }}"
                             class="mb-3" width="64" height="64">
-                        <h5 class="mb-2 font-weight-bold">{{ translate('Add My Store Category') }}</h5>
+                        <h5 class="mb-2 font-weight-bold">{{ translate('Add my store category') }}</h5>
                         <p class="text-muted mb-3 mx-auto" style="max-width: 560px;">
                             {{ translate('Organize your items with custom categories to make your menu easier for customers to browse.') }}
                         </p>
@@ -170,7 +184,7 @@
                             style="max-width: 640px; background-color: #FFF8E5; border: 1px solid #FFE6A8;" role="alert">
                             <i class="tio-info mt-1" style="color: #F2A93B;"></i>
                             <div class="fs-12 text-body">
-                                {{ translate('Once you create store categories, you must add your items to those categories. Without assigning items, they will not appear on your store details page. If you want to proceed with the main category, you can skip adding any store categories.') }}
+                                {{ translate('Items must be assigned to a store category to appear on your store page. Skip to use the main category.') }}
                             </div>
                         </div>
                     </div>
@@ -220,9 +234,9 @@
             $('#content-disable').removeClass('disabled');
         });
 
-        $('.priority-select').on('change', function () {
-            $(this).closest('form').submit();
-        });
+        // The priority selects are owned by the shared
+        // public/assets/admin/js/priority-select.js, which saves them over ajax. A
+        // handler here would call form.submit() and navigate.
 
         document.addEventListener('DOMContentLoaded', function () {
             $('#vendorPriorityFilterSelect').on('change', function () {
@@ -267,7 +281,7 @@
                 $form.find('.lang_form1').addClass('d-none');
                 $form.find('#default-form1').removeClass('d-none');
                 $defaultInput.trigger('focus');
-                toastr.error("{{ translate('messages.default_name_is_required') }}");
+                toastr.error("{{ translate('messages.Default name is required') }}");
             }
         });
 

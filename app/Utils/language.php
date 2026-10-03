@@ -3,31 +3,14 @@
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Session;
 
-if (!function_exists('translate')) {
-    function translate($key): string
-    {
-        $local = getDefaultLanguage();
-        App::setLocale($local);
-
-        try {
-            $lang_array = include(base_path('resources/lang/' . $local . '/messages.php'));
-            $processed_key = ucfirst(str_replace('_', ' ', removeSpecialCharacters($key)));
-            $key = removeSpecialCharacters($key);
-            if (!array_key_exists($key, $lang_array)) {
-                $lang_array[$key] = $processed_key;
-                $str = "<?php return " . var_export($lang_array, true) . ";";
-                file_put_contents(base_path('resources/lang/' . $local . '/messages.php'), $str);
-                $result = $processed_key;
-            } else {
-                $result = __('messages.' . $key);
-            }
-        } catch (\Exception $exception) {
-            $result = __('messages.' . $key);
-        }
-
-        return $result;
-    }
-}
+// translate() intentionally lives only in app/helpers.php.
+//
+// A second definition used to sit here. It never ran — composer's `files`
+// autoload list loads app/helpers.php first, so function_exists() short-circuited
+// this one — but it was a loaded gun: it had no static cache, so had the autoload
+// order ever shifted, every single translate() call would have include()d the
+// ~850 KB messages.php afresh (~3 ms and 4 MB each, thousands of times a request).
+// Removed rather than kept in sync, since the failure mode is silent.
 
 
 if (!function_exists('removeSpecialCharacters')) {

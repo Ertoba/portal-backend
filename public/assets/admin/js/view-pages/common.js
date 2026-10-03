@@ -187,6 +187,11 @@ $(document).on("click", ".location-reload", function () {
     location.reload();
 });
 $(document).on("click", ".redirect-url", function () {
+    // Row status switches flip in place over ajax — status-toggle.js owns the
+    // request for those, so navigating here would undo it.
+    if (window.StatusToggle && window.StatusToggle.owns(this)) {
+        return;
+    }
     location.href = $(this).data("url");
 });
 
@@ -277,7 +282,9 @@ $(document).ready(function () {
 
     $(".onerror-image").each(function () {
         let defaultImage = $(this).data("onerror-image");
-        if ($(this).attr("src").endsWith("/")) {
+        let currentSrc = $(this).attr("src");
+
+        if (!currentSrc || currentSrc.endsWith("/")) {
             $(this).attr("src", defaultImage);
         }
     });
@@ -294,7 +301,20 @@ $(document).on("click", ".confirm-Status-Toggle", function () {
             .prop("checked", true)
             .val(1);
     }
-    $("#" + Status_toggle + "_form").submit();
+
+    let $toggle = $("#" + Status_toggle);
+    let $form = $("#" + Status_toggle + "_form");
+
+    // Row status switches post the same form over ajax instead of navigating.
+    // The modal has to be dismissed by hand here — with no page load, nothing
+    // else takes it off screen.
+    if (window.StatusToggle && window.StatusToggle.owns($toggle[0]) && $form.length) {
+        $("#toggle-status-modal").modal("hide");
+        window.StatusToggle.submitForm($toggle, $form);
+        return;
+    }
+
+    $form.submit();
 });
 $(document).on("click", ".confirm-Toggle", function () {
     let toggle_id = $("#toggle-ok-button").attr("toggle-ok-button");

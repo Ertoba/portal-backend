@@ -1,6 +1,6 @@
 <div class="row">
     <div class="col-lg-12 text-center ">
-        <h1>{{ translate($data['taxSource']) }} {{ translate('Tax_Details_Report') }}</h1>
+        <h1>{{ translate($data['taxSource']) }} {{ translate('Tax details report') }}</h1>
     </div>
     <div class="col-lg-12">
 
@@ -9,16 +9,16 @@
         <table>
             <thead>
                 <tr>
-                    <th>{{ translate('Search_Criteria') }}</th>
+                    <th>{{ translate('Search criteria') }}</th>
                     <th></th>
                     <th></th>
                     <th>
 
                         
                            <br>
-                        {{ translate('total_tax_amount') }} - {{\App\CentralLogics\Helpers::format_currency($data['total_tax_amount']) ?? 0 }}
+                        {{ translate('Total tax amount') }} - {{\App\CentralLogics\Helpers::format_currency($data['total_tax_amount']) ?? 0 }}
                         <br>
-                        {{ translate('total_amount') }} - {{ \App\CentralLogics\Helpers::format_currency($data['total_amount']) }}
+                        {{ translate('Total amount') }} - {{ \App\CentralLogics\Helpers::format_currency($data['total_amount']) }}
 
                         @if ($data['from'])
                             <br>
@@ -32,7 +32,6 @@
                         @endif
                         <br>
 
-                        {{-- {{ translate('Search_Bar_Content') }}- {{ $data['search'] ?? translate('N/A') }} --}}
                         <br>
 
                     </th>
@@ -42,10 +41,10 @@
                     <th></th>
                 </tr>
                 <tr>
-                    <th class="border-0">{{ translate('sl') }}</th>
+                    <th class="border-0">{{ translate('SL') }}</th>
                     <th class="border-0">{{ translate('Transaction ID') }}</th>
                     <th class="border-0">{{ translate('Amount') }}</th>
-                    <th class="border-0">{{ translate('Tax Amount') }}</th>
+                    <th class="border-0">{{ translate('Tax amount') }}</th>
             </thead>
             <tbody>
                 @foreach ($data['taxData'] as $key => $item)

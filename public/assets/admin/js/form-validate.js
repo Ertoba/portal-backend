@@ -177,8 +177,26 @@ $(function () {
                 }
             },
             submitHandler: function(form) {
-                
+
                 let $form = $(form);
+
+                if (window.AppAjax && form.hasAttribute("data-ajax-form")) {
+                    let fileOk = true;
+
+                    if (window.fileValidators && window.FileUploadValidator) {
+                        let owned = window.fileValidators.filter(function (validator) {
+                            return form.contains(validator.input);
+                        });
+
+                        fileOk = owned.length === 0 || window.FileUploadValidator.validateAll(owned);
+                    }
+
+                    if (fileOk) {
+                        window.AppAjax.submit(form, { validate: false });
+                    }
+
+                    return;
+                }
 
                 if ($form.data("ajax") === true) {
                     let formData = new FormData(form);

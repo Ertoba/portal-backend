@@ -7,13 +7,13 @@
     <table>
         <thead>
             <tr>
-                <th>{{ translate('Search_Criteria') }}</th>
+                <th>{{ translate('Search criteria') }}</th>
                 <th></th>
                 <th></th>
                 <th>
-                    {{ translate('zone' )}} - {{ $data['zone']??translate('all') }}
+                    {{ translate('Zone' )}} - {{ $data['zone']??translate('All') }}
                     <br>
-                    {{ translate('store' )}} - {{ $data['store']??translate('all') }}
+                    {{ translate('Store' )}} - {{ $data['store']??translate('All') }}
                     @if ($data['from'])
                     <br>
                     {{ translate('from' )}} - {{ $data['from']?Carbon\Carbon::parse($data['from'])->format('d M Y'):'' }}
@@ -23,9 +23,9 @@
                     {{ translate('to' )}} - {{ $data['to']?Carbon\Carbon::parse($data['to'])->format('d M Y'):'' }}
                     @endif
                     <br>
-                    {{ translate('filter')  }}- {{  translate($data['filter']) }}
+                    {{ translate('Filter')  }}- {{  translate($data['filter']) }}
                     <br>
-                    {{ translate('Search_Bar_Content')  }}- {{ $data['search'] ??translate('N/A') }}
+                    {{ translate('Search bar content')  }}- {{ $data['search'] ??translate('N/A') }}
 
                 </th>
                 <th> </th>
@@ -38,11 +38,11 @@
                 <th></th>
                 <th></th>
                 <th>
-                    {{ translate('gross_sale')  }}- {{ \App\CentralLogics\Helpers::number_format_short($data['orders']->order_amount) }}
+                    {{ translate('Gross sale')  }}- {{ \App\CentralLogics\Helpers::number_format_short($data['orders']->order_amount) }}
                     <br>
-                    {{ translate('total_tax')  }}- {{ \App\CentralLogics\Helpers::number_format_short($data['orders']->total_tax_amount) }}
+                    {{ translate('Total tax')  }}- {{ \App\CentralLogics\Helpers::number_format_short($data['orders']->total_tax_amount) }}
                     <br>
-                    {{ translate('total_commission')  }}- {{ \App\CentralLogics\Helpers::number_format_short($data['orders']->transaction_sum_admin_commission+$data['orders']->transaction_sum_delivery_fee_comission-$data['orders']->transaction_sum_admin_expense) }}
+                    {{ translate('Total commission')  }}- {{ \App\CentralLogics\Helpers::number_format_short($data['orders']->transaction_sum_admin_commission+$data['orders']->transaction_sum_delivery_fee_comission-$data['orders']->transaction_sum_admin_expense) }}
                     <br>
                     {{ translate('total_store_earning')  }}- {{ \App\CentralLogics\Helpers::number_format_short($data['orders']->transaction_sum_store_amount) }}
                 </th>
@@ -52,15 +52,15 @@
                 <th></th>
             </tr>
         <tr>
-            <th>{{ translate('sl') }}</th>
+            <th>{{ translate('SL') }}</th>
             <th>{{translate('product_image')}}</th>
-            <th>{{ translate('Product_name') }}</th>
-            <th>{{ translate('Available_Variations') }}</th>
-            <th>{{ translate('QTY_Sold') }}</th>
+            <th>{{ translate('Product name') }}</th>
+            <th>{{ translate('Available Variations') }}</th>
+            <th>{{ translate('Quantity sold') }}</th>
             <th>
-                {{ translate('Gross_Sale') }}</th>
+                {{ translate('Gross sale') }}</th>
             <th>
-                {{ translate('Discount_Given') }}</th>
+                {{ translate('Discount given') }}</th>
         </thead>
         <tbody>
         @foreach($data['items'] as $key => $item)

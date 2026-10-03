@@ -1,144 +1,40 @@
 @extends('layouts.admin.app')
 
-@section('title',translate('messages.restaurant_bulk_export'))
+@section('title',translate('messages.Restaurant bulk export'))
 
 @push('css_or_js')
-
+    <link rel="stylesheet" href="{{ asset('public/assets/admin/css/third-party-setup.css') }}">
+    <link rel="stylesheet" href="{{ asset('public/assets/admin/css/bulk-tools.css') }}">
 @endpush
 
 @section('content')
-    <div class="content container-fluid">
-        <div class="page-header">
-            <h1 class="page-header-title">
-                <span class="page-header-icon">
-                    <img src="{{asset('public/assets/admin/img/resturant.png')}}" class="w--20" alt="">
-                </span>
-                <span>
-                    {{translate('messages.export_stores')}}
-                </span>
-            </h1>
-        </div>
-        <div class="card rest-part">
-            <div class="card-body p-2">
-                <div class="export-steps-2">
-                    <div class="row g-4">
-                        <div class="col-sm-6 col-lg-4">
-                            <div class="export-steps-item-2 h-100">
-                                <div class="top">
-                                    <div>
-                                        <h3 class="fs-20">{{translate('Step 1')}}</h3>
-                                        <div>
-                                            {{translate('Select Data Type')}}
-                                        </div>
-                                    </div>
-                                    <img src="{{asset('/public/assets/admin/img/bulk-export-1.png')}}" alt="">
-                                </div>
-                                <h4>{{ translate('Instruction') }}</h4>
-                                <ul class="m-0 pl-4">
-                                    <li>
-                                       {{ translate('Select_data_type_in_which_order_you_want_your_data_sorted_while_downloading.') }}
-                                    </li>
-
-
-                                </ul>
-                            </div>
-                        </div>
-                        <div class="col-sm-6 col-lg-4">
-                            <div class="export-steps-item-2 h-100">
-                                <div class="top">
-                                    <div>
-                                        <h3 class="fs-20">{{translate('Step 2')}}</h3>
-                                        <div>
-                                            {{translate('Select Data Range by Date or ID and Export')}}
-                                        </div>
-                                    </div>
-                                    <img src="{{asset('/public/assets/admin/img/bulk-export-2.png')}}" alt="">
-                                </div>
-                                <h4>{{ translate('Instruction') }}</h4>
-                                <ul class="m-0 pl-4">
-
-                                    <li>
-                                        {{ translate('The_file_will_be_downloaded_in_.xls_format') }}
-                                    </li>
-                                    <li>
-                                        {{ translate('Click_reset_if_you_want_to_clear_you_changes_and_want_to_download_in_default_sort_wise_data') }}
-                                    </li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <form class="product-form px-3 pb-3" action="{{route('admin.store.bulk-export')}}" method="POST"
-                        enctype="multipart/form-data">
-                    @csrf
-                    <div class="row">
-                        <div class="col-md-4">
-                            <div class="form-group">
-                                <label class="input-label" for="exampleFormControlSelect1">{{translate('messages.type')}}<span
-                                        class="input-label-secondary"></span></label>
-                                <select name="type" id="type" data-placeholder="{{translate('messages.select_type')}}" class="form-control" required title="Select Type">
-                                    <option value="all">{{translate('messages.all_data')}}</option>
-                                    <option value="date_wise">{{translate('messages.date_wise')}}</option>
-                                    <option value="id_wise">{{translate('messages.id_wise')}}</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="form-group id_wise">
-                                <label class="input-label" for="exampleFormControlSelect1">{{translate('messages.start_id')}}<span
-                                        class="input-label-secondary"></span></label>
-                                <input type="number" name="start_id" class="form-control">
-                            </div>
-                            <div class="form-group date_wise">
-                                <label class="input-label" for="exampleFormControlSelect1">{{translate('messages.from_date')}}<span
-                                        class="input-label-secondary"></span></label>
-                                <input type="date" name="from_date" id="date_from" class="form-control">
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="form-group id_wise">
-                                <label class="input-label" for="exampleFormControlSelect1">{{translate('messages.end_id')}}<span
-                                        class="input-label-secondary"></span></label>
-                                <input type="number" name="end_id" class="form-control">
-                            </div>
-                            <div class="form-group date_wise">
-                                <label class="input-label text-capitalize" for="exampleFormControlSelect1">{{translate('messages.to_date')}}<span
-                                        class="input-label-secondary"></span></label>
-                                <input type="date" name="to_date" id="date_to" class="form-control">
-                            </div>
-                        </div>
-                        <div class="col-12">
-                            <div class="btn--container justify-content-end">
-                                <button class="btn btn--reset" id="reset-btn" type="reset">{{translate('messages.clear')}}</button>
-                                <button class="btn btn--primary" type="submit">{{translate('messages.export')}}</button>
-                            </div>
-                        </div>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
+    @include('partials.bulk._export', ['bulk' => [
+        'title' => translate('messages.Export stores'),
+        'subtitle' => translate('Download your stores as a spreadsheet you can edit and import back.'),
+        'icon' => asset('public/assets/admin/img/shop.png'),
+        'action' => route('admin.store.bulk-export'),
+        'summary' => $summary,
+        'count_label' => translate('Stores in this module'),
+        'count_hint' => translate('Counted by their owner account.'),
+        'file_name' => 'Stores.xlsx',
+        'preview_all' => translate('Exporting every store in this module.'),
+        'columns' => ['Id', 'OwnerId', 'OwnerFirstName', 'OwnerLastName', 'ProviderName', 'Phone', 'Email', 'Logo',
+                      'CoverPhoto', 'Latitude', 'Longitude', 'Address', 'ZoneId', 'ModuleId', 'Comission', 'Tax',
+                      'PickupTime', 'ScheduleTrip', 'Status', 'ReviewsSection'],
+        'tips' => [
+            translate('The id range filters on the owner account, which is what the Id column holds.'),
+            translate('Logo and CoverPhoto hold stored file paths, not the pictures themselves.'),
+            translate('Email and phone are what a re-import matches against, so keep them intact.'),
+        ],
+        'import_url' => route('admin.store.bulk-import'),
+        'import_title' => translate('messages.Store bulk import'),
+        'import_desc' => translate('Upload a filled spreadsheet to add or update stores.'),
+        'help_title' => translate('Exporting stores'),
+        'help_steps' => [
+            translate('Pick the scope — everything, a date range, or an ID range.'),
+            translate('Fill in the range if you picked one. Use full range fills in the bounds shown above.'),
+            translate('Press export and the spreadsheet downloads in .xlsx format.'),
+            translate('Edit the rows you need and bring the file back through bulk import to update them.'),
+        ],
+    ]])
 @endsection
-
-@push('script_2')
-<script>
-    "use strict";
-    $(document).on('ready', function (){
-        $('#date_from').attr('max',(new Date()).toISOString().split('T')[0]);
-        $('#date_to').attr('max',(new Date()).toISOString().split('T')[0]);
-        $('.id_wise').hide();
-        $('.date_wise').hide();
-        $('#type').on('change', function()
-        {
-            $('.id_wise').hide();
-            $('.date_wise').hide();
-            $('.'+$(this).val()).show();
-        })
-        $('#reset-btn').on('click', function()
-        {
-            $('.id_wise').hide();
-            $('.date_wise').hide();
-        })
-    });
-</script>
-@endpush

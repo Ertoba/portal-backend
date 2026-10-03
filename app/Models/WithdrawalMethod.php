@@ -25,4 +25,8 @@ class WithdrawalMethod extends Model
     public function disbursementMethod(){
         return $this->hasMany(DisbursementWithdrawalMethod::class,'withdrawal_method_id');
     }
+
+    public function withdrawRequests(){
+        return $this->hasMany(WithdrawRequest::class,'withdrawal_method_id');
+    }
 }

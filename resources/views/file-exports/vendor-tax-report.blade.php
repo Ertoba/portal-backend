@@ -1,6 +1,6 @@
 <div class="row">
     <div class="col-lg-12 text-center ">
-        <h1>{{ translate('Vendor_Vat_Report') }}</h1>
+        <h1>{{ translate('Vendor VAT report') }}</h1>
     </div>
     <div class="col-lg-12">
 
@@ -15,12 +15,10 @@
                     <th>
 
                         @if (isset($data['summary']))
-                            {{-- <br>
-                            {{ translate('total_orders') }} - {{ $data['summary']->total_orders ??0 }} --}}
                             <br>
-                            {{ translate('total_order_amount') }} - {{ \App\CentralLogics\Helpers::format_currency($data['summary']->total_order_amount ?? 0) }}
+                            {{ translate('Total order amount') }} - {{ \App\CentralLogics\Helpers::format_currency($data['summary']->total_order_amount ?? 0) }}
                             <br>
-                            {{ translate('total_tax') }} - {{\App\CentralLogics\Helpers::format_currency($data['summary']->total_tax ?? 0) }}
+                            {{ translate('Total tax') }} - {{\App\CentralLogics\Helpers::format_currency($data['summary']->total_tax ?? 0) }}
                         @endif
                         @if ($data['from'])
                             <br>
@@ -33,7 +31,7 @@
                             {{ $data['to'] ? Carbon\Carbon::parse($data['to'])->format('d M Y') : '' }}
                         @endif
                         <br>
-                        {{ translate('Search_Bar_Content') }}- {{ $data['search'] ?? translate('N/A') }}
+                        {{ translate('Search bar content') }}- {{ $data['search'] ?? translate('N/A') }}
                         <br>
 
                     </th>
@@ -43,11 +41,11 @@
                     <th></th>
                 </tr>
                 <tr>
-                    <th class="border-0">{{ translate('sl') }}</th>
-                    <th class="border-0">{{ translate('messages.order_id') }}</th>
-                    <th class="border-0">{{ translate('messages.order_amount') }}</th>
-                    <th class="border-0">{{ translate('messages.tax_type') }}</th>
-                    <th class="border-0">{{ translate('messages.tax_amount') }}</th>
+                    <th class="border-0">{{ translate('SL') }}</th>
+                    <th class="border-0">{{ translate('messages.Order ID') }}</th>
+                    <th class="border-0">{{ translate('Order amount') }}</th>
+                    <th class="border-0">{{ translate('Tax type') }}</th>
+                    <th class="border-0">{{ translate('Tax amount') }}</th>
             </thead>
             <tbody>
                 @foreach ($data['orders'] as $key => $order)
@@ -76,7 +74,7 @@
 
                                         $taxLabels = [
                                             'basic' => translate($tax_type),
-                                            'tax_on_packaging_charge' => translate('Packaging Charge'),
+                                            'tax_on_packaging_charge' => translate('Packaging charge'),
                                         ];
 
                                         $groupedByTaxOn = $order->orderTaxes->groupBy('tax_on');
@@ -86,7 +84,7 @@
                                         <div class="d-flex flex-column gap-1">
                                             @if (count($order->orderTaxes) > 0)
                                                 <div class="fw-bold">
-                                                    {{ translate('Total Tax') }}:
+                                                    {{ translate('Total tax') }}:
                                                     {{ \App\CentralLogics\Helpers::format_currency($totalTaxAmount) }}
                                                 </div>, <br>
 
@@ -114,7 +112,7 @@
                                                 @endforeach
                                             @else
                                                 <div class="d-flex fz-14 gap-3 align-items-center title-clr">
-                                                    {{ translate('Tax Amount:') }} <span>
+                                                    {{ translate('Tax amount') }}: <span>
                                                         {{ \App\CentralLogics\Helpers::format_currency($order->total_tax_amount) }}</span>
                                                 </div>
                                             @endif

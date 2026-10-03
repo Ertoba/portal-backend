@@ -2,26 +2,30 @@
 
 namespace App\Mail;
 
-use App\CentralLogics\Helpers;
-use App\Models\BusinessSetting;
 use App\Models\DeliveryMan;
 use App\Models\EmailTemplate;
+use App\Mail\Concerns\BuildsTemplatedMail;
+use App\Mail\Concerns\QueueableMailable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Queue\SerializesModels;
+use App\Support\Notification\NotificationText;
+use App\Services\System\BusinessSettingService;
 
-class CollectCashMail extends Mailable
+class CollectCashMail extends Mailable implements ShouldQueue
 {
-    use Queueable, SerializesModels;
+    use BuildsTemplatedMail, Queueable, QueueableMailable, SerializesModels;
 
     /**
      * Create a new message instance.
      *
      * @return void
      */
-
     protected $wallet;
+
     protected $name;
+
     protected $deliveryMan;
 
     public function __construct($wallet, $deliveryMan)
@@ -38,26 +42,19 @@ class CollectCashMail extends Mailable
      */
     public function build()
     {
-        $company_name = BusinessSetting::where('key', 'business_name')->first()->value;
-        $data=EmailTemplate::where('type','dm')->where('email_type', 'cash_collect')->first();
-        $template=$data?$data->email_template:6;
         $wallet = $this->wallet;
         $delivery_man_name = $this->name;
-        $title = Helpers::text_variable_data_format( value:$data['title']??'',delivery_man_name:$delivery_man_name??'',transaction_id:$transaction_id??'');
-        $body = Helpers::text_variable_data_format( value:$data['body']??'',delivery_man_name:$delivery_man_name??'',transaction_id:$transaction_id??'');
-        $footer_text = Helpers::text_variable_data_format( value:$data['footer_text']??'',delivery_man_name:$delivery_man_name??'',transaction_id:$transaction_id??'');
-        $copyright_text = Helpers::text_variable_data_format( value:$data['copyright_text']??'',delivery_man_name:$delivery_man_name??'',transaction_id:$transaction_id??'');
-        return $this->subject(translate('Collect_Cash'))->view('email-templates.new-email-format-'.$template, [
-            'company_name'=>$company_name,
-            'data'=>$data,
-            'title'=>Helpers::formatDeliverymanText($title, $this->deliveryMan),
-            'body'=>Helpers::formatDeliverymanText($body, $this->deliveryMan),
-            'footer_text'=>Helpers::formatDeliverymanText($footer_text, $this->deliveryMan),
-            'copyright_text'=>Helpers::formatDeliverymanText($copyright_text, $this->deliveryMan),
-            'wallet'=>$wallet,
-            'transaction_id'=>$wallet->transaction_id,
-            'time'=>$wallet->created_at,
-            'amount'=>$wallet->amount
-        ]);
+
+        return $this->templatedMail(
+            template: EmailTemplate::where('type', 'dm')->where('email_type', 'cash_collect')->first(),
+            fallbackTemplate: 6,
+            subject: translate('Collect cash'),
+            placeholders: [
+                'delivery_man_name' => $delivery_man_name ?? '',
+                'transaction_id' => $wallet->transaction_id ?? '',
+            ],
+            viewData: ['wallet' => $wallet, 'transaction_id' => $wallet->transaction_id, 'time' => $wallet->created_at, 'amount' => $wallet->amount],
+            textFilter: fn ($value) => NotificationText::forDeliveryman($value, $this->deliveryMan),
+        );
     }
 }

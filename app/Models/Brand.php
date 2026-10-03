@@ -2,16 +2,17 @@
 
 namespace App\Models;
 
-use App\CentralLogics\Helpers;
+use App\Traits\Model\InvalidatesCacheTrait;
+use App\Traits\Report\ReportFilterTrait;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
-use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
-use App\Traits\GeneratesSlug;
+use App\Traits\Model\SlugTrait;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use App\Traits\Model\HasTranslationsTrait;
+use App\Traits\Model\HasStorageTrait;
 
 /**
  * Class Brand
@@ -25,7 +26,9 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
  */
 class Brand extends Model
 {
-    use HasFactory, GeneratesSlug;
+    use HasFactory, SlugTrait, ReportFilterTrait, HasTranslationsTrait, HasStorageTrait, InvalidatesCacheTrait;
+
+    protected static array $cacheTags = ['brand'];
 
     /**
      * @var string[]
@@ -51,11 +54,6 @@ class Brand extends Model
     /**
      * @return MorphMany
      */
-    public function translations(): MorphMany
-    {
-        return $this->morphMany(Translation::class, 'translationable');
-    }
-
     /**
      * @return HasMany
      */
@@ -73,17 +71,9 @@ class Brand extends Model
         return $query->where('status', '=', 1);
     }
 
-    public function getImageFullUrlAttribute(){
-        $value = $this->image;
-        if (count($this->storage) > 0) {
-            foreach ($this->storage as $storage) {
-                if ($storage['key'] == 'image') {
-                    return Helpers::get_full_url('brand',$value,$storage['value']);
-                }
-            }
-        }
-
-        return Helpers::get_full_url('brand',$value,'public');
+    public function getImageFullUrlAttribute()
+    {
+        return $this->storageFullUrl('brand', 'image', $this->image);
     }
 
     /**
@@ -97,19 +87,7 @@ class Brand extends Model
             $category->save();
         });
         static::saved(function ($model) {
-            if($model->isDirty('image')){
-                $value = Helpers::getDisk();
-
-                DB::table('storages')->updateOrInsert([
-                    'data_type' => get_class($model),
-                    'data_id' => $model->id,
-                    'key' => 'image',
-                ], [
-                    'value' => $value,
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
-            }
+            self::recordStorageDisk($model, 'image', 'image');
         });
     }
 
@@ -123,30 +101,6 @@ class Brand extends Model
      */
     public function getNameAttribute($value): mixed
     {
-        if (count($this->translations) > 0) {
-            foreach ($this->translations as $translation) {
-                if ($translation['key'] == 'name') {
-                    return $translation['value'];
-                }
-            }
-        }
-
-        return $value;
+        return $this->translatedAttribute('name', $value);
     }
-    public function storage()
-    {
-        return $this->morphMany(Storage::class, 'data');
-    }
-    protected static function booted()
-    {
-        static::addGlobalScope('storage', function ($builder) {
-            $builder->with('storage');
-        });
-        static::addGlobalScope('translate', function (Builder $builder) {
-            $builder->with(['translations' => function($query){
-                return $query->where('locale', app()->getLocale());
-            }]);
-        });
-    }
-
 }

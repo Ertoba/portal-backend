@@ -1,6 +1,5 @@
 <div class="d-flex flex-wrap justify-content-between align-items-center tabs-slide-wrap mb-20 __gap-12px">
     <div class="js-nav-scroller hs-nav-scroller-horizontal mt-2">
-        <!-- Nav -->
         <ul class="nav nav-tabs tabs-inner border-0 nav--tabs nav--pills">
             <li class="nav-item tabs-slide_items">
                 <a class="nav-link {{ Request::is('admin/business-settings/pages/react-landing-page-settings/header') ? 'active' : '' }}"
@@ -12,11 +11,11 @@
             </li>
             <li class="nav-item tabs-slide_items">
                 <a class="nav-link {{ Request::is('admin/business-settings/pages/react-landing-page-settings/available-zone') ? 'active' : '' }}"
-                href="{{ route('admin.business-settings.react-landing-page-settings', 'available-zone') }}">{{translate('messages.available_zone')}}</a>
+                href="{{ route('admin.business-settings.react-landing-page-settings', 'available-zone') }}">{{translate('messages.Available zone')}}</a>
             </li>
             <li class="nav-item tabs-slide_items">
                 <a class="nav-link {{ Request::is('admin/business-settings/pages/react-landing-page-settings/promotion-banner') ? 'active' : '' }}"
-                href="{{ route('admin.business-settings.react-landing-page-settings', 'promotion-banner') }}">{{translate('Promotional Banners')}}</a>
+                href="{{ route('admin.business-settings.react-landing-page-settings', 'promotion-banner') }}">{{translate('Promotional banners')}}</a>
             </li>
             <li class="nav-item tabs-slide_items">
                 <a class="nav-link {{ Request::is('admin/business-settings/pages/react-landing-page-settings/download-user-app') ? 'active' : '' }}"
@@ -28,11 +27,11 @@
             </li>
             <li class="nav-item tabs-slide_items">
                 <a class="nav-link {{ Request::is('admin/business-settings/pages/react-landing-page-settings/download-seller-app') ? 'active' : '' }}"
-                href="{{ route('admin.business-settings.react-landing-page-settings', 'download-seller-app') }}">{{translate('Seller App Download')}}</a>
+                href="{{ route('admin.business-settings.react-landing-page-settings', 'download-seller-app') }}">{{translate('Download the Seller App')}}</a>
             </li>
             <li class="nav-item tabs-slide_items">
                 <a class="nav-link {{ Request::is('admin/business-settings/pages/react-landing-page-settings/download-deliveryman-app') ? 'active' : '' }}"
-                href="{{ route('admin.business-settings.react-landing-page-settings', 'download-deliveryman-app') }}">{{translate('Deliveryman App Download')}}</a>
+                href="{{ route('admin.business-settings.react-landing-page-settings', 'download-deliveryman-app') }}">{{translate('Download the Deliveryman App')}}</a>
             </li>
             @if(addon_published_status('RideShare'))
                 <li class="nav-item tabs-slide_items">
@@ -50,7 +49,7 @@
             </li>
             <li class="nav-item tabs-slide_items">
                 <a class="nav-link {{ Request::is('admin/business-settings/pages/react-landing-page-settings/gallery') ? 'active' : '' }}"
-                href="{{ route('admin.business-settings.react-landing-page-settings', 'gallery') }}">{{translate('Gallery')}}</a>
+                href="{{ route('admin.business-settings.react-landing-page-settings', 'gallery') }}">{{translate('gallery')}}</a>
             </li>
             <li class="nav-item tabs-slide_items">
                 <a class="nav-link {{ Request::is('admin/business-settings/pages/react-landing-page-settings/highlight-section') ? 'active' : '' }}"
@@ -64,24 +63,11 @@
                 <a class="nav-link {{ Request::is('admin/business-settings/pages/react-landing-page-settings/footer') ? 'active' : '' }}"
                 href="{{ route('admin.business-settings.react-landing-page-settings', 'footer') }}">{{translate('Footer')}}</a>
             </li>
-{{--            <li class="nav-item tabs-slide_items">--}}
-{{--                <a class="nav-link {{ Request::is('admin/business-settings/pages/react-landing-page-settings/company-intro') ? 'active' : '' }}"--}}
-{{--                href="{{ route('admin.business-settings.react-landing-page-settings', 'company-intro') }}">{{translate('Company Intro')}}</a>--}}
-{{--            </li>--}}
-{{--            <li class="nav-item tabs-slide_items">--}}
-{{--                <a class="nav-link {{ Request::is('admin/business-settings/pages/react-landing-page-settings/earn-money') ? 'active' : '' }}"--}}
-{{--                href="{{ route('admin.business-settings.react-landing-page-settings', 'earn-money') }}">{{translate('messages.earn_money')}}</a>--}}
-{{--            </li>--}}
-{{--            <li class="nav-item tabs-slide_items">--}}
-{{--                <a class="nav-link {{ Request::is('admin/business-settings/pages/react-landing-page-settings/business-section') ? 'active' : '' }}"--}}
-{{--                href="{{ route('admin.business-settings.react-landing-page-settings', 'business-section') }}">{{translate('Business Section')}}</a>--}}
-{{--            </li>--}}
             <li class="nav-item tabs-slide_items">
                 <a class="nav-link {{ Request::is('admin/business-settings/pages/react-landing-page-settings/meta-data') ? 'active' : '' }}"
-                href="{{ route('admin.business-settings.react-landing-page-settings', 'meta-data') }}">{{translate('messages.meta_data')}}</a>
+                href="{{ route('admin.business-settings.react-landing-page-settings', 'meta-data') }}">{{translate('Meta data')}}</a>
             </li>
         </ul>
-        <!-- End Nav -->
     </div>
     <div class="arrow-area">
         <div class="button-prev align-items-center">

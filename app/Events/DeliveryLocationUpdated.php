@@ -27,7 +27,6 @@ class DeliveryLocationUpdated implements ShouldBroadcast
         $this->latitude = $latitude;
         $this->longitude = $longitude;
         $this->location = $location;
-        info("Broadcasting location update for deliveryman ID: {$deliverymanId} to dm_location_{$deliverymanId} channel.");
     }
 
     public function broadcastOn(): array 

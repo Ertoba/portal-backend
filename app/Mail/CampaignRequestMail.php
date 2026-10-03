@@ -2,23 +2,25 @@
 
 namespace App\Mail;
 
-use App\CentralLogics\Helpers;
-use App\Models\BusinessSetting;
 use App\Models\EmailTemplate;
+use App\Mail\Concerns\BuildsTemplatedMail;
+use App\Mail\Concerns\QueueableMailable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Queue\SerializesModels;
+use App\Support\Notification\NotificationText;
+use App\Services\System\BusinessSettingService;
 
-class CampaignRequestMail extends Mailable
+class CampaignRequestMail extends Mailable implements ShouldQueue
 {
-    use Queueable, SerializesModels;
+    use BuildsTemplatedMail, Queueable, QueueableMailable, SerializesModels;
 
     /**
      * Create a new message instance.
      *
      * @return void
      */
-
     protected $name;
 
     public function __construct($name)
@@ -33,16 +35,15 @@ class CampaignRequestMail extends Mailable
      */
     public function build()
     {
-        $company_name = BusinessSetting::where('key', 'business_name')->first()->value;
-
-        $data=EmailTemplate::where('type','admin')->where('email_type', 'campaign_request')->first();
-
-        $template=$data?$data->email_template:1;
         $store_name = $this->name;
-        $title = Helpers::text_variable_data_format( value:$data['title']??'',store_name:$store_name??'',transaction_id:$transaction_id??'');
-        $body = Helpers::text_variable_data_format( value:$data['body']??'',store_name:$store_name??'',transaction_id:$transaction_id??'');
-        $footer_text = Helpers::text_variable_data_format( value:$data['footer_text']??'',store_name:$store_name??'',transaction_id:$transaction_id??'');
-        $copyright_text = Helpers::text_variable_data_format( value:$data['copyright_text']??'',store_name:$store_name??'',transaction_id:$transaction_id??'');
-        return $this->subject(translate('Campaign_Request'))->view('email-templates.new-email-format-'.$template, ['company_name'=>$company_name,'data'=>$data,'title'=>$title,'body'=>$body,'footer_text'=>$footer_text,'copyright_text'=>$copyright_text]);
+
+        return $this->templatedMail(
+            template: EmailTemplate::where('type', 'admin')->where('email_type', 'campaign_request')->first(),
+            fallbackTemplate: 1,
+            subject: translate('Campaign request'),
+            placeholders: [
+                'store_name' => $store_name ?? '',
+            ],
+        );
     }
 }

@@ -21,33 +21,33 @@
                                     </div>
                                     <div class="text-dark mb-3">
                                         <h3 class="lh-base">
-                                            {{ translate('how_to_get_the_google_tag_manager_container_id') }}
+                                            {{ translate('How to get the Google Tag Manager container id') }}
                                         </h3>
                                         <p class="opacity-75">
-                                            {{ translate('log_into_google_tag_manager') }}
-                                            {{ translate('open_the_container_you_wish_to_use.') }}
-                                            {{ translate('the_container_id_will_be_displayed_in_the_top_section_of_the_container_page_after_you_open_the_admin_tab.') }}
-                                            {{ translate('typically_it_comes_in_the_format_gtm-xxxxxx.') }}
-                                            {{ translate('copy_it.') }}
+                                            {{ translate('Log into Google Tag Manager') }}
+                                            {{ translate('Open the container you wish to use.') }}
+                                            {{ translate('the container id will be displayed in the top section of the container page after you open the admin tab.') }}
+                                            {{ translate('Typical format') }}: GTM-XXXXXXX
+                                            {{ translate('Copy it.') }}
                                         </p>
                                     </div>
 
                                     <div class="text-dark mb-3">
                                         <h3 class="lh-base">
-                                            {{ translate('where_to_use_the_google_tag_manager_container_id') }}
+                                            {{ translate('Where to use the Google Tag Manager container id') }}
                                         </h3>
                                         <p class="opacity-75">
-                                            {{ translate('go_to_the_marketing_tools_section_in_your_admin_panel_and_complete_the_steps:') }}
+                                            {{ translate('Go to the marketing tools section in your admin panel and complete the steps') }}:
                                         </p>
                                         <ol class="d-flex flex-column gap-2 opacity-75">
                                             <li>
-                                                {{ translate('navigate_to_the_google_tag_manager_container_id_section_under_marketing_tools.') }}
+                                                {{ translate('Navigate to the Google Tag Manager container id section under marketing tools.') }}
                                             </li>
                                             <li>
-                                                {{ translate('turn_on_the_toggle_button.') }}
+                                                {{ translate('Turn on the toggle button.') }}
                                             </li>
                                             <li>
-                                                {{ translate('paste_your_google_tag_manager_container_id_into_the_input_box_and_click_submit.') }}
+                                                {{ translate('Paste your Google Tag Manager container id into the input box and click submit.') }}
                                             </li>
                                         </ol>
                                     </div>

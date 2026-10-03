@@ -1,17 +1,17 @@
 <div class="row">
-    <div class="col-lg-12 text-center "><h1 >{{ translate($data['status']) }} {{ translate('messages.Parcel_Order_List') }}</h1></div>
+    <div class="col-lg-12 text-center "><h1 >{{ translate($data['status']) }} {{ translate('Parcel order list') }}</h1></div>
     <div class="col-lg-12">
     <table>
         <thead>
             <tr>
-                <th>{{ translate('filter_criteria') }} -</th>
+                <th>{{ translate('Filter criteria') }} -</th>
                 <th></th>
                 <th></th>
                 <th>
-                    {{ translate('order_status' )}} : {{ translate($data['status']) }}
+                    {{ translate('Order status')}} : {{ translate($data['status']) }}
                     @if ($data['search'])
                     <br>
-                    {{ translate('search_bar_content' )}} : {{ $data['search'] }}
+                    {{ translate('Search bar content')}} : {{ $data['search'] }}
                     @endif
                     @if ($data['zones'])
                     <br>
@@ -20,7 +20,7 @@
 
                     @if ($data['type'])
                     <br>
-                    {{ translate('order_type' )}} : {{ translate($data['type']) }}
+                    {{ translate('Order type')}} : {{ translate($data['type']) }}
                     @endif
                     @if ($data['from'])
                     <br>
@@ -36,22 +36,28 @@
                 <th></th>
                 <th></th>
                 <th></th>
+                <th></th>
+                <th></th>
             </tr>
             <tr>
-                <th>{{ translate('messages.sl') }}</th>
-                <th>{{ translate('messages.order_id') }}</th>
+                <th>{{ translate('messages.SL') }}</th>
+                <th>{{ translate('messages.Order ID') }}</th>
                 <th>{{ translate('messages.Date') }}</th>
-                <th>{{ translate('messages.parcel_category') }}</th>
-                <th>{{ translate('messages.customer_name') }}</th>
-                <th>{{ translate('messages.coupon_discount') }}</th>
-                <th>{{ translate('messages.discounted_amount') }}</th>
+                <th>{{ translate('Parcel category') }}</th>
+                {{-- Own columns rather than extra lines inside the category cell: an export is
+                     filtered and pivoted, and a band buried in another column cannot be. --}}
+                <th>{{ translate('messages.Weight') }}</th>
+                <th>{{ translate('messages.Dimension') }}</th>
+                <th>{{ translate('Customer name') }}</th>
+                <th>{{ translate('Coupon discount') }}</th>
+                <th>{{ translate('Discounted amount') }}</th>
                 <th>{{ translate('messages.tax') }}</th>
-                <th>{{ translate('messages.total_amount') }}</th>
-                <th>{{ translate('messages.payment_status') }}</th>
-                <th>{{ translate('messages.Payment_By') }}</th>
-                <th>{{ translate('messages.Payment_method') }}</th>
-                <th>{{ translate('messages.order_status') }}</th>
-                <th>{{ translate('messages.order_type') }}</th>
+                <th>{{ translate('Total amount') }}</th>
+                <th>{{ translate('Payment status') }}</th>
+                <th>{{ translate('messages.payment By') }}</th>
+                <th>{{ translate('messages.Payment method') }}</th>
+                <th>{{ translate('Order status') }}</th>
+                <th>{{ translate('Order type') }}</th>
             </tr>
         </thead>
         <tbody>
@@ -62,8 +68,12 @@
 
                 <td>{{ \App\CentralLogics\Helpers::time_date_format($order->created_at) }}</td>
                 <td>
-                    <div>{{Str::limit($order->parcel_category?$order->parcel_category->name:translate('messages.not_found'),20,'...')}}</div>
+                    <div>{{Str::limit($order->parcel_category?$order->parcel_category->name:translate('No data found'),20,'...')}}</div>
             </td>
+                {{-- `band_label` / `size_label` carry the configured unit. A parcel with no
+                     selection, or one placed before the tiers were recorded, exports blank. --}}
+                <td>{{ $order->weight?->band_label ?? '' }}</td>
+                <td>{{ $order->dimension?->size_label ?? '' }}</td>
                 <td>
                     @php($delivery_address = is_array($order->delivery_address) ? $order->delivery_address : json_decode($order->delivery_address, true))
                     @if ($order->customer)
@@ -71,7 +81,7 @@
                     @elseif (!empty($delivery_address['contact_person_name']))
                         {{ $delivery_address['contact_person_name'] }}
                     @else
-                        {{ translate('not_found') }}
+                        {{ translate('No data found') }}
                     @endif
                 </td>
                 <td>{{ \App\CentralLogics\Helpers::number_format_short($order['coupon_discount_amount']) }}</td>
@@ -80,7 +90,7 @@
                 <td>{{ \App\CentralLogics\Helpers::number_format_short($order['order_amount']) }}</td>
                 <td>{{ translate($order->payment_status) }}</td>
                 <td>{{ translate($order->charge_payer) }}</td>
-                <td>{{ translate($order->payment_method) }}</td>
+                <td>{{ payment_method_label($order->payment_method) }}</td>
                 <td>{{ translate($order->order_status) }}</td>
                 <td>{{ translate($order->order_type) }}</td>
             </tr>

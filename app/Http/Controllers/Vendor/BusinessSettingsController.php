@@ -4,16 +4,17 @@ namespace App\Http\Controllers\Vendor;
 
 use App\Models\Store;
 use App\Models\StoreConfig;
-use App\Models\Translation;
 use Illuminate\Http\Request;
 use App\Models\StoreSchedule;
 use App\CentralLogics\Helpers;
-use App\Models\BusinessSetting;
 use App\Http\Controllers\Controller;
+use App\Services\System\DistanceService;
 use Brian2694\Toastr\Facades\Toastr;
+use App\Models\NotificationSetting;
 use App\Models\StoreNotificationSetting;
 use App\Models\Zone;
 use Illuminate\Support\Facades\Validator;
+use App\Support\Notification\SendNotification;
 
 class BusinessSettingsController extends Controller
 {
@@ -24,30 +25,54 @@ class BusinessSettingsController extends Controller
     {
 
 
-        $store = Helpers::get_store_data();
-        $store = Store::withoutGlobalScope('translate')->findOrFail($store->id);
+        $auth_store = Helpers::get_store_data();
+        $auth_store->loadMissing(['module.storage', 'storage', 'storeConfig']);
+
+        // The edit form needs the untranslated columns, hence the re-read. Relations the
+        // translate scope does not affect are carried over from the already-hydrated
+        // instance the layout uses, instead of being queried a second time.
+        $store = Store::withoutGlobalScope('translate')->without('storeConfig')->with('translations')->findOrFail($auth_store->id);
+        $store->setRelation('storage', $auth_store->storage);
+        $store->setRelation('module', $auth_store->module);
+        $store->setRelation('storeConfig', $auth_store->storeConfig);
+        $store->setRelation('store_sub', $auth_store->store_sub);
+        $store->load('schedules');
+
         $admin_website_builder_status = Helpers::get_business_settings('admin_website_builder_status');
 
         if($store->module_type == 'rental' ){
             $zones=Zone::active()->get(['id','name']);
-            // Website builder is not offered to rental providers — force the
-            // flag off so the enable toggle never renders in their settings.
             $admin_website_builder_status = 0;
             return view('rental::provider.settings.settings', compact('store','zones','admin_website_builder_status'));
         }
-        return view('vendor-views.business-settings.restaurant-index', compact('store','admin_website_builder_status'));
+
+        $currency_symbol = Helpers::currency_symbol();
+        $prescription_order_status = Helpers::get_business_settings('prescription_order_status', false) ?? 0;
+        $extra_packaging_data = json_decode(Helpers::get_business_settings('extra_packaging_data', false) ?? '', true);
+
+        // §13.2 — the per-unit rate label follows `distance_unit` from a DYNAMIC key. A static
+        // `delivery_charge_per_km` translation would keep saying "km" after the switch.
+        $distanceUnitLabel = app(DistanceService::class)->unitLabel();
+
+        return view('vendor-views.business-settings.restaurant-index', compact('store','admin_website_builder_status','currency_symbol','prescription_order_status','extra_packaging_data','distanceUnitLabel'));
     }
 
     public function store_setup(Store $store, Request $request)
     {
         $request->validate([
+            'minimum_order' => 'required|numeric|min:0.01',
             'gst' => 'required_if:gst_status,1',
             'extra_packaging_amount' => 'required_if:extra_packaging_status,1',
-            'per_km_delivery_charge'=>'required_with:minimum_delivery_charge',
-            'minimum_delivery_charge'=>'required_with:per_km_delivery_charge'
+            'per_km_delivery_charge'=>'required_with:minimum_delivery_charge|nullable|numeric|min:0|max:999999999',
+            'minimum_delivery_charge'=>'required_with:per_km_delivery_charge|nullable|numeric|min:0|max:99999999.99',
+            'maximum_shipping_charge'=>'nullable|numeric|min:0|max:999999999',
         ], [
-            'gst.required_if' => translate('messages.gst_can_not_be_empty'),
-            'extra_packaging_amount.required_if' => translate('messages.extra_packaging_amount_can_not_be_empty'),
+            'minimum_order.min' => translate('messages.Minimum order amount must be greater than 0'),
+            'gst.required_if' => translate('GST can not be empty'),
+            'extra_packaging_amount.required_if' => translate('messages.Extra packaging amount can not be empty'),
+            'per_km_delivery_charge.min' => translate('messages.Delivery charge per unit cannot be negative'),
+            'minimum_delivery_charge.min' => translate('messages.Minimum delivery charge cannot be negative'),
+            'maximum_shipping_charge.min' => translate('messages.Maximum delivery charge cannot be negative'),
         ]);
 
         if(isset($request->maximum_shipping_charge) && ($request->minimum_delivery_charge > $request->maximum_shipping_charge)){
@@ -62,7 +87,6 @@ class BusinessSettingsController extends Controller
 
         $store->minimum_order = $request->minimum_order??0;
         $store->gst = json_encode(['status'=>$request->gst_status, 'code'=>$request->gst]);
-        // $store->delivery_charge = $store->self_delivery_system?$request->delivery_charge??0: $store->delivery_charge;
         $store->minimum_shipping_charge = $store->sub_self_delivery?$request->minimum_delivery_charge??0: $store->minimum_shipping_charge;
         $store->per_km_shipping_charge = $store->sub_self_delivery?$request->per_km_delivery_charge??0: $store->per_km_shipping_charge;
         $store->per_km_shipping_charge = $store->sub_self_delivery?$request->per_km_delivery_charge??0: $store->per_km_shipping_charge;
@@ -83,9 +107,9 @@ class BusinessSettingsController extends Controller
             : ($conf->show_low_stock_count ?? 1);
         $conf->save();
         if($store->module_type == 'rental' && addon_published_status('Rental')){
-            Toastr::success(translate('messages.provider settings updated!'));
+            Toastr::success(translate('messages.Provider settings updated'));
         }else{
-            Toastr::success(translate('messages.store_settings_updated'));
+            Toastr::success(translate('messages.Store settings updated'));
         }
         return back();
     }
@@ -96,7 +120,7 @@ class BusinessSettingsController extends Controller
             'show_low_stock_count' => 'nullable|in:1',
             'minimum_stock_for_warning' => 'nullable|integer|min:0|max:999999999',
         ], [
-            'minimum_stock_for_warning.integer' => translate('messages.minimum_stock_for_warning_must_be_an_integer'),
+            'minimum_stock_for_warning.integer' => translate('messages.Minimum stock for warning must be an integer'),
         ]);
 
         $conf = StoreConfig::firstOrNew(['store_id' => $store->id]);
@@ -104,7 +128,7 @@ class BusinessSettingsController extends Controller
         $conf->minimum_stock_for_warning = (int) ($request->minimum_stock_for_warning ?? 0);
         $conf->save();
 
-        Toastr::success(translate('messages.stock_settings_updated'));
+        Toastr::success(translate('messages.Stock settings updated'));
 
         return back();
     }
@@ -121,9 +145,9 @@ class BusinessSettingsController extends Controller
         $store->meta_data = Helpers::formatMetaData($request->all(), $store->meta_data);
         $store->save();
         if($store->module->module_type == 'rental' && addon_published_status('Rental')){
-            Toastr::success(translate('messages.provider_meta_data_updated!'));
+            Toastr::success(translate('messages.Provider meta data updated!'));
         }else{
-            Toastr::success(translate('messages.store').' '.translate('messages.meta_data_updated'));
+            Toastr::success(translate('messages.Store').' '.translate('messages.Meta data updated'));
         }
 
         return back();
@@ -132,30 +156,30 @@ class BusinessSettingsController extends Controller
     {
         if($request->menu == "schedule_order" && !Helpers::schedule_order())
         {
-            Toastr::warning(translate('messages.schedule_order_disabled_warning'));
+            Toastr::warning(translate('messages.Schedule order disabled warning'));
             return back();
         }
 
         if((($request->menu == "delivery" && $store->take_away==0) || ($request->menu == "take_away" && $store->delivery==0)) &&  $request->status == 0 )
         {
-            Toastr::warning(translate('messages.can_not_disable_both_take_away_and_delivery'));
+            Toastr::warning(translate('messages.Can not disable both take away and delivery'));
             return back();
         }
 
         if((($request->menu == "veg" && $store->non_veg==0) || ($request->menu == "non_veg" && $store->veg==0)) &&  $request->status == 0 )
         {
-            Toastr::warning(translate('messages.veg_non_veg_disable_warning'));
+            Toastr::warning(translate('messages.Veg non veg disable warning'));
             return back();
         }
 
         if($request->menu == "announcement" &&  $request->status == 1 &&  !isset($store->announcement_message) )
         {
-            Toastr::warning(translate('messages.You_need_to_add_announcement_message_first'));
+            Toastr::warning(translate('messages.You need to add announcement message first'));
             return back();
         }
 
         if($request->menu == 'free_delivery' &&(($store->store_business_model == 'subscription' && $store?->store_sub?->self_delivery == 0) || ($store->store_business_model == 'unsubscribed'))){
-            Toastr::error(translate('your_subscription_plane_does_not_have_this_feature'));
+            Toastr::error(translate('Your subscription plane does not have this feature'));
             return back();
         }
 
@@ -168,9 +192,9 @@ class BusinessSettingsController extends Controller
             $conf[$request->menu] = $request->status;
             $conf->save();
             if($store->module->module_type == 'rental' && addon_published_status('Rental')){
-                Toastr::success(translate('messages.provider settings updated!'));
+                Toastr::success(translate('messages.Provider settings updated'));
             }else{
-                Toastr::success(translate('messages.store settings updated!'));
+                Toastr::success(translate('messages.Store settings updated'));
             }
             return back();
         }
@@ -179,9 +203,9 @@ class BusinessSettingsController extends Controller
         $store[$request->menu] = $request->status;
         $store->save();
         if($store->module->module_type == 'rental' && addon_published_status('Rental')){
-            Toastr::success(translate('messages.provider settings updated!'));
+            Toastr::success(translate('messages.Provider settings updated'));
         }else{
-            Toastr::success(translate('messages.store settings updated!'));
+            Toastr::success(translate('messages.Store settings updated'));
         }
         return back();
     }
@@ -197,9 +221,9 @@ class BusinessSettingsController extends Controller
             ]
         );
         if($store->module->module_type == 'rental' && addon_published_status('Rental')){
-            Toastr::success(translate('messages.provider settings updated!'));
+            Toastr::success(translate('messages.Provider settings updated'));
         }else{
-            Toastr::success(translate('messages.store settings updated!'));
+            Toastr::success(translate('messages.Store settings updated'));
         }
         return back();
     }
@@ -209,7 +233,7 @@ class BusinessSettingsController extends Controller
         $store = Helpers::get_store_data();
         $store->active = !$store->active;
         $store->save();
-        return response()->json(['message' => $store->active?($store->module->module_type == 'rental' ? translate('provider') : translate('store')).' '.translate('messages.opened'):($store->module->module_type == 'rental' ? translate('provider') : translate('store')).' '.translate('messages.temporarily_closed')], 200);
+        return response()->json(['message' => $store->active?($store->module->module_type == 'rental' ? translate('Provider') : translate('Store')).' '.translate('messages.opened'):($store->module->module_type == 'rental' ? translate('Provider') : translate('Store')).' '.translate('messages.Temporarily closed')], 200);
     }
 
     public function add_schedule(Request $request)
@@ -237,7 +261,7 @@ class BusinessSettingsController extends Controller
         if(isset($temp))
         {
             return response()->json(['errors' => [
-                ['code'=>'time', 'message'=>translate('messages.schedule_overlapping_warning')]
+                ['code'=>'time', 'message'=>translate('messages.Schedule overlapping warning')]
             ]]);
         }
 
@@ -272,17 +296,34 @@ class BusinessSettingsController extends Controller
     {
         $module_type=Helpers::get_store_data()->module->module_type;
         if(StoreNotificationSetting::where('store_id',Helpers::get_store_id())->count() == 0 ){
-            $module_type == 'rental' ? Helpers::storeRentalNotificationDataSetup(Helpers::get_store_id()) : Helpers::storeNotificationDataSetup(Helpers::get_store_id());
+            match ($module_type) {
+                'rental' => Helpers::storeRentalNotificationDataSetup(Helpers::get_store_id()),
+                'service' => Helpers::storeServiceNotificationDataSetup(Helpers::get_store_id()),
+                default => Helpers::storeNotificationDataSetup(Helpers::get_store_id()),
+            };
         }
-        $data= StoreNotificationSetting::where('store_id',Helpers::get_store_id())->where('module_type',  $module_type == 'rental' ?'rental':'all' )->get();
-        $business_name= BusinessSetting::where('key','business_name')->first()?->value;
-        return view('vendor-views.business-settings.notification-index', compact('business_name' ,'data', 'module_type'));
+        $notification_module_type = match ($module_type) {
+            'rental' => 'rental',
+            'service' => 'service',
+            default => 'all',
+        };
+        $data= StoreNotificationSetting::where('store_id',Helpers::get_store_id())->where('module_type', $notification_module_type)->get();
+        $business_name= Helpers::get_business_settings('business_name', false);
+
+        // The view previously called SendNotification::settingFor() per row,
+        // which issued one query per notification key.
+        $admin_notification_data = NotificationSetting::where('type', in_array($module_type, ['rental', 'service']) ? 'provider' : 'store')
+            ->select(['key', 'mail_status', 'push_notification_status', 'sms_status'])
+            ->get()
+            ->keyBy('key');
+
+        return view('vendor-views.business-settings.notification-index', compact('business_name' ,'data', 'module_type', 'admin_notification_data'));
     }
 
     public function notification_status_change($key, $type){
         $data= StoreNotificationSetting::where('store_id',Helpers::get_store_id())->where('key',$key)->first();
         if(!$data){
-            Toastr::error(translate('messages.Notification_settings_not_found'));
+            Toastr::error(translate('No data found'));
             return back();
         }
         if($type == 'Mail' ) {
@@ -296,7 +337,7 @@ class BusinessSettingsController extends Controller
         }
         $data?->save();
 
-        Toastr::success(translate('messages.Notification_settings_updated'));
+        Toastr::success(translate('messages.Notification settings updated'));
         return back();
     }
 }

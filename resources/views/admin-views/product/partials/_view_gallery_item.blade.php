@@ -1,211 +1,185 @@
-<div>
-        <div class="custom-offcanvas-header bg--secondary d-flex justify-content-between align-items-center px-3 py-3">
-            <h3 class="mb-0">{{ translate('Product Details') }}</h3>
-            <button type="button"
-                class="btn-close w-25px h-25px border rounded-circle d-center bg--secondary text-dark offcanvas-close fz-15px p-0"
-                aria-label="Close">
-                &times;
-            </button>
+@php
+    $module_type = $item->module?->module_type;
+    $fallback_image = asset('public/assets/admin/img/160x160/img2.jpg');
+
+    $gallery = collect($item->images_full_url ?? [])->filter()->values()->all();
+    if (count($gallery) === 0) {
+        $gallery = [$item['image_full_url'] ?? $fallback_image];
+    }
+
+    $raw_variations =
+        $module_type == 'food'
+            ? (is_array($item->food_variations) ? $item->food_variations : json_decode($item->food_variations, true))
+            : (is_array($item->variations) ? $item->variations : json_decode($item->variations, true));
+    $raw_variations = is_array($raw_variations) ? $raw_variations : [];
+
+    $variation_labels = [];
+    foreach ($raw_variations as $variation) {
+        if ($module_type == 'food') {
+            foreach ($variation['values'] ?? [] as $value) {
+                $variation_labels[] = trim(($variation['name'] ?? '') . ' - ' . ($value['label'] ?? ''), ' -');
+            }
+        } elseif (isset($variation['type'])) {
+            $variation_labels[] = $variation['type'];
+        }
+    }
+
+    $description = trim(strip_tags($item?->getRawOriginal('description') ?? ''));
+    $is_long_description = Str::length($description) > 260;
+
+    $use_url = Auth::guard('admin')->check()
+        ? route('admin.item.edit', ['id' => $item->id, 'product_gellary' => true])
+        : route('vendor.item.edit', ['id' => $item->id, 'product_gellary' => true]);
+@endphp
+
+<div class="pg-drawer__inner">
+    <div class="pg-drawer__head">
+        <div>
+            <h3>{{ translate('Product details') }}</h3>
+            <span>{{ translate('Check the details before reusing this product\'s information.') }}</span>
         </div>
-        <div class="custom-offcanvas-body p-20 pb-5">
-            <div class="d-flex flex-column gap-20px">
-                <div>
-                    <div class="d-flex gap-10px">
-                        <div class="border minmax-xl-130px rounded overflow-hidden">
-                            <img class="onerror-image w-100 h-100 object-cover"
-                                src="{{ $item['image_full_url'] ?? asset('public/assets/admin/img/160x160/img2.jpg') }}"
-                                data-onerror-image="{{ asset('public/assets/admin/img/160x160/img2.jpg') }}"
-                                alt="Image Description">
-                        </div>
-                        <div class="cont overflow-hidden py-0">
-                            <h4 class="m-0 fs-16 fw-semibold title-clr line--limit-2" data-toggle="tooltip"
-                                data-placement="bottom"
-                                data-original-title="{{ $item?->getRawOriginal('name') }}">
-                                {{ $item?->getRawOriginal('name') }} </h4>
-                            <div class="mt-10px d-flex gap-10px flex-wrap">
-                                @if ($item->organic == 1)
-                                <div class="badge badge-success font-weight-normal px-2 fs-10 rounded-pill">
-                                    {{ translate('messages.Organic') }}</div>
+        <button type="button" class="pg-drawer__close" aria-label="{{ translate('messages.Cancel') }}">&times;</button>
+    </div>
 
-                                @endif
-                                @if ($item->is_halal == 1)
-                                <div class="badge badge-warning font-weight-normal px-2 fs-10 rounded-pill text-white">
-                                    {{ translate('messages.Halal') }}</div>
-                                @endif
-                            </div>
-                            <div class="mt-10px">
-                                <div class="tabs-slide-wrap tabs-slide-wrap-pdetails position-relative">
-                                    <div class="tabs-inner d-flex align-items-center gap-xxl-20 gap-2">
+    <div class="pg-drawer__body">
+        <div class="pg-hero">
+            <div class="pg-hero__main">
+                <img class="pg-hero__img onerror-image" src="{{ $gallery[0] }}"
+                    data-onerror-image="{{ $fallback_image }}" alt="{{ $item?->getRawOriginal('name') }}">
 
-
-
-                                        @foreach($item->images as $key => $img)
-                                            @php
-                                            $photo = is_array($img) ? $img : ['img' => $img, 'storage' => 'public'];
-                                            @endphp
-
-                                            <div class="tabs-slide_items">
-                                                <div class="product-d-thumb aspect-ratio-1 overflow-hidden rounded border">
-                                                    <img src="{{ \App\CentralLogics\Helpers::get_full_url('product', $photo['img'] ?? '', $photo['storage']) }}"
-                                                        alt="img" class="w-100 h-100 object-cover">
-                                                </div>
-                                            </div>
-                                            @endforeach
-
-                                    </div>
-                                    <div class="arrow-area">
-                                        <div class="button-prev align-items-center">
-                                            <button type="button"
-                                                class="btn btn-click-prev mr-auto border-0 btn-primary rounded-circle fs-12 p-2 d-center">
-                                                <i class="tio-chevron-left fs-24"></i>
-                                            </button>
-                                        </div>
-                                        <div class="button-next align-items-center">
-                                            <button type="button"
-                                                class="btn btn-click-next ml-auto border-0 btn-primary rounded-circle fs-12 p-2 d-center">
-                                                <i class="tio-chevron-right fs-24"></i>
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="mt-20 bg--secondary p-10px rounded">
-                        <P class="m-0 fs-12 see-more_pragraph" data-character="280">
-                            {{ $item?->getRawOriginal('description') }}
-                            <span class="text-info see__moreBtn d-none text-underline cursor-pointer">{{ translate('See more') }}</span>
-                        </P>
-                    </div>
-                </div>
-                <div class="bg--secondary rounded p-10px h-100">
-                    <h6 class="mb-0 text-capitalize fs-14 fw-semibold">{{ translate('General_Information') }}</h6>
-                    <div class="product-gallery-info mt-10px">
-                        <span class="d-flex mb-2 gap-1 fs-12">
-                            <div class="w-100px max-w-100px text-nowrap line--limit-1 text-title fs-12">
-                                {{ translate('messages.Category') }}</div>
-                            <span class="title-clr">:</span>
-                            <strong
-                                class="fw-medium title-clr">{{ Str::limit(
-                                    ($item?->category?->parent ? $item?->category?->parent?->name : $item?->category?->name) ??
-                                        translate('messages.uncategorize'),
-                                    20,
-                                    '...',
-                                ) }}</strong>
+                <div class="pg-hero__badges">
+                    @if ($module_type == 'food')
+                        <span class="pg-tag {{ $item->veg == 1 ? 'pg-tag--veg' : 'pg-tag--nonveg' }}">
+                            {{ $item->veg == 1 ? translate('Veg') : translate('Non veg') }}
                         </span>
-                        <span class="d-flex mb-2 gap-1 fs-12">
-                            <div class="w-100px max-w-100px text-nowrap line--limit-1 text-title fs-12">
-                                {{ translate('messages.Sub_Category') }}</div>
-                            <span class="title-clr">:</span>
-                            <strong
-                                class="fw-medium title-clr">{{ Str::limit($item?->category?->name ?? translate('messages.uncategorize'), 20, '...') }}</strong>
+                    @endif
+                    @if ($item->organic == 1)
+                        <span class="pg-tag pg-tag--organic">{{ translate('messages.Organic') }}</span>
+                    @endif
+                    @if ($item->is_halal == 1)
+                        <span class="pg-tag pg-tag--halal">{{ translate('messages.Halal') }}</span>
+                    @endif
+                </div>
+            </div>
+
+            @if (count($gallery) > 1)
+                <div class="pg-thumbs">
+                    @foreach ($gallery as $key => $photo)
+                        <button type="button" class="pg-thumb {{ $key === 0 ? 'is-active' : '' }}"
+                            data-src="{{ $photo }}" aria-label="{{ translate('messages.Image') }} {{ $key + 1 }}">
+                            <img class="onerror-image" src="{{ $photo }}"
+                                data-onerror-image="{{ $fallback_image }}" alt="">
+                        </button>
+                    @endforeach
+                </div>
+            @endif
+
+            <h4 class="pg-detail__title">{{ $item?->getRawOriginal('name') }}</h4>
+
+            <div class="pg-detail__price">
+                <span class="pg-card__amount">{{ \App\CentralLogics\Helpers::format_currency($item->price) }}</span>
+                @if ($item->discount > 0)
+                    <span class="pg-card__off">
+                        {{ $item->discount_type == 'percent' ? $item->discount . '%' : \App\CentralLogics\Helpers::format_currency($item->discount) }}
+                        {{ translate('messages.off') }}
+                    </span>
+                @endif
+            </div>
+
+            @if ($description !== '')
+                <div class="pg-desc">
+                    <span class="pg-desc__text {{ $is_long_description ? 'pg-desc__text--clamped' : '' }}">{{ $description }}</span>
+                    @if ($is_long_description)
+                        <button type="button" class="pg-desc__toggle" data-more="{{ translate('messages.Show more') }}"
+                            data-less="{{ translate('messages.Show less') }}">{{ translate('messages.Show more') }}</button>
+                    @endif
+                </div>
+            @endif
+        </div>
+
+        <div class="pg-section">
+            <div class="pg-section__head">{{ translate('General information') }}</div>
+            <div class="pg-section__body">
+                <div class="pg-row">
+                    <span class="pg-row__label">{{ translate('messages.Category') }}</span>
+                    <span class="pg-row__value">
+                        {{ ($item?->category?->parent ? $item?->category?->parent?->name : $item?->category?->name) ?? translate('messages.uncategorize') }}
+                    </span>
+                </div>
+                <div class="pg-row">
+                    <span class="pg-row__label">{{ translate('Subcategory') }}</span>
+                    <span class="pg-row__value">
+                        {{ $item?->category?->name ?? translate('messages.uncategorize') }}
+                    </span>
+                </div>
+                @if ($module_type == 'food')
+                    <div class="pg-row">
+                        <span class="pg-row__label">{{ translate('messages.Item type') }}</span>
+                        <span class="pg-row__value">
+                            {{ $item->veg == 1 ? translate('Veg') : translate('Non veg') }}
                         </span>
-                        @if ($item->module->module_type == 'grocery')
-                            <span class="d-flex mb-2 gap-1 fs-12">
-                                <div class="w-100px max-w-100px text-nowrap line--limit-1 text-title fs-12">
-                                    {{ translate('messages.Is_Organic') }}</div>
-                                <span class="title-clr">:</span>
-                                <strong class="fw-medium title-clr">
-                                    {{ $item->organic == 1 ? translate('messages.yes') : translate('messages.no') }}</strong>
-                            </span>
-                        @endif
-                        @if ($item->module->module_type == 'food')
-                            <span class="d-flex mb-2 gap-1 fs-12">
-                                <div class="w-100px max-w-100px text-nowrap line--limit-1 text-title fs-12">
-                                    {{ translate('messages.Item_type') }} </div>
-                                <span class="title-clr">:</span>
-                                <strong class="fw-medium title-clr">
-                                    {{ $item->veg == 1 ? translate('messages.veg') : translate('messages.non_veg') }}</strong>
-                            </span>
-                        @else
-                            @if ($item?->unit)
-                                <span class="d-flex mb-2 gap-1 fs-12">
-                                    <div class="w-100px max-w-100px text-nowrap line--limit-1 text-title fs-12">
-                                        {{ translate('messages.Unit') }} </div>
-                                    <span class="title-clr">:</span>
-                                    <strong class="fw-medium title-clr"> {{ $item?->unit?->unit }}</strong>
-                                </span>
-                            @endif
-                        @endif
                     </div>
-                </div>
-                <div class="bg--secondary rounded p-10px h-100">
-                    <div>
-                        <h6 class="mb-1 text-capitalize fs-14 fw-semibold">{{ translate('Price Information') }}</h6>
-
-                                <span class="d-flex mb-2 gap-1 fs-12">
-                                    <div class="w-100px max-w-100px text-nowrap line--limit-1 text-title fs-12">
-                                        {{ translate('Price') }} </div>
-                                    <span class="title-clr">:</span>
-                                    <strong class="fw-medium title-clr"> {{\App\CentralLogics\Helpers::format_currency($item?->price)   }}</strong>
-                                </span>
-                                <span class="d-flex mb-2 gap-1 fs-12">
-                                    <div class="w-100px max-w-100px text-nowrap line--limit-1 text-title fs-12">
-                                        {{ translate('Discount') }} </div>
-                                    <span class="title-clr">:</span>
-                                    <strong class="fw-medium title-clr"> {{$item->discount_type == 'percent' ? $item->discount . ' %' : \App\CentralLogics\Helpers::format_currency($item->discount) }}</strong>
-                                </span>
+                @elseif ($item?->unit)
+                    <div class="pg-row">
+                        <span class="pg-row__label">{{ translate('Unit') }}</span>
+                        <span class="pg-row__value">{{ $item?->unit?->unit }}</span>
                     </div>
-                </div>
-
-                 @php
-                    $has_variation = ($item->module->module_type == 'food' && count(json_decode($item->food_variations, true)??[]) > 0  ) || ($item->module->module_type != 'food' &&  count(json_decode($item->variations, true)??[]) > 0 )
-                @endphp
-
-                    @if ($has_variation)
-                    <div class="bg--secondary rounded p-10px h-100">
-                        <h6 class="mb-0 text-capitalize fs-14 fw-semibold">{{ translate('Available_Variations') }}</h6>
-                        <div class="product-gallery-info mt-10px">
-                            <div class="d-flex flex-wrap gap-10px">
-
-                                    @if ($item->module->module_type == 'food')
-                                                @foreach (json_decode($item->food_variations, true) as $key => $variation)
-                                                    @if (isset($variation['values']))
-                                                        @foreach ($variation['values'] as $value)
-                                                         <span class="bg-white rounded-pill py-1 px-2 fs-12 title-clr">
-                                                            {{ $variation['name'] }} - {{ $value['label'] }} </span>
-                                                        @endforeach
-                                                    @endif
-                                                @endforeach
-                                    @else
-                                                @if ($item->variations && is_array(json_decode($item['variations'], true)))
-                                                    @foreach (json_decode($item['variations'], true) as $key => $variation)
-                                                        <span class="bg-white rounded-pill py-1 px-2 fs-12 title-clr">
-                                                            {{ $variation['type'] }}
-                                                        </span>
-                                                    @endforeach
-                                                @endif
-                                    @endif
-                            </div>
-                        </div>
+                @endif
+                @if ($module_type == 'grocery')
+                    <div class="pg-row">
+                        <span class="pg-row__label">{{ translate('Is organic') }}</span>
+                        <span class="pg-row__value">
+                            {{ $item->organic == 1 ? translate('messages.Yes') : translate('messages.No') }}
+                        </span>
                     </div>
-                    @endif
-
-
-                    @if (count($item->tags ?? []) > 0)
-
-                    <div class="bg--secondary rounded p-10px">
-                        <h6 class="mb-0 text-capitalize fs-14 fw-semibold">{{ translate('Tags') }}</h6>
-                        <div class="d-flex gap-10px align-items-center flex-wrap mt-10px">
-
-                            @foreach ($item->tags as $key => $c)
-                            <span class="bg-white rounded-pill py-1 px-2 fs-12 title-clr">
-                                {{ $c->tag }}
-                            </span>
-
-                            @endforeach
-
-                        </div>
-                    </div>
-                    @endif
-
-
+                @endif
             </div>
         </div>
-        <div class="offcanvas-footer p-3 d-flex align-items-center justify-content-center gap-3">
-            <button type="reset" class="btn w-100 btn--reset offcanvas-close">{{ translate('messages.Cancel') }}</button>
 
-            <a target="_blank"  href="{{ Auth::guard('admin')->check() ? route('admin.item.edit', ['id' => $item->id, 'product_gellary' => true]) :route('vendor.item.edit', ['id' => $item->id, 'product_gellary' => true]) }}"
-                 class="btn w-100 btn--primary offcanvas-close">  {{ translate('messages.use_this_product_info') }} </a>
+        <div class="pg-section">
+            <div class="pg-section__head">{{ translate('Price information') }}</div>
+            <div class="pg-section__body">
+                <div class="pg-row">
+                    <span class="pg-row__label">{{ translate('messages.price') }}</span>
+                    <span
+                        class="pg-row__value">{{ \App\CentralLogics\Helpers::format_currency($item?->price) }}</span>
+                </div>
+                <div class="pg-row">
+                    <span class="pg-row__label">{{ translate('Discount') }}</span>
+                    <span class="pg-row__value">
+                        {{ $item->discount_type == 'percent' ? $item->discount . ' %' : \App\CentralLogics\Helpers::format_currency($item->discount) }}
+                    </span>
+                </div>
+            </div>
         </div>
+
+        @if (count($variation_labels) > 0)
+            <div class="pg-section">
+                <div class="pg-section__head">{{ translate('messages.Available Variations') }}</div>
+                <div class="pg-section__body pg-section__body--chips">
+                    @foreach ($variation_labels as $label)
+                        <span class="pg-chip">{{ $label }}</span>
+                    @endforeach
+                </div>
+            </div>
+        @endif
+
+        @if (count($item->tags ?? []) > 0)
+            <div class="pg-section">
+                <div class="pg-section__head">{{ translate('messages.Tags') }}</div>
+                <div class="pg-section__body pg-section__body--chips">
+                    @foreach ($item->tags as $tag)
+                        <span class="pg-chip pg-chip--tag">{{ $tag->tag }}</span>
+                    @endforeach
+                </div>
+            </div>
+        @endif
     </div>
+
+    <div class="pg-drawer__foot">
+        <button type="button" class="btn btn--reset pg-drawer__close"><i class="tio-clear-circle-outlined"></i> {{ translate('messages.Cancel') }}</button>
+        <a target="_blank" href="{{ $use_url }}" class="btn btn--primary">
+            <i class="tio-checkmark-circle-outlined"></i> {{ translate('Use product') }}
+        </a>
+    </div>
+</div>

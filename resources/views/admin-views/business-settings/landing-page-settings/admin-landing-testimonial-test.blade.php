@@ -1,21 +1,24 @@
 @extends('layouts.admin.app')
 
-@section('title',translate('messages.admin_landing_page'))
+@section('title',translate('Update testimonial'))
 
 @section('content')
 <div class="content container-fluid">
     <div class="page-header pb-0">
         <div class="d-flex flex-wrap justify-content-between">
-            <h1 class="page-header-title">
-                <span class="page-header-icon">
-                    <img src="{{asset('public/assets/admin/img/landing.png')}}" class="w--20" alt="">
-                </span>
-                <span>
-                    {{ translate('messages.admin_landing_pages') }}
-                </span>
-            </h1>
+            <div>
+                <h1 class="page-header-title">
+                    <span class="page-header-icon">
+                        <img src="{{asset('public/assets/admin/img/outline/landing.svg')}}" class="w--26" alt="">
+                    </span>
+                    <span>
+                        {{ translate('messages.Admin landing pages') }}
+                    </span>
+                </h1>
+                <p class="page-header-desc">{{ translate('Customer quotes shown on the admin landing page.') }}</p>
+            </div>
             <div class="text--primary-2 py-1 d-flex flex-wrap align-items-center" type="button" data-toggle="modal" data-target="#how-it-works">
-                <strong class="mr-2">{{translate('See_how_it_works!')}}</strong>
+                <strong class="mr-2">{{translate('See how it works')}}</strong>
                 <div>
                     <i class="tio-info-outined"></i>
                 </div>
@@ -40,7 +43,7 @@
                             <div class="col-md-6">
                                 <div class="row g-3">
                                     <div class="col-md-6">
-                                        <label for="name" class="form-label">{{translate('Reviewer Name')}}<span class="form-label-secondary" data-toggle="tooltip" data-placement="right" data-original-title="{{ translate('Write_the_name_within_30_characters') }}">
+                                        <label for="name" class="form-label">{{translate('Reviewer Name')}}<span class="form-label-secondary" data-toggle="tooltip" data-placement="right" data-original-title="{{ translate('Character limit') }}: 30">
                                                 <img src="{{ asset('public/assets/admin/img/info-circle.svg') }}" alt="">
                                             </span>
                                             <span class="form-label-secondary text-danger"
@@ -48,10 +51,10 @@
                                                   data-original-title="{{ translate('messages.Required.')}}"> *
                                                 </span>
                                         </label>
-                                        <input required id="name" type="text" maxlength="30" name="name" value="{{ $review->name }}" class="form-control" placeholder="{{translate('Ex:  John Doe')}}">
+                                        <input required id="name" type="text" maxlength="30" name="name" value="{{ $review->name }}" class="form-control" placeholder="{{ translate('Ex') }}: John Doe">
                                     </div>
                                     <div class="col-md-6">
-                                        <label for="designation" class="form-label">{{translate('Designation')}}<span class="form-label-secondary" data-toggle="tooltip" data-placement="right" data-original-title="{{ translate('Write_the_designation_within_30_characters') }}">
+                                        <label for="designation" class="form-label">{{translate('Designation')}}<span class="form-label-secondary" data-toggle="tooltip" data-placement="right" data-original-title="{{ translate('Character limit') }}: 30">
                                                 <img src="{{ asset('public/assets/admin/img/info-circle.svg') }}" alt="">
                                             </span>
                                             <span class="form-label-secondary text-danger"
@@ -59,13 +62,13 @@
                                                   data-original-title="{{ translate('messages.Required.')}}"> *
                                                 </span>
                                         </label>
-                                        <input required id="designation" type="text" maxlength="30" name="designation" value="{{ $review->designation }}" class="form-control" placeholder="{{translate('Ex:  CTO')}}">
+                                        <input required id="designation" type="text" maxlength="30" name="designation" value="{{ $review->designation }}" class="form-control" placeholder="{{translate('Ex') . ':  CTO'}}">
                                     </div>
                                     <div class="col-md-12">
                                         <label for="review" class="form-label">{{translate('messages.review')}}<span
                                             class="form-label-secondary" data-toggle="tooltip"
                                             data-placement="right"
-                                            data-original-title="{{ translate('Write_the_title_within_250_characters') }}">
+                                            data-original-title="{{ translate('Character limit') }}: 250">
                                             <img src="{{ asset('public/assets/admin/img/info-circle.svg') }}"
                                                 alt="">
                                         </span><span class="form-label-secondary text-danger"
@@ -81,13 +84,13 @@
                                 <div class="d-flex gap-40px">
                                     <div>
                                         <label class="form-label d-block mb-2">
-                                            {{translate('Reviewer Image')}}  <span class="text--primary">{{translate('(1:1)')}}</span>
+                                            {{translate('Reviewer Image')}}  <span class="text--primary">(1:1)</span>
                                             <span class="form-label-secondary text-danger"
                                                   data-toggle="tooltip" data-placement="right"
                                                   data-original-title="{{ translate('messages.Required.')}}"> *
                                                 </span>
                                             <div class="fs-12 opacity-70">
-                                                {{ translate(IMAGE_FORMAT.' ' . 'Less Than 2MB') }}
+                                                {{ IMAGE_FORMAT.' ' . 'Less Than 2MB' }}
                                             </div>
                                         </label>
                                         <label class="upload-img-3 m-0 d-block">
@@ -102,8 +105,8 @@
                                                     <span style="right: 53px;top: 2px;!important;"  id="reviewer_image" class="remove_image_button remove-image dynamic-checkbox"
                                                           data-id="reviewer_image"
                                                           data-image-off="{{ asset('/public/assets/admin/img/delete-confirmation.png') }}"
-                                                          data-title="{{translate('Warning!')}}"
-                                                          data-text="<p>{{translate('Are_you_sure_you_want_to_remove_this_image_?')}}</p>"
+                                                          data-title="{{translate('warning')}}"
+                                                          data-text="<p>{{translate('Are you sure you want to remove this image?')}}</p>"
                                                     > <i class="tio-clear"></i></span>
                                             @endif
                                         </div>
@@ -111,13 +114,13 @@
                                     </div>
                                     <div class="d-flex flex-column">
                                         <label class="form-label d-block mb-2">
-                                            {{translate('Company Logo')}}  <span class="text--primary">{{translate('(3:1)')}}</span>
+                                            {{translate('Company Logo')}}  <span class="text--primary">(3:1)</span>
                                             <span class="form-label-secondary text-danger"
                                                   data-toggle="tooltip" data-placement="right"
                                                   data-original-title="{{ translate('messages.Required.')}}"> *
                                                 </span>
                                             <div class="fs-12 opacity-70">
-                                                {{ translate(IMAGE_FORMAT.' ' . 'Less Than 2MB') }}
+                                                {{ IMAGE_FORMAT.' ' . 'Less Than 2MB' }}
                                             </div>
                                         </label>
                                         <label class="upload-img-4 m-0 d-block my-auto">
@@ -131,8 +134,8 @@
                                                     <span style="right: 53px;top: 2px;!important;" id="company_image" class="remove_image_button remove-image dynamic-checkbox"
                                                           data-id="company_image"
                                                           data-image-off="{{ asset('/public/assets/admin/img/delete-confirmation.png') }}"
-                                                          data-title="{{translate('Warning!')}}"
-                                                          data-text="<p>{{translate('Are_you_sure_you_want_to_remove_this_image_?')}}</p>"
+                                                          data-title="{{translate('warning')}}"
+                                                          data-text="<p>{{translate('Are you sure you want to remove this image?')}}</p>"
                                                     > <i class="tio-clear"></i></span>
                                             @endif
                                         </div>
@@ -142,8 +145,8 @@
                             </div>
                         </div>
                         <div class="btn--container justify-content-end mt-20">
-                            <button type="reset" class="btn btn--reset mb-2">{{translate('Reset')}}</button>
-                            <button type="submit"   class="btn btn--primary mb-2">{{translate('messages.Update')}}</button>
+                            <button type="reset" class="btn btn--reset mb-2"><i class="tio-refresh"></i> {{translate('Reset')}}</button>
+                            <button type="submit"   class="btn btn--primary mb-2"><i class="tio-save"></i> {{translate('Update')}}</button>
                         </div>
 
                     </div>
@@ -152,7 +155,6 @@
             <form  id="reviewer_image_form" action="{{ route('admin.remove_image') }}" method="post">
                 @csrf
                 <input type="hidden" name="id" value="{{  $review?->id}}" >
-                {{-- <input type="hidden" name="json" value="1" > --}}
                 <input type="hidden" name="model_name" value="AdminTestimonial" >
                 <input type="hidden" name="image_path" value="reviewer_image" >
                 <input type="hidden" name="field_name" value="reviewer_image" >
@@ -160,20 +162,18 @@
             <form  id="company_image_form" action="{{ route('admin.remove_image') }}" method="post">
                 @csrf
                 <input type="hidden" name="id" value="{{  $review?->id}}" >
-                {{-- <input type="hidden" name="json" value="1" > --}}
                 <input type="hidden" name="model_name" value="AdminTestimonial" >
                 <input type="hidden" name="image_path" value="reviewer_company_image" >
                 <input type="hidden" name="field_name" value="company_image" >
             </form>
 
 
-            <!--  Special review Section View -->
             <div class="modal fade" id="testimonials-section">
                 <div class="modal-dialog modal-lg warning-modal">
                     <div class="modal-content">
                         <div class="modal-body">
                             <div class="mb-3">
-                                <h3 class="modal-title mb-3">{{translate(' Special review')}}</h3>
+                                <h3 class="modal-title mb-3"> {{translate('Special review')}}</h3>
                             </div>
                             <img src="{{asset('/public/assets/admin/img/zone-instruction.png')}}" alt="admin/img" class="w-100">
                         </div>
@@ -181,7 +181,6 @@
                 </div>
             </div>
 
-            <!-- Testimonial Modal -->
             <div class="modal fade" id="testimonials-status-modal">
                 <div class="modal-dialog status-warning-modal">
                     <div class="modal-content">
@@ -195,29 +194,18 @@
                                 <div>
                                     <div class="text-center">
                                         <img src="{{asset('/public/assets/admin/img/modal/this-review-off.png')}}" alt="" class="mb-20">
-                                        <h5 class="modal-title">{{translate('By Turning OFF ')}} <strong>{{translate('This review')}}</strong></h5>
+                                        <h5 class="modal-title">{{translate('By Turning OFF')}}  <strong>{{translate('This review')}}</strong></h5>
                                     </div>
                                     <div class="text-center">
                                         <p>
-                                            {{translate('This section  will be disabled. You can enable it in the settings')}}
+                                            {{translate('This section will be disabled. You can enable it in the settings')}}
                                         </p>
                                     </div>
                                 </div>
-                                <!-- <div>
-                                    <div class="text-center">
-                                        <img src="{{asset('/public/assets/admin/img/modal/this-review-on.png')}}" alt="" class="mb-20">
-                                        <h5 class="modal-title">{{translate('By Turning ON ')}} <strong>{{translate('This review')}}</strong></h5>
-                                    </div>
-                                    <div class="text-center">
-                                        <p>
-                                            {{translate('This section will be enabled. You can see this section on your landing page.')}}
-                                        </p>
-                                    </div>
-                                </div> -->
                                 <div class="btn--container justify-content-center">
-                                    <button type="submit" class="btn btn--primary min-w-120" data-dismiss="modal">{{translate('Ok')}}</button>
+                                    <button type="submit" class="btn btn--primary min-w-120" data-dismiss="modal"><i class="tio-checkmark-circle-outlined"></i> {{translate('OK')}}</button>
                                     <button id="reset_btn" type="reset" class="btn btn--cancel min-w-120" data-dismiss="modal">
-                                        {{translate("Cancel")}}
+                                        <i class="tio-clear-circle-outlined"></i> {{translate("Cancel")}}
                                     </button>
                                 </div>
                             </div>
@@ -228,7 +216,6 @@
         </div>
     </div>
 </div>
-    <!-- How it Works -->
     @include('admin-views.business-settings.landing-page-settings.partial.how-it-work')
 @endsection
 

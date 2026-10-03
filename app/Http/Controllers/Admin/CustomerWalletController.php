@@ -2,26 +2,27 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Services\Payment\WalletTransactionService;
 use Illuminate\Http\Request;
 use App\CentralLogics\Helpers;
-use App\Models\BusinessSetting;
 use App\Models\WalletTransaction;
-use App\CentralLogics\CustomerLogic;
 use App\Exports\CustomerWalletTransactionExport;
 use App\Http\Controllers\Controller;
+use App\Library\AjaxResponse;
 use App\Models\User;
 use Brian2694\Toastr\Facades\Toastr;
-use Illuminate\Support\Facades\Mail;
 use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Support\Facades\Validator;
+use App\Support\Notification\SendNotification;
+use Illuminate\Support\Facades\Log;
 
 
 class CustomerWalletController extends Controller
 {
     public function add_fund_view()
     {
-        if (BusinessSetting::where('key', 'wallet_status')->first()->value != 1) {
-            Toastr::error(trans('messages.customer_wallet_disable_warning_admin'));
+        if (Helpers::get_business_settings('wallet_status', false) != 1) {
+            Toastr::error(trans('messages.Customer wallet disable warning admin'));
             return back();
         }
         return view('admin-views.customer.wallet.add_fund');
@@ -30,34 +31,36 @@ class CustomerWalletController extends Controller
     public function add_fund(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'customer_id'=>'exists:users,id',
-            'amount'=>'numeric|min:.01',
+            'customer_id'=>'required|exists:users,id',
+            'amount'=>'required|numeric|min:.01',
+            'reference'=>'nullable|string|max:191',
         ]);
 
         if ($validator->fails()) {
-            return response()->json(['errors' => Helpers::error_processor($validator)]);
+            return AjaxResponse::invalid($validator->errors()->messages());
         }
 
-        $wallet_transaction = CustomerLogic::create_wallet_transaction($request->customer_id, $request->amount, 'add_fund_by_admin',$request->reference);
+        $wallet_transaction = app(WalletTransactionService::class)->recordWalletTransaction($request->customer_id, $request->amount, 'add_fund_by_admin',$request->reference);
 
         if($wallet_transaction)
         {
             try{
                 Helpers::add_fund_push_notification($request->customer_id);
-                if(config('mail.status') && Helpers::get_mail_status('add_fund_mail_status_user') == '1' &&  Helpers::getNotificationStatusData('customer','customer_add_fund_to_wallet','mail_status') ) {
-                    Mail::to($wallet_transaction->user?->getRawOriginal('email'))->send(new \App\Mail\AddFundToWallet($wallet_transaction));
+                if(SendNotification::canSendMail('add_fund_mail_status_user', 'customer', 'customer_add_fund_to_wallet') ) {
+                    SendNotification::mail($wallet_transaction->user?->getRawOriginal('email'), new \App\Mail\AddFundToWallet($wallet_transaction));
                 }
             }catch(\Exception $ex)
             {
-                info($ex->getMessage());
+                Log::error('admin.customer_wallet_controller.add_fund_failed', [
+                    'error' => $ex->getMessage(),
+                    'file' => $ex->getFile().':'.$ex->getLine(),
+                ]);
             }
 
-            return response()->json([], 200);
+            return AjaxResponse::success(translate('Fund added') . '. ' . translate('Wallet balance') . ': ' . Helpers::format_currency($wallet_transaction->balance));
         }
 
-        return response()->json(['errors'=>[
-            'message'=>trans('messages.failed_to_create_transaction')
-        ]], 200);
+        return AjaxResponse::fail(translate('messages.Failed to create transaction'));
     }
 
     public function report(Request $request)
@@ -71,7 +74,7 @@ class CustomerWalletController extends Controller
         $filter = $request->query('filter', 'all_time');
         $key = [];
         if ($request->search) {
-            $key = explode(' ', $request['search']);
+            $key = explode(' ', $request['search'] ?? '');
         }
         $data = WalletTransaction::selectRaw('sum(credit+admin_bonus) as total_credit, sum(debit) as total_debit,
          SUM(IF(transaction_type = "add_fund_by_admin", credit + admin_bonus, 0)) as add_fund_total,
@@ -179,7 +182,7 @@ class CustomerWalletController extends Controller
         $filter = $request->query('filter', 'all_time');
         $key = [];
         if ($request->search) {
-            $key = explode(' ', $request['search']);
+            $key = explode(' ', $request['search'] ?? '');
         }
 
         $data = WalletTransaction::selectRaw('sum(credit) as total_credit, sum(debit) as total_debit')
@@ -294,13 +297,28 @@ class CustomerWalletController extends Controller
 
     public function getUserWallet(Request $request){
 
+        $user = $request->customer_id ? User::withStorage()->find($request->customer_id) : null;
 
-        if($request->customer_id){
-            $user= User::where('id', $request->customer_id)->first();
-            return response()->json(Helpers::format_currency($user?->wallet_balance??0),200);
+        if(!$user){
+            return response()->json(['found' => false], 200);
         }
 
-        return response()->json(Helpers::format_currency(0),200);
+        return response()->json([
+            'found' => true,
+            'name' => $user->full_name,
+            'phone' => $user->phone,
+            'email' => $user->email,
+            'image' => $user->image_full_url,
+            'balance' => (float) $user->wallet_balance,
+            'balance_formatted' => Helpers::format_currency($user->wallet_balance),
+            'order_count' => (int) $user->order_count,
+            'loyalty_point' => (int) $user->loyalty_point,
+            'member_since' => Helpers::date_format($user->created_at),
+            'wallet_available' => !storefront_wallet_disabled_for_user($user->id),
+            'profile_url' => Helpers::module_permission_check('customer_management')
+                ? route('admin.users.customer.view', [$user->id])
+                : null,
+        ], 200);
     }
 
 

@@ -2,19 +2,21 @@
 
 namespace App\Http\Controllers\Vendor;
 
+use App\Rules\ImageFile;
+use App\Rules\PhoneNumber;
+use App\Rules\EmailAddress;
+use App\Rules\StrongPassword;
 use App\Http\Controllers\Controller;
 use App\Models\DeliveryMan;
 use App\Models\DMReview;
-use App\Models\Zone;
 use App\Models\OrderTransaction;
 use Brian2694\Toastr\Facades\Toastr;
 use Illuminate\Http\Request;
-use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\Storage;
 use App\CentralLogics\Helpers;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Validation\Rules\Password;
+use App\Support\Notification\SendNotification;
+use App\Support\Notification\NotificationMessages;
 
 class DeliveryManController extends Controller
 {
@@ -25,9 +27,9 @@ class DeliveryManController extends Controller
 
     public function list(Request $request)
     {
-        $key = explode(' ', $request['search']);
-        $delivery_men = DeliveryMan::where('store_id', Helpers::get_store_id())
-                 ->when( isset($key) , function($query) use($key){
+        $key = explode(' ', $request['search'] ?? '');
+        $delivery_men = DeliveryMan::withStorage()->with(['rating', 'vehicle.storage'])->withCount('orders')->where('store_id', Helpers::get_store_id())
+                 ->when( $request['search'] , function($query) use($key){
                     $query->where(function ($q) use ($key) {
                         foreach ($key as $value) {
                             $q->orWhere('f_name', 'like', "%{$value}%")
@@ -51,15 +53,33 @@ class DeliveryManController extends Controller
 
     public function preview($id, $tab='info')
     {
-        $dm = DeliveryMan::with(['reviews'])->where('store_id', Helpers::get_store_id())->where(['id' => $id])->first();
+        // orders was only ever ->count()ed in the blade, which hydrated every order row.
+        $dm = DeliveryMan::withStorage()->with(['reviews', 'wallet', 'rating'])->withCount('orders')->where('store_id', Helpers::get_store_id())->where(['id' => $id])->first();
+
+        if (! $dm) {
+            abort(404);
+        }
+
         if($tab == 'info')
         {
             $reviews=DMReview::where(['delivery_man_id'=>$id])->latest()->paginate(config('default_pagination'));
-            return view('vendor-views.delivery-man.view.info', compact('dm', 'reviews'));
+            // info.blade.php ran Helpers::dm_rating_count() five times — five COUNT queries
+            // for data already present in the eager-loaded reviews relation.
+            $review_total = $dm?->reviews->count() ?? 0;
+            $rating_breakdown = [1 => 0, 2 => 0, 3 => 0, 4 => 0, 5 => 0];
+            foreach ($dm?->reviews ?? [] as $review) {
+                if (isset($rating_breakdown[$review->rating])) {
+                    $rating_breakdown[$review->rating]++;
+                }
+            }
+            $store = Helpers::get_store_data();
+            return view('vendor-views.delivery-man.view.info', compact('dm', 'reviews', 'review_total', 'rating_breakdown', 'store'));
         }
         else if($tab == 'transaction')
         {
-            return view('vendor-views.delivery-man.view.transaction', compact('dm'));
+            $digital_transaction = OrderTransaction::where('delivery_man_id', $id)->paginate(25);
+
+            return view('vendor-views.delivery-man.view.transaction', compact('dm', 'digital_transaction'));
         }
     }
 
@@ -69,10 +89,10 @@ class DeliveryManController extends Controller
             'f_name' => 'required|max:100',
             'l_name' => 'nullable|max:100',
             'identity_number' => 'required|max:30',
-            'email' => 'required|unique:delivery_men',
-            'phone' => 'required|regex:/^([0-9\s\-\+\(\)]*)$/|min:10|unique:delivery_men',
-            'password' => ['required', Password::min(8)->mixedCase()->letters()->numbers()->symbols()->uncompromised()],
-            'image' => 'required|image|max:2048|mimes:'.IMAGE_FORMAT_FOR_VALIDATION,
+            'email' => EmailAddress::rules('required', 'delivery_men'),
+            'phone' => PhoneNumber::rules('required', 'delivery_men'),
+            'password' => StrongPassword::rules('required'),
+            'image' => ImageFile::rules('required'),
         ]);
 
         if ($validator->fails()) {
@@ -113,7 +133,7 @@ class DeliveryManController extends Controller
         $dm->save();
 
         return response()->json([
-            'message' => translate('messages.deliveryman_added_successfully'),
+            'message' => translate('Added successfully'),
             'redirect' => route('vendor.delivery-man.list')
         ], 200);
 
@@ -121,7 +141,7 @@ class DeliveryManController extends Controller
 
     public function edit($id)
     {
-        $delivery_man = DeliveryMan::find($id);
+        $delivery_man = DeliveryMan::withStorage()->find($id);
         return view('vendor-views.delivery-man.edit', compact('delivery_man'));
     }
 
@@ -134,54 +154,28 @@ class DeliveryManController extends Controller
         {
             if($request->status == 0)
             {   $delivery_man->auth_token = null;
-                if(isset($delivery_man->fcm_token) && Helpers::getNotificationStatusData('deliveryman','deliveryman_account_block','push_notification_status') )
+                if(isset($delivery_man->fcm_token) && SendNotification::channelEnabled('deliveryman','deliveryman_account_block','push_notification_status') )
                 {
-                    $data = [
-                        'title' => translate('messages.suspended'),
-                        'description' => translate('messages.your_account_has_been_suspended'),
-                        'order_id' => '',
-                        'image' => '',
-                        'type'=> 'block'
-                    ];
-                    Helpers::send_push_notif_to_device($delivery_man->fcm_token, $data);
-
-                    DB::table('user_notifications')->insert([
-                        'data'=> json_encode($data),
-                        'delivery_man_id'=>$delivery_man->id,
-                        'created_at'=>now(),
-                        'updated_at'=>now()
-                    ]);
+                    $data = NotificationMessages::accountSuspended();
+                    SendNotification::pushToDeliveryMan($delivery_man->id, $delivery_man->fcm_token, $data);
                 }
 
             } else{
-                if( Helpers::getNotificationStatusData('deliveryman','deliveryman_account_unblock','push_notification_status') && isset($delivery_man->fcm_token))
+                if( SendNotification::channelEnabled('deliveryman','deliveryman_account_unblock','push_notification_status') && isset($delivery_man->fcm_token))
                 {
-                    $data = [
-                        'title' => translate('messages.Account_activation'),
-                        'description' => translate('messages.your_account_has_been_activated'),
-                        'order_id' => '',
-                        'image' => '',
-                        'type'=> 'unblock'
-                    ];
-                    Helpers::send_push_notif_to_device($delivery_man->fcm_token, $data);
-
-                    DB::table('user_notifications')->insert([
-                        'data'=> json_encode($data),
-                        'delivery_man_id'=>$delivery_man->id,
-                        'created_at'=>now(),
-                        'updated_at'=>now()
-                    ]);
+                    $data = NotificationMessages::accountActivated();
+                    SendNotification::pushToDeliveryMan($delivery_man->id, $delivery_man->fcm_token, $data);
                 }
             }
 
         }
         catch (\Exception $e) {
-            Toastr::warning(translate('messages.push_notification_faild'));
+            Toastr::warning(translate('messages.Push notification failed'));
         }
 
         $delivery_man->save();
 
-        Toastr::success(translate('messages.deliveryman_status_updated'));
+        Toastr::success(translate('messages.Deliveryman status updated'));
         return back();
     }
 
@@ -192,7 +186,7 @@ class DeliveryManController extends Controller
 
         $delivery_man->save();
 
-        Toastr::success(translate('messages.deliveryman_type_updated'));
+        Toastr::success(translate('messages.Deliveryman type updated'));
         return back();
     }
 
@@ -202,16 +196,16 @@ class DeliveryManController extends Controller
             'f_name' => 'required|max:100',
             'l_name' => 'nullable|max:100',
             'identity_number' => 'required|max:30',
-            'email' => 'required|unique:delivery_men,email,'.$id,
-            'phone' => 'required|regex:/^([0-9\s\-\+\(\)]*)$/|min:10|unique:delivery_men,phone,'.$id,
-            'password' => ['nullable', Password::min(8)->mixedCase()->letters()->numbers()->symbols()->uncompromised()],
+            'email' => EmailAddress::rules('required', 'delivery_men,email,'.$id),
+            'phone' => PhoneNumber::rules('required', 'delivery_men,phone,'.$id),
+            'password' => StrongPassword::rules('nullable'),
         ]);
 
         if ($validator->fails()) {
             return response()->json(['errors' => Helpers::error_processor($validator)]);
         }
 
-        $delivery_man = DeliveryMan::find($id);
+        $delivery_man = DeliveryMan::withStorage()->find($id);
 
         if ($request->has('image')) {
             $image_name = Helpers::update('delivery-man/', $delivery_man->image, 'png', $request->file('image'));
@@ -257,7 +251,7 @@ class DeliveryManController extends Controller
         }
 
         return response()->json([
-            'message' => translate('messages.deliveryman_updated_successfully'),
+            'message' => translate('Updated successfully'),
             'redirect' => route('vendor.delivery-man.list')
         ], 200);
 
@@ -280,12 +274,12 @@ class DeliveryManController extends Controller
             $delivery_man->userinfo->delete();
         }
         $delivery_man->delete();
-        Toastr::success(translate('messages.deliveryman_deleted_successfully'));
+        Toastr::success(translate('Deleted successfully'));
         return back();
     }
 
     public function get_deliverymen(Request $request){
-        $key = explode(' ', $request->q);
+        $key = explode(' ', $request->q ?? '');
         $zone_ids = isset($request->zone_ids)?(count($request->zone_ids)>0?$request->zone_ids:[]):0;
         $data=DeliveryMan::when($zone_ids, function($query) use($zone_ids){
             return $query->whereIn('zone_id', $zone_ids);
@@ -301,7 +295,7 @@ class DeliveryManController extends Controller
                     ->orWhere('phone', 'like', "%{$value}%")
                     ->orWhere('identity_number', 'like', "%{$value}%");
             }
-        })->where('store_id', Helpers::get_store_id())->limit(8)->get(['id',DB::raw('CONCAT(f_name, " ", l_name) as text')]);
+        })->where('store_id', Helpers::get_store_id())->limit(8)->get(['id',DB::raw('CONCAT(f_name, " ", l_name) as text')])->makeHidden('image_full_url');
         return response()->json($data);
     }
 
@@ -322,7 +316,7 @@ class DeliveryManController extends Controller
 
 
     public function transaction_search(Request $request){
-        $key = explode(' ', $request['search']);
+        $key = explode(' ', $request['search'] ?? '');
         $digital_transaction=OrderTransaction::where(function ($q) use ($key) {
             foreach ($key as $value) {
                 $q->orWhere('order_id', 'like', "%{$value}%");

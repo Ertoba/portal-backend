@@ -1,6 +1,6 @@
 @extends('layouts.admin.app')
 
-@section('title', translate('messages.react_ride_share_page'))
+@section('title', translate('messages.React ride share page'))
 
 @push('css_or_js')
     <meta name="csrf-token" content="{{ csrf_token() }}">
@@ -10,20 +10,18 @@
     <div class="content container-fluid">
         <div class="page-header pb-0">
             <div class="d-flex flex-wrap justify-content-between">
-                <h1 class="page-header-title">
-                    <span class="page-header-icon">
-                        <img src="{{ asset('public/assets/admin/img/landing.png') }}" class="w--20" alt="">
-                    </span>
-                    <span>{{ translate('messages.react_ride_share_page') }}</span>
-                </h1>
+                <div>
+                    <h1 class="page-header-title">
+                        <span class="page-header-icon">
+                            <img src="{{ asset('public/assets/admin/img/outline/landing.svg') }}" class="w--26" alt="">
+                        </span>
+                        <span>{{ translate('messages.React ride share page') }}</span>
+                    </h1>
+                    <p class="page-header-desc">{{ translate('The headline, sub-heading and artwork at the top of the ride-share landing page.') }}</p>
+                </div>
             </div>
         </div>
 
-        <!-- <div class="mb-20 mt-2">
-            <div class="js-nav-scroller hs-nav-scroller-horizontal">
-                @include('admin-views.business-settings.landing-page-settings.top-menu-links.react-ride-share-page-links')
-            </div>
-        </div> -->
 
         <?php
         $role = request('role') === 'rider' ? 'rider' : 'customer';
@@ -31,21 +29,19 @@
         $tabPrefix = $role === 'rider' ? 'rider-' : '';
         ?>
 
-        <div class="mb-20">
-            <ul class="nav nav-pills role-tabs gap-2 bg--secondary p-1 rounded-pill d-inline-flex">
-                <li class="nav-item">
-                    <a href="{{ url()->current() }}?role=customer"
-                       class="nav-link px-4 py-2 rounded-pill {{ $role === 'customer' ? 'active text-white bg--primary' : 'text-dark' }}">
-                        {{ translate('Customer') }}
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a href="{{ url()->current() }}?role=rider"
-                       class="nav-link px-4 py-2 rounded-pill {{ $role === 'rider' ? 'active text-white bg--primary' : 'text-dark' }}">
-                        {{ translate('Rider') }}
-                    </a>
-                </li>
-            </ul>
+        <div class="d-flex flex-wrap justify-content-between align-items-center tabs-slide-wrap mb-20 __gap-12px">
+            <div class="js-nav-scroller hs-nav-scroller-horizontal mt-2">
+                <ul class="nav nav-tabs tabs-inner border-0 nav--tabs nav--pills">
+                    <li class="nav-item tabs-slide_items">
+                        <a class="nav-link {{ $role === 'customer' ? 'active' : '' }}"
+                           href="{{ url()->current() }}?role=customer">{{ translate('Customer') }}</a>
+                    </li>
+                    <li class="nav-item tabs-slide_items">
+                        <a class="nav-link {{ $role === 'rider' ? 'active' : '' }}"
+                           href="{{ url()->current() }}?role=rider">{{ translate('Rider') }}</a>
+                    </li>
+                </ul>
+            </div>
         </div>
 
         <div class="card py-3 px-xxl-4 px-3 mb-20">
@@ -53,7 +49,7 @@
                 <div>
                     <h3 class="mb-1">{{ translate('Hero Section') }}</h3>
                     <p class="mb-0 gray-dark fs-12">
-                        {{ translate('See how your Hero Section will look to customers.') }}
+                        {{ translate('See how this section will look to customers.') }}
                     </p>
                 </div>
                 <div class="max-w-300px ml-sm-auto">
@@ -76,7 +72,7 @@
                     <div>
                         <h3 class="mb-1">{{ translate('Show Hero Section') }}</h3>
                         <p class="mb-0 gray-dark fs-12">
-                            {{ translate('If you turn of the availability status, this section will not show in the website') }}
+                            {{ translate('If you turn off the availability status, this section will not show on the website') }}
                         </p>
                     </div>
                 </div>
@@ -91,8 +87,8 @@
                             <input type="checkbox" data-id="CheckboxStatus" data-type="status"
                                    data-image-on="{{ asset('/public/assets/admin/img/status-ons.png') }}"
                                    data-image-off="{{ asset('/public/assets/admin/img/off-danger.png') }}"
-                                   data-title-on="{{ translate('Do you want turn on this section ?') }}"
-                                   data-title-off="{{ translate('Do you want to turn off this section ?') }}"
+                                   data-title-on="{{ translate('Do you want to turn on this section?') }}"
+                                   data-title-off="{{ translate('Do you want to turn off this section?') }}"
                                    data-text-on="<p>{{ translate('If you turn on this section will be show in react ride share page.') }}"
                                    data-text-off="<p>{{ translate('If you turn off this section will not be show in react ride share page.') }}</p>"
                                    class="toggle-switch-input status dynamic-checkbox" id="CheckboxStatus"
@@ -130,7 +126,7 @@
                                     <ul class="nav nav-tabs mb-4 border-0">
                                         <li class="nav-item">
                                             <a class="nav-link lang_link active" href="#"
-                                               id="default-link">{{ translate('messages.default') }}</a>
+                                               id="default-link">{{ translate('Default') }}</a>
                                         </li>
                                         @foreach ($language as $lang)
                                             <li class="nav-item">
@@ -147,10 +143,10 @@
                                                 <div class="col-12">
                                                     <label for="hero_intro_title"
                                                            class="form-label">{{ translate('Title') }}
-                                                        ({{ translate('messages.default') }})
+                                                        ({{ translate('Default') }})
                                                         <span class="form-label-secondary" data-toggle="tooltip"
                                                               data-placement="right"
-                                                              data-original-title="{{ translate('Write_the_title_within_50_characters') }}">
+                                                              data-original-title="{{ translate('Character limit') }}: 50">
                                                             <i class="tio-info color-A7A7A7"></i>
                                                         </span>
                                                         <span class="form-label-secondary text-danger"
@@ -162,16 +158,16 @@
                                                            name="{{ $keyPrefix }}hero_intro_title[]"
                                                            value="{{ $hero_intro_title?->getRawOriginal('value') ?? '' }}"
                                                            class="form-control"
-                                                           placeholder="{{ translate('messages.title_here...') }}" required>
+                                                           placeholder="{{ translate('Enter title') }}" required>
                                                     <span class="text-right text-counting color-A7A7A7 d-block mt-1">0/50</span>
                                                 </div>
                                                 <div class="col-12">
                                                     <label for="hero_intro_sub_title"
                                                            class="form-label">{{ translate('Sub Title') }}
-                                                        ({{ translate('messages.default') }})
+                                                        ({{ translate('Default') }})
                                                         <span class="form-label-secondary" data-toggle="tooltip"
                                                               data-placement="right"
-                                                              data-original-title="{{ translate('Write_the_sub_title_within_150_characters') }}">
+                                                              data-original-title="{{ translate('Character limit') }}: 150">
                                                             <i class="tio-info color-A7A7A7"></i>
                                                         </span>
                                                         <span class="form-label-secondary text-danger"
@@ -181,7 +177,7 @@
                                                     </label>
                                                     <textarea id="hero_intro_sub_title" rows="3" type="text" maxlength="150"
                                                               name="{{ $keyPrefix }}hero_intro_sub_title[]" class="form-control"
-                                                              placeholder="{{ translate('messages.sub_title_here...') }}" required>{{ $hero_intro_sub_title?->getRawOriginal('value') ?? '' }}</textarea>
+                                                              placeholder="{{ translate('Enter subtitle') }}" required>{{ $hero_intro_sub_title?->getRawOriginal('value') ?? '' }}</textarea>
                                                     <span class="text-right text-counting color-A7A7A7 d-block mt-1">0/150</span>
                                                 </div>
                                             </div>
@@ -216,7 +212,7 @@
                                                             ({{ strtoupper($lang) }})
                                                             <span class="form-label-secondary" data-toggle="tooltip"
                                                                   data-placement="right"
-                                                                  data-original-title="{{ translate('Write_the_title_within_50_characters') }}">
+                                                                  data-original-title="{{ translate('Character limit') }}: 50">
                                                                 <i class="tio-info color-A7A7A7"></i>
                                                             </span>
                                                         </label>
@@ -224,7 +220,7 @@
                                                                name="{{ $keyPrefix }}hero_intro_title[]"
                                                                value="{{ $hero_intro_title_translate[$lang]['value'] ?? '' }}"
                                                                class="form-control"
-                                                               placeholder="{{ translate('messages.title_here...') }}">
+                                                               placeholder="{{ translate('Enter title') }}">
                                                         <span class="text-right text-counting color-A7A7A7 d-block mt-1">0/50</span>
                                                     </div>
                                                     <div class="col-12">
@@ -233,14 +229,14 @@
                                                             ({{ strtoupper($lang) }})
                                                             <span class="form-label-secondary" data-toggle="tooltip"
                                                                   data-placement="right"
-                                                                  data-original-title="{{ translate('Write_the_sub_title_within_150_characters') }}">
+                                                                  data-original-title="{{ translate('Character limit') }}: 150">
                                                                 <i class="tio-info color-A7A7A7"></i>
                                                             </span>
                                                         </label>
                                                         <textarea id="hero_intro_sub_title{{ $lang }}" rows="3" type="text"
                                                                   maxlength="150" name="{{ $keyPrefix }}hero_intro_sub_title[]"
                                                                   class="form-control"
-                                                                  placeholder="{{ translate('messages.sub_title_here...') }}">{{ $hero_intro_sub_title_translate[$lang]['value'] ?? '' }}</textarea>
+                                                                  placeholder="{{ translate('Enter subtitle') }}">{{ $hero_intro_sub_title_translate[$lang]['value'] ?? '' }}</textarea>
                                                         <span class="text-right text-counting color-A7A7A7 d-block mt-1">0/150</span>
                                                     </div>
                                                 </div>
@@ -256,7 +252,7 @@
                                                        name="{{ $keyPrefix }}hero_intro_title[]"
                                                        value="{{ $hero_intro_title?->getRawOriginal('value') ?? '' }}"
                                                        class="form-control"
-                                                       placeholder="{{ translate('messages.title_here...') }}" required>
+                                                       placeholder="{{ translate('Enter title') }}" required>
                                                 <span class="text-right text-counting color-A7A7A7 d-block mt-1">0/50</span>
                                             </div>
                                             <div class="mb-4">
@@ -264,7 +260,7 @@
                                                        class="form-label">{{ translate('Sub Title') }}</label>
                                                 <textarea id="hero_intro_sub_title" rows="3" type="text" maxlength="150"
                                                           name="{{ $keyPrefix }}hero_intro_sub_title[]" class="form-control"
-                                                          placeholder="{{ translate('messages.sub_title_here...') }}" required>{{ $hero_intro_sub_title?->getRawOriginal('value') ?? '' }}</textarea>
+                                                          placeholder="{{ translate('Enter subtitle') }}" required>{{ $hero_intro_sub_title?->getRawOriginal('value') ?? '' }}</textarea>
                                                 <span class="text-right text-counting color-A7A7A7 d-block mt-1">0/150</span>
                                             </div>
                                         </div>
@@ -277,12 +273,12 @@
                             <div class="bg--secondary h-100 rounded p-md-4 p-3 d-center">
                                 <div class="text-center w-100">
                                     <div class="mb-4">
-                                        <h5 class="mb-1">{{ translate('Upload Image') }}</h5>
+                                        <h5 class="mb-1">{{ translate('Upload image') }}</h5>
                                         <p class="mb-0 fs-12 gray-dark">
                                             {{ translate('Upload Hero section Image') }}
                                         </p>
                                     </div>
-                                    @include('rental::admin.partials._image-uploader', [
+                                    @include('admin-views.partials._image-uploader', [
                                         'name' => $keyPrefix.'hero_intro_image',
                                         'id' => $keyPrefix.'hero_intro_image',
                                         'ratio' => '1:1',
@@ -298,8 +294,8 @@
                         </div>
                     </div>
                     <div class="btn--container justify-content-end mt-20">
-                        <button type="reset" class="btn btn--reset mb-2">{{ translate('Reset') }}</button>
-                        <button type="submit" class="btn btn--primary mb-2">{{ translate('Save') }}</button>
+                        <button type="reset" class="btn btn--reset mb-2"><i class="tio-refresh"></i> {{ translate('Reset') }}</button>
+                        <button type="submit" class="btn btn--primary mb-2"><i class="tio-save"></i> {{ translate('Save') }}</button>
                     </div>
                 </div>
             </form>
@@ -360,10 +356,10 @@
                                 <div class="bg--secondary h-100 rounded p-4 mb-20">
                                     <div class="text-center py-1">
                                         <div class="mb-4">
-                                            <h5 class="mb-1">{{ translate('Upload Image') }}</h5>
+                                            <h5 class="mb-1">{{ translate('Upload image') }}</h5>
                                             <p class="mb-0 fs-12 gray-dark">{{ translate('Upload') }} {{ $cardLabel }} {{ translate('Card Image') }}</p>
                                         </div>
-                                        @include('rental::admin.partials._image-uploader', [
+                                        @include('admin-views.partials._image-uploader', [
                                             'name' => $keyPrefix.'hero_point_image_card_' . $i,
                                             'id' => $keyPrefix.'hero_point_image_card_' . $i,
                                             'ratio' => '1:1',
@@ -382,7 +378,7 @@
                                         <ul class="nav nav-tabs mb-4 border-bottom">
                                             <li class="nav-item">
                                                 <a class="nav-link lang_link active" href="#"
-                                                   id="default-link">{{ translate('messages.default') }}</a>
+                                                   id="default-link">{{ translate('Default') }}</a>
                                             </li>
                                             @foreach ($language as $lang)
                                                 <li class="nav-item">
@@ -396,10 +392,10 @@
                                             <div class="row g-1">
                                                 <div class="col-sm-12">
                                                     <label for="hero_point_title_card_{{ $i }}">{{ translate('Title') }}
-                                                        ({{ translate('messages.default') }})
+                                                        ({{ translate('Default') }})
                                                         <span class="form-label-secondary" data-toggle="tooltip"
                                                               data-placement="right"
-                                                              data-original-title="{{ translate('Write_the_title_within_20_characters') }}">
+                                                              data-original-title="{{ translate('Character limit') }}: 20">
                                                             <i class="tio-info color-A7A7A7"></i>
                                                         </span>
                                                         <span class="form-label-secondary text-danger"
@@ -411,7 +407,7 @@
                                                            name="{{ $keyPrefix }}hero_point_title_card_{{ $i }}[]"
                                                            class="form-control"
                                                            value="{{ $point_title?->getRawOriginal('value') ?? '' }}"
-                                                           placeholder="{{ translate('messages.title_here...') }}" required>
+                                                           placeholder="{{ translate('Enter title') }}" required>
                                                     <span class="text-right text-counting color-A7A7A7 d-block mt-1">0/20</span>
                                                 </div>
                                             </div>
@@ -437,7 +433,7 @@
                                                             ({{ strtoupper($lang) }})
                                                             <span class="form-label-secondary" data-toggle="tooltip"
                                                                   data-placement="right"
-                                                                  data-original-title="{{ translate('Write_the_title_within_20_characters') }}">
+                                                                  data-original-title="{{ translate('Character limit') }}: 20">
                                                                 <i class="tio-info color-A7A7A7"></i>
                                                             </span>
                                                         </label>
@@ -446,7 +442,7 @@
                                                                name="{{ $keyPrefix }}hero_point_title_card_{{ $i }}[]"
                                                                value="{{ $point_title_translate[$lang]['value'] ?? '' }}"
                                                                class="form-control"
-                                                               placeholder="{{ translate('messages.title_here...') }}">
+                                                               placeholder="{{ translate('Enter title') }}">
                                                         <span class="text-right text-counting color-A7A7A7 d-block mt-1">0/20</span>
                                                     </div>
                                                 </div>
@@ -460,7 +456,7 @@
                                                 <input id="hero_point_title_card_{{ $i }}" type="text" maxlength="20"
                                                        name="{{ $keyPrefix }}hero_point_title_card_{{ $i }}[]" class="form-control"
                                                        value="{{ $point_title?->getRawOriginal('value') ?? '' }}"
-                                                       placeholder="{{ translate('messages.title_here...') }}" required>
+                                                       placeholder="{{ translate('Enter title') }}" required>
                                                 <span class="text-right text-counting color-A7A7A7 d-block mt-1">0/20</span>
                                             </div>
                                         </div>
@@ -468,8 +464,8 @@
                                     @endif
                                 </div>
                                 <div class="btn--container justify-content-end mt-20">
-                                    <button type="reset" class="btn btn--reset mb-2">{{ translate('Reset') }}</button>
-                                    <button type="submit" class="btn btn--primary mb-2">{{ translate('Save') }}</button>
+                                    <button type="reset" class="btn btn--reset mb-2"><i class="tio-refresh"></i> {{ translate('Reset') }}</button>
+                                    <button type="submit" class="btn btn--primary mb-2"><i class="tio-save"></i> {{ translate('Save') }}</button>
                                 </div>
                             </div>
                         </div>
@@ -525,7 +521,7 @@
 
     $previewRoles = [
         'customer' => ['label' => translate("I'm a Customer"), 'data' => $buildPreviewRoleData('')],
-        'rider'    => ['label' => translate("I'am a Rider"),   'data' => $buildPreviewRoleData('rider_')],
+        'rider'    => ['label' => translate("I'm a Rider"),   'data' => $buildPreviewRoleData('rider_')],
     ];
     ?>
 

@@ -1,6 +1,6 @@
 @extends('layouts.admin.app')
 
-@section('title',translate('messages.Create_Reels'))
+@section('title',translate('Create reels'))
 
 @push('css_or_js')
 <meta name="csrf-token" content="{{ csrf_token() }}">
@@ -12,7 +12,7 @@
 @section('content')
 <div class="content container-fluid">
     <h2 class="fs-20 text-capitalize lh-1 mb-20">
-        {{ translate('Create_Reels') }}
+        {{ translate('Create reels') }}
     </h2>
     <form action="">
         <div class="card card-body mb-20">
@@ -21,12 +21,12 @@
                     <div class="bg-light p-3 p-xxl-4 rounded mb-20">
                         <label class="form-label" for="">
                             {{ translate('Store') }}
-                            <span class="input-label-secondary m-0" title="" data-toggle="tooltip" data-title="{{ translate('Select_Store') }}">
+                            <span class="input-label-secondary m-0" title="" data-toggle="tooltip" data-title="{{ translate('Select store') }}">
                                 <i class="tio-info"></i>
                             </span>
                         </label>
                         <select class="form-control w-100 js-select2-custom store-select" name="">
-                            <option value="" selected disabled>{{ translate('Select_Store') }}</option>
+                            <option value="" selected disabled>{{ translate('Select store') }}</option>
                             <option value="">Abc Store</option>
                         </select>
                     </div>
@@ -48,41 +48,41 @@
 
                         <div class="row align-items-end">
                             <div class="col-md-12 lang_form default-form">
-                                <label for="reels_des" class="form-label">{{ translate('Short_Description') }} (Default)
+                                <label for="reels_des" class="form-label">{{ translate('Short description') }} (Default)
                                     <span class="form-label-secondary" data-toggle="tooltip" data-placement="right"
-                                        data-title="{{ translate('Enter_the_short_decscription') }}">
+                                        data-title="{{ translate('Enter the short decscription') }}">
                                         <i class="tio-info text-muted"></i>
                                     </span>
                                 </label>
                                 <textarea id="reels_des" type="text" class="form-control reel-des-textarea" rows="1" maxlength="200" name="reels_des[]"
-                                    placeholder="{{ translate('write short description') }}"></textarea>
+                                    placeholder="{{ translate('Write a short description') }}"></textarea>
                                 <span class="text-right text-counting color-A7A7A7 d-block mt-1">0/200</span>
                                 <input type="hidden" name="lang[]" value="default">
                             </div>
                             <div class="col-md-12 d-none lang_form" id="en-form">
-                                <label for="reels_desen" class="form-label">{{ translate('Short_Description') }} (EN)
+                                <label for="reels_desen" class="form-label">{{ translate('Short description') }} (EN)
 
                                 </label>
                                 <textarea id="reels_desen" type="text" class="form-control reel-des-textarea" rows="1" maxlength="200" name="reels_des[]"
-                                    placeholder="{{ translate('write short description') }}"></textarea>
+                                    placeholder="{{ translate('Write a short description') }}"></textarea>
                                 <span class="text-right text-counting color-A7A7A7 d-block mt-1">0/200</span>
                                 <input type="hidden" name="lang[]" value="en">
                             </div>
                             <div class="col-md-12 d-none lang_form" id="ar-form">
-                                <label for="reels_desar" class="form-label">{{ translate('Short_Description') }} (AR)
+                                <label for="reels_desar" class="form-label">{{ translate('Short description') }} (AR)
 
                                 </label>
                                 <textarea id="reels_desar" type="text" class="form-control reel-des-textarea" rows="1" maxlength="200" name="reels_des[]"
-                                    placeholder="{{ translate('write short description') }}"></textarea>
+                                    placeholder="{{ translate('Write a short description') }}"></textarea>
                                 <span class="text-right text-counting color-A7A7A7 d-block mt-1">0/200</span>
                                 <input type="hidden" name="lang[]" value="ar">
                             </div>
                             <div class="col-md-12 d-none lang_form" id="bn-form">
-                                <label for="reels_desbn" class="form-label">{{ translate('Short_Description') }} (BN)
+                                <label for="reels_desbn" class="form-label">{{ translate('Short description') }} (BN)
 
                                 </label>
                                 <textarea id="reels_desbn" type="text" class="form-control reel-des-textarea" rows="1" maxlength="200" name="reels_des[]"
-                                    placeholder="{{ translate('write short description') }}"></textarea>
+                                    placeholder="{{ translate('Write a short description') }}"></textarea>
                                 <span class="text-right text-counting color-A7A7A7 d-block mt-1">0/200</span>
                                 <input type="hidden" name="lang[]" value="bn">
                             </div>
@@ -91,11 +91,10 @@
                     <div class="bg-light p-3 p-xxl-4 rounded mb-20">
                         <div class="row g-4">
 
-                            <!-- Thumbnail Upload -->
                             <div class="col-lg-6">
                                 <div class="reel-upload-box-wrapper text-center">
                                     <label class="form-label fs-12 text-muted mb-20">
-                                        {{ translate('Upload Thumbnail Image') }}
+                                        {{ translate('Upload thumbnail image') }}
                                     </label>
     
                                     <div class="reel-upload-box" 
@@ -122,14 +121,13 @@
                                     </div>
 
                                     <p class="mt-3">
-                                        {{ translate('JPG, JPEG, PNG Image') }}
+                                        JPG, JPEG, PNG Image
                                         <br>
-                                        {{ translate('Size : Max 2 MB (9:16 )') }}
+                                        Size: Max 2 MB (9:16 Recommended)
                                     </p>
                                 </div>
                             </div>
 
-                            <!-- Video Upload -->
                             <div class="col-lg-6">
                                 <div class="reel-upload-box-wrapper text-center">
                                     <label class="form-label fs-12 text-muted mb-3">
@@ -145,7 +143,7 @@
                                         <div class="upload-placeholder text-center">
                                             <img src="{{ asset('public/assets/admin/img/reels/video-icon.png') }}" alt="">
                                             <div>
-                                                <span class="text-info">{{ translate('Add Video') }}</span>
+                                                <span class="text-info">{{ translate('Add video') }}</span>
                                             </div>
                                         </div>
     
@@ -167,9 +165,9 @@
                                     </div>
 
                                     <p class="mt-3">
-                                        {{ translate('Mp4, MOV, 3GP, GIF') }}
+                                        Mp4, MOV, 3GP, GIF
                                         <br>
-                                        {{ translate('Size: video 15 MB (9:16 Recommended)') }}
+                                        Size: Max 15 MB (9:16 Recommended)
                                     </p>
                                 </div>
                             </div>
@@ -179,13 +177,13 @@
                     <div class="bg-light p-3 p-xxl-4 rounded"> 
                         <div class="d-flex gap-2 justify-content-between flex-wrap mb-2">
                             <label class="form-label mb-0" for="">
-                                {{ translate('Store_Validity') }}
-                                <span class="input-label-secondary m-0" title="" data-toggle="tooltip" data-title="{{ translate('Select_Store_Validity') }}">
+                                {{ translate('Store Validity') }}
+                                <span class="input-label-secondary m-0" title="" data-toggle="tooltip" data-title="{{ translate('Select Store Validity') }}">
                                     <i class="tio-info"></i>
                                 </span>
                             </label>
                             <label for="" class="form-label d-flex gap-2 align-items-center mb-0">
-                                {{ translate('Always Visible to Customers') }}
+                                {{ translate('Always visible to customers') }}
                                 <input type="checkbox">
                             </label>
                         </div>
@@ -193,13 +191,13 @@
                             <i class="tio-calendar fs-16 icon-absolute-on-right"></i>
                             <input type="text"
                                 class="form-control h-45 position-relative bg-transparent" name="dates" min="{{date('Y-m-d',strtotime(now()))}}"
-                                value="{{ old('dates') }}" placeholder="{{ translate('messages.select_reels_duration') }}" required autocomplete="off">
+                                value="{{ old('dates') }}" placeholder="{{ translate('messages.Select reels duration') }}" required autocomplete="off">
                         </div>
                     </div>
                 </div>
                 <div class="col-lg-4">
                     <div class="bg-light p-3 p-xxl-4 rounded">
-                        <h4 class="fw-medium mb-3">{{ translate('Reel_Preview') }}</h4>
+                        <h4 class="fw-medium mb-3">{{ translate('Reel preview') }}</h4>
                         <div class="reel-preview-box">
                             <video src="" controls class="reels-video"></video>
                             <div class="reel-overlay">
@@ -228,8 +226,8 @@
             </div>
         </div>
         <div class="btn--container justify-content-end">
-            <button type="reset" id="resetBtn" class="btn btn--reset min-w-120">{{ translate('Reset') }}</button>
-            <button type="submit" class="btn btn-primary min-w-120">{{ translate('Filter') }}</button>
+            <button type="reset" id="resetBtn" class="btn btn--reset min-w-120"><i class="tio-refresh"></i> {{ translate('Reset') }}</button>
+            <button type="submit" class="btn btn-primary min-w-120"><i class="tio-filter-list"></i> {{ translate('Filter') }}</button>
         </div>
     </form>
 </div>

@@ -10,18 +10,44 @@ let searchMarkers = [];
 
 document.getElementById('outOfZone').style.setProperty("display", "none", "important");
 
+// The last address the picker wrote into the form. Seeded with the stored address so the very
+// first pick can still recognise untouched language tabs as stale copies of it.
+let lastPickedAddress = null;
+
 function setAddressFromLatLng(latlng) {
     if (!geocoder) return;
     geocoder.geocode({ location: latlng }, function (results, status) {
         if (status === 'OK' && results[0]) {
             const addr = results[0].formatted_address;
-            const visibleAddress = document.querySelector('.lang_form:not(.d-none) textarea[name="address[]"]');
-            if (visibleAddress) {
-                visibleAddress.value = addr;
+            const langAddresses = document.querySelectorAll('textarea[name="address[]"]');
+
+            if (langAddresses.length) {
+                const visibleAddress = document.querySelector('.lang_form:not(.d-none) textarea[name="address[]"]');
+                // Whatever the visible tab held before this pick — the other tabs still showing it
+                // are untouched copies, not hand-written translations.
+                const staleValues = [
+                    visibleAddress ? visibleAddress.value : null,
+                    lastPickedAddress,
+                    window.mapConfig ? window.mapConfig.oldAddress : null,
+                ].filter(Boolean).map(value => value.trim());
+
+                langAddresses.forEach(function (field) {
+                    const value = field.value.trim();
+                    // Keep a manually translated address; only overwrite the visible tab, empty
+                    // tabs, and tabs that merely mirror the address being replaced. Otherwise the
+                    // stale copy is saved back over the translation and the panel keeps showing
+                    // the old address.
+                    if (field === visibleAddress || value === '' || staleValues.includes(value)) {
+                        field.value = addr;
+                    }
+                });
             } else {
                 const addressEl = document.getElementById('address');
                 if (addressEl) addressEl.value = addr;
             }
+
+            lastPickedAddress = addr;
+
             const pacInput = document.getElementById('pac-input');
             if (pacInput) pacInput.value = addr;
         }
@@ -210,7 +236,16 @@ function initMap() {
                 bounds.extend(place.geometry.location);
             }
         });
-        map.fitBounds(bounds);
+        if (first && first.geometry) {
+            if (first.geometry.viewport) {
+                map.fitBounds(first.geometry.viewport);
+            } else {
+                map.setCenter(first.geometry.location);
+                map.setZoom(17);
+            }
+        } else {
+            map.fitBounds(bounds);
+        }
     });
 }
 
@@ -425,6 +460,12 @@ function loadModuleType(moduleId) {
                 $('.multiple-select2').prop('disabled', false);
                 $('.module-select-time').html(
                     estimatedPickupText
+                );
+            } else if (response.module_type === 'service') {
+                $('#pickup-zone-container').hide();
+                $('.multiple-select2').prop('disabled', true);
+                $('.module-select-time').html(
+                    approxServiceText
                 );
             } else {
                 $('#pickup-zone-container').hide();

@@ -30,24 +30,17 @@ class ZoneRepository implements ZoneRepositoryInterface
         return $this->zone->with($relations)->where($params)->first();
     }
 
-    public function getList(array $orderBy = [], array $relations = [], int|string $dataLimit = DEFAULT_DATA_LIMIT, int $offset = null): Collection|LengthAwarePaginator
+    public function getList(array $orderBy = [], array $relations = [], int|string $dataLimit = DEFAULT_DATA_LIMIT, ?int $offset = null): Collection|LengthAwarePaginator
     {
         return $this->zone->with($relations)->get();
     }
 
-    public function getListWhere(string $searchValue = null, array $filters = [], array $relations = [], int|string $dataLimit = DEFAULT_DATA_LIMIT, int $offset = null): Collection|LengthAwarePaginator
+    public function getListWhere(?string $searchValue = null, array $filters = [], array $relations = [], int|string $dataLimit = DEFAULT_DATA_LIMIT, ?int $offset = null): Collection|LengthAwarePaginator
     {
-        $key = explode(' ', $searchValue);
-
+        // One scope for the list and the export, so a search cannot return one set on screen and
+        // a different set in the downloaded file (QA cases TC_152 and TC_156).
         return $this->zone->withCount(['stores','deliverymen'])
-
-            ->when(isset($key) , function($q) use($key){
-                $q->where(function ($q) use ($key) {
-                    foreach ($key as $value) {
-                        $q->orWhere('name', 'like', "%{$value}%");
-                    }
-                });
-            })
+            ->matchingSearch($searchValue)
             ->with($relations)
             ->latest()->paginate($dataLimit);
     }
@@ -73,7 +66,7 @@ class ZoneRepository implements ZoneRepositoryInterface
 
     public function getFirstWithoutGlobalScopeWhere(array $params, array $relations = []): ?Model
     {
-        return $this->zone->withoutGlobalScope('translate')->where($params)->first();
+        return $this->zone->with($relations)->withoutGlobalScope('translate')->with('translations')->where($params)->first();
     }
 
     public function getAll(): Collection
@@ -88,15 +81,8 @@ class ZoneRepository implements ZoneRepositoryInterface
 
     public function getExportList(Request $request): Collection
     {
-        $key = explode(' ', $request['search']);
         return $this->zone->withCount(['stores','deliverymen'])
-            ->when(isset($key) , function($q) use($key){
-                $q->where(function ($q) use ($key) {
-                    foreach ($key as $value) {
-                        $q->orWhere('name', 'like', "%{$value}%");
-                    }
-                });
-            })
+            ->matchingSearch($request['search'] ?? null)
             ->get();
     }
 
@@ -116,9 +102,11 @@ class ZoneRepository implements ZoneRepositoryInterface
         return $zone;
     }
 
-    public function getWithCountLatest(array $relations = [], int|string $dataLimit = DEFAULT_DATA_LIMIT, int $offset = null): Collection|LengthAwarePaginator
+    public function getWithCountLatest(array $relations = [], int|string $dataLimit = DEFAULT_DATA_LIMIT, ?int $offset = null): Collection|LengthAwarePaginator
     {
-        return $this->zone->withCount($relations)->latest()->paginate($dataLimit);
+        $countRelations = array_unique(array_map(fn ($relation) => explode('.', $relation)[0], $relations));
+
+        return $this->zone->with($relations)->with(array_merge($relations, ['modules']))->withCount($countRelations)->latest()->paginate($dataLimit);
     }
 
     public function getActiveListExcept(array $params): Collection

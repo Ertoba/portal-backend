@@ -10,29 +10,27 @@
         @csrf
         <div class="custom-offcanvas-body p-20 overflow-auto flex-grow-1">
 
-                {{-- Plan Type --}}
                 <div class="bg-light2 p-xl-20 p-3 rounded mb-20">
-                    <p class="fs-14 fw-500 text-dark mb-3">{{ translate('Subscription Plan') }}</p>
+                    <p class="fs-14 fw-500 text-dark mb-3">{{ translate('Subscription plan') }}</p>
                     <div class="resturant-type-group module_select-area w-100 flex-sm-nowrap flex-wrap gap-2 border bg-white">
                         <label class="form-check form--check w-100" for="plan-type-paid-create">
                             <input class="form-check-input pro-plan-type" type="radio" name="plan_type" id="plan-type-paid-create" value="paid" checked>
-                            <span class="form-check-label">{{ translate('messages.Paid') }}</span>
+                            <span class="form-check-label">{{ translate('messages.paid') }}</span>
                         </label>
                         <label class="form-check form--check w-100" for="plan-type-free-create">
                             <input class="form-check-input pro-plan-type" type="radio" name="plan_type" id="plan-type-free-create" value="free_trial">
-                            <span class="form-check-label">{{ translate('messages.Free_Trial') }}</span>
+                            <span class="form-check-label">{{ translate('Free trial') }}</span>
                         </label>
                     </div>
 
                 </div>
 
-                {{-- Plan Name --}}
                 <div class="bg-light2 p-xl-20 p-3 rounded mb-20">
                     @if($language ?? null)
                         <div class="js-nav-scroller hs-nav-scroller-horizontal">
                             <ul class="nav nav-tabs mb-4">
                                 <li class="nav-item">
-                                    <a class="nav-link lang_link active" href="#" id="default-link-plan-create">{{ translate('messages.Default') }}</a>
+                                    <a class="nav-link lang_link active" href="#" id="default-link-plan-create">{{ translate('Default') }}</a>
                                 </li>
                                 @foreach($language as $lang)
                                     <li class="nav-item">
@@ -49,12 +47,12 @@
                     <div class="lang_form" id="default-form-plan-create">
                         <div class="form-group mb-0">
                             <label class="input-label fw-400 text-capitalize">
-                                {{ translate('messages.Plan_Name') }} ({{ translate('messages.Default') }})
+                                {{ translate('Plan name') }} ({{ translate('Default') }})
                                 <span class="text-danger">*</span>
                             </label>
                             <input type="text" name="plan_name[]" maxlength="70"
                                 class="form-control plan-name-default"
-                                placeholder="{{ translate('messages.Ex:_Monthly_Plan') }}">
+                                placeholder="{{ translate('messages.Ex') . ': Monthly Plan' }}">
                             <div class="d-flex justify-content-end">
                                 <span class="text-body-light d-block mt-1 pro-plan-name-counter">0 / 70</span>
                             </div>
@@ -67,12 +65,12 @@
                             <div class="d-none lang_form" id="{{ $lang }}-form-plan-create">
                                 <div class="form-group mb-0">
                                     <label class="input-label fw-400 text-capitalize">
-                                        {{ translate('messages.Plan_Name') }} ({{ strtoupper($lang) }})
+                                        {{ translate('Plan name') }} ({{ strtoupper($lang) }})
                                     </label>
                                     <input type="text" name="plan_name[]" maxlength="70"
                                         data-locale="{{ $lang }}"
                                         class="form-control plan-name-lang"
-                                        placeholder="{{ translate('messages.Ex:_Monthly_Plan') }}">
+                                        placeholder="{{ translate('messages.Ex') . ': Monthly Plan' }}">
                                     <div class="d-flex justify-content-end">
                                         <span class="text-body-light d-block mt-1 pro-plan-name-counter">0 / 70</span>
                                     </div>
@@ -82,30 +80,29 @@
                     @endif
                 </div>
 
-                {{-- Price & Duration --}}
                 <div class="bg-light2 p-xl-20 p-3 rounded">
                     <div class="row g-3">
                         <div class="col-12">
                             <div class="form-group mb-0">
                                 <label class="input-label fw-400 text-capitalize">
-                                    {{ translate('messages.Plan Price') }}
+                                    {{ translate('Plan price') }}
                                     <span class="text-danger">*</span>
                                 </label>
                                 <input type="number" name="price" min="0"
                                     step="{{ \App\CentralLogics\Helpers::getDecimalPlaces() }}"
                                     class="form-control"
-                                    placeholder="{{ translate('messages.Ex:_9.99') }}" required>
+                                    placeholder="{{ translate('messages.Ex') . ': 9.99' }}" required>
                             </div>
                         </div>
                         <div class="col-12">
                             <div class="form-group mb-0">
                                 <label class="input-label fw-400 text-capitalize">
-                                    {{ translate('messages.Duration_days') }}
+                                    {{ translate('messages.Duration days') }}
                                     <span class="text-danger">*</span>
                                 </label>
                                 <input type="number" name="duration" min="1" max="3650"
                                     class="form-control"
-                                    placeholder="{{ translate('messages.Ex:_30') }}" required>
+                                    placeholder="{{ translate('messages.Ex') . ': 30' }}" required>
                             </div>
                         </div>
                     </div>
@@ -113,8 +110,8 @@
             </div>
 
         <div class="align-items-center bg-white d-flex gap-3 justify-content-center offcanvas-footer p-3 flex-shrink-0 border-top">
-            <button type="button" class="btn w-100 btn--reset offcanvas-close text-capitalize">{{ translate('messages.Cancel') }}</button>
-            <button type="submit" class="btn w-100 btn--primary text-capitalize">{{ translate('messages.Add') }}</button>
+            <button type="button" class="btn w-100 btn--reset offcanvas-close text-capitalize"><i class="tio-clear-circle-outlined"></i> {{ translate('messages.Cancel') }}</button>
+            <button type="submit" class="btn w-100 btn--primary text-capitalize"><i class="tio-add-circle"></i> {{ translate('Add') }}</button>
         </div>
     </form>
 </div>

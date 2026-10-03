@@ -29,6 +29,14 @@ interface CategoryRepositoryInterface extends RepositoryInterface
     public function getBulkExportList(CategoryBulkExportRequest $request): Collection;
 
     /**
+     * Row count, id bounds and created_at bounds for the current module, so the
+     * export and import forms can show the ranges they accept.
+     *
+     * @return array
+     */
+    public function getBulkDataSummary(): array;
+
+    /**
      * @param Request $request
      * @return Collection
      */
@@ -54,7 +62,8 @@ interface CategoryRepositoryInterface extends RepositoryInterface
      * @param array $relations
      * @param int|string $dataLimit
      * @param int|null $offset
+     * @param bool $withStorage
      * @return Collection|LengthAwarePaginator
      */
-    public function getMainList(string $searchValue = null, array $filters = [], array $relations = [], int|string $dataLimit = DEFAULT_DATA_LIMIT, int $offset = null): Collection|LengthAwarePaginator;
+    public function getMainList(?string $searchValue = null, array $filters = [], array $relations = [], int|string $dataLimit = DEFAULT_DATA_LIMIT, ?int $offset = null, bool $withStorage = true): Collection|LengthAwarePaginator;
 }

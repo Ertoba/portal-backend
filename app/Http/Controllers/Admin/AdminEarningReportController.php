@@ -10,14 +10,16 @@ use App\Models\SubscriptionTransaction;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use App\Traits\ReportGeneratorTrait;
+use App\Traits\Report\ReportGeneratorTrait;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\AdminEarningTransactionExport;
 use App\Exports\DeliverymanEarningTransactionExport;
 
 class AdminEarningReportController extends Controller
 {
-    use ReportGeneratorTrait;
+    use ReportGeneratorTrait {
+        getDeliveryManEarningTransactions as generateDeliveryManEarningTransactions;
+    }
 
     private function resolveModuleId(Request $request): string
     {
@@ -109,7 +111,6 @@ class AdminEarningReportController extends Controller
         $order_types = $this->normalizeOrderTypes($request->query('order_types', $request->query('order_type', ['take_away', 'delivery'])));
         $include_subscription = $this->shouldIncludeSubscription($order_types);
 
-        // require admin expense total for percentage calculations
         $summary = $this->buildAdminEarningSummary(
             filter: $filter,
             from: $from,
@@ -184,7 +185,6 @@ class AdminEarningReportController extends Controller
             } elseif ($diffDays > 31) {
                 $dateFormat = '%Y-%m';
                 $temp = $start->copy()->startOfMonth();
-                // Ensure to cover the full range of months
                 while ($temp->format('Y-m') <= $end->format('Y-m')) {
                     $months->push($temp->format('Y-m'));
                     $temp->addMonth();
@@ -224,7 +224,6 @@ class AdminEarningReportController extends Controller
             ->orderBy('month')
             ->pluck('total_earning', 'month');
 
-        // subscriptions
         $subscriptionQuery = collect();
         if ($include_subscription) {
             $subscriptionBaseQuery = SubscriptionTransaction::where('is_trial', 0)
@@ -244,7 +243,6 @@ class AdminEarningReportController extends Controller
                 ->pluck('total_sub_earning', 'month');
         }
 
-        // pro customer subscriptions
         $proCustomerQuery = collect();
         if ($include_pro_customer) {
             $proCustomerQuery = ProCustomerTransaction::where('payment_status', 'success')
@@ -258,7 +256,7 @@ class AdminEarningReportController extends Controller
         }
 
 
-        $expenseBaseQuery = Expense::withoutAddon()->where('created_by', 'admin');
+        $expenseBaseQuery = Expense::withoutAddon()->notRefunded()->where('created_by', 'admin');
         $expenseBaseQuery = $this->moduleAndOrderTypeFilter(
             query: $expenseBaseQuery,
             module_id: $module_id,
@@ -559,12 +557,12 @@ class AdminEarningReportController extends Controller
         $order_types = $this->normalizeOrderTypes($request->query('order_types', $request->query('order_type', ['take_away', 'delivery'])));
         $include_subscription = $this->shouldIncludeSubscription($order_types);
         $include_pro_customer = $this->shouldIncludeProCustomer($order_types, $module_id);
-        $type = $request->query('type', 'order'); // 'order', 'subscription', 'pro_customer', 'expense'
+        $type = $request->query('type', 'order');
 
         if ($type === 'subscription' && !$include_subscription) {
             $transactions = collect();
         } elseif ($type === 'subscription') {
-            $transactions = $this->get_subscription_earning_transactions(
+            $transactions = $this->getSubscriptionEarningTransactions(
                 request: $request,
                 filter: $filter,
                 from: $from,
@@ -575,7 +573,7 @@ class AdminEarningReportController extends Controller
         } elseif ($type === 'pro_customer' && !$include_pro_customer) {
             $transactions = collect();
         } elseif ($type === 'pro_customer') {
-            $transactions = $this->get_pro_customer_subscription_transactions(
+            $transactions = $this->getProCustomerSubscriptionTransactions(
                 request: $request,
                 filter: $filter,
                 from: $from,
@@ -583,7 +581,7 @@ class AdminEarningReportController extends Controller
                 nopaginate: false
             );
         } elseif ($type === 'expense') {
-            $transactions = $this->get_expense_transactions(
+            $transactions = $this->getExpenseTransactions(
                 request: $request,
                 filter: $filter,
                 from: $from,
@@ -593,7 +591,7 @@ class AdminEarningReportController extends Controller
                 order_types: $order_types
             );
         } else {
-            $transactions = $this->get_order_earning_transactions(
+            $transactions = $this->getOrderEarningTransactions(
                 request: $request,
                 filter: $filter,
                 from: $from,
@@ -621,8 +619,7 @@ class AdminEarningReportController extends Controller
         $delivery_man_id = $request->query('delivery_man_id', 'all');
         $type = 'order';
         $order_types = $this->normalizeOrderTypes($request->query('order_types', $request->query('order_type', ['take_away', 'delivery'])));
-        // $order_types = 'all';
-        $transactions = $this->get_deliveryman_earning_transactions(
+        $transactions = $this->generateDeliveryManEarningTransactions(
             request: $request,
             delivery_man_id: $delivery_man_id,
             filter: $filter,
@@ -647,14 +644,14 @@ class AdminEarningReportController extends Controller
         $order_types = $this->normalizeOrderTypes($request->query('order_types', $request->query('order_type', ['take_away', 'delivery'])));
         $include_subscription = $this->shouldIncludeSubscription($order_types);
         $include_pro_customer = $this->shouldIncludeProCustomer($order_types, $module_id);
-        $type = $request->query('type', 'order'); // 'order', 'subscription', 'pro_customer', 'expense'
+        $type = $request->query('type', 'order');
         $export_type = $request->query('export_type', 'excel');
 
         if ($type === 'subscription' && !$include_subscription) {
             $transactions = collect();
             $title = 'Subscription_Earning_Report';
         } elseif ($type === 'subscription') {
-            $transactions = $this->get_subscription_earning_transactions(
+            $transactions = $this->getSubscriptionEarningTransactions(
                 request: $request,
                 filter: $filter,
                 from: $from,
@@ -667,7 +664,7 @@ class AdminEarningReportController extends Controller
             $transactions = collect();
             $title = 'Pro_Customer_Subscription_Report';
         } elseif ($type === 'pro_customer') {
-            $transactions = $this->get_pro_customer_subscription_transactions(
+            $transactions = $this->getProCustomerSubscriptionTransactions(
                 request: $request,
                 filter: $filter,
                 from: $from,
@@ -676,7 +673,7 @@ class AdminEarningReportController extends Controller
             );
             $title = 'Pro_Customer_Subscription_Report';
         } elseif ($type === 'expense') {
-            $transactions = $this->get_expense_transactions(
+            $transactions = $this->getExpenseTransactions(
                 request: $request,
                 filter: $filter,
                 from: $from,
@@ -687,7 +684,7 @@ class AdminEarningReportController extends Controller
             );
             $title = 'Admin_Expense_Report';
         } else {
-            $transactions = $this->get_order_earning_transactions(
+            $transactions = $this->getOrderEarningTransactions(
                 request: $request,
                 filter: $filter,
                 from: $from,
@@ -722,7 +719,7 @@ class AdminEarningReportController extends Controller
         $export_type = $request->query('export_type', 'excel');
         $type = 'order';
         $order_types = $this->normalizeOrderTypes($request->query('order_types', $request->query('order_type', ['take_away', 'delivery'])));
-        $transactions = $this->get_deliveryman_earning_transactions(
+        $transactions = $this->generateDeliveryManEarningTransactions(
             request: $request,
             delivery_man_id: $delivery_man_id,
             filter: $filter,

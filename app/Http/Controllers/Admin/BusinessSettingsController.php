@@ -2,7 +2,12 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Rules\EmailAddress;
+use App\Support\Notification\Fcm\WebPushServiceWorker;
+use App\Rules\ImageFile;
 use App\CentralLogics\Helpers;
+use App\Services\System\DistanceService;
+use App\Services\System\MeasurementUnitService;
 use App\Http\Controllers\Controller;
 use App\Models\AdminFeature;
 use App\Models\AdminPromotionalBanner;
@@ -10,7 +15,6 @@ use App\Models\AdminSpecialCriteria;
 use App\Models\AdminTestimonial;
 use App\Models\AutomatedMessage;
 use App\Models\BusinessSetting;
-use App\Models\Currency;
 use App\Models\DataSetting;
 use App\Models\FAQ;
 use App\Models\EcommerceItemDetails;
@@ -27,33 +31,38 @@ use App\Models\ReactPromotionalBanner;
 use App\Models\ReactTestimonial;
 use App\Models\RefundReason;
 use App\Models\Setting;
+use App\Services\Payment\SettingService;
+use App\Services\System\DataSettingService;
 use App\Models\Store;
 use App\Models\StoreSubscription;
 use App\Models\TempProduct;
 use App\Models\Translation;
-use App\Traits\Processor;
+use App\Traits\System\ProcessorTrait;
 use Brian2694\Toastr\Facades\Toastr;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
+use App\Support\Cache\ApiCache;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Throwable;
+use App\Support\Notification\SendNotification;
+use App\Support\Promotion\BundleSettings;
+use Illuminate\Support\Facades\Log;
 
 class BusinessSettingsController extends Controller
 {
-    use Processor;
+    use ProcessorTrait;
 
     public function business_index(Request $request, string $tab = 'business')
 {
     if (!Helpers::module_permission_check('settings')) {
-        Toastr::error(translate('messages.access_denied'));
+        Toastr::error(translate('messages.Access denied'));
         return back();
     }
 
@@ -64,7 +73,17 @@ class BusinessSettingsController extends Controller
 
     switch ($tab) {
         case 'business':
-            return view('admin-views.business-settings.settings.business-index');
+            // The three measurement units. Read-only here — the form saves them with the rest
+            // of Business Info, and nothing is converted, so there is no preview to prepare.
+            $distanceUnit = app(DistanceService::class)->unit();
+            $measurementService = app(MeasurementUnitService::class);
+            $weightUnit = $measurementService->weightUnit();
+            $dimensionUnit = $measurementService->dimensionUnit();
+
+            return view(
+                'admin-views.business-settings.settings.business-index',
+                compact('distanceUnit', 'weightUnit', 'dimensionUnit')
+            );
 
         case 'customer':
             $keys = [
@@ -88,9 +107,7 @@ class BusinessSettingsController extends Controller
                 'customer_personalization_status',
             ];
 
-            $data = BusinessSetting::whereIn('key', $keys)
-                ->pluck('value', 'key')
-                ->toArray();
+            $data = Helpers::get_business_settings_many($keys);
 
             return view('admin-views.business-settings.settings.customer-index', compact('data'));
 
@@ -102,17 +119,17 @@ class BusinessSettingsController extends Controller
             $offline_payment_methods_count = \App\Models\OfflinePaymentMethod::where('status', 1)->count();
             $cash_on_delivery_status = optional(
                 json_decode(
-                    BusinessSetting::where('key', 'cash_on_delivery')->value('value'),
+                    Helpers::get_business_settings('cash_on_delivery', false),
                     true
                 )
             )['status'] ?? null;
             $digital_payment_status = optional(
                 json_decode(
-                    BusinessSetting::where('key', 'digital_payment')->value('value'),
+                    Helpers::get_business_settings('digital_payment', false),
                     true
                 )
             )['status'] ?? null;
-            $offline_payment_status = BusinessSetting::where('key', 'offline_payment_status')->first()->value;
+            $offline_payment_status = Helpers::get_business_settings('offline_payment_status', false);
             return view('admin-views.business-settings.settings.payment-index', compact('digital_payment_methods_count', 'offline_payment_methods_count', 'cash_on_delivery_status', 'digital_payment_status', 'offline_payment_status'));
 
         case 'deliveryman':
@@ -126,17 +143,46 @@ class BusinessSettingsController extends Controller
             ->latest()
             ->paginate(config('default_pagination'));
 
+            $bundleModuleTypes = BundleSettings::moduleTypes();
+            $bundleStatus = BundleSettings::enabled();
+            $bundleSelectedModules = BundleSettings::selectedModules();
+
             return view(
                 'admin-views.business-settings.settings.order-index',
-                compact('reasons', 'type', 'language')
+                compact('reasons', 'type', 'language', 'bundleModuleTypes', 'bundleStatus', 'bundleSelectedModules')
             );
 
         case 'store':
-            return view('admin-views.business-settings.settings.store-index');
+            $keys = [
+                'canceled_by_store',
+                'toggle_store_registration',
+                'product_gallery',
+                'access_all_products',
+                'store_review_reply',
+                'review_section',
+                'verified_seller_badge',
+                'vendor_can_set_low_stock',
+                'store_category_status',
+                'can_vendor_edit_order',
+                'admin_website_builder_status',
+                'product_approval',
+                'cash_in_hand_overflow_store',
+                'cash_in_hand_overflow_store_amount',
+                'min_amount_to_pay_store',
+            ];
+
+            $data = Helpers::get_business_settings_many($keys);
+
+            $data['product_approval_datas'] = json_decode(
+                Helpers::get_business_settings('product_approval_datas', false) ?? '',
+                true
+            );
+
+            return view('admin-views.business-settings.settings.store-index', compact('data'));
 
         case 'refund-settings':
             $refund_active_status = Helpers::get_business_settings('refund_active_status');
-            $keywords = $search ? explode(' ', $search) : [];
+            $keywords = $search ? explode(' ', $search ?? '') : [];
 
             $reasons = RefundReason::latest()
                 ->when($keywords, function ($query) use ($keywords) {
@@ -171,7 +217,7 @@ class BusinessSettingsController extends Controller
             return view('admin-views.business-settings.settings.priority-index');
 
         case 'automated-message':
-            $keywords = $search ? explode(' ', $search) : [];
+            $keywords = $search ? explode(' ', $search ?? '') : [];
 
             $messages = AutomatedMessage::latest()
                 ->when($keywords, function ($query) use ($keywords) {
@@ -195,43 +241,41 @@ class BusinessSettingsController extends Controller
     public function update_priority(Request $request)
     {
         $list = ['category_list', 'popular_store', 'recommended_store', 'special_offer', 'popular_item', 'best_reviewed_item', 'item_campaign', 'latest_items', 'all_stores', 'category_sub_category_item', 'product_search', 'basic_medicine', 'common_condition', 'brand', 'brand_item', 'latest_stores', 'top_offer_near_me_stores'];
-        foreach ($list as $item) {
+        $types = ['general', 'unavailable', 'temp_closed', 'rating'];
+
+        // Only the sections the page actually rendered are touched — otherwise a section with
+        // no form field (e.g. latest_items) would have its status overwritten with 0 on save.
+        $submitted = array_values(array_filter($list, fn ($item) => $request->has($item . '_default_status')));
+
+        // Validate everything up front: writing as we go left the sections before the failing
+        // one already saved while the admin was sent back with an error.
+        foreach ($submitted as $item) {
+            if ($request[$item . '_default_status'] == '0' && !$request[$item . '_sort_by_general']) {
+                Toastr::error(translate('You must select an option for') . ' ' . translate($item));
+
+                return back();
+            }
+        }
+
+        foreach ($submitted as $item) {
             Helpers::businessUpdateOrInsert(['key' => $item . '_default_status'], [
                 'value' => $request[$item . '_default_status'] ?? 0,
             ]);
 
-            if ($request[$item . '_default_status'] == '0') {
+            if ($request[$item . '_default_status'] != '0') {
+                continue;
+            }
 
-                if (!$request[$item . '_sort_by_general'] && $item != 'search_bar') {
-                    Toastr::error(translate('you_must_selcet_an_option_for') . ' ' . translate($item));
-
-                    return back();
-                }
-
-                if ($request[$item . '_sort_by_general']) {
-                    PriorityList::updateOrCreate(['name' => $item . '_sort_by_general', 'type' => 'general'], [
-                        'value' => $request[$item . '_sort_by_general'],
-                    ]);
-                }
-                if ($request[$item . '_sort_by_unavailable']) {
-                    PriorityList::updateOrCreate(['name' => $item . '_sort_by_unavailable', 'type' => 'unavailable'], [
-                        'value' => $request[$item . '_sort_by_unavailable'],
-                    ]);
-                }
-                if ($request[$item . '_sort_by_temp_closed']) {
-                    PriorityList::updateOrCreate(['name' => $item . '_sort_by_temp_closed', 'type' => 'temp_closed'], [
-                        'value' => $request[$item . '_sort_by_temp_closed'],
-                    ]);
-                }
-                if ($request[$item . '_sort_by_rating']) {
-                    PriorityList::updateOrCreate(['name' => $item . '_sort_by_rating', 'type' => 'rating'], [
-                        'value' => $request[$item . '_sort_by_rating'],
+            foreach ($types as $type) {
+                if ($request[$item . '_sort_by_' . $type]) {
+                    PriorityList::updateOrCreate(['name' => $item . '_sort_by_' . $type, 'type' => $type], [
+                        'value' => $request[$item . '_sort_by_' . $type],
                     ]);
                 }
             }
         }
 
-        Toastr::success(translate('messages.successfully_updated_to_changes_restart_app'));
+        Toastr::success(translate('messages.Successfully updated to changes restart app'));
 
         return back();
     }
@@ -239,7 +283,7 @@ class BusinessSettingsController extends Controller
     public function update_dm(Request $request)
     {
         if (getEnvMode() === 'demo') {
-            Toastr::info(translate('messages.update_option_is_disable_for_demo'));
+            Toastr::info(translate('messages.Update option is disable for demo'));
             return back();
         }
 
@@ -269,13 +313,22 @@ class BusinessSettingsController extends Controller
             ]);
         }
 
-        Toastr::success(translate('messages.successfully_updated_to_changes_restart_app'));
+        Toastr::success(translate('messages.Successfully updated to changes restart app'));
         return back();
     }
 
 
     public function update_store(Request $request)
     {
+        if ($request['cash_in_hand_overflow_store']) {
+            $request->validate([
+                'min_amount_to_pay_store' => 'required|numeric|min:0',
+                'cash_in_hand_overflow_store_amount' => 'required|numeric|min:0|gt:min_amount_to_pay_store',
+            ], [
+                'cash_in_hand_overflow_store_amount.gt' => translate('Amount must be greater than the minimum payable amount'),
+            ]);
+        }
+
         $reelsSettingsController = $this->getReelsBusinessSettingsController();
         if ($reelsSettingsController) {
             $reelsSettingsController->validateStoreSettings($request);
@@ -289,7 +342,7 @@ class BusinessSettingsController extends Controller
                 Helpers::businessUpdateOrInsert(['key' => 'product_approval'], [
                     'value' => 0,
                 ]);
-                Toastr::error(translate('messages.need_to_check_minimum_1_criteria_for_product_approval'));
+                Toastr::error(translate('messages.Select at least one criterion for product approval'));
 
                 return back();
             }
@@ -298,14 +351,15 @@ class BusinessSettingsController extends Controller
             'cash_in_hand_overflow_store' => $request['cash_in_hand_overflow_store'] ?? 0,
             'cash_in_hand_overflow_store_amount' => $request['cash_in_hand_overflow_store_amount'],
             'min_amount_to_pay_store' => $request['min_amount_to_pay_store'],
-            'store_review_reply' => $request['store_review_reply'],
-            'verified_seller_badge' => $request['verified_seller_badge'],
+            'store_review_reply' => $request['store_review_reply'] ?? 0,
+            'review_section' => $request['review_section'] ?? 0,
+            'verified_seller_badge' => $request['verified_seller_badge'] ?? 0,
             'vendor_can_set_low_stock' => $request['vendor_can_set_low_stock'] ?? 0,
-            'canceled_by_store' => $request['canceled_by_store'],
-            'toggle_store_registration' => $request['store_self_registration'],
-            'product_approval' => $request['product_approval'],
-            'access_all_products' => $request['access_all_products'],
-            'product_gallery' => $request['product_gallery'],
+            'canceled_by_store' => $request['canceled_by_store'] ?? 0,
+            'toggle_store_registration' => $request['store_self_registration'] ?? 0,
+            'product_approval' => $request['product_approval'] ?? 0,
+            'access_all_products' => $request['access_all_products'] ?? 0,
+            'product_gallery' => $request['product_gallery'] ?? 0,
             'admin_website_builder_status' => $request['admin_website_builder_status'] ?? 0,
             'store_category_status' => $request['store_category_status'] ?? 0,
             'can_vendor_edit_order' => $request['can_vendor_edit_order'] ?? 0
@@ -334,7 +388,7 @@ class BusinessSettingsController extends Controller
 
 
 
-        Toastr::success(translate('messages.successfully_updated_to_changes_restart_app'));
+        Toastr::success(translate('messages.Successfully updated to changes restart app'));
 
         return back();
     }
@@ -373,10 +427,11 @@ class BusinessSettingsController extends Controller
             'extra_packaging_charge_status' => 'extra_packaging_charge_status',
             'repeat_order_option' => 'repeat_order_option',
             'monthly_order_reminder' => 'monthly_order_reminder',
+            'product_bundle_status' => 'product_bundle_status',
         ];
 
         if ($request->order_cancelation_rate_limit_status && $request->order_cancelation_rate_warning_limit > $request->order_cancelation_rate_block_limit) {
-            Toastr::error(translate('messages.Providers_will_be_blocked_with_out_warning.Warning_rate_must_be_smaller'));
+            Toastr::error(translate('Providers will be blocked with out warning. Warning rate must be smaller.'));
 
             return back();
         }
@@ -402,6 +457,15 @@ class BusinessSettingsController extends Controller
             'value' => json_encode($values),
         ]);
 
+        $bundleModules = [];
+        foreach (BundleSettings::moduleTypes() as $moduleType) {
+            $bundleModules[$moduleType] = $request->input('product_bundle_modules.'.$moduleType) ? 1 : 0;
+        }
+
+        Helpers::businessUpdateOrInsert(['key' => BundleSettings::MODULES_KEY], [
+            'value' => json_encode($bundleModules),
+        ]);
+
         Helpers::businessUpdateOrInsert(['key' => 'order_confirmation_model'], [
             'value' => $request['order_confirmation_model'],
         ]);
@@ -414,25 +478,12 @@ class BusinessSettingsController extends Controller
             'value' => $request['order_notification_type'],
         ]);
 
-        Helpers::businessUpdateOrInsert(['key' => 'admin_free_delivery_status'], [
-            'value' => $request['admin_free_delivery_status'] ? $request['admin_free_delivery_status'] : null,
-        ]);
+        // Free delivery moved to a per-(zone, module) setup in S6 and these three keys were
+        // deprecated with it — nothing reads them any more. The writes are gone so the screen
+        // cannot leave an admin believing a setting still does something; the rows are left in
+        // `business_settings` rather than deleted, so a rollback loses no data.
 
-        if ($request['admin_free_delivery_status'] && $request['admin_free_delivery_option'] == 'free_delivery_by_order_amount') {
-            if ($request['free_delivery_over'] == null) {
-                Toastr::error(translate('messages.free_delivery_over_amount_required'));
-                return back();
-            }
-        }
-
-        Helpers::businessUpdateOrInsert(['key' => 'free_delivery_over'], [
-            'value' => $request['admin_free_delivery_status'] && $request['admin_free_delivery_option'] == 'free_delivery_by_order_amount' ? $request['free_delivery_over'] : null,
-        ]);
-        Helpers::businessUpdateOrInsert(['key' => 'admin_free_delivery_option'], [
-            'value' => $request['admin_free_delivery_status'] && $request['admin_free_delivery_option'] ? $request['admin_free_delivery_option'] : null,
-        ]);
-
-        Toastr::success(translate('messages.successfully_updated_to_changes_restart_app'));
+        Toastr::success(translate('messages.Successfully updated to changes restart app'));
 
         return back();
     }
@@ -440,7 +491,7 @@ class BusinessSettingsController extends Controller
     public function update_disbursement(Request $request)
     {
         if (getEnvMode() == 'demo') {
-            Toastr::info(translate('messages.update_option_is_disable_for_demo'));
+            Toastr::info(translate('messages.Update option is disable for demo'));
 
             return back();
         }
@@ -466,7 +517,7 @@ class BusinessSettingsController extends Controller
             ]);
         }
 
-        Toastr::success(translate('messages.successfully_updated_disbursement_functionality'));
+        Toastr::success(translate('messages.Successfully updated disbursement functionality'));
 
         return back();
     }
@@ -475,18 +526,48 @@ class BusinessSettingsController extends Controller
     {
         if (getEnvMode() == 'demo')
         {
-            Toastr::info(translate('messages.update_option_is_disable_for_demo'));
+            Toastr::info(translate('messages.Update option is disable for demo'));
             return back();
+        }
+
+        foreach (['admin_commission', 'delivery_charge_comission', 'digit_after_decimal_point', 'additional_charge'] as $nonNegativeKey) {
+            if ($request->filled($nonNegativeKey) && is_numeric($request->input($nonNegativeKey)) && $request->input($nonNegativeKey) < 0) {
+                $request->merge([$nonNegativeKey => 0]);
+            }
+        }
+
+        // TC_02 — a blank or unknown unit must be BLOCKED with a message. Without a rule the
+        // fallbacks above would quietly rewrite it to km and report a successful save.
+        $validator = Validator::make($request->all(), [
+            'distance_unit' => 'required|in:km,mi',
+            'weight_unit' => 'required|in:kg,lb',
+            'dimension_unit' => 'required|in:cm,in',
+        ], [
+            'distance_unit.required' => translate('messages.Please_select_a_distance_unit'),
+            'distance_unit.in' => translate('messages.Please_select_a_distance_unit'),
+            'weight_unit.required' => translate('messages.Please_select_a_weight_unit'),
+            'weight_unit.in' => translate('messages.Please_select_a_weight_unit'),
+            'dimension_unit.required' => translate('messages.Please_select_a_dimension_unit'),
+            'dimension_unit.in' => translate('messages.Please_select_a_dimension_unit'),
+        ]);
+
+        if ($validator->fails()) {
+            Toastr::error($validator->errors()->first());
+
+            return back()->withInput();
         }
 
         $this->updateBasicSettings($request);
         $this->updateImages($request);
-        $this->updatePaymentSettings($request);
+        // Business Info does NOT write partial payment settings. Those fields live only on the
+        // Payment tab and are saved by updatePaymentSetup(), which validates them. Writing them
+        // from here read them off a request that never carries them, so every Business Info save
+        // blanked partial_payment_status and partial_payment_method.
         $this->updateLocationSettings($request);
         $this->updateAdditionalChargeSettings($request);
         $this->updateBusinessModelSettings($request);
 
-        Toastr::success(translate('messages.successfully_updated_to_changes_restart_app'));
+        Toastr::success(translate('messages.Successfully updated to changes restart app'));
         return back();
     }
 
@@ -503,7 +584,7 @@ class BusinessSettingsController extends Controller
     public function mail_config(Request $request)
     {
         if (getEnvMode() == 'demo') {
-            Toastr::info(translate('messages.update_option_is_disable_for_demo'));
+            Toastr::info(translate('messages.Update option is disable for demo'));
 
             return back();
         }
@@ -524,7 +605,7 @@ class BusinessSettingsController extends Controller
                 'updated_at' => now(),
             ]
         );
-        Toastr::success(translate('messages.configuration_updated_successfully'));
+        Toastr::success(translate('Updated successfully'));
 
         return back();
     }
@@ -532,7 +613,7 @@ class BusinessSettingsController extends Controller
     public function mail_config_status(Request $request)
     {
         if (getEnvMode() == 'demo') {
-            Toastr::info(translate('messages.update_option_is_disable_for_demo'));
+            Toastr::info(translate('messages.Update option is disable for demo'));
 
             return back();
         }
@@ -557,14 +638,14 @@ class BusinessSettingsController extends Controller
                 'updated_at' => now(),
             ]
         );
-        Toastr::success(translate('messages.configuration_updated_successfully'));
+        Toastr::success(translate('Updated successfully'));
 
         return back();
     }
 
     public function payment_index(Request $request)
     {
-        $published_status = 0; // Set a default value
+        $published_status = 0;
         $payment_published_status = config('get_payment_publish_status');
         if (isset($payment_published_status[0]['is_published'])) {
             $published_status = $payment_published_status[0]['is_published'];
@@ -599,24 +680,23 @@ class BusinessSettingsController extends Controller
             return true;
         }
 
-        $allMethods = BusinessSetting::whereIn('key', [
+        $allMethods = Helpers::get_business_settings_many([
             'offline_payment_status',
             'cash_on_delivery',
             'digital_payment',
-        ])->get();
+        ]);
 
         $activeCount = 0;
 
-        foreach ($allMethods as $setting) {
-            if ($setting->key === $method) {
+        foreach ($allMethods as $key => $value) {
+            if ($key === $method) {
                 continue;
             }
 
-            $value = $setting->value;
-            if ($setting->key === 'offline_payment_status') {
+            if ($key === 'offline_payment_status') {
                 $status = (int) $value;
             } else {
-                $decoded = json_decode($value, true);
+                $decoded = json_decode($value ?? '', true);
                 $status = $decoded['status'] ?? 0;
             }
 
@@ -634,14 +714,14 @@ class BusinessSettingsController extends Controller
     {
         if ($request->toggle_type) {
             if (!$this->canTogglePaymentMethod($request->toggle_type, $request->status)) {
-                Toastr::error(translate('messages.atleast_one_method_must_be_active'));
+                Toastr::error(translate('messages.Atleast one method must be active'));
                 return back();
             }
             Helpers::businessUpdateOrInsert(['key' => $request->toggle_type], [
                 'value' => $request->toggle_type == 'offline_payment_status' ? $request?->status : json_encode(['status' => $request?->status]),
                 'updated_at' => now(),
             ]);
-            Toastr::success(translate('messages.payment_settings_updated'));
+            Toastr::success(translate('messages.Payment settings updated'));
 
             return back();
         }
@@ -672,111 +752,90 @@ class BusinessSettingsController extends Controller
 
         if ($request['gateway'] == 'ssl_commerz') {
             $additional_data = [
-                'gateway_image' => $validator_image_rule . '|image|max:' . $maxFileSizeInMB . '|mimes:' . IMAGE_FORMAT_FOR_VALIDATION,
+                'gateway_image' => ImageFile::rules($validator_image_rule),
                 'status' => 'required|in:1,0',
                 'store_id' => 'required_if:status,1',
                 'store_password' => 'required_if:status,1',
             ];
             $validation_messages = [
-                'gateway_image.required' => translate('Gateway image is required'),
-                'gateway_image.max' => translate('Gateway image size should not be greater than ' . $maxFileSizeInMB . 'MB'),
-                'gateway_image.mimes' => translate('Gateway image must be a ' . IMAGE_FORMAT_FOR_VALIDATION),
                 'store_id.required_if' => translate('Store ID is required when payment status is ON'),
-                'store_password.required_if' => translate('Store Password is required when payment status is ON'),
+                'store_password.required_if' => translate('Store password is required when payment status is ON'),
             ];
         } elseif ($request['gateway'] == 'paypal') {
             $additional_data = [
-                'gateway_image' => $validator_image_rule . '|image|max:' . $maxFileSizeInMB . '|mimes:' . IMAGE_FORMAT_FOR_VALIDATION,
+                'gateway_image' => ImageFile::rules($validator_image_rule),
                 'status' => 'required|in:1,0',
                 'client_id' => 'required_if:status,1',
                 'client_secret' => 'required_if:status,1',
             ];
             $validation_messages = [
-                'gateway_image.required' => translate('Gateway image is required'),
-                'gateway_image.max' => translate('Gateway image size should not be greater than ' . $maxFileSizeInMB . 'MB'),
-                'gateway_image.mimes' => translate('Gateway image must be a ' . IMAGE_FORMAT_FOR_VALIDATION),
                 'client_id.required_if' => translate('Client ID is required when payment status is ON'),
-                'client_secret.required_if' => translate('Client Secret is required when payment status is ON'),
+                'client_secret.required_if' => translate('Client secret is required when payment status is ON'),
             ];
         } elseif ($request['gateway'] == 'stripe') {
             $additional_data = [
-                'gateway_image' => $validator_image_rule . '|image|max:' . $maxFileSizeInMB . '|mimes:' . IMAGE_FORMAT_FOR_VALIDATION,
+                'gateway_image' => ImageFile::rules($validator_image_rule),
                 'status' => 'required|in:1,0',
                 'api_key' => 'required_if:status,1',
                 'published_key' => 'required_if:status,1',
             ];
             $validation_messages = [
-                'gateway_image.required' => translate('Gateway image is required'),
-                'gateway_image.max' => translate('Gateway image size should not be greater than ' . $maxFileSizeInMB . 'MB'),
-                'gateway_image.mimes' => translate('Gateway image must be a ' . IMAGE_FORMAT_FOR_VALIDATION),
-                'api_key.required_if' => translate('Api Key is required when payment status is ON'),
-                'published_key.required_if' => translate('Published Key is required when payment status is ON'),
+                'api_key.required_if' => translate('API key is required when payment status is ON'),
+                'published_key.required_if' => translate('Published key is required when payment status is ON'),
             ];
         } elseif ($request['gateway'] == 'razor_pay') {
             $additional_data = [
-                'gateway_image' => $validator_image_rule . '|image|max:' . $maxFileSizeInMB . '|mimes:' . IMAGE_FORMAT_FOR_VALIDATION,
+                'gateway_image' => ImageFile::rules($validator_image_rule),
                 'status' => 'required|in:1,0',
                 'api_key' => 'required_if:status,1',
                 'api_secret' => 'required_if:status,1',
             ];
             $validation_messages = [
-                'gateway_image.required' => translate('Gateway image is required'),
-                'gateway_image.max' => translate('Gateway image size should not be greater than ' . $maxFileSizeInMB . 'MB'),
-                'gateway_image.mimes' => translate('Gateway image must be a ' . IMAGE_FORMAT_FOR_VALIDATION),
-                'api_key.required_if' => translate('Api Key is required when payment status is ON'),
-                'api_secret.required_if' => translate('Api Secret is required when payment status is ON'),
+                'api_key.required_if' => translate('API key is required when payment status is ON'),
+                'api_secret.required_if' => translate('API secret is required when payment status is ON'),
             ];
         } elseif ($request['gateway'] == 'senang_pay') {
             $additional_data = [
-                'gateway_image' => $validator_image_rule . '|image|max:' . $maxFileSizeInMB . '|mimes:' . IMAGE_FORMAT_FOR_VALIDATION,
+                'gateway_image' => ImageFile::rules($validator_image_rule),
                 'status' => 'required|in:1,0',
                 'callback_url' => 'required_if:status,1',
                 'secret_key' => 'required_if:status,1',
                 'merchant_id' => 'required_if:status,1',
             ];
             $validation_messages = [
-                'gateway_image.required' => translate('Gateway image is required'),
-                'gateway_image.max' => translate('Gateway image size should not be greater than ' . $maxFileSizeInMB . 'MB'),
-                'gateway_image.mimes' => translate('Gateway image must be a ' . IMAGE_FORMAT_FOR_VALIDATION),
-                'callback_url.required_if' => translate('Callback Url is required when payment status is ON'),
-                'secret_key.required_if' => translate('Secret Key is required when payment status is ON'),
-                'merchant_id.required_if' => translate('Merchant Id is required when payment status is ON'),
+                'callback_url.required_if' => translate('Callback URL is required when payment status is ON'),
+                'secret_key.required_if' => translate('Secret key is required when payment status is ON'),
+                'merchant_id.required_if' => translate('Merchant ID is required when payment status is ON'),
             ];
         } elseif ($request['gateway'] == 'paytabs') {
             $additional_data = [
-                'gateway_image' => $validator_image_rule . '|image|max:' . $maxFileSizeInMB . '|mimes:' . IMAGE_FORMAT_FOR_VALIDATION,
+                'gateway_image' => ImageFile::rules($validator_image_rule),
                 'status' => 'required|in:1,0',
                 'profile_id' => 'required_if:status,1',
                 'server_key' => 'required_if:status,1',
                 'base_url' => 'required_if:status,1',
             ];
             $validation_messages = [
-                'gateway_image.required' => translate('Gateway image is required'),
-                'gateway_image.max' => translate('Gateway image size should not be greater than ' . $maxFileSizeInMB . 'MB'),
-                'gateway_image.mimes' => translate('Gateway image must be a ' . IMAGE_FORMAT_FOR_VALIDATION),
-                'profile_id.required_if' => translate('Profile Id is required when payment status is ON'),
-                'server_key.required_if' => translate('Server Key is required when payment status is ON'),
-                'base_url.required_if' => translate('Base Url is required when payment status is ON'),
+                'profile_id.required_if' => translate('Profile ID is required when payment status is ON'),
+                'server_key.required_if' => translate('Server key is required when payment status is ON'),
+                'base_url.required_if' => translate('Base URL is required when payment status is ON'),
             ];
         } elseif ($request['gateway'] == 'paystack') {
             $additional_data = [
-                'gateway_image' => $validator_image_rule . '|image|max:' . $maxFileSizeInMB . '|mimes:' . IMAGE_FORMAT_FOR_VALIDATION,
+                'gateway_image' => ImageFile::rules($validator_image_rule),
                 'status' => 'required|in:1,0',
                 'public_key' => 'required_if:status,1',
                 'secret_key' => 'required_if:status,1',
-                'merchant_email' => 'required_if:status,1',
+                'merchant_email' => EmailAddress::rules('required_if:status,1'),
             ];
             $validation_messages = [
-                'gateway_image.required' => translate('Gateway image is required'),
-                'gateway_image.max' => translate('Gateway image size should not be greater than ' . $maxFileSizeInMB . 'MB'),
-                'gateway_image.mimes' => translate('Gateway image must be a ' . IMAGE_FORMAT_FOR_VALIDATION),
-                'public_key.required_if' => translate('Public Key is required when payment status is ON'),
-                'secret_key.required_if' => translate('Secret Key is required when payment status is ON'),
-                'merchant_email.required_if' => translate('Merchant Email is required when payment status is ON'),
+                'public_key.required_if' => translate('Public key is required when payment status is ON'),
+                'secret_key.required_if' => translate('Secret key is required when payment status is ON'),
+                'merchant_email.required_if' => translate('Merchant email is required when payment status is ON'),
             ];
         } elseif ($request['gateway'] == 'paymob_accept') {
             $additional_data = [
-                'gateway_image' => $validator_image_rule . '|image|max:' . $maxFileSizeInMB . '|mimes:' . IMAGE_FORMAT_FOR_VALIDATION,
+                'gateway_image' => ImageFile::rules($validator_image_rule),
                 'status' => 'required|in:1,0',
                 'callback_url' => 'required_if:status,1',
                 'api_key' => 'required_if:status,1',
@@ -785,80 +844,65 @@ class BusinessSettingsController extends Controller
                 'hmac' => 'required_if:status,1',
             ];
             $validation_messages = [
-                'gateway_image.required' => translate('Gateway image is required'),
-                'gateway_image.max' => translate('Gateway image size should not be greater than ' . $maxFileSizeInMB . 'MB'),
-                'gateway_image.mimes' => translate('Gateway image must be a ' . IMAGE_FORMAT_FOR_VALIDATION),
-                'callback_url.required_if' => translate('Callback Url is required when payment status is ON'),
-                'api_key.required_if' => translate('Api Key is required when payment status is ON'),
-                'iframe_id.required_if' => translate('Iframe Id is required when payment status is ON'),
-                'integration_id.required_if' => translate('Integration Id is required when payment status is ON'),
+                'callback_url.required_if' => translate('Callback URL is required when payment status is ON'),
+                'api_key.required_if' => translate('API key is required when payment status is ON'),
+                'iframe_id.required_if' => translate('Iframe ID is required when payment status is ON'),
+                'integration_id.required_if' => translate('Integration ID is required when payment status is ON'),
                 'hmac.required_if' => translate('HMAC is required when payment status is ON'),
             ];
         } elseif ($request['gateway'] == 'mercadopago') {
             $additional_data = [
-                'gateway_image' => $validator_image_rule . '|image|max:' . $maxFileSizeInMB . '|mimes:' . IMAGE_FORMAT_FOR_VALIDATION,
+                'gateway_image' => ImageFile::rules($validator_image_rule),
                 'status' => 'required|in:1,0',
                 'access_token' => 'required_if:status,1',
                 'public_key' => 'required_if:status,1',
                 'supported_country' => 'required_if:status,1',
             ];
             $validation_messages = [
-                'gateway_image.required' => translate('Gateway image is required'),
-                'gateway_image.max' => translate('Gateway image size should not be greater than ' . $maxFileSizeInMB . 'MB'),
-                'gateway_image.mimes' => translate('Gateway image must be a ' . IMAGE_FORMAT_FOR_VALIDATION),
-                'access_token.required_if' => translate('Access Token is required when payment status is ON'),
-                'public_key.required_if' => translate('Public Key is required when payment status is ON'),
-                'supported_country.required_if' => translate('Supported Country is required when payment status is ON'),
+                'access_token.required_if' => translate('Access token is required when payment status is ON'),
+                'public_key.required_if' => translate('Public key is required when payment status is ON'),
+                'supported_country.required_if' => translate('Supported country is required when payment status is ON'),
             ];
         } elseif ($request['gateway'] == 'liqpay') {
             $additional_data = [
-                'gateway_image' => $validator_image_rule . '|image|max:' . $maxFileSizeInMB . '|mimes:' . IMAGE_FORMAT_FOR_VALIDATION,
+                'gateway_image' => ImageFile::rules($validator_image_rule),
                 'status' => 'required|in:1,0',
                 'private_key' => 'required_if:status,1',
                 'public_key' => 'required_if:status,1',
             ];
             $validation_messages = [
-                'gateway_image.required' => translate('Gateway image is required'),
-                'gateway_image.max' => translate('Gateway image size should not be greater than ' . $maxFileSizeInMB . 'MB'),
-                'gateway_image.mimes' => translate('Gateway image must be a ' . IMAGE_FORMAT_FOR_VALIDATION),
-                'private_key.required_if' => translate('Private Key is required when payment status is ON'),
-                'public_key.required_if' => translate('Public Key is required when payment status is ON'),
+                'private_key.required_if' => translate('Private key is required when payment status is ON'),
+                'public_key.required_if' => translate('Public key is required when payment status is ON'),
             ];
         } elseif ($request['gateway'] == 'flutterwave') {
             $additional_data = [
-                'gateway_image' => $validator_image_rule . '|image|max:' . $maxFileSizeInMB . '|mimes:' . IMAGE_FORMAT_FOR_VALIDATION,
+                'gateway_image' => ImageFile::rules($validator_image_rule),
                 'status' => 'required|in:1,0',
                 'secret_key' => 'required_if:status,1',
                 'public_key' => 'required_if:status,1',
                 'hash' => 'required_if:status,1',
             ];
             $validation_messages = [
-                'gateway_image.required' => translate('Gateway image is required'),
-                'gateway_image.max' => translate('Gateway image size should not be greater than ' . $maxFileSizeInMB . 'MB'),
-                'gateway_image.mimes' => translate('Gateway image must be a ' . IMAGE_FORMAT_FOR_VALIDATION),
-                'secret_key.required_if' => translate('Secret Key is required when payment status is ON'),
-                'public_key.required_if' => translate('Public Key is required when payment status is ON'),
+                'secret_key.required_if' => translate('Secret key is required when payment status is ON'),
+                'public_key.required_if' => translate('Public key is required when payment status is ON'),
                 'hash.required_if' => translate('Hash is required when payment status is ON'),
             ];
         } elseif ($request['gateway'] == 'paytm') {
             $additional_data = [
-                'gateway_image' => $validator_image_rule . '|image|max:' . $maxFileSizeInMB . '|mimes:' . IMAGE_FORMAT_FOR_VALIDATION,
+                'gateway_image' => ImageFile::rules($validator_image_rule),
                 'status' => 'required|in:1,0',
                 'merchant_key' => 'required_if:status,1',
                 'merchant_id' => 'required_if:status,1',
                 'merchant_website_link' => 'required_if:status,1',
             ];
             $validation_messages = [
-                'gateway_image.required' => translate('Gateway image is required'),
-                'gateway_image.max' => translate('Gateway image size should not be greater than ' . $maxFileSizeInMB . 'MB'),
-                'gateway_image.mimes' => translate('Gateway image must be a ' . IMAGE_FORMAT_FOR_VALIDATION),
-                'merchant_key.required_if' => translate('Merchant Key is required when payment status is ON'),
-                'merchant_id.required_if' => translate('Merchant Id is required when payment status is ON'),
-                'merchant_website_link.required_if' => translate('Merchant Website Link is required when payment status is ON'),
+                'merchant_key.required_if' => translate('Merchant key is required when payment status is ON'),
+                'merchant_id.required_if' => translate('Merchant ID is required when payment status is ON'),
+                'merchant_website_link.required_if' => translate('Merchant website link is required when payment status is ON'),
             ];
         } elseif ($request['gateway'] == 'bkash') {
             $additional_data = [
-                'gateway_image' => $validator_image_rule . '|image|max:' . $maxFileSizeInMB . '|mimes:' . IMAGE_FORMAT_FOR_VALIDATION,
+                'gateway_image' => ImageFile::rules($validator_image_rule),
                 'status' => 'required|in:1,0',
                 'app_key' => 'required_if:status,1',
                 'app_secret' => 'required_if:status,1',
@@ -866,11 +910,8 @@ class BusinessSettingsController extends Controller
                 'password' => 'required_if:status,1',
             ];
             $validation_messages = [
-                'gateway_image.required' => translate('Gateway image is required'),
-                'gateway_image.max' => translate('Gateway image size should not be greater than ' . $maxFileSizeInMB . 'MB'),
-                'gateway_image.mimes' => translate('Gateway image must be a ' . IMAGE_FORMAT_FOR_VALIDATION),
-                'app_key.required_if' => translate('App Key is required when payment status is ON'),
-                'app_secret.required_if' => translate('App Secret is required when payment status is ON'),
+                'app_key.required_if' => translate('App key is required when payment status is ON'),
+                'app_secret.required_if' => translate('App secret is required when payment status is ON'),
                 'username.required_if' => translate('Username is required when payment status is ON'),
                 'password.required_if' => translate('Password is required when payment status is ON'),
             ];
@@ -883,7 +924,7 @@ class BusinessSettingsController extends Controller
         $additional_data_image = $settings['additional_data'] != null ? json_decode($settings['additional_data']) : null;
 
         if ($request->has('gateway_image')) {
-            $gateway_image = $this->file_uploader('payment_modules/gateway_image/', 'png', $request['gateway_image'], $additional_data_image != null ? $additional_data_image->gateway_image : '');
+            $gateway_image = $this->uploadFile('payment_modules/gateway_image/', 'png', $request['gateway_image'], $additional_data_image != null ? $additional_data_image->gateway_image : '');
         } else {
             $gateway_image = $additional_data_image != null ? $additional_data_image->gateway_image : '';
         }
@@ -917,7 +958,7 @@ class BusinessSettingsController extends Controller
     public function update_app_settings(Request $request)
     {
         if (getEnvMode() == 'demo') {
-            Toastr::info(translate('messages.update_option_is_disable_for_demo'));
+            Toastr::info(translate('messages.Update option is disable for demo'));
 
             return back();
         }
@@ -926,13 +967,13 @@ class BusinessSettingsController extends Controller
             $request->validate([
                 'download_user_app_title.0' => 'required',
             ], [
-                'download_user_app_title.0.required' => translate('messages.Default_title_is_required'),
+                'download_user_app_title.0.required' => translate('messages.Default title is required'),
             ]);
 
             $this->getAddLandingPageData($request, 'app_settings', 'download_user_app_title', true);
             $this->getAddLandingPageData($request, 'app_settings', 'download_user_app_section_status', false);
 
-            Toastr::success(translate('messages.Download_section_settings_updated'));
+            Toastr::success(translate('messages.Download section settings updated'));
             return back();
         }
 
@@ -992,6 +1033,16 @@ class BusinessSettingsController extends Controller
                 ],
                 'sync_download_links' => true,
             ],
+            'serviceman_app' => [
+                'message' => 'messages.Serviceman_app_settings_updated',
+                'fields' => [
+                    'app_minimum_version_android_serviceman',
+                    'app_url_android_serviceman',
+                    'app_minimum_version_ios_serviceman',
+                    'app_url_ios_serviceman',
+                ],
+                'sync_download_links' => true,
+            ],
         ];
     }
 
@@ -1031,6 +1082,11 @@ class BusinessSettingsController extends Controller
             'apple_store_url' => 'app_url_ios_rider',
         ]);
 
+        $this->syncDownloadLinkSetting('admin_landing_page', 'serviceman_app_earning_links', [
+            'playstore_url' => 'app_url_android_serviceman',
+            'apple_store_url' => 'app_url_ios_serviceman',
+        ]);
+
         $this->syncDownloadLinkSetting('react_landing_page', 'download_seller_app_links', [
             'playstore_url' => 'app_url_android_store',
             'apple_store_url' => 'app_url_ios_store',
@@ -1044,6 +1100,11 @@ class BusinessSettingsController extends Controller
         $this->syncDownloadLinkSetting('react_landing_page', 'download_rider_app_links', [
             'playstore_url' => 'app_url_android_rider',
             'apple_store_url' => 'app_url_ios_rider',
+        ]);
+
+        $this->syncDownloadLinkSetting('react_landing_page', 'download_serviceman_app_links', [
+            'playstore_url' => 'app_url_android_serviceman',
+            'apple_store_url' => 'app_url_ios_serviceman',
         ]);
     }
 
@@ -1120,7 +1181,7 @@ class BusinessSettingsController extends Controller
 
     public function terms_and_conditions()
     {
-        $terms_and_conditions = DataSetting::withoutGlobalScope('translate')->where('type', 'admin_landing_page')->where('key', 'terms_and_conditions')->first();
+        $terms_and_conditions = DataSetting::withoutGlobalScope('translate')->with('translations')->where('type', 'admin_landing_page')->where('key', 'terms_and_conditions')->first();
 
         return view('admin-views.business-settings.terms-and-conditions', compact('terms_and_conditions'));
     }
@@ -1128,14 +1189,14 @@ class BusinessSettingsController extends Controller
     public function terms_and_conditions_update(Request $request)
     {
         $this->update_data($request, 'terms_and_conditions');
-        Toastr::success(translate('messages.terms_and_condition_updated'));
+        Toastr::success(translate('messages.Terms and condition updated'));
 
         return back();
     }
 
     public function privacy_policy()
     {
-        $privacy_policy = DataSetting::withoutGlobalScope('translate')->where('type', 'admin_landing_page')->where('key', 'privacy_policy')->first();
+        $privacy_policy = DataSetting::withoutGlobalScope('translate')->with('translations')->where('type', 'admin_landing_page')->where('key', 'privacy_policy')->first();
 
         return view('admin-views.business-settings.privacy-policy', compact('privacy_policy'));
     }
@@ -1150,7 +1211,7 @@ class BusinessSettingsController extends Controller
 
     public function refund_policy()
     {
-        $refund_policy = DataSetting::withoutGlobalScope('translate')->where('type', 'admin_landing_page')->where('key', 'refund_policy')->first();
+        $refund_policy = DataSetting::withoutGlobalScope('translate')->with('translations')->where('type', 'admin_landing_page')->where('key', 'refund_policy')->first();
         $refund_policy_status = DataSetting::where('type', 'admin_landing_page')->where('key', 'refund_policy_status')->first();
 
         return view('admin-views.business-settings.refund_policy', compact('refund_policy', 'refund_policy_status'));
@@ -1174,7 +1235,7 @@ class BusinessSettingsController extends Controller
     public function shipping_policy()
     {
 
-        $shipping_policy = DataSetting::withoutGlobalScope('translate')->where('type', 'admin_landing_page')->where('key', 'shipping_policy')->first();
+        $shipping_policy = DataSetting::withoutGlobalScope('translate')->with('translations')->where('type', 'admin_landing_page')->where('key', 'shipping_policy')->first();
         $shipping_policy_status = DataSetting::where('type', 'admin_landing_page')->where('key', 'shipping_policy_status')->first();
 
         return view('admin-views.business-settings.shipping_policy', compact('shipping_policy', 'shipping_policy_status'));
@@ -1197,7 +1258,7 @@ class BusinessSettingsController extends Controller
 
     public function cancellation_policy()
     {
-        $cancellation_policy = DataSetting::withoutGlobalScope('translate')->where('type', 'admin_landing_page')->where('key', 'cancellation_policy')->first();
+        $cancellation_policy = DataSetting::withoutGlobalScope('translate')->with('translations')->where('type', 'admin_landing_page')->where('key', 'cancellation_policy')->first();
         $cancellation_policy_status = DataSetting::where('type', 'admin_landing_page')->where('key', 'cancellation_policy_status')->first();
 
         return view('admin-views.business-settings.cancelation_policy', compact('cancellation_policy', 'cancellation_policy_status'));
@@ -1230,7 +1291,7 @@ class BusinessSettingsController extends Controller
     {
         $this->update_data($request, 'about_us');
         $this->update_data($request, 'about_title');
-        Toastr::success(translate('messages.about_us_updated'));
+        Toastr::success(translate('messages.About us updated'));
 
         return back();
     }
@@ -1239,16 +1300,17 @@ class BusinessSettingsController extends Controller
     {
         abort_if($request?->module_type == 'rental' && !addon_published_status('Rental'), 404);
         abort_if($request?->module_type == 'ride-share' && !addon_published_status('RideShare'), 404);
+        abort_if($request?->module_type == 'service' && !addon_published_status('Service'), 404);
 
         $moduleType = $request->module_type ?? 'grocery';
         if ($moduleType == 'ride-share' && addon_published_status('RideShare')) {
 
-            $language = BusinessSetting::where('key', 'language')->first()->value;
+            $language = Helpers::get_business_settings('language', false);
             $langs = json_decode($language);
             $defaultLang = $langs[0];
             $cacheKey = 'fcm_notification_form_html_' . $moduleType . '_' . implode('_', $langs);
 
-            $formHtml = Cache::remember($cacheKey, now()->addMinutes(60), function () use ($langs, $defaultLang, $moduleType) {
+            $formHtml = ApiCache::remember('fcm_form_html', $cacheKey, function () use ($langs, $defaultLang, $moduleType) {
                 $notificationMessages = NotificationMessage::with('translations')
                     ->where('module_type', $moduleType)
                     ->get()
@@ -1274,6 +1336,14 @@ class BusinessSettingsController extends Controller
         $subscription_reminder_enabled = NotificationMessage::where('key', 'subscription_expire_reminder')
             ->where('status', 1)
             ->exists();
+
+        if ($moduleType == 'service' && addon_published_status('Service')) {
+            return view('admin-views.business-settings.fcm-index-service', compact(
+                'subscription_reminder_before_time',
+                'subscription_reminder_before',
+                'subscription_reminder_enabled'
+            ));
+        }
 
         $monthly_order_reminder = NotificationMessage::where('key', 'monthly_order_reminder')->first();
 
@@ -1314,104 +1384,12 @@ class BusinessSettingsController extends Controller
                 'vapidKey' => $request->vapidKey,
             ]),
         ]);
-        self::firebase_message_config_file_gen();
-        Toastr::success(translate('messages.settings_updated'));
+        WebPushServiceWorker::generate();
+        Toastr::success(translate('messages.Settings updated'));
 
         return back();
     }
 
-    public function firebase_message_config_file_gen()
-    {
-        $config = Helpers::get_business_settings('fcm_credentials');
-
-        $apiKey            = $config['apiKey'] ?? '';
-        $authDomain        = $config['authDomain'] ?? '';
-        $projectId         = $config['projectId'] ?? '';
-        $storageBucket     = $config['storageBucket'] ?? '';
-        $messagingSenderId = $config['messagingSenderId'] ?? '';
-        $appId             = $config['appId'] ?? '';
-        $measurementId     = $config['measurementId'] ?? '';
-
-        $filePath = base_path('firebase-messaging-sw.js');
-
-        try {
-            if (file_exists($filePath) && !is_writable($filePath)) {
-                if (!chmod($filePath, 0644)) {
-                    throw new \Exception('File is not writable and permission change failed: ' . $filePath);
-                }
-            }
-
-            // Modern compat SDK (10.x) with onBackgroundMessage + click
-            // routing. Single SW shared by host's legacy push paths and
-            // Builder storefront customers — Builder's click handler
-            // routes by data.type into /profile?page=orders / inbox.
-            $fileContent = <<<JS
-                importScripts("https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js");
-                importScripts("https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging-compat.js");
-
-                firebase.initializeApp({
-                    apiKey: "$apiKey",
-                    authDomain: "$authDomain",
-                    projectId: "$projectId",
-                    storageBucket: "$storageBucket",
-                    messagingSenderId: "$messagingSenderId",
-                    appId: "$appId",
-                    measurementId: "$measurementId"
-                });
-
-                const messaging = firebase.messaging();
-
-                messaging.onBackgroundMessage((payload) => {
-                    const data = payload.data || {};
-                    const title = data.title || (payload.notification && payload.notification.title) || "Notification";
-                    const body  = data.body  || (payload.notification && payload.notification.body)  || "";
-                    const image = data.image || (payload.notification && payload.notification.image) || undefined;
-
-                    self.registration.showNotification(title, {
-                        body,
-                        icon: image,
-                        data,
-                    });
-                });
-
-                self.addEventListener("notificationclick", (event) => {
-                    event.notification.close();
-                    const data = event.notification.data || {};
-                    const url = resolveTargetUrl(data);
-
-                    event.waitUntil(
-                        self.clients
-                            .matchAll({ type: "window", includeUncontrolled: true })
-                            .then((windowClients) => {
-                                const existing = windowClients.find((c) => c.url.startsWith(self.location.origin));
-                                if (existing) {
-                                    existing.focus();
-                                    return existing.navigate(url);
-                                }
-                                return self.clients.openWindow(url);
-                            }),
-                    );
-                });
-
-                function resolveTargetUrl(data) {
-                    const base = self.location.origin;
-                    if (data && data.type === "order_status" && data.order_id) {
-                        return base + "/profile?page=orders&orderId=" + encodeURIComponent(data.order_id);
-                    }
-                    if (data && data.type === "message") {
-                        return base + "/profile?page=inbox";
-                    }
-                    return base + "/";
-                }
-                JS;
-
-            if (file_put_contents($filePath, $fileContent) === false) {
-                throw new \Exception('Failed to write to file: ' . $filePath);
-            }
-        } catch (\Exception $e) {
-            //
-        }
-    }
 
     public function update_fcm_messages(Request $request)
     {
@@ -1419,7 +1397,6 @@ class BusinessSettingsController extends Controller
         $languages = $request->lang ?? [];
         $enIndex = array_search('en', $languages);
 
-        // [request_field, status_field, db_key, parcel_supported]
         $messages = [
             ['pending_message',                'pending_status',                      'order_pending_message',          true],
             ['confirm_message',                'confirm_status',                      'order_confirmation_msg',         true],
@@ -1463,7 +1440,6 @@ class BusinessSettingsController extends Controller
             ]);
         }
 
-        // Subscription notifications (global, not module-scoped)
         if (Helpers::get_business_settings('pro_member_status') == 1) {
             if ($request->has('subscription_reminder_before_time')) {
                 DataSetting::updateOrInsert(
@@ -1497,7 +1473,7 @@ class BusinessSettingsController extends Controller
             }
         }
 
-        Toastr::success(translate('messages.message_updated'));
+        Toastr::success(translate('messages.Message updated'));
 
         return back();
     }
@@ -1560,7 +1536,74 @@ class BusinessSettingsController extends Controller
             }
         }
 
-        Toastr::success(translate('messages.message_updated'));
+        Toastr::success(translate('messages.Message updated'));
+
+        return back();
+    }
+
+    public function update_fcm_messages_service(Request $request)
+    {
+        $languages = $request->lang ?? [];
+        $enIndex = array_search('en', $languages);
+
+        $messageKeys = [
+            'booking_place_message',
+            'booking_accepted_message',
+            'booking_ongoing_message',
+            'serviceman_assign_message',
+            'booking_complete_message',
+            'booking_cancel_message',
+            'schedule_booking_time_change_message',
+            'booking_service_location_change_message',
+            'customized_booking_request_message',
+            'customized_booking_delete_message',
+            'provider_bid_offer_message',
+            'provider_bid_withdraw_message',
+            'booking_edit_service_add_message',
+            'booking_edit_service_remove_message',
+        ];
+
+        foreach ($messageKeys as $key) {
+            $notification = NotificationMessage::where('module_type', 'service')->where('key', $key)->first() ?? new NotificationMessage;
+            $notification->key = $key;
+            $notification->module_type = 'service';
+            $this->writeNotificationFields($notification, $request, $key, $key . '_status', $languages, $enIndex);
+        }
+
+        if (Helpers::get_business_settings('pro_member_status') == 1) {
+            if ($request->has('subscription_reminder_before_time')) {
+                DataSetting::updateOrInsert(
+                    ['key' => 'subscription_reminder_before_time', 'type' => 'notification_settings'],
+                    ['value' => $request->subscription_reminder_before_time]
+                );
+            }
+            if ($request->has('subscription_reminder_before')) {
+                DataSetting::updateOrInsert(
+                    ['key' => 'subscription_reminder_before', 'type' => 'notification_settings'],
+                    ['value' => $request->subscription_reminder_before]
+                );
+            }
+
+            $subscriptionKeys = [
+                'subscription_expire_reminder' => 'subscription_expire_reminder_status',
+                'subscription_activated'       => 'subscription_activated_status',
+                'subscription_expired'         => 'subscription_expired_status',
+                'subscription_canceled'        => 'subscription_canceled_status',
+            ];
+
+            foreach ($subscriptionKeys as $msgKey => $statusKey) {
+                if (!$request->has($msgKey)) {
+                    continue;
+                }
+
+                $notification = NotificationMessage::where('key', $msgKey)->first() ?? new NotificationMessage;
+                $notification->key = $msgKey;
+                $notification->module_type = null;
+                $this->writeNotificationFields($notification, $request, $msgKey, $statusKey, $languages, $enIndex);
+            }
+        }
+
+        Toastr::success(translate('messages.Message updated'));
 
         return back();
     }
@@ -1580,7 +1623,7 @@ class BusinessSettingsController extends Controller
         if ($defaultLangIndex === false && !empty($activeLanguages)) {
             $defaultLangIndex = 0;
         } else if (empty($activeLanguages)) {
-            Toastr::error(translate('messages.language not found'));
+            Toastr::error(translate('No data found'));
             return back();
         }
 
@@ -1650,9 +1693,9 @@ class BusinessSettingsController extends Controller
             DB::commit();
 
             $cacheKey = 'fcm_notification_form_html_' . $moduleType . '_' . implode('_', $activeLanguages);
-            \Cache::forget($cacheKey);
+            ApiCache::forget('fcm_form_html', $cacheKey);
 
-            Toastr::success(translate('messages.Notification updated successfully'));
+            Toastr::success(translate('Updated successfully'));
             return back();
 
         } catch (Throwable $e) {
@@ -1662,7 +1705,7 @@ class BusinessSettingsController extends Controller
                 'request_data' => $request->all()
             ]);
 
-            Toastr::error(translate('messages.notification update failed'));
+            Toastr::error(translate('Notification update failed'));
             return back();
         }
     }
@@ -1674,7 +1717,7 @@ class BusinessSettingsController extends Controller
         $store->longitude = $request['longitude'];
         $store->save();
 
-        Toastr::success(translate('messages.settings_updated'));
+        Toastr::success(translate('messages.Settings updated'));
 
         return back();
     }
@@ -1694,7 +1737,7 @@ class BusinessSettingsController extends Controller
             'value' => $request['map_api_key_server'],
         ]);
 
-        Toastr::success(translate('messages.config_data_updated'));
+        Toastr::success(translate('messages.Config data updated'));
 
         return back();
     }
@@ -1705,7 +1748,7 @@ class BusinessSettingsController extends Controller
             'value' => $value,
         ]);
 
-        Toastr::success(translate('messages.app_settings_updated'));
+        Toastr::success(translate('messages.App settings updated'));
 
         return back();
     }
@@ -1756,7 +1799,7 @@ class BusinessSettingsController extends Controller
             'value' => $credential_array,
         ]);
 
-        Toastr::success(translate('messages.credential_updated', ['service' => $service]));
+        Toastr::success(translate('messages.Credential updated'));
 
         return redirect()->back();
     }
@@ -1791,14 +1834,14 @@ class BusinessSettingsController extends Controller
 
         $appleLogin->save();
 
-        Toastr::success(translate('messages.credential_updated', ['service' => $service]));
+        Toastr::success(translate('messages.Credential updated'));
 
         return redirect()->back();
     }
 
     public function login_settings()
     {
-        $data = array_column(BusinessSetting::whereIn('key', [
+        $data = Helpers::get_business_settings_many([
             'manual_login_status',
             'otp_login_status',
             'social_login_status',
@@ -1808,7 +1851,7 @@ class BusinessSettingsController extends Controller
             'email_verification_status',
             'phone_verification_status',
             'send_otp_via',
-        ])->get(['key', 'value'])->toArray(), 'value', 'key');
+        ]);
 
         $social_login = [];
         foreach (['social_login', 'apple_login'] as $login_key) {
@@ -1821,10 +1864,7 @@ class BusinessSettingsController extends Controller
         $facebook_login_status = (bool) ($social_login['facebook'] ?? false);
         $apple_login_status = (bool) ($social_login['apple'] ?? false);
         $is_firebase_active = (bool) (Helpers::get_business_settings('firebase_otp_verification') ?? 0);
-        $is_sms_active = Setting::where('is_active', 1)
-            ->whereJsonContains('live_values->status', '1')
-            ->where('settings_type', 'sms_config')
-            ->exists();
+        $is_sms_active = app(SettingService::class)->hasActiveSmsGateway();
         $is_mail_active = (bool) config('mail.status');
 
         return view('admin-views.login-setup.login_page', compact(
@@ -1857,10 +1897,7 @@ class BusinessSettingsController extends Controller
         $phone_verification_status = (bool) $request['phone_verification_status'];
 
         $is_firebase_active = (bool) (Helpers::get_business_settings('firebase_otp_verification') ?? 0);
-        $is_sms_active = Setting::where('is_active', 1)
-            ->whereJsonContains('live_values->status', '1')
-            ->where('settings_type', 'sms_config')
-            ->exists();
+        $is_sms_active = app(SettingService::class)->hasActiveSmsGateway();
         $is_mail_active = (bool) config('mail.status');
 
         $selected_socials = [
@@ -1946,12 +1983,11 @@ class BusinessSettingsController extends Controller
             Helpers::businessUpdateOrInsert(['key' => $key], ['value' => $value]);
         }
 
-        Toastr::success(translate('messages.login_settings_data_updated_successfully'));
+        Toastr::success(translate('Updated successfully'));
 
         return back();
     }
 
-    // recaptcha
     public function recaptcha_index(Request $request)
     {
         return view('admin-views.business-settings.recaptcha-index');
@@ -1970,17 +2006,15 @@ class BusinessSettingsController extends Controller
             'updated_at' => now(),
         ]);
 
-        Toastr::success(translate('messages.updated_successfully'));
+        Toastr::success(translate('messages.Updated successfully'));
 
         return back();
     }
 
-    // recaptcha
 
     public function firebase_otp_index(Request $request)
     {
-        $is_sms_active = Setting::whereJsonContains('live_values->status', '1')->where('settings_type', 'sms_config')
-            ->exists();
+        $is_sms_active = app(SettingService::class)->hasActiveSmsGateway();
         $is_mail_active = config('mail.status');
 
         return view('admin-views.business-settings.firebase-otp-index', compact('is_sms_active', 'is_mail_active'));
@@ -1990,15 +2024,14 @@ class BusinessSettingsController extends Controller
     {
         $login_setup_status = Helpers::get_business_settings('otp_login_status') ?? 0;
         $phone_verification_status = Helpers::get_business_settings('phone_verification_status') ?? 0;
-        $is_sms_active = Setting::whereJsonContains('live_values->status', '1')->where('settings_type', 'sms_config')
-            ->exists();
+        $is_sms_active = app(SettingService::class)->hasActiveSmsGateway();
         if (!$is_sms_active && $login_setup_status && ($request['firebase_otp_verification'] == 0)) {
-            Toastr::warning(translate('otp_login_status_is_enabled_in_login_setup._First_disable_from_login_setup.'));
+            Toastr::warning(translate('Otp login status is enabled in login setup. First disable from login setup.'));
 
             return redirect()->back();
         }
         if (!$is_sms_active && $phone_verification_status && ($request['firebase_otp_verification'] == 0)) {
-            Toastr::warning(translate('phone_verification_status_is_enabled_in_login_setup._First_disable_from_login_setup.'));
+            Toastr::warning(translate('Phone verification status is enabled in login setup. First disable from login setup.'));
 
             return redirect()->back();
         }
@@ -2009,7 +2042,7 @@ class BusinessSettingsController extends Controller
             'value' => $request['firebase_web_api_key'],
         ]);
 
-        Toastr::success(translate('messages.updated_successfully'));
+        Toastr::success(translate('messages.Updated successfully'));
 
         return back();
     }
@@ -2065,25 +2098,27 @@ class BusinessSettingsController extends Controller
             ]);
         }
 
-        Toastr::success(translate('messages.updated_successfully'));
+        Toastr::success(translate('messages.Updated successfully'));
 
         return back();
     }
 
-    // Send Mail
     public function send_mail(Request $request)
     {
         if (getEnvMode() == 'demo') {
-            Toastr::info(translate('messages.update_option_is_disable_for_demo'));
+            Toastr::info(translate('messages.Update option is disable for demo'));
 
             return back();
         }
         $response_flag = 0;
         try {
-            Mail::to($request->email)->send(new \App\Mail\TestEmailSender);
+            SendNotification::mail($request->email, new \App\Mail\TestEmailSender);
             $response_flag = 1;
         } catch (\Exception $exception) {
-            info($exception->getMessage());
+            Log::error('admin.business_settings_controller.send_mail_failed', [
+                'error' => $exception->getMessage(),
+                'file' => $exception->getFile().':'.$exception->getLine(),
+            ]);
             $response_flag = 2;
         }
 
@@ -2130,7 +2165,7 @@ class BusinessSettingsController extends Controller
             abort(404);
         }
         if ($tab == 'meta-data') {
-            $landingData = DataSetting::withoutGlobalScope('translate')->where('type', 'admin_landing_page')->whereIn('key', ['meta_title', 'meta_description', 'meta_image','meta_data'])->get()->keyBy('key') ?? [];
+            $landingData = DataSetting::withoutGlobalScope('translate')->withStorage()->with('translations')->where('type', 'admin_landing_page')->whereIn('key', ['meta_title', 'meta_description', 'meta_image','meta_data'])->get()->keyBy('key') ?? [];
             $language = Helpers::get_business_settings('language');
         }
 
@@ -2141,7 +2176,7 @@ class BusinessSettingsController extends Controller
     public function update_admin_landing_page_settings(Request $request, $tab)
     {
         if (getEnvMode() == 'demo') {
-            Toastr::info(translate('messages.update_option_is_disable_for_demo'));
+            Toastr::info(translate('messages.Update option is disable for demo'));
 
             return back();
         }
@@ -2197,15 +2232,7 @@ class BusinessSettingsController extends Controller
             $fixed_referal_title->value = $request->fixed_referal_title[array_search('default', $request->lang)];
             $fixed_referal_title->save();
 
-            // $fixed_referal_sub_title = DataSetting::where('type', 'admin_landing_page')->where('key', 'fixed_referal_sub_title')->first();
-            // if ($fixed_referal_sub_title == null) {
-            //     $fixed_referal_sub_title = new DataSetting;
-            // }
 
-            // $fixed_referal_sub_title->key = 'fixed_referal_sub_title';
-            // $fixed_referal_sub_title->type = 'admin_landing_page';
-            // $fixed_referal_sub_title->value = $request->fixed_referal_sub_title[array_search('default', $request->lang)];
-            // $fixed_referal_sub_title->save();
 
             $fixed_newsletter_title = DataSetting::where('type', 'admin_landing_page')->where('key', 'fixed_newsletter_title')->first();
             if ($fixed_newsletter_title == null) {
@@ -2236,7 +2263,6 @@ class BusinessSettingsController extends Controller
             $fixed_footer_article_title->type = 'admin_landing_page';
             $fixed_footer_article_title->value = $request->fixed_footer_article_title[array_search('default', $request->lang)];
             $fixed_footer_article_title->save();
-            // dd($fixed_module_sub_title?->getRawOriginal('value'));
 
             $default_lang = str_replace('_', '-', app()->getLocale());
             foreach ($request->lang as $index => $key) {
@@ -2365,31 +2391,6 @@ class BusinessSettingsController extends Controller
                         );
                     }
                 }
-                // if ($default_lang == $key && !($request->fixed_referal_sub_title[$index])) {
-                //     if ($key != 'default') {
-                //         Translation::updateOrInsert(
-                //             [
-                //                 'translationable_type' => 'App\Models\DataSetting',
-                //                 'translationable_id' => $fixed_referal_sub_title->id,
-                //                 'locale' => $key,
-                //                 'key' => 'fixed_referal_sub_title',
-                //             ],
-                //             ['value' => $fixed_referal_sub_title?->getRawOriginal('value')]
-                //         );
-                //     }
-                // } else {
-                //     if ($request->fixed_referal_sub_title[$index] && $key != 'default') {
-                //         Translation::updateOrInsert(
-                //             [
-                //                 'translationable_type' => 'App\Models\DataSetting',
-                //                 'translationable_id' => $fixed_referal_sub_title->id,
-                //                 'locale' => $key,
-                //                 'key' => 'fixed_referal_sub_title',
-                //             ],
-                //             ['value' => $request->fixed_referal_sub_title[$index]]
-                //         );
-                //     }
-                // }
                 if ($default_lang == $key && !($request->fixed_newsletter_title[$index])) {
                     if ($key != 'default') {
                         Translation::updateOrInsert(
@@ -2473,22 +2474,20 @@ class BusinessSettingsController extends Controller
                     'web_app_url' => $request['web_app_url'],
                 ]),
             ]);
-            Toastr::success(translate('messages.landing_page_text_updated'));
+            Toastr::success(translate('messages.Landing page text updated'));
         } elseif ($tab == 'promotional-section') {
             $request->validate([
                 'title' => 'required',
                 'sub_title' => 'required',
-                // 'image' => 'required|image|max:2048|mimes:' . IMAGE_FORMAT_FOR_VALIDATION,
             ]);
             if ($request->title[array_search('default', $request->lang)] == '') {
-                Toastr::error(translate('default_data_is_required'));
+                Toastr::error(translate('Default data is required'));
 
                 return back();
             }
             $banner = new AdminPromotionalBanner;
             $banner->title = $request->title[array_search('default', $request->lang)];
             $banner->sub_title = $request->sub_title[array_search('default', $request->lang)];
-            // $banner->image = Helpers::upload('promotional_banner/', 'png', $request->file('image'));
             $banner->save();
             $default_lang = str_replace('_', '-', app()->getLocale());
             $data = [];
@@ -2547,17 +2546,17 @@ class BusinessSettingsController extends Controller
                 }
             }
 
-            Toastr::success(translate('messages.banner_added_successfully'));
+            Toastr::success(translate('Added successfully'));
 
             return back();
         } elseif ($tab == 'feature-list') {
             $request->validate([
                 'title' => 'required',
                 'sub_title' => 'required',
-                'image' => 'required|image|max:2048|mimes:' . IMAGE_FORMAT_FOR_VALIDATION,
+                'image' => ImageFile::rules('required'),
             ]);
             if ($request->title[array_search('default', $request->lang)] == '') {
-                Toastr::error(translate('default_data_is_required'));
+                Toastr::error(translate('Default data is required'));
 
                 return back();
             }
@@ -2623,7 +2622,7 @@ class BusinessSettingsController extends Controller
                 }
             }
 
-            Toastr::success(translate('messages.feature_added_successfully'));
+            Toastr::success(translate('Added successfully'));
         } elseif ($tab == 'feature-title') {
             $feature_title = DataSetting::where('type', 'admin_landing_page')->where('key', 'feature_title')->first();
             if ($feature_title == null) {
@@ -2700,7 +2699,7 @@ class BusinessSettingsController extends Controller
                 }
             }
 
-            Toastr::success(translate('messages.feature_section_updated'));
+            Toastr::success(translate('messages.Feature section updated'));
         } elseif ($tab == 'earning-title') {
             $earning_title = DataSetting::where('type', 'admin_landing_page')->where('key', 'earning_title')->first();
             if ($earning_title == null) {
@@ -2782,7 +2781,7 @@ class BusinessSettingsController extends Controller
             $request->validate([
                 'seller_app_earning_title.0' => 'required',
                 'seller_app_earning_sub_title.0' => 'required',
-                'image' => 'nullable|image|max:2048|mimes:' . IMAGE_FORMAT_FOR_VALIDATION
+                'image' => ImageFile::rules('nullable'),
             ]);
             $seller_app_earning_title = DataSetting::where('type', 'admin_landing_page')->where('key', 'seller_app_earning_title')->first();
             if ($seller_app_earning_title == null) {
@@ -2875,12 +2874,12 @@ class BusinessSettingsController extends Controller
                     'apple_store_url' => Helpers::get_business_settings('app_url_ios_store'),
                 ]),
             ]);
-            Toastr::success(translate('messages.seller_links_updated'));
+            Toastr::success(translate('messages.Seller links updated'));
         } elseif ($tab == 'earning-dm-link') {
             $request->validate([
                 'dm_app_earning_title.0' => 'required',
                 'dm_app_earning_sub_title.0' => 'required',
-                'image' => 'nullable|image|max:2048|mimes:' . IMAGE_FORMAT_FOR_VALIDATION
+                'image' => ImageFile::rules('nullable'),
             ]);
             $dm_app_earning_title = DataSetting::where('type', 'admin_landing_page')->where('key', 'dm_app_earning_title')->first();
             if ($dm_app_earning_title == null) {
@@ -2973,12 +2972,12 @@ class BusinessSettingsController extends Controller
                     'apple_store_url' => Helpers::get_business_settings('app_url_ios_deliveryman'),
                 ]),
             ]);
-            Toastr::success(translate('messages.delivery_man_links_updated'));
+            Toastr::success(translate('messages.Delivery man links updated'));
         } elseif ($tab == 'earning-rider-link') {
             $request->validate([
                 'rider_app_earning_title.0' => 'required',
                 'rider_app_earning_sub_title.0' => 'required',
-                'image' => 'nullable|image|max:2048|mimes:' . IMAGE_FORMAT_FOR_VALIDATION
+                'image' => ImageFile::rules('nullable'),
             ]);
             $rider_app_earning_title = DataSetting::where('type', 'admin_landing_page')->where('key', 'rider_app_earning_title')->first();
             if ($rider_app_earning_title == null) {
@@ -3071,7 +3070,7 @@ class BusinessSettingsController extends Controller
                     'apple_store_url' => Helpers::get_business_settings('app_url_ios_rider'),
                 ]),
             ]);
-            Toastr::success(translate('messages.rider_links_updated'));
+            Toastr::success(translate('messages.Rider links updated'));
         } elseif ($tab == 'why-choose-title') {
             $why_choose_title = DataSetting::where('type', 'admin_landing_page')->where('key', 'why_choose_title')->first();
             if ($why_choose_title == null) {
@@ -3113,14 +3112,14 @@ class BusinessSettingsController extends Controller
                 }
             }
 
-            Toastr::success(translate('messages.why_choose_section_updated'));
+            Toastr::success(translate('messages.Why choose section updated'));
         } elseif ($tab == 'special-criteria-list') {
             $request->validate([
                 'title' => 'required',
-                'image' => 'required|max:2048|mimes:' . IMAGE_FORMAT_FOR_VALIDATION,
+                'image' => ImageFile::rules('required'),
             ]);
             if ($request->title[array_search('default', $request->lang)] == '') {
-                Toastr::error(translate('default_data_is_required'));
+                Toastr::error(translate('Default data is required'));
 
                 return back();
             }
@@ -3159,12 +3158,12 @@ class BusinessSettingsController extends Controller
                 }
             }
 
-            Toastr::success(translate('messages.criteria_added_successfully'));
+            Toastr::success(translate('Added successfully'));
         } elseif ($tab == 'download-app-section') {
             $request->validate([
                 'download_user_app_title.0' => 'required',
                 'download_user_app_sub_title.0' => 'required',
-                'image' => 'nullable|image|max:2048|mimes:' . IMAGE_FORMAT_FOR_VALIDATION
+                'image' => ImageFile::rules('nullable'),
             ]);
             $download_user_app_title = DataSetting::where('type', 'admin_landing_page')->where('key', 'download_user_app_title')->first();
             if ($download_user_app_title == null) {
@@ -3259,7 +3258,7 @@ class BusinessSettingsController extends Controller
                 ]),
             ]);
 
-            Toastr::success(translate('messages.download_app_section_updated'));
+            Toastr::success(translate('messages.Download app section updated'));
         } elseif ($tab == 'download-counter-section') {
             Helpers::dataUpdateOrInsert(['key' => 'counter_section', 'type' => 'admin_landing_page'], [
                 'value' => json_encode([
@@ -3272,7 +3271,7 @@ class BusinessSettingsController extends Controller
                 ]),
             ]);
 
-            Toastr::success(translate('messages.landing_page_counter_section_updated'));
+            Toastr::success(translate('messages.Landing page counter section updated'));
         } elseif ($tab == 'testimonial-title') {
             $testimonial_title = DataSetting::where('type', 'admin_landing_page')->where('key', 'testimonial_title')->first();
             if ($testimonial_title == null) {
@@ -3314,14 +3313,14 @@ class BusinessSettingsController extends Controller
                 }
             }
 
-            Toastr::success(translate('messages.testimonial_section_updated'));
+            Toastr::success(translate('messages.Testimonial section updated'));
         } elseif ($tab == 'testimonial-list') {
             $request->validate([
                 'name' => 'required|max:30',
                 'designation' => 'required|max:30',
                 'review' => 'required',
-                'reviewer_image' => 'required|image|max:2048|mimes:' . IMAGE_FORMAT_FOR_VALIDATION,
-                'company_image' => 'required|image|max:2048|mimes:' . IMAGE_FORMAT_FOR_VALIDATION,
+                'reviewer_image' => ImageFile::rules('required'),
+                'company_image' => ImageFile::rules('required'),
             ]);
 
             $testimonial = new AdminTestimonial;
@@ -3331,94 +3330,14 @@ class BusinessSettingsController extends Controller
             $testimonial->reviewer_image = Helpers::upload('reviewer_image/', 'png', $request->file('reviewer_image'));
             $testimonial->company_image = Helpers::upload('reviewer_company_image/', 'png', $request->file('company_image'));
             $testimonial->save();
-            Toastr::success(translate('messages.testimonial_added_successfully'));
+            Toastr::success(translate('Added successfully'));
         } elseif ($tab == 'contact-us-section') {
-            // $contact_us_title = DataSetting::where('type', 'admin_landing_page')->where('key', 'contact_us_title')->first();
-            // if ($contact_us_title == null) {
-            //     $contact_us_title = new DataSetting;
-            // }
 
-            // $contact_us_title->key = 'contact_us_title';
-            // $contact_us_title->type = 'admin_landing_page';
-            // $contact_us_title->value = $request->contact_us_title[array_search('default', $request->lang)];
-            // $contact_us_title->save();
 
-            // $contact_us_sub_title = DataSetting::where('type', 'admin_landing_page')->where('key', 'contact_us_sub_title')->first();
-            // if ($contact_us_sub_title == null) {
-            //     $contact_us_sub_title = new DataSetting;
-            // }
 
-            // $contact_us_sub_title->key = 'contact_us_sub_title';
-            // $contact_us_sub_title->type = 'admin_landing_page';
-            // $contact_us_sub_title->value = $request->contact_us_sub_title[array_search('default', $request->lang)];
-            // $contact_us_sub_title->save();
 
-            // $contact_us_image = DataSetting::where('type', 'admin_landing_page')->where('key', 'contact_us_image')->first();
-            // if ($contact_us_image == null) {
-            //     $request->validate([
-            //         'image' => 'required|image|max:2048|mimes:' . IMAGE_FORMAT_FOR_VALIDATION,
-            //     ]);
-            //     $contact_us_image = new DataSetting;
-            // }
-            // $contact_us_image->key = 'contact_us_image';
-            // $contact_us_image->type = 'admin_landing_page';
-            // $contact_us_image->value = $request->has('image') ? Helpers::update('contact_us_image/', $contact_us_image->value, 'png', $request->file('image')) : $contact_us_image->value;
-            // $contact_us_image->save();
 
             $data = [];
-            // $default_lang = str_replace('_', '-', app()->getLocale());
-            // foreach ($request->lang as $index => $key) {
-            //     if ($default_lang == $key && !($request->contact_us_title[$index])) {
-            //         if ($key != 'default') {
-            //             Translation::updateOrInsert(
-            //                 [
-            //                     'translationable_type' => 'App\Models\DataSetting',
-            //                     'translationable_id' => $contact_us_title->id,
-            //                     'locale' => $key,
-            //                     'key' => 'contact_us_title',
-            //                 ],
-            //                 ['value' => $contact_us_title?->getRawOriginal('value')]
-            //             );
-            //         }
-            //     } else {
-            //         if ($request->contact_us_title[$index] && $key != 'default') {
-            //             Translation::updateOrInsert(
-            //                 [
-            //                     'translationable_type' => 'App\Models\DataSetting',
-            //                     'translationable_id' => $contact_us_title->id,
-            //                     'locale' => $key,
-            //                     'key' => 'contact_us_title',
-            //                 ],
-            //                 ['value' => $request->contact_us_title[$index]]
-            //             );
-            //         }
-            //     }
-            //     if ($default_lang == $key && !($request->contact_us_sub_title[$index])) {
-            //         if ($key != 'default') {
-            //             Translation::updateOrInsert(
-            //                 [
-            //                     'translationable_type' => 'App\Models\DataSetting',
-            //                     'translationable_id' => $contact_us_sub_title->id,
-            //                     'locale' => $key,
-            //                     'key' => 'contact_us_sub_title',
-            //                 ],
-            //                 ['value' => $contact_us_sub_title?->getRawOriginal('value')]
-            //             );
-            //         }
-            //     } else {
-            //         if ($request->contact_us_sub_title[$index] && $key != 'default') {
-            //             Translation::updateOrInsert(
-            //                 [
-            //                     'translationable_type' => 'App\Models\DataSetting',
-            //                     'translationable_id' => $contact_us_sub_title->id,
-            //                     'locale' => $key,
-            //                     'key' => 'contact_us_sub_title',
-            //                 ],
-            //                 ['value' => $request->contact_us_sub_title[$index]]
-            //             );
-            //         }
-            //     }
-            // }
 
             Helpers::businessUpdateOrInsert(['key' => 'opening_time'], [
                 'value' => $request['opening_time'],
@@ -3429,7 +3348,7 @@ class BusinessSettingsController extends Controller
             ]);
 
             if ($request->opening_day == $request->closing_day) {
-                Toastr::error(translate('messages.the_start_day_and_end_day_is_same'));
+                Toastr::error(translate('messages.The start day and end day is same'));
             } else {
                 Helpers::businessUpdateOrInsert(['key' => 'opening_day'], [
                     'value' => $request['opening_day'],
@@ -3440,14 +3359,14 @@ class BusinessSettingsController extends Controller
                 ]);
             }
 
-            Toastr::success(translate('messages.contact_section_updated'));
+            Toastr::success(translate('messages.Contact section updated'));
         } elseif ($tab == 'available-zone-section') {
             if ($request['available_zone_status']) {
                 $request->validate([
                     'available_zone_title.0' => 'required',
 
                 ], [
-                    'available_zone_title.0.required' => translate('default_title_is_required'),
+                    'available_zone_title.0.required' => translate('Default title is required'),
                 ]);
             }
             $available_zone_title = DataSetting::where('type', 'admin_landing_page')->where('key', 'available_zone_title')->first();
@@ -3473,7 +3392,7 @@ class BusinessSettingsController extends Controller
             $available_zone_image = DataSetting::where('type', 'admin_landing_page')->where('key', 'available_zone_image')->first();
             if ($available_zone_image == null) {
                 $request->validate([
-                    'image' => 'required|image|max:2048|mimes:' . IMAGE_FORMAT_FOR_VALIDATION
+                    'image' => ImageFile::rules('required'),
                 ]);
                 $available_zone_image = new DataSetting;
             }
@@ -3541,7 +3460,7 @@ class BusinessSettingsController extends Controller
                 'value' => $request['available_zone_status'],
             ]);
 
-            Toastr::success(translate('messages.available_zone_section_updated'));
+            Toastr::success(translate('messages.Available zone section updated'));
         } elseif ($tab == 'background-color') {
             Helpers::businessUpdateOrInsert(['key' => 'backgroundChange'], [
                 'value' => json_encode([
@@ -3551,10 +3470,10 @@ class BusinessSettingsController extends Controller
                     'primary_2_rgb' => Helpers::hex_to_rbg($request['footer-bg']),
                 ]),
             ]);
-            Toastr::success(translate('messages.background_updated'));
+            Toastr::success(translate('messages.Background updated'));
         } elseif ($tab == 'meta-data') {
             $this->landingPageMetaDataUpdate($request, 'admin');
-            Toastr::success(translate('messages.meta_data_updated_successfully'));
+            Toastr::success(translate('Updated successfully'));
 
             return back();
         }
@@ -3618,14 +3537,14 @@ class BusinessSettingsController extends Controller
         $banner = AdminPromotionalBanner::findOrFail($request->id);
         $banner->status = $request->status;
         $banner->save();
-        Toastr::success(translate('messages.banner_status_updated'));
+        Toastr::success(translate('messages.Banner status updated'));
 
         return back();
     }
 
     public function promotional_edit($id)
     {
-        $banner = AdminPromotionalBanner::withoutGlobalScope('translate')->findOrFail($id);
+        $banner = AdminPromotionalBanner::withoutGlobalScope('translate')->withStorage()->with('translations')->findOrFail($id);
 
         return view('admin-views.business-settings.landing-page-settings.admin-promotional-section-edit', compact('banner'));
     }
@@ -3635,18 +3554,16 @@ class BusinessSettingsController extends Controller
         $request->validate([
             'title' => 'required|max:100',
             'sub_title' => 'required',
-            // 'image' => 'required|image|max:2048|mimes:' . IMAGE_FORMAT_FOR_VALIDATION
         ]);
 
         if ($request->title[array_search('default', $request->lang)] == '') {
-            Toastr::error(translate('default_data_is_required'));
+            Toastr::error(translate('Default data is required'));
 
             return back();
         }
-        $banner = AdminPromotionalBanner::find($id);
+        $banner = AdminPromotionalBanner::withStorage()->find($id);
         $banner->title = $request->title[array_search('default', $request->lang)];
         $banner->sub_title = $request->sub_title[array_search('default', $request->lang)];
-        // $banner->image = $request->has('image') ? Helpers::update('promotional_banner/', $banner->image, 'png', $request->file('image')) : $banner->image;
         $banner->save();
         $default_lang = str_replace('_', '-', app()->getLocale());
         foreach ($request->lang as $index => $key) {
@@ -3703,7 +3620,7 @@ class BusinessSettingsController extends Controller
                 }
             }
         }
-        Toastr::success(translate('messages.banner_updated_successfully'));
+        Toastr::success(translate('Updated successfully'));
 
         return back();
     }
@@ -3711,12 +3628,12 @@ class BusinessSettingsController extends Controller
     public function promotional_destroy(AdminPromotionalBanner $banner)
     {
         if (getEnvMode() == 'demo' && $banner->id == 1) {
-            Toastr::warning(translate('messages.you_can_not_delete_this_banner_please_add_a_new_banner_to_delete'));
+            Toastr::warning(translate('messages.You can not delete this banner please add a new banner to delete'));
 
             return back();
         }
         $banner->delete();
-        Toastr::success(translate('messages.banner_deleted_successfully'));
+        Toastr::success(translate('Deleted successfully'));
 
         return back();
     }
@@ -3731,14 +3648,14 @@ class BusinessSettingsController extends Controller
         $feature = AdminFeature::findOrFail($request->id);
         $feature->status = $request->status;
         $feature->save();
-        Toastr::success(translate('messages.feature_status_updated'));
+        Toastr::success(translate('messages.Feature status updated'));
 
         return back();
     }
 
     public function feature_edit($id)
     {
-        $feature = AdminFeature::withoutGlobalScope('translate')->findOrFail($id);
+        $feature = AdminFeature::withoutGlobalScope('translate')->withStorage()->with('translations')->findOrFail($id);
 
         return view('admin-views.business-settings.landing-page-settings.admin-feature-list-edit', compact('feature'));
     }
@@ -3748,15 +3665,15 @@ class BusinessSettingsController extends Controller
         $request->validate([
             'title' => 'required|max:100',
             'sub_title' => 'required',
-            'image' => 'required|image|max:2048|mimes:' . IMAGE_FORMAT_FOR_VALIDATION
+            'image' => ImageFile::rules('required'),
         ]);
 
         if ($request->title[array_search('default', $request->lang)] == '') {
-            Toastr::error(translate('default_data_is_required'));
+            Toastr::error(translate('Default data is required'));
 
             return back();
         }
-        $feature = AdminFeature::find($id);
+        $feature = AdminFeature::withStorage()->find($id);
         $feature->title = $request->title[array_search('default', $request->lang)];
         $feature->sub_title = $request->sub_title[array_search('default', $request->lang)];
         $feature->image = $request->has('image') ? Helpers::update('admin_feature/', $feature->image, 'png', $request->file('image')) : $feature->image;
@@ -3816,7 +3733,7 @@ class BusinessSettingsController extends Controller
                 }
             }
         }
-        Toastr::success(translate('messages.feature_updated_successfully'));
+        Toastr::success(translate('Updated successfully'));
 
         return back();
     }
@@ -3824,12 +3741,12 @@ class BusinessSettingsController extends Controller
     public function feature_destroy(AdminFeature $feature)
     {
         if (getEnvMode() == 'demo' && $feature->id == 1) {
-            Toastr::warning(translate('messages.you_can_not_delete_this_feature_please_add_a_new_feature_to_delete'));
+            Toastr::warning(translate('messages.You can not delete this feature please add a new feature to delete'));
 
             return back();
         }
         $feature->delete();
-        Toastr::success(translate('messages.feature_deleted_successfully'));
+        Toastr::success(translate('Deleted successfully'));
 
         return back();
     }
@@ -3844,14 +3761,14 @@ class BusinessSettingsController extends Controller
         $criteria = AdminSpecialCriteria::findOrFail($request->id);
         $criteria->status = $request->status;
         $criteria->save();
-        Toastr::success(translate('messages.criteria_status_updated'));
+        Toastr::success(translate('messages.Criteria status updated'));
 
         return back();
     }
 
     public function criteria_edit($id)
     {
-        $criteria = AdminSpecialCriteria::withoutGlobalScope('translate')->findOrFail($id);
+        $criteria = AdminSpecialCriteria::withoutGlobalScope('translate')->withStorage()->with('translations')->findOrFail($id);
 
         return view('admin-views.business-settings.landing-page-settings.admin-landing-why-choose-edit', compact('criteria'));
     }
@@ -3863,15 +3780,15 @@ class BusinessSettingsController extends Controller
         ]);
 
         if ($request->title[array_search('default', $request->lang)] == '') {
-            Toastr::error(translate('default_data_is_required'));
+            Toastr::error(translate('Default data is required'));
 
             return back();
         }
-        $criteria = AdminSpecialCriteria::find($id);
+        $criteria = AdminSpecialCriteria::withStorage()->find($id);
         $criteria->title = $request->title[array_search('default', $request->lang)];
         if ($criteria->image == null) {
             $request->validate([
-                'image' => 'nullable|image|max:2048|mimes:' . IMAGE_FORMAT_FOR_VALIDATION
+                'image' => ImageFile::rules('nullable'),
             ]);
         }
         $criteria->image = $request->has('image') ? Helpers::update('special_criteria/', $criteria->image, 'png', $request->file('image')) : $criteria->image;
@@ -3905,7 +3822,7 @@ class BusinessSettingsController extends Controller
                 }
             }
         }
-        Toastr::success(translate('messages.criteria_updated_successfully'));
+        Toastr::success(translate('Updated successfully'));
 
         return back();
     }
@@ -3913,12 +3830,12 @@ class BusinessSettingsController extends Controller
     public function criteria_destroy(AdminSpecialCriteria $criteria)
     {
         if (getEnvMode() == 'demo' && $criteria->id == 1) {
-            Toastr::warning(translate('messages.you_can_not_delete_this_criteria_please_add_a_new_criteria_to_delete'));
+            Toastr::warning(translate('messages.You can not delete this criteria please add a new criteria to delete'));
 
             return back();
         }
         $criteria->delete();
-        Toastr::success(translate('messages.criteria_deleted_successfully'));
+        Toastr::success(translate('Deleted successfully'));
 
         return back();
     }
@@ -3933,14 +3850,14 @@ class BusinessSettingsController extends Controller
         $review = AdminTestimonial::findOrFail($request->id);
         $review->status = $request->status;
         $review->save();
-        Toastr::success(translate('messages.review_status_updated'));
+        Toastr::success(translate('messages.Review status updated'));
 
         return back();
     }
 
     public function review_edit($id)
     {
-        $review = AdminTestimonial::withoutGlobalScope('translate')->findOrFail($id);
+        $review = AdminTestimonial::withoutGlobalScope('translate')->withStorage()->findOrFail($id);
 
         return view('admin-views.business-settings.landing-page-settings.admin-landing-testimonial-test', compact('review'));
     }
@@ -3953,18 +3870,18 @@ class BusinessSettingsController extends Controller
             'review' => 'required',
         ]);
 
-        $review = AdminTestimonial::findOrFail($id);
+        $review = AdminTestimonial::withStorage()->findOrFail($id);
         $review->name = $request->name;
         $review->designation = $request->designation;
         $review->review = $request->review;
         if ($review->reviewer_image == null) {
             $request->validate([
-                'reviewer_image' => 'required|image|max:2048|mimes:' . IMAGE_FORMAT_FOR_VALIDATION,
+                'reviewer_image' => ImageFile::rules('required'),
             ]);
         }
         if ($review->company_image == null) {
             $request->validate([
-                'company_image' => 'required|image|max:2048|mimes:' . IMAGE_FORMAT_FOR_VALIDATION,
+                'company_image' => ImageFile::rules('required'),
             ]);
         }
 
@@ -3972,7 +3889,7 @@ class BusinessSettingsController extends Controller
         $review->company_image = $request->has('company_image') ? Helpers::update('reviewer_company_image/', $review->company_image, 'png', $request->file('company_image')) : $review->company_image;
         $review->save();
 
-        Toastr::success(translate('messages.review_updated_successfully'));
+        Toastr::success(translate('Updated successfully'));
 
         return back();
     }
@@ -3980,12 +3897,12 @@ class BusinessSettingsController extends Controller
     public function review_destroy(AdminTestimonial $review)
     {
         if (getEnvMode() == 'demo' && $review->id == 1) {
-            Toastr::warning(translate('messages.you_can_not_delete_this_review_please_add_a_new_review_to_delete'));
+            Toastr::warning(translate('messages.You can not delete this review please add a new review to delete'));
 
             return back();
         }
         $review->delete();
-        Toastr::success(translate('messages.review_deleted_successfully'));
+        Toastr::success(translate('Deleted successfully'));
 
         return back();
     }
@@ -4022,7 +3939,7 @@ class BusinessSettingsController extends Controller
         }
 
         if ($tab == 'meta-data') {
-            $landingData = DataSetting::withoutGlobalScope('translate')->where('type', 'react_landing_page')->whereIn('key', ['meta_title', 'meta_description', 'meta_image','meta_data'])->get()->keyBy('key') ?? [];
+            $landingData = DataSetting::withoutGlobalScope('translate')->withStorage()->with('translations')->where('type', 'react_landing_page')->whereIn('key', ['meta_title', 'meta_description', 'meta_image','meta_data'])->get()->keyBy('key') ?? [];
             $language = Helpers::get_business_settings('language');
         }
 
@@ -4032,7 +3949,7 @@ class BusinessSettingsController extends Controller
     public function update_react_landing_page_settings(Request $request, $tab)
     {
         if (getEnvMode() == 'demo') {
-            Toastr::info(translate('messages.update_option_is_disable_for_demo'));
+            Toastr::info(translate('messages.Update option is disable for demo'));
 
             return back();
         }
@@ -4042,12 +3959,12 @@ class BusinessSettingsController extends Controller
                 'gallery_content_sub_title.0' => 'required',
 
             ], [
-                'gallery_content_title.0.required' => translate('messages.Default_title_is_required'),
-                'gallery_content_sub_title.0.required' => translate('messages.Default_subtitle_is_required'),
+                'gallery_content_title.0.required' => translate('messages.Default title is required'),
+                'gallery_content_sub_title.0.required' => translate('messages.Default subtitle is required'),
             ]);
             $this->getAddLandingPageData($request, 'react_landing_page', 'gallery_content_title', true);
             $this->getAddLandingPageData($request, 'react_landing_page', 'gallery_content_sub_title', true);
-            Toastr::success(translate('messages.gallery_content_section_updated'));
+            Toastr::success(translate('messages.Gallery content section updated'));
             return back();
         } elseif ($tab == 'popular-client-section') {
             $request->validate([
@@ -4055,8 +3972,8 @@ class BusinessSettingsController extends Controller
                 'popular_client_sub_title.0' => 'required',
 
             ], [
-                'popular_client_title.0.required' => translate('messages.Default_title_is_required'),
-                'popular_client_sub_title.0.required' => translate('messages.Default_subtitle_is_required'),
+                'popular_client_title.0.required' => translate('messages.Default title is required'),
+                'popular_client_sub_title.0.required' => translate('messages.Default subtitle is required'),
             ]);
             $this->getAddLandingPageData($request, 'react_landing_page', 'popular_client_title', true);
             $this->getAddLandingPageData($request, 'react_landing_page', 'popular_client_sub_title', true);
@@ -4091,7 +4008,7 @@ class BusinessSettingsController extends Controller
                     $data->save();
                 }
             }
-            Toastr::success(translate('messages.popular_client_content_section_updated'));
+            Toastr::success(translate('messages.Popular client content section updated'));
             return back();
         } elseif ($tab == 'popular-client-section-images') {
             $request->validate([
@@ -4123,17 +4040,17 @@ class BusinessSettingsController extends Controller
                     $this->getAddLandingPageData(request: $request, type: 'react_landing_page', key: $key, multiLang: false, filePath: 'popular_client_section/');
                 }
             }
-            Toastr::success(translate('messages.popular_client_content_section_updated'));
+            Toastr::success(translate('messages.Popular client content section updated'));
             return back();
         } elseif ($tab == 'download-dm-app-section') {
             $request->validate([
                 'download_dm_app_title.0' => 'required|max:100',
                 'download_dm_app_sub_title.0' => 'nullable|max:1000',
                 'download_dm_app_button_title.0' => 'required|max:20',
-                'download_dm_app_image' => 'nullable|mimetypes:image/webp,image/jpeg,image/png,image/gif|max:2048',
+                'download_dm_app_image' => ImageFile::rules('nullable'),
             ], [
-                'download_dm_app_title.0.required' => translate('Default_title_is_required'),
-                'download_dm_app_button_title.0.required' => translate('Default_button_title_is_required'),
+                'download_dm_app_title.0.required' => translate('Default title is required'),
+                'download_dm_app_button_title.0.required' => translate('Default button title is required'),
             ]);
 
             if ($request->image_remove == '1') {
@@ -4150,7 +4067,7 @@ class BusinessSettingsController extends Controller
                 $this->getAddLandingPageData($request, 'react_landing_page', 'download_dm_app_image', false, 'download_dm_app_section/');
             }
 
-            Toastr::success(translate('messages.download_deliveryman_app_section_updated'));
+            Toastr::success(translate('messages.Download deliveryman app section updated'));
 
             return back();
         } elseif ($tab == 'download-rider-app-section') {
@@ -4158,10 +4075,10 @@ class BusinessSettingsController extends Controller
                 'download_rider_app_title.0' => 'required|max:100',
                 'download_rider_app_sub_title.0' => 'nullable|max:1000',
                 'download_rider_app_button_title.0' => 'required|max:20',
-                'download_rider_app_image' => 'nullable|mimetypes:image/webp,image/jpeg,image/png,image/gif|max:2048',
+                'download_rider_app_image' => ImageFile::rules('nullable'),
             ], [
-                'download_rider_app_title.0.required' => translate('Default_title_is_required'),
-                'download_rider_app_button_title.0.required' => translate('Default_button_title_is_required'),
+                'download_rider_app_title.0.required' => translate('Default title is required'),
+                'download_rider_app_button_title.0.required' => translate('Default button title is required'),
             ]);
 
             if ($request->image_remove == '1') {
@@ -4178,18 +4095,18 @@ class BusinessSettingsController extends Controller
                 $this->getAddLandingPageData($request, 'react_landing_page', 'download_rider_app_image', false, 'download_rider_app_section/');
             }
 
-            Toastr::success(translate('messages.download_rider_app_section_updated'));
+            Toastr::success(translate('messages.Download rider app section updated'));
             return back();
         } elseif ($tab == 'download-seller-app-section') {
             $request->validate([
                 'download_seller_app_title.0' => 'required|max:100',
                 'download_seller_app_sub_title.0' => 'nullable|max:1000',
                 'download_seller_app_button_title.0' => 'required|max:20',
-                'download_seller_app_image' => 'nullable|mimetypes:image/webp,image/jpeg,image/png,image/gif|max:2048',
+                'download_seller_app_image' => ImageFile::rules('nullable'),
             ], [
-                'download_seller_app_title.0.required' => translate('Default_title_is_required'),
-                'download_seller_app_sub_title.0.required' => translate('Default_sub_title_is_required'),
-                'download_seller_app_button_title.0.required' => translate('Default_button_title_is_required'),
+                'download_seller_app_title.0.required' => translate('Default title is required'),
+                'download_seller_app_sub_title.0.required' => translate('Default subtitle is required'),
+                'download_seller_app_button_title.0.required' => translate('Default button title is required'),
             ]);
             if ($request->image_remove == '1') {
                 $image_deleted = $this->imageDelete(dir: 'download_seller_app_section', type: 'react_landing_page', key: 'download_seller_app_image');
@@ -4204,7 +4121,7 @@ class BusinessSettingsController extends Controller
             if ($request->hasFile('download_seller_app_image')) {
                 $this->getAddLandingPageData($request, 'react_landing_page', 'download_seller_app_image', false, 'download_seller_app_section/');
             }
-            Toastr::success(translate('messages.download_seller_app_section_updated'));
+            Toastr::success(translate('messages.Download seller app section updated'));
 
             return back();
         } elseif ($tab == 'download-dm-app-button-section') {
@@ -4212,8 +4129,8 @@ class BusinessSettingsController extends Controller
                 'download_dm_app_main_button_title.0' => 'required',
                 'download_dm_app_main_button_sub_title.0' => 'required',
             ], [
-                'download_dm_app_main_button_title.0.required' => translate('messages.Default_title_is_required'),
-                'download_dm_app_main_button_sub_title.0.required' => translate('messages.Default_subtitle_is_required'),
+                'download_dm_app_main_button_title.0.required' => translate('messages.Default title is required'),
+                'download_dm_app_main_button_sub_title.0.required' => translate('messages.Default subtitle is required'),
             ]);
 
             $this->getAddLandingPageData($request, 'react_landing_page', 'download_dm_app_main_button_title', true);
@@ -4236,7 +4153,7 @@ class BusinessSettingsController extends Controller
                 ]
             );
 
-            Toastr::success(translate('messages.download_deliveryman_app_button_section_updated'));
+            Toastr::success(translate('messages.Download deliveryman app button section updated'));
 
             return back();
         } elseif ($tab == 'download-rider-app-button-section') {
@@ -4244,8 +4161,8 @@ class BusinessSettingsController extends Controller
                 'download_rider_app_main_button_title.0' => 'required',
                 'download_rider_app_main_button_sub_title.0' => 'required',
             ], [
-                'download_rider_app_main_button_title.0.required' => translate('messages.Default_title_is_required'),
-                'download_rider_app_main_button_sub_title.0.required' => translate('messages.Default_subtitle_is_required'),
+                'download_rider_app_main_button_title.0.required' => translate('messages.Default title is required'),
+                'download_rider_app_main_button_sub_title.0.required' => translate('messages.Default subtitle is required'),
             ]);
 
             $this->getAddLandingPageData($request, 'react_landing_page', 'download_rider_app_main_button_title', true);
@@ -4268,7 +4185,7 @@ class BusinessSettingsController extends Controller
                 ]
             );
 
-            Toastr::success(translate('messages.download_rider_app_button_section_updated'));
+            Toastr::success(translate('messages.Download rider app button section updated'));
 
             return back();
         } elseif ($tab == 'download-seller-app-button-section') {
@@ -4276,8 +4193,8 @@ class BusinessSettingsController extends Controller
                 'download_seller_app_main_button_title.0' => 'required',
                 'download_seller_app_main_button_sub_title.0' => 'required',
             ], [
-                'download_seller_app_main_button_title.0.required' => translate('messages.Default_title_is_required'),
-                'download_seller_app_main_button_sub_title.0.required' => translate('messages.Default_subtitle_is_required'),
+                'download_seller_app_main_button_title.0.required' => translate('messages.Default title is required'),
+                'download_seller_app_main_button_sub_title.0.required' => translate('messages.Default subtitle is required'),
             ]);
 
             $this->getAddLandingPageData($request, 'react_landing_page', 'download_seller_app_main_button_title', true);
@@ -4300,7 +4217,7 @@ class BusinessSettingsController extends Controller
                 ]
             );
 
-            Toastr::success(translate('messages.download_seller_app_button_section_updated'));
+            Toastr::success(translate('messages.Download seller app button section updated'));
 
             return back();
         } elseif ($tab == 'gallery-section-images') {
@@ -4328,19 +4245,18 @@ class BusinessSettingsController extends Controller
             }
 
 
-            Toastr::success(translate('messages.gallery_image_section_updated'));
+            Toastr::success(translate('messages.Gallery image section updated'));
             return back();
         } elseif ($tab == 'faq-section') {
-            // Helpers::check_and_delete('product/', $product['image']);
             $request->validate([
                 'faq_title.0' => 'required|max:254',
             ], [
-                'faq_title.0.required' => translate('default_faq_section_title_is_required'),
+                'faq_title.0.required' => translate('Default FAQ section title is required'),
             ]);
 
             $this->getAddLandingPageData($request, 'react_landing_page', 'faq_title', true);
 
-            Toastr::success(translate('messages.faq_section_updated'));
+            Toastr::success(translate('Updated successfully'));
             return back();
 
         } elseif ($tab == 'faq-store') {
@@ -4354,8 +4270,7 @@ class BusinessSettingsController extends Controller
             $request->validate([
                 'highlight_title' => 'required|max:50',
                 'highlight_sub_title' => 'required|max:200',
-                // 'highlight_button_title' => 'required|max:20',
-                'highlight_image' => 'nullable|mimetypes:image/webp,image/jpeg,image/png,image/gif|max:2048',
+                'highlight_image' => ImageFile::rules('nullable'),
             ]);
             if ($request->image_remove == '1') {
                 $image_deleted = $this->imageDelete(dir: 'highlight_section', type: 'react_landing_page', key: 'highlight_image');
@@ -4369,17 +4284,14 @@ class BusinessSettingsController extends Controller
             }
             $this->getAddLandingPageData($request, 'react_landing_page', 'highlight_title', true);
             $this->getAddLandingPageData($request, 'react_landing_page', 'highlight_sub_title', true);
-            // $this->getAddLandingPageData($request, 'react_landing_page', 'highlight_button_title', true);
 
-            Toastr::success(translate('messages.highlight_section_updated'));
+            Toastr::success(translate('Updated successfully'));
 
             return back();
 
         } elseif ($tab == 'banner') {
             $request->validate([
-                'banner' => 'nullable|mimetypes:image/webp,image/jpeg,image/png,image/gif|max:2048',
-            ], [
-                'banner.max' => translate('The file size must be less then 2mb')
+                'banner' => ImageFile::rules('nullable'),
             ]);
             if ($request->image_remove == '1') {
                 $image_deleted = $this->imageDelete(dir: 'banner_section', type: 'react_landing_page', key: 'banner');
@@ -4391,7 +4303,7 @@ class BusinessSettingsController extends Controller
             if ($request->hasFile('banner')) {
                 $this->getAddLandingPageData($request, 'react_landing_page', 'banner', false, 'banner_section/');
             }
-            Toastr::success(translate('messages.banner_section_updated'));
+            Toastr::success(translate('messages.Banner section updated'));
 
             return back();
 
@@ -4401,10 +4313,10 @@ class BusinessSettingsController extends Controller
             $request->validate([
                 "trust_title_card_$cardNumber.0" => 'required|max:20',
                 "trust_sub_title_card_$cardNumber.0" => 'required|max:30',
-                "trust_image_card_$cardNumber" => 'nullable|image|max:2048',
+                "trust_image_card_$cardNumber" => ImageFile::rules('nullable'),
             ], [
-                "trust_title_card_$cardNumber.0.required" => translate('Default_title_is_required'),
-                "trust_sub_title_card_$cardNumber.0.required" => translate('Default_sub_title_is_required')
+                "trust_title_card_$cardNumber.0.required" => translate('Default title is required'),
+                "trust_sub_title_card_$cardNumber.0.required" => translate('Default subtitle is required')
             ]);
 
 
@@ -4433,7 +4345,7 @@ class BusinessSettingsController extends Controller
             $request->merge([$trustImageKey => $data["trust_image_card_$cardNumber"]]);
             $this->getAddLandingPageData($request, 'react_landing_page', $trustImageKey, false, 'trust_section/');
 
-            Toastr::success(translate('messages.trust_card_section_updated'));
+            Toastr::success(translate('Updated successfully'));
             return back();
         } elseif ($tab == 'download-app-section') {
             $request->validate([
@@ -4441,8 +4353,8 @@ class BusinessSettingsController extends Controller
                 'download_user_app_sub_title.0' => 'required',
 
             ], [
-                'download_user_app_title.0.required' => translate('messages.Default_title_is_required'),
-                'download_user_app_sub_title.0.required' => translate('messages.Default_subtitle_is_required'),
+                'download_user_app_title.0.required' => translate('messages.Default title is required'),
+                'download_user_app_sub_title.0.required' => translate('messages.Default subtitle is required'),
             ]);
 
             $download_user_app_title = DataSetting::where('type', 'react_landing_page')->where('key', 'download_user_app_title')->first();
@@ -4537,14 +4449,14 @@ class BusinessSettingsController extends Controller
                 }
             }
 
-            Toastr::success(translate('messages.download_app_section_updated'));
+            Toastr::success(translate('messages.Download app section updated'));
         } elseif ($tab == 'download-app-button-section') {
             $request->validate([
                 'download_user_app_button_title.0' => 'required',
                 'download_user_app_button_sub_title.0' => 'required',
             ], [
-                'download_user_app_button_title.0.required' => translate('messages.Default_title_is_required'),
-                'download_user_app_button_sub_title.0.required' => translate('messages.Default_subtitle_is_required'),
+                'download_user_app_button_title.0.required' => translate('messages.Default title is required'),
+                'download_user_app_button_sub_title.0.required' => translate('messages.Default subtitle is required'),
             ]);
 
             $download_user_app_button_title = DataSetting::where('type', 'react_landing_page')->where('key', 'download_user_app_button_title')->first();
@@ -4632,14 +4544,14 @@ class BusinessSettingsController extends Controller
                 ]),
             ]);
 
-            Toastr::success(translate('messages.download_app_section_updated'));
+            Toastr::success(translate('messages.Download app section updated'));
         } elseif ($tab == 'available-zone-section') {
             if ($request['available_zone_status']) {
                 $request->validate([
                     'available_zone_title.0' => 'required',
 
                 ], [
-                    'available_zone_title.0.required' => translate('default_title_is_required'),
+                    'available_zone_title.0.required' => translate('Default title is required'),
                 ]);
             }
             $available_zone_title = DataSetting::where('type', 'react_landing_page')->where('key', 'available_zone_title')->first();
@@ -4720,32 +4632,31 @@ class BusinessSettingsController extends Controller
             }
 
 
-            Toastr::success(translate('messages.available_zone_section_updated'));
+            Toastr::success(translate('messages.Available zone section updated'));
         } elseif ($tab == 'testimonial-title') {
             $request->validate([
                 'testimonial_title.0' => 'required|max:50',
                 'testimonial_sub_title.0' => 'required|max:200',
                 'testimonial_button_title.0' => 'required|max:20',
             ], [
-                'testimonial_title.0.required' => translate('messages.Default_title_is_required'),
-                'testimonial_sub_title.0.required' => translate('messages.Default_sub_title_is_required'),
-                'testimonial_button_title.0.required' => translate('messages.Default_button_title_is_required'),
+                'testimonial_title.0.required' => translate('messages.Default title is required'),
+                'testimonial_sub_title.0.required' => translate('messages.Default subtitle is required'),
+                'testimonial_button_title.0.required' => translate('messages.Default button title is required'),
             ]);
             $this->getAddLandingPageData($request, 'react_landing_page', 'testimonial_title', true);
             $this->getAddLandingPageData($request, 'react_landing_page', 'testimonial_sub_title', true);
             $this->getAddLandingPageData($request, 'react_landing_page', 'testimonial_button_title', true);
 
-            Toastr::success(translate('messages.testimonial_section_updated'));
+            Toastr::success(translate('messages.Testimonial section updated'));
         } elseif ($tab == 'testimonial-list') {
             $request->validate([
                 'name.0' => 'required',
                 'designation.0' => 'nullable',
                 'review.0' => 'required|max:200',
-                'reviewer_image' => 'required',
+                'reviewer_image' => ImageFile::rules('required'),
             ], [
-                'name.0.required' => translate('messages.Default_name_is_required'),
-                'review.0.required' => translate('messages.Default_review_is_required'),
-                'reviewer_image.required' => translate('messages.Review_image_is_required')
+                'name.0.required' => translate('messages.Default name is required'),
+                'review.0.required' => translate('messages.Default review is required'),
             ]);
 
             $testimonial = new ReactTestimonial;
@@ -4758,122 +4669,22 @@ class BusinessSettingsController extends Controller
             Helpers::add_or_update_translations(request: $request, key_data: 'name', name_field: 'name', model_name: 'ReactTestimonial', data_id: $testimonial->id, data_value: $testimonial->name);
             Helpers::add_or_update_translations(request: $request, key_data: 'designation', name_field: 'designation', model_name: 'ReactTestimonial', data_id: $testimonial->id, data_value: $testimonial->designation);
             Helpers::add_or_update_translations(request: $request, key_data: 'review', name_field: 'review', model_name: 'ReactTestimonial', data_id: $testimonial->id, data_value: $testimonial->review);
-            Toastr::success(translate('messages.testimonial_added_successfully'));
+            Toastr::success(translate('Added successfully'));
         }
-        //        elseif ($tab == 'business-section') {
-//            $business_title = DataSetting::where('type', 'react_landing_page')->where('key', 'business_title')->first();
-//            if ($business_title == null) {
-//                $business_title = new DataSetting;
-//            }
-//
-//            $business_title->key = 'business_title';
-//            $business_title->type = 'react_landing_page';
-//            $business_title->value = $request->business_title[array_search('default', $request->lang)];
-//            $business_title->save();
-//
-//            $business_sub_title = DataSetting::where('type', 'react_landing_page')->where('key', 'business_sub_title')->first();
-//            if ($business_sub_title == null) {
-//                $business_sub_title = new DataSetting;
-//            }
-//
-//            $business_sub_title->key = 'business_sub_title';
-//            $business_sub_title->type = 'react_landing_page';
-//            $business_sub_title->value = $request->business_sub_title[array_search('default', $request->lang)];
-//            $business_sub_title->save();
-//
-//            $business_image = DataSetting::where('type', 'react_landing_page')->where('key', 'business_image')->first();
-//            if ($business_image == null) {
-//                $business_image = new DataSetting;
-//            }
-//            $business_image->key = 'business_image';
-//            $business_image->type = 'react_landing_page';
-//            $business_image->value = $request->has('image') ? Helpers::update('business_image/', $business_image->value, 'png', $request->file('image')) : $business_image->value;
-//            $business_image->save();
-//
-//            $data = [];
-//            $default_lang = str_replace('_', '-', app()->getLocale());
-//            foreach ($request->lang as $index => $key) {
-//                if ($default_lang == $key && !($request->business_title[$index])) {
-//                    if ($key != 'default') {
-//                        Translation::updateOrInsert(
-//                            [
-//                                'translationable_type' => 'App\Models\DataSetting',
-//                                'translationable_id' => $business_title->id,
-//                                'locale' => $key,
-//                                'key' => 'business_title',
-//                            ],
-//                            ['value' => $business_title?->getRawOriginal('value')]
-//                        );
-//                    }
-//                } else {
-//                    if ($request->business_title[$index] && $key != 'default') {
-//                        Translation::updateOrInsert(
-//                            [
-//                                'translationable_type' => 'App\Models\DataSetting',
-//                                'translationable_id' => $business_title->id,
-//                                'locale' => $key,
-//                                'key' => 'business_title',
-//                            ],
-//                            ['value' => $request->business_title[$index]]
-//                        );
-//                    }
-//                }
-//                if ($default_lang == $key && !($request->business_sub_title[$index])) {
-//                    if ($key != 'default') {
-//                        Translation::updateOrInsert(
-//                            [
-//                                'translationable_type' => 'App\Models\DataSetting',
-//                                'translationable_id' => $business_sub_title->id,
-//                                'locale' => $key,
-//                                'key' => 'business_sub_title',
-//                            ],
-//                            ['value' => $business_sub_title?->getRawOriginal('value')]
-//                        );
-//                    }
-//                } else {
-//                    if ($request->business_sub_title[$index] && $key != 'default') {
-//                        Translation::updateOrInsert(
-//                            [
-//                                'translationable_type' => 'App\Models\DataSetting',
-//                                'translationable_id' => $business_sub_title->id,
-//                                'locale' => $key,
-//                                'key' => 'business_sub_title',
-//                            ],
-//                            ['value' => $request->business_sub_title[$index]]
-//                        );
-//                    }
-//                }
-//            }
-//
-//            Helpers::dataUpdateOrInsert(['key' => 'download_business_app_links', 'type' => 'react_landing_page'], [
-//                'value' => json_encode([
-//                    'seller_playstore_url_status' => $request['seller_playstore_url_status'],
-//                    'seller_playstore_url' => $request['seller_playstore_url'],
-//                    'seller_appstore_url_status' => $request['seller_appstore_url_status'],
-//                    'seller_appstore_url' => $request['seller_appstore_url'],
-//                    'dm_playstore_url_status' => $request['dm_playstore_url_status'],
-//                    'dm_playstore_url' => $request['dm_playstore_url'],
-//                    'dm_appstore_url_status' => $request['dm_appstore_url_status'],
-//                    'dm_appstore_url' => $request['dm_appstore_url'],
-//                ]),
-//            ]);
-//
-//            Toastr::success(translate('messages.business_section_updated'));
-//        }
         elseif ($tab == 'header-section') {
             $request->validate([
                 'header_title.0' => 'required',
                 'header_sub_title.0' => 'required',
             ], [
-                'header_title.0.required' => translate('messages.Default_title_is_required'),
-                'header_sub_title.0.required' => translate('messages.Default_subtitle_is_required'),
+                'header_title.0.required' => translate('messages.Default title is required'),
+                'header_sub_title.0.required' => translate('messages.Default subtitle is required'),
             ]);
             $header_banner = DataSetting::where('type', 'react_landing_page')->where('key', 'header_banner')->first();
             if ($header_banner == null) {
                 $header_banner = new DataSetting;
             }
             if (!$header_banner->value && !$request->has('banner_image')) {
-                Toastr::error(translate('messages.Banner_image_is_required'));
+                Toastr::error(translate('messages.Banner image is required'));
 
                 return back();
             }
@@ -5035,181 +4846,11 @@ class BusinessSettingsController extends Controller
                 }
             }
 
-            Toastr::success(translate('messages.header_section_updated'));
+            Toastr::success(translate('messages.Header section updated'));
         }
-        //        elseif ($tab == 'company-section') {
-//
-//            $request->validate([
-//                'company_title.0' => 'required',
-//                'company_sub_title.0' => 'required',
-//                'company_button_url' => 'required_unless:company_button_name.0,!=,null',
-//                'company_button_name.0' => 'required_unless:company_button_url,!=,null',
-//            ], [
-//                'company_title.0.required' => translate('messages.Default_title_is_required'),
-//                'company_sub_title.0.required' => translate('messages.Default_subtitle_is_required'),
-//                'company_button_name.0.required_unless' => translate('messages.Default_button_name_is_required'),
-//                'company_button_url.required_unless' => translate('messages.Button_redirec_url_is_required'),
-//            ]);
-//
-//            $company_title = DataSetting::where('type', 'react_landing_page')->where('key', 'company_title')->first();
-//            if ($company_title == null) {
-//                $company_title = new DataSetting;
-//            }
-//
-//            $company_title->key = 'company_title';
-//            $company_title->type = 'react_landing_page';
-//            $company_title->value = $request->company_title[array_search('default', $request->lang)];
-//            $company_title->save();
-//
-//            $company_sub_title = DataSetting::where('type', 'react_landing_page')->where('key', 'company_sub_title')->first();
-//            if ($company_sub_title == null) {
-//                $company_sub_title = new DataSetting;
-//            }
-//
-//            $company_sub_title->key = 'company_sub_title';
-//            $company_sub_title->type = 'react_landing_page';
-//            $company_sub_title->value = $request->company_sub_title[array_search('default', $request->lang)];
-//            $company_sub_title->save();
-//
-//            $company_description = DataSetting::where('type', 'react_landing_page')->where('key', 'company_description')->first();
-//            if ($company_description == null) {
-//                $company_description = new DataSetting;
-//            }
-//
-//            $company_description->key = 'company_description';
-//            $company_description->type = 'react_landing_page';
-//            $company_description->value = $request->company_description[array_search('default', $request->lang)];
-//            $company_description->save();
-//
-//            $company_button_name = DataSetting::where('type', 'react_landing_page')->where('key', 'company_button_name')->first();
-//            if ($company_button_name == null) {
-//                $company_button_name = new DataSetting;
-//            }
-//
-//            $company_button_name->key = 'company_button_name';
-//            $company_button_name->type = 'react_landing_page';
-//            $company_button_name->value = $request->company_button_name[array_search('default', $request->lang)];
-//            $company_button_name->save();
-//
-//            $company_button_url = DataSetting::where('type', 'react_landing_page')->where('key', 'company_button_url')->first();
-//            if ($company_button_url == null) {
-//                $company_button_url = new DataSetting;
-//            }
-//
-//            $company_button_url->key = 'company_button_url';
-//            $company_button_url->type = 'react_landing_page';
-//            $company_button_url->value = $request->company_button_url;
-//            $company_button_url->save();
-//
-//            $default_lang = str_replace('_', '-', app()->getLocale());
-//            foreach ($request->lang as $index => $key) {
-//                if ($default_lang == $key && !($request->company_title[$index])) {
-//                    if ($key != 'default') {
-//                        Translation::updateOrInsert(
-//                            [
-//                                'translationable_type' => 'App\Models\DataSetting',
-//                                'translationable_id' => $company_title->id,
-//                                'locale' => $key,
-//                                'key' => 'company_title',
-//                            ],
-//                            ['value' => $company_title?->getRawOriginal('value')]
-//                        );
-//                    }
-//                } else {
-//                    if ($request->company_title[$index] && $key != 'default') {
-//                        Translation::updateOrInsert(
-//                            [
-//                                'translationable_type' => 'App\Models\DataSetting',
-//                                'translationable_id' => $company_title->id,
-//                                'locale' => $key,
-//                                'key' => 'company_title',
-//                            ],
-//                            ['value' => $request->company_title[$index]]
-//                        );
-//                    }
-//                }
-//                if ($default_lang == $key && !($request->company_sub_title[$index])) {
-//                    if ($key != 'default') {
-//                        Translation::updateOrInsert(
-//                            [
-//                                'translationable_type' => 'App\Models\DataSetting',
-//                                'translationable_id' => $company_sub_title->id,
-//                                'locale' => $key,
-//                                'key' => 'company_sub_title',
-//                            ],
-//                            ['value' => $company_sub_title?->getRawOriginal('value')]
-//                        );
-//                    }
-//                } else {
-//                    if ($request->company_sub_title[$index] && $key != 'default') {
-//                        Translation::updateOrInsert(
-//                            [
-//                                'translationable_type' => 'App\Models\DataSetting',
-//                                'translationable_id' => $company_sub_title->id,
-//                                'locale' => $key,
-//                                'key' => 'company_sub_title',
-//                            ],
-//                            ['value' => $request->company_sub_title[$index]]
-//                        );
-//                    }
-//                }
-//                if ($default_lang == $key && !($request->company_description[$index])) {
-//                    if ($key != 'default') {
-//                        Translation::updateOrInsert(
-//                            [
-//                                'translationable_type' => 'App\Models\DataSetting',
-//                                'translationable_id' => $company_description->id,
-//                                'locale' => $key,
-//                                'key' => 'company_description',
-//                            ],
-//                            ['value' => $company_description->getRawOriginal('value')]
-//                        );
-//                    }
-//                } else {
-//                    if ($request->company_description[$index] && $key != 'default') {
-//                        Translation::updateOrInsert(
-//                            [
-//                                'translationable_type' => 'App\Models\DataSetting',
-//                                'translationable_id' => $company_description->id,
-//                                'locale' => $key,
-//                                'key' => 'company_description',
-//                            ],
-//                            ['value' => $request->company_description[$index]]
-//                        );
-//                    }
-//                }
-//                if ($default_lang == $key && !($request->company_button_name[$index])) {
-//                    if ($key != 'default') {
-//                        Translation::updateOrInsert(
-//                            [
-//                                'translationable_type' => 'App\Models\DataSetting',
-//                                'translationable_id' => $company_button_name->id,
-//                                'locale' => $key,
-//                                'key' => 'company_button_name',
-//                            ],
-//                            ['value' => $company_button_name->getRawOriginal('value')]
-//                        );
-//                    }
-//                } else {
-//                    if ($request->company_button_name[$index] && $key != 'default') {
-//                        Translation::updateOrInsert(
-//                            [
-//                                'translationable_type' => 'App\Models\DataSetting',
-//                                'translationable_id' => $company_button_name->id,
-//                                'locale' => $key,
-//                                'key' => 'company_button_name',
-//                            ],
-//                            ['value' => $request->company_button_name[$index]]
-//                        );
-//                    }
-//                }
-//            }
-//
-//            Toastr::success(translate('messages.company_section_updated'));
-//        }
         elseif ($tab == 'promotion-banner') {
             if (!$request->has('image')) {
-                Toastr::error(translate('messages.Banner_image_is_required'));
+                Toastr::error(translate('messages.Banner image is required'));
 
                 return back();
             }
@@ -5220,7 +4861,7 @@ class BusinessSettingsController extends Controller
                 $data = json_decode($promotion_banner->value, true);
             }
             if (count($data) >= 3) {
-                Toastr::error(translate('messages.you_have_already_added_maximum_banner_image'));
+                Toastr::error(translate('messages.You have already added maximum banner image'));
 
                 return back();
             }
@@ -5230,12 +4871,11 @@ class BusinessSettingsController extends Controller
             array_push($data, [
                 'img' => $imageName,
                 'storage' => Helpers::getDisk(),
-                // 'sub_title' => $request->sub_title,
             ]);
             $promotion_banner->value = json_encode($data);
 
             $promotion_banner->save();
-            Toastr::success(translate('messages.landing_page_promotion_banner_updated'));
+            Toastr::success(translate('messages.Landing page promotion banner updated'));
         } elseif ($tab == 'fixed-banner') {
             $fixed_promotional_banner = DataSetting::where('type', 'react_landing_page')->where('key', 'fixed_promotional_banner')->first();
             if ($fixed_promotional_banner == null) {
@@ -5245,24 +4885,24 @@ class BusinessSettingsController extends Controller
             $fixed_promotional_banner->type = 'react_landing_page';
             $fixed_promotional_banner->value = $request->has('fixed_promotional_banner') ? Helpers::update('promotional_banner/', $fixed_promotional_banner->value, 'png', $request->file('fixed_promotional_banner')) : $fixed_promotional_banner->value;
             $fixed_promotional_banner->save();
-            Toastr::success(translate('messages.landing_page_promotion_banner_updated'));
+            Toastr::success(translate('messages.Landing page promotion banner updated'));
         } elseif ($tab == 'fixed-newsletter') {
             $request->validate([
                 'fixed_newsletter_title.0' => 'required',
                 'fixed_newsletter_sub_title.0' => 'required',
             ], [
-                'fixed_newsletter_title.0.required' => translate('messages.Default_title_is_required'),
-                'fixed_newsletter_sub_title.0.required' => translate('messages.Default_subtitle_is_required'),
+                'fixed_newsletter_title.0.required' => translate('messages.Default title is required'),
+                'fixed_newsletter_sub_title.0.required' => translate('messages.Default subtitle is required'),
             ]);
 
             $this->getAddLandingPageData($request, 'react_landing_page', 'fixed_newsletter_title', true);
             $this->getAddLandingPageData($request, 'react_landing_page', 'fixed_newsletter_sub_title', true);
             $this->getAddLandingPageData($request, 'react_landing_page', 'fixed_footer_description', true);
 
-            Toastr::success(translate('messages.landing_page_newsletter_content_updated'));
+            Toastr::success(translate('messages.Landing page newsletter content updated'));
         } elseif ($tab == 'meta-data') {
             $this->landingPageMetaDataUpdate($request, 'react');
-            Toastr::success(translate('messages.meta_data_updated_successfully'));
+            Toastr::success(translate('Updated successfully'));
 
             return back();
         }
@@ -5273,7 +4913,7 @@ class BusinessSettingsController extends Controller
     public function delete_react_landing_page_settings($tab, $key)
     {
         if (getEnvMode() == 'demo') {
-            Toastr::info(translate('messages.update_option_is_disable_for_demo'));
+            Toastr::info(translate('messages.Update option is disable for demo'));
 
             return back();
         }
@@ -5292,7 +4932,7 @@ class BusinessSettingsController extends Controller
 
             return back();
         }
-        Toastr::error(translate('messages.not_found'));
+        Toastr::error(translate('No data found'));
 
         return back();
     }
@@ -5307,14 +4947,14 @@ class BusinessSettingsController extends Controller
         $review = ReactTestimonial::findOrFail($request->id);
         $review->status = $request->status;
         $review->save();
-        Toastr::success(translate('messages.review_status_updated'));
+        Toastr::success(translate('messages.Review status updated'));
 
         return back();
     }
 
     public function review_react_edit($id)
     {
-        $review = ReactTestimonial::withoutGlobalScope('translate')->findOrFail($id);
+        $review = ReactTestimonial::withoutGlobalScope('translate')->withStorage()->with('translations')->findOrFail($id);
 
         return view('admin-views.business-settings.landing-page-settings.react-landing-testimonial-edit', compact('review'));
     }
@@ -5324,16 +4964,13 @@ class BusinessSettingsController extends Controller
         $request->validate([
             'name.0' => 'required',
             'review.0' => 'required|max:200',
-            'reviewer_image' => 'required|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            'reviewer_image' => ImageFile::rules('required'),
         ], [
-            'name.0.required' => translate('messages.Default_name_is_required'),
-            'review.0.required' => translate('messages.Default_review_is_required'),
-            'reviewer_image.required' => translate('messages.reviewer_image_is_required'),
-            'reviewer_image.mimes' => translate('messages.invalid_file_type'),
-            'reviewer_image.max' => translate('messages.file_size_must_be_less_than_2mb'),
+            'name.0.required' => translate('messages.Default name is required'),
+            'review.0.required' => translate('messages.Default review is required'),
         ]);
 
-        $review = ReactTestimonial::findOrFail($id);
+        $review = ReactTestimonial::withStorage()->findOrFail($id);
         $review->name = $request->name[array_search('default', $request->lang)];
         $review->designation = $request->designation[array_search('default', $request->lang)];
         $review->review = $request->review[array_search('default', $request->lang)];
@@ -5344,7 +4981,7 @@ class BusinessSettingsController extends Controller
         Helpers::add_or_update_translations(request: $request, key_data: 'designation', name_field: 'designation', model_name: 'ReactTestimonial', data_id: $review->id, data_value: $review->designation);
         Helpers::add_or_update_translations(request: $request, key_data: 'review', name_field: 'review', model_name: 'ReactTestimonial', data_id: $review->id, data_value: $review->review);
 
-        Toastr::success(translate('messages.review_updated_successfully'));
+        Toastr::success(translate('Updated successfully'));
 
         return redirect()->route('admin.business-settings.react-landing-page-settings', 'testimonials');
     }
@@ -5352,12 +4989,12 @@ class BusinessSettingsController extends Controller
     public function review_react_destroy(ReactTestimonial $review)
     {
         if (getEnvMode() == 'demo' && $review->id == 1) {
-            Toastr::warning(translate('messages.you_can_not_delete_this_review_please_add_a_new_review_to_delete'));
+            Toastr::warning(translate('messages.You can not delete this review please add a new review to delete'));
 
             return back();
         }
         $review->delete();
-        Toastr::success(translate('messages.review_deleted_successfully'));
+        Toastr::success(translate('Deleted successfully'));
 
         return back();
     }
@@ -5383,7 +5020,7 @@ class BusinessSettingsController extends Controller
     public function update_react_ride_share_page_settings(Request $request, $tab)
     {
         if (getEnvMode() == 'demo') {
-            Toastr::info(translate('messages.update_option_is_disable_for_demo'));
+            Toastr::info(translate('messages.Update option is disable for demo'));
             return back();
         }
 
@@ -5405,10 +5042,10 @@ class BusinessSettingsController extends Controller
             $request->validate([
                 $titleField.'.0' => 'required|max:50',
                 $subTitleField.'.0' => 'required|max:150',
-                $imageField => 'nullable|mimes:'.IMAGE_FORMAT_FOR_VALIDATION.'|max:'.MAX_FILE_SIZE * 1024,
+                $imageField => ImageFile::rules('nullable'),
             ], [
-                $titleField.'.0.required' => translate('messages.Default_title_is_required'),
-                $subTitleField.'.0.required' => translate('messages.Default_sub_title_is_required'),
+                $titleField.'.0.required' => translate('messages.Default title is required'),
+                $subTitleField.'.0.required' => translate('messages.Default subtitle is required'),
             ]);
 
             $this->getAddLandingPageData($request, 'react_ride_share_page', $titleField, true);
@@ -5425,22 +5062,22 @@ class BusinessSettingsController extends Controller
 
             $request->validate([
                 "$titleKey.0" => 'required|max:20',
-                $imageKey => 'nullable|mimes:'.IMAGE_FORMAT_FOR_VALIDATION.'|max:'.MAX_FILE_SIZE * 1024,
+                $imageKey => ImageFile::rules('nullable'),
             ], [
-                "$titleKey.0.required" => translate('messages.Default_title_is_required'),
-                "$imageKey.max" => translate('messages.file_size_must_be_less_than_2mb'),
-                "$imageKey.mimes" => translate('messages.invalid_file_type'),
+                "$titleKey.0.required" => translate('messages.Default title is required'),
+                "$imageKey.max" => translate('messages.Maximum size') . ': ' . MAX_FILE_SIZE . ' MB',
+                "$imageKey.mimes" => translate('messages.Invalid file type'),
             ]);
 
             $this->getAddLandingPageData($request, 'react_ride_share_page', $statusKey, false);
             $this->getAddLandingPageData($request, 'react_ride_share_page', $titleKey, true);
             $this->saveRideShareImage($request, $imageKey, 'ride_share_hero_section');
 
-            Toastr::success(translate('messages.hero_point_card_updated'));
+            Toastr::success(translate('messages.Hero point card updated'));
             return back();
         }
 
-        Toastr::error(translate('messages.not_found'));
+        Toastr::error(translate('No data found'));
         return back();
     }
 
@@ -5473,16 +5110,19 @@ class BusinessSettingsController extends Controller
     public function delete_react_ride_share_page_settings($tab, $key)
     {
         if (getEnvMode() == 'demo') {
-            Toastr::info(translate('messages.update_option_is_disable_for_demo'));
+            Toastr::info(translate('messages.Update option is disable for demo'));
             return back();
         }
 
-        Toastr::error(translate('messages.not_found'));
+        Toastr::error(translate('No data found'));
         return back();
     }
 
     public function flutter_landing_page_settings($tab)
     {
+        view()->share('flutterSettings',
+            app(DataSettingService::class)->getEditableRowsByType('flutter_landing_page'));
+
         if ($tab == 'fixed-data') {
             return view('admin-views.business-settings.landing-page-settings.flutter-fixed-data');
         } elseif ($tab == 'special-criteria') {
@@ -5499,7 +5139,7 @@ class BusinessSettingsController extends Controller
     public function update_flutter_landing_page_settings(Request $request, $tab)
     {
         if (getEnvMode() == 'demo') {
-            Toastr::info(translate('messages.update_option_is_disable_for_demo'));
+            Toastr::info(translate('messages.Update option is disable for demo'));
 
             return back();
         }
@@ -5507,10 +5147,10 @@ class BusinessSettingsController extends Controller
         if ($tab == 'special-criteria-list') {
             $request->validate([
                 'title' => 'required',
-                'image' => 'required',
+                'image' => ImageFile::rules('required'),
             ]);
             if ($request->title[array_search('default', $request->lang)] == '') {
-                Toastr::error(translate('default_data_is_required'));
+                Toastr::error(translate('Default data is required'));
 
                 return back();
             }
@@ -5549,14 +5189,14 @@ class BusinessSettingsController extends Controller
                 }
             }
 
-            Toastr::success(translate('messages.criteria_added_successfully'));
+            Toastr::success(translate('Added successfully'));
         } elseif ($tab == 'available-zone-section') {
             if ($request['available_zone_status']) {
                 $request->validate([
                     'available_zone_title.0' => 'required',
 
                 ], [
-                    'available_zone_title.0.required' => translate('default_title_is_required'),
+                    'available_zone_title.0.required' => translate('Default title is required'),
                 ]);
             }
             $available_zone_title = DataSetting::where('type', 'flutter_landing_page')->where('key', 'available_zone_title')->first();
@@ -5584,7 +5224,7 @@ class BusinessSettingsController extends Controller
             if ($available_zone_image == null) {
                 if ($request['available_zone_status']) {
                     $request->validate([
-                        'image' => 'required',
+                        'image' => ImageFile::rules('required'),
                     ]);
                 }
 
@@ -5654,7 +5294,7 @@ class BusinessSettingsController extends Controller
                 'value' => $request['available_zone_status'],
             ]);
 
-            Toastr::success(translate('messages.available_zone_section_updated'));
+            Toastr::success(translate('messages.Available zone section updated'));
         } elseif ($tab == 'download-app-section') {
 
             $download_user_app_title = DataSetting::where('type', 'flutter_landing_page')->where('key', 'download_user_app_title')->first();
@@ -5750,7 +5390,7 @@ class BusinessSettingsController extends Controller
                 ]),
             ]);
 
-            Toastr::success(translate('messages.download_app_section_updated'));
+            Toastr::success(translate('messages.Download app section updated'));
         } elseif ($tab == 'fixed-header') {
 
             $fixed_header_title = DataSetting::where('type', 'flutter_landing_page')->where('key', 'fixed_header_title')->first();
@@ -5837,7 +5477,7 @@ class BusinessSettingsController extends Controller
                 }
             }
 
-            Toastr::success(translate('messages.landing_page_header_updated'));
+            Toastr::success(translate('messages.Landing page header updated'));
         } elseif ($tab == 'fixed-location') {
 
             $fixed_location_title = DataSetting::where('type', 'flutter_landing_page')->where('key', 'fixed_location_title')->first();
@@ -5880,7 +5520,7 @@ class BusinessSettingsController extends Controller
                 }
             }
 
-            Toastr::success(translate('messages.landing_page_location_title_updated'));
+            Toastr::success(translate('messages.Landing page location title updated'));
         } elseif ($tab == 'fixed-module') {
 
             $fixed_module_title = DataSetting::where('type', 'flutter_landing_page')->where('key', 'fixed_module_title')->first();
@@ -5958,7 +5598,7 @@ class BusinessSettingsController extends Controller
                 }
             }
 
-            Toastr::success(translate('messages.landing_page_module_updated'));
+            Toastr::success(translate('messages.Landing page module updated'));
         } elseif ($tab == 'join-seller') {
 
             if ($request->join_seller_flutter_status !== null) {
@@ -5972,7 +5612,7 @@ class BusinessSettingsController extends Controller
                 $join_seller_flutter_status->value = $request->join_seller_flutter_status ? 0 : 1;
                 $join_seller_flutter_status->save();
 
-                Toastr::success(translate('messages.join_as_seller_section_status_updated'));
+                Toastr::success(translate('messages.Join as seller section status updated'));
 
                 return back();
             }
@@ -6097,7 +5737,7 @@ class BusinessSettingsController extends Controller
                 }
             }
 
-            Toastr::success(translate('messages.join_as_seller_data_updated'));
+            Toastr::success(translate('messages.Join as seller data updated'));
         } elseif ($tab == 'join-delivery') {
 
             if ($request->join_DM_flutter_status !== null) {
@@ -6111,7 +5751,7 @@ class BusinessSettingsController extends Controller
                 $join_DM_flutter_status->value = $request->join_DM_flutter_status ? 0 : 1;
                 $join_DM_flutter_status->save();
 
-                Toastr::success(translate('messages.join_as_seller_section_status_updated'));
+                Toastr::success(translate('messages.Join as seller section status updated'));
 
                 return back();
             }
@@ -6236,7 +5876,7 @@ class BusinessSettingsController extends Controller
                 }
             }
 
-            Toastr::success(translate('messages.join_as_delivery_man_data_updated'));
+            Toastr::success(translate('messages.Join as delivery man data updated'));
         }
 
         return back();
@@ -6252,14 +5892,14 @@ class BusinessSettingsController extends Controller
         $criteria = FlutterSpecialCriteria::findOrFail($request->id);
         $criteria->status = $request->status;
         $criteria->save();
-        Toastr::success(translate('messages.criteria_status_updated'));
+        Toastr::success(translate('messages.Criteria status updated'));
 
         return back();
     }
 
     public function flutter_criteria_edit($id)
     {
-        $criteria = FlutterSpecialCriteria::withoutGlobalScope('translate')->findOrFail($id);
+        $criteria = FlutterSpecialCriteria::withoutGlobalScope('translate')->withStorage()->with('translations')->findOrFail($id);
 
         return view('admin-views.business-settings.landing-page-settings.flutter-landing-page-special-criteria-edit', compact('criteria'));
     }
@@ -6271,11 +5911,11 @@ class BusinessSettingsController extends Controller
         ]);
 
         if ($request->title[array_search('default', $request->lang)] == '') {
-            Toastr::error(translate('default_data_is_required'));
+            Toastr::error(translate('Default data is required'));
 
             return back();
         }
-        $criteria = FlutterSpecialCriteria::find($id);
+        $criteria = FlutterSpecialCriteria::withStorage()->find($id);
         $criteria->title = $request->title[array_search('default', $request->lang)];
         $criteria->image = $request->has('image') ? Helpers::update('special_criteria/', $criteria->image, 'png', $request->file('image')) : $criteria->image;
         $criteria->save();
@@ -6308,7 +5948,7 @@ class BusinessSettingsController extends Controller
                 }
             }
         }
-        Toastr::success(translate('messages.criteria_updated_successfully'));
+        Toastr::success(translate('Updated successfully'));
 
         return back();
     }
@@ -6316,12 +5956,12 @@ class BusinessSettingsController extends Controller
     public function flutter_criteria_destroy(FlutterSpecialCriteria $criteria)
     {
         if (getEnvMode() == 'demo' && $criteria->id == 1) {
-            Toastr::warning(translate('messages.you_can_not_delete_this_criteria_please_add_a_new_criteria_to_delete'));
+            Toastr::warning(translate('messages.You can not delete this criteria please add a new criteria to delete'));
 
             return back();
         }
         $criteria->delete();
-        Toastr::success(translate('messages.criteria_deleted_successfully'));
+        Toastr::success(translate('Deleted successfully'));
 
         return back();
     }
@@ -6343,7 +5983,7 @@ class BusinessSettingsController extends Controller
         $view = "admin-views.business-settings.email-format-setting.{$type}-email-formats.{$viewName}";
 
         if (!view()->exists($view)) {
-            abort(404, translate('messages.view_not_found'));
+            abort(404, translate('No data found'));
         }
 
         return view($view, compact('template'));
@@ -6352,7 +5992,7 @@ class BusinessSettingsController extends Controller
     public function update_email_index(Request $request, $type, $tab)
     {
         if (getEnvMode() == 'demo') {
-            Toastr::info(translate('messages.update_option_is_disable_for_demo'));
+            Toastr::info(translate('messages.Update option is disable for demo'));
 
             return back();
         }
@@ -6417,7 +6057,7 @@ class BusinessSettingsController extends Controller
         $email_type = $email_types[$tab] ?? null;
 
         if (!$email_type) {
-            Toastr::error(translate('messages.not_found'));
+            Toastr::error(translate('No data found'));
 
             return back();
         }
@@ -6427,7 +6067,7 @@ class BusinessSettingsController extends Controller
             ->firstOrNew();
 
         if ($request->title[array_search('default', $request->lang)] == '') {
-            Toastr::error(translate('default_data_is_required'));
+            Toastr::error(translate('Default data is required'));
 
             return back();
         }
@@ -6465,7 +6105,7 @@ class BusinessSettingsController extends Controller
         Helpers::add_or_update_translations(request: $request, key_data: 'footer_text', name_field: 'footer_text', model_name: 'EmailTemplate', data_id: $template->id, data_value: $template->footer_text);
         Helpers::add_or_update_translations(request: $request, key_data: 'copyright_text', name_field: 'copyright_text', model_name: 'EmailTemplate', data_id: $template->id, data_value: $template->copyright_text);
 
-        Toastr::success(translate('messages.template_added_successfully'));
+        Toastr::success(translate('Added successfully'));
 
         return back();
     }
@@ -6473,7 +6113,7 @@ class BusinessSettingsController extends Controller
     public function update_email_status($type, $tab, $status)
     {
         if (getEnvMode() == 'demo') {
-            Toastr::info(translate('messages.update_option_is_disable_for_demo'));
+            Toastr::info(translate('messages.Update option is disable for demo'));
 
             return back();
         }
@@ -6486,7 +6126,7 @@ class BusinessSettingsController extends Controller
 
         Helpers::businessUpdateOrInsert(['key' => $key], ['value' => $status]);
 
-        Toastr::success(translate('messages.email_status_updated'));
+        Toastr::success(translate('messages.Email status updated'));
 
         return back();
     }
@@ -6581,7 +6221,7 @@ class BusinessSettingsController extends Controller
 
             return back();
         }
-        Toastr::success(translate('messages.Image_removed_successfully'));
+        Toastr::success(translate('Deleted successfully'));
 
         return back();
     }
@@ -6598,7 +6238,7 @@ class BusinessSettingsController extends Controller
 
         return response()->json([
             'status' => 'error',
-            'message' => translate('invalid_request'),
+            'message' => translate('Invalid request'),
         ]);
     }
 
@@ -6611,7 +6251,7 @@ class BusinessSettingsController extends Controller
 
         return response()->json([
             'status' => 'success',
-            'message' => translate('updated_successfully!'),
+            'message' => translate('Updated successfully'),
         ]);
     }
 
@@ -6669,7 +6309,7 @@ class BusinessSettingsController extends Controller
 
         return response()->json([
             'status' => 'success',
-            'message' => translate('url_saved_successfully!'),
+            'message' => translate('Saved successfully'),
         ]);
     }
 
@@ -6678,7 +6318,7 @@ class BusinessSettingsController extends Controller
         $validator = Validator::make($request->all(), [
             'file_upload' => 'required_if:file_exist,0|mimes:zip',
         ],[
-            'file_upload.required_if' => translate('messages.zip_file_is_required'),
+            'file_upload.required_if' => translate('messages.Zip file is required'),
         ]);
 
         if (
@@ -6687,7 +6327,7 @@ class BusinessSettingsController extends Controller
         ) {
             $validator->errors()->add(
                 'file_upload',
-                translate('messages.zip_file_is_required,_upload_zip_file_first')
+                translate('messages.Zip file is required, upload zip file first')
             );
         }
 
@@ -6703,7 +6343,7 @@ class BusinessSettingsController extends Controller
         if (!$request->hasFile('file_upload')) {
             return response()->json([
                 'status' => 'success',
-                'message' => translate('updated_successfully!'),
+                'message' => translate('Updated successfully'),
             ]);
         }
 
@@ -6744,7 +6384,7 @@ class BusinessSettingsController extends Controller
 
             return response()->json([
                 'status' => 'success',
-                'message' => translate('file_upload_successfully!'),
+                'message' => translate('File upload successfully!'),
             ]);
 
         } catch (\Exception $e) {
@@ -6753,7 +6393,7 @@ class BusinessSettingsController extends Controller
 
             return response()->json([
                 'status' => 'error',
-                'message' => translate('file_upload_fail!') . ' ' . $e->getMessage(),
+                'message' => translate('File upload fail!') . ' ' . $e->getMessage(),
             ]);
         }
     }
@@ -6763,7 +6403,7 @@ class BusinessSettingsController extends Controller
     {
         return response()->json([
             'status' => 'success',
-            'message' => translate('updated_successfully!'),
+            'message' => translate('Updated successfully'),
         ]);
     }
 
@@ -6785,11 +6425,11 @@ class BusinessSettingsController extends Controller
 
         if (File::exists($filePath)) {
             File::delete($filePath);
-            Toastr::success(translate('messages.File_deleted_successfully'));
+            Toastr::success(translate('Deleted successfully'));
 
             return back();
         } else {
-            Toastr::error(translate('messages.File_not_found'));
+            Toastr::error(translate('No data found'));
 
             return back();
         }
@@ -6877,17 +6517,23 @@ class BusinessSettingsController extends Controller
     {
 
         abort_if(!addon_published_status('Rental') && $request?->module == 'rental', 404);
+        abort_if(!addon_published_status('Service') && $request?->module == 'service', 404);
 
         if (NotificationSetting::count() == 0) {
             Helpers::notificationDataSetup();
         }
         if (addon_published_status('Rental') && $request?->module == 'rental') {
-            Helpers::getRentalAdminNotificationSetupDatasetup();
+            Helpers::seedRentalAdminNotificationSettings();
+        }
+        if (addon_published_status('Service') && $request?->module == 'service') {
+            Helpers::seedServiceAdminNotificationSettings();
         }
 
         Helpers::addNewAdminNotificationSetupDataSetup();
 
-        $data = NotificationSetting::where('module_type', $request?->module == 'rental' ? 'rental' : 'all')
+        $module_type = $request?->module == 'rental' ? 'rental' : ($request?->module == 'service' ? 'service' : 'all');
+
+        $data = NotificationSetting::where('module_type', $module_type)
             ->when($request?->type == null || $request?->type == 'admin', function ($query) {
                 $query->where('type', 'admin');
             })
@@ -6904,16 +6550,20 @@ class BusinessSettingsController extends Controller
                 $query->where('type', 'deliveryman');
             })->get();
 
-        $business_name = BusinessSetting::where('key', 'business_name')->first()?->value;
+        $business_name = Helpers::get_business_settings('business_name', false);
 
-        return view($request?->module == 'rental' ? 'admin-views.business-settings.notification_setup_rental' : 'admin-views.business-settings.notification_setup', compact('business_name', 'data'));
+        $view = $request?->module == 'rental'
+            ? 'admin-views.business-settings.notification_setup_rental'
+            : ($request?->module == 'service' ? 'admin-views.business-settings.notification_setup_service' : 'admin-views.business-settings.notification_setup');
+
+        return view($view, compact('business_name', 'data'));
     }
 
     public function notification_status_change($key, $user_type, $type)
     {
         $data = NotificationSetting::where('type', $user_type)->where('key', $key)->first();
         if (!$data) {
-            Toastr::error(translate('messages.Notification_settings_not_found'));
+            Toastr::error(translate('No data found'));
 
             return back();
         }
@@ -6926,7 +6576,7 @@ class BusinessSettingsController extends Controller
         }
         $data?->save();
 
-        Toastr::success(translate('messages.Notification_settings_updated'));
+        Toastr::success(translate('messages.Notification settings updated'));
 
         return back();
     }
@@ -6938,11 +6588,11 @@ class BusinessSettingsController extends Controller
 
     public function openAISettings()
     {
-        $data = array_column(BusinessSetting::whereIn('key', [
+        $data = Helpers::get_business_settings_many([
             'section_wise_ai_limit',
             'image_upload_limit_for_ai',
             'ai_chat_status',
-        ])->get(['key', 'value'])->toArray(), 'value', 'key');
+        ]);
 
         return view('admin-views.business-settings.3rd_party.open_ai_settings', compact('data'));
     }
@@ -6963,7 +6613,7 @@ class BusinessSettingsController extends Controller
                 'updated_at' => now(),
             ]);
         }
-        Toastr::success(translate('messages.updated_successfully'));
+        Toastr::success(translate('messages.Updated successfully'));
 
         return back();
     }
@@ -6971,7 +6621,7 @@ class BusinessSettingsController extends Controller
     public function openAIConfigStatus(Request $request)
     {
         if (getEnvMode() == 'demo') {
-            Toastr::info(translate('messages.update_option_is_disable_for_demo'));
+            Toastr::info(translate('messages.Update option is disable for demo'));
 
             return back();
         }
@@ -6990,7 +6640,7 @@ class BusinessSettingsController extends Controller
                 'updated_at' => now(),
             ]
         );
-        Toastr::success(translate('messages.configuration_updated_successfully'));
+        Toastr::success(translate('Updated successfully'));
 
         return back();
     }
@@ -6998,7 +6648,7 @@ class BusinessSettingsController extends Controller
     public function openAIConfigUpdate(Request $request)
     {
         if (getEnvMode() == 'demo') {
-            Toastr::info(translate('messages.update_option_is_disable_for_demo'));
+            Toastr::info(translate('messages.Update option is disable for demo'));
 
             return back();
         }
@@ -7017,7 +6667,7 @@ class BusinessSettingsController extends Controller
                 'updated_at' => now(),
             ]
         );
-        Toastr::success(translate('messages.configuration_updated_successfully'));
+        Toastr::success(translate('Updated successfully'));
 
         return back();
     }
@@ -7066,9 +6716,9 @@ class BusinessSettingsController extends Controller
             'question.0' => 'required|max:150',
             'answer.0' => 'required|max:500',
         ], [
-            'user_type' => translate('User_type_required'),
-            'question.0.required' => translate('Default_question_is_required'),
-            'answer.0.required' => translate('Default_answer_is_required')
+            'user_type' => translate('User type required'),
+            'question.0.required' => translate('Default question is required'),
+            'answer.0.required' => translate('Default answer is required')
         ]);
 
         $faq = new FAQ();
@@ -7080,7 +6730,7 @@ class BusinessSettingsController extends Controller
         Helpers::add_or_update_translations(request: $request, key_data: 'question', name_field: 'question', model_name: 'FAQ', data_id: $faq->id, data_value: $faq->question);
         Helpers::add_or_update_translations(request: $request, key_data: 'answer', name_field: 'answer', model_name: 'FAQ', data_id: $faq->id, data_value: $faq->answer);
 
-        Toastr::success(translate('messages.faq_added_successfully'));
+        Toastr::success(translate('Added successfully'));
         return back();
     }
 
@@ -7094,7 +6744,7 @@ class BusinessSettingsController extends Controller
         $faq = FAQ::findOrFail($request->id);
         $faq->status = !$faq->status;
         $faq->save();
-        Toastr::success(translate('messages.Faq_status_updated'));
+        Toastr::success(translate('messages.Faq status updated'));
         return back();
     }
 
@@ -7124,18 +6774,18 @@ class BusinessSettingsController extends Controller
         Helpers::add_or_update_translations(request: $request, key_data: 'answer', name_field: 'answer', model_name: 'FAQ', data_id: $faq->id, data_value: $faq->answer);
 
 
-        Toastr::success(translate('messages.Faq_updated_successfully'));
+        Toastr::success(translate('Updated successfully'));
         return back();
     }
 
     public function reactFaqDestroy(FAQ $faq)
     {
         if (getEnvMode() == 'demo' && $faq->id == 1) {
-            Toastr::warning(translate('messages.you_can_not_delete_this_review_please_add_a_new_review_to_delete'));
+            Toastr::warning(translate('messages.You can not delete this review please add a new review to delete'));
             return back();
         }
         $faq->delete();
-        Toastr::success(translate('messages.faq_deleted_successfully'));
+        Toastr::success(translate('Deleted successfully'));
         return back();
     }
 
@@ -7148,7 +6798,7 @@ class BusinessSettingsController extends Controller
         $dataSetting->value = !$dataSetting->value;
         $dataSetting->save();
         $key = $this->formatSectionName($key);
-        Toastr::success(translate('Section Status Updated', ['section' => $key]));
+        Toastr::success(translate('Updated successfully') . ': ' . $key);
         return back();
     }
 
@@ -7166,18 +6816,18 @@ class BusinessSettingsController extends Controller
 
     public function react_promotional_banner_update(Request $request, $id)
     {
-        $ReactPromotionalBanner = ReactPromotionalBanner::findOrFail($id);
+        $ReactPromotionalBanner = ReactPromotionalBanner::withStorage()->findOrFail($id);
         $ReactPromotionalBanner->image = $request->has('image') ? Helpers::update(dir: 'promotional_banner/', old_image: $ReactPromotionalBanner->image, format: 'png', image: $request->file('image')) : $ReactPromotionalBanner->image;
         $ReactPromotionalBanner->save();
 
-        Toastr::success(translate('messages.React_promotional_banner_updated_successfully'));
+        Toastr::success(translate('Updated successfully'));
         return back();
     }
 
     public function react_promotional_banner_destroy(ReactPromotionalBanner $react_promotional_banner)
     {
         if (getEnvMode() == 'demo' && $react_promotional_banner->id == 1) {
-            Toastr::warning(translate('messages.you_can_not_delete_this_review_please_add_a_new_review_to_delete'));
+            Toastr::warning(translate('messages.You can not delete this review please add a new review to delete'));
             return back();
         }
 
@@ -7185,7 +6835,7 @@ class BusinessSettingsController extends Controller
 
         $react_promotional_banner?->translations()?->delete();
         $react_promotional_banner?->delete();
-        Toastr::success(translate('messages.React_promotional_banner_deleted_successfully'));
+        Toastr::success(translate('Deleted successfully'));
         return back();
     }
 
@@ -7201,14 +6851,14 @@ class BusinessSettingsController extends Controller
     public function react_promotional_banner_store(Request $request)
     {
         $request->validate([
-            'image' => 'required|max:2048',
+            'image' => ImageFile::rules('required'),
         ]);
 
         $react_promotional_banner = new ReactPromotionalBanner();
         $react_promotional_banner->image = Helpers::upload(dir: 'promotional_banner/', format: 'png', image: $request->file('image'));
         $react_promotional_banner->save();
 
-        Toastr::success(translate('messages.React_promotional_banner_added_successfully'));
+        Toastr::success(translate('Added successfully'));
         return back();
     }
 
@@ -7221,7 +6871,7 @@ class BusinessSettingsController extends Controller
         $ReactPromotionalBanner = ReactPromotionalBanner::findOrFail($request->id);
         $ReactPromotionalBanner->status = $request->status;
         $ReactPromotionalBanner->save();
-        Toastr::success(translate('messages.React_promotional_banner_status_updated'));
+        Toastr::success(translate('messages.React promotional banner status updated'));
         return back();
     }
 
@@ -7236,7 +6886,7 @@ class BusinessSettingsController extends Controller
         }
 
         if($request->has('search')){
-            $key = explode(' ', $request['search']);
+            $key = explode(' ', $request['search'] ?? '');
             $pages = $pages = collect($pages)->filter(function ($item) use ($key) {
                 foreach ($key as $k) {
                     if (stripos($item, $k) !== false) {
@@ -7246,8 +6896,21 @@ class BusinessSettingsController extends Controller
                 return false;
             })->values()->all();
         }
-        $pageMetaData = PageSeoData::whereIn('page_name', $pages)->select(['id', 'page_name'])->get()->groupBy('page_name');
-        return view('admin-views.business-settings.seo-settings.page-meta-data', compact('pages', 'pageMetaData'));
+        $pageMetaData = PageSeoData::whereIn('page_name', $pages)
+            ->withStorage()
+            ->select(['id', 'page_name', 'title', 'description', 'image', 'meta_data', 'updated_at'])
+            ->get()
+            ->keyBy('page_name');
+
+        $configured = $pageMetaData->count();
+        $summary = [
+            'total' => count($pages),
+            'configured' => $configured,
+            'pending' => max(count($pages) - $configured, 0),
+            'no_index' => $pageMetaData->filter(fn ($row) => ($row->meta_data['meta_index'] ?? 1) == 0)->count(),
+        ];
+
+        return view('admin-views.business-settings.seo-settings.page-meta-data', compact('pages', 'pageMetaData', 'summary'));
     }
     public function pageMetaDataUpdate(Request $request)
     {
@@ -7275,7 +6938,7 @@ class BusinessSettingsController extends Controller
             $pageMetaData->slug = $pageMetaData->slug ?: "{$slug}{$pageMetaData->id}";
             $pageMetaData->save();
 
-            Toastr::success(translate('messages.page_meta_data_updated_successfully'));
+            Toastr::success(translate('Updated successfully'));
         } else {
             Toastr::error(translate('messages.invalid_page_name'));
         }
@@ -7291,7 +6954,7 @@ class BusinessSettingsController extends Controller
     public function update_websocket(Request $request)
     {
         if (getEnvMode() == 'demo') {
-            Toastr::info(translate('messages.update_option_is_disable_for_demo'));
+            Toastr::info(translate('messages.Update option is disable for demo'));
 
             return back();
         }
@@ -7302,7 +6965,7 @@ class BusinessSettingsController extends Controller
             ],
         ], [
             'websocket_url.regex' =>
-                translate('messages.Please_enter_a_valid_WebSocket_URL'),
+                translate('messages.Please enter a valid WebSocket URL'),
         ]);
 
         $settings = [
@@ -7316,7 +6979,7 @@ class BusinessSettingsController extends Controller
             ]);
         }
 
-        Toastr::success(translate('messages.successfully_updated_to_changes_restart_app'));
+        Toastr::success(translate('messages.Successfully updated to changes restart app'));
 
         return back();
     }
@@ -7331,18 +6994,18 @@ class BusinessSettingsController extends Controller
             $live_values = $settings->live_values;
 
             if (empty($additional_data) || empty($live_values)) {
-                Toastr::error(translate('messages.please_fill_all_required_fields_in_setup_first'));
+                Toastr::error(translate('messages.Please fill all required fields in setup first'));
                 return back();
             }
 
             if (empty($additional_data['gateway_title']) || empty($additional_data['gateway_image'])) {
-                Toastr::error(translate('messages.please_fill_all_required_fields_in_setup_first'));
+                Toastr::error(translate('messages.Please fill all required fields in setup first'));
                 return back();
             }
 
             foreach ($live_values as $key => $value) {
                 if ($key != 'mode' && $key != 'status' && $key != 'gateway' && empty($value)) {
-                    Toastr::error(translate('messages.please_fill_all_required_fields_in_setup_first'));
+                    Toastr::error(translate('messages.Please fill all required fields in setup first'));
                     return back();
                 }
             }
@@ -7351,7 +7014,7 @@ class BusinessSettingsController extends Controller
         $settings->is_active = $request['status'];
         $settings->save();
 
-        Toastr::success(translate('messages.payment_method_status_updated'));
+        Toastr::success(translate('messages.Payment method status updated'));
 
         return back();
     }
@@ -7362,7 +7025,7 @@ class BusinessSettingsController extends Controller
 
         $partialPaymentMethod = null;
         if($request->boolean('partial_payment_status') && empty($partialMethods)){
-            Toastr::error(translate('messages.combined_payment_method_is_required'));
+            Toastr::error(translate('messages.Combined payment method is required'));
             return back();
         }
 
@@ -7390,11 +7053,10 @@ class BusinessSettingsController extends Controller
             ]);
         }
 
-        Toastr::success(translate('messages.payment_settings_updated'));
+        Toastr::success(translate('messages.Payment settings updated'));
         return back();
     }
 
-    // Business setup
     private function updateBasicSettings(Request $request): void
     {
                 $settings = [
@@ -7414,6 +7076,13 @@ class BusinessSettingsController extends Controller
                 'timeformat' => $request->timeformat,
                 'digit_after_decimal_point' => $request->digit_after_decimal_point,
                 'delivery_charge_comission' => $request->delivery_charge_comission,
+                // Measurement units ride this form like every other Business Info field.
+                // Switching one only changes the unit stored numbers are READ in — nothing is
+                // converted, which is why there is no confirmation step: the numbers an admin
+                // typed stay exactly as they typed them.
+                'distance_unit' => in_array($request->distance_unit, ['km', 'mi'], true) ? $request->distance_unit : 'km',
+                'weight_unit' => in_array($request->weight_unit, ['kg', 'lb'], true) ? $request->weight_unit : 'kg',
+                'dimension_unit' => in_array($request->dimension_unit, ['cm', 'in'], true) ? $request->dimension_unit : 'in',
             ];
 
             foreach ($settings as $key => $value) {
@@ -7439,18 +7108,6 @@ class BusinessSettingsController extends Controller
         }
 
         $setting->save();
-    }
-
-    private function updatePaymentSettings(Request $request): void
-    {
-        $settings = [
-            'partial_payment_status' => $request->partial_payment_status,
-            'partial_payment_method' => $request->partial_payment_method,
-        ];
-
-        foreach ($settings as $key => $value) {
-            Helpers::businessUpdateOrInsert(['key' => $key], ['value' => $value]);
-        }
     }
 
     private function updateLocationSettings(Request $request): void
@@ -7480,7 +7137,7 @@ class BusinessSettingsController extends Controller
     private function updateBusinessModelSettings(Request $request): void
     {
             if (!$request->subscription_business_model && !$request->commission_business_model) {
-                Toastr::error(translate('You_must_select_at_least_one_business_model_between_commission_and_subscription'));
+                Toastr::error(translate('You must select at least one business model between commission and subscription'));
                 back()->throwResponse();
             }
 
@@ -7497,7 +7154,7 @@ class BusinessSettingsController extends Controller
             Helpers::businessUpdateOrInsert(['key' => 'subscription_business_model'], ['value' => 1]);
             Helpers::businessUpdateOrInsert(['key' => 'commission_business_model'], ['value' => 0]);
 
-            if (BusinessSetting::where('key', 'commission_business_model')->first()?->value === 0) {
+            if (Helpers::get_business_settings('commission_business_model', false) === 0) {
                 Store::where('store_business_model', 'commission')
                     ->update(['store_business_model' => 'unsubscribed', 'status' => 0]);
             }
@@ -7506,14 +7163,14 @@ class BusinessSettingsController extends Controller
     private function handleCommissionOnlyModel(Request $request): void
     {
         if (StoreSubscription::where('status', 1)->exists()) {
-            Toastr::warning(translate('You_need_to_switch_your_subscribers_to_commission_first'));
+            Toastr::warning(translate('You need to switch your subscribers to commission first'));
             back()->throwResponse();
         }
 
         Helpers::businessUpdateOrInsert(['key' => 'commission_business_model'], ['value' => 1]);
         Helpers::businessUpdateOrInsert(['key' => 'subscription_business_model'], ['value' => 0]);
 
-        if (BusinessSetting::where('key', 'subscription_business_model')->first()?->value === 0) {
+        if (Helpers::get_business_settings('subscription_business_model', false) === 0) {
             Store::query()->update(['store_business_model' => 'commission']);
         }
     }
@@ -7523,7 +7180,7 @@ class BusinessSettingsController extends Controller
         Helpers::businessUpdateOrInsert(['key' => 'commission_business_model'], ['value' => 1]);
 
         if (!$request->subscription_business_model &&  StoreSubscription::where('status', 1)->exists()) {
-            Toastr::warning(translate('You_need_to_switch_your_subscribers_to_commission_first'));
+            Toastr::warning(translate('You need to switch your subscribers to commission first'));
             back()->throwResponse();
         }
 
@@ -7531,79 +7188,4 @@ class BusinessSettingsController extends Controller
     }
 
 
-
-    public function openAIChatStatus(Request $request)
-    {
-        if (env('APP_MODE') == 'demo') {
-            Toastr::info(translate('messages.update_option_is_disable_for_demo'));
-
-            return back();
-        }
-
-        $config = BusinessSetting::where(['key' => 'openai_config'])->first();
-        $data = $config ? json_decode($config['value'], true) : [];
-
-        Helpers::businessUpdateOrInsert(
-            ['key' => 'openai_config'],
-            [
-                'value' => json_encode([
-                    'status' => $data['status'] ?? 0,
-                    'chat_status' => $request->boolean('status') ? 1 : 0,
-                    'OPENAI_ORGANIZATION' => $data['OPENAI_ORGANIZATION'] ?? '',
-                    'OPENAI_API_KEY' => $data['OPENAI_API_KEY'] ?? '',
-                ]),
-                'updated_at' => now(),
-            ]
-        );
-        Cache::forget('business_settings_config_keys');
-        Toastr::success(translate('messages.configuration_updated_successfully'));
-
-        return back();
-    }
-
-
-    public function currency_store(Request $request)
-    {
-        $request->validate([
-            'currency_code' => 'required|unique:currencies',
-        ]);
-
-        Currency::create([
-            'country' => $request['country'],
-            'currency_code' => $request['currency_code'],
-            'currency_symbol' => $request['symbol'],
-            'exchange_rate' => $request['exchange_rate'],
-        ]);
-        Toastr::success(translate('messages.currency_added_successfully'));
-
-        return back();
-    }
-
-    public function currency_edit($id)
-    {
-        $currency = Currency::find($id);
-
-        return view('admin-views.business-settings.currency-update', compact('currency'));
-    }
-
-    public function currency_update(Request $request, $id)
-    {
-        Currency::where(['id' => $id])->update([
-            'country' => $request['country'],
-            'currency_code' => $request['currency_code'],
-            'currency_symbol' => $request['symbol'],
-            'exchange_rate' => $request['exchange_rate'],
-        ]);
-        Toastr::success(translate('messages.currency_updated_successfully'));
-
-        return redirect('vendor-panel/business-settings/currency-add');
-    }
-
-    public function currency_delete($id)
-    {
-        Currency::where(['id' => $id])->delete();
-        Toastr::success(translate('messages.currency_deleted_successfully'));
-
-        return back();
-    }
 }

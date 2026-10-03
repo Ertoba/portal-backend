@@ -1,6 +1,6 @@
 @extends('layouts.admin.app')
 
-@section('title', translate('messages.Delivery Man Preview'))
+@section('title', translate('Deliveryman preview'))
 
 @push('css_or_js')
 
@@ -8,27 +8,21 @@
 
 @section('content')
     <div class="content container-fluid">
-        <!-- Page Header -->
         <div class="page-header">
             @include('admin-views.delivery-man.partials._page_header')
             <div class="">
                 @include('admin-views.delivery-man.partials._tab_menu')
             </div>
         </div>
-        <!-- End Page Header -->
 
-        <!-- Card -->
         <div class="card mb-3 mb-lg-5">
             <div class="card-header flex-wrap pt-3 pb-0 border-0 gap-2">
                 <div class="search--button-wrapper">
-                    <h4 class="card-title fs-16 text-dark">{{ translate('messages.order_transactions')}}</h4>
-                    <!-- <div class="min--260">
-                                                    <input type="date" class="form-control set-filter" placeholder="{{ translate('mm/dd/yyyy') }}" data-url="{{route('admin.users.delivery-man.preview',['id'=>$deliveryMan->id, 'tab'=> 'transaction'])}}" data-filter="date" value="{{$date}}">
-                                                </div> -->
+                    <h4 class="card-title fs-16 text-dark">{{ translate('Order transactions')}}</h4>
                     <form class="search-form min--260">
                         <div class="input-group input--group">
                             <input id="datatableSearch_" type="search" name="search" class="form-control h--40px text-muted"
-                                placeholder="{{ translate('messages.Search Order ID') }}" value="{{ request()->search }}"
+                                placeholder="{{ translate('Search by order ID') }}" value="{{ request()->search }}"
                                 aria-label="Search" tabindex="1">
 
                             <button type="submit" class="btn btn--secondary bg-modal-btn"><i
@@ -46,37 +40,34 @@
                         @endif
                     </button>
                 </div>
-                <!-- Unfold -->
                 <div class="hs-unfold mr-2">
                     <a class="js-hs-unfold-invoker btn btn-sm btn-white dropdown-toggle min-height-40" href="javascript:;"
                         data-hs-unfold-options='{
                                                             "target": "#usersExportDropdown",
                                                             "type": "css-animation"
                                                         }'>
-                        <i class="tio-download-to mr-1"></i> {{ translate('messages.export') }}
+                        <i class="tio-download-to mr-1"></i> {{ translate('messages.Export') }}
                     </a>
 
                     <div id="usersExportDropdown"
                         class="hs-unfold-content dropdown-unfold dropdown-menu dropdown-menu-sm-right">
-                        <span class="dropdown-header">{{ translate('messages.download_options') }}</span>
+                        <span class="dropdown-header">{{ translate('messages.Download options') }}</span>
                         <a id="export-excel" class="dropdown-item"
                             href="{{route('admin.users.delivery-man.earning-export', ['type' => 'excel', 'id' => $deliveryMan->id, request()->getQueryString()])}}">
                             <img class="avatar avatar-xss avatar-4by3 mr-2"
                                 src="{{ asset('public/assets/admin') }}/svg/components/excel.svg" alt="Image Description">
-                            {{ translate('messages.excel') }}
+                            Excel
                         </a>
                         <a id="export-csv" class="dropdown-item"
                             href="{{route('admin.users.delivery-man.earning-export', ['type' => 'csv', 'id' => $deliveryMan->id, request()->getQueryString()])}}">
                             <img class="avatar avatar-xss avatar-4by3 mr-2"
                                 src="{{ asset('public/assets/admin') }}/svg/components/placeholder-csv-format.svg"
                                 alt="Image Description">
-                            {{ translate('messages.csv') }}
+                            CSV
                         </a>
                     </div>
                 </div>
-                <!-- End Unfold -->
             </div>
-            <!-- Body -->
             <div class="p-xxl-20 p-3">
                 <div class="shadow-sm rounded">
                     <div class="card-body p-0">
@@ -85,20 +76,15 @@
                                 class="table table-borderless table-thead-bordered table-nowrap justify-content-between table-align-middle card-table">
                                 <thead class="thead-light">
                                     <tr>
-                                        <th class="border-0">{{translate('sl')}}</th>
-                                        <th class="border-0">{{translate('messages.order_id')}}</th>
-                                        <th class="border-0">{{translate('messages.date')}}</th>
-                                        <th class="border-0">{{translate('messages.delivery_fee_earned')}}</th>
-                                        <th class="border-0">{{translate('messages.delivery_tips')}}</th>
-                                        <th class="border-0">{{translate('messages.total_amount')}}</th>
+                                        <th class="border-0">{{translate('SL')}}</th>
+                                        <th class="border-0">{{translate('messages.Order ID')}}</th>
+                                        <th class="border-0">{{translate('messages.Date')}}</th>
+                                        <th class="border-0">{{translate('messages.Delivery fee earned')}}</th>
+                                        <th class="border-0">{{translate('Delivery tips')}}</th>
+                                        <th class="border-0">{{translate('Total amount')}}</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {{-- @php($digital_transaction = \App\Models\OrderTransaction::where('delivery_man_id',
-                                    $deliveryMan->id)
-                                    ->when($date, function($query)use($date){
-                                    return $query->whereDate('created_at', $date);
-                                    })->paginate(25)) --}}
                                     @foreach($digital_transaction as $k => $dt)
 
                                         <tr>
@@ -119,7 +105,6 @@
                             </table>
                         </div>
                     </div>
-                    <!-- End Body -->
                     <div class="card-footer">
                         {!!$digital_transaction->links()!!}
                     </div>
@@ -128,14 +113,13 @@
                                 <img src="{{ asset('/public/assets/admin/svg/illustrations/sorry.svg') }}"
                                     alt="public">
                                 <h5>
-                                    {{ translate('no_data_found') }}
+                                    {{ translate('No data found') }}
                                 </h5>
                             </div>
                         @endif
                 </div>
             </div>
         </div>
-        <!-- End Card -->
     </div>
 
 
@@ -158,8 +142,8 @@
         </div>
         <div class="offcanvas-footer p-3 d-flex align-items-center justify-content-center gap-3">
             <button type="reset" class="btn w-100 btn--reset h--40px redirect-url"
-                data-url="{{ route('admin.users.delivery-man.preview', ['id' => $deliveryMan->id, 'tab' => 'transaction']) }}">{{ translate('messages.reset') }}</button>
-            <button type="submit" class="btn w-100 btn--primary h--40px">{{ translate('messages.Filter') }}</button>
+                data-url="{{ route('admin.users.delivery-man.preview', ['id' => $deliveryMan->id, 'tab' => 'transaction']) }}"><i class="tio-refresh"></i> {{ translate('messages.Reset') }}</button>
+            <button type="submit" class="btn w-100 btn--primary h--40px"><i class="tio-filter-list"></i> {{ translate('messages.Filter') }}</button>
         </div>
         </form>
     </div>

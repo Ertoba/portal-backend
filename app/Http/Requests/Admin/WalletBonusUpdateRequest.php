@@ -24,8 +24,6 @@ use Illuminate\Support\Carbon;
  */
 class WalletBonusUpdateRequest extends FormRequest
 {
-    /**
-     * Determine if the user is authorized to make this request.     */
     public function authorize(): bool
     {
         return true;
@@ -53,7 +51,7 @@ class WalletBonusUpdateRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'title.0.required'=>translate('default_title_is_required'),
+            'title.0.required'=>translate('Default title is required'),
         ];
     }
 }

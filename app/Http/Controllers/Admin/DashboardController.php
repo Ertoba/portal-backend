@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Support\Settings\BusinessRules;
 use Carbon\Carbon;
 use App\Models\Item;
 use App\Models\User;
@@ -23,11 +24,6 @@ use Modules\RideShare\Entities\UserManagement\Rider;
 
 class DashboardController extends Controller
 {
-
-    public function __construct()
-    {
-        DB::statement("SET sql_mode=(SELECT REPLACE(@@sql_mode,'ONLY_FULL_GROUP_BY',''));");
-    }
 
     private function buildParams(Request $request): array
     {
@@ -64,6 +60,17 @@ class DashboardController extends Controller
         };
     }
 
+    private function statDatePredicate(string $type, string $column): array
+    {
+        return match ($type) {
+            'today' => ["DATE(`$column`) = ?", [Carbon::now()->format('Y-m-d')]],
+            'this_year' => ["YEAR(`$column`) = ?", [now()->format('Y')]],
+            'this_month' => ["MONTH(`$column`) = ? AND YEAR(`$column`) = ?", [now()->format('m'), now()->format('Y')]],
+            'this_week' => ["`$column` BETWEEN ? AND ?", [now()->startOfWeek()->format('Y-m-d H:i:s'), now()->endOfWeek()->format('Y-m-d H:i:s')]],
+            default => [null, []],
+        };
+    }
+
     public function user_dashboard(Request $request)
     {
         $params = $this->buildParams($request);
@@ -73,19 +80,25 @@ class DashboardController extends Controller
         $total_sell = $data['total_sell'];
         $commission = $data['commission'];
         $delivery_commission = $data['delivery_commission'];
-        $customers = User::zone($params['zone_id'])->take(2)->get();
+        $customers = User::withStorage()->zone($params['zone_id'])->take(2)->get();
 
-        $delivery_man = DeliveryMan::with('last_location')->when(is_numeric($params['zone_id']), function ($q) use ($params) {
+        // Only the avatars are rendered, so last_location was loaded and never read. `id` has
+        // to be selected for the storage relation behind image_full_url to match its rows —
+        // without it that lookup ran against id 0 and could never resolve a disk.
+        $delivery_man = DeliveryMan::withStorage()->when(is_numeric($params['zone_id']), function ($q) use ($params) {
             return $q->where('zone_id', $params['zone_id']);
         })
             ->Zonewise()
-            ->limit(2)->get('image');
+            ->limit(2)->get(['id', 'image']);
 
         $last30 = now()->subDays(30)->format('Y-m-d');
+        // toBase() on the aggregates below: they return computed columns, not rows, so
+        // hydrating a model only made the storage global scope fetch storages for id 0.
         $dmStats = DeliveryMan::when(is_numeric($params['zone_id']), function ($q) use ($params) {
             return $q->where('zone_id', $params['zone_id']);
         })
             ->Zonewise()
+            ->toBase()
             ->selectRaw("
                 SUM(CASE WHEN active = 1 AND application_status = 'approved' THEN 1 ELSE 0 END) as active_deliveryman,
                 SUM(CASE WHEN application_status = 'approved' AND active = 0 THEN 1 ELSE 0 END) as inactive_deliveryman,
@@ -120,12 +133,14 @@ class DashboardController extends Controller
         $number = 12;
 
         $users = User::zone($params['zone_id'])
+            ->toBase()
             ->select(
                 DB::raw('(count(id)) as total'),
                 DB::raw('YEAR(created_at) year, MONTH(created_at) month')
             )
             ->whereBetween('created_at', [Carbon::parse(now())->startOfYear(), Carbon::parse(now())->endOfYear()])
-            ->groupBy('year', 'month')->get()->toArray();
+            ->groupBy('year', 'month')->get()
+            ->map(fn ($row) => (array) $row)->all();
 
         for ($inc = 1; $inc <= $number; $inc++) {
             $user_data[$inc] = 0;
@@ -136,7 +151,7 @@ class DashboardController extends Controller
             }
         }
 
-        $customerStats = User::zone($params['zone_id'])->selectRaw("
+        $customerStats = User::zone($params['zone_id'])->toBase()->selectRaw("
             SUM(CASE WHEN status = 1 THEN 1 ELSE 0 END) as active_customers,
             SUM(CASE WHEN status = 0 THEN 1 ELSE 0 END) as blocked_customers,
             SUM(CASE WHEN DATE(created_at) >= ? THEN 1 ELSE 0 END) as newly_joined,
@@ -150,7 +165,7 @@ class DashboardController extends Controller
         $this_month = (int) $customerStats->this_month;
         $last_year_users = (int) $customerStats->last_year_users;
 
-        $employees = Admin::zone()->with(['role'])->where('role_id', '!=', '1')
+        $employees = Admin::withStorage()->zone()->with(['role'])->where('role_id', '!=', '1')
             ->when(is_numeric($params['zone_id']), function ($q) use ($params) {
                 return $q->where('zone_id', $params['zone_id']);
             })
@@ -175,7 +190,7 @@ class DashboardController extends Controller
 
     private function get_rider_data($params) {
 
-        $data['rider_images'] = Rider::when(is_numeric($params['zone_id']), function ($q) use ($params) {
+        $data['rider_images'] = Rider::withStorage()->when(is_numeric($params['zone_id']), function ($q) use ($params) {
                 return $q->where('zone_id', $params['zone_id']);
             })
             ->limit(2)
@@ -197,7 +212,7 @@ class DashboardController extends Controller
         $data['blocked_rider'] = (int) $riderStats->blocked_rider;
         $data['newly_joined_rider'] = (int) $riderStats->newly_joined_rider;
 
-        $data['top_riders'] = Rider::withCount('driverTrips')->when(is_numeric($params['zone_id']), function ($q) use ($params) {
+        $data['top_riders'] = Rider::withStorage()->withCount('driverTrips')->when(is_numeric($params['zone_id']), function ($q) use ($params) {
                 return $q->where('zone_id', $params['zone_id']);
             })
             ->having("driver_trips_count", '>', 0)
@@ -233,7 +248,7 @@ class DashboardController extends Controller
         session()->put('dash_params', $params);
         $data = self::dashboard_data($request);
 
-        $maxOrder = config('dm_maximum_orders') ?? 1;
+        $maxOrder = BusinessRules::dmMaximumOrders();
 
         $deliveryman_stats = DeliveryMan::when(is_numeric($params['zone_id']), function ($q) use ($params) {
                 return $q->where('zone_id', $params['zone_id']);
@@ -308,6 +323,9 @@ class DashboardController extends Controller
                 : view('errors.404'),
             'rental' => addon_published_status('Rental') == 1
                 ? redirect()->route('admin.rental.dashboard')
+                : view('errors.404'),
+            'service' => addon_published_status('Service') == 1
+                ? redirect()->route('admin.service.dashboard')
                 : view('errors.404'),
             default => null,
         };
@@ -421,118 +439,88 @@ class DashboardController extends Controller
         $params = session('dash_params');
         $module_type = Config::get('module.current_module_type');
 
-        if ($module_id && $params['statistics_type'] == 'today') {
-            $today = Carbon::now();
-            $searching_for_dm = Order::SearchingForDeliveryman()->where('module_id', $module_id)->whereDate('created_at', $today);
-            $accepted_by_dm = Order::AccepteByDeliveryman()->where('module_id', $module_id)->whereDate('accepted', $today);
-            $preparing_in_rs = Order::Preparing()->where('module_id', $module_id)->whereDate('processing', $today);
-            $picked_up = Order::ItemOnTheWay()->where('module_id', $module_id)->whereDate('picked_up', $today);
-            $delivered = Order::Delivered()->where('module_id', $module_id)->whereDate('delivered', $today);
-            $canceled = Order::where('module_id', $module_id)->where(['order_status' => 'canceled'])->whereDate('canceled', $today);
-            $refund_requested = Order::where('module_id', $module_id)->where(['order_status' => 'refund_requested'])->whereDate('refund_requested', $today);
-            $refunded = Order::where('module_id', $module_id)->where(['order_status' => 'refunded'])->whereDate('refunded', $today);
-            $new_orders = Order::where('module_id', $module_id)->whereDate('schedule_at', $today);
-            if ($module_type == 'parcel') {
-                $total_orders = Order::where('module_id', $module_id)->whereDate('created_at', $today);
-            } else {
-                $total_orders = Order::where('module_id', $module_id);
-            }
-        } elseif ($module_id && $params['statistics_type'] == 'this_year') {
-            $year = now()->format('Y');
-            $searching_for_dm = Order::SearchingForDeliveryman()->where('module_id', $module_id)->whereYear('created_at', $year);
-            $accepted_by_dm = Order::AccepteByDeliveryman()->where('module_id', $module_id)->whereYear('accepted', $year);
-            $preparing_in_rs = Order::Preparing()->where('module_id', $module_id)->whereYear('processing', $year);
-            $picked_up = Order::ItemOnTheWay()->where('module_id', $module_id)->whereYear('picked_up', $year);
-            $delivered = Order::Delivered()->where('module_id', $module_id)->whereYear('delivered', $year);
-            $canceled = Order::where('module_id', $module_id)->where(['order_status' => 'canceled'])->whereYear('canceled', $year);
-            $refund_requested = Order::where('module_id', $module_id)->where(['order_status' => 'refund_requested'])->whereYear('refund_requested', $year);
-            $refunded = Order::where('module_id', $module_id)->where(['order_status' => 'refunded'])->whereYear('refunded', $year);
-            $new_orders = Order::where('module_id', $module_id)->whereYear('schedule_at', $year);
-            $total_orders = Order::where('module_id', $module_id);
-        } elseif ($module_id && $params['statistics_type'] == 'this_month') {
-            $month = now()->format('m');
-            $year = now()->format('Y');
-            $searching_for_dm = Order::SearchingForDeliveryman()->where('module_id', $module_id)->whereMonth('created_at', $month)->whereYear('created_at', $year);
-            $accepted_by_dm = Order::AccepteByDeliveryman()->where('module_id', $module_id)->whereMonth('accepted', $month)->whereYear('accepted', $year);
-            $preparing_in_rs = Order::Preparing()->where('module_id', $module_id)->whereMonth('processing', $month)->whereYear('processing', $year);
-            $picked_up = Order::ItemOnTheWay()->where('module_id', $module_id)->whereMonth('picked_up', $month)->whereYear('picked_up', $year);
-            $delivered = Order::Delivered()->where('module_id', $module_id)->whereMonth('delivered', $month)->whereYear('delivered', $year);
-            $canceled = Order::where('module_id', $module_id)->where(['order_status' => 'canceled'])->whereMonth('canceled', $month)->whereYear('canceled', $year);
-            $refund_requested = Order::where('module_id', $module_id)->where(['order_status' => 'refund_requested'])->whereMonth('refund_requested', $month)->whereYear('refund_requested', $year);
-            $refunded = Order::where('module_id', $module_id)->where(['order_status' => 'refunded'])->whereMonth('refunded', $month)->whereYear('refunded', $year);
-            $new_orders = Order::where('module_id', $module_id)->whereMonth('schedule_at', $month)->whereYear('schedule_at', $year);
-            $total_orders = Order::where('module_id', $module_id);
-        } elseif ($module_id && $params['statistics_type'] == 'this_week') {
-            $weekStart = now()->startOfWeek()->format('Y-m-d H:i:s');
-            $weekEnd = now()->endOfWeek()->format('Y-m-d H:i:s');
-            $searching_for_dm = Order::SearchingForDeliveryman()->where('module_id', $module_id)->whereBetween('created_at', [$weekStart, $weekEnd]);
-            $accepted_by_dm = Order::AccepteByDeliveryman()->where('module_id', $module_id)->whereBetween('accepted', [$weekStart, $weekEnd]);
-            $preparing_in_rs = Order::Preparing()->where('module_id', $module_id)->whereBetween('processing', [$weekStart, $weekEnd]);
-            $picked_up = Order::ItemOnTheWay()->where('module_id', $module_id)->whereBetween('picked_up', [$weekStart, $weekEnd]);
-            $delivered = Order::Delivered()->where('module_id', $module_id)->whereBetween('delivered', [$weekStart, $weekEnd]);
-            $canceled = Order::where('module_id', $module_id)->where(['order_status' => 'canceled'])->whereBetween('canceled', [$weekStart, $weekEnd]);
-            $refund_requested = Order::where('module_id', $module_id)->where(['order_status' => 'refund_requested'])->whereBetween('refund_requested', [$weekStart, $weekEnd]);
-            $refunded = Order::where('module_id', $module_id)->where(['order_status' => 'refunded'])->whereBetween('refunded', [$weekStart, $weekEnd]);
-            $new_orders = Order::where('module_id', $module_id)->whereBetween('schedule_at', [$weekStart, $weekEnd]);
-            $total_orders = Order::where('module_id', $module_id);
-        } elseif ($module_id) {
-            $last30 = now()->subDays(30)->format('Y-m-d');
-            $searching_for_dm = Order::SearchingForDeliveryman()->where('module_id', $module_id);
-            $accepted_by_dm = Order::AccepteByDeliveryman()->where('module_id', $module_id);
-            $preparing_in_rs = Order::Preparing()->where('module_id', $module_id);
-            $picked_up = Order::ItemOnTheWay()->where('module_id', $module_id);
-            $delivered = Order::Delivered()->where('module_id', $module_id);
-            $canceled = Order::Canceled()->where('module_id', $module_id);
-            $refund_requested = Order::failed()->where('module_id', $module_id);
-            $refunded = Order::Refunded()->where('module_id', $module_id);
-            $new_orders = Order::where('module_id', $module_id)->whereDate('schedule_at', '>=', $last30);
-            $total_orders = Order::where('module_id', $module_id);
-        } else {
-            $last30 = now()->subDays(30)->format('Y-m-d');
-            $searching_for_dm = Order::SearchingForDeliveryman();
-            $accepted_by_dm = Order::AccepteByDeliveryman();
-            $preparing_in_rs = Order::Preparing();
-            $picked_up = Order::ItemOnTheWay();
-            $delivered = Order::Delivered();
-            $canceled = Order::Canceled();
-            $refund_requested = Order::failed();
-            $refunded = Order::Refunded();
-            $new_orders = Order::whereDate('schedule_at', '>=', $last30);
-            $total_orders = Order::query();
-        }
+        $statistics_type = ($module_id && in_array($params['statistics_type'], ['today', 'this_year', 'this_month', 'this_week']))
+            ? $params['statistics_type'] : 'overall';
 
         $isParcel = $module_id && $module_type == 'parcel';
-        $orderScope = $isParcel ? 'ParcelOrder' : 'StoreOrder';
         $zoneOnOrders = is_numeric($zone_id) && $module_id;
+        $typeSql = $isParcel ? "`order_type` = 'parcel'" : "(`order_type` = 'take_away' or `order_type` = 'delivery')";
+
+        $scheduledInSql = '((created_at <> schedule_at and (`schedule_at` between ? and ?) or `schedule_at` < ?) or created_at = schedule_at)';
+        $scheduledInBind = [now()->toDateTimeString(), now()->addMinutes(30)->toDateTimeString(), now()->toDateTimeString()];
+        $searchingSql = "`delivery_man_id` is null and `order_type` in ('delivery', 'parcel') and `order_status` not in ('delivered', 'failed', 'canceled', 'refund_requested', 'refund_request_canceled', 'refunded')";
+        $failedSql = "`order_status` = 'failed' and not exists (select * from `offline_payments` where `orders`.`id` = `offline_payments`.`order_id`)";
+
+        $dated = $statistics_type !== 'overall';
+
+        $metrics = [
+            'searching_for_dm' => [$searchingSql . ' and ' . $scheduledInSql, $scheduledInBind, 'created_at', true],
+            'accepted_by_dm' => ["`order_status` = 'accepted'", [], 'accepted', true],
+            'preparing_in_rs' => ["`order_status` in ('confirmed', 'processing', 'handover')", [], 'processing', true],
+            'picked_up' => ["`order_status` = 'picked_up'", [], 'picked_up', true],
+            'delivered' => ["`order_status` = 'delivered'", [], 'delivered', true],
+            'canceled' => ["`order_status` = 'canceled'", [], 'canceled', true],
+            'refund_requested' => [$dated ? "`order_status` = 'refund_requested'" : $failedSql, [], 'refund_requested', true],
+            'refunded' => ["`order_status` = 'refunded'", [], 'refunded', true],
+            'new_orders' => [null, [], 'schedule_at', (bool) $module_id],
+            'total_orders' => [null, [], ($statistics_type == 'today' && $module_type == 'parcel') ? 'created_at' : null, (bool) $module_id],
+        ];
+
+        $select = [];
+        $bindings = [];
+
+        foreach ($metrics as $alias => [$statusSql, $statusBind, $dateColumn, $withType]) {
+            $conditions = [];
+            $binds = [];
+
+            if ($statusSql !== null) {
+                $conditions[] = $statusSql;
+                $binds = array_merge($binds, $statusBind);
+            }
+
+            if ($withType) {
+                $conditions[] = $typeSql;
+            }
+
+            if ($dateColumn !== null) {
+                [$dateSql, $dateBind] = $alias == 'new_orders' && ! $dated
+                    ? ['DATE(`schedule_at`) >= ?', [now()->subDays(30)->format('Y-m-d')]]
+                    : $this->statDatePredicate($statistics_type, $dateColumn);
+
+                if ($dateSql !== null) {
+                    $conditions[] = $dateSql;
+                    $binds = array_merge($binds, $dateBind);
+                }
+            }
+
+            $select[] = empty($conditions)
+                ? "count(*) as {$alias}"
+                : 'sum(case when ' . implode(' and ', $conditions) . " then 1 else 0 end) as {$alias}";
+
+            $bindings = array_merge($bindings, $binds);
+        }
+
+        $orderRow = Order::query()
+            ->when($module_id, fn($q) => $q->where('module_id', $module_id))
+            ->when($zoneOnOrders, fn($q) => $q->where('zone_id', $zone_id))
+            ->toBase()
+            ->selectRaw(implode(', ', $select), $bindings)
+            ->first();
+
+        $searching_for_dm = (int) ($orderRow?->searching_for_dm ?? 0);
+        $accepted_by_dm = (int) ($orderRow?->accepted_by_dm ?? 0);
+        $preparing_in_rs = (int) ($orderRow?->preparing_in_rs ?? 0);
+        $picked_up = (int) ($orderRow?->picked_up ?? 0);
+        $delivered = (int) ($orderRow?->delivered ?? 0);
+        $canceled = (int) ($orderRow?->canceled ?? 0);
+        $refund_requested = (int) ($orderRow?->refund_requested ?? 0);
+        $refunded = (int) ($orderRow?->refunded ?? 0);
+        $new_orders = (int) ($orderRow?->new_orders ?? 0);
+        $total_orders = (int) ($orderRow?->total_orders ?? 0);
+
+        [$newCase, $newBind] = $this->statNewDateCase('created_at', $module_id);
         $zoneOnStores = is_numeric($zone_id) && $module_id;
         $zoneOnCustomers = is_numeric($zone_id) && $module_id && $isParcel;
-        [$newCase, $newBind] = $this->statNewDateCase('created_at', $module_id);
-
-        $applyOrderType = function ($q, $withType) use ($orderScope, $zoneOnOrders, $zone_id) {
-            if ($withType) {
-                $q = $q->{$orderScope}();
-            }
-            if ($zoneOnOrders) {
-                $q = $q->where('zone_id', $zone_id);
-            }
-            return $q;
-        };
-
-        $sfd = $searching_for_dm->{$orderScope}()->OrderScheduledIn(30);
-        if ($zoneOnOrders) {
-            $sfd = $sfd->where('zone_id', $zone_id);
-        }
-        $searching_for_dm = $sfd->count();
-
-        $accepted_by_dm = $applyOrderType($accepted_by_dm, true)->count();
-        $preparing_in_rs = $applyOrderType($preparing_in_rs, true)->count();
-        $picked_up = $applyOrderType($picked_up, true)->count();
-        $delivered = $applyOrderType($delivered, true)->count();
-        $canceled = $applyOrderType($canceled, true)->count();
-        $refund_requested = $applyOrderType($refund_requested, true)->count();
-        $refunded = $applyOrderType($refunded, true)->count();
-        $new_orders = $applyOrderType($new_orders, (bool) $module_id)->count();
-        $total_orders = $applyOrderType($total_orders, (bool) $module_id)->count();
 
         $itemRow = Item::where('is_approved', 1)
             ->when($module_id, fn($q) => $q->where('module_id', $module_id))
@@ -582,7 +570,6 @@ class DashboardController extends Controller
     public function user_overview_calc($zone_id, $module_id)
     {
         $params = session('dash_params');
-        //zone
         if (is_numeric($zone_id)) {
             $customer = User::where('zone_id', $zone_id);
             $stores = Store::whereHas('vendor', fn($query) => $query->where('status', 1))->where('module_id', $module_id)->where(['zone_id' => $zone_id]);
@@ -592,11 +579,15 @@ class DashboardController extends Controller
             $stores = Store::whereHas('vendor', fn($query) => $query->where('status', 1))->where('module_id', $module_id)->whereNotNull('id');
             $delivery_man = DeliveryMan::where('application_status', 'approved')->Zonewise();
         }
-        //user overview
         $applyOverview = match ($params['user_overview']) {
             'overall' => fn($q) => $q,
-            'this_month' => fn($q) => $q->whereMonth('created_at', date('m'))->whereYear('created_at', date('Y')),
-            'this_year' => fn($q) => $q->whereYear('created_at', date('Y')),
+            // Ranges, not whereMonth/whereYear -- see the note on the yearly chart below.
+            'this_month' => fn($q) => $q->whereBetween('created_at', [
+                now()->startOfMonth()->format('Y-m-d H:i:s'), now()->endOfMonth()->format('Y-m-d H:i:s'),
+            ]),
+            'this_year' => fn($q) => $q->whereBetween('created_at', [
+                now()->startOfYear()->format('Y-m-d H:i:s'), now()->endOfYear()->format('Y-m-d H:i:s'),
+            ]),
             default => fn($q) => $q->whereDate('created_at', [now()->startOfWeek()->format('Y-m-d H:i:s'), now()->endOfWeek()->format('Y-m-d H:i:s')]),
         };
 
@@ -620,8 +611,13 @@ class DashboardController extends Controller
             $data_uo = self::user_overview_calc($params['zone_id'], $params['module_id']);
         }
 
-        $popular = Wishlist::with(['store' => fn($q) => $q->select('id', 'name', 'logo'), 'store.storage'])
-            ->whereHas('store')
+        // Ranked separately from $top_restaurants below (wishlist count vs. order count are
+        // different metrics), but the two rankings' top-6 lists overlap heavily in practice --
+        // popular stores tend to rank high on both. Each used to hydrate its own Store models
+        // (with the storage/translations/store_configs Store always eager-loads), so the shared
+        // stores got fetched twice. Only the ranking queries run here; the actual Store rows are
+        // hydrated once, together, after $top_restaurants below.
+        $wishlistCounts = Wishlist::whereHas('store')
             ->when(is_numeric($params['module_id']), function ($q) use ($params) {
                 return $q->whereHas('store', function ($query) use ($params) {
                     return $query->where('module_id', $params['module_id']);
@@ -681,18 +677,35 @@ class DashboardController extends Controller
             ->take(6)
             ->get();
 
-        $top_customers = User::select('id', 'f_name', 'phone', 'image')->with('storage')->when(is_numeric($params['zone_id']), function ($q) use ($params) {
-                return $q->where('zone_id', $params['zone_id']);
+        // Ranked from the orders side: withCount + having + orderByDesc ran a correlated
+        // COUNT per user and sorted all of them to return six rows (12.9s, 2.2M rows examined
+        // on 200k users), because HAVING on the counted alias cannot terminate early.
+        // Grouping orders is served by orders_status_guest_user_index.
+        // is_guest = 0 mirrors the User::orders() relation.
+        $topCustomerOrderCounts = DB::table('orders')
+            ->selectRaw('user_id, COUNT(*) AS order_count')
+            ->where('order_status', 'delivered')
+            ->where('is_guest', 0)
+            ->whereNotNull('user_id')
+            ->when(is_numeric($params['zone_id']), function ($query) use ($params) {
+                // Users in the zone, not orders in it: orders.zone_id is the store's zone.
+                return $query->whereIn('user_id', User::select('id')->where('zone_id', $params['zone_id']));
             })
-            ->withCount([
-                'orders as order_count' => fn($query) => $query->where('order_status', 'delivered')
-            ])
-            ->having('order_count', '>', 0)
+            ->groupBy('user_id')
             ->orderByDesc('order_count')
-            ->take(6)
-            ->get();
+            ->limit(6)
+            ->pluck('order_count', 'user_id');
 
-        $top_restaurants = Store::select('id', 'name', 'logo', 'order_count')->with('storage')->whereHas('vendor', fn($query) => $query->where('status', 1))->when(is_numeric($params['module_id']), function ($q) use ($params) {
+        $top_customers = User::select('id', 'f_name', 'phone', 'image')->with('storage')
+            ->whereIn('id', $topCustomerOrderCounts->keys())
+            ->get()
+            ->each(function ($customer) use ($topCustomerOrderCounts) {
+                $customer->order_count = (int) ($topCustomerOrderCounts[$customer->id] ?? 0);
+            })
+            ->sortByDesc('order_count')
+            ->values();
+
+        $topOrderStoreIds = Store::select('id', 'order_count')->whereHas('vendor', fn($query) => $query->where('status', 1))->when(is_numeric($params['module_id']), function ($q) use ($params) {
             return $q->where('module_id', $params['module_id']);
         })
             ->when(is_numeric($params['zone_id']), function ($q) use ($params) {
@@ -701,7 +714,24 @@ class DashboardController extends Controller
             ->having("order_count", '>', 0)
             ->orderBy("order_count", 'desc')
             ->take(6)
-            ->get();
+            ->pluck('id');
+
+        // One shared fetch for whichever stores either ranking needs -- id/name/logo/order_count
+        // plus Store's own always-on storage/translations/store_configs eager loads, once, instead
+        // of once per ranking.
+        $rankedStoreIds = $wishlistCounts->pluck('store_id')->merge($topOrderStoreIds)->unique()->values();
+        $rankedStores = Store::select('id', 'name', 'logo', 'order_count')->with('storage')
+            ->whereIn('id', $rankedStoreIds)->get()->keyBy('id');
+
+        $popular = $wishlistCounts
+            ->map(fn($row) => $row->setRelation('store', $rankedStores->get($row->store_id)))
+            ->filter(fn($row) => $row->store)
+            ->values();
+
+        $top_restaurants = $topOrderStoreIds
+            ->map(fn($id) => $rankedStores->get($id))
+            ->filter()
+            ->values();
 
 
         if (!url()->current() == $request->is('admin/users')) {
@@ -722,27 +752,27 @@ class DashboardController extends Controller
     {
         $params = session('dash_params');
         $months = array(
-            '"' . translate('Jan') . '"',
-            '"' . translate('Feb') . '"',
-            '"' . translate('Mar') . '"',
-            '"' . translate('Apr') . '"',
-            '"' . translate('May') . '"',
-            '"' . translate('Jun') . '"',
-            '"' . translate('Jul') . '"',
-            '"' . translate('Aug') . '"',
-            '"' . translate('Sep') . '"',
-            '"' . translate('Oct') . '"',
-            '"' . translate('Nov') . '"',
-            '"' . translate('Dec') . '"'
+            '"' . 'Jan' . '"',
+            '"' . 'Feb' . '"',
+            '"' . 'Mar' . '"',
+            '"' . 'Apr' . '"',
+            '"' . 'May' . '"',
+            '"' . 'Jun' . '"',
+            '"' . 'Jul' . '"',
+            '"' . 'Aug' . '"',
+            '"' . 'Sep' . '"',
+            '"' . 'Oct' . '"',
+            '"' . 'Nov' . '"',
+            '"' . 'Dec' . '"'
         );
         $days = array(
-            '"' . translate('Mon') . '"',
-            '"' . translate('Tue') . '"',
-            '"' . translate('Wed') . '"',
-            '"' . translate('Thu') . '"',
-            '"' . translate('Fri') . '"',
-            '"' . translate('Sat') . '"',
-            '"' . translate('Sun') . '"',
+            '"' . 'Mon' . '"',
+            '"' . 'Tue' . '"',
+            '"' . 'Wed' . '"',
+            '"' . 'Thu' . '"',
+            '"' . 'Fri' . '"',
+            '"' . 'Sat' . '"',
+            '"' . 'Sun' . '"',
         );
         $total_sell = [];
         $commission = [];
@@ -751,7 +781,7 @@ class DashboardController extends Controller
         $currentYear = now()->format('Y');
         $commissionSelect = [
             DB::raw('SUM(order_amount) as total_sell'),
-            DB::raw('SUM(admin_commission + admin_expense - delivery_fee_comission) as commission'),
+            DB::raw("SUM(admin_commission + admin_expense - delivery_fee_comission + COALESCE((SELECT CASE WHEN orders.delivery_type = 'express' THEN orders.delivery_type_charge ELSE 0 END FROM orders WHERE orders.id = order_transactions.order_id), 0)) as commission"),
             DB::raw('SUM(delivery_fee_comission) as delivery_commission'),
         ];
         $applyFilters = function ($q) use ($params) {
@@ -825,8 +855,13 @@ class DashboardController extends Controller
 
             case "this_year":
             default:
+                // A range, not whereYear(): year(created_at) = ? cannot use the index.
+                // Grouping by MONTH() is fine -- only the WHERE decides index usability.
                 $rows = $applyFilters(OrderTransaction::NotRefunded())
-                    ->whereYear('created_at', $currentYear)
+                    ->whereBetween('created_at', [
+                        $currentYear.'-01-01 00:00:00',
+                        $currentYear.'-12-31 23:59:59',
+                    ])
                     ->select(array_merge([DB::raw('MONTH(created_at) as period')], $commissionSelect))
                     ->groupBy('period')
                     ->get()->keyBy('period');

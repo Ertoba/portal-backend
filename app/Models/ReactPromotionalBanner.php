@@ -2,15 +2,15 @@
 
 namespace App\Models;
 
-use App\CentralLogics\Helpers;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Support\Facades\DB;
+use App\Traits\Model\HasTranslationsTrait;
+use App\Traits\Model\HasStorageTrait;
 
 class ReactPromotionalBanner extends Model
 {
-    use HasFactory;
+    use HasFactory, HasTranslationsTrait, HasStorageTrait;
     protected $guarded = ['id'];
 
     protected $casts = [
@@ -18,83 +18,25 @@ class ReactPromotionalBanner extends Model
         'status' => 'integer',
     ];
 
-    protected $appends = ['image_full_url'];
-
-    public function getImageFullUrlAttribute(){
-        $value = $this->image;
-        if (count($this->storage) > 0) {
-            foreach ($this->storage as $storage) {
-                if ($storage['key'] == 'image') {
-                    return Helpers::get_full_url('promotional_banner',$value,$storage['value']);
-                }
-            }
-        }
-
-        return Helpers::get_full_url('promotional_banner',$value,'public');
-    }
-
-    public function storage()
+    public function getImageFullUrlAttribute()
     {
-        return $this->morphMany(Storage::class, 'data');
+        return $this->storageFullUrl('promotional_banner', 'image', $this->image);
     }
 
-    public function translations()
+    public function getTitleAttribute($value)
     {
-        return $this->morphMany(Translation::class, 'translationable');
+        return $this->translatedAttribute('promotional_banner_title', $value);
     }
-
-    public function getTitleAttribute($value){
-        if (count($this->translations) > 0) {
-            foreach ($this->translations as $translation) {
-                if ($translation['key'] == 'promotional_banner_title') {
-                    return $translation['value'];
-                }
-            }
-        }
-
-        return $value;
-    }
-    public function getDescriptionAttribute($value){
-        if (count($this->translations) > 0) {
-            foreach ($this->translations as $translation) {
-                if ($translation['key'] == 'promotional_banner_description') {
-                    return $translation['value'];
-                }
-            }
-        }
-
-        return $value;
-    }
-
-    protected static function booted()
+    public function getDescriptionAttribute($value)
     {
-        // static::addGlobalScope('storage', function ($builder) {
-        //     $builder->with('storage');
-        // });
-        static::addGlobalScope('translate', function (Builder $builder) {
-            $builder->with(['translations' => function($query){
-                return $query->where('locale', app()->getLocale());
-            }]);
-        });
+        return $this->translatedAttribute('promotional_banner_description', $value);
     }
 
     protected static function boot()
     {
         parent::boot();
         static::saved(function ($model) {
-            if($model->isDirty('image')){
-                $value = Helpers::getDisk();
-
-                DB::table('storages')->updateOrInsert([
-                    'data_type' => get_class($model),
-                    'data_id' => $model->id,
-                    'key' => 'image',
-                ], [
-                    'value' => $value,
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
-            }
+            self::recordStorageDisk($model, 'image', 'image');
         });
 
     }

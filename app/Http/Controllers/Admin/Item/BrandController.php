@@ -7,7 +7,7 @@ use App\Models\Brand;
 use Illuminate\View\View;
 use App\Models\TempProduct;
 use Illuminate\Http\Request;
-use App\Services\BrandService;
+use App\Services\Item\BrandService;
 use Illuminate\Support\Carbon;
 use Illuminate\Http\JsonResponse;
 use App\Models\EcommerceItemDetails;
@@ -37,7 +37,7 @@ class BrandController extends BaseController
     public function index(?Request $request): View|Collection|LengthAwarePaginator|RedirectResponse|null
     {
         if (!in_array(Config::get('module.current_module_type'), ['ecommerce', 'grocery'])) {
-            Toastr::error(translate('messages.this_feature_is_only_for_shop_and_grocery_module'));
+            Toastr::error(translate('messages.This feature is only for shop and grocery module'));
             return back();
         }
 
@@ -48,18 +48,20 @@ class BrandController extends BaseController
     {
         $brands = $this->brandRepo->getListWhere(
             searchValue: $request['search'],
+            relations: ['storage'],
             dataLimit: config('default_pagination')
         );
+        $translatedLocales = $this->brandService->getTranslatedLocales(brandIds: $brands->pluck('id')->all());
         $language = getWebConfig('language');
         $defaultLang = str_replace('_', '-', app()->getLocale());
-        return view(BrandViewPath::INDEX[VIEW], compact('brands','language','defaultLang'));
+        return view(BrandViewPath::INDEX[VIEW], compact('brands','language','defaultLang','translatedLocales'));
     }
 
     public function add(BrandAddRequest $request): RedirectResponse
     {
-        $brand = $this->brandRepo->add(data: $this->brandService->getAddData(request: $request));
+        $brand = $this->brandRepo->add(data: $this->brandService->getAddData($request->all()));
         $this->translationRepo->addByModel(request: $request, model: $brand, modelPath: 'App\Models\Brand', attribute: 'name');
-        Toastr::success(translate('messages.brand_added_successfully'));
+        Toastr::success(translate('Added successfully'));
         return back();
     }
 
@@ -68,23 +70,23 @@ class BrandController extends BaseController
     public function update(BrandUpdateRequest $request, $id): RedirectResponse
     {
         $brand = $this->brandRepo->getFirstWithoutGlobalScopeWhere(params: ['id' => $id]);
-        $brand = $this->brandRepo->update(id: $id ,data: $this->brandService->getUpdateData(request: $request,brand: $brand));
+        $brand = $this->brandRepo->update(id: $id ,data: $this->brandService->getUpdateData($request->all(),brand: $brand));
         $this->translationRepo->updateByModel(request: $request, model: $brand, modelPath: 'App\Models\Brand', attribute: 'name');
-        Toastr::success(translate('messages.brand_updated_successfully'));
+        Toastr::success(translate('Updated successfully'));
         return back();
     }
 
     public function updateStatus(Request $request): RedirectResponse
     {
         $this->brandRepo->update(id: $request['id'] ,data: ['status'=>$request['status']]);
-        Toastr::success(translate('messages.brand_status_updated'));
+        Toastr::success(translate('messages.Brand status updated'));
         return back();
     }
 
     public function delete(Request $request): RedirectResponse
     {
         $this->brandRepo->delete(id: $request['id']);
-        Toastr::success(translate('messages.brand_deleted_successfully'));
+        Toastr::success(translate('Deleted successfully'));
         return back();
     }
 
@@ -119,7 +121,7 @@ class BrandController extends BaseController
 
                     $this->brandRepo->update(id: $request['brand_id'] ,data: ['module_id'=>Config::get('module.current_module_id')]);
 
-                    Toastr::success(translate('messages.New_brand_created_successfully'));
+                    Toastr::success(translate('Added successfully'));
                     return back();
         } elseif($request->type == 'only_this_module'){
             $items = $this->getItemIds($brandId);
@@ -129,7 +131,7 @@ class BrandController extends BaseController
             })->delete();
 
             $this->brandRepo->update(id: $brandId ,data: ['module_id'=>Config::get('module.current_module_id')]);
-            Toastr::success(translate('messages.brand_updated_successfully'));
+            Toastr::success(translate('Updated successfully'));
             return back();
         }
         return back();
@@ -206,6 +208,11 @@ class BrandController extends BaseController
     public function getBrandData(Request $request): JsonResponse
     {
         $brand = $this->brandRepo->getFirstWithoutGlobalScopeWhere(params: ['id' => $request->id]);
+
+        if (! $brand) {
+            return response()->json(['errors' => [['code' => 'brand', 'message' => translate('No data found')]]], 404);
+        }
+
         $language = getWebConfig('language');
         $defaultLang = str_replace('_', '-', app()->getLocale());
         return response()->json([

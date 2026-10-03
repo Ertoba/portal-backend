@@ -14,19 +14,19 @@ use Illuminate\Routing\Redirector;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Validator;
 use App\Models\PaymentRequest;
-use App\Traits\Processor;
+use App\Traits\System\ProcessorTrait;
 use Razorpay\Api\Api;
 
 class RazorPayController extends Controller
 {
-    use Processor;
+    use ProcessorTrait;
 
     private PaymentRequest $payment;
     private User $user;
 
     public function __construct(PaymentRequest $payment, User $user)
     {
-        $config = $this->payment_config('razor_pay', 'payment_config');
+        $config = $this->paymentConfig('razor_pay', 'payment_config');
 
         if ($config && in_array($config->mode, ['live', 'test'])) {
             $values = json_decode($config->{$config->mode . '_values'});
@@ -49,12 +49,12 @@ class RazorPayController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return response()->json($this->response_formatter(GATEWAYS_DEFAULT_400, null, $this->error_processor($validator)), 400);
+            return response()->json($this->responseFormatter(GATEWAYS_DEFAULT_400, null, $this->errorProcessor($validator)), 400);
         }
 
         $data = $this->payment::where(['id' => $request['payment_id']])->where(['is_paid' => 0])->first();
         if (!isset($data)) {
-            return response()->json($this->response_formatter(GATEWAYS_DEFAULT_204), 200);
+            return response()->json($this->responseFormatter(GATEWAYS_DEFAULT_204), 200);
         }
         $payer = json_decode($data['payer_information']);
 
@@ -87,13 +87,13 @@ class RazorPayController extends Controller
             if (isset($data) && function_exists($data->success_hook)) {
                 call_user_func($data->success_hook, $data);
             }
-            return $this->payment_response($data, 'success');
+            return $this->paymentResponse($data, 'success');
         }
         $payment_data = $this->payment::where(['id' => $request['payment_id']])->first();
         if (isset($payment_data) && function_exists($payment_data->failure_hook)) {
             call_user_func($payment_data->failure_hook, $payment_data);
         }
-        return $this->payment_response($payment_data, 'fail');
+        return $this->paymentResponse($payment_data, 'fail');
     }
 
     public function callback(Request $request): JsonResponse|Redirector|RedirectResponse|Application
@@ -108,7 +108,7 @@ class RazorPayController extends Controller
                 $data->transaction_id= $input['razorpay_payment_id'] ;
                 $data->save();
                 call_user_func($data->success_hook, $data);
-                return $this->payment_response($data, 'success');
+                return $this->paymentResponse($data, 'success');
             }
         }
         return redirect()->route('payment-fail');
@@ -117,7 +117,7 @@ class RazorPayController extends Controller
     public function cancel(Request $request): JsonResponse|Redirector|RedirectResponse|Application
     {
         $payment_data = $this->payment::where(['id' => $request['payment_id']])->first();
-        return $this->payment_response($payment_data, 'fail');
+        return $this->paymentResponse($payment_data, 'fail');
     }
 
 
@@ -172,14 +172,12 @@ class RazorPayController extends Controller
     {
         $api = new Api(config('razor_config.api_key'), config('razor_config.api_secret'));
 
-        // Verify payment signature
         $api->utility->verifyPaymentSignature([
             'razorpay_order_id' => $request['order_id'],
             'razorpay_payment_id' => $request['payment_id'],
             'razorpay_signature' => $request['signature']
         ]);
 
-        // Fetch payment details using payment_id
         $payment = $api->payment->fetch($request['payment_id']);
 
         if ($payment && isset($payment['status']) && $payment['status'] == 'captured') {
@@ -192,12 +190,12 @@ class RazorPayController extends Controller
             if (isset($data) && function_exists($data->success_hook)) {
                 call_user_func($data->success_hook, $data);
             }
-            return $this->payment_response($data, 'success');
+            return $this->paymentResponse($data, 'success');
         }
         $paymentData = $this->payment::where(['id' => $request['payment_request_id']])->first();
         if (isset($paymentData) && function_exists($paymentData->failure_hook)) {
             call_user_func($paymentData->failure_hook, $paymentData);
         }
-        return $this->payment_response($paymentData, 'fail');
+        return $this->paymentResponse($paymentData, 'fail');
     }
 }

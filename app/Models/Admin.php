@@ -2,14 +2,14 @@
 
 namespace App\Models;
 
-use App\CentralLogics\Helpers;
-use App\Traits\DemoMaskable;
+use App\Traits\Model\DemoMaskableTrait;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use App\Traits\Model\HasStorageTrait;
 
 /**
  * Class Admin
@@ -31,7 +31,7 @@ use Illuminate\Support\Str;
 
 class Admin extends Authenticatable
 {
-    use Notifiable,DemoMaskable;
+    use Notifiable, DemoMaskableTrait, HasStorageTrait;
 
     /**
      * The attributes that are mass assignable.
@@ -63,6 +63,12 @@ class Admin extends Authenticatable
     protected $appends = ['image_full_url'];
 
     /**
+     * Every admin request runs module_permission_check(), which reads role->modules, and the
+     * sidebars read it again. Loading it with the admin costs the one query it already costs.
+     */
+    protected $with = ['role'];
+
+    /**
      * @return BelongsTo
      */
     public function role(): BelongsTo
@@ -77,17 +83,9 @@ class Admin extends Authenticatable
     {
         return $this->belongsTo(Zone::class,'zone_id');
     }
-    public function getImageFullUrlAttribute(){
-        $value = $this->image;
-        if (count($this->storage) > 0) {
-            foreach ($this->storage as $storage) {
-                if ($storage['key'] == 'image') {
-                    return Helpers::get_full_url('admin',$value,$storage['value']);
-                }
-            }
-        }
-
-        return Helpers::get_full_url('admin',$value,'public');
+    public function getImageFullUrlAttribute()
+    {
+        return $this->storageFullUrl('admin', 'image', $this->image);
     }
     public function getFullNameAttribute(){
         return Str::limit($this->f_name.' '.$this->l_name, 15, '...') ;
@@ -104,10 +102,6 @@ class Admin extends Authenticatable
         return $maskedEmail ?? $this->email;
     }
 
-    // public function account()
-    // {
-    //     return $this->hasOne(UserAccount::class, 'user_id', 'id')->where('user_type', 'admin');
-    // }
 
     /**
      * @param $query
@@ -121,34 +115,11 @@ class Admin extends Authenticatable
         }
         return $query;
     }
-    public function storage()
-    {
-        return $this->morphMany(Storage::class, 'data');
-    }
-    protected static function booted()
-    {
-        static::addGlobalScope('storage', function ($builder) {
-            $builder->with('storage');
-        });
-    }
-
     protected static function boot()
     {
         parent::boot();
         static::saved(function ($model) {
-            if($model->isDirty('image')){
-                $value = Helpers::getDisk();
-
-                DB::table('storages')->updateOrInsert([
-                    'data_type' => get_class($model),
-                    'data_id' => $model->id,
-                    'key' => 'image',
-                ], [
-                    'value' => $value,
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
-            }
+            self::recordStorageDisk($model, 'image', 'image');
         });
     }
 }

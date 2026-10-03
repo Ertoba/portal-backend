@@ -1,6 +1,6 @@
 @extends('layouts.admin.app')
 
-@section('title', translate('messages.subscription'))
+@section('title', translate('messages.Subscription'))
 
 @section('content')
 
@@ -10,9 +10,10 @@
         <div class="d-flex flex-wrap justify-content-between align-items-start">
             <h1 class="page-header-title text-capitalize">
                 <span>
-                    {{ translate('Price Setup') }}
+                    {{ translate('Price setup') }}
                 </span>
             </h1>
+            <p class="page-header-desc">{{ translate('What a Pro membership costs and the lengths customers can buy it for.') }}</p>
         </div>
     </div>
 
@@ -30,7 +31,7 @@
                 <div class="">
                     <button type="button" class="btn btn--primary text-nowrap px-3 offcanvas-trigger"
                        data-target="#offcanvas__createplan">
-                        <i class="tio-add-circle"></i> {{ translate('add plan') }} 
+                        <i class="tio-add-circle"></i> {{ translate('Add Plan') }} 
                     </button>
                 </div>
             </div>
@@ -54,7 +55,7 @@
                             </div>
                             <div class="pt-4 mt-1">
                                 <h3 class="mb-2 fs-24 fw-medium lh-1">
-                                    {{ translate('Monthly') }}
+                                    {{ translate('monthly') }}
                                 </h3>
                                 <p class="mb-0 fs-32 font-semibold text-dark">
                                     $ 20.00 <span class="fs-20 font-weight-light gray-dark">/30 days</span>
@@ -132,7 +133,7 @@
                             </div>
                             <div class="pt-4 mt-1">
                                 <h3 class="mb-2 fs-24 fw-medium lh-1">
-                                    {{ translate('Free Trial') }}
+                                    {{ translate('Free trial') }}
                                 </h3>
                                 <p class="mb-0 fs-32 font-semibold text-dark">
                                     $ 20.00 <span class="fs-20 font-weight-light gray-dark">/30 days</span>
@@ -162,7 +163,7 @@
                 <div class="">
                     <button type="button" class="btn btn--primary text-nowrap px-3 offcanvas-trigger"
                        data-target="#offcanvas__createplan">
-                        <i class="tio-add-circle"></i> {{ translate('add plan') }} 
+                        <i class="tio-add-circle"></i> {{ translate('Add Plan') }} 
                     </button>
                 </div>
             </div>
@@ -172,7 +173,6 @@
 </div>
 
 
-<!-- Edit plan -->
 <div id="offcanvas__editplan" class="custom-offcanvas d-flex flex-column justify-content-between">
     <div class="h-100">
         <form action="#" method="post" class="d-flex flex-column h-100" enctype="multipart/form-data">
@@ -196,13 +196,13 @@
                                         <label class="form-check form--check w-100">
                                             <input class="form-check-input" type="radio" value="central_setup" name="subscription_status" checked>
                                             <span class="form-check-label">
-                                                {{ translate('messages.Paid') }}
+                                                {{ translate('messages.paid') }}
                                             </span>
                                         </label>
                                         <label class="form-check form--check w-100">
                                             <input class="form-check-input" type="radio" value="individual_setup" name="subscription_status">
                                             <span class="form-check-label">
-                                                {{ translate('messages.Free Trial') }}
+                                                {{ translate('Free trial') }}
                                             </span>
                                         </label>
                                     </div>
@@ -211,28 +211,28 @@
                             <div class="col-12">
                                 <div class="form-group mb-0">
                                     <label class="input-label">
-                                        {{ translate('messages.plan name') }}
+                                        {{ translate('Plan name') }}
                                         <span class="text-danger">*</span>
                                     </label>
-                                    <input type="text" name="name" class="form-control" placeholder="{{ translate('messages.ex: monthly') }}" required>
+                                    <input type="text" name="name" class="form-control" placeholder="{{ translate('messages.Ex') . ': ' . translate('messages.monthly') }}" required>
                                 </div>
                             </div>
                             <div class="col-12">
                                 <div class="form-group mb-0">
                                     <label class="input-label">
-                                        {{ translate('messages.Plan Price ($)') }}
+                                        {{ translate('Plan price') }}
                                         <span class="text-danger">*</span>
                                     </label>
-                                    <input type="text" name="name" class="form-control" placeholder="{{ translate('messages.ex: 500') }}" required>
+                                    <input type="text" name="name" class="form-control" placeholder="{{ translate('messages.Ex') . ': 500' }}" required>
                                 </div>
                             </div>
                             <div class="col-12">
                                 <div class="form-group mb-0">
                                     <label class="input-label">
-                                        {{ translate('messages.Duration (Days)') }}
+                                        {{ translate('messages.Duration days') }}
                                         <span class="text-danger">*</span>
                                     </label>
-                                    <input type="text" name="name" class="form-control" placeholder="{{ translate('messages.ex: 100') }}" required>
+                                    <input type="text" name="name" class="form-control" placeholder="{{ translate('messages.Ex') . ': 100' }}" required>
                                 </div>
                             </div>                            
                         </div>
@@ -241,13 +241,12 @@
             </div>
         
             <div class="align-items-center bg-white bottom-0 d-flex gap-3 justify-content-center mt-auto offcanvas-footer p-3 position-sticky">
-                <button type="button" class="btn w-100 btn--reset">{{ translate('Cancel') }}</button>
-                <button type="submit" class="btn w-100 btn--primary">{{ translate('Add') }}</button>
+                <button type="button" class="btn w-100 btn--reset"><i class="tio-clear-circle-outlined"></i> {{ translate('Cancel') }}</button>
+                <button type="submit" class="btn w-100 btn--primary"><i class="tio-add-circle"></i> {{ translate('Add') }}</button>
             </div>
         </form>
     </div>
 </div>
-<!-- Create plan -->
 <div id="offcanvas__createplan" class="custom-offcanvas d-flex flex-column justify-content-between">
     <div class="h-100">
         <form action="#" method="post" class="d-flex flex-column h-100" enctype="multipart/form-data">
@@ -272,13 +271,13 @@
                                         <label class="form-check form--check w-100">
                                             <input class="form-check-input" type="radio" value="central_setup" name="subscription_status" checked>
                                             <span class="form-check-label">
-                                                {{ translate('messages.Paid') }}
+                                                {{ translate('messages.paid') }}
                                             </span>
                                         </label>
                                         <label class="form-check form--check w-100">
                                             <input class="form-check-input" type="radio" value="individual_setup" name="subscription_status">
                                             <span class="form-check-label">
-                                                {{ translate('messages.Free Trial') }}
+                                                {{ translate('Free trial') }}
                                             </span>
                                         </label>
                                     </div>
@@ -287,28 +286,28 @@
                             <div class="col-12">
                                 <div class="form-group mb-0">
                                     <label class="input-label">
-                                        {{ translate('messages.plan name') }}
+                                        {{ translate('Plan name') }}
                                         <span class="text-danger">*</span>
                                     </label>
-                                    <input type="text" name="name" class="form-control" placeholder="{{ translate('messages.ex: monthly') }}" required>
+                                    <input type="text" name="name" class="form-control" placeholder="{{ translate('messages.Ex') . ': ' . translate('messages.monthly') }}" required>
                                 </div>
                             </div>
                             <div class="col-12">
                                 <div class="form-group mb-0">
                                     <label class="input-label">
-                                        {{ translate('messages.Plan Price ($)') }}
+                                        {{ translate('Plan price') }}
                                         <span class="text-danger">*</span>
                                     </label>
-                                    <input type="text" name="name" class="form-control" placeholder="{{ translate('messages.ex: 500') }}" required>
+                                    <input type="text" name="name" class="form-control" placeholder="{{ translate('messages.Ex') . ': 500' }}" required>
                                 </div>
                             </div>
                             <div class="col-12">
                                 <div class="form-group mb-0">
                                     <label class="input-label">
-                                        {{ translate('messages.Duration (Days)') }}
+                                        {{ translate('messages.Duration days') }}
                                         <span class="text-danger">*</span>
                                     </label>
-                                    <input type="text" name="name" class="form-control" placeholder="{{ translate('messages.ex: 100') }}" required>
+                                    <input type="text" name="name" class="form-control" placeholder="{{ translate('messages.Ex') . ': 100' }}" required>
                                 </div>
                             </div>                            
                         </div>
@@ -317,8 +316,8 @@
             </div>
         
             <div class="align-items-center bg-white bottom-0 d-flex gap-3 justify-content-center mt-auto offcanvas-footer p-3 position-sticky">
-                <button type="button" class="btn w-100 btn--reset">{{ translate('reset') }}</button>
-                <button type="submit" class="btn w-100 btn--primary">{{ translate('Add') }}</button>
+                <button type="button" class="btn w-100 btn--reset"><i class="tio-refresh"></i> {{ translate('Reset') }}</button>
+                <button type="submit" class="btn w-100 btn--primary"><i class="tio-add-circle"></i> {{ translate('Add') }}</button>
             </div>
         </form>
     </div>

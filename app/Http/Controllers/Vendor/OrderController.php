@@ -2,43 +2,57 @@
 
 namespace App\Http\Controllers\Vendor;
 
+use App\Support\Settings\BusinessRules;
+use App\Services\Order\EtaService;
+use App\Services\Zone\FreeDeliveryService;
+use App\Rules\PhoneNumber;
+use App\Traits\Item\ItemStockTrait;
 use App\Models\Order;
 use App\Models\OrderCancelReason;
 use App\Models\OrderDetail;
-use App\Models\OrderEditLog;
 use App\Models\Store;
-use App\Models\StoreConfig;
 use App\Models\Item;
 use App\Models\ItemCampaign;
 use App\Models\Coupon;
-use App\Models\Category;
 use App\Exports\OrderExport;
 use App\Scopes\StoreScope;
 use Illuminate\Http\Request;
 use App\CentralLogics\Helpers;
-use App\Models\BusinessSetting;
-use App\CentralLogics\OrderLogic;
-use App\CentralLogics\CouponLogic;
-use App\CentralLogics\DeliveryFeeLogic;
-use App\CentralLogics\ProductLogic;
+use App\Services\Marketing\CouponService;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\LazyCollection;
 use App\Http\Controllers\Controller;
 use App\Models\OrderPayment;
-use App\Traits\PlaceNewOrder;
+use App\Traits\Order\PlaceNewOrderTrait;
+use App\Services\Promotion\BogoOrderService;
+use App\Services\Promotion\BundleOrderService;
 use Brian2694\Toastr\Facades\Toastr;
 use Maatwebsite\Excel\Facades\Excel;
+use App\Services\Order\OrderPaymentService;
+use App\Services\Order\OrderTransactionService;
+use App\Support\Notification\SendNotification;
+use App\Services\Order\OrderService;
 
 
 class OrderController extends Controller
 {
-    use PlaceNewOrder;
-    use \App\Traits\EditsOrderFromCart;
+    use ItemStockTrait;
+
+    use PlaceNewOrderTrait;
+    use \App\Traits\Order\OrderFromCartTrait;
+
+    /** Orders materialised at a time while streaming an export. */
+    private const EXPORT_CHUNK = 250;
     public function list($status)
     {
         $key = explode(' ', request()?->search);
         Order::where(['checked' => 0])->where('store_id',Helpers::get_store_id())->update(['checked' => 1]);
 
-        $orders = Order::with(['customer', 'store.storeConfig', 'payments', 'details'])
+        // 'store.storeConfig' is intentionally not eager-loaded: every row is filtered to the
+        // authenticated store below, so it would hydrate a second Store instance for a row
+        // this request already holds, re-firing the translate/storage scopes. The store the
+        // auth user already carries is attached to each order after pagination instead.
+        $orders = Order::with(['customer', 'payments', 'details', 'delivery_man'])
         ->when($status == 'searching_for_deliverymen', function($query){
             return $query->SearchingForDeliveryman();
         })
@@ -46,7 +60,7 @@ class OrderController extends Controller
             return $query->whereIn('order_status',['confirmed', 'accepted'])->whereNotNull('confirmed');
         })
         ->when($status == 'pending', function($query){
-            if(config('order_confirmation_model') == 'store' || Helpers::get_store_data()->sub_self_delivery)
+            if(BusinessRules::storeConfirmsOrder() || Helpers::get_store_data()->sub_self_delivery)
             {
                 return $query->where('order_status','pending');
             }
@@ -75,7 +89,7 @@ class OrderController extends Controller
         })
         ->when($status == 'scheduled', function($query){
             return $query->Scheduled()->where(function($q){
-                if(config('order_confirmation_model') == 'store' || Helpers::get_store_data()->sub_self_delivery)
+                if(BusinessRules::storeConfirmsOrder() || Helpers::get_store_data()->sub_self_delivery)
                 {
                     $q->whereNotIn('order_status',['failed','canceled', 'refund_requested', 'refunded']);
                 }
@@ -90,7 +104,7 @@ class OrderController extends Controller
         })
         ->when($status == 'all', function($query){
             return $query->where(function($query){
-                $query->whereNotIn('order_status',(config('order_confirmation_model') == 'store'|| Helpers::get_store_data()->sub_self_delivery)?['failed','canceled', 'refund_requested', 'refunded']:[ 'accepted' ,'pending','failed','canceled', 'refund_requested', 'refunded'])
+                $query->whereNotIn('order_status',(BusinessRules::storeConfirmsOrder()|| Helpers::get_store_data()->sub_self_delivery)?['failed','canceled', 'refund_requested', 'refunded']:[ 'accepted' ,'pending','failed','canceled', 'refund_requested', 'refunded'])
                 ->orWhere(function($query){
                     return $query->where('order_status','pending')->where('order_type', 'take_away');
                 });
@@ -99,7 +113,7 @@ class OrderController extends Controller
         ->when(in_array($status, ['pending','confirmed']), function($query){
             return $query->OrderScheduledIn(30);
         })
-        ->when(isset($key), function ($query) use ($key) {
+        ->when(request()?->search, function ($query) use ($key) {
             return $query->where(function ($q) use ($key) {
                 foreach ($key as $value) {
                     $q->orWhere('id', 'like', "%{$value}%")
@@ -112,8 +126,19 @@ class OrderController extends Controller
         ->where('store_id',\App\CentralLogics\Helpers::get_store_id())
         ->orderBy('schedule_at', 'desc')
         ->paginate(config('default_pagination'));
+
+        // The list reaches $order->store (Order::getIsEditableAttribute() does
+        // isset($this->store)) and $order->store->storeConfig. Share the instance the auth
+        // user already holds so both resolve without a second hydration.
+        if ($auth_store = Helpers::get_store_data()) {
+            $auth_store->loadMissing('storeConfig');
+            $orders->getCollection()->each(function ($order) use ($auth_store) {
+                $order->setRelation('store', $auth_store);
+            });
+        }
+
         $status = $status;
-        $can_vendor_edit_order = BusinessSetting::where('key', 'can_vendor_edit_order')->first()?->value ?? 0;
+        $can_vendor_edit_order = Helpers::get_business_settings('can_vendor_edit_order', false) ?? 0;
         $canEditOrder = (bool) $can_vendor_edit_order && (Helpers::get_store_data()?->storeConfig?->can_edit_order ?? false);
         return view('vendor-views.order.list', compact('orders', 'status', 'canEditOrder'));
     }
@@ -123,7 +148,23 @@ class OrderController extends Controller
     {
         $key = explode(' ', request()?->search);
         Order::where(['checked' => 0])->where('store_id',Helpers::get_store_id())->update(['checked' => 1]);
-        $orders = Order::with(['customer'])
+        // `orders` has 81 columns; the export view reads 15 of them plus the 4 that
+        // $this->adjustedFeeForOrder() pulls off the model. Selecting only those
+        // cuts hydration of the whole result set from 84 MB to 54 MB.
+        // Anything added to file-exports/order-export.blade.php must be added here too.
+        $orders = Order::select([
+            'id', 'user_id', 'store_id', 'created_at', 'schedule_at',
+            'order_status', 'order_type', 'payment_status', 'delivery_address',
+            'coupon_discount_amount', 'dm_tips', 'order_amount', 'ref_bonus_amount',
+            'store_discount_amount', 'total_tax_amount',
+            // read by $this->adjustedFeeForOrder()
+            'delivery_charge', 'delivery_type', 'delivery_type_charge', 'free_delivery_by',
+        ])
+        ->with([
+            'customer',
+            'orderProDiscount',
+            'details:id,order_id,discount_on_item',
+        ])
         ->when($status == 'searching_for_deliverymen', function($query){
             return $query->SearchingForDeliveryman();
         })
@@ -131,7 +172,7 @@ class OrderController extends Controller
             return $query->whereIn('order_status',['confirmed', 'accepted'])->whereNotNull('confirmed');
         })
         ->when($status == 'pending', function($query){
-            if(config('order_confirmation_model') == 'store' || Helpers::get_store_data()->sub_self_delivery)
+            if(BusinessRules::storeConfirmsOrder() || Helpers::get_store_data()->sub_self_delivery)
             {
                 return $query->where('order_status','pending');
             }
@@ -160,7 +201,7 @@ class OrderController extends Controller
         })
         ->when($status == 'scheduled', function($query){
             return $query->Scheduled()->where(function($q){
-                if(config('order_confirmation_model') == 'store' || Helpers::get_store_data()->sub_self_delivery)
+                if(BusinessRules::storeConfirmsOrder() || Helpers::get_store_data()->sub_self_delivery)
                 {
                     $q->whereNotIn('order_status',['failed','canceled', 'refund_requested', 'refunded']);
                 }
@@ -175,7 +216,7 @@ class OrderController extends Controller
         })
         ->when($status == 'all', function($query){
             return $query->where(function($query){
-                $query->whereNotIn('order_status',(config('order_confirmation_model') == 'store'|| Helpers::get_store_data()->sub_self_delivery)?['failed','canceled', 'refund_requested', 'refunded']:['pending','failed','canceled', 'refund_requested', 'refunded'])
+                $query->whereNotIn('order_status',(BusinessRules::storeConfirmsOrder()|| Helpers::get_store_data()->sub_self_delivery)?['failed','canceled', 'refund_requested', 'refunded']:['pending','failed','canceled', 'refund_requested', 'refunded'])
                 ->orWhere(function($query){
                     return $query->where('order_status','pending')->where('order_type', 'take_away');
                 });
@@ -184,7 +225,7 @@ class OrderController extends Controller
         ->when(in_array($status, ['pending','confirmed']), function($query){
             return $query->OrderScheduledIn(30);
         })
-        ->when(isset($key), function ($query) use ($key) {
+        ->when(request()?->search, function ($query) use ($key) {
             return $query->where(function ($q) use ($key) {
                 foreach ($key as $value) {
                     $q->orWhere('id', 'like', "%{$value}%")
@@ -196,10 +237,32 @@ class OrderController extends Controller
         ->StoreOrder()->NotDigitalOrder()
         ->where('store_id',\App\CentralLogics\Helpers::get_store_id())
         ->orderBy('schedule_at', 'desc')
-        ->get();
+        // Tiebreaker. schedule_at is not unique (18 tied pairs here), and paging re-sorts on
+        // every page, so without a total order MySQL could place a tied row on both sides of
+        // a page boundary — duplicating one row and dropping another. Verified to reproduce
+        // the exact sequence ->get() returned; 'id desc' does not.
+        ->orderBy('id', 'asc');
+
+        $orders_count = (clone $orders)->count();
+        $auth_store = Helpers::get_store_data();
+
+        $orders = LazyCollection::make(function () use ($orders, $auth_store) {
+            $page = 1;
+            do {
+                $chunk = (clone $orders)->forPage($page, self::EXPORT_CHUNK)->get();
+                foreach ($chunk as $order) {
+                    if ($auth_store) {
+                        $order->setRelation('store', $auth_store);
+                    }
+                    yield $order;
+                }
+                $page++;
+            } while ($chunk->count() === self::EXPORT_CHUNK);
+        });
 
         $data = [
             'orders'=>$orders,
+            'orders_count'=>$orders_count,
             'type'=>$type,
             'status'=>$status,
             'order_status'=>isset($request->orderStatus)?implode(', ', $request->orderStatus):null,
@@ -222,17 +285,26 @@ class OrderController extends Controller
 
     public function details(Request $request,$id)
     {
-        $order = Order::with(['details','offline_payments','orderEditLogs','customer'=>function($query){
-            return $query->withCount('orders');
+        $order = Order::with(['details','offline_payments','orderEditLogs','payments','orderProDiscount','module:id,module_type','customer'=>function($query){
+            return $query->with('storage')->withCount('orders');
         },'delivery_man'=>function($query){
-            return $query->withCount('orders');
-        },'store' => function ($query) {
-            return $query->with('storeConfig');
+            return $query->with('storage')->withCount('orders');
         },'details.item' => function ($query) {
-            return $query->withoutGlobalScope(StoreScope::class);
+            return $query->withoutGlobalScope(StoreScope::class)->withStorage();
         },'details.campaign' => function ($query) {
-            return $query->withoutGlobalScope(StoreScope::class);
+            return $query->withoutGlobalScope(StoreScope::class)->withStorage();
         }])->where(['id' => $id, 'store_id' => Helpers::get_store_id()])->first();
+
+        // 'store' => with('storeConfig') was removed from the eager loads above: the row is
+        // already constrained to store_id = get_store_id(), so it only produced a second
+        // Store instance for a row this request holds. That cost the translate/storage
+        // scopes twice, and — because the view reaches $order->store->module while the
+        // layout reads get_store_data()->module_type — the Module hydration twice as well.
+        if ($order && $auth_store = Helpers::get_store_data()) {
+            $auth_store->loadMissing('storeConfig');
+            $order->setRelation('store', $auth_store);
+        }
+
         if (isset($order)) {
             $reasons=OrderCancelReason::where('status', 1)->where('user_type' ,'store' )->get();
 
@@ -242,16 +314,35 @@ class OrderController extends Controller
                 $sessionCart = session()->get('order_cart');
                 if (count($sessionCart) > 0 && $sessionCart[0]->order_id == $order->id) {
                     $editing = true;
-                    $cart = $sessionCart;
+                    $cart = $this->primeEditCartRelations($sessionCart);
                 } else {
                     session()->forget('order_cart');
                 }
             }
 
-            $can_vendor_edit_order = BusinessSetting::where('key', 'can_vendor_edit_order')->first()?->value ?? 0;
-            $canEditOrder = (bool) $can_vendor_edit_order && ($order->store?->storeConfig?->can_edit_order ?? false);
+            $can_vendor_edit_order = Helpers::get_business_settings('can_vendor_edit_order', false) ?? 0;
+            $canEditOrder = (bool) $can_vendor_edit_order
+                && ($order->store?->storeConfig?->can_edit_order ?? false);
 
-            return view('vendor-views.order.order-view', compact('order' ,'reasons', 'editing', 'cart', 'canEditOrder'));
+            // order-view.blade.php ran three ->payments()->where(...) builder calls of its
+            // own — exists(), get() and sum() — on top of the eager-loaded relation.
+            // pull() mutates the session; the blade was doing that mid-render.
+            $open_edit_offcanvas = $editing && $request->session()->pull('open_edit_offcanvas') ? 1 : 0;
+
+            $tax_included = Helpers::get_business_settings('tax_included', false) ?? 0;
+            $order_delivery_verification = (bool) Helpers::get_business_settings('order_delivery_verification', false);
+            $additional_charge_name = Helpers::get_business_data('additional_charge_name');
+
+            $has_unpaid_payment = $order->payments->where('payment_status', 'unpaid')->isNotEmpty();
+            $paid_payments = $order->payments->where('payment_status', 'paid');
+            $paid_payments_amount = $paid_payments->sum('amount');
+
+            // Null for a take-away or parcel order, a finished one, or a (zone, module) with no
+            // live ETA configuration — the view then omits the row (§11.2).
+            $eta = app(EtaService::class)->forOrder($order);
+            $etaWindow = app(EtaService::class)->panelWindow($eta);
+
+            return view('vendor-views.order.order-view', compact('order' ,'reasons', 'editing', 'cart', 'canEditOrder', 'has_unpaid_payment', 'paid_payments', 'paid_payments_amount', 'tax_included', 'order_delivery_verification', 'additional_charge_name', 'open_edit_offcanvas', 'eta', 'etaWindow'));
         } else {
             Toastr::info('No more orders!');
             return back();
@@ -272,54 +363,54 @@ class OrderController extends Controller
 
         if($order->delivered != null)
         {
-            Toastr::warning(translate('messages.cannot_change_status_after_delivered'));
+            Toastr::warning(translate('messages.Cannot change status after delivered'));
             return back();
         }
 
-        if($request['order_status']=='canceled' && !config('canceled_by_store'))
+        if($request['order_status']=='canceled' && !BusinessRules::canceledByStore())
         {
-            Toastr::warning(translate('messages.you_can_not_cancel_a_order'));
+            Toastr::warning(translate('messages.You can not cancel a order'));
             return back();
         }
 
         if($request['order_status']=='canceled' && $order->confirmed)
         {
-            Toastr::warning(translate('messages.you_can_not_cancel_after_confirm'));
+            Toastr::warning(translate('messages.You can not cancel after confirm'));
             return back();
         }
 
 
 
-        if($request['order_status']=='delivered' && $order->order_type != 'take_away' && !Helpers::get_store_data()->sub_self_delivery)
+        if($request['order_status']=='delivered' && $order->order_type != 'take_away' && !$order->is_pos && !Helpers::get_store_data()->sub_self_delivery)
         {
-            Toastr::warning(translate('messages.you_can_not_delivered_delivery_order'));
+            Toastr::warning(translate('messages.You can not delivered delivery order'));
             return back();
         }
 
         if($request['order_status'] =="confirmed")
         {
-            if(!Helpers::get_store_data()->sub_self_delivery && config('order_confirmation_model') == 'deliveryman' && $order->order_type != 'take_away')
+            if(!Helpers::get_store_data()->sub_self_delivery && BusinessRules::deliverymanConfirmsOrder() && $order->order_type != 'take_away' && !$order->is_pos)
             {
-                Toastr::warning(translate('messages.order_confirmation_warning'));
+                Toastr::warning(translate('messages.Order confirmation warning'));
                 return back();
             }
         }
 
         if ($request->order_status == 'delivered') {
-            $order_delivery_verification = (boolean)\App\Models\BusinessSetting::where(['key' => 'order_delivery_verification'])->first()->value;
+            $order_delivery_verification = (boolean)Helpers::get_business_settings('order_delivery_verification', false);
             if($order_delivery_verification)
             {
                 if($request->otp)
                 {
                     if($request->otp != $order->otp)
                     {
-                        Toastr::warning(translate('messages.order_varification_code_not_matched'));
+                        Toastr::warning(translate('messages.Order varification code not matched'));
                         return back();
                     }
                 }
                 else
                 {
-                    Toastr::warning(translate('messages.order_varification_code_is_required'));
+                    Toastr::warning(translate('messages.Order varification code is required'));
                     return back();
                 }
             }
@@ -333,14 +424,14 @@ class OrderController extends Controller
                 }
                 if($order->payment_method == 'cash_on_delivery' || $unpaid_pay_method == 'cash_on_delivery')
                 {
-                    $ol = OrderLogic::create_transaction($order,'store', null);
+                    $ol = app(OrderTransactionService::class)->createOrderTransaction($order, 'store', null);
                 }
                 else{
-                    $ol = OrderLogic::create_transaction($order,'admin', null);
+                    $ol = app(OrderTransactionService::class)->createOrderTransaction($order, 'admin', null);
                 }
                 if(!$ol)
                 {
-                    Toastr::warning(translate('messages.faield_to_create_order_transaction'));
+                    Toastr::warning(translate('messages.Faield to create order transaction'));
                     return back();
                 }
                 if($order->delivery_man_id){
@@ -351,7 +442,7 @@ class OrderController extends Controller
 
             $order->payment_status = 'paid';
 
-            OrderLogic::update_unpaid_order_payment(order_id:$order->id, payment_method:$order->payment_method);
+            app(OrderPaymentService::class)->markUnpaidOrderPaymentPaid(orderId: $order->id, paymentMethod: $order->payment_method);
 
             $order->details->each(function($item, $key){
                 if($item->item)
@@ -380,7 +471,7 @@ class OrderController extends Controller
 
                 if($order->is_guest == 0){
 
-                    OrderLogic::refund_before_delivered($order);
+                    app(OrderTransactionService::class)->refundBeforeDelivered($order);
                 }
 
             $hasStock = config('module.' . $order->module->module_type)['stock'];
@@ -394,11 +485,11 @@ class OrderController extends Controller
                     if ($hasStock) {
                         $variant = json_decode($detail->variation, true);
                         $variantType = !empty($variant) ? $variant[0]['type'] : null;
-                        ProductLogic::update_stock($item, -$detail->quantity, $variantType)?->save();
+                        self::updateItemStock($item, -$detail->quantity, $variantType)?->save();
                     }
 
                     if ($hasFlashDiscount) {
-                        ProductLogic::update_flash_stock($detail->item, $detail->quantity, true)?->save();
+                        self::updateFlashSaleStock($detail->item, $detail->quantity, true)?->save();
                     }
                 }
             }
@@ -428,12 +519,12 @@ class OrderController extends Controller
 
         $order[$request['order_status']] = now();
         $order->save();
-        if(!Helpers::send_order_notification($order))
+        if(!SendNotification::sendOrderNotifications($order))
         {
-            Toastr::warning(translate('messages.push_notification_faild'));
+            Toastr::warning(translate('messages.Push notification failed'));
         }
 
-        Toastr::success(translate('messages.order_status_updated'));
+        Toastr::success(translate('messages.Order status updated'));
         return back();
     }
 
@@ -442,7 +533,7 @@ class OrderController extends Controller
         $request->validate([
             'contact_person_name' => 'required',
             'address_type' => 'required',
-            'contact_person_number' => 'required',
+            'contact_person_number' => PhoneNumber::rules(),
             'address' => 'required'
         ]);
 
@@ -467,7 +558,14 @@ class OrderController extends Controller
 
     public function generate_invoice($id)
     {
-        $order = Order::where(['id' => $id, 'store_id' => Helpers::get_store_id()])->first();
+        $order = Order::where(['id' => $id, 'store_id' => Helpers::get_store_id()])->firstOrFail();
+
+        // The invoice view reaches $order->store; the row is constrained to this store, so
+        // share the hydrated instance rather than lazy-load a second one.
+        if ($order && $auth_store = Helpers::get_store_data()) {
+            $order->setRelation('store', $auth_store);
+        }
+
         return view('vendor-views.order.invoice', compact('order'));
     }
 
@@ -491,11 +589,11 @@ class OrderController extends Controller
 
         $order = Order::find($request->order_id);
         if(!$order){
-            Toastr::error(translate('messages.Order_not_found'));
+            Toastr::error(translate('No data found'));
             return back();
         }
         if(!in_array($order->order_status, ['pending','confirmed','processing','picked_up','handover','accepted']) ){
-            Toastr::error(translate('messages.Order_can_not_edit_a_completed_order'));
+            Toastr::error(translate('messages.Order can not edit a completed order'));
             return back();
         }
         $store = Store::find($order->store_id);
@@ -504,36 +602,36 @@ class OrderController extends Controller
         if ($order->coupon_code) {
             $coupon = Coupon::active()->where(['code' => $order->coupon_code])->first();
             if (isset($coupon)) {
-                $staus = CouponLogic::is_valide($coupon, $order->user_id, $order->store_id);
+                $staus = app(CouponService::class)->validateForCustomer($coupon, $order->user_id, $order->store_id);
                 if ($staus == 407) {
                     return response()->json([
                         'errors' => [
-                            ['code' => 'coupon', 'message' => translate('messages.coupon_expire')]
+                            ['code' => 'coupon', 'message' => translate('messages.Coupon expire')]
                         ]
                     ], 407);
                 } else if ($staus == 406) {
                     return response()->json([
                         'errors' => [
-                            ['code' => 'coupon', 'message' => translate('messages.coupon_usage_limit_over')]
+                            ['code' => 'coupon', 'message' => translate('messages.Coupon usage limit over')]
                         ]
                     ], 406);
                 } else if ($staus == 409) {
                     return response()->json([
                         'errors' => [
-                            ['code' => 'coupon', 'message' => translate('messages.coupon_not_valid_for_this_zone')]
+                            ['code' => 'coupon', 'message' => translate('messages.Coupon not valid for this zone')]
                         ]
                     ], 403);
                 } else if ($staus == 404) {
                     return response()->json([
                         'errors' => [
-                            ['code' => 'coupon', 'message' => translate('messages.not_found')]
+                            ['code' => 'coupon', 'message' => translate('No data found')]
                         ]
                     ], 404);
                 }
             } else {
                 return response()->json([
                     'errors' => [
-                        ['code' => 'coupon', 'message' => translate('messages.not_found')]
+                        ['code' => 'coupon', 'message' => translate('No data found')]
                     ]
                 ], 404);
             }
@@ -561,16 +659,19 @@ class OrderController extends Controller
         $additionalCharges=[];
 
 
-        $coupon_discount_amount = $coupon ? CouponLogic::get_discount($coupon, $product_price + $total_addon_price - $store_discount_amount) : 0;
+        $coupon_discount_amount = $coupon ? app(CouponService::class)->calculateDiscount($coupon, $product_price + $total_addon_price - $store_discount_amount) : 0;
         $total_price = $product_price + $total_addon_price - $store_discount_amount - $coupon_discount_amount;
         $total_price = max($total_price, 0);
 
-        $free_delivery_over = BusinessSetting::where('key', 'free_delivery_over')->first()->value;
-        if (isset($free_delivery_over)) {
-            if ($free_delivery_over <= $product_price + $total_addon_price - $coupon_discount_amount - $store_discount_amount) {
-                $order->delivery_charge = 0;
-                $free_delivery_by = 'admin';
-            }
+        // Step 7a. The global `free_delivery_over` this used to read was deprecated in S6 —
+        // free delivery is a per-(zone, module) setup now, and nothing honours the old key.
+        if (app(FreeDeliveryService::class)->frees(
+            [$store?->zone_id],
+            $store?->module_id,
+            $product_price + $total_addon_price - $coupon_discount_amount - $store_discount_amount,
+        )) {
+            $order->delivery_charge = 0;
+            $free_delivery_by = 'admin';
         }
 
         if ($store->free_delivery) {
@@ -602,12 +703,12 @@ class OrderController extends Controller
         }
 
 
-   $settings = BusinessSetting::whereIn('key', [
+   $settings = Helpers::get_business_settings_many([
                 'dm_tips_status',
                 'additional_charge_status',
                 'additional_charge',
                 'extra_packaging_data',
-            ])->pluck('value', 'key');
+            ]);
 
             $dm_tips_manage_status     = $settings['dm_tips_status'] ?? null;
             $additional_charge_status  = $settings['additional_charge_status'] ?? null;
@@ -657,7 +758,7 @@ class OrderController extends Controller
         $order->store_discount_amount = round($store_discount_amount, config('round_up_to_digit'));
         $order->order_amount = round($total_price + $order->total_tax_amount + $order->additional_charge + $order->delivery_charge, config('round_up_to_digit'));
         $order->free_delivery_by = $free_delivery_by;
-        $order->order_amount = DeliveryFeeLogic::applyDeliveryTypeToAmount($order, (float) $order->order_amount);
+        $order->order_amount = $this->applyDeliveryTypeToAmount($order, (float) $order->order_amount);
         $order->order_amount = $order->order_amount + $order->dm_tips;
         $order->save();
             $order?->orderTaxes()?->delete();
@@ -667,7 +768,7 @@ class OrderController extends Controller
                     orderTaxIds: $orderTaxIds,
                 );
             }
-        Toastr::success(translate('messages.order_amount_updated'));
+        Toastr::success(translate('messages.Order amount updated'));
         return back();
     }
     public function edit_discount_amount(Request $request)
@@ -679,12 +780,12 @@ class OrderController extends Controller
 
         $order = Order::find($request->order_id);
         if(!$order){
-            Toastr::error(translate('messages.Order_not_found'));
+            Toastr::error(translate('No data found'));
             return back();
         }
 
         if(!in_array($order->order_status, ['pending','confirmed','processing','picked_up','handover','accepted']) ){
-            Toastr::error(translate('messages.Order_can_not_edit_a_completed_order'));
+            Toastr::error(translate('messages.Order can not edit a completed order'));
             return back();
         }
         $product_price = $order['order_amount']-$order['delivery_charge']-$order['total_tax_amount']-$order['dm_tips'] - $order->additional_charge  +$order->store_discount_amount;
@@ -694,7 +795,7 @@ class OrderController extends Controller
 
         if($request->discount_amount > $product_price)
         {
-            Toastr::error(translate('messages.discount_amount_is_greater_then_product_amount'));
+            Toastr::error(translate('messages.Discount amount is greater then product amount'));
             return back();
         }
         $order->store_discount_amount = round($request->discount_amount, config('round_up_to_digit'));
@@ -717,12 +818,12 @@ class OrderController extends Controller
             $order->free_delivery_by = $proRecompute['free_delivery_by'];
         }
 
-        $settings = BusinessSetting::whereIn('key', [
+        $settings = Helpers::get_business_settings_many([
                 'dm_tips_status',
                 'additional_charge_status',
                 'additional_charge',
                 'extra_packaging_data',
-            ])->pluck('value', 'key');
+            ]);
 
             $dm_tips_manage_status     = $settings['dm_tips_status'] ?? null;
             $additional_charge_status  = $settings['additional_charge_status'] ?? null;
@@ -779,7 +880,7 @@ class OrderController extends Controller
                     orderTaxIds: $orderTaxIds,
                 );
             }
-        Toastr::success(translate('messages.discount_amount_updated'));
+        Toastr::success(translate('messages.Discount amount updated'));
         return back();
     }
 
@@ -796,7 +897,7 @@ class OrderController extends Controller
         }
 
         if ($total_file>5) {
-            Toastr::error(translate('messages.order_proof_must_not_have_more_than_5_item'));
+            Toastr::error(translate('messages.Maximum photos') . ': 5');
             return back();
         }
 
@@ -813,7 +914,7 @@ class OrderController extends Controller
         }
         $order->save();
 
-        Toastr::success(translate('messages.order_proof_added'));
+        Toastr::success(translate('messages.Order proof added'));
         return back();
     }
 
@@ -824,7 +925,7 @@ class OrderController extends Controller
         $array = [];
         $proof = isset($order->order_proof) ? json_decode($order->order_proof, true) : [];
         if (count($proof) < 2) {
-            Toastr::warning(translate('all_image_delete_warning'));
+            Toastr::warning(translate('You cannot delete all images!'));
             return back();
         }
 
@@ -838,12 +939,20 @@ class OrderController extends Controller
         Order::where('id', $request['id'])->update([
             'order_proof' => json_encode($array),
         ]);
-        Toastr::success(translate('order_proof_image_removed_successfully'));
+        Toastr::success(translate('Deleted successfully'));
         return back();
     }
 
     public function add_to_cart(Request $request)
     {
+        // A bundle is an offer, not a product: its items, variations and add-ons were fixed when
+        // the store enrolled. Only the quantity may move, and update_cart_quantity moves the whole
+        // group. Rewriting the line here would re-price it from today's menu and, on a free
+        // member, quietly stop it being free.
+        if ($refusal = app(OrderService::class)->promotionLockedRefusal($request)) {
+            return $refusal;
+        }
+
         if ($request->item_type == 'item') {
             $product = Item::withoutGlobalScope(StoreScope::class)->find($request->id);
         } else {
@@ -853,7 +962,7 @@ class OrderController extends Controller
         if (!$product) {
             return response()->json([
                 'data' => 'variation_error',
-                'message' => translate('messages.item_not_found'),
+                'message' => translate('No data found'),
             ]);
         }
 
@@ -884,19 +993,19 @@ class OrderController extends Controller
                     if ($value['required'] == 'on' &&  isset($value['values']) == false) {
                         return response()->json([
                             'data' => 'variation_error',
-                            'message' => translate('Please select items from') . ' ' . $value['name'],
+                            'message' => translate('Selection required') . ': ' . $value['name'],
                         ]);
                     }
                     if (isset($value['values'])  && $value['min'] != 0 && $value['min'] > count($value['values']['label'])) {
                         return response()->json([
                             'data' => 'variation_error',
-                            'message' => translate('Please select minimum ') . $value['min'] . translate('For') . $value['name'] . '.',
+                            'message' => translate('Please select minimum') . ' ' . $value['min'] . translate('For') . $value['name'] . '.',
                         ]);
                     }
                     if (isset($value['values']) && $value['max'] != 0 && $value['max'] < count($value['values']['label'])) {
                         return response()->json([
                             'data' => 'variation_error',
-                            'message' => translate('Please select maximum ') . $value['max'] . translate('For') . $value['name'] . '.',
+                            'message' => translate('Please select maximum') . ' ' . $value['max'] . translate('For') . $value['name'] . '.',
                         ]);
                     }
                 }
@@ -1012,7 +1121,7 @@ class OrderController extends Controller
             if ($moduleHasStock && $resolvedStock !== null && $resolvedStock <= 0) {
                 return response()->json([
                     'data' => 'stock_error',
-                    'message' => translate('messages.out_of_stock'),
+                    'message' => translate('Out of stock'),
                 ]);
             }
 
@@ -1041,7 +1150,7 @@ class OrderController extends Controller
                     if ($moduleHasStock && $resolvedStock !== null && $newQty > $resolvedStock) {
                         return response()->json([
                             'data' => 'stock_error',
-                            'message' => translate('messages.requested_quantity_exceeds_stock'),
+                            'message' => translate('messages.Requested quantity exceeds stock'),
                         ]);
                     }
                     $cart[$existingKey]['quantity'] = $newQty;
@@ -1054,7 +1163,7 @@ class OrderController extends Controller
             if ($moduleHasStock && $resolvedStock !== null && $requestedQty > $resolvedStock) {
                 return response()->json([
                     'data' => 'stock_error',
-                    'message' => translate('messages.requested_quantity_exceeds_stock'),
+                    'message' => translate('messages.Requested quantity exceeds stock'),
                 ]);
             }
 
@@ -1108,7 +1217,7 @@ class OrderController extends Controller
         if (!isset($cart[$key])) {
             return response()->json([
                 'data' => 'not_found',
-                'message' => translate('messages.cart_item_not_found'),
+                'message' => translate('messages.Cart item not found'),
             ]);
         }
 
@@ -1116,6 +1225,33 @@ class OrderController extends Controller
         $cartItem = $cart[$key];
         $itemId = $cartItem['item_id'] ?? null;
         $isPreexisting = isset($cartItem->id);
+
+        // For a bundle line the posted figure is a number of BUNDLES, not of that one item: the
+        // group's members move together or the offer stops being assemblable. What a bundle may
+        // total is the offer's own rule, checked against the enrolment when the edit is saved.
+        if ($groupId = data_get($cartItem, 'bogo_group_id')) {
+            $cart = app(BogoOrderService::class)->scaleEditorBundle($cart, $groupId, $newQty);
+            $request->session()->put('order_cart', $cart);
+
+            $product = $itemId ? Item::withoutGlobalScope(StoreScope::class)->with('store')->find($itemId) : null;
+            if ($product && $product->store) {
+                $this->setOrderEditCalculatedTax(store: $product->store, order_id: $cartItem['order_id'] ?? null);
+            }
+
+            return response()->json(['data' => 0, 'quantity' => $newQty]);
+        }
+
+        if ($groupId = data_get($cartItem, 'bundle_group_id')) {
+            $cart = app(BundleOrderService::class)->scaleEditorBundle($cart, $groupId, $newQty);
+            $request->session()->put('order_cart', $cart);
+
+            $product = $itemId ? Item::withoutGlobalScope(StoreScope::class)->with('store')->find($itemId) : null;
+            if ($product && $product->store) {
+                $this->setOrderEditCalculatedTax(store: $product->store, order_id: $cartItem['order_id'] ?? null);
+            }
+
+            return response()->json(['data' => 0, 'quantity' => $newQty]);
+        }
 
         if ($isPreexisting) {
             $cart[$key]['quantity'] = $newQty;
@@ -1130,7 +1266,7 @@ class OrderController extends Controller
         if (!$itemId) {
             return response()->json([
                 'data' => 'not_found',
-                'message' => translate('messages.cart_item_not_found'),
+                'message' => translate('messages.Cart item not found'),
             ]);
         }
 
@@ -1138,7 +1274,7 @@ class OrderController extends Controller
         if (!$product || !$product->module) {
             return response()->json([
                 'data' => 'not_found',
-                'message' => translate('messages.product_not_found'),
+                'message' => translate('No data found'),
             ]);
         }
 
@@ -1162,7 +1298,7 @@ class OrderController extends Controller
             if ($newQty > $availableStock) {
                 return response()->json([
                     'data' => 'stock_error',
-                    'message' => translate('messages.requested_quantity_exceeds_stock'),
+                    'message' => translate('messages.Requested quantity exceeds stock'),
                 ]);
             }
         }
@@ -1170,7 +1306,7 @@ class OrderController extends Controller
         if ($product->maximum_cart_quantity && $newQty > $product->maximum_cart_quantity) {
             return response()->json([
                 'data' => 'stock_error',
-                'message' => translate('messages.maximum_cart_quantity_limit_over'),
+                'message' => translate('messages.Maximum cart quantity limit over'),
             ]);
         }
 
@@ -1188,7 +1324,22 @@ class OrderController extends Controller
     {
         $cart = $request->session()->get('order_cart', collect([]));
         $item_id = $cart[$request->key]['item_id'];
-        $cart[$request->key]->status = false;
+
+        // Half a bundle is not a thing the offer can express, so removing one member removes the
+        // group. Marked rather than unset, which is how this editor has always dropped a line.
+        $groupField = data_get($cart[$request->key], 'bogo_group_id') ? 'bogo_group_id' : 'bundle_group_id';
+        $groupId = data_get($cart[$request->key], $groupField);
+
+        if ($groupId) {
+            foreach ($cart as $row) {
+                if (data_get($row, $groupField) === $groupId) {
+                    $row->status = false;
+                }
+            }
+        } else {
+            $cart[$request->key]->status = false;
+        }
+
         $request->session()->put('order_cart', $cart);
 
         $product = Item::withoutGlobalScope(StoreScope::class)->with('store')->find($item_id);
@@ -1200,14 +1351,26 @@ class OrderController extends Controller
 
     public function edit(Request $request, Order $order)
     {
-        $order = Order::with(['details', 'store', 'details.item' => function ($query) {
+        // 'store' dropped from the eager loads — the row is constrained to
+        // store_id = get_store_id() below, so it only re-hydrated a Store this request holds.
+        $order = Order::with(['details', 'details.item' => function ($query) {
             return $query->withoutGlobalScope(StoreScope::class);
         }, 'details.campaign' => function ($query) {
             return $query->withoutGlobalScope(StoreScope::class);
         }])->where(['id' => $order->id, 'store_id' => Helpers::get_store_id()])->StoreOrder()->first();
 
+        if (! $order) {
+            Toastr::error(translate('No data found'));
+
+            return back();
+        }
+
+        if ($order && $auth_store = Helpers::get_store_data()) {
+            $order->setRelation('store', $auth_store);
+        }
+
         if (!$order) {
-            Toastr::error(translate('messages.order_not_found'));
+            Toastr::error(translate('No data found'));
             return back();
         }
 
@@ -1225,8 +1388,14 @@ class OrderController extends Controller
             $cart->push($details);
         }
 
+        // Worked out once, here: how many bundles each group holds and what one bundle's worth of
+        // each line is. The quantity control scales against these, and re-deriving them after the
+        // first change would read line quantities that no longer match the enrolment.
+        $cart = app(BogoOrderService::class)->stampEditorBundles($cart, (int) $order->store_id);
+        $cart = app(BundleOrderService::class)->stampEditorBundles($cart);
+
         if ($cart->isEmpty()) {
-            Toastr::error(translate('messages.cart_is_empty'));
+            Toastr::error(translate('messages.Cart is empty'));
             return back();
         }
 
@@ -1276,7 +1445,12 @@ class OrderController extends Controller
 
     public function quick_view_cart_item(Request $request)
     {
-        $cart_item = session('order_cart')[$request->key];
+        $cart_item = data_get(session('order_cart'), $request->key);
+
+        if (!$cart_item) {
+            abort(404);
+        }
+
         $order_id = $request->order_id;
         $item_key = $request->key;
         $product = $cart_item->item ? $cart_item->item : $cart_item->campaign;
@@ -1304,7 +1478,7 @@ class OrderController extends Controller
             $sessionCart = session()->get('order_cart');
             if (count($sessionCart) > 0 && $sessionCart[0]->order_id == $order->id) {
                 $editing = true;
-                $cart = $sessionCart;
+                $cart = $this->primeEditCartRelations($sessionCart);
             }
         }
 
@@ -1321,8 +1495,10 @@ class OrderController extends Controller
             return response()->json(['items' => []]);
         }
 
-        $products = Item::withoutGlobalScope(StoreScope::class)
-            ->with(['module', 'store.storeConfig'])
+        // 'module' and 'store.storeConfig' are attached after the fetch instead of eager
+        // loaded: the query is pinned to where('store_id', $storeId) despite dropping
+        // StoreScope, so both can only resolve to the store this request already holds.
+        $products = Item::withoutGlobalScope(StoreScope::class)->withStorage()
             ->where('store_id', $storeId)
             ->when($request->keyword, function ($query) use ($request) {
                 $keywords = array_filter(array_map('trim', explode(' ', $request->keyword)));
@@ -1341,6 +1517,14 @@ class OrderController extends Controller
             })
             ->active()->take(10)->get();
 
+        if ($auth_store = Helpers::get_store_data()) {
+            $auth_store->loadMissing(['storeConfig', 'module']);
+            $products->each(function ($p) use ($auth_store) {
+                $p->setRelation('store', $auth_store);
+                $p->setRelation('module', $auth_store->module);
+            });
+        }
+
         $items = $products->map(function ($p) {
             $hasVariations = false;
             if ($p->module && $p->module->module_type == 'food') {
@@ -1358,13 +1542,13 @@ class OrderController extends Controller
             $tracksStock = $moduleType ? (bool) data_get(config('module.' . $moduleType), 'stock', false) : false;
             $stock = $tracksStock ? (int) $p->stock : null;
             $availableTime = ($p->available_time_starts && $p->available_time_ends)
-                ? date(config('timeformat'), strtotime($p->available_time_starts)) . ' - ' . date(config('timeformat'), strtotime($p->available_time_ends))
+                ? date(config('timeformat') ?? 'H:i', strtotime($p->available_time_starts)) . ' - ' . date(config('timeformat') ?? 'H:i', strtotime($p->available_time_ends))
                 : null;
             $isAvailable = $p->is_available_now;
             if ($tracksStock && $stock <= 0) {
                 $isAvailable = false;
             }
-            $showVeg = $isFood && (bool) config('toggle_veg_non_veg') && (bool) data_get(config('module.' . $moduleType), 'veg_non_veg', false);
+            $showVeg = $isFood && BusinessRules::vegNonVegEnabled() && (bool) data_get(config('module.' . $moduleType), 'veg_non_veg', false);
             $showHalal = $p->is_halal == 1
                 && (bool) data_get(config('module.' . $moduleType), 'halal', false)
                 && (bool) ($p->store?->storeConfig?->halal_tag_status ?? 0);
@@ -1415,7 +1599,7 @@ class OrderController extends Controller
                         return [
                             'status_code' => 403,
                             'code' => 'different_stores',
-                            'message' => translate('messages.Please_select_items_from_the_same_store'),
+                            'message' => translate('messages.Please select items from the same store'),
                         ];
                     }
 
@@ -1423,7 +1607,7 @@ class OrderController extends Controller
                         return [
                             'status_code' => 403,
                             'code' => 'prescription',
-                            'message' => translate('messages.prescription_is_required_for_this_order'),
+                            'message' => translate('messages.Prescription is required for this order'),
                         ];
                     }
 
@@ -1431,7 +1615,7 @@ class OrderController extends Controller
                         return [
                             'status_code' => 403,
                             'code' => 'quantity',
-                            'message' => translate('messages.maximum_cart_quantity_limit_over'),
+                            'message' => translate('messages.Maximum cart quantity limit over'),
                         ];
                     }
 
@@ -1453,7 +1637,7 @@ class OrderController extends Controller
                                 return [
                                     'status_code' => 403,
                                     'code' => 'stock',
-                                    'message' => $product?->name . ' ' . translate('messages.is_out_of_stock')
+                                    'message' => $product?->name . ' ' . translate('messages.Is out of stock')
                                 ];
                             }
                         }
@@ -1462,7 +1646,7 @@ class OrderController extends Controller
                     return[
                         'status_code' => 403,
                         'code' => 'not_found',
-                        'message' => translate('messages.product_not_found'),
+                        'message' => translate('No data found'),
                     ];
                 }
             }
@@ -1470,7 +1654,7 @@ class OrderController extends Controller
         return [
             'status_code' => 200,
             'code' => 'success',
-            'message' => translate('messages.order_updated_successfully'),
+            'message' => translate('Updated successfully'),
         ];
     }
 }

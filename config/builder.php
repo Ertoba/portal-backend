@@ -20,6 +20,17 @@ return [
     'default_platform_name'  => '6amMart',
 
     /*
+     * Extra CKEditor plugins the vendor-panel rich-text editor must load from
+     * public/assets/admin/ckeditor/plugins/. 6amMart's CKEditor build doesn't
+     * compile Justify/Font/color buttons in, so they're loaded here; installs
+     * whose build already includes them leave this empty. Merged with the
+     * always-on 'uploadimage' plugin inside RichTextEditor.
+     */
+    'rich_text_editor' => [
+        'extra_plugins' => 'justify,font,colorbutton,panelbutton',
+    ],
+
+    /*
      * Master switch for storefront wallet-family features: wallet payment,
      * partial payment, loyalty points, referral, and wallet cashback. When
      * false, the storefront hides all of those UI affordances and the
@@ -68,20 +79,26 @@ return [
     'capabilities' => [
         'schemaVersion' => 1,
 
-        // Business-model / item presentation.
-        // itemPresentation: 'auto' (food→modal, else page) | 'modal' | 'page'.
+        'profile' => [
+            'phoneEditable' => false,
+            'emailEditable' => true,
+        ],
+
         'modules' => ['mode' => 'multi', 'switcher' => true, 'itemPresentation' => 'auto'],
 
-        // Currency. Only 'single' is implemented today; 'multi' is reserved.
         'currency' => ['mode' => 'single', 'switcher' => false],
 
-        // Location / map / address book.
         'location' => [
             'enabled' => true, 'map' => true, 'currentLocation' => true,
             'zoneBased' => true, 'savedAddresses' => true,
+            'addressEmail' => false,
+            'addressFields' => [
+                ['key' => 'road',  'label' => 'address_form_street', 'half' => false],
+                ['key' => 'house', 'label' => 'address_form_house',  'half' => true],
+                ['key' => 'floor', 'label' => 'address_form_floor',  'half' => true],
+            ],
         ],
 
-        // Checkout surface.
         'checkout' => [
             'deliveryTypes' => ['home', 'takeaway', 'schedule'],
             'tips' => true, 'tipPresets' => [10, 15, 20, 40],
@@ -90,25 +107,24 @@ return [
             'orderNote' => false, 'savedAddress' => true,
         ],
 
-        // Payment rails + flow. timing: 'after' (place→pay) is the only mode
-        // implemented today; 'before' is reserved for a future pre-auth flow.
         'payment' => [
             'cod' => true, 'digital' => true, 'offline' => true,
             'wallet' => true, 'partial' => true,
             'timing' => 'after', 'retryReminder' => true,
         ],
 
-        // Cross-cutting commerce features.
         'features' => [
             'wallet' => true, 'loyaltyPoint' => true, 'referral' => true,
             'reviews' => true, 'inbox' => true, 'pushNotif' => true,
             'guestCheckout' => true, 'reorder' => true, 'wishlist' => true, 'blog' => false,
+            'buyNow' => false,
+            'deliveryManChat' => true, 'deliveryManCall' => true,
         ],
 
-        // Auth methods (folds the existing social/login switches under one axis).
         'auth' => [
             'manual' => true, 'otp' => true, 'otpChannel' => 'sms',
             'social' => ['google' => true, 'facebook' => true, 'apple' => true],
+            'forgotPassword' => ['status' => true, 'modes' => ['phone', 'email']],
         ],
     ],
 ];

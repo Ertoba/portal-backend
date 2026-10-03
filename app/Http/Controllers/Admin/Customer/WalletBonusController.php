@@ -8,7 +8,7 @@ use App\Enums\ViewPaths\Admin\WalletBonus as WalletBonusViewPath;
 use App\Http\Controllers\BaseController;
 use App\Http\Requests\Admin\WalletBonusAddRequest;
 use App\Http\Requests\Admin\WalletBonusUpdateRequest;
-use App\Services\WalletBonusService;
+use App\Services\Payment\WalletBonusService;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -44,17 +44,24 @@ class WalletBonusController extends BaseController
 
     public function add(WalletBonusAddRequest $request): RedirectResponse
     {
-        $bonus = $this->bonusRepo->add(data: $this->bonusService->getAddData(request: $request));
+        $bonus = $this->bonusRepo->add(data: $this->bonusService->getAddData($request->all()));
         $this->translationRepo->addByModel(request: $request, model: $bonus, modelPath: 'App\Models\WalletBonus', attribute: 'title');
         $this->translationRepo->addByModel(request: $request, model: $bonus, modelPath: 'App\Models\WalletBonus', attribute: 'description');
 
-        Toastr::success(translate('messages.bonus_added_successfully'));
+        Toastr::success(translate('Added successfully'));
         return back();
     }
 
-    public function getUpdateView(string|int $id): View
+    public function getUpdateView(string|int $id): View|RedirectResponse
     {
         $bonus = $this->bonusRepo->getFirstWithoutGlobalScopeWhere(params: ['id' => $id]);
+
+        if (! $bonus) {
+            Toastr::warning(translate('No data found'));
+
+            return back();
+        }
+
         $language = getWebConfig('language');
         $defaultLang = str_replace('_', '-', app()->getLocale());
         return view(WalletBonusViewPath::UPDATE[VIEW], compact('bonus','language','defaultLang'));
@@ -62,18 +69,18 @@ class WalletBonusController extends BaseController
 
     public function update(WalletBonusUpdateRequest $request, $id): RedirectResponse
     {
-        $bonus = $this->bonusRepo->update(id: $id ,data: $this->bonusService->getUpdateData(request: $request));
+        $bonus = $this->bonusRepo->update(id: $id ,data: $this->bonusService->getUpdateData($request->all()));
         $this->translationRepo->updateByModel(request: $request, model: $bonus, modelPath: 'App\Models\WalletBonus', attribute: 'title');
         $this->translationRepo->updateByModel(request: $request, model: $bonus, modelPath: 'App\Models\WalletBonus', attribute: 'description');
 
-        Toastr::success(translate('messages.bonus_updated_successfully'));
+        Toastr::success(translate('Updated successfully'));
         return back();
     }
 
     public function delete(Request $request): RedirectResponse
     {
         $this->bonusRepo->delete(id: $request['id']);
-        Toastr::success(translate('messages.bonus_deleted_successfully'));
+        Toastr::success(translate('Deleted successfully'));
         return back();
     }
 

@@ -14,17 +14,12 @@ $company_links = isset($fixed_link->value)?json_decode($fixed_link->value, true)
 <head>
   <meta charset="utf-8">
   <meta http-equiv="x-ua-compatible" content="ie=edge">
-  <title>{{translate('messages.Reply_form_'.$company_name)}}</title>
+  <title>{{translate('messages.Reply form'.$company_name)}}</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
   <style type="text/css">
 
   @import url('https://fonts.googleapis.com/css2?family=Roboto&display=swap');
-  /**
-   * Avoid browser level font resizing.
-   * 1. Windows Mobile
-   * 2. iOS / OSX
-   */
    body{
     font-family: 'Roboto', sans-serif;
    }
@@ -32,26 +27,17 @@ $company_links = isset($fixed_link->value)?json_decode($fixed_link->value, true)
   table,
   td,
   a {
-    -ms-text-size-adjust: 100%; /* 1 */
-    -webkit-text-size-adjust: 100%; /* 2 */
+    -ms-text-size-adjust: 100%;
+    -webkit-text-size-adjust: 100%;
   }
-  /**
-   * Remove extra space added to tables and cells in Outlook.
-   */
   table,
   td {
     mso-table-rspace: 0pt;
     mso-table-lspace: 0pt;
   }
-  /**
-   * Better fluid images in Internet Explorer.
-   */
   img {
     -ms-interpolation-mode: bicubic;
   }
-  /**
-   * Remove blue links for iOS devices.
-   */
   a[x-apple-data-detectors] {
     font-family: inherit !important;
     font-size: inherit !important;
@@ -88,8 +74,7 @@ $company_links = isset($fixed_link->value)?json_decode($fixed_link->value, true)
                 </td>
                 <td>
                     <div style="text-align: end; margin-inline-end:15px;">
-                      @php($store_logo = \App\Models\BusinessSetting::where(['key' => 'logo'])->first())
-                      <img style="width:100px;display:block;margin:10px auto" src="{{ \App\CentralLogics\Helpers::get_full_url('business',$store_logo?->value,$store_logo?->storage[0]?->value ?? 'public', 'favicon') }}" alt="public/img">
+                      <img style="width:100px;display:block;margin:10px auto" src="{{ \App\CentralLogics\Helpers::logoFullUrl() }}" alt="public/img">
                     </div>
                 </td>
             </tr>
@@ -106,7 +91,7 @@ $company_links = isset($fixed_link->value)?json_decode($fixed_link->value, true)
     <table style="margin:auto;width:90%; color:#777777;">
         <tbody style="text-align: center;">
             <tr>
-                @php($social_media = \App\Models\SocialMedia::active()->get())
+                @php($social_media = \App\CentralLogics\Helpers::social_media_active())
                 @if(isset($social_media))
                     <th style="width: 100%;">
                         @foreach ($social_media as $item)
@@ -121,13 +106,13 @@ $company_links = isset($fixed_link->value)?json_decode($fixed_link->value, true)
             </tr>
             <tr>
                 <th >
-                    <div style="font-weight: 400;font-size: 11px;line-height: 22px;color: #242A30;"><span style="margin-inline-end:5px;"> <a href="tel:{{$company_phone}}" style="text-decoration: none; color: inherit;">{{translate('messages.phone')}}: {{$company_phone}}</a></span> <span><a href="mailto:{{$company_email}}" style="text-decoration: none; color: inherit;">{{translate('messages.email')}}: {{$company_email}}</a></span></div>
+                    <div style="font-weight: 400;font-size: 11px;line-height: 22px;color: #242A30;"><span style="margin-inline-end:5px;"> <a href="tel:{{$company_phone}}" style="text-decoration: none; color: inherit;">{{translate('Phone')}}: {{$company_phone}}</a></span> <span><a href="mailto:{{$company_email}}" style="text-decoration: none; color: inherit;">{{translate('messages.email')}}: {{$company_email}}</a></span></div>
                     @if ($company_links['web_app_url_status'])
                     <div style="font-weight: 400;font-size: 11px;line-height: 22px;color: #242A30;">
                         <a href="{{$company_links['web_app_url']}}" style="text-decoration: none; color: inherit;">{{$company_links['web_app_url']}}</a></div>
                     @endif
                     <div style="font-weight: 400;font-size: 11px;line-height: 22px;color: #242A30;">{{$company_address}}</div>
-                    <span style="font-weight: 400;font-size: 10px;line-height: 22px;color: #242A30;">{{translate('messages.All copy right reserved',['year'=>date('Y'),'title'=>$company_name])}}</span>
+                    <span style="font-weight: 400;font-size: 10px;line-height: 22px;color: #242A30;">{{translate('messages.All rights reserved')}}</span>
                 </th>
             </tr>
         </tbody>

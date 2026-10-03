@@ -6,18 +6,18 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Validator;
-use App\Traits\Processor;
+use App\Traits\System\ProcessorTrait;
 use App\Models\PaymentRequest;
 
 class Paytabs
 {
-    use Processor;
+    use ProcessorTrait;
 
     private $config_values;
 
     public function __construct()
     {
-        $config = $this->payment_config('paytabs', 'payment_config');
+        $config = $this->paymentConfig('paytabs', 'payment_config');
         if (!is_null($config) && $config->mode == 'live') {
             $this->config_values = json_decode($config->live_values);
         } elseif (!is_null($config) && $config->mode == 'test') {
@@ -67,7 +67,7 @@ class Paytabs
 
 class PaytabsController extends Controller
 {
-    use Processor;
+    use ProcessorTrait;
 
     private PaymentRequest $payment;
     private $user;
@@ -85,12 +85,12 @@ class PaytabsController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return response()->json($this->response_formatter(GATEWAYS_DEFAULT_400, null, $this->error_processor($validator)), 400);
+            return response()->json($this->responseFormatter(GATEWAYS_DEFAULT_400, null, $this->errorProcessor($validator)), 400);
         }
 
         $payment_data = $this->payment::where(['id' => $request['payment_id']])->where(['is_paid' => 0])->first();
         if (!isset($payment_data)) {
-            return response()->json($this->response_formatter(GATEWAYS_DEFAULT_204), 200);
+            return response()->json($this->responseFormatter(GATEWAYS_DEFAULT_204), 200);
         }
         $payer = json_decode($payment_data['payer_information']);
 
@@ -104,8 +104,8 @@ class PaytabsController extends Controller
             "cart_amount" => round($payment_data->payment_amount, 2),
             "cart_description" => "products",
             "paypage_lang" => "en",
-            "callback" => route('paytabs.callback', ['payment_id' => $payment_data->id]), // Nullable - Must be HTTPS, otherwise no post data from paytabs
-            "return" => route('paytabs.callback', ['payment_id' => $payment_data->id]), // Must be HTTPS, otherwise no post data from paytabs , must be relative to your site URL
+            "callback" => route('paytabs.callback', ['payment_id' => $payment_data->id]),
+            "return" => route('paytabs.callback', ['payment_id' => $payment_data->id]),
             "customer_details" => [
                 "name" => $payer->name,
                 "email" => $payer->email,
@@ -134,7 +134,7 @@ class PaytabsController extends Controller
 
         $page = $plugin->send_api_request($request_url, $data);
         if (!isset($page['redirect_url'])) {
-            return response()->json($this->response_formatter(GATEWAYS_DEFAULT_204), 200);
+            return response()->json($this->responseFormatter(GATEWAYS_DEFAULT_204), 200);
         }
         header('Location:' . $page['redirect_url']); /* Redirect browser */
         exit();
@@ -147,12 +147,12 @@ class PaytabsController extends Controller
         $transRef = filter_input(INPUT_POST, 'tranRef');
 
         if (!$transRef) {
-            return response()->json($this->response_formatter(GATEWAYS_DEFAULT_204), 200);
+            return response()->json($this->responseFormatter(GATEWAYS_DEFAULT_204), 200);
         }
 
         $is_valid = $plugin->is_valid_redirect($response_data);
         if (!$is_valid) {
-            return response()->json($this->response_formatter(GATEWAYS_DEFAULT_204), 200);
+            return response()->json($this->responseFormatter(GATEWAYS_DEFAULT_204), 200);
         }
 
         $request_url = 'payment/query';
@@ -171,17 +171,17 @@ class PaytabsController extends Controller
             if (isset($payment_data) && function_exists($payment_data->success_hook)) {
                 call_user_func($payment_data->success_hook, $payment_data);
             }
-            return $this->payment_response($payment_data,'success');
+            return $this->paymentResponse($payment_data,'success');
         }
         $payment_data = $this->payment::where(['id' => $request['payment_id']])->first();
         if (isset($payment_data) && function_exists($payment_data->failure_hook)) {
             call_user_func($payment_data->failure_hook, $payment_data);
         }
-        return $this->payment_response($payment_data,'fail');
+        return $this->paymentResponse($payment_data,'fail');
     }
 
     public function response(Request $request)
     {
-        return response()->json($this->response_formatter(GATEWAYS_DEFAULT_200), 200);
+        return response()->json($this->responseFormatter(GATEWAYS_DEFAULT_200), 200);
     }
 }

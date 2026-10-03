@@ -2,7 +2,7 @@
 
 namespace App\Builder;
 
-use App\CentralLogics\CouponLogic;
+use App\Services\Marketing\CouponService;
 use App\Models\Coupon;
 use App\Models\Order;
 use App\Models\Store;
@@ -30,12 +30,6 @@ class CouponProvider implements CouponProviderContract
             return [];
         }
 
-        $firstOrderEligible = $customerId !== null
-            && !Order::query()
-                ->where('user_id', $customerId)
-                ->where('is_guest', 0)
-                ->exists();
-
         $today = Carbon::today()->toDateString();
 
         return Coupon::query()
@@ -44,42 +38,18 @@ class CouponProvider implements CouponProviderContract
             ->when($store->module_id, fn (Builder $q) => $q->module($store->module_id))
             ->whereDate('start_date', '<=', $today)
             ->whereDate('expire_date', '>=', $today)
-            ->where(fn (Builder $q) => $this->applyEligibility($q, $store, $customerId, $firstOrderEligible))
+            ->where(fn (Builder $q) => $this->applyEligibility($q, $store, $customerId))
             ->get()
             ->map(fn (Coupon $coupon) => $this->toDto($coupon, $store))
             ->values()
             ->all();
     }
 
-    private function applyEligibility(Builder $q, Store $store, ?int $customerId, bool $firstOrderEligible): void
+    private function applyEligibility(Builder $q, Store $store, ?int $customerId): void
     {
-        $q->orWhere(function (Builder $w) use ($store, $customerId) {
-            $w->where('coupon_type', 'store_wise')
-              ->where(fn (Builder $d) => $this->jsonContainsScalar($d, 'data', $store->id))
-              ->where(fn (Builder $c) => $this->jsonContainsCustomer($c, $customerId));
-        });
-
-        if ($store->zone_id !== null) {
-            $q->orWhere(function (Builder $w) use ($store) {
-                $w->where('coupon_type', 'zone_wise')
-                  ->where(fn (Builder $d) => $this->jsonContainsScalar($d, 'data', (int) $store->zone_id));
-            });
-        }
-
-        if ($firstOrderEligible) {
-            $q->orWhere('coupon_type', 'first_order');
-        }
-
-        $q->orWhere(function (Builder $w) use ($store) {
-            $w->whereNotIn('coupon_type', self::EXPLICIT_TYPES)
-              ->where('store_id', $store->id);
-        });
-
-        $q->orWhere(function (Builder $w) use ($customerId) {
-            $w->whereNotIn('coupon_type', self::EXPLICIT_TYPES)
-              ->whereNull('store_id')
-              ->where(fn (Builder $c) => $this->jsonContainsCustomer($c, $customerId));
-        });
+        $q->where('created_by', 'vendor')
+          ->where('store_id', $store->id)
+          ->where(fn (Builder $c) => $this->jsonContainsCustomer($c, $customerId));
     }
 
     private function jsonContainsScalar(Builder $q, string $column, int $value): void
@@ -105,16 +75,16 @@ class CouponProvider implements CouponProviderContract
         $minPurchase  = (float) $coupon->min_purchase;
         $maxDiscount  = (float) $coupon->max_discount;
 
-        $benefit = $discountType === 'percent'
-            ? $this->trimNumber($discount) . '% Off'
-            : '$' . $this->trimNumber($discount) . ' Off';
+        $isFreeDelivery = $coupon->coupon_type === 'free_delivery';
+        $benefit = $isFreeDelivery
+            ? 'Free Delivery'
+            : ($discountType === 'percent'
+                ? $this->trimNumber($discount) . '% Off'
+                : '$' . $this->trimNumber($discount) . ' Off');
 
-        $note = null;
-        if ($minPurchase > 0) {
-            $note = 'Min purchase $' . $this->trimNumber($minPurchase);
-        } elseif ($discountType === 'percent' && $maxDiscount > 0) {
-            $note = 'Max discount $' . $this->trimNumber($maxDiscount);
-        }
+        $note = $minPurchase > 0
+            ? 'Min purchase $' . $this->trimNumber($minPurchase)
+            : null;
 
         $storeName = $coupon->store?->name ?? ($coupon->coupon_type === 'store_wise' ? $store->name : null);
 
@@ -139,10 +109,11 @@ class CouponProvider implements CouponProviderContract
     private function typeLabel(?string $type): string
     {
         return match ($type) {
-            'store_wise'  => 'Store Special',
-            'zone_wise'   => 'Zone Discount',
-            'first_order' => 'First Order',
-            default       => 'Special Offer',
+            'store_wise'    => 'Store Special',
+            'zone_wise'     => 'Zone Discount',
+            'first_order'   => 'First Order',
+            'free_delivery' => 'Free Delivery',
+            default         => 'Special Offer',
         };
     }
 
@@ -192,8 +163,8 @@ class CouponProvider implements CouponProviderContract
         if ((int) $coupon->module_id !== (int) $moduleId) {
             return ['ok' => false, 'error' => 'This coupon does not apply to the current module.'];
         }
-        if ($coupon->created_by === 'vendor' && (int) $coupon->store_id !== (int) $storeId) {
-            return ['ok' => false, 'error' => 'This coupon is only valid at the issuing store.'];
+        if ($coupon->created_by !== 'vendor' || (int) $coupon->store_id !== (int) $storeId) {
+            return ['ok' => false, 'error' => 'This coupon is not available at this store.'];
         }
         if ($coupon->coupon_type === 'store_wise') {
             $stores = json_decode((string) $coupon->data, true) ?: [];
@@ -204,15 +175,15 @@ class CouponProvider implements CouponProviderContract
         }
 
         $status = $customerId
-            ? CouponLogic::is_valide($coupon, $customerId, $storeId, $moduleId)
-            : CouponLogic::is_valid_for_guest($coupon, $storeId, $moduleId);
+            ? app(CouponService::class)->validateForCustomer($coupon, $customerId, $storeId, $moduleId)
+            : app(CouponService::class)->validateForGuest($coupon, $storeId, $moduleId);
 
         if ($status !== 200) {
             return ['ok' => false, 'error' => $this->statusToMessage($status)];
         }
 
         $isFreeDelivery = $coupon->coupon_type === 'free_delivery';
-        $discount       = $isFreeDelivery ? 0.0 : (float) CouponLogic::get_discount($coupon, $cartTotal);
+        $discount       = $isFreeDelivery ? 0.0 : (float) app(CouponService::class)->calculateDiscount($coupon, $cartTotal);
 
         return [
             'ok'           => true,

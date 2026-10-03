@@ -1,6 +1,6 @@
 @extends('layouts.admin.app')
 
-@section('title',translate('messages.new_page'))
+@section('title',translate('messages.New page'))
 
 @push('css_or_js')
 <meta name="csrf-token" content="{{ csrf_token() }}">
@@ -52,7 +52,7 @@
                                     <label for="" class="fs-14 mb-10px text-title">Google Analytics Measurement ID</label>
                                     <div class="flex-xs-wrap d-flex align-items-center gap-3">
                                         <textarea name="gs" rows="1" class="form-control" placeholder="Enter the GA Measurement ID"></textarea>
-                                        <button type="submit" class="btn py-1 min-w-100px h-40px btn--primary ">Save</button>
+                                        <button type="submit" class="btn py-1 min-w-100px h-40px btn--primary "><i class="tio-save"></i> Save</button>
                                     </div>             
                                 </div>
                             </div>
@@ -94,7 +94,7 @@
                                     <label for="" class="fs-14 mb-10px text-title">Google Analytics Measurement ID</label>
                                     <div class="flex-xs-wrap d-flex align-items-center gap-3">
                                         <textarea name="gs" rows="1" class="form-control" placeholder="Enter the GA Measurement ID"></textarea>
-                                        <button type="submit" class="btn py-1 min-w-100px h-40px btn--primary ">Save</button>
+                                        <button type="submit" class="btn py-1 min-w-100px h-40px btn--primary "><i class="tio-save"></i> Save</button>
                                     </div>             
                                 </div>
                             </div>
@@ -136,7 +136,7 @@
                                     <label for="" class="fs-14 mb-10px text-title">Google Analytics Measurement ID</label>
                                     <div class="flex-xs-wrap d-flex align-items-center gap-3">
                                         <textarea name="gs" rows="1" class="form-control" placeholder="Enter the GA Measurement ID"></textarea>
-                                        <button type="submit" class="btn py-1 min-w-100px h-40px btn--primary ">Save</button>
+                                        <button type="submit" class="btn py-1 min-w-100px h-40px btn--primary "><i class="tio-save"></i> Save</button>
                                     </div>             
                                 </div>
                             </div>
@@ -178,7 +178,7 @@
                                     <label for="" class="fs-14 mb-10px text-title">Google Analytics Measurement ID</label>
                                     <div class="flex-xs-wrap d-flex align-items-center gap-3">
                                         <textarea name="gs" rows="1" class="form-control" placeholder="Enter the GA Measurement ID"></textarea>
-                                        <button type="submit" class="btn py-1 min-w-100px h-40px btn--primary ">Save</button>
+                                        <button type="submit" class="btn py-1 min-w-100px h-40px btn--primary "><i class="tio-save"></i> Save</button>
                                     </div>             
                                 </div>
                             </div>
@@ -220,7 +220,7 @@
                                     <label for="" class="fs-14 mb-10px text-title">Google Analytics Measurement ID</label>
                                     <div class="flex-xs-wrap d-flex align-items-center gap-3">
                                         <textarea name="gs" rows="1" class="form-control" placeholder="Enter the GA Measurement ID"></textarea>
-                                        <button type="submit" class="btn py-1 min-w-100px h-40px btn--primary ">Save</button>
+                                        <button type="submit" class="btn py-1 min-w-100px h-40px btn--primary "><i class="tio-save"></i> Save</button>
                                     </div>             
                                 </div>
                             </div>
@@ -262,7 +262,7 @@
                                     <label for="" class="fs-14 mb-10px text-title">Google Analytics Measurement ID</label>
                                     <div class="flex-xs-wrap d-flex align-items-center gap-3">
                                         <textarea name="gs" rows="1" class="form-control" placeholder="Enter the GA Measurement ID"></textarea>
-                                        <button type="submit" class="btn py-1 min-w-100px h-40px btn--primary ">Save</button>
+                                        <button type="submit" class="btn py-1 min-w-100px h-40px btn--primary "><i class="tio-save"></i> Save</button>
                                     </div>             
                                 </div>
                             </div>
@@ -304,7 +304,7 @@
                                     <label for="" class="fs-14 mb-10px text-title">Google Analytics Measurement ID</label>
                                     <div class="flex-xs-wrap d-flex align-items-center gap-3">
                                         <textarea name="gs" rows="1" class="form-control" placeholder="Enter the GA Measurement ID"></textarea>
-                                        <button type="submit" class="btn py-1 min-w-100px h-40px btn--primary ">Save</button>
+                                        <button type="submit" class="btn py-1 min-w-100px h-40px btn--primary "><i class="tio-save"></i> Save</button>
                                     </div>             
                                 </div>
                             </div>
@@ -346,7 +346,7 @@
                                     <label for="" class="fs-14 mb-10px text-title">Google Analytics Measurement ID</label>
                                     <div class="flex-xs-wrap d-flex align-items-center gap-3">
                                         <textarea name="gs" rows="1" class="form-control" placeholder="Enter the GA Measurement ID"></textarea>
-                                        <button type="submit" class="btn py-1 min-w-100px h-40px btn--primary ">Save</button>
+                                        <button type="submit" class="btn py-1 min-w-100px h-40px btn--primary "><i class="tio-save"></i> Save</button>
                                     </div>             
                                 </div>
                             </div>
@@ -359,7 +359,6 @@
 </div>
 
 
-<!-- Confiramtion Feature Modal -->
 <div class="modal shedule-modal fade" id="confirmation-modal-feature" tabindex="-1" aria-labelledby="exampleModalLabel"
     aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
@@ -379,8 +378,8 @@
                 </div>
             </div>
             <div class="modal-footer justify-content-center border-0 pt-0 gap-2">
-                <button type="button" class="btn min-w-120px btn--reset" data-dismiss="modal">No</button>
-                <button type="button" class="btn min-w-120px btn--primary">Yes</button>
+                <button type="button" class="btn min-w-120px btn--reset" data-dismiss="modal"><i class="tio-clear-circle-outlined"></i> No</button>
+                <button type="button" class="btn min-w-120px btn--primary"><i class="tio-checkmark-circle-outlined"></i> Yes</button>
             </div>
         </div>
     </div>
