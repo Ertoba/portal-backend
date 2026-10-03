@@ -4,6 +4,7 @@ on:
   push:
     branches: [upgrade-v42-20261002]
     paths: ['.github/workflows/v42-export-source.yml']
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -15,11 +16,21 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: upgrade-v42-20261002
-      - name: Pack source
+          fetch-depth: 1
+      - name: Pack complete source snapshot
+        shell: bash
         run: |
-          tar --exclude=.git --exclude=vendor --exclude=storage/logs --exclude=node_modules -czf /tmp/portal-backend-upgrade-v42-current.tar.gz .
+          set -euo pipefail
+          tar \
+            --exclude='./.git' \
+            --exclude='./vendor' \
+            --exclude='./storage/logs' \
+            --exclude='./node_modules' \
+            -czf /tmp/portal-backend-upgrade-v42-current-complete.tar.gz .
+          tar -tzf /tmp/portal-backend-upgrade-v42-current-complete.tar.gz | grep -F './resources/views/vendor/pagination/tailwind.blade.php'
+          tar -tzf /tmp/portal-backend-upgrade-v42-current-complete.tar.gz | grep -F './Modules/Rental/Routes/web/vendor/routes.php'
       - uses: actions/upload-artifact@v4
         with:
-          name: portal-backend-upgrade-v42-current
-          path: /tmp/portal-backend-upgrade-v42-current.tar.gz
+          name: portal-backend-upgrade-v42-current-complete
+          path: /tmp/portal-backend-upgrade-v42-current-complete.tar.gz
           retention-days: 1
