@@ -13,7 +13,6 @@ use Gregwar\Captcha\CaptchaBuilder;
 use Brian2694\Toastr\Facades\Toastr;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Session;
-use Modules\RideShare\Interface\UserManagement\Service\DriverLevelServiceInterface;
 use Modules\RideShare\Entities\UserManagement\RiderDetail;
 use App\Support\Notification\SendNotification;
 use App\Support\Storage\FileStorage;
@@ -21,12 +20,6 @@ use Illuminate\Support\Facades\Log;
 
 class RiderRegistrationController extends Controller
 {
-    public function __construct(
-        protected DriverLevelServiceInterface $driverLevelService,
-    )
-    {
-    }
-
     public function create()
     {
         if (!addon_published_status('RideShare')) {
@@ -52,6 +45,8 @@ class RiderRegistrationController extends Controller
         if (!addon_published_status('RideShare')) {
             abort(404);
         }
+
+        $driverLevelService = app('Modules\\RideShare\\Interface\\UserManagement\\Service\\DriverLevelServiceInterface');
 
         $settings = DataSetting::where('type', RIDE_SHARE_BUSINESS_SETTINGS)->where('key', 'toggle_rider_registration')->first();
 
@@ -123,7 +118,7 @@ class RiderRegistrationController extends Controller
             $identity_image = json_encode([]);
         }
 
-        $firstLevel = $this->driverLevelService->findOneBy(criteria: ['user_type' => DRIVER, 'sequence' => 1]);
+        $firstLevel = $driverLevelService->findOneBy(criteria: ['user_type' => DRIVER, 'sequence' => 1]);
         if (!$firstLevel) {
             Toastr::error(translate('messages.Rider level not found'));
             return back()->withInput();

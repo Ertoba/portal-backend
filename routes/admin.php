@@ -1,7 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\{
-    AccountTransactionController, AddonActivationController,
+    AccountTransactionController,
     AdminEarningReportController, AdminTaxReportController,
     AutomatedMessageController, Banner\BannerController,
     BusinessSettingsController, CampaignController,
@@ -576,11 +576,6 @@ Route::name('admin.')->controller(ZoneController::class)->group(function () {
             Route::middleware(['module:system_config'])->controller(BusinessSettingsController::class)->group(function () {
                 Route::get('websocket', 'websocket')->name('websocket');
                 Route::post('update-websocket', 'update_websocket')->name('update-websocket');
-
-                Route::prefix('addon-activation')->name('addon-activation.')->controller(AddonActivationController::class)->group(function () {
-                    Route::get('/', 'index')->name('index');
-                    Route::post('activation', 'activation')->name('activation');
-                });
 
                 Route::prefix('language')->name('language.')->controller(LanguageController::class)->group(function () {
                     Route::get('/', 'index')->name('index');
