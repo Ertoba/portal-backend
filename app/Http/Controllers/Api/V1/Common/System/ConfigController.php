@@ -22,8 +22,8 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Modules\Rental\Services\Vehicle\VehicleService;
 use Modules\RideShare\Services\RideRequestService;
+use Modules\TaxModule\Entities\SystemTaxSetup;
 use Modules\TaxModule\Services\CalculateTaxService;
-use Modules\TaxModule\Services\SystemTaxSetupService;
 
 class ConfigController extends BaseApiController
 {
@@ -109,8 +109,8 @@ class ConfigController extends BaseApiController
             'vehicle_minimums' => addon_published_status('Rental')
                 ? app(VehicleService::class)->getMinimumPrices()
                 : ['distance' => 0, 'hourly' => 0, 'day_wise' => 0],
-            'system_tax' => addon_published_status('TaxModule')
-                ? app(SystemTaxSetupService::class)->findDefault()
+            'system_tax' => addon_published_status('TaxModule') && class_exists(SystemTaxSetup::class)
+                ? SystemTaxSetup::query()->where('is_active', 1)->where('is_default', 1)->first()
                 : null,
             'ride_share' => addon_published_status('RideShare') ? $this->rideShareData() : [],
             'service_module' => addon_published_status('Service') ? $this->serviceModuleData() : [],
@@ -136,7 +136,9 @@ class ConfigController extends BaseApiController
     {
         return [
             'settings' => $this->dataSettingService->getServiceModuleSettings(),
-            'tax_setup' => app(SystemTaxSetupService::class)->findActiveByTaxPayer('service_provider'),
+            'tax_setup' => class_exists(SystemTaxSetup::class)
+                ? SystemTaxSetup::query()->where('is_active', 1)->where('tax_payer', 'service_provider')->first()
+                : null,
             'tax_percentage' => CalculateTaxService::getTaxPercentage('service_provider'),
         ];
     }
