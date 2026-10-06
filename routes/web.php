@@ -58,15 +58,13 @@ Route::controller(HomeController::class)->group(function () {
     Route::get('subscription-invoice/{id}', 'subscription_invoice')->name('subscription_invoice');
     Route::get('order-invoice/{id}', 'order_invoice')->name('order_invoice');
     Route::get('deliveryman-earning-report-invoice/{id}', 'earningReportInvoice')->name('delivery_earning_invoice')->middleware('localization');
-    Route::get('activation-check', 'getActivationCheckView')->name('system.activation-check');
-    Route::post('activation-check', 'activationCheck');
 });
 Route::controller(NewsletterController::class)->group(function () {
     Route::post('newsletter/subscribe', 'newsLetterSubscribe')->name('newsletter.subscribe');
 });
 Route::controller(LoginController::class)->group(function () {
     Route::get('login/{tab}', 'login')->name('login');
-    Route::post('login_submit', 'submit')->name('login_post')->middleware('actch');
+    Route::post('login_submit', 'submit')->name('login_post');
     Route::get('logout', 'logout')->name('logout');
     Route::get('/reload-captcha', 'reloadCaptcha')->name('reload-captcha');
     Route::post('/reset-password', 'reset_password_request')->name('reset-password')->middleware('throttle:3,60');
