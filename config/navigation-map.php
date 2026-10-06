@@ -2990,15 +2990,6 @@ return [
             'args' => [],
         ],
         [
-            'pattern' => 'admin/business-settings/addon-activation*',
-            'scope' => 'settings',
-            'section' => 'v2_settings::sys',
-            'group' => NULL,
-            'label' => 'Add-on activation',
-            'route' => 'admin.business-settings.addon-activation.index',
-            'args' => [],
-        ],
-        [
             'pattern' => 'vendor-panel/report/store-earning-report*',
             'scope' => 'vendor',
             'section' => 'v2::reports',

@@ -49,7 +49,7 @@
     elseif ($is('admin/business-settings/safety-precaution*') || $is('admin/business-settings/ride-fare*') || $is('admin/business-settings/ride-share*')) $active_section = 'safety';
     elseif ($is('admin/business-settings/service*'))             $active_section = 'service';
     elseif ($is('admin/business-settings/db-index*') || $is('admin/business-settings/database/*')) $active_section = 'maint';
-    elseif ($is('admin/business-settings/language*') || $is('admin/business-settings/app-settings*') || $is('admin/business-settings/websocket*') || $is('admin/business-settings/addon-activation*') || $is('admin/business-settings/system-addon*')) $active_section = 'sys';
+    elseif ($is('admin/business-settings/language*') || $is('admin/business-settings/app-settings*') || $is('admin/business-settings/websocket*') || $is('admin/business-settings/system-addon*')) $active_section = 'sys';
 @endphp
 
 <aside id="v2-shell" class="v2-shell" data-workspace="settings" data-active-section="{{ $active_section }}">
@@ -468,10 +468,6 @@
                         <a class="v2-nav-item {{ $is('admin/business-settings/websocket*') ? 'is-active' : '' }}" href="{{ route('admin.business-settings.websocket') }}" data-id="sys-ws">
                             <span class="v2-dot v2-dot--violet"></span><span class="v2-label">{{ translate('WebSocket configuration') }}</span>
                             <button type="button" class="v2-pin" data-pin="sys-ws" title="{{ translate('Pin') }}">@include('layouts.admin.partials._v2_pin_icon')</button>
-                        </a>
-                        <a class="v2-nav-item {{ $is('admin/business-settings/addon-activation*') ? 'is-active' : '' }}" href="{{ route('admin.business-settings.addon-activation.index') }}" data-id="sys-add">
-                            <span class="v2-dot v2-dot--amber"></span><span class="v2-label">{{ translate('Add-on activation') }}</span>
-                            <button type="button" class="v2-pin" data-pin="sys-add" title="{{ translate('Pin') }}">@include('layouts.admin.partials._v2_pin_icon')</button>
                         </a>
                         @endif
                         @if($can_sys_addons)
