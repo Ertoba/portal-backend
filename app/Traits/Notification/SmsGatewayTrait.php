@@ -14,6 +14,7 @@ trait SmsGatewayTrait
     public static function send($receiver, $otp)
     {
         return match (true) {
+            self::smsGatewayActive('ubill_ge') => self::ubillGe($receiver, $otp),
             self::smsGatewayActive('twilio') => self::twilio($receiver, $otp),
             self::smsGatewayActive('nexmo') => self::nexmo($receiver, $otp),
             self::smsGatewayActive('2factor') => self::twoFactor($receiver, $otp),
@@ -22,6 +23,29 @@ trait SmsGatewayTrait
             default => 'not_found',
         };
     }
+    public static function ubillGe($receiver, $otp): string
+    {
+        $config = self::smsGatewaySettings('ubill_ge');
+        $number = preg_replace('/\D/', '', (string) $receiver);
+        if (str_starts_with($number, '00')) $number = substr($number, 2);
+        if (strlen($number) === 9) $number = '995'.$number;
+        try {
+            $response = \Illuminate\Support\Facades\Http::connectTimeout(self::smsConnectTimeout())
+                ->timeout(self::smsTimeout())->withHeaders(['key' => $config['api_key']])
+                ->post('https://api.ubill.dev/v1/sms/send', [
+                    'brandID' => (int) $config['brand_id'],
+                    'numbers' => [$number],
+                    'text' => str_replace('#OTP#', (string) $otp, $config['otp_template'] ?: 'MILI: #OTP#'),
+                    'otp' => true,
+                ]);
+            if ($response->successful() && $response->json('statusID') !== null && (int) $response->json('statusID') === 0) return 'success';
+            self::reportSmsFailure('ubill_ge', $receiver, 'HTTP '.$response->status().' statusID='.($response->json('statusID') ?? 'missing'));
+        } catch (\Throwable $exception) {
+            self::reportSmsFailure('ubill_ge', $receiver, 'Transport error: '.get_class($exception));
+        }
+        return 'error';
+    }
+
     public static function twilio($receiver, $otp): string
     {
         $config = self::smsGatewaySettings('twilio');
