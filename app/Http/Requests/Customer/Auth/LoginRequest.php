@@ -18,7 +18,15 @@ class LoginRequest extends BaseRequest
                     'field_type' => 'required|in:phone,email',
                 ],
                 'otp' => [
-                    'phone' => $this->phoneRule(),
+                    'phone' => [...$this->phoneRule(), function ($attribute, $value, $fail) {
+                        $digits = preg_replace('/\D/', '', (string) $value);
+                        if (str_starts_with($digits, '00')) {
+                            $digits = substr($digits, 2);
+                        }
+                        if (str_starts_with($digits, '995') && ! preg_match('/^995\d{9}$/', $digits)) {
+                            $fail(translate('messages.Please enter a valid phone number.'));
+                        }
+                    }],
                     'otp' => Rule::requiredIf(fn () => (bool) $this->input('verified')),
                 ],
                 'social' => [
