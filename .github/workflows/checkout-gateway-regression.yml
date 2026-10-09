@@ -1,0 +1,37 @@
+name: Checkout Gateway Regression
+
+on:
+  pull_request:
+    paths:
+      - "app/Services/Payment/SettingService.php"
+      - "tests/Unit/PaymentGatewayVisibilityTest.php"
+      - ".github/workflows/checkout-gateway-regression.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-gateways:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.3"
+          extensions: curl, json, simplexml, mbstring, fileinfo, pdo_sqlite, gd, intl, zip, bcmath
+          coverage: none
+          tools: composer:v2
+      - name: PHP syntax checks
+        run: |
+          php -l app/Services/Payment/SettingService.php
+          php -l tests/Unit/PaymentGatewayVisibilityTest.php
+      - name: Install locked dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+      - name: Validate gateway eligibility without accessing production
+        env:
+          APP_ENV: testing
+          DB_CONNECTION: sqlite
+          DB_DATABASE: ":memory:"
+        run: vendor/bin/phpunit tests/Unit/PaymentGatewayVisibilityTest.php
