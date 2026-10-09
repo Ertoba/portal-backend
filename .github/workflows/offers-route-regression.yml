@@ -1,0 +1,45 @@
+name: Offers Route Regression
+
+on:
+  pull_request:
+    paths:
+      - "routes/api/v1/api.php"
+      - "tests/Unit/OffersRouteResolutionTest.php"
+      - ".github/workflows/offers-route-regression.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check-offers-routes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.3"
+          extensions: curl, json, simplexml, mbstring, fileinfo, pdo_sqlite, gd, intl, zip, bcmath
+          coverage: none
+          tools: composer:v2
+      - name: PHP syntax validation
+        run: |
+          php -l routes/api/v1/api.php
+          php -l tests/Unit/OffersRouteResolutionTest.php
+      - name: Install locked PHP dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+      - name: Prepare isolated app configuration
+        run: |
+          cp .env.example .env
+          php artisan key:generate --force
+      - name: Verify actual Laravel route resolution
+        env:
+          APP_ENV: testing
+          DB_CONNECTION: sqlite
+          DB_DATABASE: ":memory:"
+          CACHE_DRIVER: array
+          SESSION_DRIVER: array
+          QUEUE_CONNECTION: sync
+          MAIL_MAILER: array
+        run: php artisan test --filter=OffersRouteResolutionTest
