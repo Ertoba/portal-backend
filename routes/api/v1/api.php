@@ -1001,7 +1001,5 @@ Route::prefix('erp')->middleware('erp.api')->group(function () {
 // MILI compatibility aliases retained for existing app/web clients.
 Route::middleware('localization')->group(function () {
     Route::get('module/top-offer', [\App\Http\Controllers\Api\V1\MiliV4CompatibilityController::class, 'topOffer']);
-    Route::get('offers/items', [\App\Http\Controllers\Api\V1\MiliV4CompatibilityController::class, 'offerItems']);
-    Route::get('offers/stores', [\App\Http\Controllers\Api\V1\MiliV4CompatibilityController::class, 'offerStores']);
     Route::get('stores/exclusive-deals', [\App\Http\Controllers\Api\V1\MiliV4CompatibilityController::class, 'exclusiveDeals']);
 });
