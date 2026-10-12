@@ -9,7 +9,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <title>{{translate('messages.login')}}</title>
 
-    <link rel="shortcut icon" href="{{asset('public/favicon.ico')}}">
+    <link rel="shortcut icon" href="{{ asset('public/assets/admin/img/mili-mark-20261013.svg') }}">
 
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{asset('public/assets/admin')}}/css/vendor.min.css">
@@ -30,7 +30,7 @@
         <div class="auth-wrapper-left">
             <div class="auth-left-cont">
                 <img class="onerror-image"  data-onerror-image="{{asset('/public/assets/admin/img/favicon.png')}}"
-                src="{{\App\CentralLogics\Helpers::logoFullUrl()}}"  alt="public/img">
+                src="{{ asset('public/assets/admin/img/mili-mark-20261013.svg') }}"  alt="public/img">
                 <h2 class="title">{{translate('Your')}} <span class="d-block">{{translate('All service')}}</span> <strong class="text--039D55">{{translate('in one field')}}....</strong></h2>
             </div>
         </div>
