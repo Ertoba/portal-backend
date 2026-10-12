@@ -3781,7 +3781,7 @@ class Helpers
             return $data;
         }
 
-    function getPriorityList($name, $type, $relations = [], $json_decode = false)
+    public static function getPriorityList($name, $type, $relations = [], $json_decode = false)
         {
             try {
                 static $allSettings = null;
