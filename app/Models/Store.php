@@ -410,6 +410,22 @@ class Store extends Model
         return $this->items()->where('status', 1)->where('is_approved', 1);
     }
 
+    public static function topItemsByIds(array $storeIds, int $limit = 5): \Illuminate\Support\Collection
+    {
+        $storeIds = array_values(array_unique(array_filter(array_map('intval', $storeIds))));
+        if (empty($storeIds)) {
+            return collect();
+        }
+
+        return Item::active()
+            ->whereIn('store_id', $storeIds)
+            ->orderBy('store_id')
+            ->orderByDesc('order_count')
+            ->get(['id', 'name', 'image', 'store_id', 'price', 'discount', 'discount_type', 'order_count', 'avg_rating'])
+            ->groupBy('store_id')
+            ->map(fn ($g) => $g->take(max(1, $limit))->values());
+    }
+
     public function storeCategories(): HasMany
     {
         return $this->hasMany(StoreCategory::class);
