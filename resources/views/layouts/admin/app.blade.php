@@ -30,8 +30,8 @@ $countryCode = strtolower($country ? $country : 'auto');
             && ! empty($fcm_credentials['messagingSenderId'])
             && ! empty($fcm_credentials['appId']);
     @endphp
-    <link rel="icon" type="image/x-icon"
-        href="{{\App\CentralLogics\Helpers::iconFullUrl()}}">
+    <link rel="icon" type="image/svg+xml"
+        href="{{ asset('public/assets/admin/img/mili-mark-20261013.svg') }}">
     <link rel="preload" as="font" type="font/woff2" crossorigin
         href="{{ asset('public/assets/admin/vendor/icon-set/fonts/The-Icon-of9a76.woff2') }}?ww946b">
     <link href="{{asset('public/assets/admin/css/fonts.css')}}" rel="stylesheet">
