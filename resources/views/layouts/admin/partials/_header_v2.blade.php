@@ -60,7 +60,7 @@
 
 <header class="v2-topbar" role="banner">
     <a class="v2-brand" href="{{ route('admin.dashboard') }}">
-        <img class="v2-brand-mark" src="{{ \App\CentralLogics\Helpers::logoFullUrl() }}" alt="Logo" onerror="this.src='{{ asset('public/assets/admin/img/160x160/img2.jpg') }}'">
+        <img class="v2-brand-mark" src="{{ asset('public/assets/admin/img/mili-mark-20261013.svg') }}" alt="Logo" onerror="this.src='{{ asset('public/assets/admin/img/mili-mark-20261013.svg') }}'">
     </a>
 
     <button type="button" class="v2-mode-btn v2-mobile-toggle" id="v2-mobile-toggle" aria-label="{{ translate('Toggle navigation drawer') }}">
