@@ -10,5 +10,6 @@ return [
     Maatwebsite\Excel\ExcelServiceProvider::class,
     App\Providers\InterfaceServiceProvider::class,
     App\Providers\FirebaseServiceProvider::class,
+    App\Providers\CheckoutPaymentRecoveryServiceProvider::class,
     App\Providers\ScheduleServiceProvider::class,
 ];
