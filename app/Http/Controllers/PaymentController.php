@@ -6,6 +6,7 @@ use App\CentralLogics\Helpers;
 use App\Models\User;
 use App\Models\Order;
 use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 use App\Models\BusinessSetting;
 use App\Library\Payer;
 use App\Services\Payment\PaymentLinkService;
@@ -132,6 +133,33 @@ class PaymentController extends Controller
 
         return redirect($redirect_link);
 
+    }
+
+    public function keepzMobileIntent(Request $request)
+    {
+        $request->merge([
+            'payment_method' => 'keepz',
+            'payment_platform' => 'app',
+        ]);
+
+        $redirect = $this->payment($request);
+        if (!method_exists($redirect, 'getTargetUrl')) {
+            return $redirect;
+        }
+
+        $targetUrl = $redirect->getTargetUrl();
+        $query = parse_url($targetUrl, PHP_URL_QUERY);
+        parse_str((string) $query, $parameters);
+        $paymentId = $parameters['payment_id'] ?? null;
+
+        if (!$paymentId) {
+            return response()->json([
+                'message' => 'Keepz payment could not be initialized',
+            ], 422);
+        }
+
+        return app(\App\Http\Controllers\KeepzPaymentController::class)
+            ->mobileIntentById((string) $paymentId, $request);
     }
 
     public function success()

@@ -84,6 +84,7 @@ return response()->json([
 Route::prefix('payment-mobile')->group(function () {
     Route::controller(PaymentController::class)->group(function () {
         Route::get('/', 'payment')->name('payment-mobile');
+        Route::get('keepz-intent', 'keepzMobileIntent')->name('payment-mobile.keepz-intent');
         Route::get('set-payment-method/{name}', 'set_payment_method')->name('set-payment-method');
     });
 });
