@@ -823,7 +823,9 @@ class ZoneService extends BaseService
         $bindings = [];
 
         foreach (array_values($points) as $index => $point) {
-            $selects[] = "SELECT ? AS idx, ST_GeomFromText(?, ?, 'axis-order=long-lat') AS pt";
+            // The WKT is already emitted as longitude latitude. MariaDB/MySQL
+            // deployments do not accept the optional axis-order third argument.
+            $selects[] = "SELECT ? AS idx, ST_GeomFromText(?, ?) AS pt";
             $bindings[] = $index;
             $bindings[] = "POINT({$point['longitude']} {$point['latitude']})";
             $bindings[] = POINT_SRID;
