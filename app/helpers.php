@@ -614,6 +614,19 @@ if (! function_exists('translate')) {
             $result = trans('messages.' . $key, $replace);
         }
 
+        // Laravel returns the fully-qualified key when a namespaced message is
+        // missing from the active locale. The Blade helper accepts both
+        // `messages.X` and `X`, so that implementation detail must never leak
+        // into the admin UI as literal `messages.X` text.
+        if (is_string($result) && str_starts_with($result, 'messages.')) {
+            $result = trim(substr($result, 9));
+            $result = ucfirst(preg_replace_callback(
+                '/:[a-zA-Z_][a-zA-Z0-9_]*|_/',
+                fn ($match) => $match[0] === '_' ? ' ' : $match[0],
+                $result
+            ));
+        }
+
         return $result;
     }
 }
