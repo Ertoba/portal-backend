@@ -137,7 +137,7 @@
         <div class="row g-1 g-sm-2">
             @foreach($addons as $key => $addon)
             <?php
-            $data= include $addon.'/Addon/info.php';
+            $data = include base_path($addon . '/Addon/info.php');
             ?>
             <div class="col-6 col-md-4 col-xxl-3">
                 <div class="card theme-card">
