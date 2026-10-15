@@ -138,6 +138,7 @@
             @foreach($addons as $key => $addon)
             <?php
             $data = include base_path($addon . '/Addon/info.php');
+            $addon_icon = asset('public/assets/admin/img/6m-logo.png');
             ?>
             <div class="col-6 col-md-4 col-xxl-3">
                 <div class="card theme-card">
@@ -216,8 +217,8 @@
                     <div class="p-2 p-sm-3">
                         <div class="aspect-ration-3:2 border border-color-primary-light radius-10">
                             <img class="img-fit radius-10 onerror-image"
-                            data-onerror-image="{{asset('public/assets/admin/img/placeholder.png')}}"
-                                src="{{asset($addon.'/public/addon.png')}}">
+                            data-onerror-image="{{ $addon_icon }}"
+                                src="{{ $addon_icon }}" alt="{{ $data['name'] }}">
                         </div>
                     </div>
                 </div>
