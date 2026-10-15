@@ -68,7 +68,7 @@ class AddonController extends Controller
             Toastr::info(translate('messages.update_option_is_disable_for_demo'));
             return back();
         }
-        $full_data = include($request['path'] . '/Addon/info.php');
+        $full_data = include base_path($request['path'] . '/Addon/info.php');
         $full_data['is_published'] = $full_data['is_published'] ? 0 : 1;
         $str = "<?php return " . var_export($full_data, true) . ";";
         file_put_contents(base_path($request['path'] . '/Addon/info.php'), $str);
