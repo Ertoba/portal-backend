@@ -106,7 +106,12 @@ class ConfigController extends BaseApiController
             'has_active_sms' => $this->settingService->hasActiveSmsGateway(),
             'maintenance_mode' => $this->dataSettingService->getMaintenanceMode(),
             'policy_statuses' => $policyStatuses,
+            // Some MILI installs have the Rental addon published before its optional
+            // VehicleService class is present. Config must remain available to every
+            // app in that state; rental pricing can safely use zero defaults until the
+            // service package is installed.
             'vehicle_minimums' => addon_published_status('Rental')
+                && class_exists(VehicleService::class)
                 ? app(VehicleService::class)->getMinimumPrices()
                 : ['distance' => 0, 'hourly' => 0, 'day_wise' => 0],
             'system_tax' => addon_published_status('TaxModule') && class_exists(SystemTaxSetup::class)
