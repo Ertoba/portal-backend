@@ -954,7 +954,7 @@ class OrderLogic
         }
 
         $parcelCancellation->save();
-        Helpers::send_order_notification($order);
+        app(Helpers::class)->send_order_notification($order);
 
         return ['status_code' => 200, 'code' => $code, 'message' => $msg];
     }

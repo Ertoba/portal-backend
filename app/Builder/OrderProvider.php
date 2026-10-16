@@ -27,7 +27,7 @@ class OrderProvider implements OrderProviderContract
         'confirmed'               => 'On the way',
         'accepted'                => 'On the way',
         'processing'              => 'On the way',
-        'handover'                => 'On the way',
+        'handover'                => 'Ready for delivery',
         'picked_up'               => 'On the way',
         'delivered'               => 'Delivered',
         'canceled'                => 'Canceled',

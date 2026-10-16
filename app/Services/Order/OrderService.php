@@ -1906,6 +1906,17 @@ class OrderService extends BaseService
             return ['status_code' => 403, 'code' => 'order-confirmation-model', 'message' => translate('messages.Order confirmation warning')];
         }
 
+        // Deliveryman Confirmation requires rider acceptance before preparation
+        // or handover; otherwise the customer is told the courier is en route
+        // while no courier is assigned.
+        if (in_array($data['status'] ?? null, ['processing', 'handover'], true)
+            && ! $store->sub_self_delivery
+            && BusinessRules::deliverymanConfirmsOrder()
+            && $order->order_type !== 'take_away' && ! $order->is_pos
+            && ! $order->delivery_man_id) {
+            return ['status_code' => 403, 'code' => 'order-confirmation-model', 'message' => translate('messages.Order confirmation warning')];
+        }
+
         if ($order->picked_up !== null) {
             return ['status_code' => 403, 'code' => 'status', 'message' => translate('messages.You can not change status after picked up by delivery man')];
         }

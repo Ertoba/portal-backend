@@ -499,7 +499,7 @@ class VendorController extends Controller
         }
         $order[$request['status']] = now();
         $order->save();
-        Helpers::send_order_notification($order);
+        app(Helpers::class)->send_order_notification($order);
 
         return response()->json(['message' => 'Status updated'], 200);
     }

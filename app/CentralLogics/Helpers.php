@@ -3912,7 +3912,7 @@ class Helpers
                     ],
                     "android" => [
                         "notification" => [
-                            "channelId" => '6ammart',
+                            "channelId" => 'mili_order_notifications',
                         ]
                     ],
                     "apns" => [
@@ -3977,7 +3977,7 @@ class Helpers
                         ],
                         "android" => [
                             "notification" => [
-                                "channelId" => '6ammart',
+                                "channelId" => 'mili_order_notifications',
                             ]
                         ],
                         "apns" => [
@@ -4009,7 +4009,7 @@ class Helpers
                         ],
                         "android" => [
                             "notification" => [
-                                "channelId" => '6ammart',
+                                "channelId" => 'mili_order_notifications',
                             ]
                         ],
                         "apns" => [
@@ -4055,13 +4055,13 @@ class Helpers
                     'translations' => function ($query) use ($lang) {
                         $query->where('locale', $lang);
                     }
-                ])->where('module_type', $module_type)->where('key', 'out_for_delivery_message')->first();
+                ])->where('module_type', $module_type)->where('key', 'order_handover_message')->first();
             } elseif ($status == 'handover') {
                 $data = NotificationMessage::with([
                     'translations' => function ($query) use ($lang) {
                         $query->where('locale', $lang);
                     }
-                ])->where('module_type', $module_type)->where('key', 'order_handover_message')->first();
+                ])->where('module_type', $module_type)->where('key', 'out_for_delivery_message')->first();
             } elseif ($status == 'delivered') {
                 $data = NotificationMessage::with([
                     'translations' => function ($query) use ($lang) {

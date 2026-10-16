@@ -1189,7 +1189,7 @@ trait PlaceNewOrder
                 if ($store?->is_valid_subscription == 1 && $store?->store_sub?->max_order != "unlimited" && $store?->store_sub?->max_order > 0) {
                     $store?->store_sub?->decrement('max_order', 1);
                 }
-                Helpers::send_order_notification($order);
+                app(Helpers::class)->send_order_notification($order);
 
                 $email = $order->is_guest == 1 ? $request->contact_person_email : $request->user?->email;
                 $name = $order->is_guest == 1 ? $request->contact_person_name : $request->user?->f_name;

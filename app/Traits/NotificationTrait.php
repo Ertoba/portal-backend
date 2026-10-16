@@ -56,7 +56,7 @@ trait NotificationTrait
                     ],
                     "android" => [
                         "notification" => [
-                            "channelId" => '6ammart',
+                            "channelId" => 'mili_order_notifications',
                         ]
                     ],
                     "apns" => [
@@ -88,7 +88,7 @@ trait NotificationTrait
                     ],
                     "android" => [
                         "notification" => [
-                            "channelId" => '6ammart',
+                            "channelId" => 'mili_order_notifications',
                         ]
                     ],
                     "apns" => [
@@ -160,7 +160,7 @@ trait NotificationTrait
                 ],
                 "android" => [
                     "notification" => [
-                        "channelId" => '6ammart',
+                        "channelId" => 'mili_order_notifications',
                     ]
                 ],
                 "apns" => [

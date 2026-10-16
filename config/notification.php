@@ -86,7 +86,7 @@ return [
         'timeout' => 10,
         'batch_size' => 500,
         'prune_dead_tokens' => true,
-        'android_channel' => env('FCM_ANDROID_CHANNEL', '6ammart'),
+        'android_channel' => env('FCM_ANDROID_CHANNEL', 'mili_order_notifications'),
         'sound' => 'notification.wav',
     ],
 

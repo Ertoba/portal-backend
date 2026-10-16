@@ -98,7 +98,7 @@ class FcmMessage
         if ($this->withAndroid) {
             $message['android'] = [
                 'notification' => [
-                    'channelId' => $this->androidChannel ?? (string) config('notification.fcm.android_channel', '6ammart'),
+                    'channelId' => $this->androidChannel ?? (string) config('notification.fcm.android_channel', 'mili_order_notifications'),
                 ],
             ];
         }

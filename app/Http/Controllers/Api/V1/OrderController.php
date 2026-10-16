@@ -525,7 +525,7 @@ class OrderController extends Controller
             $order?->store ?
             Helpers::increment_order_count($order?->store) : '';
 
-            Helpers::send_order_notification($order);
+            app(Helpers::class)->send_order_notification($order);
             return response()->json(['message' => translate('messages.order_canceled_successfully')], 200);
         }
         return response()->json([
@@ -658,7 +658,7 @@ class OrderController extends Controller
             $address = json_decode($order->delivery_address, true);
 
             try {
-                Helpers::send_order_notification($order);
+                app(Helpers::class)->send_order_notification($order);
 
                 if ($order->is_guest == 0 && config('mail.status') && $order_mail_status == '1' && $order->customer && Helpers::getNotificationStatusData('customer', 'customer_order_notification', 'mail_status')) {
                     Mail::to($order->customer?->getRawOriginal('email'))->send(new PlaceOrder($order->id));
@@ -864,7 +864,7 @@ class OrderController extends Controller
 
 
         } else {
-            Helpers::send_order_notification($order);
+            app(Helpers::class)->send_order_notification($order);
         }
 
 

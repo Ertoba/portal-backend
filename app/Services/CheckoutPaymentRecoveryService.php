@@ -295,7 +295,7 @@ class CheckoutPaymentRecoveryService
         }
 
         try {
-            Helpers::send_order_notification($order);
+            app(Helpers::class)->send_order_notification($order);
         } catch (Throwable $exception) {
             Log::warning('Recovered COD order notification failed', [
                 'order_id' => $order->id,
