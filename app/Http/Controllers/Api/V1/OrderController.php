@@ -525,7 +525,9 @@ class OrderController extends Controller
             $order?->store ?
             Helpers::increment_order_count($order?->store) : '';
 
-            app(Helpers::class)->send_order_notification($order);
+            if (!$request->boolean('silent_payment_replacement')) {
+                app(Helpers::class)->send_order_notification($order);
+            }
             return response()->json(['message' => translate('messages.order_canceled_successfully')], 200);
         }
         return response()->json([

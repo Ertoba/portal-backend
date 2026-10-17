@@ -632,7 +632,13 @@ trait PlaceNewOrder
                     orderTaxIds: $orderTaxIds,
                 );
             }
-            if (!isset($request->is_buy_now) || (isset($request->is_buy_now) && $request->is_buy_now == 0)) {
+            $preserveCartForPaymentRetry = $request->boolean('preserve_cart_for_payment_retry')
+                && $request->payment_method === 'digital_payment'
+                && (int) ($request->is_buy_now ?? 0) === 0
+                && $order->payment_status !== 'paid';
+
+            if (!$preserveCartForPaymentRetry
+                && (!isset($request->is_buy_now) || (isset($request->is_buy_now) && $request->is_buy_now == 0))) {
                 foreach ($carts ?? [] as $cart) {
                     $cart?->delete();
                 }
