@@ -55,10 +55,11 @@ class NotificationController extends BaseController
     {
         $notification = $this->notificationRepo->add(data: $this->notificationService->getAddData($request->all()));
         $notification->image = $notification->image ? $notification->toArray()['image_full_url'] :'';
+        $payload = $notification->toArray();
 
         try {
             foreach ($this->notificationService->getTopics($request->all()) as $topic) {
-                SendNotification::pushToTopic($notification, $topic, 'push_notification');
+                SendNotification::pushToTopic($payload, $topic, 'push_notification');
             }
         } catch (Exception) {
             Toastr::warning(translate('messages.Push notification failed'));
@@ -79,10 +80,11 @@ class NotificationController extends BaseController
 
         $notification = $this->notificationRepo->getFirstWhere(params: ['id' => $id]);
         $notification->image = $notification->image ? $notification->toArray()['image_full_url'] :'';
+        $payload = $notification->toArray();
 
         try {
             foreach ($this->notificationService->getTopics($request->all()) as $topic) {
-                SendNotification::pushToTopic($notification, $topic, 'push_notification');
+                SendNotification::pushToTopic($payload, $topic, 'push_notification');
             }
         } catch (Exception) {
             Toastr::warning(translate('messages.Push notification failed'));
