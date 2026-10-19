@@ -110,6 +110,17 @@
         reader.readAsDataURL(file);
     });
 
+    // The legacy confirmation layer can be absent or fail before it creates
+    // the AJAX request. A valid form must still be able to use the server's
+    // normal POST flow directly from Save & Send.
+    $(document).on("click", "#notification button[type='submit']", function (event) {
+        event.preventDefault();
+        var form = document.getElementById("notification");
+        if (form && form.reportValidity()) {
+            HTMLFormElement.prototype.submit.call(form);
+        }
+    });
+
     $(document).on("click", "#image-input-wrap .remove_btn", function () {
         paintImage("");
     });
