@@ -15,8 +15,8 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection as SupportCollection;
-use Modules\Rental\Services\Cart\RentalCartService;
-use Modules\Rental\Services\Cart\RentalCartUserDataService;
+use Modules\Rental\Entities\RentalCart;
+use Modules\Rental\Entities\RentalCartUserData;
 
 class CartService extends BaseService
 {
@@ -127,16 +127,16 @@ class CartService extends BaseService
             return;
         }
 
-        if (app(RentalCartService::class)->guestRowsExist($guestId)) {
-            app(RentalCartService::class)->deleteForUser($userId);
+        if (RentalCart::where(['user_id' => $guestId, 'is_guest' => 1])->exists()) {
+            RentalCart::where(['user_id' => $userId, 'is_guest' => 0])->delete();
         }
 
-        if (app(RentalCartUserDataService::class)->guestRowsExist($guestId)) {
-            app(RentalCartUserDataService::class)->deleteForUser($userId);
+        if (RentalCartUserData::where(['user_id' => $guestId, 'is_guest' => 1])->exists()) {
+            RentalCartUserData::where(['user_id' => $userId, 'is_guest' => 0])->delete();
         }
 
-        app(RentalCartService::class)->transferGuestRows($guestId, $userId);
-        app(RentalCartUserDataService::class)->transferGuestRows($guestId, $userId);
+        RentalCart::where('user_id', $guestId)->update(['user_id' => $userId, 'is_guest' => 0]);
+        RentalCartUserData::where('user_id', $guestId)->update(['user_id' => $userId, 'is_guest' => 0]);
     }
 
     public function clear(array $filters): bool
