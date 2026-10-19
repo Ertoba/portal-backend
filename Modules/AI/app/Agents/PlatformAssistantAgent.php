@@ -4,6 +4,10 @@ namespace Modules\AI\app\Agents;
 
 use Modules\AI\app\Agents\Tools\AddToCartTool;
 use Modules\AI\app\Agents\Tools\GetBestDealsTool;
+use Modules\AI\app\Agents\Tools\GetBogoOfferDetailsTool;
+use Modules\AI\app\Agents\Tools\GetBogoOffersTool;
+use Modules\AI\app\Agents\Tools\GetBundlesTool;
+use Modules\AI\app\Agents\Tools\GetHappyHourTool;
 use Modules\AI\app\Agents\Tools\GetAvailableLanguagesTool;
 use Modules\AI\app\Agents\Tools\GetCartItemsTool;
 use Modules\AI\app\Agents\Tools\GetCategoriesTool;
@@ -20,6 +24,9 @@ use Modules\AI\app\Agents\Tools\GetRideVehicleTypesTool;
 use Modules\AI\app\Agents\Tools\EstimateRideFareTool;
 use Modules\AI\app\Agents\Tools\GetMyTripsTool;
 use Modules\AI\app\Agents\Tools\GetStoreDetailsTool;
+use Modules\AI\app\Agents\Tools\GetServiceCategoriesTool;
+use Modules\AI\app\Agents\Tools\GetServiceProvidersTool;
+use Modules\AI\app\Agents\Tools\GetServicesTool;
 use Modules\AI\app\Agents\Tools\RemoveFromCartTool;
 use Modules\AI\app\Agents\Tools\SearchProductsTool;
 use Modules\AI\app\Agents\Tools\SearchStoresTool;
@@ -263,6 +270,10 @@ INSTRUCTIONS;
             new SearchProductsTool($this->context, $this->moduleId, $this->zoneIds),
             new GetPopularItemsTool($this->context, $this->moduleId, $this->zoneIds),
             new GetBestDealsTool($this->context, $this->moduleId, $this->zoneIds),
+            new GetBogoOffersTool($this->context, $this->moduleId, $this->zoneIds, $this->user, $this->guestId),
+            new GetBogoOfferDetailsTool($this->context, $this->moduleId, $this->zoneIds, $this->user, $this->guestId),
+            new GetBundlesTool($this->context, $this->moduleId, $this->zoneIds),
+            new GetHappyHourTool($this->context, $this->moduleId, $this->zoneIds, $this->latitude, $this->longitude),
             new SearchStoresTool($this->context, $this->moduleId, $this->zoneIds, $this->latitude, $this->longitude, $this->user),
             new GetStoreDetailsTool($this->context, $this->moduleId, $this->zoneIds),
             new GetPlatformInfoTool($this->context),
@@ -284,6 +295,11 @@ INSTRUCTIONS;
             $tools[] = new GetRentalVehiclesTool($this->context, $this->moduleId, $this->zoneIds);
             $tools[] = new GetRentalCategoriesTool($this->context);
             $tools[] = new GetRentalProvidersTool($this->context, $this->moduleId, $this->zoneIds);
+        }
+        if ($this->moduleType === 'service' && service_addon_active()) {
+            $tools[] = new GetServicesTool($this->context, $this->moduleId, $this->zoneIds);
+            $tools[] = new GetServiceCategoriesTool($this->context, $this->moduleId);
+            $tools[] = new GetServiceProvidersTool($this->context, $this->moduleId, $this->zoneIds);
         }
         if ($this->moduleType === 'ride-share') {
             $tools[] = new GetRideVehicleTypesTool($this->context, $this->zoneIds);
