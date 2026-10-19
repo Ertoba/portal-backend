@@ -655,6 +655,7 @@
 @push('script_2')
     @php($notificationFormConfig = [
         'submitUrl' => route('admin.notification.store'),
+        'historyUrl' => route('admin.notification.add-new'),
         'updateUrl' => route('admin.notification.update', '__id__'),
         'successMessage' => translate('messages.Notification sent successfully'),
         'confirmImage' => asset('public/assets/admin/img/off-danger.png'),

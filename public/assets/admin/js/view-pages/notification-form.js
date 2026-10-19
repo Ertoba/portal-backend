@@ -146,6 +146,14 @@
             return false;
         }
 
+        // Keep sending functional even if an optional SweetAlert bundle was
+        // not loaded by the admin layout. The native form request reaches the
+        // same validated endpoint and is preferable to a silent no-op.
+        if (!window.Swal || typeof window.Swal.fire !== "function") {
+            form.submit();
+            return false;
+        }
+
         Swal.fire({
             title: lang.confirmTitle,
             text: lang.confirmText + ": " + $.trim(selectedTarget().data("label") || ""),
