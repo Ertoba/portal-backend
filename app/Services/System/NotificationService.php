@@ -10,6 +10,7 @@ use App\Services\System\UserNotificationService;
 use Carbon\Carbon;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use App\Support\Storage\FileStorage;
 
 class NotificationService extends BaseService
@@ -115,6 +116,28 @@ class NotificationService extends BaseService
         ];
 
         return ($input['zone'] ?? null) == 'all'?$topicAllZone[($input['tergat'] ?? null)]:$topicZoneWise[($input['tergat'] ?? null)];
+    }
+
+    /**
+     * Customer apps subscribe to the legacy zone topic and, since V4.2, to a
+     * zone+module topic. Keep the legacy topic for older installs and fan out
+     * the admin broadcast to every module served by the selected zone(s).
+     */
+    public function getTopics(array $input): array
+    {
+        $legacy = $this->getTopic($input);
+        if (($input['tergat'] ?? null) !== 'customer') {
+            return [$legacy];
+        }
+
+        $moduleTopics = DB::table('module_zone')
+            ->when(($input['zone'] ?? null) !== 'all', fn ($query) => $query->where('zone_id', $input['zone']))
+            ->get(['zone_id', 'module_id'])
+            ->filter(fn ($row) => $row->zone_id !== null && $row->module_id !== null)
+            ->map(fn ($row) => "zone_{$row->zone_id}_module_{$row->module_id}_customer")
+            ->all();
+
+        return array_values(array_unique(array_merge([$legacy], $moduleTopics)));
     }
     public function getServicemanFeed(?int $zoneId, mixed $servicemanId, int $recentDays = self::SERVICEMAN_RECENT_DAYS): Collection
     {
