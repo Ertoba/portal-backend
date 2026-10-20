@@ -51,7 +51,7 @@ class NotificationController extends BaseController
         return view(NotificationViewPath::INDEX[VIEW], compact('notifications','zones','target'));
     }
 
-    public function add(NotificationAddRequest $request): JsonResponse
+    public function add(NotificationAddRequest $request): JsonResponse|RedirectResponse
     {
         $notification = $this->notificationRepo->add(data: $this->notificationService->getAddData($request->all()));
         $notification->image = $notification->image ? $notification->toArray()['image_full_url'] :'';
@@ -65,7 +65,13 @@ class NotificationController extends BaseController
             Toastr::warning(translate('messages.Push notification failed'));
         }
 
-        return response()->json();
+        if ($request->expectsJson()) {
+            return response()->json();
+        }
+
+        return redirect()
+            ->route('admin.notification.add-new')
+            ->with('success', translate('messages.Notification sent successfully'));
     }
 
     public function getUpdateView(string|int $id): RedirectResponse
