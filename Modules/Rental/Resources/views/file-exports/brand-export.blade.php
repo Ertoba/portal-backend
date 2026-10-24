@@ -1,16 +1,16 @@
 
 <div class="row">
-    <div class="col-lg-12 text-center "><h1 > {{translate('Brand_List')}}
+    <div class="col-lg-12 text-center "><h1 > {{translate('Brand list')}}
     </h1></div>
     <div class="col-lg-12">
 
     <table>
         <thead>
             <tr>
-                <th>{{ translate('Filter_Criteria') }}</th>
+                <th>{{ translate('Filter criteria') }}</th>
                 <th></th>
                 <th>
-                    {{ translate('Search_Bar_Content')  }}: {{ $data['search'] ?? translate('N/A') }}
+                    {{ translate('Search bar content')  }}: {{ $data['search'] ?? translate('N/A') }}
 
                 </th>
                 <th> </th>
@@ -18,9 +18,9 @@
 
 
         <tr>
-            <th>{{ translate('sl') }}</th>
-            <th>{{ translate('Brand_Name') }}</th>
-            <th>{{ translate('Brand_ID') }}</th>
+            <th>{{ translate('SL') }}</th>
+            <th>{{ translate('Brand name') }}</th>
+            <th>{{ translate('Brand ID') }}</th>
             <th>{{ translate('Status') }}</th>
 
         </thead>

@@ -1,47 +1,46 @@
 <div class="d-flex flex-wrap justify-content-between align-items-center tabs-slide-wrap position-relative mb-2 __gap-12px">
     <div class="js-nav-scroller hs-nav-scroller-horizontal mt-2">
-        <!-- Nav -->
         <ul class="nav nav-tabs tabs-inner border-0 nav--tabs nav--pills">
             <li class="nav-item tabs-slide_items">
                 <a class="nav-link {{ Request::is('admin/business-settings/rental-email-setup/provider/registration') ? 'active' : '' }}"
                 href="{{ route('admin.business-settings.rental-email-setup', ['provider','registration']) }}">
-                    {{translate('New Provider Registration')}}
+                    {{translate('New provider registration')}}
                 </a>
             </li>
             <li class="nav-item tabs-slide_items">
                 <a class="nav-link {{ Request::is('admin/business-settings/rental-email-setup/provider/approve') ? 'active' : '' }}"
                 href="{{ route('admin.business-settings.rental-email-setup', ['provider','approve']) }}">
-                    {{translate('New_Provider_Approval')}}
+                    {{translate('New Provider Approval')}}
                 </a>
             </li>
             <li class="nav-item tabs-slide_items">
                 <a class="nav-link {{ Request::is('admin/business-settings/rental-email-setup/provider/deny') ? 'active' : '' }}"
                 href="{{ route('admin.business-settings.rental-email-setup', ['provider','deny']) }}">
-                    {{translate('New_Provider_Rejection')}}
+                    {{translate('New Provider Rejection')}}
                 </a>
             </li>
             <li class="nav-item tabs-slide_items">
                 <a class="nav-link {{ Request::is('admin/business-settings/rental-email-setup/provider/suspend') ? 'active' : '' }}"
                 href="{{ route('admin.business-settings.rental-email-setup', ['provider','suspend']) }}">
-                    {{translate('Account_Suspend')}}
+                    {{translate('Account Suspend')}}
                 </a>
             </li>
             <li class="nav-item tabs-slide_items">
                 <a class="nav-link {{ Request::is('admin/business-settings/rental-email-setup/provider/unsuspend') ? 'active' : '' }}"
                 href="{{ route('admin.business-settings.rental-email-setup', ['provider','unsuspend']) }}">
-                    {{translate('Account_Unsuspend')}}
+                    {{translate('Account Unsuspend')}}
                 </a>
             </li>
             <li class="nav-item tabs-slide_items">
                 <a class="nav-link {{ Request::is('admin/business-settings/rental-email-setup/provider/withdraw-approve') ? 'active' : '' }}"
                 href="{{ route('admin.business-settings.rental-email-setup', ['provider','withdraw-approve']) }}">
-                    {{translate('Withdraw_Approval')}}
+                    {{translate('Withdraw Approval')}}
                 </a>
             </li>
             <li class="nav-item tabs-slide_items">
                 <a class="nav-link {{ Request::is('admin/business-settings/rental-email-setup/provider/withdraw-deny') ? 'active' : '' }}"
                 href="{{ route('admin.business-settings.rental-email-setup', ['provider','withdraw-deny']) }}">
-                    {{translate('Withdraw_Rejection')}}
+                    {{translate('Withdraw Rejection')}}
                 </a>
             </li>
 
@@ -49,36 +48,35 @@
             <li class="nav-item tabs-slide_items">
                 <a class="nav-link {{ Request::is('admin/business-settings/rental-email-setup/provider/subscription-successful') ? 'active' : '' }}"
                 href="{{ route('admin.business-settings.rental-email-setup', ['provider','subscription-successful']) }}">
-                    {{translate('Subscription_Successful')}}
+                    {{translate('Subscription successful')}}
                 </a>
             </li>
             <li class="nav-item tabs-slide_items">
                 <a class="nav-link {{ Request::is('admin/business-settings/rental-email-setup/provider/subscription-renew') ? 'active' : '' }}"
                 href="{{ route('admin.business-settings.rental-email-setup', ['provider','subscription-renew']) }}">
-                    {{translate('Subscription_Renew')}}
+                    {{translate('Subscription Renew')}}
                 </a>
             </li>
             <li class="nav-item tabs-slide_items">
                 <a class="nav-link {{ Request::is('admin/business-settings/rental-email-setup/provider/subscription-shift') ? 'active' : '' }}"
                 href="{{ route('admin.business-settings.rental-email-setup', ['provider','subscription-shift']) }}">
-                    {{translate('Subscription_Shift')}}
+                    {{translate('Subscription Shift')}}
                 </a>
             </li>
             <li class="nav-item tabs-slide_items">
                 <a class="nav-link {{ Request::is('admin/business-settings/rental-email-setup/provider/subscription-cancel') ? 'active' : '' }}"
                 href="{{ route('admin.business-settings.rental-email-setup', ['provider','subscription-cancel']) }}">
-                    {{translate('Subscription_Cancel')}}
+                    {{translate('Subscription Cancel')}}
                 </a>
             </li>
             <li class="nav-item tabs-slide_items">
                 <a class="nav-link {{ Request::is('admin/business-settings/rental-email-setup/provider/subscription-plan_upadte') ? 'active' : '' }}"
                 href="{{ route('admin.business-settings.rental-email-setup', ['provider','subscription-plan_upadte']) }}">
-                    {{translate('Subscription_Plan_Upadte')}}
+                    {{translate('Subscription Plan Upadte')}}
                 </a>
             </li>
             @endif
         </ul>
-        <!-- End Nav -->
     </div>
     <div class="arrow-area">
         <div class="button-prev align-items-center">

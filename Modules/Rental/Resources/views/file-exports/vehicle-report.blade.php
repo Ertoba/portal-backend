@@ -1,5 +1,5 @@
 <div class="row">
-    <div class="col-lg-12 text-center "><h1 >{{ translate('vehicle_report') }}</h1></div>
+    <div class="col-lg-12 text-center "><h1 >{{ translate('Vehicle report') }}</h1></div>
     <div class="col-lg-12">
 
 
@@ -7,13 +7,13 @@
     <table>
         <thead>
             <tr>
-                <th>{{ translate('Search_Criteria') }}</th>
+                <th>{{ translate('Search criteria') }}</th>
                 <th></th>
                 <th></th>
                 <th>
-                    {{ translate('zone' )}} - {{ $data['zone']??translate('all') }}
+                    {{ translate('Zone' )}} - {{ $data['zone']??translate('All') }}
                     <br>
-                    {{ translate('provider' )}} - {{ $data['provider']??translate('all') }}
+                    {{ translate('Provider' )}} - {{ $data['provider']??translate('All') }}
                     @if ($data['from'])
                     <br>
                     {{ translate('from' )}} - {{ $data['from']?Carbon\Carbon::parse($data['from'])->format('d M Y'):'' }}
@@ -23,9 +23,9 @@
                     {{ translate('to' )}} - {{ $data['to']?Carbon\Carbon::parse($data['to'])->format('d M Y'):'' }}
                     @endif
                     <br>
-                    {{ translate('filter')  }}- {{  translate($data['filter']) }}
+                    {{ translate('Filter')  }}- {{  translate($data['filter']) }}
                     <br>
-                    {{ translate('Search_Bar_Content')  }}- {{ $data['search'] ??translate('N/A') }}
+                    {{ translate('Search bar content')  }}- {{ $data['search'] ??translate('N/A') }}
 
                 </th>
                 <th> </th>
@@ -34,20 +34,20 @@
                 <th></th>
                 </tr>
         <tr>
-            <th>{{ translate('sl') }}</th>
-            <th>{{translate('messages.vehicle_image')}}</th>
-            <th>{{translate('messages.Vehicle Info')}}</th>
-            <th>{{translate('messages.provider')}}</th>
-            <th>{{translate('messages.hourly_rate')}}</th>
-            <th>{{translate('messages.distance_wise_rate')}}</th>
-            <th>{{translate('messages.day_wise_rate')}}</th>
-            <th>{{translate('messages.total_trip_count')}}</th>
-            <th>{{translate('messages.total_trip_vehicles')}}</th>
-            <th>{{translate('messages.total_trip_amount')}}</th>
-            <th>{{translate('messages.total_discount_given')}}</th>
-            <th>{{translate('messages.Average Trip Value')}}</th>
-            <th>{{translate('messages.total_reviews')}}</th>
-            <th>{{translate('messages.average_ratings')}}</th>
+            <th>{{ translate('SL') }}</th>
+            <th>{{translate('messages.Vehicle image')}}</th>
+            <th>{{translate('Vehicle information')}}</th>
+            <th>{{translate('messages.Provider')}}</th>
+            <th>{{translate('messages.Hourly rate')}}</th>
+            <th>{{translate('messages.Distance wise rate')}}</th>
+            <th>{{translate('messages.Day wise rate')}}</th>
+            <th>{{translate('messages.Total trip count')}}</th>
+            <th>{{translate('messages.Total trip vehicles')}}</th>
+            <th>{{translate('Total trip amount')}}</th>
+            <th>{{translate('Total discount given')}}</th>
+            <th>{{translate('Average trip value')}}</th>
+            <th>{{translate('messages.Total reviews')}}</th>
+            <th>{{translate('messages.Average ratings')}}</th>
         </thead>
         <tbody>
         @foreach($data['vehicles'] as $key => $vehicle)
@@ -59,7 +59,7 @@
                     @if($vehicle->provider)
                     {{ $vehicle->provider->name }}
                     @else
-                    {{translate('messages.provider_deleted')}}
+                    {{translate('messages.Provider deleted')}}
                     @endif
                 </td>
                 <td>

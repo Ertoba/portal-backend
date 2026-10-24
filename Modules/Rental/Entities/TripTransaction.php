@@ -6,13 +6,13 @@ use App\Models\Zone;
 use App\Models\Store;
 use App\Models\Module;
 use App\Models\Vendor;
-use App\Traits\ReportFilter;
+use App\Traits\Report\ReportFilterTrait;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class TripTransaction extends Model
 {
-    use HasFactory, ReportFilter;
+    use HasFactory, ReportFilterTrait;
 
     protected $guarded = ['id'];
     protected $casts = [

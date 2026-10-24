@@ -1,45 +1,33 @@
 @extends('layouts.vendor.app')
 
-@section('title',translate('Edit Role'))
+@section('title',translate('Edit role'))
 
 @section('content')
 <div class="content container-fluid">
 
-    <!-- Page Heading -->
     <div class="page-header">
         <h1 class="page-header-title">
             <span class="page-header-icon">
                 <img src="{{asset('public/assets/admin/img/edit.png')}}" class="w--26" alt="">
             </span>
             <span>
-                {{translate('messages.edit_role')}}
+                {{translate('Edit role')}}
             </span>
         </h1>
+        <p class="page-header-desc">{{ translate('Change what this role can reach. Employees holding it are updated at once.') }}</p>
     </div>
-    <!-- Page Heading -->
 
-    <!-- Content Row -->
     <div class="card">
-        <div class="card-header">
-            <h5 class="card-title">
-                <span class="card-header-icon">
-                    <i class="tio-document-text-outlined"></i>
-                </span>
-                <span>{{translate('messages.role_form')}}</span>
-            </h5>
-        </div>
         <div class="card-body">
             <form action="{{route('vendor.custom-role.update-role',[$role['id']])}}" method="post">
                 @csrf
-                @php($language=\App\Models\BusinessSetting::where('key','language')->first())
-                @php($language = $language->value ?? null)
-                @php($defaultLang = str_replace('_', '-', app()->getLocale()))
+                @php($language = \App\CentralLogics\Helpers::get_business_settings('language', false) ?? null)
                 @if($language)
                     <ul class="nav nav-tabs mb-4">
                         <li class="nav-item">
                             <a class="nav-link lang_link active"
                             href="#"
-                            id="default-link">{{translate('messages.default')}}</a>
+                            id="default-link">{{translate('Default')}}</a>
                         </li>
                         @foreach (json_decode($language) as $lang)
                             <li class="nav-item">
@@ -51,8 +39,8 @@
                     </ul>
                     <div class="lang_form" id="default-form">
                         <div class="form-group">
-                            <label class="input-label" for="default_title">{{translate('messages.role_name')}} ({{translate('messages.default')}})</label>
-                            <input type="text" name="name[]" id="default_title" class="form-control" placeholder="{{translate('role_name_example')}}" value="{{$role?->getRawOriginal('name')}}"  >
+                            <label class="input-label" for="default_title">{{translate('Role name')}} ({{translate('Default')}})</label>
+                            <input type="text" name="name[]" id="default_title" class="form-control" placeholder="{{translate('Role name example')}}" value="{{$role?->getRawOriginal('name')}}"  >
                         </div>
                         <input type="hidden" name="lang[]" value="default">
                     </div>
@@ -70,8 +58,8 @@
                         ?>
                         <div class="d-none lang_form" id="{{$lang}}-form">
                             <div class="form-group">
-                                <label class="input-label" for="{{$lang}}_title">{{translate('messages.role_name')}} ({{strtoupper($lang)}})</label>
-                                <input type="text" name="name[]" id="{{$lang}}_title" class="form-control" placeholder="{{translate('role_name_example')}}" value="{{$translate[$lang]['name']??''}}"  >
+                                <label class="input-label" for="{{$lang}}_title">{{translate('Role name')}} ({{strtoupper($lang)}})</label>
+                                <input type="text" name="name[]" id="{{$lang}}_title" class="form-control" placeholder="{{translate('Role name example')}}" value="{{$translate[$lang]['name']??''}}"  >
                             </div>
                             <input type="hidden" name="lang[]" value="{{$lang}}">
                         </div>
@@ -79,14 +67,14 @@
                 @else
                 <div id="default-form">
                     <div class="form-group">
-                        <label class="input-label" for="name">{{translate('messages.role_name')}} ({{ translate('messages.default') }})</label>
-                        <input type="text" id="name" name="name[]" class="form-control" placeholder="{{translate('role_name_example')}}" value="{{$role['name']}}" maxlength="100" required>
+                        <label class="input-label" for="name">{{translate('Role name')}} ({{ translate('Default') }})</label>
+                        <input type="text" id="name" name="name[]" class="form-control" placeholder="{{translate('Role name example')}}" value="{{$role['name']}}" maxlength="100" required>
                     </div>
                     <input type="hidden" name="lang[]" value="default">
                 </div>
                 @endif
 
-                <h5>{{translate('messages.module_permission')}} : </h5>
+                <h5>{{translate('messages.Module permission')}} : </h5>
                 <hr>
                 <div class="check--item-wrapper mx-0">
                     <div class="check-item">
@@ -143,7 +131,7 @@
                         <div class="form-group form-check form--check">
                             <input type="checkbox" name="modules[]" value="employee" class="form-check-input"
                                    id="employee" {{in_array('employee',(array)json_decode($role['modules']))?'checked':''}}>
-                            <label class="form-check-label input-label " for="employee">{{translate('messages.Employees')}}</label>
+                            <label class="form-check-label input-label " for="employee">{{translate('Employees')}}</label>
                         </div>
                     </div>
                     <div class="check-item">
@@ -157,27 +145,27 @@
                         <div class="form-group form-check form--check">
                             <input type="checkbox" name="modules[]" value="reviews" class="form-check-input"
                                    id="reviews" {{in_array('reviews',(array)json_decode($role['modules']))?'checked':''}}>
-                            <label class="form-check-label input-label " for="reviews">{{translate('messages.reviews')}}</label>
+                            <label class="form-check-label input-label " for="reviews">{{translate('messages.Reviews')}}</label>
                         </div>
                     </div>
                     <div class="check-item">
                         <div class="form-group form-check form--check">
                             <input type="checkbox" name="modules[]" value="chat" class="form-check-input"
                                    id="chat" {{in_array('chat',(array)json_decode($role['modules']))?'checked':''}}>
-                            <label class="form-check-label input-label " for="chat">{{translate('messages.chat')}}</label>
+                            <label class="form-check-label input-label " for="chat">{{translate('messages.Chat')}}</label>
                         </div>
                     </div>
                     <div class="check-item">
                         <div class="form-group form-check form--check">
                             <input type="checkbox" name="modules[]" value="report" class="form-check-input"
                                    id="report" {{in_array('report',(array)json_decode($role['modules']))?'checked':''}}>
-                            <label class="form-check-label input-label " for="report">{{translate('messages.Report')}}</label>
+                            <label class="form-check-label input-label " for="report">{{translate('messages.report')}}</label>
                         </div>
                     </div>
                 </div>
                 <div class="btn--container justify-content-end mt-4">
-                    <button type="reset" class="btn btn--reset">{{translate('messages.reset')}}</button>
-                    <button type="submit" class="btn btn--primary">{{translate('messages.update')}}</button>
+                    <button type="reset" class="btn btn--reset">{{translate('messages.Reset')}}</button>
+                    <button type="submit" class="btn btn--primary">{{translate('Update')}}</button>
                 </div>
             </form>
         </div>

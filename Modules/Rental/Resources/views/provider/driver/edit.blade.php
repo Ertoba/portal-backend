@@ -1,23 +1,22 @@
 @extends('layouts.vendor.app')
 
-@section('title', translate('messages.Update Driver'))
+@section('title', translate('Update driver'))
 
 @section('content')
     <div class="content container-fluid">
-        <!-- Page Header -->
         <div class="page-header">
             <div class="d-flex justify-content-between flex-wrap gap-3">
                 <div>
                     <h1 class="page-header-title text-break">
                         <span class="page-header-icon">
-                            <img src="{{ asset('public/assets/admin/img/car-logo.png') }}" alt="">
+                            <img src="{{ asset('public/assets/admin/img/outline/car.svg') }}" alt="">
                         </span>
-                        <span>{{ translate('messages.Update Driver') }}
+                        <span>{{ translate('Update driver') }}
                     </h1>
+                    <p class="page-header-desc">{{ translate('Change this driver\'s details, licence or account state.') }}</p>
                 </div>
             </div>
         </div>
-        <!-- End Page Header -->
 
         <form action="" method="post" enctype="multipart/form-data">
             @csrf
@@ -27,7 +26,7 @@
                     <div class="card">
                         <div class="card-header">
                             <h5 class="text-title mb-1">
-                                {{ translate('messages.User_Info') }}
+                                {{ translate('User information') }}
                             </h5>
                         </div>
                         <div class="card-body">
@@ -36,7 +35,7 @@
                                     <div class="form-group">
                                         <label class="input-label"
                                                for="">
-                                            {{ translate('messages.first_name') }}
+                                            {{ translate('First name') }}
                                         </label>
                                         <input type="text" name="first_name" id=""
                                                class="form-control"
@@ -46,7 +45,7 @@
                                     <div class="form-group">
                                         <label class="input-label"
                                                for="">
-                                            {{ translate('messages.last_name') }}
+                                            {{ translate('Last name') }}
                                         </label>
                                         <input type="text" name="last_name" id=""
                                                class="form-control"
@@ -65,20 +64,20 @@
                                     </div>
                                     <div class="form-group mb-0">
                                         <label class="input-label"
-                                               for="phone">{{ translate('messages.phone') }}</label>
+                                               for="phone">{{ translate('Phone') }}</label>
                                         <input type="tel" id="phone" name="phone" class="form-control"
-                                               placeholder="{{ translate('messages.Ex:') }} 017********" value="{{ $driver->phone }}"
+                                               placeholder="{{ translate('messages.Ex') }}: 017********" value="{{ $driver->phone }}"
                                                required>
                                     </div>
                                 </div>
                                 <div class="col-lg-6">
                                     <div class="text-center">
                                         <label class="text--title fs-16 font-semibold mb-1">
-                                            {{ translate('Profile_Image') }}
+                                            {{ translate('Profile image') }}
                                         </label>
                                         <div class="mb-20">
                                             <p class="fs-12">
-                                                {{ translate('JPG, JPEG, PNG Less Than 1MB') }} <strong class="font-semibold">({{ translate('Ratio 1:1') }})</strong>
+                                                {{ 'JPG, JPEG, PNG' . ' image, max ' . 1 . ' MB' }} <strong class="font-semibold">(Ratio 1:1)</strong>
                                             </p>
                                         </div>
                                         <div class="upload-file image-general d-inline-block w-auto">
@@ -110,26 +109,26 @@
                     <div class="card">
                         <div class="card-header">
                             <h5 class="text-title mb-1">
-                                {{ translate('messages.Identity_Info') }}
+                                {{ translate('Identity information') }}
                             </h5>
                         </div>
                         <div class="card-body pb-2">
                             <div class="row g-3">
                                 <div class="col-lg-6">
                                     <div class="form-group mb-0">
-                                        <label class="input-label" for="">{{ translate('messages.Identity_Type') }}</label>
+                                        <label class="input-label" for="">{{ translate('Identity type') }}</label>
                                         <select name="identity_type" class="form-control js-select2-custom" required>
-                                            <option value="" readonly="true" hidden="true"  > {{ translate('messages.select_identity_type') }}</option>
-                                            <option value="passport" {{ $driver->identity_type == 'passport' ? 'selected' : '' }}>{{ translate('messages.passport') }}</option>
-                                            <option value="driving_license" {{ $driver->identity_type == 'driving_license' ? 'selected' : '' }}>{{ translate('messages.driving_license') }} </option>
-                                            <option value="nid" {{ $driver->identity_type == 'nid' ? 'selected' : '' }}>{{ translate('messages.nid') }}</option>
+                                            <option value="" readonly="true" hidden="true"  > {{ translate('messages.Select identity type') }}</option>
+                                            <option value="passport" {{ $driver->identity_type == 'passport' ? 'selected' : '' }}>{{ translate('Passport') }}</option>
+                                            <option value="driving_license" {{ $driver->identity_type == 'driving_license' ? 'selected' : '' }}>{{ translate('messages.Driving license') }} </option>
+                                            <option value="nid" {{ $driver->identity_type == 'nid' ? 'selected' : '' }}>NID</option>
                                         </select>
                                     </div>
                                 </div>
                                 <div class="col-lg-6">
                                     <div class="form-group mb-0">
                                         <label class="input-label"
-                                               for="">{{ translate('messages.Identity_Number') }}</label>
+                                               for="">{{ translate('Identity number') }}</label>
                                         <input type="text" id="" name="identity_number" class="form-control"
                                                placeholder="Ex: 123654789512364" value="{{ $driver->identity_number }}"
                                                required>
@@ -139,16 +138,15 @@
                                     <div class="">
                                         <div>
                                             <label class="form-label font-semibold mb-1">
-                                                {{ translate('Identity Image') }}
+                                                {{ translate('Identity image') }}
                                             </label>
                                             <p class="fs-12 mb-0">
-                                                {{translate('JPG, JPEG, PNG Less Than 1MB')}}
-                                                <strong class="font-semibold">({{translate('Ratio 2:1')}})</strong>
+                                                {{'JPG, JPEG, PNG' . ' image, max ' . 1 . ' MB'}}
+                                                <strong class="font-semibold">(Ratio 2:1)</strong>
                                             </p>
                                         </div>
                                         <div class="d-flex pt-20 pb-2 overflow-x-auto">
                                             <div class="d-flex gap-3 flex-shrink-0" id="image_container">
-                                                <!-- Upload Wrapper for New Files -->
                                                 <div class="upload-file text-wrapper h--100px w--200px flex-shrink-0" id="image_upload_wrapper">
                                                     <input type="file" name="identity_image[]" class="upload-file__input multiple_image_input" accept=".webp, .jpg,.jpeg,.png" multiple>
                                                     <div class="upload-file__img d-flex gap-0 justify-content-center align-items-center h-100 max-w-300px p-0">
@@ -161,7 +159,6 @@
                                                         </div>
                                                     </div>
                                                 </div>
-                                                <!-- Existing Images dynamically loaded here -->
                                                 @foreach($driver['identity_image_full_url'] as $img)
                                                     <div class="image-single h-100 max-w-200px p-0" data-existing="true" data-url="{{ $img }}">
                                                         <a href="javascript:void(0);" class="remove-btn" data-file-name="{{ $img }}">
@@ -181,17 +178,17 @@
                 <div class="col-lg-12">
                     <div class="btn--container justify-content-end mt-20">
                         <button type="reset" id="reset_btn"
-                                class="btn btn--reset min-w-120px shadow-none">{{ translate('messages.reset') }}</button>
+                                class="btn btn--reset min-w-120px shadow-none">{{ translate('messages.Reset') }}</button>
                         <button type="submit"
-                                class="btn btn--primary min-w-120px shadow-none">{{ translate('messages.submit') }}</button>
+                                class="btn btn--primary min-w-120px shadow-none">{{ translate('messages.Submit') }}</button>
                     </div>
                 </div>
             </div>
         </form>
     </div>
-    <input type="hidden" id="file-type-toast" value="{{ translate('please_only_input_png_or_jpg_type_file') }}">
-    <input type="hidden" id="file-size-toast" value="{{ translate('file_size_too_big') }}">
-    <input type="hidden" id="file-max-toast" value="{{ translate('You can upload a maximum of 5 files.') }}">
+    <input type="hidden" id="file-type-toast" value="{{ translate('Please upload a file in a supported format') . ': PNG, JPG' }}">
+    <input type="hidden" id="file-size-toast" value="{{ translate('File size too big') }}">
+    <input type="hidden" id="file-max-toast" value="{{ translate('Maximum files') }}: 5">
 
 @endsection
 

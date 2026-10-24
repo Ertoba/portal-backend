@@ -1,23 +1,22 @@
 @extends('layouts.vendor.app')
 
-@section('title', translate('messages.Add New Driver'))
+@section('title', translate('Add new driver'))
 
 @section('content')
     <div class="content container-fluid">
-        <!-- Page Header -->
         <div class="page-header">
             <div class="d-flex justify-content-between flex-wrap gap-3">
                 <div>
                     <h1 class="page-header-title text-break">
                         <span class="page-header-icon">
-                            <img src="{{ asset('public/assets/admin/img/car-logo.png') }}" alt="{{translate('image')}}">
+                            <img src="{{ asset('public/assets/admin/img/outline/car.svg') }}" alt="{{translate('Image')}}">
                         </span>
-                        <span>{{ translate('messages.Add New Driver') }}
+                        <span>{{ translate('Add new driver') }}
                     </h1>
+                    <p class="page-header-desc">{{ translate('Add a driver and the licence details that let them take your vehicles out.') }}</p>
                 </div>
             </div>
         </div>
-        <!-- End Page Header -->
 
         <form action="" method="post" enctype="multipart/form-data">
             @csrf
@@ -27,7 +26,7 @@
                     <div class="card">
                         <div class="card-header">
                             <h5 class="text-title mb-1">
-                                {{ translate('messages.User_Info') }}
+                                {{ translate('User information') }}
                             </h5>
                         </div>
                         <div class="card-body">
@@ -36,7 +35,7 @@
                                     <div class="form-group">
                                         <label class="input-label"
                                                for="">
-                                            {{ translate('messages.first_name') }}
+                                            {{ translate('First name') }}
                                         </label>
                                         <input type="text" name="first_name" id=""
                                                class="form-control"
@@ -46,7 +45,7 @@
                                     <div class="form-group">
                                         <label class="input-label"
                                                for="">
-                                            {{ translate('messages.last_name') }}
+                                            {{ translate('Last name') }}
                                         </label>
                                         <input type="text" name="last_name" id=""
                                                class="form-control"
@@ -65,20 +64,20 @@
                                     </div>
                                     <div class="form-group mb-0">
                                         <label class="input-label"
-                                               for="phone">{{ translate('messages.phone') }}</label>
+                                               for="phone">{{ translate('Phone') }}</label>
                                         <input type="tel" id="phone" name="phone" class="form-control"
-                                               placeholder="{{ translate('messages.Ex:') }} 017********"
+                                               placeholder="{{ translate('messages.Ex') }}: 017********"
                                                required>
                                     </div>
                                 </div>
                                 <div class="col-lg-6">
                                     <div class="text-center">
                                         <label class="text--title fs-16 font-semibold mb-1">
-                                            {{ translate('Profile_Image') }}
+                                            {{ translate('Profile image') }}
                                         </label>
                                         <div class="mb-20">
                                             <p class="fs-12">
-                                                {{ translate('JPG, JPEG, PNG Less Than 1MB') }} <strong class="font-semibold">({{ translate('Ratio 1:1') }})</strong>
+                                                {{ 'JPG, JPEG, PNG' . ' image, max ' . 1 . ' MB' }} <strong class="font-semibold">(Ratio 1:1)</strong>
                                             </p>
                                         </div>
                                         <div class="upload-file image-general d-inline-block w-auto">
@@ -111,7 +110,7 @@
                     <div class="card">
                         <div class="card-header">
                             <h5 class="text-title mb-1">
-                                {{ translate('messages.Identity_Info') }}
+                                {{ translate('Identity information') }}
                             </h5>
                         </div>
                         <div class="card-body pb-2">
@@ -119,32 +118,32 @@
                                 <div class="col-lg-6">
                                     <div class="form-group mb-0">
                                         <label class="input-label"
-                                               for="">{{ translate('messages.Identity_Type') }}</label>
+                                               for="">{{ translate('Identity type') }}</label>
                                         <select name="identity_type" class="form-control js-select2-custom" required>
-                                            <option value="" readonly="true" hidden="true"  > {{ translate('messages.select_identity_type') }}</option>
-                                            <option value="passport">{{ translate('messages.passport') }}</option>
-                                            <option value="driving_license">{{ translate('messages.driving_license') }} </option>
-                                            <option value="nid">{{ translate('messages.nid') }}</option>
+                                            <option value="" readonly="true" hidden="true"  > {{ translate('messages.Select identity type') }}</option>
+                                            <option value="passport">{{ translate('Passport') }}</option>
+                                            <option value="driving_license">{{ translate('messages.Driving license') }} </option>
+                                            <option value="nid">NID</option>
                                         </select>
                                     </div>
                                 </div>
                                 <div class="col-lg-6">
                                     <div class="form-group mb-0">
                                         <label class="input-label"
-                                               for="">{{ translate('messages.Identity_Number') }}</label>
+                                               for="">{{ translate('Identity number') }}</label>
                                         <input type="text" id="" name="identity_number" class="form-control"
-                                               placeholder="{{translate('Ex: 123654789512364')}}" value=""
+                                               placeholder="{{translate('Ex') . ': 123654789512364'}}" value=""
                                                required>
                                     </div>
                                 </div>
                                 <div class="col-lg-12">
                                     <div>
                                         <label class="form-label font-semibold mb-1">
-                                            {{ translate('Identity Image') }}
+                                            {{ translate('Identity image') }}
                                         </label>
                                         <p class="fs-12 mb-0">
-                                            {{translate('JPG, JPEG, PNG Less Than 1MB')}}
-                                            <strong class="font-semibold">({{translate('Ratio 2:1')}})</strong>
+                                            {{'JPG, JPEG, PNG' . ' image, max ' . 1 . ' MB'}}
+                                            <strong class="font-semibold">(Ratio 2:1)</strong>
                                         </p>
                                     </div>
                                     <div class="d-flex pt-20 pb-2 overflow-x-auto">
@@ -176,9 +175,9 @@
                 <div class="col-lg-12">
                     <div class="btn--container justify-content-end mt-20">
                         <button type="reset" id="reset_btn"
-                                class="btn btn--reset min-w-120px shadow-none">{{ translate('messages.reset') }}</button>
+                                class="btn btn--reset min-w-120px shadow-none">{{ translate('messages.Reset') }}</button>
                         <button type="submit"
-                                class="btn btn--primary min-w-120px shadow-none">{{ translate('messages.submit') }}</button>
+                                class="btn btn--primary min-w-120px shadow-none">{{ translate('messages.Submit') }}</button>
                     </div>
                 </div>
             </div>
@@ -186,9 +185,9 @@
 
 
     </div>
-    <input type="hidden" id="file-type-toast" value="{{ translate('please_only_input_png_or_jpg_type_file') }}">
-    <input type="hidden" id="file-size-toast" value="{{ translate('file_size_too_big') }}">
-    <input type="hidden" id="file-max-toast" value="{{ translate('You can upload a maximum of 5 files.') }}">
+    <input type="hidden" id="file-type-toast" value="{{ translate('Please upload a file in a supported format') . ': PNG, JPG' }}">
+    <input type="hidden" id="file-size-toast" value="{{ translate('File size too big') }}">
+    <input type="hidden" id="file-max-toast" value="{{ translate('Maximum files') }}: 5">
 
 @endsection
 

@@ -3,6 +3,7 @@
 namespace Modules\Rental\Entities;
 
 use App\Models\User;
+use App\Traits\Model\HasStorageTrait;
 use App\Models\Store;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -12,7 +13,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class VehicleReview extends Model
 {
-    use HasFactory;
+    use HasFactory, HasStorageTrait;
 
     protected $guarded = ['id'];
     protected $casts = [
@@ -31,6 +32,11 @@ class VehicleReview extends Model
     public function scopeModule($query, $module_id)
     {
         return $query->where('module_id', $module_id);
+    }
+
+    public function getAttachmentFullUrlAttribute(): array
+    {
+        return $this->attachmentUrls($this->attachment);
     }
 
     /**
@@ -81,6 +87,8 @@ class VehicleReview extends Model
     {
         parent::boot();
         static::saved(function ($review) {
+            self::recordStorageDisk($review, 'attachment', 'attachment');
+
             if($review->review_id == null){
                 $review->review_id = $review->generateReviewId($review->trip_id);
                 $review->save();

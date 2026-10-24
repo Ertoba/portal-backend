@@ -1,32 +1,28 @@
 @extends('layouts.vendor.app')
 
-@section('title',translate('messages.Create_Role'))
+@section('title',translate('Create role'))
 
 @section('content')
 <div class="content container-fluid">
-    <!-- Page Heading -->
     <div class="page-header">
         <h1 class="page-header-title">
             <span class="page-header-icon">
                 <img src="{{asset('public/assets/admin/img/role.png')}}" class="w--26" alt="">
             </span>
             <span>
-                {{translate('messages.custom_role')}}
+                {{translate('messages.Custom role')}}
             </span>
         </h1>
+        <p class="page-header-desc">{{ translate('A role decides which parts of the panel an employee can open.') }}</p>
     </div>
-    <!-- Page Heading -->
-    @php($language=\App\Models\BusinessSetting::where('key','language')->first())
-    @php($language = $language->value ?? null)
-    @php($defaultLang = str_replace('_', '-', app()->getLocale()))
-    <!-- Content Row -->
+    @php($language = \App\CentralLogics\Helpers::get_business_settings('language', false) ?? null)
     <div class="card">
         <div class="card-header">
             <h5 class="card-title">
                 <span class="card-header-icon">
                     <i class="tio-document-text-outlined"></i>
                 </span>
-                <span>{{translate('messages.role_form')}}</span>
+                <span>{{translate('messages.Role form')}}</span>
             </h5>
         </div>
         <div class="card-body">
@@ -37,7 +33,7 @@
                             <li class="nav-item">
                                 <a class="nav-link lang_link active"
                                 href="#"
-                                id="default-link">{{translate('messages.default')}}</a>
+                                id="default-link">{{translate('Default')}}</a>
                             </li>
                             @foreach (json_decode($language) as $lang)
                                 <li class="nav-item">
@@ -48,26 +44,26 @@
                             @endforeach
                         </ul>
                             <div class="form-group lang_form" id="default-form">
-                                <label class="input-label" for="name">{{translate('messages.role_name')}} ({{ translate('messages.default') }})</label>
-                                <input type="text" id="name" name="name[]" class="form-control" placeholder="{{translate('role_name_example')}}" maxlength="191"  >
+                                <label class="input-label" for="name">{{translate('Role name')}} ({{ translate('Default') }})</label>
+                                <input type="text" id="name" name="name[]" class="form-control" placeholder="{{translate('Role name example')}}" maxlength="191"  >
                             </div>
                             <input type="hidden" name="lang[]" value="default">
                                 @foreach(json_decode($language) as $lang)
                                     <div class="form-group d-none lang_form" id="{{$lang}}-form">
-                                        <label class="input-label" for="name{{$lang}}">{{translate('messages.role_name')}} ({{strtoupper($lang)}})</label>
-                                        <input type="text" id="name{{$lang}}" name="name[]" class="form-control" placeholder="{{translate('role_name_example')}}" maxlength="191"  >
+                                        <label class="input-label" for="name{{$lang}}">{{translate('Role name')}} ({{strtoupper($lang)}})</label>
+                                        <input type="text" id="name{{$lang}}" name="name[]" class="form-control" placeholder="{{translate('Role name example')}}" maxlength="191"  >
                                     </div>
                                     <input type="hidden" name="lang[]" value="{{$lang}}">
                                 @endforeach
                             @else
                                 <div class="form-group">
-                                    <label class="input-label" for="name">{{translate('messages.role_name')}}</label>
-                                    <input type="text" id="name" name="name" class="form-control" placeholder="{{translate('role_name_example')}}" value="{{old('name')}}" required maxlength="191">
+                                    <label class="input-label" for="name">{{translate('Role name')}}</label>
+                                    <input type="text" id="name" name="name" class="form-control" placeholder="{{translate('Role name example')}}" value="{{old('name')}}" required maxlength="191">
                                 </div>
                                 <input type="hidden" name="lang[]" value="default">
                             @endif
 
-                <h5 class="text-capitalize">{{translate('messages.module_permission')}} : </h5>
+                <h5 class="text-capitalize">{{translate('messages.Module permission')}} : </h5>
                 <hr>
                 <div class="check--item-wrapper mx-0">
                     <div class="check-item">
@@ -123,7 +119,7 @@
                         <div class="form-group form-check form--check">
                             <input type="checkbox" name="modules[]" value="employee" class="form-check-input"
                                     id="employee">
-                            <label class="form-check-label input-label " for="employee">{{translate('messages.Employees')}}</label>
+                            <label class="form-check-label input-label " for="employee">{{translate('Employees')}}</label>
                         </div>
                     </div>
                     <div class="check-item">
@@ -137,27 +133,27 @@
                         <div class="form-group form-check form--check">
                             <input type="checkbox" name="modules[]" value="reviews" class="form-check-input"
                                     id="reviews">
-                            <label class="form-check-label input-label " for="reviews">{{translate('messages.reviews')}}</label>
+                            <label class="form-check-label input-label " for="reviews">{{translate('messages.Reviews')}}</label>
                         </div>
                     </div>
                     <div class="check-item">
                         <div class="form-group form-check form--check">
                             <input type="checkbox" name="modules[]" value="chat" class="form-check-input"
                                     id="chat">
-                            <label class="form-check-label input-label " for="chat">{{translate('messages.chat')}}</label>
+                            <label class="form-check-label input-label " for="chat">{{translate('messages.Chat')}}</label>
                         </div>
                     </div>
                     <div class="check-item">
                         <div class="form-group form-check form--check">
                             <input type="checkbox" name="modules[]" value="report" class="form-check-input"
                                     id="report">
-                            <label class="form-check-label input-label " for="report">{{translate('messages.Report')}}</label>
+                            <label class="form-check-label input-label " for="report">{{translate('messages.report')}}</label>
                         </div>
                     </div>
                 </div>
                 <div class="btn--container justify-content-end mt-4">
-                    <button type="reset" class="btn btn--reset">{{translate('messages.reset')}}</button>
-                    <button type="submit" class="btn btn--primary">{{translate('messages.submit')}}</button>
+                    <button type="reset" class="btn btn--reset">{{translate('messages.Reset')}}</button>
+                    <button type="submit" class="btn btn--primary">{{translate('messages.Submit')}}</button>
                 </div>
             </form>
         </div>
@@ -171,16 +167,14 @@
                         <i class="tio-document-text-outlined"></i>
                     </span>
                     <span>
-                        {{translate('messages.roles_table')}}<span class="badge badge-soft-dark ml-2" id="itemCount">{{$roles->total()}}</span>
+                        {{translate('messages.Roles table')}}<span class="badge badge-soft-dark ml-2" id="itemCount">{{$roles->total()}}</span>
                     </span>
                 </h5>
                 <form  class="search-form min--250">
-                    <!-- Search -->
                     <div class="input-group input--group">
-                        <input  value="{{request()?->search ?? ''}}" type="search" name="search" class="form-control" placeholder="{{translate('messages.search_role')}}" aria-label="{{translate('messages.search')}}">
+                        <input  value="{{request()?->search ?? ''}}" type="search" name="search" class="form-control" placeholder="{{translate('messages.Search role')}}" aria-label="{{translate('messages.Search')}}">
                         <button type="submit" class="btn btn--secondary"><i class="tio-search"></i></button>
                     </div>
-                    <!-- End Search -->
                 </form>
             </div>
         </div>
@@ -195,11 +189,11 @@
                         }'>
                     <thead class="thead-light">
                         <tr>
-                            <th class="border-0 w-50px">{{translate('messages.sl#')}}</th>
-                            <th class="border-0 w-50px">{{translate('messages.role_name')}}</th>
-                            <th class="border-0 w-100px">{{translate('messages.modules')}}</th>
-                            <th class="border-0 w-50px">{{translate('messages.created_at')}}</th>
-                            <th class="border-0 w-50px text-center">{{translate('messages.action')}}</th>
+                            <th class="border-0 w-50px">{{translate('messages.SL')}}</th>
+                            <th class="border-0 w-50px">{{translate('Role name')}}</th>
+                            <th class="border-0 w-100px">{{translate('Modules')}}</th>
+                            <th class="border-0 w-50px">{{translate('messages.Created at')}}</th>
+                            <th class="border-0 w-50px text-center">{{translate('messages.Action')}}</th>
                         </tr>
                     </thead>
                     <tbody  id="set-rows">
@@ -212,7 +206,7 @@
                                     @foreach((array)json_decode($r['modules']) as $key=>$m)
 
                                     @if ($m == 'bank_info')
-                                    {{translate('messages.profile')}}
+                                    {{translate('messages.Profile')}}
                                     @else
                                     {{translate(str_replace('_',' ',$m))}}
                                     @endif
@@ -226,12 +220,12 @@
                             <td>
                                 @if (auth('vendor_employee')?->user()?->employee_role_id  != $r['id'])
                                     <div class="btn--container justify-content-center">
-                                        <a class="btn action-btn btn--primary btn-outline-primary"
-                                            href="{{route('vendor.custom-role.update-role',$r['id'])}}" title="{{translate('messages.edit_role')}}"><i class="tio-edit"></i>
+                                        <a class="btn action-btn action-btn--edit"
+                                            href="{{route('vendor.custom-role.update-role',$r['id'])}}" title="{{translate('Edit role')}}"><i class="tio-edit"></i>
                                         </a>
-                                        <a class="btn action-btn btn--danger btn-outline-danger form-alert" href="javascript:"
-                                           data-id="role-{{$r['id']}}" data-message="{{translate('messages.Want_to_delete_this_role')}}"
-                                             title="{{translate('messages.delete_role')}}"><i class="tio-delete-outlined"></i>
+                                        <a class="btn action-btn action-btn--delete form-alert" href="javascript:"
+                                           data-id="role-{{$r['id']}}" data-message="{{translate('Want to delete this role?')}}"
+                                             title="{{translate('messages.Delete role')}}"><i class="tio-delete-outlined"></i>
                                         </a>
                                     </div>
                                     <form action="{{route('vendor.custom-role.delete',[$r['id']])}}"
@@ -262,7 +256,7 @@
                 <div class="empty--data">
                     <img src="{{asset('/public/assets/admin/svg/illustrations/sorry.svg')}}" alt="public">
                     <h5>
-                        {{translate('no_data_found')}}
+                        {{translate('No data found')}}
                     </h5>
                 </div>
                 @endif

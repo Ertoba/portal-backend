@@ -6,7 +6,7 @@ foreach ($store->schedules as $schedule)
 }
 ?>
 <div class="schedule-item">
-    <span class="btn">{{translate('messages.monday')}} :</span>
+    <span class="btn">Monday :</span>
     <div class="schedult-date-content">
         @if(isset($data['1']) && count($data['1']))
             <span class="d-inline-flex align-items-center">
@@ -16,7 +16,7 @@ foreach ($store->schedules as $schedule)
                         <i class="tio-time"></i>
                     </span>
                     <span class="info">
-                        <span>{{translate('opening_time')}}</span>
+                        <span>{{translate('Opening time')}}</span>
                         {{date(config('timeformat'), strtotime($day['start_time']))}}
                     </span>
                 </span>
@@ -25,7 +25,7 @@ foreach ($store->schedules as $schedule)
                         <i class="tio-time"></i>
                     </span>
                     <span class="info">
-                        <span>{{translate('closing_time')}}</span>
+                        <span>{{translate('Closing time')}}</span>
                         {{date(config('timeformat'), strtotime($day['end_time']))}}
                     </span>
                 </span>
@@ -35,14 +35,14 @@ foreach ($store->schedules as $schedule)
                 @endforeach
             </span>
         @else
-            <span class="btn btn-sm btn-outline-danger m-1 disabled">{{translate('messages.Offday')}}</span>
+            <span class="btn btn-sm btn-outline-danger m-1 disabled">{{translate('messages.Off day')}}</span>
         @endif
-        <span class="btn add--primary" data-toggle="modal" data-target="#exampleModal" data-dayid="1" data-day="{{translate('messages.monday')}}"><i class="tio-add"></i></span>
+        <span class="btn add--primary" data-toggle="modal" data-target="#exampleModal" data-dayid="1" data-day="Monday"><i class="tio-add"></i></span>
     </div>
 </div>
 
 <div class="schedule-item">
-    <span class="btn">{{translate('messages.tuesday')}} :</span>
+    <span class="btn">Tuesday :</span>
     <div class="schedult-date-content">
     @if(isset($data['2']) && count($data['2']))
             <span class="d-inline-flex align-items-center">
@@ -52,7 +52,7 @@ foreach ($store->schedules as $schedule)
                         <i class="tio-time"></i>
                     </span>
                     <span class="info">
-                        <span>{{translate('opening_time')}}</span>
+                        <span>{{translate('Opening time')}}</span>
                         {{date(config('timeformat'), strtotime($day['start_time']))}}
                     </span>
                 </span>
@@ -61,7 +61,7 @@ foreach ($store->schedules as $schedule)
                         <i class="tio-time"></i>
                     </span>
                     <span class="info">
-                        <span>{{translate('closing_time')}}</span>
+                        <span>{{translate('Closing time')}}</span>
                         {{date(config('timeformat'), strtotime($day['end_time']))}}
                     </span>
                 </span>
@@ -71,13 +71,13 @@ foreach ($store->schedules as $schedule)
                 @endforeach
             </span>
     @else
-        <span class="btn btn-sm btn-outline-danger m-1 disabled">{{translate('messages.Offday')}}</span>
+        <span class="btn btn-sm btn-outline-danger m-1 disabled">{{translate('messages.Off day')}}</span>
     @endif
-    <span class="btn add--primary" data-toggle="modal" data-target="#exampleModal" data-dayid="2" data-day="{{translate('messages.tuesday')}}"><i class="tio-add"></i></span>
+    <span class="btn add--primary" data-toggle="modal" data-target="#exampleModal" data-dayid="2" data-day="Tuesday"><i class="tio-add"></i></span>
 </div>
 </div>
 <div class="schedule-item">
-        <span class="btn">{{translate('messages.wednesday')}} :</span>
+        <span class="btn">Wednesday :</span>
     <div class="schedult-date-content">
         @if(isset($data['3']) && count($data['3']))
             <span class="d-inline-flex align-items-center">
@@ -87,7 +87,7 @@ foreach ($store->schedules as $schedule)
                         <i class="tio-time"></i>
                     </span>
                     <span class="info">
-                        <span>{{translate('opening_time')}}</span>
+                        <span>{{translate('Opening time')}}</span>
                         {{date(config('timeformat'), strtotime($day['start_time']))}}
                     </span>
                 </span>
@@ -96,7 +96,7 @@ foreach ($store->schedules as $schedule)
                         <i class="tio-time"></i>
                     </span>
                     <span class="info">
-                        <span>{{translate('closing_time')}}</span>
+                        <span>{{translate('Closing time')}}</span>
                         {{date(config('timeformat'), strtotime($day['end_time']))}}
                     </span>
                 </span>
@@ -106,14 +106,14 @@ foreach ($store->schedules as $schedule)
                 @endforeach
             </span>
         @else
-            <span class="btn btn-sm btn-outline-danger m-1 disabled">{{translate('messages.Offday')}}</span>
+            <span class="btn btn-sm btn-outline-danger m-1 disabled">{{translate('messages.Off day')}}</span>
         @endif
-        <span class="btn add--primary" data-toggle="modal" data-target="#exampleModal" data-dayid="3" data-day="{{translate('messages.wednesday')}}"><i class="tio-add"></i></span>
+        <span class="btn add--primary" data-toggle="modal" data-target="#exampleModal" data-dayid="3" data-day="Wednesday"><i class="tio-add"></i></span>
 </div>
 </div>
 
 <div class="schedule-item">
-        <span class="btn">{{translate('messages.thirsday')}} :</span>
+        <span class="btn">Thursday :</span>
     <div class="schedult-date-content">
         @if(isset($data['4']) && count($data['4']))
             <span class="d-inline-flex align-items-center">
@@ -123,7 +123,7 @@ foreach ($store->schedules as $schedule)
                         <i class="tio-time"></i>
                     </span>
                     <span class="info">
-                        <span>{{translate('opening_time')}}</span>
+                        <span>{{translate('Opening time')}}</span>
                         {{date(config('timeformat'), strtotime($day['start_time']))}}
                     </span>
                 </span>
@@ -132,7 +132,7 @@ foreach ($store->schedules as $schedule)
                         <i class="tio-time"></i>
                     </span>
                     <span class="info">
-                        <span>{{translate('closing_time')}}</span>
+                        <span>{{translate('Closing time')}}</span>
                         {{date(config('timeformat'), strtotime($day['end_time']))}}
                     </span>
                 </span>
@@ -142,14 +142,14 @@ foreach ($store->schedules as $schedule)
                 @endforeach
             </span>
         @else
-            <span class="btn btn-sm btn-outline-danger m-1 disabled">{{translate('messages.Offday')}}</span>
+            <span class="btn btn-sm btn-outline-danger m-1 disabled">{{translate('messages.Off day')}}</span>
         @endif
-        <span class="btn add--primary" data-toggle="modal" data-target="#exampleModal" data-dayid="4" data-day="{{translate('messages.thirsday')}}"><i class="tio-add"></i></span>
+        <span class="btn add--primary" data-toggle="modal" data-target="#exampleModal" data-dayid="4" data-day="Thursday"><i class="tio-add"></i></span>
 </div>
 </div>
 
 <div class="schedule-item">
-        <span class="btn">{{translate('messages.friday')}} :</span>
+        <span class="btn">Friday :</span>
     <div class="schedult-date-content">
         @if(isset($data['5']) && count($data['5']))
             <span class="d-inline-flex align-items-center">
@@ -159,7 +159,7 @@ foreach ($store->schedules as $schedule)
                         <i class="tio-time"></i>
                     </span>
                     <span class="info">
-                        <span>{{translate('opening_time')}}</span>
+                        <span>{{translate('Opening time')}}</span>
                         {{date(config('timeformat'), strtotime($day['start_time']))}}
                     </span>
                 </span>
@@ -168,7 +168,7 @@ foreach ($store->schedules as $schedule)
                         <i class="tio-time"></i>
                     </span>
                     <span class="info">
-                        <span>{{translate('closing_time')}}</span>
+                        <span>{{translate('Closing time')}}</span>
                         {{date(config('timeformat'), strtotime($day['end_time']))}}
                     </span>
                 </span>
@@ -178,14 +178,14 @@ foreach ($store->schedules as $schedule)
                 @endforeach
             </span>
         @else
-            <span class="btn btn-sm btn-outline-danger m-1 disabled">{{translate('messages.Offday')}}</span>
+            <span class="btn btn-sm btn-outline-danger m-1 disabled">{{translate('messages.Off day')}}</span>
         @endif
-        <span class="btn add--primary" data-toggle="modal" data-target="#exampleModal" data-dayid="5" data-day="{{translate('messages.friday')}}"><i class="tio-add"></i></span>
+        <span class="btn add--primary" data-toggle="modal" data-target="#exampleModal" data-dayid="5" data-day="Friday"><i class="tio-add"></i></span>
 </div>
 </div>
 
 <div class="schedule-item">
-        <span class="btn">{{translate('messages.saturday')}} :</span>
+        <span class="btn">Saturday :</span>
     <div class="schedult-date-content">
         @if(isset($data['6']) && count($data['6']))
             <span class="d-inline-flex align-items-center">
@@ -195,7 +195,7 @@ foreach ($store->schedules as $schedule)
                         <i class="tio-time"></i>
                     </span>
                     <span class="info">
-                        <span>{{translate('opening_time')}}</span>
+                        <span>{{translate('Opening time')}}</span>
                         {{date(config('timeformat'), strtotime($day['start_time']))}}
                     </span>
                 </span>
@@ -204,7 +204,7 @@ foreach ($store->schedules as $schedule)
                         <i class="tio-time"></i>
                     </span>
                     <span class="info">
-                        <span>{{translate('closing_time')}}</span>
+                        <span>{{translate('Closing time')}}</span>
                         {{date(config('timeformat'), strtotime($day['end_time']))}}
                     </span>
                 </span>
@@ -214,14 +214,14 @@ foreach ($store->schedules as $schedule)
                 @endforeach
             </span>
         @else
-            <span class="btn btn-sm btn-outline-danger m-1 disabled">{{translate('messages.Offday')}}</span>
+            <span class="btn btn-sm btn-outline-danger m-1 disabled">{{translate('messages.Off day')}}</span>
         @endif
-        <span class="btn add--primary" data-toggle="modal" data-target="#exampleModal" data-dayid="6" data-day="{{translate('messages.saturday')}}"><i class="tio-add"></i></span>
+        <span class="btn add--primary" data-toggle="modal" data-target="#exampleModal" data-dayid="6" data-day="Saturday"><i class="tio-add"></i></span>
     </div>
 </div>
 
 <div class="schedule-item">
-    <span class="btn">{{translate('messages.sunday')}} :</span>
+    <span class="btn">Sunday :</span>
     <div class="schedult-date-content">
         @if(isset($data['0']) && count($data['0']))
             <span class="d-inline-flex align-items-center">
@@ -231,7 +231,7 @@ foreach ($store->schedules as $schedule)
                         <i class="tio-time"></i>
                     </span>
                     <span class="info">
-                        <span>{{translate('opening_time')}}</span>
+                        <span>{{translate('Opening time')}}</span>
                         {{date(config('timeformat'), strtotime($day['start_time']))}}
                     </span>
                 </span>
@@ -240,7 +240,7 @@ foreach ($store->schedules as $schedule)
                         <i class="tio-time"></i>
                     </span>
                     <span class="info">
-                        <span>{{translate('closing_time')}}</span>
+                        <span>{{translate('Closing time')}}</span>
                         {{date(config('timeformat'), strtotime($day['end_time']))}}
                     </span>
                 </span>
@@ -251,8 +251,8 @@ foreach ($store->schedules as $schedule)
 
             </span>
         @else
-            <span class="btn btn-sm btn-outline-danger m-1 disabled">{{translate('messages.Offday')}}</span>
+            <span class="btn btn-sm btn-outline-danger m-1 disabled">{{translate('messages.Off day')}}</span>
         @endif
-        <span class="btn add--primary" data-toggle="modal" data-target="#exampleModal" data-dayid="0" data-day="{{translate('messages.sunday')}}"><i class="tio-add"></i></span>
+        <span class="btn add--primary" data-toggle="modal" data-target="#exampleModal" data-dayid="0" data-day="Sunday"><i class="tio-add"></i></span>
     </div>
 </div>

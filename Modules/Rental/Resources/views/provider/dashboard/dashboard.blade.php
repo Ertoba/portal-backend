@@ -1,6 +1,6 @@
 @extends('layouts.vendor.app')
 
-@section('title', translate('messages.dashboard'))
+@section('title', translate('Dashboard'))
 
 @push('css_or_js')
 @endpush
@@ -17,9 +17,10 @@
                                 src="{{ asset('/public/assets/admin/img/rental/image_car.png') }}" width="38" alt="img">
                             <div class="w-0 flex-grow pl-2">
                                 <h1 class="page-header-title text-title mb-0">
-                                    {{ translate('messages.Dashboard') }}</h1>
-                                <p class="page-header-text text-title fs-12 m-0">{{ translate('messages.Monitor_your') }}
-                                    <strong class="font-bold"> {{ translate('messages.business') }}</strong>
+                                    {{ translate('Dashboard') }}</h1>
+                                <p class="page-header-desc">{{ translate('Today\'s trips, earnings and anything waiting on you.') }}</p>
+                                <p class="page-header-text text-title fs-12 m-0">
+                                    {{ translate('Monitor your business statistics by zone') }}
                                 </p>
                             </div>
                         </div>
@@ -34,18 +35,18 @@
                         <div class="statistics--title pr-sm-3" id="">
                             <div class="d-flex align-items-center gap-2">
                                 <h3 class="page-header-title text-title fs-18 mb-0">
-                                    {{ translate('messages.Delivery_Statistics') }}</h3>
+                                    {{ translate('Delivery statistics') }}</h3>
 
                             </div>
                         </div>
                         <div class="statistics--select">
                             <select class="custom-select border-0 trip_stats_update" name="statistics_type" data-route="{{ route('vendor.deliveryStatistics') }}">
                                 <option value="all" {{ request()->statistics_type ? '' : 'selected' }}>
-                                    {{ translate('messages.All_Time') }}
+                                    {{ translate('All time') }}
                                 </option>
-                                <option value="this_year" {{ request()->statistics_type == 'this_year' ? 'selected' : '' }}>{{ translate('messages.this_year') }}</option>
-                                <option value="this_month" {{ request()->statistics_type == 'this_month' ? 'selected' : '' }}>{{ translate('messages.this_month') }}</option>
-                                <option value="this_week" {{ request()->statistics_type == 'this_week' ? 'selected' : '' }}>{{ translate('messages.this_week') }}</option>
+                                <option value="this_year" {{ request()->statistics_type == 'this_year' ? 'selected' : '' }}>{{ translate('This year') }}</option>
+                                <option value="this_month" {{ request()->statistics_type == 'this_month' ? 'selected' : '' }}>{{ translate('This month') }}</option>
+                                <option value="this_week" {{ request()->statistics_type == 'this_week' ? 'selected' : '' }}>{{ translate('This week') }}</option>
                             </select>
                         </div>
                     </div>
@@ -55,7 +56,6 @@
                 </div>
             </div>
 
-            <!-- End Stats -->
             <div class="row g-2">
                 <div class="col-md-12">
                     <div class="card h-100">
@@ -64,7 +64,7 @@
                                 <div class="__gross-amount" id="gross_earning">
                                     <h6 class="gross-earning">
                                         {{ \App\CentralLogics\Helpers::format_currency(collect($commission)->sum()) }}</h6>
-                                    <span>{{ translate('messages.Gross_Earnings') }}</span>
+                                    <span>{{ translate('Gross earnings') }}</span>
                                 </div>
                                 <div class="chart--label __chart-label p-0 move-left-100 ml-auto">
                                     <span class="indicator chart-bg-2"></span>
@@ -78,19 +78,19 @@
                                     data-route="{{ route('vendor.commissionOverview') }}"
                                     name="commission_overview">
                                     <option value="all">
-                                        {{ translate('All Time') }}
+                                        {{ translate('All time') }}
                                     </option>
                                     <option value="this_year"
                                         {{ request()->commission_overview == 'this_year' ? 'selected' : '' }}>
-                                        {{ translate('this_year') }}
+                                        {{ translate('This year') }}
                                     </option>
                                     <option value="this_month"
                                         {{ request()->commission_overview == 'this_month' ? 'selected' : '' }}>
-                                        {{ translate('this_month') }}
+                                        {{ translate('This month') }}
                                     </option>
                                     <option value="this_week"
                                         {{ request()->commission_overview == 'this_week' ? 'selected' : '' }}>
-                                        {{ translate('this_week') }}
+                                        {{ translate('This week') }}
                                     </option>
                                 </select>
                             </div>
@@ -102,17 +102,16 @@
                 </div>
             </div>
         @else
-            <!-- Page Header -->
             <div class="page-header">
                 <div class="row align-items-center">
                     <div class="col-sm mb-2 mb-sm-0">
                         <h1 class="page-header-title">{{ translate('messages.welcome') }},
                             {{ auth('vendor_employee')->user()->f_name }}.</h1>
-                        <p class="page-header-text">{{ translate('messages.employee_welcome_message') }}</p>
+                        <p class="page-header-desc">{{ translate('Today\'s trips, earnings and anything waiting on you.') }}</p>
+                        <p class="page-header-text">{{ translate('messages.Employee welcome message') }}</p>
                     </div>
                 </div>
             </div>
-            <!-- End Page Header -->
         @endif
         <div id="currency" data-currency="{{ \App\CentralLogics\Helpers::currency_symbol() }}"></div>
         <div class="d-none" id="current_url" data-src-url="{{ url()->current() }} "> </div>

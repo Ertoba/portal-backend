@@ -7,13 +7,13 @@
     <table>
         <thead>
             <tr>
-                <th>{{ translate('Search_Criteria') }}</th>
+                <th>{{ translate('Search criteria') }}</th>
                 <th></th>
                 <th></th>
                 <th>
-                    {{ translate('zone' )}} - {{ $data['zone']??translate('all') }}
+                    {{ translate('Zone' )}} - {{ $data['zone']??translate('All') }}
                     <br>
-                    {{ translate('provider' )}} - {{ $data['provider']??translate('all') }}
+                    {{ translate('Provider' )}} - {{ $data['provider']??translate('All') }}
                     @if ($data['from'])
                     <br>
                     {{ translate('from' )}} - {{ $data['from']?Carbon\Carbon::parse($data['from'])->format('d M Y'):'' }}
@@ -23,9 +23,9 @@
                     {{ translate('to' )}} - {{ $data['to']?Carbon\Carbon::parse($data['to'])->format('d M Y'):'' }}
                     @endif
                     <br>
-                    {{ translate('filter')  }}- {{  translate($data['filter']) }}
+                    {{ translate('Filter')  }}- {{  translate($data['filter']) }}
                     <br>
-                    {{ translate('Search_Bar_Content')  }}- {{ $data['search'] ??translate('N/A') }}
+                    {{ translate('Search bar content')  }}- {{ $data['search'] ??translate('N/A') }}
 
                 </th>
                 <th> </th>
@@ -38,13 +38,16 @@
                 <th></th>
                 <th></th>
                 <th>
-                    {{ translate('Total Trip Amount')  }}- {{ \App\CentralLogics\Helpers::number_format_short($data['trips']->sum('trip_amount')) }}
+                    {{-- Reads the pre-aggregated row the query already computes, exactly as the
+                         on-screen report does. It used to sum a `trips` collection this data set
+                         no longer carries, so the export threw on every request. --}}
+                    {{ translate('Total trip amount')  }}- {{ \App\CentralLogics\Helpers::number_format_short($data['trip_totals']->trip_amount) }}
                     <br>
-                    {{ translate('total_tax')  }}- {{ \App\CentralLogics\Helpers::number_format_short($data['trips']->sum('tax_amount')) }}
+                    {{ translate('Total tax')  }}- {{ \App\CentralLogics\Helpers::number_format_short($data['trip_totals']->tax_amount) }}
                     <br>
-                    {{ translate('total_commission')  }}- {{ \App\CentralLogics\Helpers::number_format_short($data['trips']->sum('trip_transaction_sum_admin_commission')-$data['trips']->sum('trip_transaction_sum_admin_expense')) }}
+                    {{ translate('Total commission')  }}- {{ \App\CentralLogics\Helpers::number_format_short($data['trip_totals']->admin_commission - $data['trip_totals']->admin_expense) }}
                     <br>
-                    {{ translate('total_provider_earning')  }}- {{ \App\CentralLogics\Helpers::number_format_short($data['trips']->sum('trip_transaction_sum_store_amount')) }}
+                    {{ translate('Total provider earning')  }}- {{ \App\CentralLogics\Helpers::number_format_short($data['trip_totals']->store_amount) }}
                 </th>
                 <th> </th>
                 <th></th>
@@ -52,14 +55,14 @@
                 <th></th>
             </tr>
         <tr>
-            <th>{{ translate('sl') }}</th>
-            <th>{{translate('vehicle_image')}}</th>
-            <th>{{ translate('Vehicle Info') }}</th>
-            <th>{{ translate('Total Trip') }}</th>
+            <th>{{ translate('SL') }}</th>
+            <th>{{translate('Vehicle image')}}</th>
+            <th>{{ translate('Vehicle information') }}</th>
+            <th>{{ translate('Total trip') }}</th>
             <th>
-                {{ translate('Total Trip Amount') }}</th>
+                {{ translate('Total trip amount') }}</th>
             <th>
-                {{ translate('Discount_Given') }}</th>
+                {{ translate('Discount given') }}</th>
         </thead>
         <tbody>
         @foreach($data['vehicles'] as $key => $item)

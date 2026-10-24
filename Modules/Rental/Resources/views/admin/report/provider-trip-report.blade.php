@@ -1,6 +1,6 @@
 @extends('layouts.admin.app')
 
-@section('title', translate('Provider Report'))
+@section('title', translate('Provider trip report'))
 
 @push('css_or_js')
     <meta name="csrf-token" content="{{ csrf_token() }}">
@@ -10,47 +10,45 @@
 
     <div class="content container-fluid">
 
-        <!-- Page Header -->
         <div class="page-header report-page-header">
             <div class="d-flex">
-                <img src="{{ asset('public/assets/admin/img/store-report.svg') }}" class="page-header-icon" alt="">
+                <img src="{{ asset('public/assets/admin/img/outline/report-search.svg') }}" class="page-header-icon" alt="">
                 <div class="w-0 flex-grow-1 pl-3">
                     <h1 class="page-header-title m-0">
-                        {{ translate('Provider Wise Report') }}
+                        {{ translate('Provider wise report') }}
                     </h1>
+                    <p class="page-header-desc">{{ translate('How each provider is doing, by trips run, money made and trips lost.') }}</p>
                     <span>
-                        {{ translate('Monitor_provider’s_business_analytics_&_Reports') }}
+                        {{ translate('Monitor provider\'s business analytics & reports') }}
                     </span>
                 </div>
             </div>
         </div>
-        <!-- End Page Header -->
 
-        <!-- Page Header Menu -->
         <ul class="nav nav-tabs page-header-tabs mb-2">
             <li class="nav-item">
-                <a href="{{route('admin.transactions.rental.report.provider-summary-report')}}" class="nav-link">{{translate('Summary Report')}}</a>
+                <a href="{{route('admin.transactions.rental.report.provider-summary-report')}}" class="nav-link">{{translate('Summary report')}}</a>
             </li>
             <li class="nav-item">
-                <a href="{{route('admin.transactions.rental.report.provider-sales-report')}}" class="nav-link">{{translate('Vehicle Report')}}</a>
+                <a href="{{route('admin.transactions.rental.report.provider-sales-report')}}" class="nav-link">{{translate('Vehicle report')}}</a>
             </li>
             <li class="nav-item">
-                <a href="{{ route('admin.transactions.rental.report.provider-trip-report') }}" class="nav-link active">{{translate('Trip Report')}}</a>
+                <a href="{{ route('admin.transactions.rental.report.provider-trip-report') }}" class="nav-link active">{{translate('Trip report')}}</a>
             </li>
         </ul>
 
         <div class="card filter--card">
             <div class="card-body p-xl-5">
                 <h5 class="form-label m-0 mb-3">
-                    {{ translate('Filter Data') }}
+                    {{ translate('Filter data') }}
                 </h5>
                 <form action="{{ route('admin.transactions.rental.report.set-date') }}" method="post">
                     @csrf
                     <div class="row g-3">
                         <div class="col-md-4 col-sm-6">
                             <select name="zone_id" class="form-control js-select2-custom set-filter" data-url="{{ url()->full() }}" data-filter="zone_id" id="zone">
-                                <option value="all">{{ translate('messages.All_Zones') }}</option>
-                                @foreach (\App\Models\Zone::orderBy('name')->get() as $z)
+                                <option value="all">{{ translate('All zones') }}</option>
+                                @foreach (\App\CentralLogics\Helpers::zones_dropdown() as $z)
                                     <option value="{{ $z['id'] }}"
                                         {{ isset($zone) && $zone->id == $z['id'] ? 'selected' : '' }}>
                                         {{ $z['name'] }}
@@ -62,28 +60,28 @@
                             <select name="provider_id"
                                     data-get-provider-url="{{route('admin.store.get-providers')}}"
                                     data-zone-id="{{ isset($zone) ? $zone->id : '' }}"
-                                data-placeholder="{{ translate('messages.select_provider') }}"
+                                data-placeholder="{{ translate('Select provider') }}"
                                 class="js-data-example-ajax form-control set-filter" data-url="{{ url()->full() }}" data-filter="provider_id">
                                 @if (isset($provider))
                                     <option value="{{ $provider->id }}" selected>{{ $provider->name }}</option>
                                 @else
-                                    <option value="all" selected>{{ translate('messages.all_providers') }}</option>
+                                    <option value="all" selected>{{ translate('All providers') }}</option>
                                 @endif
                             </select>
                         </div>
                         <div class="col-md-4 col-sm-6">
                             <select class="form-control set-filter" data-url="{{ url()->full() }}" data-filter="filter" name="filter">
                                 <option value="all_time" {{ isset($filter) && $filter == 'all_time' ? 'selected' : '' }}>
-                                    {{ translate('messages.All Time') }}</option>
+                                    {{ translate('All time') }}</option>
                                 <option value="this_year" {{ isset($filter) && $filter == 'this_year' ? 'selected' : '' }}>
-                                    {{ translate('messages.This Year') }}</option>
+                                    {{ translate('This year') }}</option>
                                 <option value="previous_year"
-                                    {{ isset($filter) && $filter == 'previous_year' ? 'selected' : '' }}>{{ translate('messages.Previous Year') }}
+                                    {{ isset($filter) && $filter == 'previous_year' ? 'selected' : '' }}>{{ translate('Previous year') }}
                                 </option>
                                 <option value="this_month"
-                                    {{ isset($filter) && $filter == 'this_month' ? 'selected' : '' }}>{{ translate('messages.This Month') }}</option>
+                                    {{ isset($filter) && $filter == 'this_month' ? 'selected' : '' }}>{{ translate('This month') }}</option>
                                 <option value="this_week" {{ isset($filter) && $filter == 'this_week' ? 'selected' : '' }}>
-                                    {{ translate('messages.This Week') }}</option>
+                                    {{ translate('This week') }}</option>
                                 <option value="custom" {{ isset($filter) && $filter == 'custom' ? 'selected' : '' }}>
                                     {{ translate('Custom') }}</option>
                             </select>
@@ -100,7 +98,7 @@
                                 required>
                         </div>
                         <div class="col-md-4 col-sm-6">
-                            <button type="submit" class="btn btn--primary btn-block">{{ translate('show_data') }}</button>
+                            <button type="submit" class="btn btn--primary btn-block"><i class="tio-visible-outlined"></i> {{ translate('Show data') }}</button>
                         </div>
                         @endif
                     </div>
@@ -114,8 +112,8 @@
                 <div class="left-content-card">
                     <img src="{{ asset('/public/assets/admin/img/report/cart.svg') }}" alt="">
                     <div class="info">
-                        <h4 class="subtitle">{{ $trips_list->count() }}</h4>
-                        <h6 class="subtext">{{ translate('messages.Total Trip') }}</h6>
+                        <h4 class="subtitle">{{ $trips_count }}</h4>
+                        <h6 class="subtext">{{ translate('Total trip') }}</h6>
                     </div>
                 </div>
                 <div class="left-content-card">
@@ -123,12 +121,12 @@
                     <div class="info">
                         <h4 class="subtitle">{{ \App\CentralLogics\Helpers::number_format_short($total_trip_amount) }}
                         </h4>
-                        <h6 class="subtext">{{ translate('messages.total_trip_amount') }}</h6>
+                        <h6 class="subtext">{{ translate('Total trip amount') }}</h6>
                     </div>
                     <div class="coupon__discount w-100 text-right d-flex justify-content-between">
                         <div>
                             <strong class="text-danger">{{ \App\CentralLogics\Helpers::number_format_short($total_canceled) }}</strong>
-                            <div>{{ translate('messages.canceled') }}</div>
+                            <div>{{ translate('Canceled') }}</div>
                         </div>
                         <div>
                             <strong>{{ \App\CentralLogics\Helpers::number_format_short($total_ongoing) }}</strong>
@@ -150,23 +148,23 @@
                         <h4 class="subtitle">
                             {{ \App\CentralLogics\Helpers::number_format_short($total_coupon_discount + $total_product_discount + ($total_pro_discount ?? 0)) }}
                         </h4>
-                        <h6 class="subtext">{{ translate('Total Discount Given') }}</h6>
+                        <h6 class="subtext">{{ translate('Total discount given') }}</h6>
                     </div>
                     <div class="coupon__discount w-100 text-right d-flex justify-content-between">
                         <div>
                             <strong>{{ \App\CentralLogics\Helpers::number_format_short($total_coupon_discount) }}</strong>
-                            <div>{{ translate('messages.coupon_discount') }}</div>
+                            <div>{{ translate('Coupon discount') }}</div>
                         </div>
                         <div>
                             <strong>{{ \App\CentralLogics\Helpers::number_format_short($total_product_discount) }}</strong>
                             <div>
-                                {{ translate('Vehicle Discount') }}
+                                {{ translate('Vehicle discount') }}
                             </div>
                         </div>
                         <div>
                             <strong>{{ \App\CentralLogics\Helpers::number_format_short($total_pro_discount ?? 0) }}</strong>
                             <div>
-                                {{ translate('messages.Pro_discount') }}
+                                {{ translate('messages.Pro discount') }}
                             </div>
                         </div>
                     </div>
@@ -174,12 +172,12 @@
             </div>
             <div class="center-chart-area">
                 <div class="center-chart-header">
-                    <h4 class="title">{{ translate('Total Trips') }}</h4>
-                    <h5 class="subtitle">{{ translate('Average Trip Value :') }}
+                    <h4 class="title">{{ translate('Total trips') }}</h4>
+                    <h5 class="subtitle">{{ translate('Average trip value') }}:
                         {{ $trips->count() > 0 ? \App\CentralLogics\Helpers::number_format_short($total_trip_amount / $trips->total()) : 0 }}
                         <span class="input-label-secondary text--title" data-toggle="tooltip"
                     data-placement="right"
-                    data-original-title="{{ translate('This Average Trip Value is calculated from all completed trips.') }}">
+                    data-original-title="{{ translate('This average trip value is calculated from all completed trips.') }}">
                     <i class="tio-info-outined"></i>
                 </span>
                     </h5>
@@ -195,34 +193,34 @@
                 <div class="card h-100 bg-white payment-statistics-shadow">
                     <div class="card-header border-0 ">
                         <h5 class="card-title">
-                            <span>{{ translate('trip statistics') }}</span>
+                            <span>{{ translate('Trip statistics') }}</span>
                         </h5>
                     </div>
                     <div class="card-body px-0 pt-0">
                         <div class="position-relative pie-chart">
                             <div id="dognut-pie"></div>
                             <div class="total--orders">
-                                <h3>{{ $trips_list->count() }}
+                                <h3>{{ $trips_count }}
                                 </h3>
-                                <span>{{ translate('messages.trips') }}</span>
+                                <span>{{ translate('messages.Trips') }}</span>
                             </div>
                         </div>
                         <div class="apex-legends">
                             <div class="before-bg-107980">
-                                <span>{{ translate('Total_canceled') }}
+                                <span>{{ translate('Total canceled') }}
                                     ({{ $total_canceled_count }})</span>
                             </div>
                             <div class="before-bg-56B98F">
-                                <span>{{ translate('Total_ongoing') }} (
+                                <span>{{ translate('Total ongoing') }} (
                                     {{ $total_ongoing_count }})</span>
                             </div>
                             <div class="before-bg-E5F5F1">
-                                <span>{{ translate('Total_completed') }}
+                                <span>{{ translate('Total completed') }}
                                     ({{ $total_completed_count }})</span>
                             </div>
                         </div>
                         <div class="earning-statistics-content mt-3">
-                            <a href="{{ route('admin.rental.trip.list', ['status' =>'all', 'module_id' => $rentalModuleId]) }}" class="trx-btn">{{ translate('View All Trips') }}</a>
+                            <a href="{{ route('admin.rental.trip.list', ['status' =>'all', 'module_id' => $rentalModuleId]) }}" class="trx-btn">{{ translate('View all trips') }}</a>
                         </div>
                     </div>
                 </div>
@@ -232,19 +230,16 @@
         <div class="mt-11px card">
             <div class="card-header border-0 py-2">
                 <div class="search--button-wrapper">
-                    <h5 class="card-title">{{ translate('Total Trip') }}</h5>
+                    <h5 class="card-title">{{ translate('Total trip') }}</h5>
                     <form class="search-form">
-                        <!-- Search -->
                         <div class="input-group input--group">
                             <input id="datatableSearch_" type="search" name="search" class="form-control"
-                                placeholder="{{ translate('Search by ID..') }}"
-                                aria-label="{{ translate('messages.search') }}" value="{{ request()?->search ?? null}}" required>
+                                placeholder="{{ translate('Search by ID') }}"
+                                aria-label="{{ translate('messages.Search') }}" value="{{ request()?->search ?? null}}" required>
                             <button type="submit" class="btn btn--secondary"><i class="tio-search"></i></button>
 
                         </div>
-                        <!-- End Search -->
                     </form>
-                    <!-- Unfold -->
                     <div class="hs-unfold mr-2 flex-grow-0">
                         <a class="js-hs-unfold-invoker btn btn-sm btn-white dropdown-toggle min-height-40"
                             href="javascript:;"
@@ -252,29 +247,28 @@
                                 "target": "#usersExportDropdown",
                                 "type": "css-animation"
                             }'>
-                            <i class="tio-download-to mr-1"></i> {{ translate('messages.export') }}
+                            <i class="tio-download-to mr-1"></i> {{ translate('messages.Export') }}
                         </a>
 
                         <div id="usersExportDropdown"
                             class="hs-unfold-content dropdown-unfold dropdown-menu dropdown-menu-sm-right">
-                            <span class="dropdown-header">{{ translate('messages.download_options') }}</span>
+                            <span class="dropdown-header">{{ translate('messages.Download options') }}</span>
                             <a id="export-excel" class="dropdown-item"
                                 href="{{ route('admin.transactions.rental.report.provider-trip-report-export', ['type' => 'excel', request()->getQueryString()]) }}">
                                 <img class="avatar avatar-xss avatar-4by3 mr-2"
                                     src="{{ asset('public/assets/admin') }}/svg/components/excel.svg"
                                     alt="Image Description">
-                                {{ translate('messages.excel') }}
+                                Excel
                             </a>
                             <a id="export-csv" class="dropdown-item"
                                 href="{{ route('admin.transactions.rental.report.provider-trip-report-export', ['type' => 'csv', request()->getQueryString()]) }}">
                                 <img class="avatar avatar-xss avatar-4by3 mr-2"
                                     src="{{ asset('public/assets/admin') }}/svg/components/placeholder-csv-format.svg"
                                     alt="Image Description">
-                                {{ translate('messages.csv') }}
+                                CSV
                             </a>
                         </div>
                     </div>
-                    <!-- End Unfold -->
                 </div>
             </div>
             <div class="card-body p-0">
@@ -284,16 +278,16 @@
                             <tr>
                                 <th class="border-top border-bottom text-capitalize">{{ translate('SL') }}</th>
                                 <th class="border-top border-bottom text-capitalize">{{ translate('Trip ID') }}</th>
-                                <th class="border-top border-bottom text-capitalize">{{ translate('Trip Booking Date') }}</th>
-                                <th class="border-top border-bottom text-capitalize">{{ translate('Trip Schedule Date') }}</th>
-                                <th class="border-top border-bottom text-capitalize">{{ translate('Customer Info') }}</th>
-                                <th class="border-top border-bottom text-capitalize">{{ translate('Total Trip Amount') }}</th>
+                                <th class="border-top border-bottom text-capitalize">{{ translate('Trip booking date') }}</th>
+                                <th class="border-top border-bottom text-capitalize">{{ translate('Trip schedule date') }}</th>
+                                <th class="border-top border-bottom text-capitalize">{{ translate('Customer information') }}</th>
+                                <th class="border-top border-bottom text-capitalize">{{ translate('Total trip amount') }}</th>
                                 <th class="border-top border-bottom text-capitalize text-center">
                                     {{ translate('Discount') }}</th>
-                                <th class="border-top border-bottom text-capitalize text-center">{{ translate('Tax') }}
+                                <th class="border-top border-bottom text-capitalize text-center">{{ translate('tax') }}
                                 </th>
                                 <th class="border-top border-bottom text-capitalize text-center">
-                                    {{ \App\CentralLogics\Helpers::get_business_data('additional_charge_name')??translate('messages.additional_charge') }}</th>
+                                    {{ \App\CentralLogics\Helpers::get_business_data('additional_charge_name')??translate('Additional charge') }}</th>
                                 <th class="border-top border-bottom text-capitalize text-center">{{ translate('Action') }}
                                 </th>
                             </tr>
@@ -335,12 +329,12 @@
                                         <div>{{$customer_details['contact_person_number']}}</div>
                                         @elseif ($trip->customer)
                                         <a class="text-body text-capitalize"
-                                            href="{{ route('admin.transactions.customer.view', [$trip['user_id']]) }}">
+                                            href="{{ route('admin.users.customer.view', [$trip['user_id']]) }}">
                                             <strong>{{ $trip->customer['f_name'] . ' ' . $trip->customer['l_name'] }}</strong>
                                             <div>{{ $trip->customer['phone'] }}</div>
                                         </a>
                                         @else
-                                            <label class="badge badge-danger">{{ translate('messages.invalid_customer_data') }}</label>
+                                            <label class="badge badge-danger">{{ translate('messages.Invalid customer data') }}</label>
                                         @endif
                                     </td>
                                     <td>
@@ -371,9 +365,9 @@
 
                                     <td>
                                         <div class="btn--container justify-content-center">
-                                            <a class="ml-2 btn btn-sm btn--warning btn-outline-warning action-btn"
+                                            <a class="ml-2 btn btn-sm action-btn action-btn--view"
                                                 href="{{ route('admin.rental.trip.details', ['id' => $trip->id, 'module_id' => $rentalModuleId]) }}">
-                                                <i class="tio-invisible"></i>
+                                                <i class="tio-visible-outlined"></i>
                                             </a>
                                             <a class="ml-2 btn btn-sm btn--primary btn-outline-primary action-btn"
                                                 href="{{ route('admin.rental.trip.generate-invoice', ['id' => $trip['id'], 'module_id' => $rentalModuleId]) }}">
@@ -385,22 +379,21 @@
                             @endforeach
                         </tbody>
                     </table>
-                    @if (count($trips) !== 0)
-                        <hr>
-                        <div class="page-area">
-                            {!! $trips->withQueryString()->links() !!}
-                        </div>
-                    @endif
                     @if (count($trips) === 0)
                         <div class="empty--data">
                             <img src="{{ asset('/public/assets/admin/svg/illustrations/sorry.svg') }}" alt="public">
                             <h5>
-                                {{ translate('no_data_found') }}
+                                {{ translate('No data found') }}
                             </h5>
                         </div>
                     @endif
                 </div>
-                <!-- End Table -->
+                @if (count($trips) !== 0)
+                    <hr>
+                    <div class="page-area">
+                        {!! $trips->withQueryString()->links() !!}
+                    </div>
+                @endif
 
 
             </div>

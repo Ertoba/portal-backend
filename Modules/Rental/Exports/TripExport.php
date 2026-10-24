@@ -18,10 +18,22 @@ class TripExport implements  FromView, ShouldAutoSize, WithStyles ,WithHeadings,
 
     use Exportable;
     protected $data;
-    // protected $search;
 
     public function __construct($data) {
         $this->data = $data;
+    }
+
+
+    /**
+     * Row count used to size the styled ranges.
+     *
+     * The controller streams its rows as a LazyCollection, where count() would re-run every
+     * chunk query, so it supplies a precomputed count. A caller still passing an eager
+     * Collection falls through to count() unchanged.
+     */
+    private function rowCount(): int
+    {
+        return (int) ($this->data['data_count'] ?? $this->data['data']->count());
     }
 
     public function view(): View
@@ -54,12 +66,11 @@ class TripExport implements  FromView, ShouldAutoSize, WithStyles ,WithHeadings,
         ];
         $sheet->getStyle('A1:I1')->applyFromArray($styleArray);
         return [
-            // Define the style for cells with data
-            'A1:I'.$this->data['data']->count() +3 => [
+            'A1:I'.$this->rowCount() +3 => [
                 'borders' => [
                     'allBorders' => [
                         'borderStyle' => Border::BORDER_THIN,
-                        'color' => ['argb' => '000000'], // Specify the color of the border (optional)
+                        'color' => ['argb' => '000000'],
                     ],
                 ],
             ],
@@ -71,7 +82,7 @@ class TripExport implements  FromView, ShouldAutoSize, WithStyles ,WithHeadings,
     {
         return [
             AfterSheet::class => function(AfterSheet $event) {
-                $event->sheet->getStyle('A1:I1') // Adjust the range as per your needs
+                $event->sheet->getStyle('A1:I1')
                 ->getAlignment()
                     ->setHorizontal(Alignment::HORIZONTAL_CENTER)
                     ->setVertical(Alignment::VERTICAL_CENTER);
@@ -84,7 +95,7 @@ class TripExport implements  FromView, ShouldAutoSize, WithStyles ,WithHeadings,
                     ->setHorizontal(Alignment::HORIZONTAL_CENTER)
                     ->setVertical(Alignment::VERTICAL_CENTER);
 
-                $event->sheet->getStyle('A3:I'.$this->data['data']->count() +3)
+                $event->sheet->getStyle('A3:I'.$this->rowCount() +3)
                     ->getAlignment()
                     ->setHorizontal(Alignment::HORIZONTAL_CENTER)
                     ->setVertical(Alignment::VERTICAL_CENTER);

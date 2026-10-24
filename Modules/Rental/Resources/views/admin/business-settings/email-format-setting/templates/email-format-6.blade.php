@@ -8,24 +8,24 @@
                 src="{{ $data['icon_full_url'] ?? asset('/public/assets/admin/img/blank3.png') }}"
 
                 id="iconViewer" alt="">
-                    <h2 id="mail-title" class="mt-2">{{ $data['title']?? translate('Main_Title_or_Subject_of_the_Mail') }}</h2>
-                    <div class="mb-2" id="mail-body">{!! $data['body']?? translate('Hi_Sabrina,') !!}</div>
+                    <h2 id="mail-title" class="mt-2">{{ $data['title']?? translate('Main title or subject of the mail') }}</h2>
+                    <div class="mb-2" id="mail-body">{!! $data['body']?? translate('Hi sabrina,') !!}</div>
                 </div>
                 <table class="bg-section p-10 w-100 text-center">
                     <thead>
                         <tr>
                             <th>{{ translate('SL') }}</th>
-                            <th>{{ translate('Transaction_ID') }}</th>
+                            <th>{{ translate('Transaction ID') }}</th>
                             <th>{{ translate('Time') }}</th>
                             <th>{{ translate('Amount') }}</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr>
-                            <td>{{ translate('1') }}</td>
-                            <td>{{ translate('23984357sd834') }}</td>
-                            <td>{{ translate('23 Jul, 2023 3:34 am') }}</td>
-                            <td>{{ translate('$500') }}</td>
+                            <td>1</td>
+                            <td>23984357sd834</td>
+                            <td>23 Jul, 2023 3:34 am</td>
+                            <td>$500</td>
                         </tr>
                     </tbody>
                 </table>
@@ -34,10 +34,10 @@
                 </span>
                 <hr>
                 <div class="mb-2" id="mail-footer">
-                    {{ $data['footer_text'] ?? translate('Please_contact_us_for_any_queries,_we’re_always_happy_to_help.') }}
+                    {{ $data['footer_text'] ?? translate('Please contact us for any queries; we\'re always happy to help.') }}
                 </div>
                 <div>
-                    {{ translate('Thanks_&_Regards') }},
+                    {{ translate('Thanks & regards') }},
                 </div>
                 <div class="mb-4">
                     {{ \App\CentralLogics\Helpers::get_business_settings('business_name', false) }}
@@ -47,10 +47,10 @@
         <tr>
             <td>
             <span class="privacy">
-                <a href="#" id="privacy-check" style="{{ (isset($data['privacy']) && $data['privacy'] == 1)?'':'display:none;' }}"><span class="dot"></span>{{ translate('Privacy_Policy')}}</a>
-                <a href="#" id="refund-check" style="{{ (isset($data['refund']) && $data['refund'] == 1)?'':'display:none;' }}"><span class="dot"></span>{{ translate('Refund_Policy') }}</a>
-                <a href="#" id="cancelation-check" style="{{ (isset($data['cancelation']) && $data['cancelation'] == 1)?'':'display:none;' }}"><span class="dot"></span>{{ translate('Cancelation_Policy') }}</a>
-                <a href="#" id="contact-check" style="{{ (isset($data['contact']) && $data['contact'] == 1)?'':'display:none;' }}"><span class="dot"></span>{{ translate('Contact_us') }}</a>
+                <a href="#" id="privacy-check" style="{{ (isset($data['privacy']) && $data['privacy'] == 1)?'':'display:none;' }}"><span class="dot"></span>{{ translate('Privacy policy')}}</a>
+                <a href="#" id="refund-check" style="{{ (isset($data['refund']) && $data['refund'] == 1)?'':'display:none;' }}"><span class="dot"></span>{{ translate('Refund policy') }}</a>
+                <a href="#" id="cancelation-check" style="{{ (isset($data['cancelation']) && $data['cancelation'] == 1)?'':'display:none;' }}"><span class="dot"></span>{{ translate('Cancellation policy') }}</a>
+                <a href="#" id="contact-check" style="{{ (isset($data['contact']) && $data['contact'] == 1)?'':'display:none;' }}"><span class="dot"></span>{{ translate('Contact us') }}</a>
             </span>
                 <span class="social email-template-social-span">
                     <a href="" id="facebook-check" class="email-template-social-media" style="{{ (isset($data['facebook']) && $data['facebook'] == 1)?'':'display:none;' }}">

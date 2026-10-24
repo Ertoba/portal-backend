@@ -30,7 +30,6 @@ class ProviderTaxReportController extends Controller
 
         $store = Helpers::get_store_data();
 
-        // $start = microtime(true);
         $vendortaxData =   $this->getVendortaxData($store->id, $startDate, $endDate, $key);
         $summary =   $vendortaxData['summary'];
         $orders = $vendortaxData['orders'];
@@ -42,8 +41,6 @@ class ProviderTaxReportController extends Controller
         $orders = $orders->paginate(config('default_pagination'))
             ->withQueryString();
 
-        // $time = microtime(true) - $start;
-        // dd("Query took {$time} seconds", $stores);
 
 
         return view('rental::provider.report.tax-report.vendor-tax-detail-report', compact('totalOrders', 'totalOrderAmount', 'totalTax', 'store', 'orders', 'startDate', 'endDate', 'taxSummary','dateRange'));
@@ -62,16 +59,12 @@ class ProviderTaxReportController extends Controller
 
         $store = Helpers::get_store_data();
 
-        // $start = microtime(true);
         $vendortaxData =   $this->getVendortaxData($store->id, $startDate, $endDate, $key, true);
         $summary =   $vendortaxData['summary'];
         $orders = $vendortaxData['orders'];
-        // $taxSummary = $vendortaxData['taxSummary'];
 
         $orders = $orders->cursor();
 
-        // $time = microtime(true) - $start;
-        // dd("Query took {$time} seconds", $stores);
         $startDate = Carbon::parse($startDate)->format('d M, Y');
         $endDate = Carbon::parse($endDate)->format('d M, Y');
 
@@ -82,7 +75,6 @@ class ProviderTaxReportController extends Controller
             'to' => $endDate,
             'summary' => $summary
         ];
-        // dd($request->export_type);
         if ($request->export_type == 'excel') {
             return Excel::download(new ProviderTaxExport($data), $store->name . 's TaxExport.xlsx');
         } else if ($request->export_type == 'csv') {
@@ -104,13 +96,12 @@ class ProviderTaxReportController extends Controller
             ->selectRaw('COUNT(*) as total_orders, SUM(trip_amount) as total_order_amount, SUM(tax_amount) as total_tax')
             ->first();
 
-        $orders = Trips::with([
+        $orders = Trips::when(addon_published_status('TaxModule'), fn ($q) => $q->with([
             'orderTaxes' => function (MorphMany $query) {
                 $query->where('order_type', Trips::class)
                     ->select('id', 'order_id', 'tax_name', 'tax_amount','tax_on','tax_type','taxable_type');
             }
-        ])
-
+        ]))
             ->where('provider_id', $store_id)
             ->when(count($search), fn($q) => $q->where(function ($q) use ($search) {
                 foreach ($search as $value) {

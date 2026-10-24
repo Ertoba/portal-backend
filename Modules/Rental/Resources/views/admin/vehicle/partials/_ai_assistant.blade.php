@@ -7,7 +7,7 @@
                         <span class="ai-btn-animation"><span class="gradientCirc"></span></span>
                         <img class="position-relative z-1" width="15" height="12" src="{{ asset('public/assets/admin/img/svg/blink-right.svg') }}" alt="">
                     </span>
-                    <span>{{ translate('AI_Assistant') }}</span>
+                    <span>{{ translate('AI assistant') }}</span>
                 </h5>
                 <button type="button" class="close" data-dismiss="modal" aria-label="{{ translate('Close') }}">
                     <span aria-hidden="true" class="tio-clear"></span>
@@ -24,20 +24,20 @@
                             </div>
                         </div>
                         <div class="ai-greeting mb-5">
-                            <h4 class="text-title">{{ translate('Hi_There') }},</h4>
-                            <h2 class="mb-2">{{ translate('I_am_here_to_help_you') }}</h2>
+                            <h4 class="text-title">{{ translate('Hi there') }},</h4>
+                            <h2 class="mb-2">{{ translate('I am here to help you') }}</h2>
                             <p class="text-muted">
-                                {{ translate('Generate_your_vehicle_name_and_description_from_a_keyword_or_a_photo.') }}
+                                {{ translate('Generate your vehicle name and description from a keyword or a photo.') }}
                             </p>
                         </div>
                         <div class="ai-actions d-grid gap-3">
                             <button type="button" class="btn btn-outline-secondary bg-transparent btn-block d-flex gap-2 mb-3 vehicle-ai-action-btn" data-action="keyword">
                                 <img width="18" height="18" src="{{ asset('public/assets/admin/img/svg/text-generate.svg') }}" alt="">
-                                <span class="text-title">{{ translate('Generate_by_Keyword') }}</span>
+                                <span class="text-title">{{ translate('Generate by keyword') }}</span>
                             </button>
                             <button type="button" class="btn btn-outline-secondary bg-transparent btn-block d-flex gap-2 vehicle-ai-action-btn" data-action="image">
                                 <img width="18" height="18" src="{{ asset('public/assets/admin/img/svg/picture.svg') }}" alt="">
-                                <span class="text-title">{{ translate('Generate_from_Image') }}</span>
+                                <span class="text-title">{{ translate('Generate from image') }}</span>
                             </button>
                         </div>
                     </div>
@@ -46,15 +46,15 @@
                 <div id="vehicleAiKeyword" class="ai-modal-content" style="display: none;">
                     <div class="mb-4">
                         <h5 class="mb-3 fs-16 font-bold">{{ translate('great!') }}</h5>
-                        <p class="mb-3">{{ translate('Tell_me_which_vehicle_you_want_to_add._Just_type_it_simply,_like:') }}</p>
+                        <p class="mb-3">{{ translate('Tell me which vehicle you want to add. Just type it simply, like') }}:</p>
                         <ul class="mb-3 pl-4">
-                            <li>{{ translate('a_2023_toyota_corolla_sedan') }}</li>
-                            <li>{{ translate('a_luxury_bmw_suv') }}</li>
-                            <li>{{ translate('a_yamaha_sports_bike') }}</li>
+                            <li>A 2023 Toyota Corolla sedan</li>
+                            <li>A luxury BMW SUV</li>
+                            <li>A Yamaha sports bike</li>
                         </ul>
                         <div class="generate-text-input-group">
                             <input type="text" class="form-control" id="vehicleAiKeywords"
-                                   placeholder="{{ translate('Tell_me_about_your_vehicle') }}">
+                                   placeholder="{{ translate('Tell me about your vehicle') }}">
                             <button type="button" class="btn btn-primary border-0" id="vehicleAiGenerateTitles"
                                     data-route="{{ route($aiRoutePrefix . '.generate-titles') }}">
                                 <span class="ai-loader-animation z-2 d-none">
@@ -70,9 +70,9 @@
                             <div class="btn-svg-wrapper">
                                 <img width="18" height="18" src="{{ asset('public/assets/admin/img/svg/blink-right-small.svg') }}" alt="">
                             </div>
-                            <span class="ai-text-animation ai-text-animation-visible">{{ translate('Just_a_second') }}</span>
+                            <span class="ai-text-animation ai-text-animation-visible">{{ translate('Just a second') }}</span>
                         </div>
-                        <h4 class="mb-2 vehicle-ai-titles-heading d-none">{{ translate('Suggested_Vehicle_Names') }}</h4>
+                        <h4 class="mb-2 vehicle-ai-titles-heading d-none">{{ translate('Suggested vehicle names') }}</h4>
                         <div id="vehicleAiTitles" class="list-group"></div>
                     </div>
                     <div class="mt-3">
@@ -85,10 +85,10 @@
                 <div id="vehicleAiImage" class="ai-modal-content" style="display: none;">
                     <div class="mt-10">
                         <div class="mb-4">
-                            <h5 class="mb-3 fs-16 font-bold">{{ translate('upload_a_clear_photo_of_the_vehicle') }}</h5>
+                            <h5 class="mb-3 fs-16 font-bold">{{ translate('Upload a clear photo of the vehicle') }}</h5>
                             <ul class="mb-4 pl-4">
-                                <li>{{ translate('try_to_use_a_clean_&_avoid_blur_image') }}</li>
-                                <li>{{ translate('use_a_photo_that_clearly_shows_the_vehicle') }}</li>
+                                <li>{{ translate('Try to use a clean & avoid blur image') }}</li>
+                                <li>{{ translate('Use a photo that clearly shows the vehicle') }}</li>
                             </ul>
                         </div>
                         <div class="text-center mb-4">
@@ -98,10 +98,10 @@
                                     <div class="w-100 d-flex flex-column gap-2 justify-content-center align-items-center py-4">
                                         <img width="40" height="40" src="{{ asset('public/assets/admin/img/svg/image-upload.svg') }}" alt="">
                                         <div class="d-flex gap-2 align-items-center justify-content-center fs-14">
-                                            <span class="text-dark">{{ translate('drag_&_drop_your_image') }}</span>
-                                            <span class="text-lowercase">{{ translate('or') }}</span>
+                                            <span class="text-dark">{{ translate('Drag & drop your image') }}</span>
+                                            <span class="text-lowercase">{{ translate('Or') }}</span>
                                             <span class="text-primary font-semibold fs-12 text-underline">
-                                                <i class="fi fi-rr-cloud-upload-alt"></i> {{ translate('Browse_Image') }}
+                                                <i class="fi fi-rr-cloud-upload-alt"></i> {{ translate('Browse image') }}
                                             </span>
                                         </div>
                                     </div>
@@ -109,7 +109,7 @@
                                 <div id="vehicleAiImagePreview" class="mx-auto position-relative" style="display: none;">
                                     <img id="vehicleAiPreviewImg" src="" alt="{{ translate('Preview') }}" class="upload-zone_img" style="max-height: 200px;">
                                     <div class="d-flex justify-content-center gap-2 flex-wrap">
-                                        <button type="button" class="btn btn-danger p-0 square-div z-2" id="vehicleAiRemoveImage" data-toggle="tooltip" title="{{ translate('Remove_image') }}">
+                                        <button type="button" class="btn btn-danger p-0 square-div z-2" id="vehicleAiRemoveImage" data-toggle="tooltip" title="{{ translate('Remove image') }}">
                                             <i class="tio-clear"></i>
                                         </button>
                                     </div>
@@ -120,7 +120,7 @@
                                         id="vehicleAiAnalyze" data-route="{{ route($aiRoutePrefix . '.analyze-image') }}" disabled>
                                     <span class="ai-btn-animation d-none"><span class="gradientRect"></span></span>
                                     <span class="position-relative z-1 d-flex gap-2 align-items-center">
-                                        <span class="d-flex align-items-center btn-text">{{ translate('Generate_Vehicle_Info') }}</span>
+                                        <span class="d-flex align-items-center btn-text">{{ translate('Generate vehicle information') }}</span>
                                         <img width="17" height="15" src="{{ asset('public/assets/admin/img/svg/blink-left.svg') }}" alt="">
                                     </span>
                                 </button>
@@ -140,14 +140,14 @@
 </div>
 
 <div class="floating-ai-button">
-    <button type="button" class="btn btn-lg rounded-circle shadow-lg" data-toggle="modal" data-target="#vehicleAiModal" title="{{ translate('AI_Assistant') }}">
+    <button type="button" class="btn btn-lg rounded-circle shadow-lg" data-toggle="modal" data-target="#vehicleAiModal" title="{{ translate('AI assistant') }}">
         <span class="ai-btn-animation"><span class="gradientCirc"></span></span>
         <span class="position-relative z-1 text-white d-flex flex-column gap-1 align-items-center">
             <img width="16" height="17" src="{{ asset('public/assets/admin/img/svg/hexa-ai.svg') }}" alt="">
-            <span class="fs-12 font-semibold">{{ translate('Use_AI') }}</span>
+            <span class="fs-12 font-semibold">{{ translate('Use AI') }}</span>
         </span>
     </button>
-    <div class="ai-tooltip"><span>{{ translate('AI_Assistant') }}</span></div>
+    <div class="ai-tooltip"><span>{{ translate('AI assistant') }}</span></div>
 </div>
 
 <input type="hidden" id="vehicle_ai_lang" value="{{ \App\CentralLogics\Helpers::system_default_language() }}">

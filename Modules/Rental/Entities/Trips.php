@@ -4,19 +4,39 @@ namespace Modules\Rental\Entities;
 
 
 use App\Models\OrderProDiscount;
+use App\Traits\Item\MissingAddonRelationsTrait;
 use App\Models\User;
 use App\Models\Guest;
+use App\Models\Module;
 use App\Models\Store;
+use App\Models\Zone;
 use App\Models\CashBackHistory;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Collection;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Modules\TaxModule\Entities\OrderTax;
+use App\Traits\System\SidebarCountsTrait;
 
 class Trips extends Model
 {
-    use HasFactory;
+    /**
+     * The trip's distance, said in the unit the platform is configured for — port doc §3.4.
+     *
+     * `distance` is a MEASURED value and is kilometres always; only the presentation follows
+     * `business_settings.distance_unit`. Same shape as Order::getDistanceLabelAttribute(), so a
+     * trip and an order never disagree about what a distance means.
+     */
+    public function getDistanceLabelAttribute(): ?string
+    {
+        $kilometres = (float) ($this->attributes['distance'] ?? 0);
+
+        return $kilometres > 0 ? app(\App\Services\System\DistanceService::class)->format($kilometres) : null;
+    }
+
+    use HasFactory, MissingAddonRelationsTrait, SidebarCountsTrait;
 
     protected $guarded = ['id'];
     protected $casts = [
@@ -98,6 +118,16 @@ class Trips extends Model
     public function provider()
     {
         return $this->belongsTo(Store::class,'provider_id');
+    }
+
+    public function zone(): BelongsTo
+    {
+        return $this->belongsTo(Zone::class, 'zone_id');
+    }
+
+    public function module(): BelongsTo
+    {
+        return $this->belongsTo(Module::class, 'module_id');
     }
     public function trip_transaction()
     {
@@ -195,9 +225,41 @@ class Trips extends Model
         return $query->where('trip_status', 'payment_failed');
     }
 
+    public function statusBeforePaymentFailure(): string
+    {
+        $stamps = collect(['pending', 'confirmed', 'ongoing', 'completed'])
+            ->mapWithKeys(fn ($status) => [$status => $this->getRawOriginal($status)])
+            ->filter();
+
+        return $stamps->isEmpty() ? 'pending' : (string) $stamps->sort()->keys()->last();
+    }
+
+    public static function statusCounts(?Builder $query = null): Collection
+    {
+        $grouped = ($query ? clone $query : static::query())
+            ->selectRaw('trip_status, count(*) as aggregate')
+            ->groupBy('trip_status');
+
+        $key = md5($grouped->toSql() . serialize($grouped->getBindings()));
+
+        static $cache = [];
+
+        return $cache[$key] ??= $grouped->get()->pluck('aggregate', 'trip_status');
+    }
+
     public function scopeZone($query, $id): void
     {
         $query->where('zone_id', '=', $id);
+    }
+
+    /**
+     * Five report methods in the admin ReportController already call ->module($id), but the
+     * scope was never defined -- so any of those reports reached with a module_id parameter
+     * threw BadMethodCallException instead of filtering.
+     */
+    public function scopeModule($query, $id): void
+    {
+        $query->where('module_id', '=', $id);
     }
 
     public function vehicles()
@@ -206,6 +268,10 @@ class Trips extends Model
     }
     public function orderTaxes()
     {
+        if (! addon_published_status('TaxModule')) {
+            return $this->missingAddonMorphMany();
+        }
+
         return $this->morphMany(OrderTax::class, 'order');
     }
 

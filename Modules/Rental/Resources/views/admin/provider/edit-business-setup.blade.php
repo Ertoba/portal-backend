@@ -1,12 +1,11 @@
 @extends('layouts.admin.app')
 
-@section('title', translate('messages.update Provider'))
+@section('title', translate('Update provider business setup'))
 
 
 
 @section('content')
     <div class="content container-fluid">
-        <!-- Page Header -->
         <div class="page-header pb-20">
             <div class="d-flex justify-content-between flex-wrap gap-3">
                 <div>
@@ -15,19 +14,19 @@
                             <img src="{{ asset('public/assets/admin/img/store.png') }}" class="w--22" alt="">
                         </span>
                         <span>{{ $store->name }}
-                    </h1></span>
+                    </h1>
+                    <p class="page-header-desc">{{ translate('Change how this provider trades: its commission, opening hours and what it may do.') }}</p></span>
                     </h1>
                 </div>
             </div>
         </div>
-        <!-- End Page Header -->
 
         <form action="" method="post" enctype="multipart/form-data" id="providerFormSubmit">
             @csrf
             <div id="businessPlan">
                 <div class="custom-timeline d-flex flex-wrap gap-40px text-title mb-2">
-                    <h4 class="single text-primary checked"><span class="count-checked">1</span>{{ translate('messages.Business Basic Setup') }}</h4>
-                    <h4 class="single font-semibold"><span class="count btn-primary">2</span>{{ translate('messages.Business Plan Setup') }}</h4>
+                    <h4 class="single text-primary checked"><span class="count-checked">1</span>{{ translate('Business basic setup') }}</h4>
+                    <h4 class="single font-semibold"><span class="count btn-primary">2</span>{{ translate('Business plan setup') }}</h4>
                 </div>
                 <div class="row g-2">
                     <div class="col-lg-12">
@@ -35,7 +34,7 @@
                             <div class="card-header">
                                 <div>
                                     <h5 class="text-title mb-1">
-                                        {{ translate('messages.Update Business Plan') }}
+                                        {{ translate('Update business plan') }}
                                     </h5>
 
                                 </div>
@@ -47,10 +46,10 @@
                                             <input type="radio" name="business_plan" class="business-plan-radio" value="commission-base" {{ $store->store_business_model == 'commission' ? 'checked' : ''}}/>
                                             <div class="business-plan-card">
                                                 <h4 class="fs-16 title text-title mb-10px opacity-70">
-                                                    {{ translate('messages.Commission Base') }}
+                                                    {{ translate('Commission base') }}
                                                 </h4>
                                                 <p class="fs-14 text-title opacity-70 mb-0">
-                                                    {{ translate('messages.You have to give a certain percentage of commission to admin for every Trip request.') }}
+                                                    {{ translate('You have to give a certain percentage of commission to admin for every trip request.') }}
                                                 </p>
                                             </div>
                                         </label>
@@ -60,7 +59,7 @@
                                             <input type="radio" name="business_plan" class="business-plan-radio" value="subscription-base" {{ $store->store_business_model == 'subscription' ? 'checked' : ''}}/>
                                             <div class="business-plan-card">
                                                 <h4 class="fs-16 title text-title mb-10px opacity-70">
-                                                    {{ translate('messages.Subscription Base') }}
+                                                    {{ translate('Subscription base') }}
                                                 </h4>
                                                 <p class="fs-14 text-title opacity-70 mb-0">
                                                     {{ translate('messages.You have to pay certain amount in every month/year to admin as subscription fee.') }}
@@ -73,7 +72,7 @@
                                         <div>
                                             <div class="text-center mb-20">
                                                 <h3 class="modal-title fs-16 opacity-lg font-bold">
-                                                    {{ translate('Choose Subscription Package') }}</h3>
+                                                    {{ translate('Choose subscription package') }}</h3>
                                             </div>
                                             <div class="plan-slider owl-theme owl-carousel owl-refresh">
                                                 @forelse ($packages as $key=> $package)
@@ -97,31 +96,31 @@
                                                                 @if ($package->mobile_app)
                                                                     <li>
                                                                         <i class="tio-checkmark-circle"></i>
-                                                                        <span>{{ translate('messages.mobile_app') }}</span>
+                                                                        <span>{{ translate('Mobile app') }}</span>
                                                                     </li>
                                                                 @endif
                                                                 @if ($package->chat)
                                                                     <li>
                                                                         <i class="tio-checkmark-circle"></i>
-                                                                        <span>{{ translate('messages.chatting_options') }}</span>
+                                                                        <span>{{ translate('messages.Chatting options') }}</span>
                                                                     </li>
                                                                 @endif
                                                                 @if ($package->review)
                                                                     <li>
                                                                         <i class="tio-checkmark-circle"></i>
-                                                                        <span>{{ translate('messages.review_section') }}</span>
+                                                                        <span>{{ translate('Review section') }}</span>
                                                                     </li>
                                                                 @endif
                                                                 @if ($package->self_delivery)
                                                                     <li>
                                                                         <i class="tio-checkmark-circle"></i>
-                                                                        <span>{{ translate('messages.self_delivery') }}</span>
+                                                                        <span>{{ translate('messages.Self delivery') }}</span>
                                                                     </li>
                                                                 @endif
                                                                 @if ($package->max_order == 'unlimited')
                                                                     <li>
                                                                         <i class="tio-checkmark-circle"></i>
-                                                                        <span>{{ translate('messages.Unlimited_Orders') }}</span>
+                                                                        <span>{{ translate('Unlimited orders') }}</span>
                                                                     </li>
                                                                 @else
                                                                     <li>
@@ -132,7 +131,7 @@
                                                                 @if ($package->max_product == 'unlimited')
                                                                     <li>
                                                                         <i class="tio-checkmark-circle"></i>
-                                                                        <span>{{ translate('messages.Unlimited_uploads') }}</span>
+                                                                        <span>{{ translate('messages.Unlimited uploads') }}</span>
                                                                     </li>
                                                                 @else
                                                                     <li>
@@ -145,7 +144,7 @@
                                                     </label>
                                                 @empty
                                                     <div class="text-center">
-                                                        {{translate('No Package Found')}}
+                                                        {{translate('No package found')}}
                                                     </div>
                                                 @endforelse
                                             </div>
@@ -157,16 +156,16 @@
                     </div>
                     <div class="col-lg-12">
                         <div class="btn--container justify-content-end mt-20">
-                            <a href="{{ route('admin.rental.provider.edit-basic-setup', $store->id ) }}" class="btn btn--reset min-w-100px justify-content-center">{{ translate('messages.back') }}</a>
+                            <a href="{{ route('admin.rental.provider.edit-basic-setup', $store->id ) }}" class="btn btn--reset min-w-100px justify-content-center"><i class="tio-arrow-backward"></i> {{ translate('Back') }}</a>
                             <div id="subscriptionBtn">
                                 <button data-id="{{ $store->store_business_model == 'commission' ? 0 : $store?->package?->id }}"
-                                    data-target="#package_detail" id="package_detail" type="button" class="btn btn--primary shift-btn package_detail">{{ translate('messages.update') }}</button>
+                                    data-target="#package_detail" id="package_detail" type="button" class="btn btn--primary shift-btn package_detail"><i class="tio-save"></i> {{ translate('Update') }}</button>
                             </div>
                             <?php
                                 $cash_backs= \App\CentralLogics\Helpers::calculateSubscriptionRefundAmount(store:$store ,return_data:true);
                             ?>
                             <div id="commissionBtn">
-                                <button type="button" data-url="{{route('admin.business-settings.subscriptionackage.switchToCommission',$store->id)}}" data-message="{{translate('You_Want_To_Migrate_To_Commission.')}} {{ data_get($cash_backs,'back_amount') > 0  ?  translate('You will get').' '. \App\CentralLogics\Helpers::format_currency(data_get($cash_backs,'back_amount')) .' '.translate('to_your_wallet_for_remaining') .' '.data_get($cash_backs,'days').' '.translate('messages.days_subscription_plan') : '' }}"  class="btn btn--primary shift_to_commission">{{ translate('Update') }}</button>
+                                <button type="button" data-url="{{route('admin.business-settings.subscriptionackage.switchToCommission',$store->id)}}" data-message="{{translate('You want to migrate to commission.')}} {{ data_get($cash_backs,'back_amount') > 0  ?  translate('You will get').' '. \App\CentralLogics\Helpers::format_currency(data_get($cash_backs,'back_amount')) .' '.translate('To your wallet for remaining') .' '.data_get($cash_backs,'days').' '.translate('messages.Days subscription plan') : '' }}"  class="btn btn--primary shift_to_commission"><i class="tio-save"></i> {{ translate('Update') }}</button>
                             </div>
                     </div>
                 </div>
@@ -178,7 +177,6 @@
         <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
             <div class="modal-content">
 
-                <!-- Modal Header -->
                 <div class="modal-header">
                     <button type="button" class="close" data-dismiss="modal">&times;</button>
                 </div>
@@ -196,16 +194,17 @@
         data-rental-provider-url="{{ route('admin.rental.provider.list') }}"
 
         data-store-id="{{ $store->id }}"
-        data-translate-are-you-sure="{{ translate('Are_you_sure?') }}"
-        data-translate-no="{{ translate('no') }}"
-        data-translate-yes="{{ translate('yes') }}"
-        data-translate-success="{{ translate('Successfully_Switched_To_Commission') }}"
+        data-translate-are-you-sure="{{ translate('Are you sure?') }}"
+        data-translate-no="{{ translate('No') }}"
+        data-translate-yes="{{ translate('Yes') }}"
+        data-translate-success="{{ translate('Successfully switched to commission') }}"
         data-select-subscription-package="{{ translate('Please select a subscription package.') }}"
 
         data-subscription-package-view-url="{{ route('admin.business-settings.subscriptionackage.packageView', ['PLACEHOLDER_ID', $store->id]) }}"
     ></div>
 
 
+    </div>
 @endsection
 
 @push('script_2')

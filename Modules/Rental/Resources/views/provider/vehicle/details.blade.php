@@ -1,6 +1,6 @@
 @extends('layouts.vendor.app')
 
-@section('title', translate('messages.vehicle_details'))
+@section('title', translate('Vehicle details'))
 
 @push('css_or_js')
     <link rel="stylesheet" href="{{ asset('/public/assets/admin/vendor/simplebar/dist/simplebar.min.css') }}">
@@ -10,29 +10,29 @@
 
 @section('content')
     <div class="content container-fluid">
-        <!-- Page Header -->
         <div class="page-header">
             <div class="d-flex justify-content-between flex-wrap gap-3">
                 <div>
                     <h1 class="page-header-title text-break">
                         <span class="page-header-icon">
-                            <img src="{{ asset('public/assets/admin/img/car-logo.png') }}" alt="">
+                            <img src="{{ asset('public/assets/admin/img/outline/car.svg') }}" alt="">
                         </span>
                         <span>{{ $vehicle->name }}
                     </h1>
+                    <p class="page-header-desc">{{ translate('Everything about this vehicle, from its rate and availability to how it has been booked.') }}</p>
                 </div>
                 <div class="d-flex align-items-start flex-wrap gap-2">
                     <a class="btn btn--cancel h--45px d-flex gap-2 align-items-center form-alert" href="javascript:"
-                       data-id="vehicle-{{$vehicle['id']}}" data-message="{{ translate('Want to delete this vehicle') }}" title="{{translate('messages.delete_vehicle')}}">
+                       data-id="vehicle-{{$vehicle['id']}}" data-message="{{ translate('Want to delete this vehicle?') }}" title="{{translate('messages.Delete vehicle')}}">
                         <i class="tio-delete"></i>
-                        {{ translate('messages.delete') }}
+                        {{ translate('messages.Delete') }}
                     </a>
 
                     <form action="{{route('vendor.vehicle.delete',[$vehicle['id']])}}?vehicle_list={{request()->vehicle_list}}" method="post" id="vehicle-{{$vehicle->id}}">
                         @csrf @method('delete')
                     </form>
                     <a href="javascript:" class="btn btn--reset d-flex justify-content-between align-items-center gap-4 lh--1 h--45px">
-                        {{ translate('messages.new_tag') }}
+                        {{ translate('New tag') }}
                         <label class="toggle-switch toggle-switch-sm" for="stocksCheckboxNew{{$vehicle->id}}">
                             <input type="checkbox" data-url="{{route('vendor.vehicle.new-tag',[$vehicle['id'],$vehicle->new_tag?0:1])}}"
                                    class="toggle-switch-input redirect-url" id="stocksCheckboxNew{{$vehicle->id}}" {{$vehicle->new_tag?'checked':''}}>
@@ -42,7 +42,7 @@
                         </label>
                     </a>
                     <a href="javascript:" class="btn btn--reset d-flex justify-content-between align-items-center gap-4 lh--1 h--45px">
-                        {{ translate('messages.status') }}
+                        {{ translate('messages.Status') }}
                         <label class="toggle-switch toggle-switch-sm" for="stocksCheckbox{{$vehicle->id}}">
                             <input type="checkbox" data-url="{{route('vendor.vehicle.status',[$vehicle['id'],$vehicle->status?0:1])}}"
                                    class="toggle-switch-input redirect-url" id="stocksCheckbox{{$vehicle->id}}" {{$vehicle->status?'checked':''}}>
@@ -53,7 +53,7 @@
                     </a>
                     <a href="{{ route('vendor.vehicle.edit', $vehicle->id)}}" class="btn btn--primary h--45px d-flex gap-2 align-items-center">
                         <i class="tio-edit"></i>
-                        {{ translate('messages.Edit_Vechicle') }}
+                        {{ translate('Edit vehicle') }}
                     </a>
                 </div>
             </div>
@@ -145,9 +145,8 @@
                                         </h5>
                                     </div>
                                     <ul class="list-unstyled list-unstyled-py-2 mb-0 rating--review-right review-color-progress">
-                                        <!-- Review Ratings -->
                                         <li class="d-flex align-items-center font-size-sm">
-                                            <span class="progress-name mr-3">{{ translate('Excellent') }}</span>
+                                            <span class="progress-name mr-3">{{ translate('excellent') }}</span>
                                             <div class="progress flex-grow-1">
                                                 <div class="progress-bar" role="progressbar"
                                                      style="width: {{ $totalRating > 0 ? ($excellentCount / $totalRating) * 100 : 0 }}%;"
@@ -155,9 +154,7 @@
                                             </div>
                                             <span class="ml-3">{{ $excellentCount }}</span>
                                         </li>
-                                        <!-- End Review Ratings -->
 
-                                        <!-- Review Ratings -->
                                         <li class="d-flex align-items-center font-size-sm">
                                             <span class="progress-name mr-3">{{ translate('Good') }}</span>
                                             <div class="progress flex-grow-1">
@@ -167,11 +164,9 @@
                                             </div>
                                             <span class="ml-3">{{ $goodCount }}</span>
                                         </li>
-                                        <!-- End Review Ratings -->
 
-                                        <!-- Review Ratings -->
                                         <li class="d-flex align-items-center font-size-sm">
-                                            <span class="progress-name mr-3">{{translate('Average')}}</span>
+                                            <span class="progress-name mr-3">{{translate('average')}}</span>
                                             <div class="progress flex-grow-1">
                                                 <div class="progress-bar" role="progressbar"
                                                      style="width: {{ $totalRating > 0 ? ($averageCount / $totalRating) * 100 : 0 }}%;"
@@ -179,9 +174,7 @@
                                             </div>
                                             <span class="ml-3">{{ $averageCount }}</span>
                                         </li>
-                                        <!-- End Review Ratings -->
 
-                                        <!-- Review Ratings -->
                                         <li class="d-flex align-items-center font-size-sm">
                                             <span class="progress-name mr-3">{{translate('Below average')}}</span>
                                             <div class="progress flex-grow-1">
@@ -191,11 +184,9 @@
                                             </div>
                                             <span class="ml-3">{{ $belowAverageCount }}</span>
                                         </li>
-                                        <!-- End Review Ratings -->
 
-                                        <!-- Review Ratings -->
                                         <li class="d-flex align-items-center font-size-sm">
-                                            <span class="progress-name mr-3">{{translate('Poor')}}</span>
+                                            <span class="progress-name mr-3">{{translate('poor')}}</span>
                                             <div class="progress flex-grow-1">
                                                 <div class="progress-bar" role="progressbar"
                                                      style="width: {{ $totalRating > 0 ? ($poorCount / $totalRating) * 100 : 0 }}%;"
@@ -203,7 +194,6 @@
                                             </div>
                                             <span class="ml-3">{{ $poorCount }}</span>
                                         </li>
-                                        <!-- End Review Ratings -->
                                     </ul>
                                 </div>
                             </div>
@@ -267,14 +257,13 @@
             </div>
             <div class="col-lg-9">
                 <div class="card h-100">
-                    <!-- Table -->
                     <div class="table-responsive">
                         <table id="" class="table table-borderless table-thead-bordered table-nowrap card-table">
                             <thead class="thead-light">
                             <tr>
-                                <th class="border-0">{{ translate('messages.General_Info') }}</th>
-                                <th class="border-0">{{ translate('messages.Fare_&_Discounts') }}</th>
-                                <th class="border-0">{{ translate('messages.Other_Features') }}</th>
+                                <th class="border-0">{{ translate('General information') }}</th>
+                                <th class="border-0">{{ translate('Fare & discounts') }}</th>
+                                <th class="border-0">{{ translate('Other features') }}</th>
                             </tr>
                             </thead>
 
@@ -298,12 +287,12 @@
                                             </div>
                                         @endif
                                         @if($vehicle->trip_distance)
-                                            <div class="d-flex"><span class="min-w-110px">{{ translate('Distance Wise')}}</span>
+                                            <div class="d-flex"><span class="min-w-110px">{{ translate('Distance wise')}}</span>
                                                 <span class="font-semibold">:{{\App\CentralLogics\Helpers::format_currency($vehicle['distance_price'])}}</span>
                                             </div>
                                         @endif
                                          @if($vehicle->trip_day_wise)
-                                        <div class="d-flex"><span class="min-w-110px">{{ translate('Per Day')}}</span>
+                                        <div class="d-flex"><span class="min-w-110px">{{ translate('Per day')}}</span>
                                             <span class="font-semibold">:{{\App\CentralLogics\Helpers::format_currency($vehicle['day_wise_price'])}}</span>
                                         </div>
                                         @endif
@@ -314,21 +303,21 @@
                                 <td>
                                     <div class="d-flex justify-content-between gap-20px">
                                         <div>
-                                            <div class="d-flex"> <span class="min-w-110px">{{translate('Air Condition')}}</span><span
+                                            <div class="d-flex"> <span class="min-w-110px">{{ translate('Air condition') }}</span><span
                                                     class="font-semibold">: {{ $vehicle->air_condition ? 'Yes' : 'No' }}</span></div>
                                             <div class="d-flex"><span class="min-w-110px">{{translate('Transmission')}}</span><span
                                                     class="font-semibold">:
                                                         {{ ucwords($vehicle->transmission_type) }}</span></div>
-                                            <div class="d-flex"><span class="min-w-110px">{{translate('Fuel Type')}}</span><span
+                                            <div class="d-flex"><span class="min-w-110px">{{translate('Fuel type')}}</span><span
                                                     class="font-semibold">: {{ $vehicle->fuel_type }}</span></div>
                                         </div>
                                         <div>
-                                            <div class="d-flex"> <span class="min-w-110px">{{translate('Engine Capacity')}}</span><span
+                                            <div class="d-flex"> <span class="min-w-110px">{{translate('Engine capacity')}}</span><span
                                                     class="font-semibold">: {{ $vehicle->engine_capacity }}</span></div>
-                                            <div class="d-flex"><span class="min-w-110px">{{translate('Seating Capacity')}}</span><span
+                                            <div class="d-flex"><span class="min-w-110px">{{translate('Seating capacity')}}</span><span
                                                     class="font-semibold">:
                                                         {{ $vehicle->seating_capacity }}</span></div>
-                                            <div class="d-flex"><span class="min-w-110px">{{translate('Engine Power')}}</span><span
+                                            <div class="d-flex"><span class="min-w-110px">{{translate('Engine power')}}</span><span
                                                     class="font-semibold">: {{ $vehicle->engine_power }}</span></div>
                                         </div>
                                     </div>
@@ -338,18 +327,16 @@
                         </table>
 
                     </div>
-                    <!-- End Table -->
                 </div>
             </div>
         </div>
 
         <div class="card mb-20">
-            <!-- Table -->
             <div class="table-responsive">
                 <table id="" class="table table-borderless table-thead-bordered table-nowrap card-table">
                     <thead class="thead-light">
                     <tr>
-                        <th class="border-0">{{ translate('messages.Identity_Info') }}</th>
+                        <th class="border-0">{{ translate('Identity information') }}</th>
                     </tr>
                     </thead>
 
@@ -363,11 +350,11 @@
                                         <div class="opacity-70 mb-2">{{translate('Vehicle')}} {{ $loop->iteration }}</div>
                                         <div class="border rounded p-3 d-flex gap-4 justify-content-between">
                                             <div>
-                                                <div class="fs-12 opacity-60">{{translate('VIN Number')}}</div>
+                                                <div class="fs-12 opacity-60">{{translate('VIN number')}}</div>
                                                 <div>{{ $multi->vin_number }}</div>
                                             </div>
                                             <div class="pr-4">
-                                                <div class="fs-12 opacity-60">{{translate('Registration No.')}}</div>
+                                                <div class="fs-12 opacity-60">{{translate('Registration no.')}}</div>
                                                 <div>{{ $multi->license_plate_number }}</div>
                                             </div>
                                         </div>
@@ -381,13 +368,12 @@
                 </table>
 
             </div>
-            <!-- End Table -->
         </div>
         <div class="card mb-20">
             <div class="card-header">
                 <div>
                     <h5 class="text-title mb-1">
-                        {{ translate('messages.Additional_Documents') }}
+                        {{ translate('Additional documents') }}
                     </h5>
                     <p class="fs-12">
                         {{ translate('messages.Here you can see all images & document for the provider') }}
@@ -400,14 +386,14 @@
                         <div class="pdf-single" data-pdf-url="{{ $doc }}">
                             <div class="pdf-frame">
                                 <canvas class="pdf-preview display-none"></canvas>
-                                <img class="pdf-thumbnail" src="{{ $doc }}" alt="{{translate('File Thumbnail')}}">
+                                <img class="pdf-thumbnail" src="{{ $doc }}" alt="{{translate('File thumbnail')}}">
                             </div>
                             <div class="overlay">
                                 <a href="javascript:void(0);" class="download-btn">
                                     <i class="tio-download-to"></i>
                                 </a>
                                 <div class="pdf-info d-flex gap-10px align-items-center">
-                                    <img src="{{ asset('public/assets/admin/img/document.svg') }}" width="34" alt="{{translate('Document Logo')}}">
+                                    <img src="{{ asset('public/assets/admin/img/document.svg') }}" width="34" alt="{{translate('Document logo')}}">
                                     <div class="fs-13 text--title d-flex flex-column">
                                         <span class="file-name js-filename-truncate"></span>
                                         <span class="opacity-50">{{translate('Click to view the file')}}</span>
@@ -420,14 +406,12 @@
             </div>
         </div>
         <div class="card">
-            <!-- Header -->
             <div class="card-header py-2">
                 <div class="search--button-wrapper">
                     <h5 class="card-title text--title">
                         {{ translate('messages.Reviews') }}
                         <span class="badge badge-soft-dark ml-2" id="itemCount">{{ $vehicleReview->total() }}</span>
                     </h5>
-                    <!-- Unfold -->
                     <div class="hs-unfold mr-2">
                         <a class="js-hs-unfold-invoker btn btn-sm btn-white dropdown-toggle min-height-40 font-semibold"
                            href="javascript:;"
@@ -435,36 +419,33 @@
                             "target": "#usersExportDropdown",
                             "type": "css-animation"
                         }'>
-                            <i class="tio-download-to mr-1"></i> {{ translate('messages.export') }}
+                            <i class="tio-download-to mr-1"></i> {{ translate('messages.Export') }}
                         </a>
 
                         <div id="usersExportDropdown"
                              class="hs-unfold-content dropdown-unfold dropdown-menu dropdown-menu-sm-right">
 
-                            <span class="dropdown-header">{{ translate('messages.download_options') }}</span>
+                            <span class="dropdown-header">{{ translate('messages.Download options') }}</span>
                             <a id="export-excel" class="dropdown-item"
                                href="{{ route('vendor.vehicle.review.export', ['vehicle_id' => request()->id, 'type' => 'excel', request()->getQueryString()]) }}">
                                 <img class="avatar avatar-xss avatar-4by3 mr-2"
                                      src="{{ asset('public/assets/admin') }}/svg/components/excel.svg"
-                                     alt="{{translate('Image Description')}}">
-                                {{ translate('messages.excel') }}
+                                     alt="{{translate('Image description')}}">
+                                Excel
                             </a>
                             <a id="export-csv" class="dropdown-item"
                                href="{{ route('vendor.vehicle.review.export', ['vehicle_id' => request()->id, 'type' => 'csv', request()->getQueryString()]) }}">
                                 <img class="avatar avatar-xss avatar-4by3 mr-2"
                                      src="{{ asset('public/assets/admin') }}/svg/components/placeholder-csv-format.svg"
-                                     alt="{{translate('Image Description')}}">
-                                {{ translate('messages.csv') }}
+                                     alt="{{translate('Image description')}}">
+                                CSV
                             </a>
 
                         </div>
                     </div>
-                    <!-- End Unfold -->
                 </div>
             </div>
-            <!-- End Header -->
-            @php($store_review_reply = App\Models\BusinessSetting::where('key' , 'store_review_reply')->first()->value ?? 0)
-            <!-- Table -->
+            @php($store_review_reply = \App\CentralLogics\Helpers::get_business_settings('store_review_reply', false) ?? 0)
             <div class="table-responsive datatable-custom">
                 <table id="columnSearchDatatable"
                        class="table table-borderless table-thead-bordered table-nowrap table-align-middle card-table"
@@ -475,15 +456,15 @@
                         }'>
                     <thead class="thead-light">
                     <tr>
-                        <th class="border-0">{{translate('messages.#')}}</th>
-                        <th class="border-0">{{translate('messages.Review_Id')}}</th>
+                        <th class="border-0">#</th>
+                        <th class="border-0">{{translate('Review ID')}}</th>
                         <th class="border-0">{{translate('messages.Vehicle')}}</th>
-                        <th class="border-0">{{translate('messages.reviewer')}}</th>
+                        <th class="border-0">{{translate('messages.Reviewer')}}</th>
                         <th class="border-0">{{translate('messages.review')}}</th>
-                        <th class="border-0">{{translate('messages.date')}}</th>
-                        <th class="border-0">{{translate('messages.Reply_date')}}</th>
+                        <th class="border-0">{{translate('messages.Date')}}</th>
+                        <th class="border-0">{{translate('messages.Reply date')}}</th>
                         @if($store_review_reply == '1')
-                            <th class="text-center">{{translate('messages.action')}}</th>
+                            <th class="text-center">{{translate('messages.Action')}}</th>
                         @endif
                     </tr>
                     </thead>
@@ -498,17 +479,15 @@
                                     <div class="position-relative media align-items-center">
                                         <a class=" text-hover-primary absolute--link" href="{{route('vendor.vehicle.details',$review->vehicle_id)}}">
                                             <img class="avatar avatar-lg mr-3  onerror-image"  data-onerror-image="{{asset('public/assets/admin/img/160x160/img1.jpg')}}"
-                                                 src="{{ $review->vehicle->thumbnail_full_url }}" alt="{{$review?->vehicle?->name}} {{translate('image')}}">
+                                                 src="{{ $review->vehicle->thumbnail_full_url }}" alt="{{$review?->vehicle?->name}} {{translate('Image')}}">
                                         </a>
                                         <div class="media-body">
                                             <h5 class="text-hover-primary important--link mb-0">{{Str::limit($review?->vehicle?->name,10)}}</h5>
-                                            <!-- Static -->
                                             <a href="{{route('vendor.trip.details',$review->trip_id)}}"  class="fz--12 text-body important--link">{{ translate('Trip ID') }} #{{$review->trip_id}}</a>
-                                            <!-- Static -->
                                         </div>
                                     </div>
                                 @else
-                                    {{translate('messages.Food_deleted!')}}
+                                    {{translate('messages.Food deleted!')}}
                                 @endif
                             </td>
                             <td>
@@ -518,7 +497,7 @@
                                         <span class="d-block font-size-sm text-body">{{Str::limit($review->customer->phone)}}</span>
                                     </div>
                                 @else
-                                    {{translate('messages.customer_not_found')}}
+                                    {{translate('No data found')}}
                                 @endif
                             </td>
                             <td>
@@ -541,13 +520,13 @@
                             </td>
                             <td>
                                 <p class="text-wrap" data-toggle="tooltip" data-placement="top"
-                                   data-original-title="{{ $review?->reply }}">{!! $review->reply?Str::limit($review->reply, 50, '...'): translate('messages.Not_replied_Yet') !!}</p>
+                                   data-original-title="{{ $review?->reply }}">{!! $review->reply?Str::limit($review->reply, 50, '...'): translate('Not replied yet') !!}</p>
                             </td>
                             @if($store_review_reply == '1')
                                 <td>
                                     <div class="btn--container justify-content-center">
-                                        <a  class="btn btn-sm btn--primary {{ $review->reply ? 'btn-outline-primary' : ''}}" data-toggle="modal" data-target="#reply-{{$review->id}}" title="{{translate('View Details')}}">
-                                            {{ $review->reply ? translate('view_reply') : translate('give_reply')}}
+                                        <a  class="btn btn-sm btn--primary {{ $review->reply ? 'btn-outline-primary' : ''}}" data-toggle="modal" data-target="#reply-{{$review->id}}" title="{{translate('View details')}}">
+                                            {{ $review->reply ? translate('View reply') : translate('Give reply')}}
                                         </a>
                                     </div>
                                 </td>
@@ -565,7 +544,7 @@
                                                 <a class="absolute--link" href="{{route('vendor.vehicle.details',$review->vehicle_id)}}">
                                                 </a>
                                                 <img class="avatar avatar-lg mr-3  onerror-image"  data-onerror-image="{{asset('public/assets/admin/img/160x160/img1.jpg')}}"
-                                                     src="{{ $review?->vehicle?->thumbnail_full_url }}" alt="{{$review?->vehicle?->name}} {{translate('image')}}">
+                                                     src="{{ $review?->vehicle?->thumbnail_full_url }}" alt="{{$review?->vehicle?->name}} {{translate('Image')}}">
                                                 <div>
                                                     <h5 class="text-hover-primary mb-0">{{ $review?->vehicle?->name }}</h5>
                                                     @if ($review?->vehicle?->avg_rating == 5)
@@ -675,15 +654,15 @@
                                                         <span class="d-block font-size-sm text-body">{{$review->comment}}</span>
                                                     </div>
                                                 @else
-                                                    {{translate('messages.customer_not_found')}}
+                                                    {{translate('No data found')}}
                                                 @endif
                                             </div>
                                             <div class="mt-3">
                                                 <form action="{{route('vendor.rental.review.reply', $review->id)}}" method="POST">
                                                     @csrf
-                                                    <textarea id="reply" name="reply" required class="form-control" cols="30" rows="3" placeholder="{{ translate('Write_your_reply_here') }}">{{ $review->reply ?? '' }}</textarea>
+                                                    <textarea id="reply" name="reply" required class="form-control" cols="30" rows="3" placeholder="{{ translate('Write your reply here') }}">{{ $review->reply ?? '' }}</textarea>
                                                     <div class="mt-3 btn--container justify-content-end">
-                                                        <button class="btn btn-primary">{{ $review->reply ? translate('update_reply') : translate('send_reply')}}</button>
+                                                        <button class="btn btn-primary">{{ $review->reply ? translate('Update reply') : translate('Send reply')}}</button>
                                                     </div>
                                                 </form>
                                             </div>
@@ -707,14 +686,12 @@
                 <div class="empty--data">
                     <img src="{{asset('/public/assets/admin/svg/illustrations/sorry.svg')}}" alt="public">
                     <h5>
-                        {{translate('no_data_found')}}
+                        {{translate('No data found')}}
                     </h5>
                 </div>
             @endif
-            <!-- End Table -->
         </div>
     </div>
-    <!-- End Modal -->
 @endsection
 
 @push('script_2')

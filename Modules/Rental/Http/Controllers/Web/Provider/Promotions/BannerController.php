@@ -2,10 +2,10 @@
 
 namespace Modules\Rental\Http\Controllers\Web\Provider\Promotions;
 
+use App\Rules\ImageFile;
 use Exception;
 use App\Models\Banner;
 use Illuminate\Http\Request;
-use App\Traits\FileManagerTrait;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Contracts\View\View;
@@ -17,14 +17,12 @@ use Illuminate\Contracts\View\Factory;
 use Modules\Rental\Exports\BannerExport;
 use Illuminate\Contracts\Foundation\Application;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
+use App\Support\Storage\FileStorage;
 
 class BannerController extends Controller
 {
     private Banner $banner;
     private Helpers $helpers;
-
-
-    use FileManagerTrait;
 
     public function __construct(Banner $banner, Helpers $helpers)
     {
@@ -60,10 +58,10 @@ class BannerController extends Controller
             DB::commit();
         } catch (Exception) {
             DB::rollBack();
-            Toastr::error(translate('messages.failed_to_add_banner'));
+            Toastr::error(translate('messages.Failed to add banner'));
             return back();
         }
-        Toastr::success(translate('messages.banner_added_successfully'));
+        Toastr::success(translate('Added successfully'));
         return back();
     }
 
@@ -73,7 +71,7 @@ class BannerController extends Controller
      */
     public function edit(Banner $banner): View|Factory|Application|RedirectResponse
     {
-        $banner->load('translations');
+        $banner->load(['translations', 'storage']);
         $language = getWebConfig('language') ?? [];
         $defaultLang = str_replace('_', '-', app()->getLocale());
         return view('rental::provider.banner.edit', compact('banner', 'language', 'defaultLang'));
@@ -91,11 +89,11 @@ class BannerController extends Controller
         try {
             $this->updateBanner($request, $banner);
             Helpers::add_or_update_translations(request: $request, key_data: 'title', name_field: 'title', model_name: 'Banner', data_id: $banner->id, data_value: $banner->title);
-            Toastr::success(translate('messages.banner_updated_successfully'));
+            Toastr::success(translate('Updated successfully'));
             return to_route('vendor.rental_banner.list');
 
         } catch (Exception) {
-            Toastr::error(translate('messages.failed_to_update_banner'));
+            Toastr::error(translate('messages.Failed to update banner'));
             return back();
         }
     }
@@ -107,7 +105,7 @@ class BannerController extends Controller
     public function status(Banner $banner): RedirectResponse
     {
         $banner->update(['status' => !$banner->status]);
-        Toastr::success(translate('messages.banner_status_updated_successfully'));
+        Toastr::success(translate('Updated successfully'));
         return back();
     }
 
@@ -118,7 +116,7 @@ class BannerController extends Controller
     public function updateFeatured(Banner $banner): RedirectResponse
     {
         $banner->update(['featured' => !$banner->featured]);
-        Toastr::success(translate('messages.banner_featured_updated_successfully'));
+        Toastr::success(translate('Updated successfully'));
         return back();
     }
 
@@ -129,12 +127,12 @@ class BannerController extends Controller
     public function destroy(Banner $banner): RedirectResponse
     {
         if ($banner->image) {
-            Helpers::check_and_delete('banner/' , $banner->image);
+            FileStorage::delete('banner/' , $banner->image);
         }
         $banner->translations()->delete();
         $banner->delete();
 
-        Toastr::success(translate('messages.banner_deleted_successfully'));
+        Toastr::success(translate('Deleted successfully'));
         return back();
     }
 
@@ -170,7 +168,7 @@ class BannerController extends Controller
         $request->validate(
             [
                 'title' => 'required|max:191',
-                'image' => $image == true ? 'required' : 'nullable',
+                'image' => ImageFile::rules($image == true ? 'required' : 'nullable'),
             ]
         );
     }
@@ -186,7 +184,7 @@ class BannerController extends Controller
         $banner->title = $request->title[array_search('default', $request->lang)];
         $banner->zone_id = $store->zone_id ?? 0;
         $banner->data = $store->id;
-        $banner->image = $this->upload('banner/', 'png', $request->file('image'));
+        $banner->image = FileStorage::upload('banner/', $request->file('image'));
         $banner->module_id = $store->module_id ?? null;
         $banner->type = 'store_wise';
         $banner->default_link = $request->default_link;
@@ -199,7 +197,7 @@ class BannerController extends Controller
     private function updateBanner(Request $request, Banner $banner): void
     {
         if ($request->hasFile('image')) {
-            $banner->image = $this->updateAndUpload('banner/', $banner->image ,'png', $request->file('image'));
+            $banner->image = FileStorage::update('banner/', $banner->image , $request->file('image'));
         }
         $banner->title = $request->title[array_search('default', $request->lang)];
         $banner->default_link = $request->default_link;

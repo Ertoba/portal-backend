@@ -3,9 +3,9 @@
         <div>
             <div class="text-center">
                 <input type="button" class="btn btn-primary mt-3 non-printable print-Div"
-                       value="{{ translate('Proceed,_If_thermal_printer_is_ready.') }}" />
+                       value="{{ translate('Proceed, if the thermal printer is ready.') }}" />
                 <a href="{{ url()->previous() }}"
-                   class="btn btn-danger non-printable mt-3">{{ translate('messages.back') }}</a>
+                   class="btn btn-danger non-printable mt-3"><i class="tio-arrow-backward"></i> {{ translate('Back') }}</a>
             </div>
 
             <hr class="non-printable">
@@ -38,7 +38,7 @@
                     </div>
                     <div class="order-info-id text-center">
                         <div class="d-flex justify-content-center mb-2 fs-12">
-                            <span class="fw-medium">{{ translate('trip_Id') }}</span>
+                            <span class="fw-medium">{{ translate('Trip ID') }}</span>
                             <span>:</span>
                             <span class="fw-medium">{{ $trip?->id }}</span>
                         </div>
@@ -47,7 +47,7 @@
                         </div>
                         <div>
                             @if ($trip->provider?->gst_status)
-                                <span>{{ translate('Gst No') }}</span> <span>:</span> <span>{{ $trip?->provider?->gst_code }}</span>
+                                <span>{{ translate('GST no') }}</span> <span>:</span> <span>{{ $trip?->provider?->gst_code }}</span>
                             @endif
                         </div>
                     </div>
@@ -55,19 +55,19 @@
                         <div class="row mt-3">
                             <div class="col-12">
                                 <div class="mb-1">
-                                    <span class="opacity-70">{{ translate('messages.customer_name') }}</span> <span>:</span>
+                                    <span class="opacity-70">{{ translate('Customer name') }}</span> <span>:</span>
                                     <span>{{ $trip?->customer ? $trip?->customer?->fullName : $trip?->user_info['contact_person_name'] }}</span>
                                 </div>
                                 <div class="mb-1">
-                                    <span class="opacity-70">{{ translate('messages.phone') }}</span> <span>:</span>
+                                    <span class="opacity-70">{{ translate('Phone') }}</span> <span>:</span>
                                     <span>{{ $trip?->customer ? $trip?->customer?->phone : $trip?->user_info['contact_person_number'] }}</span>
                                 </div>
                                 <div class="text-break mb-1">
-                                    <span class="opacity-70">{{ translate('messages.pickup_location') }}</span> <span>:</span>
+                                    <span class="opacity-70">{{ translate('Pickup location') }}</span> <span>:</span>
                                     <span>{{ $trip?->pickup_location['location_name'] }}</span>
                                 </div>
                                 <div class="text-break mb-1">
-                                    <span class="opacity-70">{{ translate('messages.destination_location') }}</span> <span>:</span>
+                                    <span class="opacity-70">{{ translate('messages.Destination location') }}</span> <span>:</span>
                                     <span>{{ $trip?->destination_location['location_name'] }}</span>
                                 </div>
                             </div>
@@ -79,7 +79,7 @@
                             <table class="table invoice--table text-black mb-1">
                                 <thead class="border-0">
                                 <tr class="border-0">
-                                    <th>{{ translate('messages.Vehicle_List') }}</th>
+                                    <th>{{ translate('Vehicle list') }}</th>
                                     <th class="w-10p"></th>
                                     <th>{{ translate('messages.price') }}</th>
                                 </tr>
@@ -88,7 +88,6 @@
                                 <tbody>
                                 @php($sub_total = 0)
                                 @php($total_tax = 0)
-                                @php($total_dis_on_pro = 0)
                                 @foreach($trip->trip_details as $details)
                                     <tr>
                                         <td>
@@ -105,16 +104,16 @@
                                                         } elseif( $details->rental_type == 'day_wise'){
                                                             $getTime=( (int) round($details->estimated_hours/ 24)  ) .'Days'; ;
                                                         } else{
-                                                            $getTime=  $details->distance .' Km';
+                                                            $getTime = $details->distance_label ?? '';
                                                         }
                                                         ?>
                                                         {{ $getTime }}
                                                     </span><br>
                                                     @php($licensePlates = $details?->tripVehicleDetails->map(function($vehicleDetails) {
-                                                            return $vehicleDetails?->vehicle_identity_data?->license_plate_number ?? translate('vehicle not found');
-                                                        })->filter()->implode(', ') ?? translate('vehicle not assign'))
+                                                            return $vehicleDetails?->vehicle_identity_data?->license_plate_number ?? translate('No data found');
+                                                        })->filter()->implode(', ') ?? translate('Vehicle not assigned'))
 
-                                                    <span class="fs-9">@if($licensePlates) {{translate('Vehicles')}}: {{ $licensePlates }} @endif </span>
+                                                    <span class="fs-9">@if($licensePlates) {{translate('vehicles')}}: {{ $licensePlates }} @endif </span>
                                                 </div>
                                             </div>
                                         </td>
@@ -135,28 +134,28 @@
 
                         <div class="checkout--info">
                             <dl class="row text-right">
-                                <dt class="col-6 opacity-70">{{ translate('messages.Subtotal') }}
+                                <dt class="col-6 opacity-70">{{ translate('messages.subtotal') }}
                                     @if ($trip->tax_status == 'included' )
-                                        ({{ translate('messages.TAX_Included') }})
+                                        ({{ translate('TAX included') }})
                                     @endif
                                     :</dt>
                                 <dd class="col-6"> {{ \App\CentralLogics\Helpers::format_currency($sub_total) }} </dd>
 
-                                <dt class="col-6 opacity-70">{{ translate('messages.Discount') }}:</dt>
+                                <dt class="col-6 opacity-70">{{ translate('Discount') }}:</dt>
                                 <dd class="col-6">  - {{ \App\CentralLogics\Helpers::format_currency($trip['discount_on_trip'])}}</dd>
 
-                                <dt class="col-6 opacity-70">{{ translate('messages.Coupon_Discount') }}:</dt>
+                                <dt class="col-6 opacity-70">{{ translate('Coupon discount') }}:</dt>
                                 <dd class="col-6"> - {{ \App\CentralLogics\Helpers::format_currency($trip['coupon_discount_amount']) }}</dd>
 
                                 @if (($trip->proDiscount?->amount_saved ?? 0) > 0)
-                                <dt class="col-6 opacity-70">{{ translate('messages.Pro_discount') }}:</dt>
+                                <dt class="col-6 opacity-70">{{ translate('messages.Pro discount') }}:</dt>
                                 <dd class="col-6"> - {{ \App\CentralLogics\Helpers::format_currency($trip->proDiscount?->amount_saved) }}</dd>
                                 @endif
 
                                 <dt class="col-6 opacity-70">{{ translate('messages.tax') }}:</dt>
                                 <dd class="col-6"> +{{ \App\CentralLogics\Helpers::format_currency($trip['tax_amount']) }}</dd>
 
-                                <dt class="col-6 total">{{ translate('messages.total') }}:</dt>
+                                <dt class="col-6 total">{{ translate('messages.Total') }}:</dt>
                                 <dd class="col-6 total"> {{ \App\CentralLogics\Helpers::format_currency($trip->trip_amount) }}</dd>
                             </dl>
                         </div>
@@ -164,12 +163,12 @@
 
                     <div class="top-info">
                         <img src="{{ asset('/public/assets/admin/img/line_icon.svg') }}" alt="" class="w-100">
-                        <div>{{ translate('Thank You') }}</div>
+                        <div>{{ translate('Thank you') }}</div>
                         <img src="{{ asset('/public/assets/admin/img/line_icon.svg') }}" alt="" class="w-100">
 
                         <div class="copyright">
-                            &copy; {{ \App\Models\BusinessSetting::where(['key' => 'business_name'])->first()->value }}.
-                            <span class="d-none d-sm-inline-block">{{ \App\Models\BusinessSetting::where(['key' => 'footer_text'])->first()->value }}</span>
+                            &copy; {{ \App\CentralLogics\Helpers::get_business_settings('business_name', false) }}.
+                            <span class="d-none d-sm-inline-block">{{ \App\CentralLogics\Helpers::get_business_settings('footer_text', false) }}</span>
                         </div>
                     </div>
                 </div>

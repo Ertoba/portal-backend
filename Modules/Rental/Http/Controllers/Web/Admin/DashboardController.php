@@ -21,21 +21,15 @@ use Modules\Rental\Entities\TripTransaction;
 class DashboardController extends Controller
 {
 
-    public function __construct()
-    {
-        DB::statement("SET sql_mode=(SELECT REPLACE(@@sql_mode,'ONLY_FULL_GROUP_BY',''));");
-    }
-
     /**
      * @param Request $request
      * @return Application|Factory|View|RedirectResponse|JsonResponse
      */
     public function dashboard(Request $request): Application|Factory|View|RedirectResponse|JsonResponse
     {
-//        dd($request->all(), auth('admin')->user()->email);
-        $zone_id = $request->get('zone_id', 'all');
-        $statistics_type = $request->get('statistics_type', 'all');
-        $statistics_chart_type = $request->get('statistics_chart_type', 'all');
+        $zone_id = $request->input('zone_id', 'all');
+        $statistics_type = $request->input('statistics_type', 'all');
+        $statistics_chart_type = $request->input('statistics_chart_type', 'all');
 
         $tripQuery = Trips::when($zone_id != 'all', function ($query) use ($zone_id) {
             return $query->Zone($zone_id);
@@ -59,16 +53,21 @@ class DashboardController extends Controller
             $tripQuery->whereBetween('created_at', [now()->startOfWeek(), now()->endOfWeek()]);
         }
 
-        $distanceWiseCount = (clone $tripQuery)->where('trip_type', 'distance_wise')->count();
-        $hourlyCount = (clone $tripQuery)->where('trip_type', 'hourly')->count();
-        $daywiseCount =  (clone $tripQuery)->where('trip_type', 'day_wise')->count();
+        $typeCounts = (clone $tripQuery)->selectRaw('trip_type, count(*) as aggregate')
+            ->groupBy('trip_type')->get()->pluck('aggregate', 'trip_type');
 
-        $totalCount = (clone $tripQuery)->count();
-        $pendingCount = (clone $tripQuery)->pending()->count();
-        $confirmedCount = (clone $tripQuery)->confirmed()->count();
-        $ongoingCount = (clone $tripQuery)->ongoing()->count();
-        $completedCount = (clone $tripQuery)->completed()->count();
-        $canceledCount = (clone $tripQuery)->canceled()->count();
+        $distanceWiseCount = $typeCounts['distance_wise'] ?? 0;
+        $hourlyCount = $typeCounts['hourly'] ?? 0;
+        $daywiseCount = $typeCounts['day_wise'] ?? 0;
+
+        $statusCounts = Trips::statusCounts($tripQuery);
+
+        $totalCount = $statusCounts->sum();
+        $pendingCount = $statusCounts['pending'] ?? 0;
+        $confirmedCount = $statusCounts['confirmed'] ?? 0;
+        $ongoingCount = $statusCounts['ongoing'] ?? 0;
+        $completedCount = $statusCounts['completed'] ?? 0;
+        $canceledCount = $statusCounts['canceled'] ?? 0;
         $zoneName = $zone_id == 'all' ? 'All' : Zone::where('id', $zone_id)->value('name');
 
         $module_type = Config::get('module.current_module_type');
@@ -130,8 +129,8 @@ class DashboardController extends Controller
      */
     public function byTripType(Request $request): Application|Factory|View|RedirectResponse|JsonResponse
     {
-        $zone_id = $request->get('zone_id', 'all');
-        $type = $request->get('trip_overview', 'all');
+        $zone_id = $request->input('zone_id', 'all');
+        $type = $request->input('trip_overview', 'all');
 
         $tripQuery = Trips::when($zone_id != 'all', function ($query) use ($zone_id) {
             return $query->Zone($zone_id);
@@ -166,8 +165,8 @@ class DashboardController extends Controller
      */
     public function commissionOverview(Request $request): Application|Factory|View|RedirectResponse|JsonResponse
     {
-        $request->get('zone_id', 'all');
-        $request->get('commission_overview', 'all');
+        $request->input('zone_id', 'all');
+        $request->input('commission_overview', 'all');
 
         $data = self::dashboard_data($request);
         $total_sell = $data['total_sell'];
@@ -193,22 +192,120 @@ class DashboardController extends Controller
             }, $label)
                 ], 200);
     }
+    private function bucketAggregate($value)
+    {
+        if (! $value) {
+            return 0;
+        }
+
+        if (is_int($value) || is_float($value)) {
+            return $value;
+        }
+
+        return ! str_contains((string) $value, '.') ? (int) $value : (float) $value;
+    }
+
+    private function tripTransactionBucketSums(array $buckets, $request): array
+    {
+        $select = [];
+        $bindings = [];
+
+        foreach (['trip_amount' => 's', 'admin_commission + admin_expense' => 'c'] as $expression => $prefix) {
+            foreach ($buckets as $key => [$condition, $binds]) {
+                $select[] = "sum(case when {$condition} then {$expression} else 0 end) as {$prefix}_{$key}";
+
+                foreach ($binds as $bind) {
+                    $bindings[] = $bind;
+                }
+            }
+        }
+
+        $row = TripTransaction::when(is_numeric($request['module_id']), function ($q) use ($request) {
+                return $q->where('module_id', $request['module_id']);
+            })
+            ->when(is_numeric($request['zone_id']), function ($q) use ($request) {
+                return $q->where('zone_id', $request['zone_id']);
+            })
+            ->toBase()
+            ->selectRaw(implode(', ', $select), $bindings)
+            ->first();
+
+        $total_sell = [];
+        $commission = [];
+
+        foreach (array_keys($buckets) as $key) {
+            $total_sell[$key] = $this->bucketAggregate($row?->{"s_{$key}"});
+            $commission[$key] = $this->bucketAggregate($row?->{"c_{$key}"});
+        }
+
+        return [$total_sell, $commission];
+    }
+
+    private function subscriptionBucketSums(array $buckets, $request): array
+    {
+        $select = [];
+        $bindings = [];
+
+        foreach ($buckets as $key => [$condition, $binds]) {
+            $select[] = "sum(case when {$condition} then paid_amount else 0 end) as p_{$key}";
+
+            foreach ($binds as $bind) {
+                $bindings[] = $bind;
+            }
+        }
+
+        $row = SubscriptionTransaction::when(is_numeric($request['zone_id']), function ($q) use ($request) {
+                return $q->whereHas('store', function ($query) use ($request) {
+                    return $query->where('zone_id', $request['zone_id'])->where('module_id', $request['module_id']);
+                });
+            })
+            ->toBase()
+            ->selectRaw(implode(', ', $select), $bindings)
+            ->first();
+
+        $total_subs = [];
+
+        foreach (array_keys($buckets) as $key) {
+            $total_subs[$key] = $this->bucketAggregate($row?->{"p_{$key}"});
+        }
+
+        return $total_subs;
+    }
+
     public function dashboard_data($request)
     {
-        $topCustomers = User::select('users.*')
-            ->selectRaw('COUNT(trips.id) as trip_count')
-            ->join('trips', 'trips.user_id', '=', 'users.id')
-            ->when(is_numeric($request['zone_id']), function ($q) use ($request) {
-                return $q->where('users.zone_id', $request['zone_id']);
+        // Ranked from the trips side: the previous join plus withCount('trips'), ordered on
+        // the alias, could not terminate early and was still running after 690s against 2M
+        // trips to produce five rows. is_guest = 0 mirrors the User::trips() relation.
+        $topTripCounts = DB::table('trips')
+            ->selectRaw('user_id, COUNT(*) AS trip_count')
+            ->where('is_guest', 0)
+            ->whereNotNull('user_id')
+            ->when(is_numeric($request['zone_id']), function ($query) use ($request) {
+                // Users in the zone, as the original users.zone_id filter meant -- trips
+                // carry the provider's zone.
+                return $query->whereIn('user_id', User::select('id')->where('zone_id', $request['zone_id']));
             })
-            ->groupBy('users.id')
-            ->having('trip_count', '>', 0)
-            ->orderBy('trip_count', 'desc')
-            ->take(5)
-            ->get();
+            ->groupBy('user_id')
+            ->orderByDesc('trip_count')
+            ->limit(5)
+            ->pluck('trip_count', 'user_id');
+
+        $topCustomers = User::withStorage()
+            ->whereIn('id', $topTripCounts->keys())
+            ->get()
+            ->each(function ($customer) use ($topTripCounts) {
+                // Both names are set: the view reads trip_count, and trips_count is what
+                // withCount('trips') used to expose.
+                $count = (int) ($topTripCounts[$customer->id] ?? 0);
+                $customer->trip_count = $count;
+                $customer->trips_count = $count;
+            })
+            ->sortByDesc('trip_count')
+            ->values();
 
 
-        $topProvider = Store::withcount('trips')
+        $topProvider = Store::withStorage()->withcount('trips')
             ->when(is_numeric($request['module_id']), function ($q) use ($request) {
                 return $q->where('module_id', $request['module_id']);
             })
@@ -222,99 +319,48 @@ class DashboardController extends Controller
 
 
 
-        // custom filtering for bar chart
         $months = array(
-            '"'.translate('Jan').'"',
-            '"'.translate('Feb').'"',
-            '"'.translate('Mar').'"',
-            '"'.translate('Apr').'"',
-            '"'.translate('May').'"',
-            '"'.translate('Jun').'"',
-            '"'.translate('Jul').'"',
-            '"'.translate('Aug').'"',
-            '"'.translate('Sep').'"',
-            '"'.translate('Oct').'"',
-            '"'.translate('Nov').'"',
-            '"'.translate('Dec').'"'
+            '"Jan"',
+            '"Feb"',
+            '"Mar"',
+            '"Apr"',
+            '"May"',
+            '"Jun"',
+            '"Jul"',
+            '"Aug"',
+            '"Sep"',
+            '"Oct"',
+            '"Nov"',
+            '"Dec"'
         );
         $days = array(
-            '"'.translate('Mon').'"',
-            '"'.translate('Tue').'"',
-            '"'.translate('Wed').'"',
-            '"'.translate('Thu').'"',
-            '"'.translate('Fri').'"',
-            '"'.translate('Sat').'"',
-            '"'.translate('Sun').'"',
+            '"Mon"',
+            '"Tue"',
+            '"Wed"',
+            '"Thu"',
+            '"Fri"',
+            '"Sat"',
+            '"Sun"',
         );
         $total_sell = [];
         $commission = [];
 
         switch ($request['commission_overview']) {
             case "this_year":
+                $buckets = [];
                 for ($i = 1; $i <= 12; $i++) {
-                    $total_sell[$i] = TripTransaction::when(is_numeric($request['module_id']), function ($q) use ($request) {
-                            return $q->where('module_id', $request['module_id']);
-                        })
-                        ->when(is_numeric($request['zone_id']), function ($q) use ($request) {
-                            return $q->where('zone_id', $request['zone_id']);
-                        })
-                        ->whereMonth('created_at', $i)->whereYear('created_at', now()->format('Y'))
-                        ->sum('trip_amount');
-
-                    $commission[$i] = TripTransaction::when(is_numeric($request['module_id']), function ($q) use ($request) {
-                            return $q->where('module_id', $request['module_id']);
-                        })
-                        ->when(is_numeric($request['zone_id']), function ($q) use ($request) {
-                            return $q->where('zone_id', $request['zone_id']);
-                        })
-                        ->whereMonth('created_at', $i)->whereYear('created_at', now()->format('Y'))
-                        ->sum(DB::raw('admin_commission + admin_expense'));
-
-                    $total_subs[$i] = SubscriptionTransaction::when(is_numeric($request['zone_id']),function($q)use($request){
-                        return $q->whereHas('store', function($query)use($request){
-                            return $query->where('zone_id', $request['zone_id'])->where('module_id', $request['module_id']);
-                        });
-                    })
-                    ->whereMonth('created_at', $i)->whereYear('created_at', now()->format('Y'))
-                    ->sum('paid_amount');
+                    $buckets[$i] = ['month(`created_at`) = ? and year(`created_at`) = ?', [$i, now()->format('Y')]];
                 }
                 $label = $months;
 
                 break;
 
             case "this_week":
-                $weekStartDate = now()->startOfWeek(); // Start from Monday
-
-                for ($i = 0; $i < 7; $i++) { // Loop through each day of the week
-                    $currentDate = $weekStartDate->copy()->addDays($i); // Get the date for the current day in the loop
-
-                    $total_sell[$i] = TripTransaction::when(is_numeric($request['module_id']), function ($q) use ($request) {
-                            return $q->where('module_id', $request['module_id']);
-                        })
-                        ->when(is_numeric($request['zone_id']), function ($q) use ($request) {
-                            return $q->where('zone_id', $request['zone_id']);
-                        })
-                        ->whereDate('created_at', $currentDate->format('Y-m-d'))
-                        ->sum('trip_amount');
-
-                    $commission[$i] = TripTransaction::when(is_numeric($request['module_id']), function ($q) use ($request) {
-                            return $q->where('module_id', $request['module_id']);
-                        })
-                        ->when(is_numeric($request['zone_id']), function ($q) use ($request) {
-                            return $q->where('zone_id', $request['zone_id']);
-                        })
-                        ->whereDate('created_at', $currentDate->format('Y-m-d'))
-                        ->sum(DB::raw('admin_commission + admin_expense'));
-
-                    $total_subs[$i] = SubscriptionTransaction::when(is_numeric($request['zone_id']),function($q)use($request){
-                        return $q->whereHas('store', function($query)use($request){
-                            return $query->where('zone_id', $request['zone_id'])->where('module_id', $request['module_id']);
-                        });
-                    })
-                    ->whereDate('created_at', $currentDate->format('Y-m-d'))
-                    ->sum('paid_amount');
+                $weekStartDate = now()->startOfWeek();
+                $buckets = [];
+                for ($i = 0; $i < 7; $i++) {
+                    $buckets[$i] = ['date(`created_at`) = ?', [$weekStartDate->copy()->addDays($i)->format('Y-m-d')]];
                 }
-
                 $label = $days;
 
                 break;
@@ -329,40 +375,15 @@ class DashboardController extends Controller
                     '"Day 22-' . $total_days . '"',
                 );
 
+                $buckets = [];
                 for ($i = 1; $i <= 4; $i++) {
-                    $end = $start->copy()->addDays(6); // Set the end date for each week
+                    $end = $start->copy()->addDays(6);
 
-                    // Adjust for the last week of the month
                     if ($i == 4) {
                         $end = now()->endOfMonth();
                     }
 
-                    $total_sell[$i] = TripTransaction::when(is_numeric($request['module_id']), function ($q) use ($request) {
-                            return $q->where('module_id', $request['module_id']);
-                        })
-                        ->when(is_numeric($request['zone_id']), function ($q) use ($request) {
-                            return $q->where('zone_id', $request['zone_id']);
-                        })
-                        ->whereBetween('created_at', ["{$start->format('Y-m-d')} 00:00:00", "{$end->format('Y-m-d')} 23:59:59"])
-                        ->sum('trip_amount');
-
-                    $commission[$i] = TripTransaction::when(is_numeric($request['module_id']), function ($q) use ($request) {
-                            return $q->where('module_id', $request['module_id']);
-                        })
-                        ->when(is_numeric($request['zone_id']), function ($q) use ($request) {
-                            return $q->where('zone_id', $request['zone_id']);
-                        })
-                        ->whereBetween('created_at', ["{$start->format('Y-m-d')} 00:00:00", "{$end->format('Y-m-d')} 23:59:59"])
-                        ->sum(DB::raw('admin_commission + admin_expense'));
-
-
-                    $total_subs[$i] = SubscriptionTransaction::when(is_numeric($request['zone_id']),function($q)use($request){
-                        return $q->whereHas('store', function($query)use($request){
-                            return $query->where('zone_id', $request['zone_id'])->where('module_id', $request['module_id']);
-                        });
-                    })
-                    ->whereBetween('created_at', ["{$start->format('Y-m-d')} 00:00:00", "{$end->format('Y-m-d')} 23:59:59"])
-                    ->sum('paid_amount');
+                    $buckets[$i] = ['`created_at` between ? and ?', ["{$start->format('Y-m-d')} 00:00:00", "{$end->format('Y-m-d')} 23:59:59"]];
 
                     $start = $end->copy()->addDay();
                 }
@@ -372,36 +393,16 @@ class DashboardController extends Controller
                 break;
 
             default:
+                $buckets = [];
                 for ($i = 1; $i <= 12; $i++) {
-                    $total_sell[$i] = TripTransaction::when(is_numeric($request['module_id']), function ($q) use ($request) {
-                            return $q->where('module_id', $request['module_id']);
-                        })
-                        ->when(is_numeric($request['zone_id']), function ($q) use ($request) {
-                            return $q->where('zone_id', $request['zone_id']);
-                        })
-                        ->whereMonth('created_at', $i)->whereYear('created_at', now()->format('Y'))
-                        ->sum('trip_amount');
-
-                    $commission[$i] = TripTransaction::when(is_numeric($request['module_id']), function ($q) use ($request) {
-                            return $q->where('module_id', $request['module_id']);
-                        })
-                        ->when(is_numeric($request['zone_id']), function ($q) use ($request) {
-                            return $q->where('zone_id', $request['zone_id']);
-                        })
-                        ->whereMonth('created_at', $i)->whereYear('created_at', now()->format('Y'))
-                        ->sum(DB::raw('admin_commission + admin_expense'));
-
-                    $total_subs[$i] = SubscriptionTransaction::when(is_numeric($request['zone_id']),function($q)use($request){
-                        return $q->whereHas('store', function($query)use($request){
-                            return $query->where('zone_id', $request['zone_id'])->where('module_id', $request['module_id']);
-                        });
-                    })
-                    ->whereMonth('created_at', $i)->whereYear('created_at', now()->format('Y'))
-                    ->sum('paid_amount');
+                    $buckets[$i] = ['month(`created_at`) = ? and year(`created_at`) = ?', [$i, now()->format('Y')]];
                 }
                 $label = $months;
 
         }
+
+        [$total_sell, $commission] = $this->tripTransactionBucketSums($buckets, $request);
+        $total_subs = $this->subscriptionBucketSums($buckets, $request);
 
         $dash_data['top_providers'] = $topProvider;
         $dash_data['top_customers'] = $topCustomers;

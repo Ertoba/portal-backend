@@ -2,6 +2,7 @@
 
 namespace Modules\Rental\Traits;
 
+use App\CentralLogics\Helpers;
 use App\Models\Expense;
 use App\Models\Module;
 use App\Models\Store;
@@ -13,313 +14,6 @@ use Modules\Rental\Entities\TripTransaction;
 
 trait RentalReportGeneratorTrait
 {
-    private function rental_provider_module_ids()
-    {
-        return Module::where('module_type', 'rental')->pluck('id');
-    }
-
-    private function rental_admin_expense_query($query)
-    {
-        return $query
-            ->whereNotNull('trip_id')
-            ->whereNull('store_id')
-            ->where('created_by', 'admin');
-    }
-
-    private function rental_admin_earning_query($query, $module_id = 'all')
-    {
-        return $query
-            ->when(!in_array($module_id, [null, '', 'all'], true), function ($builder) use ($module_id) {
-                $builder->where('trip_transactions.module_id', $module_id);
-            }, function ($builder) {
-                $builder->whereIn('trip_transactions.module_id', $this->rental_provider_module_ids());
-            });
-    }
-
-    private function rental_admin_subscription_query($query, $module_id = 'all')
-    {
-        return $query
-            ->where('payment_status', 'success')
-            ->where('is_trial', 0)
-            ->whereHas('store.module', function ($builder) use ($module_id) {
-                if (!in_array($module_id, [null, '', 'all'], true)) {
-                    $builder->where('id', $module_id);
-                    return;
-                }
-
-                $builder->whereIn('id', $this->rental_provider_module_ids());
-            });
-    }
-
-    private function rental_provider_earning_query($query, $provider_id = 'all', $module_id = 'all')
-    {
-        return $query
-            ->when(!in_array($provider_id, [null, '', 'all'], true), function ($builder) use ($provider_id) {
-                $builder->where('trip_transactions.provider_id', $provider_id);
-            })
-            ->when(!in_array($module_id, [null, '', 'all'], true), function ($builder) use ($module_id) {
-                $builder->where('trip_transactions.module_id', $module_id);
-            }, function ($builder) {
-                $builder->whereIn('trip_transactions.module_id', $this->rental_provider_module_ids());
-            });
-    }
-
-    private function rental_provider_expense_query($query, $provider_id = 'all', $module_id = 'all')
-    {
-        return $query
-            ->whereNotNull('trip_id')
-            ->whereNotNull('store_id')
-            ->where('created_by', 'vendor')
-            ->when(!in_array($provider_id, [null, '', 'all'], true), function ($builder) use ($provider_id) {
-                $builder->where('store_id', $provider_id);
-            })
-            ->when(!in_array($module_id, [null, '', 'all'], true), function ($builder) use ($module_id) {
-                $builder->whereHas('trip', function ($tripQuery) use ($module_id) {
-                    $tripQuery->where('module_id', $module_id);
-                });
-            }, function ($builder) {
-                $builder->whereHas('trip', function ($tripQuery) {
-                    $tripQuery->whereIn('module_id', $this->rental_provider_module_ids());
-                });
-            });
-    }
-
-    private function rental_provider_expense_totals($provider_id = 'all', $module_id = 'all', $filter = null, $from = null, $to = null, $dateRange = null)
-    {
-        $query = $this->rental_provider_expense_query(Expense::query(), $provider_id, $module_id);
-
-        if ($dateRange) {
-            $query->whereBetween('expenses.created_at', $dateRange);
-        } else {
-            $query->applyDateFilter($filter, $from, $to, 'expenses.created_at');
-        }
-
-        return $query->selectRaw("
-                SUM(amount) as total_amount,
-                COUNT(id) as total_count,
-                SUM(CASE WHEN expenses.type = 'discount_on_trip' THEN expenses.amount ELSE 0 END) as discount_on_trip,
-                SUM(CASE WHEN expenses.type = 'coupon_discount' THEN expenses.amount ELSE 0 END) as coupon_discount
-            ")
-            ->first();
-    }
-
-    private function rental_provider_trip_commission_query($query, $provider_id = 'all', $module_id = 'all')
-    {
-        return $this->rental_provider_earning_query($query, $provider_id, $module_id)
-            ->where('admin_commission', '>', 0);
-    }
-
-    private function rental_provider_trip_commission_totals($provider_id = 'all', $module_id = 'all', $filter = null, $from = null, $to = null, $dateRange = null)
-    {
-        $query = $this->rental_provider_trip_commission_query(TripTransaction::query(), $provider_id, $module_id)
-            ->join('trips', 'trips.id', '=', 'trip_transactions.trip_id');
-
-        if ($dateRange) {
-            $query->whereBetween('trip_transactions.created_at', $dateRange);
-        } else {
-            $query->applyDateFilter($filter, $from, $to, 'trip_transactions.created_at');
-        }
-
-        return $query->selectRaw("
-                SUM(
-                    trip_transactions.admin_commission
-                ) as total_amount,
-                COUNT(trip_transactions.id) as total_count
-            ")
-            ->first();
-    }
-
-    private function rental_provider_subscription_query($query, $provider_id = 'all', $module_id = 'all')
-    {
-        return $query
-            ->where('payment_status', 'success')
-            ->where('is_trial', 0)
-            ->when(!in_array($provider_id, [null, '', 'all'], true), function ($builder) use ($provider_id) {
-                $builder->where('store_id', $provider_id);
-            })
-            ->whereHas('store.module', function ($builder) use ($module_id) {
-                if (!in_array($module_id, [null, '', 'all'], true)) {
-                    $builder->where('id', $module_id);
-                    return;
-                }
-
-                $builder->whereIn('id', $this->rental_provider_module_ids());
-            });
-    }
-
-    private function rental_provider_transaction_type($type): string
-    {
-        return match ($type) {
-            'earning', 'order', null, '' => 'order',
-            'expense' => 'expense',
-            'subscription' => 'subscription',
-            default => 'order',
-        };
-    }
-
-
-    private function rental_provider_trip_adjusted_commission_sql(): string
-    {
-        return "
-            (
-                trips.trip_amount
-                + trips.coupon_discount_amount
-                + trips.ref_bonus_amount
-                + trips.discount_on_trip
-                + COALESCE((SELECT SUM(opd.amount_saved) FROM order_pro_discounts opd WHERE opd.trip_id = trips.id), 0)
-                - trips.additional_charge
-                - trips.tax_amount
-            )
-        ";
-    }
-
-    private function rental_admin_trip_earning_amount($adminCommission, $additionalCharge): float
-    {
-        return round(($adminCommission ?? 0) + ($additionalCharge ?? 0), 2);
-    }
-
-    private function rental_provider_format_paginated_transactions($transactions, $limit = null, $offset = null): array
-    {
-        return [
-            'total_size' => $transactions->total(),
-            'limit' => (int) ($limit ?? $transactions->perPage()),
-            'offset' => (int) ($offset ?? $transactions->currentPage()),
-            'data' => $transactions->items(),
-        ];
-    }
-
-    private function rental_resolve_previous_summary($query, string $dateColumn, ?array $previousPeriodRange, string $aggregateColumn = 'sum', string $select = 'amount')
-    {
-        if (!$previousPeriodRange) {
-            return 0;
-        }
-
-        $previousQuery = (clone $query)->whereBetween($dateColumn, $previousPeriodRange);
-
-        if ($aggregateColumn === 'value') {
-            return $previousQuery->value($select) ?? 0;
-        }
-
-        return $previousQuery->sum($select) ?? 0;
-    }
-
-    public function buildRentalAdminEarningSummary($filter, $from, $to, $module_id = 'all')
-    {
-        $previousPeriodRange = $this->getPreviousPeriodRange($filter, $from, $to);
-
-        $tripCommissionBaseQuery = $this->rental_admin_earning_query(
-            TripTransaction::query(),
-            $module_id
-        );
-
-        $currentTripData = (clone $tripCommissionBaseQuery)
-            ->join('trips', 'trips.id', '=', 'trip_transactions.trip_id')
-            ->applyDateFilter($filter, $from, $to, 'trip_transactions.created_at')
-            ->selectRaw('
-                SUM(
-                    trip_transactions.admin_commission
-                ) as trip_commission,
-                SUM(trip_transactions.additional_charge) as additional_charge
-            ')
-            ->first();
-
-        $previousTripData = $previousPeriodRange
-            ? (clone $tripCommissionBaseQuery)
-                ->join('trips', 'trips.id', '=', 'trip_transactions.trip_id')
-                ->whereBetween('trip_transactions.created_at', $previousPeriodRange)
-                ->selectRaw('
-                    SUM(
-                        trip_transactions.admin_commission
-                    ) as trip_commission,
-                    SUM(trip_transactions.additional_charge) as additional_charge
-                ')
-                ->first()
-            : (object) [];
-
-        $trip_commission = round($currentTripData->trip_commission ?? 0, 2);
-        $trip_previous_commission = round($previousTripData->trip_commission ?? 0, 2);
-        $additional_charge = round($currentTripData->additional_charge ?? 0, 2);
-        $previous_additional_charge = round($previousTripData->additional_charge ?? 0, 2);
-        $trip_earning = $this->rental_admin_trip_earning_amount($trip_commission, $additional_charge);
-        $previous_trip_earning = $this->rental_admin_trip_earning_amount($trip_previous_commission, $previous_additional_charge);
-
-        $expenseBaseQuery = $this->rental_admin_expense_query(Expense::query())
-            ->when(!in_array($module_id, [null, '', 'all'], true), function ($builder) use ($module_id) {
-                $builder->whereHas('trip', function ($tripQuery) use ($module_id) {
-                    $tripQuery->where('module_id', $module_id);
-                });
-            });
-
-        $admin_expense = (clone $expenseBaseQuery)
-            ->applyDateFilter($filter, $from, $to, 'expenses.created_at')
-            ->sum('amount');
-
-        $admin_previous_expense = $this->rental_resolve_previous_summary(
-            $expenseBaseQuery,
-            'expenses.created_at',
-            $previousPeriodRange
-        );
-
-        $subscriptionBaseQuery = $this->rental_admin_subscription_query(
-            SubscriptionTransaction::query(),
-            $module_id
-        );
-
-        $subscription_earning = (clone $subscriptionBaseQuery)
-            ->applyDateFilter($filter, $from, $to, 'subscription_transactions.created_at')
-            ->sum('paid_amount');
-
-        $subscription_previous_earning = $this->rental_resolve_previous_summary(
-            $subscriptionBaseQuery,
-            'subscription_transactions.created_at',
-            $previousPeriodRange,
-            'sum',
-            'paid_amount'
-        );
-
-        $admin_earning = $trip_earning + $subscription_earning;
-        $admin_previous_earning = $previous_trip_earning + $subscription_previous_earning;
-        $net_profit = $admin_earning - $admin_expense;
-        $previous_net_profit = $admin_previous_earning - $admin_previous_expense;
-
-        [$admin_earning_percentage, $admin_earning_positive] =
-            $this->calculatePercentageData($admin_earning, $admin_previous_earning);
-
-        [$admin_expense_percentage, $admin_expense_positive] =
-            $this->calculatePercentageData($admin_expense, $admin_previous_expense);
-
-        [$net_profit_percentage, $net_profit_positive] =
-            $this->calculatePercentageData($net_profit, $previous_net_profit);
-
-        [$subscription_percentage] = $this->calculatePercentage($subscription_earning, $admin_earning);
-        [$trip_commission_percentage] = $this->calculatePercentage($trip_commission, $admin_earning);
-        [$additional_charge_percentage] = $this->calculatePercentage($additional_charge, $admin_earning);
-
-        return [
-            'admin_earning' => $admin_earning,
-            'admin_previous_earning' => $admin_previous_earning,
-            'admin_earning_positive' => $admin_earning_positive,
-            'admin_earning_percentage' => $admin_earning_percentage,
-            'admin_expense' => $admin_expense,
-            'admin_previous_expense' => $admin_previous_expense,
-            'admin_expense_positive' => $admin_expense_positive,
-            'admin_expense_percentage' => $admin_expense_percentage,
-            'net_profit' => $net_profit,
-            'previous_net_profit' => $previous_net_profit,
-            'net_profit_positive' => $net_profit_positive,
-            'net_profit_percentage' => $net_profit_percentage,
-            'subscription_earning' => $subscription_earning,
-            'subscription_previous_earning' => $subscription_previous_earning,
-            'subscription_percentage' => $subscription_percentage,
-            'trip_commission' => $trip_commission,
-            'trip_previous_commission' => $trip_previous_commission,
-            'trip_commission_percentage' => $trip_commission_percentage,
-            'additional_charge' => $additional_charge,
-            'previous_additional_charge' => $previous_additional_charge,
-            'additional_charge_percentage' => $additional_charge_percentage,
-        ];
-    }
-
     public function buildRentalAdminEarningBreakdown($filter, $from, $to, $module_id = 'all')
     {
         $summary = $this->buildRentalAdminEarningSummary($filter, $from, $to, $module_id);
@@ -333,7 +27,6 @@ trait RentalReportGeneratorTrait
             'additional_charge_percentage' => $summary['additional_charge_percentage'],
         ];
     }
-
     public function buildRentalAdminExpenseBreakdown($filter, $from, $to, $module_id = 'all')
     {
         $summary = $this->buildRentalAdminEarningSummary($filter, $from, $to, $module_id);
@@ -369,7 +62,6 @@ trait RentalReportGeneratorTrait
             'pro_discount_percentage' => $pro_discount_percentage,
         ];
     }
-
     public function getRentalAdminEarningTransactions($request, $filter, $from, $to, $nopaginate = false, $module_id = 'all')
     {
         $search = $request->query('search');
@@ -431,7 +123,6 @@ trait RentalReportGeneratorTrait
         $results->setCollection($collection);
         return $results;
     }
-
     public function getRentalAdminExpenseTransactions($request, $filter, $from, $to, $nopaginate = false, $module_id = 'all')
     {
         $search = $request->query('search');
@@ -492,13 +183,12 @@ trait RentalReportGeneratorTrait
         $results->setCollection($collection);
         return $results;
     }
-
     public function getRentalAdminSubscriptionTransactions($request, $filter, $from, $to, $nopaginate = false, $module_id = 'all')
     {
         $search = $request->query('search');
 
         $query = $this->rental_admin_subscription_query(
-            SubscriptionTransaction::with('store'),
+            SubscriptionTransaction::with('store.translations'),
             $module_id
         )
             ->applyDateFilter($filter, $from, $to, 'subscription_transactions.created_at')
@@ -554,7 +244,6 @@ trait RentalReportGeneratorTrait
         $results->setCollection($collection);
         return $results;
     }
-
     public function getRentalAdminTrendData($filter, $from, $to, $module_id = 'all')
     {
         $today = Carbon::now();
@@ -681,7 +370,6 @@ trait RentalReportGeneratorTrait
             }),
         ];
     }
-
     public function getRentalAdminTopEarningProviders($filter, $from, $to, $module_id = 'all')
     {
         $moduleIds = !in_array($module_id, [null, '', 'all'], true)
@@ -765,7 +453,6 @@ trait RentalReportGeneratorTrait
             ->limit(10)
             ->get();
     }
-
     public function getRentalAdminZoneWiseEarnings($filter, $from, $to, $module_id = 'all')
     {
         $moduleIds = !in_array($module_id, [null, '', 'all'], true)
@@ -852,15 +539,16 @@ trait RentalReportGeneratorTrait
             ];
         });
     }
-
     public function buildRentalProviderSummary($provider_id, $filter, $from, $to, $module_id = 'all')
     {
         $previousPeriodRange = $this->getPreviousPeriodRange($filter, $from, $to);
 
         $adjustedCommissionSql = $this->rental_provider_trip_adjusted_commission_sql();
 
-        $tripBaseQuery = $this->rental_provider_earning_query(TripTransaction::query(), $provider_id, $module_id)
-            ->join('trips', 'trips.id', '=', 'trip_transactions.trip_id');
+        $tripBaseQuery = $this->rental_provider_join_pro_discount(
+            $this->rental_provider_earning_query(TripTransaction::query(), $provider_id, $module_id)
+                ->join('trips', 'trips.id', '=', 'trip_transactions.trip_id')
+        );
 
         $currentTripData = (clone $tripBaseQuery)
             ->applyDateFilter($filter, $from, $to, 'trip_transactions.created_at')
@@ -992,12 +680,10 @@ trait RentalReportGeneratorTrait
             'subscription_amount_percentage' => $subscriptionExpensePercentage,
         ];
     }
-
     public function buildRentalProviderEarningBreakdown($provider_id, $filter, $from, $to, $module_id = 'all')
     {
         return $this->buildRentalProviderSummary($provider_id, $filter, $from, $to, $module_id)['breakdown'];
     }
-
     public function buildRentalProviderExpenseBreakdown($provider_id, $filter, $from, $to, $module_id = 'all')
     {
         $summary = $this->buildRentalProviderSummary($provider_id, $filter, $from, $to, $module_id);
@@ -1014,7 +700,6 @@ trait RentalReportGeneratorTrait
             'subscription_amount_percentage' => $summary['subscription_amount_percentage'],
         ];
     }
-
     public function getRentalProviderTrendData($provider_id, $filter, $from, $to, $module_id = 'all')
     {
         $today = Carbon::now();
@@ -1075,8 +760,10 @@ trait RentalReportGeneratorTrait
             }
         }
 
-        $earnings = $this->rental_provider_earning_query(TripTransaction::query(), $provider_id, $module_id)
-            ->join('trips', 'trips.id', '=', 'trip_transactions.trip_id')
+        $earnings = $this->rental_provider_join_pro_discount(
+            $this->rental_provider_earning_query(TripTransaction::query(), $provider_id, $module_id)
+                ->join('trips', 'trips.id', '=', 'trip_transactions.trip_id')
+        )
             ->applyDateFilter($filter, $from, $to, 'trip_transactions.created_at')
             ->selectRaw("DATE_FORMAT(trip_transactions.created_at, '$dateFormat') as month")
             ->selectRaw("
@@ -1148,12 +835,11 @@ trait RentalReportGeneratorTrait
             }),
         ];
     }
-
     public function getRentalProviderEarningTransactions($request, $provider_id, $filter, $from, $to, $nopaginate = false, $limit = null, $offset = null, $module_id = 'all')
     {
-        $search = $request->query('search');
+        $search = $this->rental_report_search($request);
 
-        $query = $this->rental_provider_earning_query(TripTransaction::with(['provider', 'trip', 'trip.proDiscount']), $provider_id, $module_id)
+        $query = $this->rental_provider_earning_query(TripTransaction::with(['trip', 'trip.proDiscount', 'provider']), $provider_id, $module_id)
             ->join('trips', 'trips.id', '=', 'trip_transactions.trip_id')
             ->applyDateFilter($filter, $from, $to, 'trip_transactions.created_at')
             ->when($search, function ($builder) use ($search) {
@@ -1179,6 +865,7 @@ trait RentalReportGeneratorTrait
         }
 
         $collection = ($nopaginate ? $results : $results->getCollection())->map(function ($transaction) {
+            $this->shareAuthProvider($transaction);
             $totalAmount =  $this->totalStoreAmount($transaction);
             $storeAmountWithoutTax =  $this->getproviderComission($transaction);
             return [
@@ -1204,22 +891,9 @@ trait RentalReportGeneratorTrait
         $results->setCollection($collection);
         return $results;
     }
-
-    private function totalStoreAmount($transaction){
-        return $this->getproviderComission($transaction) + ($transaction->tax ?? 0);
-    }
-    private function getproviderComission($transaction)
-    {
-            $trip= $transaction->trip;
-
-            $total_discount = $trip->coupon_discount_amount + $trip->ref_bonus_amount + $trip->discount_on_trip + ($trip->proDiscount?->amount_saved ?? 0);
-            $original_trip_amount = $trip->trip_amount + $total_discount - $trip->additional_charge - $trip->tax_amount;
-
-            return $original_trip_amount - $transaction->admin_commission;
-    }
     public function getRentalProviderExpenseTransactions($request, $provider_id, $filter, $from, $to, $nopaginate = false, $limit = null, $offset = null, $module_id = 'all')
     {
-        $search = $request->query('search');
+        $search = $this->rental_report_search($request);
 
         $expenseQuery = $this->rental_provider_expense_query(Expense::with(['trip.provider']), $provider_id, $module_id)
             ->applyDateFilter($filter, $from, $to, 'expenses.created_at')
@@ -1237,7 +911,7 @@ trait RentalReportGeneratorTrait
             })
             ->latest('expenses.created_at');
 
-        $tripCommissionQuery = $this->rental_provider_trip_commission_query(TripTransaction::with(['provider', 'trip']), $provider_id, $module_id)
+        $tripCommissionQuery = $this->rental_provider_trip_commission_query(TripTransaction::with(['trip', 'provider']), $provider_id, $module_id)
             ->join('trips', 'trips.id', '=', 'trip_transactions.trip_id')
             ->applyDateFilter($filter, $from, $to, 'trip_transactions.created_at')
             ->when($search, function ($builder) use ($search) {
@@ -1255,6 +929,7 @@ trait RentalReportGeneratorTrait
             ->latest('trip_transactions.created_at');
 
         $expenseCollection = $expenseQuery->get()->map(function ($expense) {
+            $this->shareAuthProvider($expense->trip);
             return [
                 'transaction_id' => '#TXN ' . $expense->id,
                 'date' => $expense->created_at,
@@ -1270,6 +945,7 @@ trait RentalReportGeneratorTrait
         });
 
         $tripCommissionCollection = $tripCommissionQuery->get()->map(function ($transaction) {
+            $this->shareAuthProvider($transaction);
             $admin_discount = 0;
             if ($transaction->discount_on_trip > 0 && $transaction->discount_on_trip_by === 'vendor' && $transaction->is_subscribed == 0) {
                 $admin_discount = ($transaction->discount_on_trip / 100) * $transaction->commission_percentage;
@@ -1316,12 +992,11 @@ trait RentalReportGeneratorTrait
         );
         return $paginator->withQueryString();
     }
-
     public function getRentalProviderSubscriptionTransactions($request, $provider_id, $filter, $from, $to, $nopaginate = false, $limit = null, $offset = null, $module_id = 'all')
     {
-        $search = $request->query('search');
+        $search = $this->rental_report_search($request);
 
-        $query = $this->rental_provider_subscription_query(SubscriptionTransaction::with('store'), $provider_id, $module_id)
+        $query = $this->rental_provider_subscription_query(SubscriptionTransaction::with('store.translations'), $provider_id, $module_id)
             ->applyDateFilter($filter, $from, $to, 'subscription_transactions.created_at')
             ->when($search, function ($builder) use ($search) {
                 $cleanSearch = str_replace(['#TXN', '#'], '', $search);
@@ -1380,42 +1055,361 @@ trait RentalReportGeneratorTrait
         $results->setCollection($collection);
         return $results;
     }
-
-    public function buildRentalProviderApiReportPayload($request, $provider_id, $filter, $from, $to, $module_id = 'all', $type = 'order', $limit = null, $offset = null): array
+    public function buildRentalAdminEarningSummary($filter, $from, $to, $module_id = 'all')
     {
-        $type = $this->rental_provider_transaction_type($type);
-        $summary = $this->buildRentalProviderSummary($provider_id, $filter, $from, $to, $module_id);
-        $trend = $this->getRentalProviderTrendData($provider_id, $filter, $from, $to, $module_id);
+        $previousPeriodRange = $this->getPreviousPeriodRange($filter, $from, $to);
 
-        $earningTransactions = $type === 'order'
-            ? $this->getRentalProviderEarningTransactions($request, $provider_id, $filter, $from, $to, false, $limit, $offset, $module_id)
-            : null;
-        $expenseTransactions = $type === 'expense'
-            ? $this->getRentalProviderExpenseTransactions($request, $provider_id, $filter, $from, $to, false, $limit, $offset, $module_id)
-            : null;
-        $subscriptionTransactions = $type === 'subscription'
-            ? $this->getRentalProviderSubscriptionTransactions($request, $provider_id, $filter, $from, $to, false, $limit, $offset, $module_id)
-            : null;
+        $tripCommissionBaseQuery = $this->rental_admin_earning_query(
+            TripTransaction::query(),
+            $module_id
+        );
+
+        $currentTripData = (clone $tripCommissionBaseQuery)
+            ->join('trips', 'trips.id', '=', 'trip_transactions.trip_id')
+            ->applyDateFilter($filter, $from, $to, 'trip_transactions.created_at')
+            ->selectRaw('
+                SUM(
+                    trip_transactions.admin_commission
+                ) as trip_commission,
+                SUM(trip_transactions.additional_charge) as additional_charge
+            ')
+            ->first();
+
+        $previousTripData = $previousPeriodRange
+            ? (clone $tripCommissionBaseQuery)
+                ->join('trips', 'trips.id', '=', 'trip_transactions.trip_id')
+                ->whereBetween('trip_transactions.created_at', $previousPeriodRange)
+                ->selectRaw('
+                    SUM(
+                        trip_transactions.admin_commission
+                    ) as trip_commission,
+                    SUM(trip_transactions.additional_charge) as additional_charge
+                ')
+                ->first()
+            : (object) [];
+
+        $trip_commission = round($currentTripData->trip_commission ?? 0, 2);
+        $trip_previous_commission = round($previousTripData->trip_commission ?? 0, 2);
+        $additional_charge = round($currentTripData->additional_charge ?? 0, 2);
+        $previous_additional_charge = round($previousTripData->additional_charge ?? 0, 2);
+        $trip_earning = $this->rental_admin_trip_earning_amount($trip_commission, $additional_charge);
+        $previous_trip_earning = $this->rental_admin_trip_earning_amount($trip_previous_commission, $previous_additional_charge);
+
+        $expenseBaseQuery = $this->rental_admin_expense_query(Expense::query())
+            ->when(!in_array($module_id, [null, '', 'all'], true), function ($builder) use ($module_id) {
+                $builder->whereHas('trip', function ($tripQuery) use ($module_id) {
+                    $tripQuery->where('module_id', $module_id);
+                });
+            });
+
+        $admin_expense = (clone $expenseBaseQuery)
+            ->applyDateFilter($filter, $from, $to, 'expenses.created_at')
+            ->sum('amount');
+
+        $admin_previous_expense = $this->rental_resolve_previous_summary(
+            $expenseBaseQuery,
+            'expenses.created_at',
+            $previousPeriodRange
+        );
+
+        $subscriptionBaseQuery = $this->rental_admin_subscription_query(
+            SubscriptionTransaction::query(),
+            $module_id
+        );
+
+        $subscription_earning = (clone $subscriptionBaseQuery)
+            ->applyDateFilter($filter, $from, $to, 'subscription_transactions.created_at')
+            ->sum('paid_amount');
+
+        $subscription_previous_earning = $this->rental_resolve_previous_summary(
+            $subscriptionBaseQuery,
+            'subscription_transactions.created_at',
+            $previousPeriodRange,
+            'sum',
+            'paid_amount'
+        );
+
+        $admin_earning = $trip_earning + $subscription_earning;
+        $admin_previous_earning = $previous_trip_earning + $subscription_previous_earning;
+        $net_profit = $admin_earning - $admin_expense;
+        $previous_net_profit = $admin_previous_earning - $admin_previous_expense;
+
+        [$admin_earning_percentage, $admin_earning_positive] =
+            $this->calculatePercentageData($admin_earning, $admin_previous_earning);
+
+        [$admin_expense_percentage, $admin_expense_positive] =
+            $this->calculatePercentageData($admin_expense, $admin_previous_expense);
+
+        [$net_profit_percentage, $net_profit_positive] =
+            $this->calculatePercentageData($net_profit, $previous_net_profit);
+
+        [$subscription_percentage] = $this->calculatePercentage($subscription_earning, $admin_earning);
+        [$trip_commission_percentage] = $this->calculatePercentage($trip_commission, $admin_earning);
+        [$additional_charge_percentage] = $this->calculatePercentage($additional_charge, $admin_earning);
 
         return [
-            'summary' => $summary,
-            'earning_breakdown' => $this->buildRentalProviderEarningBreakdown($provider_id, $filter, $from, $to, $module_id),
-            'expense_breakdown' => $this->buildRentalProviderExpenseBreakdown($provider_id, $filter, $from, $to, $module_id),
-            'trend' => $trend,
-            'recent_transactions' => [
-                'active_type' => $type === 'order' ? 'earning' : $type,
-                'earning' => $earningTransactions ? $this->rental_provider_format_paginated_transactions($earningTransactions, $limit, $offset) : null,
-                'expense' => $expenseTransactions ? $this->rental_provider_format_paginated_transactions($expenseTransactions, $limit, $offset) : null,
-                'subscription' => $subscriptionTransactions ? $this->rental_provider_format_paginated_transactions($subscriptionTransactions, $limit, $offset) : null,
-            ],
-            'total_size' => match ($type) {
-                'order' => $earningTransactions?->total() ?? 0,
-                'expense' => $expenseTransactions?->total() ?? 0,
-                'subscription' => $subscriptionTransactions?->total() ?? 0,
-                default => 0,
-            },
-            'limit' => (int) $limit,
-            'offset' => (int) $offset,
+            'admin_earning' => $admin_earning,
+            'admin_previous_earning' => $admin_previous_earning,
+            'admin_earning_positive' => $admin_earning_positive,
+            'admin_earning_percentage' => $admin_earning_percentage,
+            'admin_expense' => $admin_expense,
+            'admin_previous_expense' => $admin_previous_expense,
+            'admin_expense_positive' => $admin_expense_positive,
+            'admin_expense_percentage' => $admin_expense_percentage,
+            'net_profit' => $net_profit,
+            'previous_net_profit' => $previous_net_profit,
+            'net_profit_positive' => $net_profit_positive,
+            'net_profit_percentage' => $net_profit_percentage,
+            'subscription_earning' => $subscription_earning,
+            'subscription_previous_earning' => $subscription_previous_earning,
+            'subscription_percentage' => $subscription_percentage,
+            'trip_commission' => $trip_commission,
+            'trip_previous_commission' => $trip_previous_commission,
+            'trip_commission_percentage' => $trip_commission_percentage,
+            'additional_charge' => $additional_charge,
+            'previous_additional_charge' => $previous_additional_charge,
+            'additional_charge_percentage' => $additional_charge_percentage,
         ];
+    }
+    /**
+     * The authenticated vendor's already-hydrated Store, or null outside a vendor request.
+     *
+     * The provider report rows are scoped to that store, so reading `->provider` on them
+     * lazy-loaded the same row again and re-ran its translate and storage global scopes.
+     * Returns null for the admin callers of this trait, which then load as before.
+     */
+    private function authProviderStore(): ?Store
+    {
+        static $resolved = false;
+        static $store = null;
+
+        if (! $resolved) {
+            $resolved = true;
+            if (auth('vendor')->check() || auth('vendor_employee')->check()) {
+                $candidate = Helpers::get_store_data();
+                $store = $candidate instanceof Store ? $candidate : null;
+            }
+        }
+
+        return $store;
+    }
+    private function shareAuthProvider($model): void
+    {
+        $store = $this->authProviderStore();
+
+        if ($model && $store && (int) $model->provider_id === (int) $store->id) {
+            $model->setRelation('provider', $store);
+        }
+    }
+    private function rental_provider_module_ids()
+    {
+        // Called once per report query builder, so a single provider report page ran this
+        // identical lookup four times. The set of rental modules cannot change inside one
+        // request, so it is resolved once.
+        static $ids = null;
+
+        return $ids ??= Module::where('module_type', 'rental')->pluck('id');
+    }
+    private function rental_admin_expense_query($query)
+    {
+        return $query
+            ->whereNotNull('trip_id')
+            ->whereNull('store_id')
+            ->where('created_by', 'admin');
+    }
+    private function rental_admin_earning_query($query, $module_id = 'all')
+    {
+        return $query
+            ->when(!in_array($module_id, [null, '', 'all'], true), function ($builder) use ($module_id) {
+                $builder->where('trip_transactions.module_id', $module_id);
+            }, function ($builder) {
+                $builder->whereIn('trip_transactions.module_id', $this->rental_provider_module_ids());
+            });
+    }
+    private function rental_admin_subscription_query($query, $module_id = 'all')
+    {
+        return $query
+            ->where('payment_status', 'success')
+            ->where('is_trial', 0)
+            ->whereHas('store.module', function ($builder) use ($module_id) {
+                if (!in_array($module_id, [null, '', 'all'], true)) {
+                    $builder->where('id', $module_id);
+                    return;
+                }
+
+                $builder->whereIn('id', $this->rental_provider_module_ids());
+            });
+    }
+    private function rental_provider_earning_query($query, $provider_id = 'all', $module_id = 'all')
+    {
+        return $query
+            ->when(!in_array($provider_id, [null, '', 'all'], true), function ($builder) use ($provider_id) {
+                $builder->where('trip_transactions.provider_id', $provider_id);
+            })
+            ->when(!in_array($module_id, [null, '', 'all'], true), function ($builder) use ($module_id) {
+                $builder->where('trip_transactions.module_id', $module_id);
+            }, function ($builder) {
+                $builder->whereIn('trip_transactions.module_id', $this->rental_provider_module_ids());
+            });
+    }
+    private function rental_provider_expense_query($query, $provider_id = 'all', $module_id = 'all')
+    {
+        return $query
+            ->whereNotNull('trip_id')
+            ->whereNotNull('store_id')
+            ->where('created_by', 'vendor')
+            ->when(!in_array($provider_id, [null, '', 'all'], true), function ($builder) use ($provider_id) {
+                $builder->where('store_id', $provider_id);
+            })
+            ->when(!in_array($module_id, [null, '', 'all'], true), function ($builder) use ($module_id) {
+                $builder->whereHas('trip', function ($tripQuery) use ($module_id) {
+                    $tripQuery->where('module_id', $module_id);
+                });
+            }, function ($builder) {
+                $builder->whereHas('trip', function ($tripQuery) {
+                    $tripQuery->whereIn('module_id', $this->rental_provider_module_ids());
+                });
+            });
+    }
+    private function rental_provider_expense_totals($provider_id = 'all', $module_id = 'all', $filter = null, $from = null, $to = null, $dateRange = null)
+    {
+        $query = $this->rental_provider_expense_query(Expense::query(), $provider_id, $module_id);
+
+        if ($dateRange) {
+            $query->whereBetween('expenses.created_at', $dateRange);
+        } else {
+            $query->applyDateFilter($filter, $from, $to, 'expenses.created_at');
+        }
+
+        return $query->selectRaw("
+                SUM(amount) as total_amount,
+                COUNT(id) as total_count,
+                SUM(CASE WHEN expenses.type = 'discount_on_trip' THEN expenses.amount ELSE 0 END) as discount_on_trip,
+                SUM(CASE WHEN expenses.type = 'coupon_discount' THEN expenses.amount ELSE 0 END) as coupon_discount
+            ")
+            ->first();
+    }
+    private function rental_provider_trip_commission_query($query, $provider_id = 'all', $module_id = 'all')
+    {
+        return $this->rental_provider_earning_query($query, $provider_id, $module_id)
+            ->where('admin_commission', '>', 0);
+    }
+    private function rental_provider_trip_commission_totals($provider_id = 'all', $module_id = 'all', $filter = null, $from = null, $to = null, $dateRange = null)
+    {
+        $query = $this->rental_provider_trip_commission_query(TripTransaction::query(), $provider_id, $module_id)
+            ->join('trips', 'trips.id', '=', 'trip_transactions.trip_id');
+
+        if ($dateRange) {
+            $query->whereBetween('trip_transactions.created_at', $dateRange);
+        } else {
+            $query->applyDateFilter($filter, $from, $to, 'trip_transactions.created_at');
+        }
+
+        return $query->selectRaw("
+                SUM(
+                    trip_transactions.admin_commission
+                ) as total_amount,
+                COUNT(trip_transactions.id) as total_count
+            ")
+            ->first();
+    }
+    private function rental_provider_subscription_query($query, $provider_id = 'all', $module_id = 'all')
+    {
+        return $query
+            ->where('payment_status', 'success')
+            ->where('is_trial', 0)
+            ->when(!in_array($provider_id, [null, '', 'all'], true), function ($builder) use ($provider_id) {
+                $builder->where('store_id', $provider_id);
+            })
+            ->whereHas('store.module', function ($builder) use ($module_id) {
+                if (!in_array($module_id, [null, '', 'all'], true)) {
+                    $builder->where('id', $module_id);
+                    return;
+                }
+
+                $builder->whereIn('id', $this->rental_provider_module_ids());
+            });
+    }
+    private function rental_report_search($request): ?string
+    {
+        return is_string($request) || $request === null ? $request : $request->query('search');
+    }
+    private function rental_provider_transaction_type($type): string
+    {
+        return match ($type) {
+            'earning', 'order', null, '' => 'order',
+            'expense' => 'expense',
+            'subscription' => 'subscription',
+            default => 'order',
+        };
+    }
+    /**
+     * Reads the pro-discount from the join that rental_provider_join_pro_discount() adds,
+     * rather than a correlated subquery per row.
+     *
+     * The subquery form ran one lookup against order_pro_discounts for every trip_transaction
+     * the aggregate touched: measured at 50,853ms against 2,057ms for the joined form over 2M
+     * rows, to the same total to the cent. Any query using this expression must add the join.
+     */
+    private function rental_provider_trip_adjusted_commission_sql(): string
+    {
+        return "
+            (
+                trips.trip_amount
+                + trips.coupon_discount_amount
+                + trips.ref_bonus_amount
+                + trips.discount_on_trip
+                + COALESCE(rental_pro_discount.amount_saved, 0)
+                - trips.additional_charge
+                - trips.tax_amount
+            )
+        ";
+    }
+
+    /**
+     * One order_pro_discounts row per trip at most, so this cannot duplicate a trip row.
+     */
+    private function rental_provider_join_pro_discount($query)
+    {
+        return $query->leftJoin('order_pro_discounts as rental_pro_discount', 'rental_pro_discount.trip_id', '=', 'trips.id');
+    }
+    private function rental_admin_trip_earning_amount($adminCommission, $additionalCharge): float
+    {
+        return round(($adminCommission ?? 0) + ($additionalCharge ?? 0), 2);
+    }
+    private function rental_provider_format_paginated_transactions($transactions, $limit = null, $offset = null): array
+    {
+        return [
+            'total_size' => $transactions->total(),
+            'limit' => (int) ($limit ?? $transactions->perPage()),
+            'offset' => (int) ($offset ?? $transactions->currentPage()),
+            'data' => $transactions->items(),
+        ];
+    }
+    private function rental_resolve_previous_summary($query, string $dateColumn, ?array $previousPeriodRange, string $aggregateColumn = 'sum', string $select = 'amount')
+    {
+        if (!$previousPeriodRange) {
+            return 0;
+        }
+
+        $previousQuery = (clone $query)->whereBetween($dateColumn, $previousPeriodRange);
+
+        if ($aggregateColumn === 'value') {
+            return $previousQuery->value($select) ?? 0;
+        }
+
+        return $previousQuery->sum($select) ?? 0;
+    }
+    private function totalStoreAmount($transaction){
+        return $this->getproviderComission($transaction) + ($transaction->tax ?? 0);
+    }
+    private function getproviderComission($transaction)
+    {
+            $trip= $transaction->trip;
+
+            $total_discount = $trip->coupon_discount_amount + $trip->ref_bonus_amount + $trip->discount_on_trip + ($trip->proDiscount?->amount_saved ?? 0);
+            $original_trip_amount = $trip->trip_amount + $total_discount - $trip->additional_charge - $trip->tax_amount;
+
+            return $original_trip_amount - $transaction->admin_commission;
     }
 }

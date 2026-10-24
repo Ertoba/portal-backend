@@ -109,7 +109,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
         files.forEach(file => {
             if (!ALLOWED_FILE_TYPES.includes(file.type)) {
-                toastr.error("Please only input PNG or JPG type file.", {
+                toastr.error("Please upload a file in a supported format: PNG, JPG", {
                     CloseButton: true,
                     ProgressBar: true
                 });

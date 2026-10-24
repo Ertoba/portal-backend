@@ -15,17 +15,11 @@ use Modules\Rental\Entities\TripTransaction;
 
 class ProviderDashBoardController extends Controller
 {
-    public function __construct()
-    {
-        DB::statement("SET sql_mode=(SELECT REPLACE(@@sql_mode,'ONLY_FULL_GROUP_BY',''));");
-    }
-
 
     public function providerDashboard(Request $request)
     {
         $deliveryStatistics= $this->getTripData($request);
         $data = self::dashboard_data($request);
-        // $total_sell = $data['total_sell'];
         $commission = $data['commission'];
         $label = $data['label'];
         return view("rental::provider.dashboard.dashboard", [
@@ -37,7 +31,6 @@ class ProviderDashBoardController extends Controller
             'totalCount' => $deliveryStatistics['totalCount'],
             'scheduledCount' => $deliveryStatistics['scheduledCount'],
             'instantCount' => $deliveryStatistics['instantCount'],
-            // 'total_sell' => $total_sell,
             'commission' => $commission,
             'label' => $label,
         ]);
@@ -64,7 +57,7 @@ class ProviderDashBoardController extends Controller
 
 
     private function getTripData($request){
-        $statistics_type = $request->get('statistics_type', 'all');
+        $statistics_type = $request->input('statistics_type', 'all');
 
         $tripQuery = Trips::where('provider_id',Helpers::get_store_id());
         if ($statistics_type == 'this_year') {
@@ -91,9 +84,8 @@ class ProviderDashBoardController extends Controller
 
     public function commissionOverview(Request $request)
     {
-        $request->get('commission_overview', 'all');
+        $request->input('commission_overview', 'all');
         $data = self::dashboard_data($request);
-        // $total_sell = $data['total_sell'];
         $commission = $data['commission'];
         $label = $data['label'];
         $grossEarning = collect($commission)->sum();
@@ -113,60 +105,55 @@ class ProviderDashBoardController extends Controller
     public function dashboard_data($request)
     {
         $months = array(
-            '"'.translate('Jan').'"',
-            '"'.translate('Feb').'"',
-            '"'.translate('Mar').'"',
-            '"'.translate('Apr').'"',
-            '"'.translate('May').'"',
-            '"'.translate('Jun').'"',
-            '"'.translate('Jul').'"',
-            '"'.translate('Aug').'"',
-            '"'.translate('Sep').'"',
-            '"'.translate('Oct').'"',
-            '"'.translate('Nov').'"',
-            '"'.translate('Dec').'"'
+            '"Jan"',
+            '"Feb"',
+            '"Mar"',
+            '"Apr"',
+            '"May"',
+            '"Jun"',
+            '"Jul"',
+            '"Aug"',
+            '"Sep"',
+            '"Oct"',
+            '"Nov"',
+            '"Dec"'
         );
         $days = array(
-            '"'.translate('Mon').'"',
-            '"'.translate('Tue').'"',
-            '"'.translate('Wed').'"',
-            '"'.translate('Thu').'"',
-            '"'.translate('Fri').'"',
-            '"'.translate('Sat').'"',
-            '"'.translate('Sun').'"',
+            '"Mon"',
+            '"Tue"',
+            '"Wed"',
+            '"Thu"',
+            '"Fri"',
+            '"Sat"',
+            '"Sun"',
         );
-        // $total_sell = [];
         $commission = [];
 
         switch ($request['commission_overview']) {
             case "this_year":
-                for ($i = 1; $i <= 12; $i++) {
-                    // $total_sell[$i] = TripTransaction::where('provider_id',Helpers::get_store_id())
-                    //     ->whereMonth('created_at', $i)->whereYear('created_at', now()->format('Y'))
-                    //     ->sum('trip_amount');
-
-                    $commission[$i] = TripTransaction::where('provider_id',Helpers::get_store_id())
-                        ->whereMonth('created_at', $i)->whereYear('created_at', now()->format('Y'))
-                        ->sum(DB::raw('store_amount - tax'));
-                }
+                $commission = $this->commissionByMonth();
                 $label = $months;
 
                 break;
 
             case "this_week":
-                $weekStartDate = now()->startOfWeek(); // Start from Monday
+                $weekStartDate = now()->startOfWeek();
 
-                for ($i = 0; $i < 7; $i++) { // Loop through each day of the week
-                    $currentDate = $weekStartDate->copy()->addDays($i); // Get the date for the current day in the loop
+                // One grouped query for the week instead of seven dated sums. The keys are
+                // still 0..6 in week order, and a day with no transactions still yields 0.
+                $weekly = TripTransaction::where('provider_id', Helpers::get_store_id())
+                    ->whereBetween('created_at', [
+                        $weekStartDate->copy()->startOfDay(),
+                        $weekStartDate->copy()->addDays(6)->endOfDay(),
+                    ])
+                    ->groupBy('bucket')
+                    ->selectRaw('DATE(created_at) as bucket, SUM(store_amount - tax) as aggregate')
+                    ->pluck('aggregate', 'bucket');
 
-                    // $total_sell[$i] = TripTransaction::where('provider_id',Helpers::get_store_id())
-                    //     ->whereDate('created_at', $currentDate->format('Y-m-d'))
-                    //     ->sum('trip_amount');
+                for ($i = 0; $i < 7; $i++) {
+                    $currentDate = $weekStartDate->copy()->addDays($i);
 
-                    $commission[$i] = TripTransaction::where('provider_id',Helpers::get_store_id())
-                        ->whereDate('created_at', $currentDate->format('Y-m-d'))
-                        ->sum(DB::raw('store_amount - tax'));
-
+                    $commission[$i] = $weekly[$currentDate->format('Y-m-d')] ?? 0;
                 }
 
                 $label = $days;
@@ -184,16 +171,12 @@ class ProviderDashBoardController extends Controller
                 );
 
                 for ($i = 1; $i <= 4; $i++) {
-                    $end = $start->copy()->addDays(6); // Set the end date for each week
+                    $end = $start->copy()->addDays(6);
 
-                    // Adjust for the last week of the month
                     if ($i == 4) {
                         $end = now()->endOfMonth();
                     }
 
-                    // $total_sell[$i] = TripTransaction::where('provider_id',Helpers::get_store_id())
-                    //     ->whereBetween('created_at', ["{$start->format('Y-m-d')} 00:00:00", "{$end->format('Y-m-d')} 23:59:59"])
-                    //     ->sum('trip_amount');
 
                     $commission[$i] = TripTransaction::where('provider_id',Helpers::get_store_id())
                         ->whereBetween('created_at', ["{$start->format('Y-m-d')} 00:00:00", "{$end->format('Y-m-d')} 23:59:59"])
@@ -207,24 +190,39 @@ class ProviderDashBoardController extends Controller
                 break;
 
             default:
-                for ($i = 1; $i <= 12; $i++) {
-                    // $total_sell[$i] = TripTransaction::where('provider_id',Helpers::get_store_id())
-                    //     ->whereMonth('created_at', $i)->whereYear('created_at', now()->format('Y'))
-                    //     ->sum('trip_amount');
-
-                    $commission[$i] = TripTransaction::where('provider_id',Helpers::get_store_id())
-                        ->whereMonth('created_at', $i)->whereYear('created_at', now()->format('Y'))
-                        ->sum(DB::raw('store_amount - tax'));
-                }
+                $commission = $this->commissionByMonth();
                 $label = $months;
         }
 
 
-        // $dash_data['total_sell'] = $total_sell;
         $dash_data['commission'] = $commission;
         $dash_data['label'] = $label;
 
         return $dash_data;
+    }
+
+    /**
+     * Commission per calendar month of the current year, keyed 1..12.
+     *
+     * This was twelve separate SUM queries in a loop — and the dashboard runs the loop
+     * twice (once for the page, once for the chart endpoint), so a provider dashboard
+     * issued 24 of them. One grouped query returns the same numbers; months with no
+     * transactions still come back as 0, exactly as sum() on an empty set did.
+     */
+    private function commissionByMonth(): array
+    {
+        $sums = TripTransaction::where('provider_id', Helpers::get_store_id())
+            ->whereYear('created_at', now()->format('Y'))
+            ->groupBy('bucket')
+            ->selectRaw('MONTH(created_at) as bucket, SUM(store_amount - tax) as aggregate')
+            ->pluck('aggregate', 'bucket');
+
+        $commission = [];
+        for ($i = 1; $i <= 12; $i++) {
+            $commission[$i] = $sums[$i] ?? 0;
+        }
+
+        return $commission;
     }
 
 }

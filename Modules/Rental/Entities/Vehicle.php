@@ -2,33 +2,33 @@
 
 namespace Modules\Rental\Entities;
 
+use App\Traits\Model\InvalidatesCacheTrait;
 use App\Models\Store;
-use App\Models\Storage;
-use App\Models\Translation;
-use App\Traits\GeneratesSlug;
-use App\Traits\ReportFilter;
+use App\Traits\Model\SlugTrait;
+use App\Traits\Report\ReportFilterTrait;
 use App\CentralLogics\Helpers;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Support\Facades\DB;
+use App\Traits\Model\HasTranslationsTrait;
+use App\Traits\Model\HasStorageTrait;
 
 class Vehicle extends Model
 {
-    use HasFactory , ReportFilter, GeneratesSlug;
+    use HasFactory, ReportFilterTrait, SlugTrait, HasTranslationsTrait, HasStorageTrait, InvalidatesCacheTrait;
+
+    protected static array $cacheTags = ['vehicle'];
 
     protected $guarded = ['id'];
-    protected $appends = ['thumbnail_full_url', 'images_full_url', 'documents_full_url'];
     protected $casts = [
         'air_condition' => 'integer',
         'multiple_vehicles' => 'integer',
         'trip_hourly' => 'integer',
         'trip_day_wise' => 'integer',
         'trip_distance' => 'integer',
-        'trip_day_wise' => 'integer',
         'status' => 'integer',
         'new_tag' => 'integer',
         'provider_id' => 'integer',
@@ -39,7 +39,6 @@ class Vehicle extends Model
         'avg_rating' => 'float',
         'distance_price' => 'float',
         'discount_price' => 'float',
-        'day_wise_price' => 'float',
         'total_trip' => 'integer',
         'total_reviews' => 'integer',
         'zone_id' => 'integer',
@@ -139,11 +138,6 @@ class Vehicle extends Model
     /**
      * @return MorphMany
      */
-    public function translations(): MorphMany
-    {
-        return $this->morphMany(Translation::class, 'translationable');
-    }
-
     /**
      * @param $string
      * @return bool
@@ -157,26 +151,12 @@ class Vehicle extends Model
     /**
      * @return MorphMany
      */
-    public function storage(): MorphMany
-    {
-        return $this->morphMany(Storage::class, 'data');
-    }
-
     /**
      * @return mixed|string|null
      */
     public function getThumbnailFullUrlAttribute(): mixed
     {
-        $value = $this->thumbnail;
-        if (count($this->storage) > 0) {
-            foreach ($this->storage as $storage) {
-                if ($storage['key'] == 'image') {
-                    return Helpers::get_full_url('vehicle',$value,$storage['value']);
-                }
-            }
-        }
-
-        return Helpers::get_full_url('vehicle',$value,'public');
+        return $this->storageFullUrl('vehicle', 'image', $this->thumbnail);
     }
 
     /**
@@ -221,74 +201,28 @@ class Vehicle extends Model
         return $images;
     }
 
-    public function getNameAttribute($value){
-        if (count($this->translations) > 0) {
-            foreach ($this->translations as $translation) {
-                if ($translation['key'] == 'name') {
-                    return $translation['value'];
-                }
-            }
-        }
-
-        return $value;
-    }
-
-    public function getDescriptionAttribute($value){
-        if (count($this->translations) > 0) {
-            foreach ($this->translations as $translation) {
-                if ($translation['key'] == 'description') {
-                    return $translation['value'];
-                }
-            }
-        }
-
-        return $value;
-    }
-
-
-    protected static function booted()
+    public function getNameAttribute($value)
     {
-        static::addGlobalScope('storage', function ($builder) {
-            $builder->with('storage');
-        });
-
-        static::addGlobalScope('translate', function (Builder $builder) {
-            $builder->with(['translations' => function($query){
-                return $query->where('locale', app()->getLocale());
-            }]);
-        });
+        return $this->translatedAttribute('name', $value);
     }
+
+    public function getDescriptionAttribute($value)
+    {
+        return $this->translatedAttribute('description', $value);
+    }
+
+
     protected static function boot()
     {
         parent::boot();
         static::created(function ($item) {
             $item->slug = $item->generateSlug($item->name);
             $item->save();
-            Helpers::deleteCacheData('vehicle_');
-        });
-        static::deleted(function(){
-            Helpers::deleteCacheData('vehicle_');
         });
         static::saved(function($model){
 
-            if ($model->isDirty('thumbnail')) {
-                $value = Helpers::getDisk();
+            self::recordStorageDisk($model, 'thumbnail', 'image');
 
-                DB::table('storages')->updateOrInsert([
-                    'data_type' => get_class($model),
-                    'data_id' => $model->id,
-                    'key' => 'image',
-                ], [
-                    'value' => $value,
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
-            }
-
-            Helpers::deleteCacheData('vehicle_');
-        });
-        static::updated(function(){
-            Helpers::deleteCacheData('vehicle_');
         });
 
     }

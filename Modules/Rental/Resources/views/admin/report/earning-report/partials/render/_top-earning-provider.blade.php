@@ -1,5 +1,5 @@
 <div class="card card-body shadow-none h-100 pb-2 report-equal-height-card">
-    <h3 class="mb-3">{{ translate('messages.Top_Earning_Provider') }}</h3>
+    <h3 class="mb-3">{{ translate('Top earning provider') }}</h3>
     <div class="report-scroll-list">
         @forelse ($topProviders as $provider)
             <div class="border-top py-3 d-flex gap-3 justify-content-between align-items-center flex-wrap">
@@ -18,13 +18,13 @@
                     <h5 class="font-bold mb-1">
                         {{ \App\CentralLogics\Helpers::format_currency($provider->total_earning) }}
                     </h5>
-                    <p class="fs-12 mb-0">{{ $provider->total_transactions }} {{ translate('messages.trips') }}</p>
+                    <p class="fs-12 mb-0">{{ $provider->total_transactions }} {{ translate('messages.Trips') }}</p>
                 </div>
             </div>
         @empty
             <div class="empty--data text-center">
                 <img src="{{ asset('public/assets/admin/svg/illustrations/sorry.svg') }}" alt="public">
-                <h5>{{ translate('no_data_found') }}</h5>
+                <h5>{{ translate('No data found') }}</h5>
             </div>
         @endforelse
     </div>

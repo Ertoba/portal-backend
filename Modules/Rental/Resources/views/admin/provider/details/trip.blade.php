@@ -1,6 +1,6 @@
 @extends('layouts.admin.app')
 
-@section('title',$store->name."'s ".translate('messages.orders'))
+@section('title',$store->name."'s ".translate('messages.Orders'))
 
 @push('css_or_js')
     <link href="{{asset('public/assets/admin/css/croppie.css')}}" rel="stylesheet">
@@ -24,64 +24,62 @@
         <a class="order--card flex-grow-1" href="javascript:">
             <div class="d-flex justify-content-between align-items-center">
                 <h6 class="card-subtitle m-0">
-                    <span>{{ translate('messages.ongoing') }}</span>
+                    <span>{{ translate('Ongoing') }}</span>
                 </h6>
-                <span class="card-title text--warning">{{ $store->trips->where('trip_status','ongoing')->count() }}</span>
+                <span class="card-title text--warning">{{ $tripStatusCounts['ongoing'] ?? 0 }}</span>
             </div>
         </a>
 
         <a class="order--card flex-grow-1" href="javascript:">
             <div class="d-flex justify-content-between align-items-center">
                 <h6 class="card-subtitle m-0">
-                    <span>{{ translate('messages.pending') }}</span>
+                    <span>{{ translate('Pending') }}</span>
                 </h6>
-                <span class="card-title text--info">{{ $store->trips->where('trip_status','pending')->count() }}</span>
+                <span class="card-title text--info">{{ $tripStatusCounts['pending'] ?? 0 }}</span>
             </div>
         </a>
 
         <a class="order--card flex-grow-1" href="javascript:">
             <div class="d-flex justify-content-between align-items-center">
                 <h6 class="card-subtitle m-0">
-                    <span>{{ translate('messages.completed') }}</span>
+                    <span>{{ translate('messages.Completed') }}</span>
                 </h6>
-                <span class="card-title text--success">{{ $store->trips->where('trip_status','completed')->count() }}</span>
+                <span class="card-title text--success">{{ $tripStatusCounts['completed'] ?? 0 }}</span>
             </div>
         </a>
 
         <a class="order--card flex-grow-1" href="javascript:">
             <div class="d-flex justify-content-between align-items-center">
                 <h6 class="card-subtitle m-0">
-                    <span>{{ translate('messages.canceled') }}</span>
+                    <span>{{ translate('Canceled') }}</span>
                 </h6>
-                <span class="card-title text--danger">{{ $store->trips->where('trip_status','canceled')->count() }}</span>
+                <span class="card-title text--danger">{{ $tripStatusCounts['canceled'] ?? 0 }}</span>
             </div>
         </a>
     </div>
-    <!-- Page Heading -->
     <div class="content">
-        <!-- End Page Header -->
 
-        <!-- Card -->
         <div class="card">
-            <!-- Header -->
             <div class="card-header justify-content-between gap-3 py-2 flex-wrap">
 
-                <!-- Page Header -->
                 <div class="page-header">
                     <div class="d-flex justify-content-between flex-wrap gap-3">
                         <div>
                             <h1 class="page-header-title text-break">
-                                <span>{{ translate('messages.All_Trips') }}
-                            <span class="badge badge-soft-dark ml-2" id="itemCount">{{ $trips->total() }}</span>
-                        </span>
+                                <span class="page-header-icon">
+                                    <img src="{{ asset('public/assets/admin/img/outline/car.svg') }}" class="w--26" alt="">
+                                </span>
+                                <span>{{ translate('All trips') }}
+                                <span class="badge badge-soft-dark ml-2" id="itemCount">{{ $trips->total() }}</span>
+                                </span>
                             </h1>
+                            <p class="page-header-desc">{{ translate('Every trip run through this provider, and the state each is in.') }}</p>
                         </div>
                     </div>
                 </div>
 
                 <div class="search--button-wrapper justify-content-end gap-20px">
                     <form action="" method="get" class="search-form flex-grow-1 max-w-450px" data-route="{{route('admin.order.store-search')}}">
-                        <!-- Search -->
                         <div class="input-group input--group">
                             <input id="datatableSearch_" type="search" value="{{ request()?->search ?? null }}"
                                    name="search" class="form-control"
@@ -89,13 +87,11 @@
                                    aria-label="{{ translate('messages.Search by trip ID, customer name, email') }}">
                             <button type="submit" class="btn btn--secondary bg--primary"><i class="tio-search"></i></button>
                         </div>
-                        <!-- End Search -->
                     </form>
                     @if (request()->input('search'))
                         <button type="reset" class="btn btn--primary ml-2 location-reload-to-base"
-                                data-url="{{ url()->full() }}">{{ translate('messages.reset') }}</button>
+                                data-url="{{ url()->full() }}"><i class="tio-refresh"></i> {{ translate('messages.Reset') }}</button>
                     @endif
-                    <!-- Unfold -->
                     <div class="hs-unfold m-0">
                         <a class="js-hs-unfold-invoker btn btn-sm btn-white dropdown-toggle min-height-40 font-semibold"
                            href="javascript:;"
@@ -103,35 +99,33 @@
                             "target": "#usersExportDropdown",
                             "type": "css-animation"
                         }'>
-                            <i class="tio-download-to mr-1"></i> {{ translate('messages.export') }}
+                            <i class="tio-download-to mr-1"></i> {{ translate('messages.Export') }}
                         </a>
 
                         <div id="usersExportDropdown"
                              class="hs-unfold-content dropdown-unfold dropdown-menu dropdown-menu-sm-right">
 
-                            <span class="dropdown-header">{{ translate('messages.download_options') }}</span>
+                            <span class="dropdown-header">{{ translate('messages.Download options') }}</span>
                             <a id="export-excel" class="dropdown-item"
                                href="{{ route('admin.rental.trip.export', ['provider_id'=>request()->id,'type' => 'excel', request()->getQueryString()]) }}">
                                 <img class="avatar avatar-xss avatar-4by3 mr-2"
                                      src="{{ asset('public/assets/admin') }}/svg/components/excel.svg"
-                                     alt="{{translate('Image Description')}}">
-                                {{ translate('messages.excel') }}
+                                     alt="{{translate('Image description')}}">
+                                Excel
                             </a>
                             <a id="export-csv" class="dropdown-item"
                                href="{{ route('admin.rental.trip.export', ['provider_id'=>request()->id,'type' => 'csv', request()->getQueryString()]) }}">
                                 <img class="avatar avatar-xss avatar-4by3 mr-2"
                                      src="{{ asset('public/assets/admin') }}/svg/components/placeholder-csv-format.svg"
-                                     alt="{{translate('Image Description')}}">
-                                {{ translate('messages.csv') }}
+                                     alt="{{translate('Image description')}}">
+                                CSV
                             </a>
 
                         </div>
                     </div>
                 </div>
             </div>
-            <!-- End Header -->
 
-            <!-- Table -->
             <div class="table-responsive datatable-custom">
                 <table id="columnSearchDatatable"
                        class="table table-borderless table-thead-bordered table-nowrap table-align-middle card-table"
@@ -143,16 +137,16 @@
                        }'>
                     <thead class="thead-light">
                     <tr>
-                        <th class="border-0">{{ translate('sl') }}</th>
+                        <th class="border-0">{{ translate('SL') }}</th>
                         <th class="border-0">{{ translate('messages.Trip ID') }}</th>
-                        <th class="border-0">{{ translate('messages.Booking_Date') }}</th>
-                        <th class="border-0">{{ translate('messages.Schedule_At') }}</th>
-                        <th class="border-0">{{ translate('messages.Customer_Info') }}</th>
-                        <th class="border-0">{{ translate('messages.Driver_Info') }}</th>
-                        <th class="border-0">{{ translate('messages.Vehicle_Info') }}</th>
-                        <th class="border-0">{{ translate('messages.Trip_Type') }}</th>
-                        <th class="text-end border-0">{{ translate('messages.Trip_Amount') }}</th>
-                        <th class="text-center border-0">{{ translate('messages.Trip_Status') }}</th>
+                        <th class="border-0">{{ translate('Booking date') }}</th>
+                        <th class="border-0">{{ translate('Schedule at') }}</th>
+                        <th class="border-0">{{ translate('Customer information') }}</th>
+                        <th class="border-0">{{ translate('Driver information') }}</th>
+                        <th class="border-0">{{ translate('Vehicle information') }}</th>
+                        <th class="border-0">{{ translate('Trip type') }}</th>
+                        <th class="text-end border-0">{{ translate('Trip amount') }}</th>
+                        <th class="text-center border-0">{{ translate('Trip status') }}</th>
                         <th class="text-center border-0">{{ translate('messages.Action') }}</th>
                     </tr>
                     </thead>
@@ -202,7 +196,7 @@
                                         </div>
                                     </div>
                                 @else
-                                    {{ translate('messages.Guest_user') }}
+                                    {{ translate('messages.Guest user') }}
                                 @endif
                             </td>
                             @php
@@ -268,7 +262,7 @@
                                                          <h5 class='d-flex align-items-center gap-2 text-white mb-0'>
                                                             <a href='{{ route('admin.rental.provider.vehicle.details', $detail->vehicle_id) }}' class='text-white'>{{ Str::limit($detail->vehicle_details['name'],12,'...')  }}</a>
                                                          </h5>
-                                                         <div class='d-flex align-items-center gap-2 fs-10'>{{ translate('messages.car_Assigned') }}: {{ $detail->tripVehicleDetails->count() }}</div>
+                                                         <div class='d-flex align-items-center gap-2 fs-10'>{{ translate('Car assigned') }}: {{ $detail->trip_vehicle_details_count }}</div>
                                                      </div>
                                                  </div>
                                              @else
@@ -278,7 +272,7 @@
                                                          <h5 class='d-flex align-items-center gap-2 text-white mb-0'>
                                                             <span class='text-white'>{{ Str::limit($detail->vehicle_details['name'],12,'...')  }}</span>
                                                         </h5>
-                                                         <div class='d-flex align-items-center text-danger gap-2 fs-10'>{{ translate('Vehicle_Not_Found_!!!') }}</div>
+                                                         <div class='d-flex align-items-center text-danger gap-2 fs-10'>{{ translate('No data found') }}</div>
                                                      </div>
                                                  </div>
                                              @endif
@@ -299,7 +293,7 @@
                                         {{ translate(str_replace('-', ' ', translate($trip->trip_type))) }}
                                     </div>
                                     <div class="opacity-lg">
-                                        {{ $trip->scheduled ? translate('messages.Instant') : translate('messages.scheduled') }}
+                                        {{ $trip->scheduled ? translate('messages.Instant') : translate('Scheduled') }}
                                     </div>
                                 </div>
                             </td>
@@ -336,10 +330,10 @@
                             <td>
                                 <div class="btn--container justify-content-center">
                                     <a class="btn action-btn btn--primary btn-outline-primary" href="{{route("admin.rental.trip.generate-invoice",["id" => $trip->id])}}"
-                                       title="{{ translate('messages.download') }}"><i class="tio-download-to"></i>
+                                       title="{{ translate('messages.Download') }}"><i class="tio-download-to"></i>
                                     </a>
-                                    <a class="btn action-btn btn--primary btn-outline-primary" href="{{ route('admin.rental.trip.details', $trip->id) }}"
-                                       title="{{ translate('messages.view') }}"><i class="tio-visible-outlined"></i>
+                                    <a class="btn action-btn action-btn--view" href="{{ route('admin.rental.trip.details', $trip->id) }}"
+                                       title="{{ translate('messages.View') }}"><i class="tio-visible-outlined"></i>
                                     </a>
                                 </div>
                             </td>
@@ -359,13 +353,11 @@
                 <div class="empty--data">
                     <img src="{{asset('/public/assets/admin/svg/illustrations/sorry.svg')}}" alt="{{translate('public')}}">
                     <h5>
-                        {{translate('no_data_found')}}
+                        {{translate('No data found')}}
                     </h5>
                 </div>
             @endif
-            <!-- End Table -->
         </div>
-        <!-- End Card -->
     </div>
 </div>
 @endsection

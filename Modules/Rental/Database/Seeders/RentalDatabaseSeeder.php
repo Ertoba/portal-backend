@@ -16,6 +16,5 @@ class RentalDatabaseSeeder extends Seeder
     {
         Model::unguard();
 
-        // $this->call("OthersTableSeeder");
     }
 }

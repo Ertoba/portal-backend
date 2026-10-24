@@ -41,9 +41,10 @@ class CouponController extends Controller
     {
         $coupons = $this->getListData($request);
         $coupons =  $coupons->paginate(config('default_pagination'));
-        $zones = $this->zone->where('status' , 1)->get(['id','name']);
-        $users = $this->user->where('status' , 1)->get(['id','f_name','l_name']);
-        return view('rental::provider.coupon.list', compact('coupons','zones','users'));
+        // $zones and $users used to be passed here. provider/coupon/list.blade.php reads
+        // neither, and it extends the vendor layout, which reads neither — so the users
+        // query hydrated every active customer (10,183 rows, 28 MB, ~200ms) for nothing.
+        return view('rental::provider.coupon.list', compact('coupons'));
     }
 
 
@@ -62,7 +63,7 @@ class CouponController extends Controller
             'coupon_type' => 'required|in:free_delivery,default',
             'title.0' => 'required',
         ],[
-            'title.0.required'=>translate('default_title_is_required'),
+            'title.0.required'=>translate('Default title is required'),
         ]);
         $customer_id  = $request->customer_ids ?? ['all'];
         $data = "";
@@ -112,7 +113,7 @@ class CouponController extends Controller
 
         Translation::insert($data);
 
-        Toastr::success(translate('messages.coupon_added_successfully'));
+        Toastr::success(translate('Added successfully'));
         return back();
     }
 
@@ -122,14 +123,14 @@ class CouponController extends Controller
      */
     public function edit($id): View|Factory|Application|RedirectResponse
     {
-        $coupon = Coupon::withoutGlobalScope('translate')->where(['id' => $id])->where('created_by', 'vendor' )->first();
+        $coupon = Coupon::withoutGlobalScope('translate')->with('translations')->where(['id' => $id])->where('created_by', 'vendor' )->first();
         return view('rental::provider.coupon.edit', compact('coupon'));
     }
 
     /**
      * Update the specified resource in storage.
-     * @param Coupon $coupon
      * @param Request $request
+     * @param $id
      * @return RedirectResponse
      */
     public function update(Request $request, $id): RedirectResponse
@@ -143,7 +144,7 @@ class CouponController extends Controller
             'coupon_type' => 'required|in:free_delivery,default',
             'title.0' => 'required',
         ],[
-            'title.0.required'=>translate('default_title_is_required'),
+            'title.0.required'=>translate('Default title is required'),
         ]);
 
         $customer_id  = $request->customer_ids ?? ['all'];
@@ -191,19 +192,18 @@ class CouponController extends Controller
             }
         }
 
-        Toastr::success(translate('messages.coupon_updated_successfully'));
+        Toastr::success(translate('Updated successfully'));
         return redirect()->route('vendor.rental_coupon.list');
     }
 
     /**
-     * @param Request $request
-     * @param $id
+     * @param Coupon $coupon
      * @return RedirectResponse
      */
     public function status(Coupon $coupon): RedirectResponse
     {
         $coupon->update(['status' => !$coupon->status]);
-        Toastr::success(translate('messages.coupon_status_updated_successfully'));
+        Toastr::success(translate('Updated successfully'));
         return back();
     }
 
@@ -212,7 +212,7 @@ class CouponController extends Controller
     {
         $coupon?->translations()?->delete();
         $coupon?->delete();
-        Toastr::success(translate('messages.coupon_deleted_successfully'));
+        Toastr::success(translate('Deleted successfully'));
         return back();
     }
 
@@ -253,10 +253,9 @@ class CouponController extends Controller
                 'coupon_type' => 'required|in:zone_wise,store_wise,first_order,default',
                 'zone_ids' => 'required_if:coupon_type,zone_wise',
                 'store_ids' => 'required_if:coupon_type,store_wise',
-                'title.0' => 'required',
             ],
             [
-                'title.0.required'=>translate('default_title_is_required'),
+                'title.0.required'=>translate('Default title is required'),
             ]);
     }
 

@@ -1,31 +1,31 @@
 @extends('layouts.vendor.app')
 
-@section('title', translate('messages.Driver_Details'))
+@section('title', translate('Driver details'))
 
 @section('content')
     <div class="content container-fluid">
-        <!-- Page Header -->
         <div class="page-header">
             <div class="d-flex justify-content-between flex-wrap gap-3">
                 <div>
                     <h1 class="page-header-title text-break">
                         <span class="page-header-icon">
-                            <img src="{{ asset('public/assets/admin/img/car-logo.png') }}" alt="">
+                            <img src="{{ asset('public/assets/admin/img/outline/car.svg') }}" alt="">
                         </span>
-                        <span>{{ translate('messages.Driver_Details') }}
+                        <span>{{ translate('Driver details') }}
                     </h1>
+                    <p class="page-header-desc">{{ translate('This driver\'s trips, earnings, reviews and account state in one place.') }}</p>
                 </div>
                 <div class="d-flex align-items-start flex-wrap gap-2">
                     <a class="btn btn--cancel h--45px d-flex gap-2 align-items-center form-alert" href="javascript:"
-                       data-id="brand-{{$driver['id']}}" data-message="{{ translate('Want to delete this driver') }}" title="{{translate('messages.delete_driver')}}">
+                       data-id="brand-{{$driver['id']}}" data-message="{{ translate('Want to delete this driver?') }}" title="{{translate('messages.Delete driver')}}">
                         <i class="tio-delete-outlined"></i>
-                        {{ translate('messages.delete') }}
+                        {{ translate('messages.Delete') }}
                     </a>
                     <form action="{{route('vendor.driver.delete',[$driver['id']])}}?driver_list=true" method="post" id="brand-{{$driver['id']}}">
                         @csrf @method('delete')
                     </form>
                     <a href="javascript:" class="btn btn--reset d-flex justify-content-between align-items-center gap-4 lh--1 h--45px">
-                        {{ translate('messages.status') }}
+                        {{ translate('messages.Status') }}
                         <label class="toggle-switch toggle-switch-sm" for="stocksCheckbox{{$driver->id}}">
                             <input type="checkbox" data-url="{{route('vendor.driver.status',[$driver['id'],$driver->status?0:1])}}" class="toggle-switch-input redirect-url" id="stocksCheckbox{{$driver->id}}" {{$driver->status?'checked':''}}>
                             <span class="toggle-switch-label mx-auto">
@@ -35,14 +35,12 @@
                     </a>
                     <a href="{{ route('vendor.driver.edit', $driver->id)}}" class="btn btn--primary h--45px d-flex gap-2 align-items-center">
                         <i class="tio-edit"></i>
-                        {{ translate('messages.Edit_Driver') }}
+                        {{ translate('Edit driver') }}
                     </a>
                 </div>
             </div>
         </div>
-        <!-- End Page Header -->
 
-        <!-- Card -->
         <div class="card mb-20">
             <div class="card-body p-4">
                 <div class="card border p-3 p-sm-4 shadow-none mb-3">
@@ -59,28 +57,28 @@
                                     <span>: {{ $driver->phone }}</span>
                                 </div>
                                 <div class="d-flex gap-3">
-                                    <span class="min-w-110px">{{ translate('Email') }}</span>
+                                    <span class="min-w-110px">{{ translate('email') }}</span>
                                     <span>: {{ $driver->email }}</span>
                                 </div>
                             </div>
 
                             <div class="mr-0 mr-lg-4">
-                                <h5 class="">{{ translate('Identity Information') }}</h5>
+                                <h5 class="">{{ translate('Identity information') }}</h5>
                                 <div class="d-flex gap-3">
-                                    <span class="min-w-110px">{{ translate('Identity Type') }}</span>
-                                    <span>: {{ translate($driver->identity_type) }}</span>
+                                    <span class="min-w-110px">{{ translate('Identity type') }}</span>
+                                    <span>: {{ identity_type_label($driver->identity_type) }}</span>
                                 </div>
                                 <div class="d-flex gap-3">
-                                    <span class="min-w-110px">{{ translate('Identity Number') }}</span>
+                                    <span class="min-w-110px">{{ translate('Identity number') }}</span>
                                     <span>: {{ $driver->identity_number }}</span>
                                 </div>
                             </div>
                             <div class="mr-0 mr-lg-4">
-                                <h5 class="">{{ translate('Provider Info') }}</h5>
+                                <h5 class="">{{ translate('Provider information') }}</h5>
                                 <div class="align-items-center d-flex gap-2 resturant--information-single text-left">
                                     <img height="45" class="aspect-ratio-1 onerror-image rounded"
                                         src="{{ $driver?->provider?->logo_full_url }}"
-                                        alt="{{ translate('Image Description') }}">
+                                        alt="{{ translate('Image description') }}">
                                     <div class="text--title">
 
                                             <h5 class="text-capitalize font-semibold text-hover-primary d-block mb-1">
@@ -103,7 +101,7 @@
                 <div>
                     @if (count($driver['identity_image_full_url']) > 0)
 
-                        <h5 class="text--title mb-20">{{ translate('Identity Image') }}</h5>
+                        <h5 class="text--title mb-20">{{ translate('Identity image') }}</h5>
                         <div class="d-flex gap-4 flex-wrap">
                             @foreach ($driver['identity_image_full_url'] as $key => $img)
                                 <div>
@@ -118,10 +116,10 @@
                                         <div class="modal-content">
                                             <div class="modal-header">
                                                 <h4 class="modal-title" id="order_proof_{{ $key }}">
-                                                    {{ translate('Identity Image') }}</h4>
+                                                    {{ translate('Identity image') }}</h4>
                                                 <button type="button" class="close" data-dismiss="modal"><span
                                                         aria-hidden="true">&times;</span><span
-                                                        class="sr-only">{{ translate('messages.cancel') }}</span></button>
+                                                        class="sr-only">{{ translate('messages.Cancel') }}</span></button>
                                             </div>
                                             <div class="modal-body scroll-down">
                                                 <img src="{{ $img }}" class="initial--22 w-100">
@@ -132,7 +130,7 @@
                                                     class="download-icon mt-3">
                                                     <img src="{{ asset('/public/assets/admin/new-img/download-icon.svg') }}"
                                                         alt="">
-                                                    {{ translate('messages.download') }}
+                                                    {{ translate('messages.Download') }}
                                                 </a>
                                             </div>
                                         </div>
@@ -144,36 +142,30 @@
                 </div>
             </div>
         </div>
-        <!-- End Card -->
 
-        <!-- Card -->
         <div class="card">
-            <!-- Header -->
             <div class="card-header py-2">
                 <div class="search--button-wrapper gap-20px">
-                    <h5 class="card-title text--title flex-grow-1">{{ translate('messages.Total_Trips') }}
+                    <h5 class="card-title text--title flex-grow-1">{{ translate('Total trips') }}
                         <span class="badge badge-soft-dark ml-2" id="itemCount">{{$driverTrips->count()}}</span>
 
 
                     </h5>
                     <form class="search-form flex-grow-1 max-w-353px">
-                        <!-- Search -->
                         <div class="input-group input--group">
                             <input id="datatableSearch_" type="search" value="{{ request()?->search ?? null }}"
                                    name="search" class="form-control"
                                    placeholder="{{ translate('Search by trip ID') }}"
-                                   aria-label="{{ translate('messages.Search by trip ID...') }}">
+                                   aria-label="{{ translate('Search by trip ID') }}">
                             <button type="submit" class="btn btn--secondary bg--primary"><i
                                     class="tio-search"></i></button>
 
                         </div>
-                        <!-- End Search -->
                     </form>
                     @if (request()->input('search'))
                         <button type="reset" class="btn btn--primary ml-2 location-reload-to-base"
-                                data-url="{{ url()->full() }}">{{ translate('messages.reset') }}</button>
+                                data-url="{{ url()->full() }}">{{ translate('messages.Reset') }}</button>
                     @endif
-                    <!-- Unfold -->
                     <div class="hs-unfold m-0">
                         <a class="js-hs-unfold-invoker btn btn-sm btn-white dropdown-toggle min-height-40 font-semibold"
                            href="javascript:;"
@@ -181,35 +173,33 @@
                             "target": "#usersExportDropdown",
                             "type": "css-animation"
                         }'>
-                            <i class="tio-download-to mr-1"></i> {{ translate('messages.export') }}
+                            <i class="tio-download-to mr-1"></i> {{ translate('messages.Export') }}
                         </a>
 
                         <div id="usersExportDropdown"
                              class="hs-unfold-content dropdown-unfold dropdown-menu dropdown-menu-sm-right">
 
-                            <span class="dropdown-header">{{ translate('messages.download_options') }}</span>
+                            <span class="dropdown-header">{{ translate('messages.Download options') }}</span>
                             <a id="export-excel" class="dropdown-item"
                                href="{{ route('vendor.driver.trip.export', ['id' => request()->id,'type' => 'excel', request()->getQueryString()]) }}">
                                 <img class="avatar avatar-xss avatar-4by3 mr-2"
                                      src="{{ asset('public/assets/admin') }}/svg/components/excel.svg"
                                      alt="Image Description">
-                                {{ translate('messages.excel') }}
+                                Excel
                             </a>
                             <a id="export-csv" class="dropdown-item"
                                href="{{ route('vendor.driver.trip.export', ['id' => request()->id, 'type' => 'csv', request()->getQueryString()]) }}">
                                 <img class="avatar avatar-xss avatar-4by3 mr-2"
                                      src="{{ asset('public/assets/admin') }}/svg/components/placeholder-csv-format.svg"
                                      alt="Image Description">
-                                {{ translate('messages.csv') }}
+                                CSV
                             </a>
 
                         </div>
                     </div>
                 </div>
             </div>
-            <!-- End Header -->
 
-            <!-- Table -->
             <div class="table-responsive datatable-custom">
                 <table id="columnSearchDatatable"
                        class="table table-borderless table-thead-bordered table-nowrap table-align-middle card-table"
@@ -221,14 +211,14 @@
                     }'>
                     <thead class="thead-light">
                     <tr>
-                        <th class="border-0">{{ translate('sl') }}</th>
+                        <th class="border-0">{{ translate('SL') }}</th>
                         <th class="border-0">{{ translate('messages.Trip ID') }}</th>
-                        <th class="border-0">{{ translate('messages.Booking_Date') }}</th>
-                        <th class="border-0">{{ translate('messages.Schedule_At') }}</th>
-                        <th class="border-0">{{ translate('messages.Customer_Info') }}</th>
-                        <th class="border-0">{{ translate('messages.Vehicle_Info') }}</th>
-                        <th class="border-0">{{ translate('messages.Trip_Type') }}</th>
-                        <th class="text-center border-0">{{ translate('messages.Trip_Status') }}</th>
+                        <th class="border-0">{{ translate('Booking date') }}</th>
+                        <th class="border-0">{{ translate('Schedule at') }}</th>
+                        <th class="border-0">{{ translate('Customer information') }}</th>
+                        <th class="border-0">{{ translate('Vehicle information') }}</th>
+                        <th class="border-0">{{ translate('Trip type') }}</th>
+                        <th class="text-center border-0">{{ translate('Trip status') }}</th>
                         <th class="text-center border-0">{{ translate('messages.Action') }}</th>
                     </tr>
                     </thead>
@@ -274,7 +264,7 @@
                                             {{ $driverTrip?->trip?->user_info['contact_person_email'] }}
                                         </div>
                                     @else
-                                        {{ translate('messages.Guest_user') }}
+                                        {{ translate('messages.Guest user') }}
                                     @endif
                                 </div>
                             </td>
@@ -291,7 +281,7 @@
                                                 <img src='{{ $detail->vehicle?->thumbnailFullUrl }}' class='rounded ratio-1-1' width='40' alt='...'>
                                                 <div class='media-body'>
                                                     <h5 class='d-flex align-items-center gap-2 text-white mb-0'>{{ $detail->vehicle_details['name'] }}</h5>
-                                                    <div class='d-flex align-items-center gap-2 fs-10'>{{ translate('messages.car_Assigned') }}: {{ $detail->tripVehicleDetails->count() }}</div>
+                                                    <div class='d-flex align-items-center gap-2 fs-10'>{{ translate('Car assigned') }}: {{ $detail->tripVehicleDetails->count() }}</div>
                                                 </div>
                                             </div>
                                          @endforeach
@@ -311,7 +301,7 @@
                                         {{ translate($driverTrip?->trip?->trip_type) }}
                                     </div>
                                     <div class="opacity-lg">
-                                        {{ $driverTrip?->trip?->scheduled ? translate('messages.scheduled'): translate('messages.Instant')  }}
+                                        {{ $driverTrip?->trip?->scheduled ? translate('Scheduled'): translate('messages.Instant')  }}
                                     </div>
                                 </div>
                             </td>
@@ -339,10 +329,10 @@
                             <td>
                                 <div class="btn--container justify-content-center">
                                     <a class="btn action-btn btn--primary btn-outline-primary" href="{{route("vendor.trip.generate-invoice",["id" => $driverTrip?->trip?->id])}}"
-                                       title="{{ translate('messages.download') }}"><i class="tio-download-to"></i>
+                                       title="{{ translate('messages.Download') }}"><i class="tio-download-to"></i>
                                     </a>
-                                    <a class="btn action-btn btn--primary btn-outline-primary" href="{{ route('vendor.trip.details', $driverTrip?->trip?->id) }}"
-                                       title="{{ translate('messages.view') }}"><i class="tio-visible-outlined"></i>
+                                    <a class="btn action-btn action-btn--view" href="{{ route('vendor.trip.details', $driverTrip?->trip?->id) }}"
+                                       title="{{ translate('messages.View') }}"><i class="tio-visible-outlined"></i>
                                     </a>
                                 </div>
                             </td>
@@ -362,12 +352,10 @@
                 <div class="empty--data">
                     <img src="{{asset('/public/assets/admin/svg/illustrations/sorry.svg')}}" alt="public">
                     <h5>
-                        {{translate('no_data_found')}}
+                        {{translate('No data found')}}
                     </h5>
                 </div>
             @endif
-            <!-- End Table -->
         </div>
-        <!-- End Card -->
     </div>
 @endsection

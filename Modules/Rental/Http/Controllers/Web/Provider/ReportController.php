@@ -28,6 +28,24 @@ class ReportController extends Controller
         return back();
     }
 
+    /**
+     * Hand every trip the Store instance the query was already filtered by.
+     *
+     * The export view reads $trip->provider->name, so simply dropping 'provider' from the
+     * eager load would turn one duplicate query into one lazy load per row. Attaching the
+     * instance keeps the relation populated and costs nothing.
+     */
+    private function shareProvider($trips, $provider): void
+    {
+        if (! $provider) {
+            return;
+        }
+
+        foreach ($trips as $trip) {
+            $trip->setRelation('provider', $provider);
+        }
+    }
+
     public function tripReport(Request $request)
     {
         $key = explode(' ', $request['search'] ?? '');
@@ -45,7 +63,10 @@ class ReportController extends Controller
         $customer = is_numeric($customer_id) ? User::findOrFail($customer_id) : null;
         $filter = $request->query('filter', 'all_time');
 
-        $trips = Trips::with(['customer', 'provider', 'trip_details', 'trip_transaction', 'proDiscount'])
+        // 'provider' dropped from the eager load: every row here is filtered to
+        // $provider->id, which is the authenticated vendor's already-hydrated Store.
+        // Loading it again re-ran that Store's translate and storage global scopes.
+        $trips = Trips::with(['customer', 'trip_details', 'trip_transaction', 'proDiscount'])
             ->when(request('module_id'), function ($query) {
                 return $query->module(request('module_id'));
             })
@@ -83,13 +104,9 @@ class ReportController extends Controller
                     }
                 });
             })
-//
-//            ->withSum('transaction', 'admin_commission')
-//            ->withSum('transaction', 'admin_expense')
-//            ->withSum('transaction', 'delivery_fee_comission')
             ->orderBy('schedule_at', 'desc')->paginate(config('default_pagination'))->withQueryString();
+        $this->shareProvider($trips, $provider);
 
-        // trip card values calculation
         $trips_list = Trips::when(request('module_id'), function ($query) {
             return $query->module(request('module_id'));
         })
@@ -154,7 +171,10 @@ class ReportController extends Controller
         $customer = is_numeric($customer_id) ? User::findOrFail($customer_id) : null;
         $filter = $request->query('filter', 'all_time');
 
-        $trips = Trips::with(['customer', 'provider', 'trip_details', 'trip_transaction', 'proDiscount'])
+        // 'provider' dropped from the eager load: every row here is filtered to
+        // $provider->id, which is the authenticated vendor's already-hydrated Store.
+        // Loading it again re-ran that Store's translate and storage global scopes.
+        $trips = Trips::with(['customer', 'trip_details', 'trip_transaction', 'proDiscount'])
             ->when(request('module_id'), function ($query) {
                 return $query->module(request('module_id'));
             })
@@ -192,11 +212,8 @@ class ReportController extends Controller
                     }
                 });
             })
-//
-//            ->withSum('transaction', 'admin_commission')
-//            ->withSum('transaction', 'admin_expense')
-//            ->withSum('transaction', 'delivery_fee_comission')
             ->orderBy('schedule_at', 'desc')->get();
+        $this->shareProvider($trips, $provider);
 
         $data = [
             'trips'=>$trips,

@@ -1,28 +1,31 @@
 <?php
 
+use Modules\Rental\Http\Controllers\Api\V1\Vendor\Promotion\BannerController;
+use Modules\Rental\Http\Controllers\Api\V1\Customer\Promotion\BannerController as RentalBannerController;
+use Modules\Rental\Http\Controllers\Api\V1\Vendor\Promotion\CouponController;
+use Modules\Rental\Http\Controllers\Api\V1\Customer\Promotion\CouponController as RentalCouponController;
+use Modules\Rental\Http\Controllers\Api\V1\Vendor\Profile\ProfileController;
+use Modules\Rental\Http\Controllers\Api\V1\Vendor\Store\ScheduleController;
+use Modules\Rental\Http\Controllers\Api\V1\Vendor\Vehicle\BrandController;
+use Modules\Rental\Http\Controllers\Api\V1\Vendor\Vehicle\CategoryController;
+use Modules\Rental\Http\Controllers\Api\V1\Customer\Store\ProviderController as RentalProviderController;
+use Modules\Rental\Http\Controllers\Api\V1\Customer\Store\ProviderReviewController;
+use Modules\Rental\Http\Controllers\Api\V1\Vendor\Report\EarningReportController;
+use Modules\Rental\Http\Controllers\Api\V1\Vendor\Report\TaxReportController;
+use Modules\Rental\Http\Controllers\Api\V1\Vendor\Chat\ConversationController;
+use Modules\Rental\Http\Controllers\Api\V1\Vendor\Store\BusinessSetupController;
+use Modules\Rental\Http\Controllers\Api\V1\Customer\Vehicle\BrandController as RentalBrandController;
+use Modules\Rental\Http\Controllers\Api\V1\Customer\Vehicle\CategoryController as RentalCategoryController;
+use Modules\Rental\Http\Controllers\Api\V1\Customer\Vehicle\VehicleController as RentalVehicleController;
+use Modules\Rental\Http\Controllers\Api\V1\Customer\Vehicle\ReviewController as VehicleReviewController;
+use Modules\Rental\Http\Controllers\Api\V1\Vendor\Vehicle\DriverController;
+use Modules\Rental\Http\Controllers\Api\V1\Vendor\Ai\VehicleAiController;
+use Modules\Rental\Http\Controllers\Api\V1\Vendor\Vehicle\VehicleController;
+use Modules\Rental\Http\Controllers\Api\V1\Customer\Wishlist\WishlistController as RentalWishlistController;
+use Modules\Rental\Http\Controllers\Api\V1\Customer\Cart\CartController;
+use Modules\Rental\Http\Controllers\Api\V1\Vendor\Trip\TripController as ProviderTripController;
+use Modules\Rental\Http\Controllers\Api\V1\Customer\Trip\TripController;
 use Illuminate\Support\Facades\Route;
-
-use Modules\Rental\Http\Controllers\Api\Provider\BannerController;
-use Modules\Rental\Http\Controllers\Api\Provider\BusinessSettingsController;
-use Modules\Rental\Http\Controllers\Api\Provider\ConversationController;
-use Modules\Rental\Http\Controllers\Api\Provider\CouponController;
-use Modules\Rental\Http\Controllers\Api\Provider\DriverController;
-use Modules\Rental\Http\Controllers\Api\Provider\ProviderController;
-use Modules\Rental\Http\Controllers\Api\Provider\ProviderEarningReportController;
-use Modules\Rental\Http\Controllers\Api\Provider\ProviderTaxReportController;
-use Modules\Rental\Http\Controllers\Api\Provider\VehicleController;
-use Modules\Rental\Http\Controllers\Api\Provider\VehicleAiController;
-use Modules\Rental\Http\Controllers\Api\Provider\ProviderTripController;
-use Modules\Rental\Http\Controllers\Api\Public\CouponController as Coupon;
-use Modules\Rental\Http\Controllers\Api\Public\BannerController as Banner;
-use Modules\Rental\Http\Controllers\Api\Public\VehicleController as Vehicle;
-use Modules\Rental\Http\Controllers\Api\Public\VehicleCategoryController as VehicleCategory;
-use Modules\Rental\Http\Controllers\Api\Public\VehicleBrandController as VehicleBrand;
-use Modules\Rental\Http\Controllers\Api\Public\ProviderController as Provider;
-use Modules\Rental\Http\Controllers\Api\User\CartController;
-use Modules\Rental\Http\Controllers\Api\User\TripController;
-use Modules\Rental\Http\Controllers\Api\User\RentalWishlistController;
-use Modules\Rental\Http\Controllers\Api\User\VehicleReviewController;
 
 /*
 |--------------------------------------------------------------------------
@@ -34,156 +37,193 @@ use Modules\Rental\Http\Controllers\Api\User\VehicleReviewController;
 | is assigned the "api" middleware group. Enjoy building your API!
 |
 */
-
-Route::group(['prefix' => 'rental', 'as' => 'rental.',  'middleware' =>  ['localization']], function () {
-
-    Route::group(['prefix' => 'vendor', 'namespace' => 'Provider', 'middleware' => ['vendor.api']], function () {
-        Route::group(['prefix' => 'driver', 'as' => 'driver.'], function () {
-            Route::get('list', [DriverController::class, 'list']);
-            Route::post('create', [DriverController::class, 'store']);
-            Route::post('update/{id}', [DriverController::class, 'update']);
-            Route::get('details/{id}', [DriverController::class, 'details']);
-            Route::get('status/{id}', [DriverController::class, 'status']);
-            Route::delete('delete/{id}', [DriverController::class, 'destroy']);
-        });
-
-        Route::group(['prefix' => 'vehicle', 'as' => 'vehicle.'], function () {
-            Route::get('list', [VehicleController::class, 'list']);
-            Route::get('edit/{id}', [VehicleController::class, 'edit']);
-            Route::post('create', [VehicleController::class, 'store']);
-            Route::post('update/{id}', [VehicleController::class, 'update']);
-            Route::get('details/{id}', [VehicleController::class, 'details']);
-            Route::get('status/{id}', [VehicleController::class, 'status']);
-            Route::get('new-tag/{id}', [VehicleController::class, 'newTag']);
-            Route::delete('delete/{id}', [VehicleController::class, 'destroy']);
-            Route::get('reviews', [VehicleController::class, 'reviews']);
-            Route::put('reply-update', [VehicleController::class, 'updateReply']);
-
-            Route::group(['prefix' => 'ai', 'as' => 'ai.'], function () {
-                Route::get('generate-title-and-description', [VehicleAiController::class, 'getTitleAndDescription']);
-                Route::get('generate-other-data', [VehicleAiController::class, 'getOtherData']);
-                Route::get('generate-title-suggestions', [VehicleAiController::class, 'generateTitleSuggestions']);
-                Route::post('generate-form-image', [VehicleAiController::class, 'analyzeImageAutoFill']);
+Route::middleware(['localization'])->prefix('rental')->name('rental.')->group(function () {
+    Route::middleware(['vendor.api'])->prefix('vendor')->group(function () {
+        Route::prefix('driver')->name('driver.')->group(function () {
+            Route::controller(DriverController::class)->group(function () {
+                Route::get('list', 'index');
+                Route::post('create', 'store');
+                Route::post('update/{id}', 'update');
+                Route::get('details/{id}', 'show');
+                Route::get('status/{id}', 'updateStatus');
+                Route::delete('delete/{id}', 'destroy');
             });
         });
-
-        Route::group(['prefix' => 'banner', 'as' => 'vehicle.'], function () {
-            Route::get('list', [BannerController::class, 'list']);
-            Route::get('edit/{id}', [BannerController::class, 'edit']);
-            Route::post('create', [BannerController::class, 'store']);
-            Route::post('update/{id}', [BannerController::class, 'update']);
-            Route::get('status/{id}', [BannerController::class, 'status']);
-            Route::get('featured/{id}', [BannerController::class, 'featured']);
-            Route::delete('delete/{id}', [BannerController::class, 'destroy']);
-        });
-
-        Route::group(['prefix' => 'coupon', 'as' => 'coupon.'], function () {
-            Route::get('list', [CouponController::class, 'list']);
-            Route::post('create', [CouponController::class, 'store']);
-            Route::get('edit/{id}', [CouponController::class, 'edit']);
-            Route::post('update/{id}', [CouponController::class, 'update']);
-            Route::get('status/{id}', [CouponController::class, 'status']);
-            Route::delete('delete/{id}', [CouponController::class, 'destroy']);
-        });
-
-        Route::group(['prefix' => 'profile', 'as' => 'profile.'], function () {
-            Route::get('/', [ProviderController::class, 'profile']);
-            Route::post('update', [ProviderController::class, 'profileUpdate']);
-        });
-
-        Route::group(['prefix' => 'schedule', 'as' => 'schedule.'], function () {
-            Route::post('/create', [ProviderController::class, 'scheduleStore']);
-            Route::delete('delete/{id}', [ProviderController::class, 'scheduleDelete']);
-        });
-
-        Route::group(['prefix' => 'message', 'as' => 'message.'], function () {
-            Route::get('list', [ConversationController::class, 'conversations']);
-            Route::get('search-list', [ConversationController::class, 'search']);
-            Route::get('details', [ConversationController::class, 'messages']);
-            Route::post('send', [ConversationController::class, 'messagesStore']);
-        });
-
-        Route::group(['prefix' => 'trip', 'as' => 'trip.'], function () {
-            Route::get('list/{all}', [ProviderTripController::class, 'tripList']);
-            Route::get('details', [ProviderTripController::class, 'getTripDetails']);
-            Route::get('status', [ProviderTripController::class, 'updateTripStatus']);
-            Route::get('payment', [ProviderTripController::class, 'updateTripPaymentStatus']);
-            Route::put('assign-vehicle', [ProviderTripController::class, 'assignVehicle']);
-            Route::put('assign-driver', [ProviderTripController::class, 'assignDriver']);
-            Route::put('edit-trip', [ProviderTripController::class, 'editTrip']);
-        });
-        Route::get('get-earning-report', [ProviderEarningReportController::class, 'getEarningReport']);
-        Route::get('get-tax-report',[ProviderTaxReportController::class, 'providerTax'])->name('providerTax');
-
-        Route::get('category/list', [ProviderController::class, 'categoryList']);
-        Route::get('brand/list', [ProviderController::class, 'brandList']);
-        Route::POST('update-business-setup', [BusinessSettingsController::class, 'updateStoreSetup']);
-    });
-
-    Route::group(['middleware' => 'module-check'], function () {
-        Route::get('coupon/list/all', [Coupon::class, 'list']);
-        Route::group(['prefix' => 'coupon', 'middleware' => 'auth:api'], function () {
-            Route::get('list', [Coupon::class, 'list']);
-            Route::get('apply', [Coupon::class, 'apply']);
-        });
-        Route::group(['prefix' => 'banners'], function () {
-            Route::get('/', [Banner::class, 'list']);
-            Route::get('/{store_id}', [Banner::class, 'getStoreBanners']);
-        });
-        Route::group(['prefix' => 'vehicle'], function () {
-            Route::get('top-rated/', [Vehicle::class, 'topRatedVehicleList']);
-            Route::get('search/', [Vehicle::class, 'getSearchedVehicles']);
-            Route::get('search/suggestion', [Vehicle::class, 'getSearchedVehiclesSuggestion']);
-            Route::get('get-provider-vehicles', [Vehicle::class, 'getProviderWiseVehicles']);
-            Route::get('get-vehicle-details/{vehicle}', [Vehicle::class, 'getVehicleDetails']);
-            Route::get('category-list/', [VehicleCategory::class, 'vehicleCategoryList']);
-            Route::get('brand-list/', [VehicleBrand::class, 'vehicleBrandList']);
-            Route::get('popular-suggestion/', [Vehicle::class, 'getPopularSearchlist']);
-            Route::get('reviews/{id}', [Vehicle::class, 'getVehicleReviews']);
-        });
-
-        Route::group(['prefix' => 'provider'], function () {
-            Route::get('get-provider-details/{provider}', [Provider::class, 'getProvidereDetails']);
-            Route::get('get-provider-reviews/{provider}', [Provider::class, 'getProvidereReviews']);
-            Route::get('popular', [Provider::class, 'getPopularProvider']);
-            Route::get('latest', [Provider::class, 'getLatestProvider']);
-            Route::get('verified', [Provider::class, 'getVerifiedProvider']);
-        });
-
-        Route::group(['prefix' => 'user', 'middleware' => 'apiGuestCheck'], function () {
-            Route::group(['prefix' => 'cart'], function () {
-                Route::get('get-cart', [CartController::class, 'getCartList']);
-                Route::Post('add-to-cart', [CartController::class, 'addToCart']);
-                Route::Put('update-cart', [CartController::class, 'updateCart']);
-                Route::Put('update-user-data/{user_data}', [CartController::class, 'updateUserData']);
-                Route::delete('remove-vehicle/{cart_id}', [CartController::class, 'removeVehicle']);
-                Route::delete('remove-cart', [CartController::class, 'removeCart']);
-                Route::delete('remove-multiple-cart', [CartController::class, 'removeMultipleVehicles']);
+        Route::prefix('vehicle')->name('vehicle.')->group(function () {
+            Route::controller(VehicleController::class)->group(function () {
+                Route::get('list', 'index');
+                Route::get('edit/{id}', 'edit');
+                Route::post('create', 'store');
+                Route::post('update/{id}', 'update');
+                Route::get('details/{id}', 'show');
+                Route::get('status/{id}', 'updateStatus');
+                Route::get('new-tag/{id}', 'updateNewTag');
+                Route::delete('delete/{id}', 'destroy');
+                Route::get('reviews', 'reviews');
+                Route::put('reply-update', 'updateReply');
             });
-            Route::group(['prefix' => 'trip'], function () {
-                Route::Post('trip-booking', [TripController::class, 'tripBooking']);
-                Route::get('get-trip-list/{all}', [TripController::class, 'getTripList']);
-                Route::get('get-trip-details', [TripController::class, 'getTripDetails']);
-                Route::post('payment', [TripController::class, 'makePayment']);
-                Route::put('cancel-trip', [TripController::class, 'cancelTrip']);
-                Route::delete('delete-trip', [TripController::class, 'deleteTrip']);
-                Route::Post('get-tax', [TripController::class, 'getTaxFromCart']);
-            });
-            Route::group(['middleware' => 'auth:api'], function () {
-                Route::group(['prefix' => 'wish-list'], function () {
-                    Route::get('/', [RentalWishlistController::class, 'wishlist']);
-                    Route::post('add',  [RentalWishlistController::class, 'addToWishlist']);
-                    Route::delete('remove',  [RentalWishlistController::class, 'removeFromWishlist']);
+            Route::prefix('ai')->name('ai.')->group(function () {
+                Route::controller(VehicleAiController::class)->group(function () {
+                    Route::get('generate-title-and-description', 'titleAndDescription');
+                    Route::get('generate-other-data', 'otherData');
+                    Route::get('generate-title-suggestions', 'titleSuggestions');
+                    Route::post('generate-form-image', 'imageAnalysis');
                 });
-                Route::group(['prefix' => 'review'], function () {
-                    Route::post('add', [VehicleReviewController::class, 'submitVehicleReview']);
-                });
-                Route::post('trip/reorder', [TripController::class, 'reorderTrip']);
             });
         });
-
-        Route::get('customer/trip/last', [TripController::class, 'getLastTrips']);
+        Route::prefix('banner')->name('vehicle.')->group(function () {
+            Route::controller(BannerController::class)->group(function () {
+                Route::get('list', 'index');
+                Route::get('edit/{id}', 'show');
+                Route::post('create', 'store');
+                Route::post('update/{id}', 'update');
+                Route::get('status/{id}', 'updateStatus');
+                Route::get('featured/{id}', 'updateFeatured');
+                Route::delete('delete/{id}', 'destroy');
+            });
+        });
+        Route::prefix('coupon')->name('coupon.')->group(function () {
+            Route::controller(CouponController::class)->group(function () {
+                Route::get('list', 'index');
+                Route::post('create', 'store');
+                Route::get('edit/{id}', 'show');
+                Route::post('update/{id}', 'update');
+                Route::get('status/{id}', 'updateStatus');
+                Route::delete('delete/{id}', 'destroy');
+            });
+        });
+        Route::prefix('profile')->name('profile.')->group(function () {
+            Route::controller(ProfileController::class)->group(function () {
+                Route::get('/', 'show');
+                Route::post('update', 'update');
+            });
+        });
+        Route::prefix('schedule')->name('schedule.')->group(function () {
+            Route::controller(ScheduleController::class)->group(function () {
+                Route::post('/create', 'store');
+                Route::delete('delete/{id}', 'destroy');
+            });
+        });
+        Route::prefix('message')->name('message.')->group(function () {
+            Route::controller(ConversationController::class)->group(function () {
+                Route::get('list', 'index');
+                Route::get('search-list', 'search');
+                Route::get('details', 'show');
+                Route::post('send', 'store');
+            });
+        });
+        Route::prefix('trip')->name('trip.')->group(function () {
+            Route::controller(ProviderTripController::class)->group(function () {
+                Route::get('list/{all}', 'index');
+                Route::get('details', 'show');
+                Route::get('status', 'updateStatus');
+                Route::get('payment', 'updatePaymentStatus');
+                Route::put('assign-vehicle', 'assignVehicle');
+                Route::put('assign-driver', 'assignDriver');
+                Route::put('edit-trip', 'edit');
+            });
+        });
+        Route::controller(EarningReportController::class)->group(function () {
+            Route::get('get-earning-report', 'index');
+        });
+        Route::controller(TaxReportController::class)->group(function () {
+            Route::get('get-tax-report', 'index')->name('providerTax');
+        });
+        Route::controller(CategoryController::class)->group(function () {
+            Route::get('category/list', 'index');
+        });
+        Route::controller(BrandController::class)->group(function () {
+            Route::get('brand/list', 'index');
+        });
+        Route::controller(BusinessSetupController::class)->group(function () {
+            Route::post('update-business-setup', 'update');
+        });
     });
-
-    Route::get('push-notification-test/{id}', [BusinessSettingsController::class, 'testNotification']);
+    Route::middleware('module-check')->group(function () {
+        Route::controller(RentalCouponController::class)->group(function () {
+            Route::get('coupon/list/all', 'index');
+        });
+        Route::middleware('auth:api')->prefix('coupon')->group(function () {
+            Route::controller(RentalCouponController::class)->group(function () {
+                Route::get('list', 'index');
+                Route::get('apply', 'apply');
+            });
+        });
+        Route::prefix('banners')->group(function () {
+            Route::controller(RentalBannerController::class)->group(function () {
+                Route::get('/', 'index');
+                Route::get('/{store_id}', 'listForStore');
+            });
+        });
+        Route::prefix('vehicle')->group(function () {
+            Route::controller(RentalVehicleController::class)->group(function () {
+                Route::get('top-rated/', 'topRated');
+                Route::get('search/', 'search');
+                Route::get('search/suggestion', 'suggestion');
+                Route::get('get-provider-vehicles', 'providerVehicles');
+                Route::get('get-vehicle-details/{vehicle}', 'show');
+            });
+            Route::get('popular-suggestion/', [RentalBrandController::class, 'popular']);
+            Route::get('reviews/{id}', [VehicleReviewController::class, 'index']);
+            Route::controller(RentalCategoryController::class)->group(function () {
+                Route::get('category-list/', 'index');
+            });
+            Route::controller(RentalBrandController::class)->group(function () {
+                Route::get('brand-list/', 'index');
+            });
+        });
+        Route::prefix('provider')->group(function () {
+            Route::controller(RentalProviderController::class)->group(function () {
+                Route::get('get-provider-details/{provider}', 'show');
+                Route::get('get-provider-reviews/{provider}', [ProviderReviewController::class, 'index']);
+                Route::get('popular', 'popular');
+                Route::get('latest', 'latest');
+                Route::get('verified', 'verified');
+            });
+        });
+        Route::middleware('apiGuestCheck')->prefix('user')->group(function () {
+            Route::prefix('cart')->group(function () {
+                Route::controller(CartController::class)->group(function () {
+                    Route::get('get-cart', 'index');
+                    Route::post('add-to-cart', 'store');
+                    Route::put('update-cart', 'update');
+                    Route::put('update-user-data/{user_data}', 'updateUserData');
+                    Route::delete('remove-vehicle/{cart_id}', 'destroy');
+                    Route::delete('remove-cart', 'clear');
+                    Route::delete('remove-multiple-cart', 'destroyMany');
+                });
+            });
+            Route::prefix('trip')->group(function () {
+                Route::controller(TripController::class)->group(function () {
+                    Route::post('trip-booking', 'store');
+                    Route::get('get-trip-list/{all}', 'index');
+                    Route::get('get-trip-details', 'show');
+                    Route::post('payment', 'pay');
+                    Route::put('cancel-trip', 'cancel');
+                    Route::delete('delete-trip', 'destroy');
+                    Route::post('get-tax', 'tax');
+                });
+            });
+            Route::middleware('auth:api')->group(function () {
+                Route::prefix('wish-list')->group(function () {
+                    Route::controller(RentalWishlistController::class)->group(function () {
+                        Route::get('/', 'index');
+                        Route::post('add', 'store');
+                        Route::delete('remove', 'destroy');
+                    });
+                });
+                Route::prefix('review')->group(function () {
+                    Route::controller(VehicleReviewController::class)->group(function () {
+                        Route::post('add', 'store');
+                    });
+                });
+                Route::controller(TripController::class)->group(function () {
+                    Route::post('trip/reorder', 'reorder');
+                });
+            });
+        });
+        Route::controller(TripController::class)->group(function () {
+            Route::get('customer/trip/last', 'lastTrips');
+        });
+    });
 });

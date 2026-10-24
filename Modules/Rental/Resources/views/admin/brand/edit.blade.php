@@ -1,6 +1,6 @@
 @extends('layouts.admin.app')
 
-@section('title',translate('messages.Update brand'))
+@section('title',translate('Update brand'))
 
 @push('css_or_js')
 
@@ -8,15 +8,14 @@
 
 @section('content')
     <div class="content container-fluid">
-        <!-- Page Header -->
         <div class="page-header">
             <h1 class="page-header-title">
                 <span class="page-header-icon">
                     <img src="{{asset('public/assets/admin/img/edit.png')}}" class="w--20" alt="">
                 </span>
             </h1>
+            <p class="page-header-desc">{{ translate('Rename this brand or change the artwork shown beside it.') }}</p>
         </div>
-        <!-- End Page Header -->
         <div class="card">
             <div class="card-body">
                 <form action="" method="post" enctype="multipart/form-data">
@@ -28,7 +27,7 @@
                                     <li class="nav-item">
                                         <a class="nav-link lang_link active"
                                         href="#"
-                                        id="default-link">{{translate('messages.default')}}</a>
+                                        id="default-link">{{translate('Default')}}</a>
                                     </li>
                                     @foreach ($language as $lang)
                                         <li class="nav-item">
@@ -41,12 +40,12 @@
                             @endif
                             @if($language)
                                 <div class="form-group lang_form" id="default-form">
-                                    <label class="input-label" for="exampleFormControlInput1">{{translate('messages.name')}} ({{ translate('messages.default') }}) <span class="form-label-secondary text-danger"
+                                    <label class="input-label" for="exampleFormControlInput1">{{translate('Name')}} ({{ translate('Default') }}) <span class="form-label-secondary text-danger"
                                         data-toggle="tooltip" data-placement="right"
                                         data-original-title="{{ translate('messages.Required.')}}"> *
                                         </span>
                                     </label>
-                                    <input type="text" name="name[]" class="form-control" placeholder="{{translate('messages.new_brand')}}" maxlength="191" value="{{$brand?->getRawOriginal('name')}}"  >
+                                    <input type="text" name="name[]" class="form-control" placeholder="{{translate('messages.New brand')}}" maxlength="191" value="{{$brand?->getRawOriginal('name')}}"  >
                                 </div>
                                 <input type="hidden" name="lang[]" value="default">
                                 @foreach($language as $lang)
@@ -62,15 +61,15 @@
                                             }
                                         ?>
                                     <div class="form-group d-none lang_form" id="{{$lang}}-form">
-                                        <label class="input-label" for="exampleFormControlInput1">{{translate('messages.name')}} ({{strtoupper($lang)}})</label>
-                                        <input type="text" name="name[]" class="form-control" placeholder="{{translate('messages.new_brand')}}" maxlength="191" value="{{$translate[$lang]['name']??''}}"  >
+                                        <label class="input-label" for="exampleFormControlInput1">{{translate('Name')}} ({{strtoupper($lang)}})</label>
+                                        <input type="text" name="name[]" class="form-control" placeholder="{{translate('messages.New brand')}}" maxlength="191" value="{{$translate[$lang]['name']??''}}"  >
                                     </div>
                                     <input type="hidden" name="lang[]" value="{{$lang}}">
                                 @endforeach
                             @else
                                 <div class="form-group">
-                                    <label class="input-label" for="exampleFormControlInput1">{{translate('messages.name')}}</label>
-                                    <input type="text" name="name" class="form-control" placeholder="{{translate('messages.new_brand')}}" value="{{$brand['name']}}" maxlength="191">
+                                    <label class="input-label" for="exampleFormControlInput1">{{translate('Name')}}</label>
+                                    <input type="text" name="name" class="form-control" placeholder="{{translate('messages.New brand')}}" value="{{$brand['name']}}" maxlength="191">
                                 </div>
                                 <input type="hidden" name="lang[]" value="{{$lang}}">
                             @endif
@@ -96,14 +95,13 @@
                         </div>
                         <div class="col-12 mt-4">
                             <div class="btn--container justify-content-end mt-20">
-                                <button type="reset" id="reset_btn" data-image="{{ $brand['image_full_url'] }}" class="btn btn--reset">{{translate('messages.reset')}}</button>
-                                <button type="submit" class="btn btn--primary">{{translate('messages.update')}}</button>
+                                <button type="reset" id="reset_btn" data-image="{{ $brand['image_full_url'] }}" class="btn btn--reset"><i class="tio-refresh"></i> {{translate('messages.Reset')}}</button>
+                                <button type="submit" class="btn btn--primary"><i class="tio-save"></i> {{translate('Update')}}</button>
                             </div>
                         </div>
                     </div>
                 </form>
             </div>
-            <!-- End Table -->
         </div>
     </div>
 

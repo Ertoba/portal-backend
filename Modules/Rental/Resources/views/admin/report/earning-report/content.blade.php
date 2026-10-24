@@ -27,9 +27,9 @@
     data-currency-symbol="{{ \App\CentralLogics\Helpers::currency_symbol() }}"
     data-currency-position="{{ \App\CentralLogics\Helpers::get_business_settings('currency_symbol_position') ?? 'left' }}"
     data-currency-decimals="{{ (int) config('round_up_to_digit') }}"
-    data-placeholder-order="{{ translate('messages.Search_by_Transaction_ID_or_Provider') }}"
-    data-placeholder-expense="{{ translate('messages.Search_by_Transaction_ID_or_Provider_or_Expense_Source') }}"
-    data-placeholder-subscription="{{ translate('messages.Search_by_Transaction_ID_or_Provider_or_Subscription_Type') }}"
+    data-placeholder-order="{{ translate('Search by transaction ID or provider') }}"
+    data-placeholder-expense="{{ translate('Search by transaction ID or provider or expense source') }}"
+    data-placeholder-subscription="{{ translate('Search by transaction ID or provider or subscription type') }}"
 >
     @include('rental::admin.report.earning-report.partials._filter', [
         'resetUrl' => $resetUrl,

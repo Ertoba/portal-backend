@@ -1,130 +1,37 @@
 @extends('layouts.admin.app')
 
-@section('title',translate('Vehicles Bulk Export'))
+@section('title', translate('messages.Vehicle bulk export'))
 
-
+@push('css_or_js')
+    <link rel="stylesheet" href="{{ asset('public/assets/admin/css/third-party-setup.css') }}">
+    <link rel="stylesheet" href="{{ asset('public/assets/admin/css/bulk-tools.css') }}">
+@endpush
 
 @section('content')
-    <div class="content container-fluid">
-        <div class="page-header">
-            <h1 class="page-header-title">
-                <span class="page-header-icon">
-                    <img src="{{asset('public/assets/admin/img/items.png')}}" class="w--20" alt="">
-                </span>
-                <span>
-                    {{translate('messages.vehicles_bulk_export')}}
-                </span>
-            </h1>
-        </div>
-        <div class="card mt-2 rest-part">
-            <div class="card-body">
-                <div class="export-steps-2">
-                    <div class="row g-4">
-                        <div class="col-sm-6 col-lg-4">
-                            <div class="export-steps-item-2 h-100">
-                                <div class="top">
-                                    <div>
-                                        <h3 class="fs-20">{{translate('Step 1')}}</h3>
-                                        <div>
-                                            {{translate('Select Data Type')}}
-                                        </div>
-                                    </div>
-                                    <img src="{{asset('/public/assets/admin/img/bulk-export-1.png')}}" alt="">
-                                </div>
-                                <h4>{{ translate('Instruction') }}</h4>
-                                <ul class="m-0 pl-4">
-                                    <li>
-                                       {{ translate('Download the format file and fill it with proper data.') }}
-                                    </li>
-                                    <li>
-                                       {{ translate('You can download the example file to understand how the data must be filled.') }}
-                                    </li>
-                                    <li>
-                                       {{ translate('Have to upload zip file') }}
-                                    </li>
-                                </ul>
-                            </div>
-                        </div>
-                        <div class="col-sm-6 col-lg-4">
-                            <div class="export-steps-item-2 h-100">
-                                <div class="top">
-                                    <div>
-                                        <h3 class="fs-20">{{translate('Step 2')}}</h3>
-                                        <div>
-                                            {{translate('Select Data Range by Date or ID and Export')}}
-                                        </div>
-                                    </div>
-                                    <img src="{{asset('/public/assets/admin/img/bulk-export-2.png')}}" alt="">
-                                </div>
-                                <h4>{{ translate('Instruction') }}</h4>
-                                <ul class="m-0 pl-4">
-                                    <li>
-                                        {{ translate('Download the format file and fill it with proper data.') }}
-                                    </li>
-                                    <li>
-                                        {{ translate('You can download the example file to understand how the data must be filled.') }}
-                                    </li>
-                                    <li>
-                                        {{ translate('Have to upload zip file') }}
-                                    </li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <form class="product-form" action="" method="POST"
-                        enctype="multipart/form-data">
-                    @csrf
-
-                    <div class="row">
-                        <div class="col-md-4">
-                            <div class="form-group">
-                                <label class="input-label" for="exampleFormControlSelect1">{{translate('messages.type')}}<span
-                                        class="input-label-secondary"></span></label>
-                                <select name="type" id="type" data-placeholder="{{translate('messages.select_type')}}" class="form-control" required title="Select Type">
-                                    <option value="all">{{translate('messages.all_data')}}</option>
-                                    <option value="date_wise">{{translate('messages.date_wise')}}</option>
-                                    <option value="id_wise">{{translate('messages.id_wise')}}</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="form-group id_wise">
-                                <label class="input-label" for="exampleFormControlSelect1">{{translate('messages.start_id')}}<span
-                                        class="input-label-secondary"></span></label>
-                                <input type="number" name="start_id" class="form-control">
-                            </div>
-                            <div class="form-group date_wise">
-                                <label class="input-label" for="exampleFormControlSelect1">{{translate('messages.from_date')}}<span
-                                        class="input-label-secondary"></span></label>
-                                <input type="date" name="from_date" class="form-control">
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="form-group id_wise">
-                                <label class="input-label" for="exampleFormControlSelect1">{{translate('messages.end_id')}}<span
-                                        class="input-label-secondary"></span></label>
-                                <input type="number" name="end_id" class="form-control">
-                            </div>
-                            <div class="form-group date_wise">
-                                <label class="input-label text-capitalize" for="exampleFormControlSelect1">{{translate('messages.to_date')}}<span
-                                        class="input-label-secondary"></span></label>
-                                <input type="date" name="to_date" class="form-control">
-                            </div>
-                        </div>
-                        <div class="col-12">
-                            <div class="btn--container justify-content-end">
-                                <button type="reset" id="reset-btn" class="btn btn--reset">{{translate('clear')}}</button>
-                                <button type="submit" class="btn btn--primary">{{translate('export')}}</button>
-                            </div>
-                        </div>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
+    @include('partials.bulk._export', ['bulk' => [
+        'title' => translate('messages.Export vehicles'),
+        'subtitle' => translate('Download your vehicles as a spreadsheet you can edit and import back.'),
+        'icon' => asset('public/assets/admin/img/outline/vehicle.svg'),
+        'action' => url()->current(),
+        'summary' => $summary,
+        'count_label' => translate('Vehicles in this module'),
+        'file_name' => 'Vehicles.xlsx',
+        'preview_all' => translate('Exporting every vehicle in this module.'),
+        'columns' => ['Id', 'Name', 'Description', 'Thumbnail', 'Images', 'ZoneId', 'ProviderId', 'BrandId', 'CategoryId', 'Model', 'Type', 'EngineCapacity', 'EnginePower', 'SeatingCapacity', 'AirCondition', 'FuelType', 'TransmissionType', 'MultipleVehicles', 'TripHourly', 'TripDistance', 'TripDayWise', 'HourlyPrice', 'DayWisePrice', 'DistancePrice', 'DiscountType', 'DiscountPrice', 'Tag', 'Documents', 'Status', 'NewTag'],
+        'tips' => [
+            translate('TripHourly, TripDistance and TripDayWise switch a trip type on, and each has its own price column.'),
+            translate('Thumbnail, images and documents hold stored file paths, not the files themselves.'),
+            translate('Keep the Id column untouched if you plan to import the file back as an update.'),
+        ],
+        'import_url' => route('admin.rental.provider.vehicle.bulk_import'),
+        'import_title' => translate('messages.Vehicle bulk import'),
+        'import_desc' => translate('Upload a filled spreadsheet to add or update vehicles.'),
+        'help_title' => translate('Exporting vehicles'),
+        'help_steps' => [
+            translate('Pick the scope — everything, a date range, or an ID range.'),
+            translate('Fill in the range if you picked one. Use full range fills in the bounds shown above.'),
+            translate('Press export and the spreadsheet downloads in .xlsx format.'),
+            translate('Edit the rows you need and bring the file back through bulk import to update them.'),
+        ],
+    ]])
 @endsection
-
-@push('script_2')
- <script src="{{asset('Modules/Rental/public/assets/js/admin/view-pages/vehicle-bulk-export.js')}}"></script>
-@endpush

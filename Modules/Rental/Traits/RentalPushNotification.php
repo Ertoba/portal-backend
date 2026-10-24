@@ -2,9 +2,11 @@
 
 namespace Modules\Rental\Traits;
 
-use App\CentralLogics\Helpers;
 use App\Models\NotificationMessage;
-use App\Models\UserNotification;
+use App\Support\Notification\SendNotification;
+use Modules\Rental\Support\TripNotificationMessages;
+use App\Support\Notification\NotificationLinks;
+use App\Support\Notification\NotificationText;
 
 trait RentalPushNotification
 {
@@ -38,48 +40,42 @@ trait RentalPushNotification
     public static function sendTripNotificationAdminPanel($trip)
     {
         $data = self::makeNotifyData(
-            title: translate('Trip_Notification'),
+            title: translate('Trip notification'),
             description: translate('messages.You have a new trip booking'),
             trip: $trip,
             order_type: 'trip',
             type: 'new_order'
         );
-        Helpers::send_push_notif_to_topic($data, 'admin_message', 'order_request', url('/') . '/admin/rental/trip');
+        SendNotification::pushToTopic($data, 'admin_message', 'order_request', url('/') . '/admin/rental/trip');
         return true;
     }
 
     public static function sendTripNotificationproviderPanel($trip)
     {
-        $push_notification_status = Helpers::getRentalNotificationStatusData('provider', 'provider_trip_notification', 'push_notification_status', $trip?->provider_id);
+        $push_notification_status = SendNotification::rentalChannelEnabled('provider', 'provider_trip_notification', 'push_notification_status', $trip?->provider_id);
 
         if ($push_notification_status) {
             $data = self::makeNotifyData(
-                title: translate('Trip_Notification'),
+                title: translate('Trip notification'),
                 description: translate('messages.You have a new trip booking'),
                 trip: $trip,
                 order_type: 'trip',
                 type: 'new_order'
             );
-            $web_push_link = url('/') . '/vendor-panel/trip/list/all';
-            Helpers::send_push_notif_to_topic($data, "store_panel_{$trip->provider_id}_message", 'new_order', $web_push_link);
+            SendNotification::pushToTopic($data, "store_panel_{$trip->provider_id}_message", 'new_order', NotificationLinks::vendorTrips());
             if ($trip?->provider?->vendor?->firebase_token) {
-                Helpers::send_push_notif_to_device($trip?->provider?->vendor?->firebase_token, $data);
-                UserNotification::create([
-                    'data' => json_encode($data),
-                    'vendor_id' => $trip->provider?->vendor_id,
-                    'order_type' => 'trip',
-                ]);
+                SendNotification::pushToVendor($trip->provider?->vendor_id, $trip?->provider?->vendor?->firebase_token, $data, 'trip');
             }
         }
         return true;
     }
     public static function sendTripNotificationproviderApp($trip)
     {
-        $push_notification_status = Helpers::getRentalNotificationStatusData('provider', 'provider_trip_notification', 'push_notification_status', $trip?->provider_id);
+        $push_notification_status = SendNotification::rentalChannelEnabled('provider', 'provider_trip_notification', 'push_notification_status', $trip?->provider_id);
         if ($push_notification_status) {
 
             $data = self::makeNotifyData(
-                title: translate('Trip_Notification'),
+                title: translate('Trip notification'),
                 description: translate('messages.You have a new trip booking'),
                 trip: $trip,
                 order_type: 'trip',
@@ -87,12 +83,7 @@ trait RentalPushNotification
             );
 
             if ($trip?->provider?->vendor?->firebase_token) {
-                Helpers::send_push_notif_to_device($trip?->provider?->vendor?->firebase_token, $data);
-                UserNotification::create([
-                    'data' => json_encode($data),
-                    'vendor_id' => $trip->provider?->vendor_id,
-                    'order_type' => 'trip',
-                ]);
+                SendNotification::pushToVendor($trip->provider?->vendor_id, $trip?->provider?->vendor?->firebase_token, $data, 'trip');
             }
         }
         return true;
@@ -102,49 +93,48 @@ trait RentalPushNotification
 
         if($trip->is_guest){
             $customer_details =$trip['user_info'];
+            $customer_name = $customer_details['contact_person_name'];
             $value = self::getTripStatusMessage($trip->trip_status,'rental','en');
-            $value = Helpers::text_variable_data_format(value:$value,store_name:$trip->provider?->name,order_id:$trip->id,user_name:$customer_details['contact_person_name']);
             $user_fcm = $trip?->guest?->fcm_token;
         }else{
+            $customer_name = "{$trip->customer?->f_name} {$trip->customer?->l_name}";
             $value = self::getTripStatusMessage($trip->trip_status,'rental',$trip?->customer?->current_language_key??'en');
-            $value = Helpers::text_variable_data_format(value:$value,store_name:$trip->provider?->name,order_id:$trip->id,user_name:"{$trip->customer?->f_name} {$trip->customer?->l_name}");
             $user_fcm = $trip?->customer?->cm_firebase_token;
         }
 
-        if (Helpers::getRentalNotificationStatusData('customer','customer_trip_notification','push_notification_status') &&  $value && $user_fcm) {
+        $value = NotificationText::format(value:$value,store_name:$trip->provider?->name,order_id:$trip->id,user_name:$customer_name);
+
+        if (SendNotification::rentalChannelEnabled('customer','customer_trip_notification','push_notification_status') &&  $value && $user_fcm) {
             $data = self::makeNotifyData(
-                title: translate('Trip_Notification'),
+                title: translate('Trip notification'),
                 description: $value,
                 trip: $trip,
                 order_type: 'trip',
                 type: 'trip_status'
             );
-            Helpers::send_push_notif_to_device($user_fcm, $data);
-            UserNotification::create([
-                'data' => json_encode($data),
-                'user_id' => $trip->user_id,
-                'order_type' => 'trip',
-            ]);
+            SendNotification::pushToCustomer($trip->user_id, $user_fcm, $data, 'trip', isGuest: (bool) $trip->is_guest);
         }
         return true;
     }
-    public static function sendTripPaymentNotificationCustomer($trip) {
-        Helpers::sendTripPaymentNotificationCustomerMain($trip);
+    public static function sendTripPaymentNotificationCustomer($trip)
+    {
+        if ($trip->is_guest) {
+            $user_fcm = $trip?->guest?->fcm_token;
+        } else {
+            $user_fcm = $trip?->customer?->cm_firebase_token;
+        }
+        $value = $trip->payment_status == 'paid' ? translate('Your transaction has been completed') : translate('Your payment has not been received yet');
+
+        if (SendNotification::rentalChannelEnabled('customer', 'customer_trip_notification', 'push_notification_status') && $value && $user_fcm) {
+            $data = TripNotificationMessages::forTripPayment($trip, $value);
+            SendNotification::pushToCustomer($trip->user_id, $user_fcm, $data, 'trip', isGuest: (bool) $trip->is_guest);
+        }
+
         return true;
     }
 
     public static function makeNotifyData($title, $description, $trip, $order_type, $type)
     {
-        return [
-            'title' => $title,
-            'description' => $description,
-            'order_id' => $trip->id,
-            'module_id' => $trip->module_id,
-            'order_type' => $order_type,
-            'status' => $trip->trip_status,
-            'image' => '',
-            'type' => $type,
-            'zone_id' => $trip->zone_id,
-        ];
+        return TripNotificationMessages::forTrip($trip, $title, $description, $order_type, $type);
     }
 }

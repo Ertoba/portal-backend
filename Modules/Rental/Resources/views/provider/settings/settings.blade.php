@@ -1,6 +1,6 @@
 @extends('layouts.vendor.app')
 
-@section('title',translate('messages.settings'))
+@section('title',translate('Settings'))
 
 @push('css_or_js')
 <link href="{{asset('public/assets/admin/css/croppie.css')}}" rel="stylesheet">
@@ -11,35 +11,37 @@
 @section('content')
 
     <div class="content container-fluid config-inline-remove-class">
-        <!-- Page Heading -->
         <div class="page-header">
             <h1 class="page-header-title">
+                <span class="page-header-icon">
+                    <img src="{{ asset('public/assets/admin/img/outline/setting.svg') }}" class="w--26" alt="">
+                </span>
                 <span>
-                    {{translate('messages.Provider_Setup')}}
+                {{translate('Provider setup')}}
                 </span>
             </h1>
+            <p class="page-header-desc">{{ translate('Your opening hours, contact details, payout account and the basics customers see.') }}</p>
         </div>
-        <!-- Page Heading -->
         <div class="card mb-3">
             <div class="card-body py-3">
                 <div class="row">
                     <div class="col-lg-6">
                         <div>
 
-                            <p>{{ translate('To view a list of all active zones on your') }} <a target="_blank" href="{{ route('home') }}" class="text-underline text--info">{{ translate('Admin Landing') }}</a> {{ translate('Page, Enable the') }} <span class="font-semibold">'{{ translate('Available Zones') }}'</span> {{ translate('feature') }}</p>
+                            <p>{{ translate('To view all active zones on your landing page, enable this feature') }}: <span class="font-semibold">{{ translate('Available zones') }}</span> (<a target="_blank" href="{{ route('home') }}" class="text-underline text--info">{{ translate('Admin landing') }}</a>)</p>
                         </div>
                     </div>
                     <div class="col-lg-6">
                         <div class="">
                             <label class="toggle-switch toggle-switch-sm d-flex justify-content-between border border-secondary rounded px-4 form-control" for="restaurant-open-status">
-                                <span class="pr-2">{{translate('messages.Provider_temporarily_closed_title')}}</span>
+                                <span class="pr-2">{{translate('messages.Provider temporarily closed title')}}</span>
                                 <label class="switch toggle-switch-lg m-0">
                                     <input id="restaurant-open-status" type="checkbox" class="toggle-switch-input restaurant-open-status"
-                                           data-title="{{translate('messages.are_you_sure')}}"
-                                           data-text="{{$store->active ? translate('messages.you_want_to_temporarily_close_this_').($store->module->module_type == 'rental' ? translate('provider') : translate('store')) : translate('messages.you_want_to_open_this_').($store->module->module_type == 'rental' ? translate('provider') : translate('store')) }}"
+                                           data-title="{{translate('messages.Are you sure?')}}"
+                                           data-text="{{$store->active ? translate('messages.You want to temporarily close this').($store->module->module_type == 'rental' ? translate('Provider') : translate('Store')) : translate('messages.You want to open this').($store->module->module_type == 'rental' ? translate('Provider') : translate('Store')) }}"
                                            data-route="{{route('vendor.business-settings.update-active-status')}}"
-                                           data-no="{{translate('messages.no')}}"
-                                           data-yes="{{translate('messages.yes')}}"
+                                           data-no="{{translate('messages.No')}}"
+                                           data-yes="{{translate('messages.Yes')}}"
                                         {{$store->active ?'':'checked'}}>
                                     <span class="toggle-switch-label">
                                         <span class="toggle-switch-indicator"></span>
@@ -56,10 +58,10 @@
             <div class="card-header">
                 <div>
                     <h5 class="text-title mb-1">
-                        {{ translate('Basic Settings') }}
+                        {{ translate('Basic settings') }}
                     </h5>
                     <p class="fs-12 mb-0">
-                        {{ translate('Vendor Settings') }}
+                        {{ translate('Vendor settings') }}
                     </p>
                 </div>
             </div>
@@ -71,10 +73,10 @@
                     <div class="col-lg-4 col-sm-6">
                         <div class="form-group mb-0">
                             <label class="input-label font-semibold" for="schedule_order">
-                                {{ translate('Scheduled Trip') }}
+                                {{ translate('Scheduled trip') }}
                             </label>
                             <label class="toggle-switch toggle-switch-sm d-flex justify-content-between border border-secondary rounded px-4 form-control" for="schedule_order">
-                                <span class="pr-2">{{translate('messages.scheduled_order')}}<span class="input-label-secondary" data-toggle="tooltip" data-placement="right" data-original-title="{{translate('When_enabled,_store_owner_can_take_scheduled_orders_from_customers.')}}"><img src="{{asset('/public/assets/admin/img/info-circle.svg')}}" alt="{{translate('messages.scheduled_order_hint')}}"></span></span>
+                                <span class="pr-2">{{translate('Scheduled order')}}<span class="input-label-secondary" data-toggle="tooltip" data-placement="right" data-original-title="{{translate('When enabled, store owner can take scheduled orders from customers.')}}"><img src="{{asset('/public/assets/admin/img/info-circle.svg')}}" alt="{{translate('When enabled, store owner can take scheduled orders from customers.')}}"></span></span>
                                 <input type="checkbox" value="1" class="toggle-switch-input " name="schedule_order" id="schedule_order" {{$store->schedule_order?'checked':''}}>
                                 <span class="toggle-switch-label">
                                     <span class="toggle-switch-indicator"></span>
@@ -86,7 +88,7 @@
                         <div class="">
                             <label class="d-flex justify-content-between switch toggle-switch-sm text-dark" for="gst_status">
                                 <label class="input-label font-semibold mb-0">{{translate('messages.GST')}} <span class="form-label-secondary" data-toggle="tooltip" data-placement="right"
-                                data-original-title="{{translate('messages.If GST is enable, GST number will show in invoice')}}"><i class="tio-info text--title opacity-60"></i></span></label>
+                                data-original-title="{{translate('messages.If GST is enabled, the GST number will show on the invoice')}}"><i class="tio-info text--title opacity-60"></i></span></label>
                                 <input type="checkbox" class="toggle-switch-input" name="gst_status" id="gst_status" value="1" {{$store->gst_status?'checked':''}}>
                                 <span class="toggle-switch-label">
                                     <span class="toggle-switch-indicator"></span>
@@ -98,13 +100,13 @@
                     <div class="col-lg-6">
                         <div class="position-relative">
                             <label class="input-label font-semibold"
-                                for="tax">{{ translate('Approx. Pickup Time') }}</label>
+                                for="tax">{{ translate('Approximate pickup time') }}</label>
                             <div class="custom-group-btn">
                                 <div class="item flex-sm-grow-1">
                                     <input id="min" type="number" name="minimum_delivery_time"
                                         value="{{explode('-',$store->delivery_time)[0]}}"
                                         class="form-control h--45px border-0"
-                                        placeholder="{{ translate('messages.Ex :') }} 20"
+                                        placeholder="{{ translate('messages.Ex') }}: 20"
                                         pattern="^[0-9]{2}$" required>
                                 </div>
                                 <div class="separator"></div>
@@ -112,7 +114,7 @@
                                     <input id="max" type="number" name="maximum_delivery_time"
                                         value="{{explode(' ',explode('-',$store->delivery_time)[1])[0]}}"
                                         class="form-control h--45px border-0"
-                                        placeholder="{{ translate('messages.Ex :') }} 30" pattern="[0-9]{2}$"
+                                        placeholder="{{ translate('messages.Ex') }}: 30" pattern="[0-9]{2}$"
                                         required>
                                 </div>
                                 <div class="separator"></div>
@@ -129,7 +131,7 @@
                     <div class="col-lg-6">
                         <div class="form-group mb-0 pickup-zone-tag">
                             <label class="input-label font-semibold"
-                                for="pickup_zones">{{ translate('messages.pickup_zone') }}<span
+                                for="pickup_zones">{{ translate('Pickup zone') }}<span
                                     class="form-label-secondary" data-toggle="tooltip" data-placement="right"
                                     data-original-title="{{ translate('messages.Select zones from where customer can choose their pickup locations for trip booking') }}">
                                     <i class="tio-info text--title opacity-60"></i>
@@ -157,8 +159,8 @@
                     </div>
                     <div class="col-12">
                         <div class="btn--container mt-3 justify-content-end">
-                            <button type="reset" class="btn btn--reset">{{translate('messages.reset')}}</button>
-                            <button type="submit" class="btn btn--primary">{{translate('messages.update')}}</button>
+                            <button type="reset" class="btn btn--reset">{{translate('messages.Reset')}}</button>
+                            <button type="submit" class="btn btn--primary">{{translate('Update')}}</button>
                         </div>
                     </div>
                 </div>
@@ -175,7 +177,7 @@
                             <div class="col-xxl-9 col-lg-8 col-md-7 col-sm-6">
                                 <div>
                                     <h4 class="mb-1">
-                                        {{ translate('Vendor Website Builder') }}
+                                        {{ translate('Vendor website builder') }}
                                     </h4>
                                     <p class="mb-0 fs-12">
                                         {{ translate('Enable this option to allow vendors to set up and manage their own website.') }}
@@ -197,10 +199,10 @@
                                                 data-type="toggle"
                                                 data-image-on="{{ asset('/public/assets/admin/img/modal/store-reg-on.png') }}"
                                                 data-image-off="{{ asset('/public/assets/admin/img/modal/store-reg-off.png') }}"
-                                                data-title-on="<strong>{{translate('Are you sure to enable vendor Website setup?')}}</strong>"
-                                                data-title-off="<strong>{{translate('Are you sure to disable vendor Website setup?')}}</strong>"
+                                                data-title-on="<strong>{{translate('Are you sure to enable vendor website setup?')}}</strong>"
+                                                data-title-off="<strong>{{translate('Are you sure to disable vendor website setup?')}}</strong>"
                                                 data-text-on="<p>{{ translate('If enabled, vendors will have the freedom to create, edit, and manage their own websites independently.') }}</p>"
-                                                data-text-off="<p>{{ translate('If disabled, vendors will not be able to create or manage their own websites.') }}</p>"
+                                                data-text-off="<p>{{ translate('If disabled, vendors cannot create or manage their own websites.') }}</p>"
                                                 class="status toggle-switch-input dynamic-checkbox"
                                                 value="1"
                                                 name="website_builder_status" id="website_builder_status"
@@ -222,10 +224,10 @@
             <div class="card-header">
                 <div>
                     <h5 class="text-title mb-1">
-                        {{translate('messages.Provider_Meta_Data')}}
+                        {{translate('Provider meta data')}}
                     </h5>
                     <p class="fs-12 mb-0">
-                        {{ translate('Provider_Meta_Data_&_Image') }}
+                        {{ translate('Provider meta data & image') }}
                     </p>
                 </div>
             </div>
@@ -243,10 +245,10 @@
             <div class="card-header">
                 <div>
                     <h5 class="text-title mb-1">
-                        {{translate('messages.Provder_Active_Time')}}
+                        {{translate('Provider active time')}}
                     </h5>
                     <p class="fs-12 mb-0">
-                        {{ translate('Set the time when Provder is active to show in app and website') }}
+                        {{ translate('Set the time when provider is active to show in app and website') }}
                     </p>
                 </div>
             </div>
@@ -257,13 +259,12 @@
         @endif
     </div>
 
-    <!-- Create schedule modal -->
 
-    <div class="modal fade" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true" data-title="{{ translate('messages.Create Schedule For ') }} ">
+    <div class="modal fade" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true" data-title="{{ translate('Create schedule for') }}  ">
         <div class="modal-dialog" role="document">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="exampleModalLabel">{{translate('messages.Create Schedule For ')}}</h5>
+                    <h5 class="modal-title" id="exampleModalLabel">{{translate('Create schedule for')}} </h5>
                     <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                     </button>
@@ -281,7 +282,7 @@
                             <input type="time" id="message-text" class="form-control" name="end_time" required>
                         </div>
                         <div class="btn--container mt-4 justify-content-end">
-                            <button type="reset" class="btn btn--reset">{{translate('messages.reset')}}</button>
+                            <button type="reset" class="btn btn--reset">{{translate('messages.Reset')}}</button>
                             <button type="submit" class="btn btn--primary">{{translate('messages.Submit')}}</button>
                         </div>
                     </form>
@@ -290,13 +291,13 @@
         </div>
     </div>
 
-    <div id="button-title" data-title="{{translate('Want_to_delete_this_schedule?')}}"></div>
-    <div id="button-text" data-text="{{translate('If_you_select_Yes,_the_time_schedule_will_be_deleted.')}}"></div>
-    <div id="button-cancel" data-no="{{ translate('no') }}"></div>
-    <div id="button-accept" data-yes="{{ translate('yes') }}"></div>
-    <div id="button-success" data-success="{{translate('messages.Schedule removed successfully')}}"></div>
-    <div id="button-error" data-error="{{translate('messages.Schedule removed successfully')}}"></div>
-    <div id="button-added" data-error="{{translate('messages.Schedule added successfully')}}"></div>
+    <div id="button-title" data-title="{{translate('Want to delete this schedule?')}}"></div>
+    <div id="button-text" data-text="{{translate('If you select yes, the time schedule will be deleted.')}}"></div>
+    <div id="button-cancel" data-no="{{ translate('No') }}"></div>
+    <div id="button-accept" data-yes="{{ translate('Yes') }}"></div>
+    <div id="button-success" data-success="{{translate('Deleted successfully')}}"></div>
+    <div id="button-error" data-error="{{translate('Deleted successfully')}}"></div>
+    <div id="button-added" data-error="{{translate('Added successfully')}}"></div>
 @endsection
 
 @push('script_2')

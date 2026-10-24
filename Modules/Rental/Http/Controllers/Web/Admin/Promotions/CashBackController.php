@@ -44,7 +44,7 @@ class CashBackController extends Controller
         $cashBacks =  $cashBacks->paginate(config('default_pagination'));
         $language = getWebConfig('language');
         $defaultLang = str_replace('_', '-', app()->getLocale());
-        $users = $this->user->ofStatus(1)->get(['id','f_name','l_name']);
+        $users = Helpers::customers_by_ids([request('customer')]);
         return view('rental::admin.cashback.list', compact('cashBacks', 'language', 'defaultLang','users'));
     }
 
@@ -68,7 +68,7 @@ class CashBackController extends Controller
 
          $title = $request->title[array_search('default', $request->lang)];
             if($request->cashback_type == 'percentage' && $request->cashback_amount > 100){
-                Toastr::error(translate('cashback_amount_must_be_under_100%'));
+                Toastr::error(translate('Maximum cashback') . ': 100%');
                 return back();
             }
          $cashbackData = [
@@ -96,7 +96,7 @@ class CashBackController extends Controller
                  data_value: $cashback->title
              );
 
-             Toastr::success(translate('messages.Cashback created successfully'));
+             Toastr::success(translate('Added successfully'));
              return back();
 
          } catch (\Exception $e) {
@@ -114,7 +114,7 @@ class CashBackController extends Controller
          $cashback = $this->cashback->findOrFail($id);
          $language = getWebConfig('language') ?? [];
          $defaultLang = str_replace('_', '-', app()->getLocale());
-         $users = $this->user->ofStatus(1)->get(['id','f_name','l_name']);
+         $users = Helpers::customers_by_ids(json_decode($cashback->customer_id));
 
          return view('rental::admin.cashback.edit', compact('cashback', 'language', 'defaultLang','users'));
      }
@@ -140,7 +140,7 @@ class CashBackController extends Controller
         ]);
 
         if($request->cashback_type == 'percentage' && $request->cashback_amount > 100){
-            Toastr::error(translate('cashback_amount_must_be_under_100%'));
+            Toastr::error(translate('Maximum cashback') . ': 100%');
             return back();
         }
         $cashback = $this->cashback->findOrFail($id);
@@ -172,7 +172,7 @@ class CashBackController extends Controller
                 data_value: $cashback->title
             );
 
-            Toastr::success(translate('messages.Cashback updated successfully'));
+            Toastr::success(translate('Updated successfully'));
             return back();
         } catch (\Exception $e) {
             Toastr::error(translate('messages.Cashback not updated successfully'));
@@ -191,13 +191,13 @@ class CashBackController extends Controller
         $cashback = $this->cashback->find($id);
 
         if (!$cashback) {
-            Toastr::error(translate('messages.cashback_not_found'));
+            Toastr::error(translate('No data found'));
             return back();
         }
 
         $cashback->update(['status' => !$cashback->status]);
 
-        Toastr::success(translate('messages.cashback_status_updated_successfully'));
+        Toastr::success(translate('Updated successfully'));
         return back();
     }
 
@@ -211,14 +211,14 @@ class CashBackController extends Controller
         $cashback = $this->cashback->find($id);
 
         if (!$cashback) {
-            Toastr::error(translate('messages.failed_to_delete_cashback'));
+            Toastr::error(translate('messages.Failed to delete cashback'));
             return back();
         }
 
         $cashback->translations()->delete();
         $cashback->delete();
 
-        Toastr::success(translate('messages.cashback_deleted_successfully'));
+        Toastr::success(translate('Deleted successfully'));
         return back();
     }
 

@@ -2,25 +2,27 @@
 
 namespace Modules\Rental\Traits;
 
+use App\Services\Payment\LoyaltyPointTransactionService;
+use App\Services\Payment\WalletTransactionService;
+use App\Services\Marketing\CashBackService;
 use App\Models\User;
 use App\Models\Admin;
-use App\Models\Store;
 use App\Models\Coupon;
-use App\Models\Vendor;
 use App\Models\Expense;
 use App\Models\AdminWallet;
 use App\Models\StoreWallet;
 use App\CentralLogics\Helpers;
-use App\Models\BusinessSetting;
-use App\CentralLogics\OrderLogic;
-use App\CentralLogics\CouponLogic;
-use App\Models\AccountTransaction;
+use App\Services\Marketing\CouponService;
 use Illuminate\Support\Facades\DB;
 use Modules\Rental\Entities\Trips;
-use App\CentralLogics\CustomerLogic;
-use Illuminate\Support\Facades\Mail;
 use Modules\Rental\Entities\PartialPayment;
 use Modules\Rental\Entities\TripTransaction;
+use App\Services\Order\OrderPaymentService;
+use App\Services\Payment\AccountTransactionService;
+use App\Support\Notification\SendNotification;
+use App\Support\Notification\NotificationMessages;
+use App\Services\Customer\UserService;
+use Illuminate\Support\Facades\Log;
 
 
 trait TripLogicTrait
@@ -41,17 +43,14 @@ trait TripLogicTrait
         $provider = $trip?->provider;
         $store_sub = $provider?->store_sub;
         DB::beginTransaction();
-        // coupon discount by Admin
         if ($trip->coupon_discount_by == 'admin') {
             $admin_coupon_discount_subsidy = $trip->coupon_discount_amount;
             self::tripExpenseCreate(amount: $admin_coupon_discount_subsidy, type: 'coupon_discount', datetime: now(), created_by: $trip->coupon_discount_by, trip_id: $trip->id);
         }
-        // 1st order discount by Admin
         if ($trip->ref_bonus_amount > 0) {
             $ref_bonus_amount = $trip->ref_bonus_amount;
             self::tripExpenseCreate(amount: $ref_bonus_amount, type: 'referral_discount', datetime: now(), created_by: 'admin', trip_id: $trip->id);
         }
-        // coupon discount by store
         if ($trip->coupon_discount_by == 'vendor') {
             $store_coupon_discount_subsidy = $trip->coupon_discount_amount;
             self::tripExpenseCreate(amount: $store_coupon_discount_subsidy, type: 'coupon_discount', datetime: now(), created_by: $trip->coupon_discount_by, trip_id: $trip->id, store_id: $provider->id);
@@ -61,7 +60,7 @@ trait TripLogicTrait
             self::cashbackToWallet($trip);
         }
 
-        $comission =   $provider?->comission ??  BusinessSetting::where('key', 'admin_commission')->first()->value;
+        $comission =   $provider?->comission ??  Helpers::get_business_settings('admin_commission', false);
 
 
         if ($trip->discount_on_trip > 0  && $trip->discount_on_trip_by == 'vendor') {
@@ -91,7 +90,6 @@ trait TripLogicTrait
         $trip_amount = $trip->trip_amount - $trip->additional_charge  -  $trip->tax_amount   + $trip->coupon_discount_amount + $discount_on_trip  + $ref_bonus_amount + $store_d_amount + $amount_admin + $pro_discount_amount;
 
 
-        //final comission
         if ($provider->store_business_model == 'subscription' && isset($store_sub)) {
             $comission_on_store_amount = 0;
             $subscription_mode = 1;
@@ -126,7 +124,6 @@ trait TripLogicTrait
                 'discount_amount_by_store' => $store_coupon_discount_subsidy + $store_d_amount,
                 'additional_charge' => $trip->additional_charge,
                 'ref_bonus_amount' => $trip->ref_bonus_amount,
-                // for store business model
                 'is_subscribed' => $subscription_mode,
                 'commission_percentage' => $commission_percentage,
                 'admin_net_income' => $comission_amount + $trip->additional_charge - ($admin_coupon_discount_subsidy + $ref_bonus_amount + $discount_on_trip + $amount_admin + $pro_discount_amount)
@@ -165,68 +162,47 @@ trait TripLogicTrait
 
 
             if (isset($store_over_flow)) {
-                self::create_account_transaction_for_collect_cash(old_collected_cash: $vendorWallet->collected_cash, from_type: 'store', from_id: $provider->vendor->id, amount: $trip->trip_amount - $trip->partially_paid_amount, trip_id: $trip->id);
+                app(AccountTransactionService::class)->recordCashCollection(oldCollectedCash: $vendorWallet->collected_cash, fromType: 'store', fromId: $provider->vendor->id, amount: $trip->trip_amount - $trip->partially_paid_amount, reference: $trip->id);
             }
 
 
-            OrderLogic::update_unpaid_trip_payment(trip_id: $trip->id, payment_method: $trip->payment_method);
+            app(OrderPaymentService::class)->markUnpaidTripPaymentPaid(tripId: $trip->id, paymentMethod: $trip->payment_method);
 
             DB::commit();
 
             if ($trip->is_guest  == 0) {
-                $ref_status = BusinessSetting::where('key', 'ref_earning_status')->first()->value;
+                $ref_status = Helpers::get_business_settings('ref_earning_status', false);
                 if (isset($trip->customer->ref_by) && $trip->customer->order_count == 0  && $ref_status == 1) {
-                    $ref_code_exchange_amt = BusinessSetting::where('key', 'ref_earning_exchange_rate')->first()->value;
+                    $ref_code_exchange_amt = Helpers::get_business_settings('ref_earning_exchange_rate', false);
                     $referar_user = User::where('id', $trip->customer->ref_by)->first();
-                    $refer_wallet_transaction = CustomerLogic::create_wallet_transaction($referar_user->id, $ref_code_exchange_amt, 'referrer', $trip->customer->phone);
+                    $refer_wallet_transaction = app(WalletTransactionService::class)->recordWalletTransaction($referar_user->id, $ref_code_exchange_amt, 'referrer', $trip->customer->phone);
 
-                    $notification_data = [
-                        'title' => translate('messages.Congratulation'),
-                        'description' => translate('You have received') . ' ' . Helpers::format_currency($ref_code_exchange_amt) . ' ' . translate('in your wallet as') . ' ' . $trip?->customer?->f_name . ' ' . $trip?->customer?->l_name . ' ' . translate('you referred completed thier first order'),
-                        'trip_id' => 1,
-                        'image' => '',
-                        'type' => 'referral_code',
-                    ];
+                    $notification_data = NotificationMessages::referralWalletCredit($ref_code_exchange_amt, $trip?->customer?->f_name . ' ' . $trip?->customer?->l_name, ['trip_id' => 1]);
 
-                    if (Helpers::getNotificationStatusData('customer', 'customer_referral_bonus_earning', 'push_notification_status') && $referar_user?->cm_firebase_token) {
-                        Helpers::send_push_notif_to_device($referar_user?->cm_firebase_token, $notification_data);
-                        DB::table('user_notifications')->insert([
-                            'data' => json_encode($notification_data),
-                            'user_id' => $referar_user?->id,
-                            'created_at' => now(),
-                            'updated_at' => now()
-                        ]);
+                    if (SendNotification::channelEnabled('customer', 'customer_referral_bonus_earning', 'push_notification_status') && $referar_user?->cm_firebase_token) {
+                        SendNotification::pushToCustomer($referar_user?->id, $referar_user?->cm_firebase_token, $notification_data);
                     }
 
 
                     try {
-                        Helpers::add_fund_push_notification($referar_user->id);
-                        if (config('mail.status') && Helpers::get_mail_status('add_fund_mail_status_user') == '1' && Helpers::getNotificationStatusData('customer', 'customer_add_fund_to_wallet', 'mail_status')) {
-                            Mail::to($referar_user?->getRawOriginal('email'))->send(new \App\Mail\AddFundToWallet($refer_wallet_transaction));
+                        app(UserService::class)->notifyFundAdded($referar_user->id);
+                        if (SendNotification::canSendMail('add_fund_mail_status_user', 'customer', 'customer_add_fund_to_wallet')) {
+                            SendNotification::mail($referar_user?->getRawOriginal('email'), new \App\Mail\AddFundToWallet($refer_wallet_transaction));
                         }
                     } catch (\Exception $ex) {
-                        info($ex->getMessage());
+                        Log::error('rental.trip_logic_trait.create_transaction_failed', [
+                            'error' => $ex->getMessage(),
+                            'file' => $ex->getFile().':'.$ex->getLine(),
+                        ]);
                     }
                 }
 
-                $create_loyalty_point_transaction = CustomerLogic::create_loyalty_point_transaction($trip->user_id, $trip->id, $trip->trip_amount, 'trip_booking');
+                $create_loyalty_point_transaction = app(LoyaltyPointTransactionService::class)->recordLoyaltyPointTransaction($trip->user_id, $trip->id, $trip->trip_amount, 'trip_booking');
                 if ($create_loyalty_point_transaction > 0) {
-                    $notification_data = [
-                        'title' => translate('messages.Congratulation'),
-                        'description' => translate('You_have_received') . ' ' . $create_loyalty_point_transaction . ' ' . translate('points_as_loyalty_point'),
-                        'trip_id' => $trip->id,
-                        'image' => '',
-                        'type' => 'loyalty_point',
-                    ];
+                    $notification_data = NotificationMessages::loyaltyPointsEarned($create_loyalty_point_transaction, ['trip_id' => $trip->id]);
 
-                    if (Helpers::getNotificationStatusData('customer', 'customer_loyalty_point_earning', 'push_notification_status') && $trip->customer?->cm_firebase_token) {
-                        Helpers::send_push_notif_to_device($trip->customer?->cm_firebase_token, $notification_data);
-                        DB::table('user_notifications')->insert([
-                            'data' => json_encode($notification_data),
-                            'user_id' => $trip->user_id,
-                            'created_at' => now(),
-                            'updated_at' => now()
-                        ]);
+                    if (SendNotification::channelEnabled('customer', 'customer_loyalty_point_earning', 'push_notification_status') && $trip->customer?->cm_firebase_token) {
+                        SendNotification::pushToCustomer($trip->user_id, $trip->customer?->cm_firebase_token, $notification_data, isGuest: (bool) $trip->is_guest);
                     }
                 }
             }
@@ -254,58 +230,19 @@ trait TripLogicTrait
         return $expense->save();
     }
 
-    public static function create_account_transaction_for_collect_cash($old_collected_cash, $from_type, $from_id, $amount, $trip_id)
-    {
-        $account_transaction = new AccountTransaction();
-        $account_transaction->from_type = $from_type;
-        $account_transaction->from_id = $from_id;
-        $account_transaction->created_by = $from_type;
-        $account_transaction->method = 'cash_collection';
-        $account_transaction->ref = $trip_id;
-        $account_transaction->amount = $amount ?? 0;
-        $account_transaction->current_balance = $old_collected_cash ?? 0;
-        $account_transaction->type = 'cash_in';
-        $account_transaction->save();
-
-        if ($from_type  ==  'store') {
-            $vendor = Vendor::find($from_id);
-            $Payable_Balance = $vendor?->wallet?->collected_cash   > 0 ? 1 : 0;
-            $cash_in_hand_overflow = BusinessSetting::where('key', 'cash_in_hand_overflow_store')->first()?->value;
-            $cash_in_hand_overflow_store_amount = BusinessSetting::where('key', 'cash_in_hand_overflow_store_amount')->first()?->value;
-
-            if ($Payable_Balance == 1 &&  $cash_in_hand_overflow && $vendor?->wallet?->balance < 0 &&  $cash_in_hand_overflow_store_amount <= abs($vendor?->wallet?->collected_cash)) {
-                $rest = Store::where('vendor_id', $vendor->id)->first();
-                $rest->status = 0;
-                $rest->save();
-            }
-        }
-        return true;
-    }
 
     public static function cashbackToWallet($trip)
     {
 
-        $refer_wallet_transaction = CustomerLogic::create_wallet_transaction($trip?->cashback_history?->user_id, $trip?->cashback_history?->calculated_amount, 'CashBack', $trip->id);
+        $refer_wallet_transaction = app(WalletTransactionService::class)->recordWalletTransaction($trip?->cashback_history?->user_id, $trip?->cashback_history?->calculated_amount, 'CashBack', $trip->id);
         if ($refer_wallet_transaction != false) {
             self::tripExpenseCreate(amount: $trip?->cashback_history?->calculated_amount, type: 'CashBack', datetime: now(), created_by: 'admin', trip_id: $trip->id);
             $trip?->cashback_history?->cashBack?->increment('total_used');
 
-            $notification_data = [
-                'title' => translate('messages.Congratulation_you_have_received') . ' ' . $trip?->cashback_history?->calculated_amount . ' ' . translate('cashback'),
-                'description' => translate('The_cashback_amount_successfully_added_to_your_wallet'),
-                'trip_id' => $trip->id,
-                'image' => '',
-                'type' => 'cashback',
-            ];
+            $notification_data = NotificationMessages::cashbackCreditedWithAmountPlaceholder($trip?->cashback_history?->calculated_amount, ['trip_id' => $trip->id]);
 
-            if ($trip->customer?->cm_firebase_token && Helpers::getNotificationStatusData('customer', 'customer_cashback', 'push_notification_status')) {
-                Helpers::send_push_notif_to_device($trip->customer?->cm_firebase_token, $notification_data);
-                DB::table('user_notifications')->insert([
-                    'data' => json_encode($notification_data),
-                    'user_id' => $trip->customer?->id,
-                    'created_at' => now(),
-                    'updated_at' => now()
-                ]);
+            if ($trip->customer?->cm_firebase_token && SendNotification::channelEnabled('customer', 'customer_cashback', 'push_notification_status')) {
+                SendNotification::pushToCustomer($trip->customer?->id, $trip->customer?->cm_firebase_token, $notification_data);
             }
         }
 
@@ -322,14 +259,13 @@ trait TripLogicTrait
 
         foreach ($trip->trip_details as $tripDetail) {
             if (!$tripDetail->vehicle) {
-                return ['errors' => translate('vehicle_not_found'), 'code' => 403];
+                return ['errors' => translate('No data found'), 'code' => 403];
             }
         }
         $details = $trip->trip_details;
 
         $additionalCharges = [];
         if (self::getAdditionalCharge() > 0) {
-            // $additionalCharges['tax_on_additional_charge'] = self::getAdditionalCharge();
         }
 
         foreach ($details as $key => $tripDetail) {
@@ -378,7 +314,7 @@ trait TripLogicTrait
         $totalDiscount = $finalPricing['totalDiscount'];
 
         $proManager = new class {
-            use \App\Traits\ManagesProCustomerSubscription;
+            use \App\Traits\Payment\ProCustomerSubscriptionTrait;
         };
         $proDiscount = 0.0;
         $proOffer = ['status' => false, 'benefit' => null];
@@ -420,7 +356,9 @@ trait TripLogicTrait
                     $tripDetails->save();
                 }
             }
-            $trip?->orderTaxes()?->delete();
+            if (addon_published_status('TaxModule')) {
+                $trip?->orderTaxes()?->delete();
+            }
             if (count($orderTaxIds)) {
                 \Modules\TaxModule\Services\CalculateTaxService::updateOrderTaxData(
                     orderId: $trip->id,
@@ -471,7 +409,11 @@ trait TripLogicTrait
         } elseif ($rentalType === 'day_wise') {
             $originalPrice = $tripDetail->vehicle->day_wise_price * ((int) round($estimatedHours / 24));
         } else {
-            $originalPrice = $tripDetail->vehicle->distance_price * $distance;
+            // §3.4 — measured distance is kilometres always (D2); `distance_price` is quoted in
+            // whatever unit `distance_unit` names. Convert before multiplying, exactly as
+            // DeliveryChargeService::chargeableBase() does.
+            $originalPrice = $tripDetail->vehicle->distance_price
+                * app(\App\Services\System\DistanceService::class)->chargeable($distance);
         }
 
         if ($updateDistance == 1) {
@@ -541,7 +483,7 @@ trait TripLogicTrait
         }
 
         $coupon = Coupon::where(['code' => $trip->coupon_code])->first();
-        return isset($coupon) ? CouponLogic::get_discount($coupon, $price) : $trip->coupon_discount_amount;
+        return isset($coupon) ? app(CouponService::class)->calculateDiscount($coupon, $price) : $trip->coupon_discount_amount;
     }
 
     public static function calculateReferralBonus($trip, $price): float
@@ -556,10 +498,10 @@ trait TripLogicTrait
 
     public static function getAdditionalCharge(): float
     {
-        if (BusinessSetting::where('key', 'additional_charge_status')->first()?->value != 1) {
+        if (Helpers::get_business_settings('additional_charge_status', false) != 1) {
             return 0;
         }
-        return BusinessSetting::where('key', 'additional_charge')->first()?->value ?? 0;
+        return Helpers::get_business_settings('additional_charge', false) ?? 0;
     }
 
     public static function getDiscount($price, $discount_type, $discount)
@@ -591,24 +533,24 @@ trait TripLogicTrait
         if (isset($coupon)) {
 
             if ($request->is_guest) {
-                $staus = CouponLogic::is_valid_for_guest($coupon, $request['provider_id']);
+                $staus = app(CouponService::class)->validateForGuest($coupon, $request['provider_id']);
             } else {
-                $staus = CouponLogic::is_valide($coupon, $request->user->id, $request['provider_id']);
+                $staus = app(CouponService::class)->validateForCustomer($coupon, $request->user->id, $request['provider_id']);
             }
 
             $message = match ($staus) {
-                407 => translate('messages.coupon_expire'),
-                408 => translate('messages.You_are_not_eligible_for_this_coupon'),
-                406 => translate('messages.coupon_usage_limit_over'),
-                409 => translate('messages.coupon_not_valid_for_this_zone'),
-                404 => translate('messages.coupon_not_found'),
+                407 => translate('messages.Coupon expire'),
+                408 => translate('messages.You are not eligible for this coupon'),
+                406 => translate('messages.Coupon usage limit over'),
+                409 => translate('messages.Coupon not valid for this zone'),
+                404 => translate('No data found'),
                 default => null,
             };
             if ($message != null) {
                 return ['code' => 'coupon', 'message' => $message, 'status_code' => $staus];
             }
             if ($coupon->coupon_type == 'free_delivery') {
-                return ['code' => 'coupon', 'message' => translate('messages.invalid_coupon'), 'status_code' => 403];
+                return ['code' => 'coupon', 'message' => translate('messages.Invalid coupon'), 'status_code' => 403];
             }
 
             if ($increment === true) {
@@ -619,14 +561,14 @@ trait TripLogicTrait
 
             return ['coupon' => $coupon, 'coupon_discount_by' => $coupon_discount_by];
         } else {
-            return ['code' => 'coupon', 'message' => translate('messages.coupon_not_found'), 'status_code' => 404];
+            return ['code' => 'coupon', 'message' => translate('No data found'), 'status_code' => 404];
         }
     }
 
 
     public static function getCusromerFirstOrderDiscount($price = null)
     {
-        $settings =  array_column(BusinessSetting::whereIn('key', ['new_customer_discount_amount', 'new_customer_discount_amount_type'])->get()->toArray(), 'value', 'key');
+        $settings =  Helpers::get_business_settings_many(['new_customer_discount_amount', 'new_customer_discount_amount_type']);
         $calculated_amount = 0;
         if (data_get($settings, 'new_customer_discount_amount') > 0) {
             if (data_get($settings, 'new_customer_discount_amount_type') == 'percentage' && isset($price)) {
@@ -688,9 +630,9 @@ trait TripLogicTrait
             return;
         }
 
-        $cashBack = Helpers::getCalculatedCashBackAmount(
+        $cashBack = app(CashBackService::class)->calculateForCustomer(
             amount: $tripAmount,
-            customer_id: $trip->user_id,
+            customerId: $trip->user_id,
             type: 'rental'
         );
 
@@ -736,11 +678,8 @@ trait TripLogicTrait
         $tripDetail->fill([
             'quantity' => $pricingData['quantity'],
             'price' => $pricingData['originalPrice'] * $pricingData['quantity'],
-            // unit price * hour or distacne * quantity
             'original_price' => $pricingData['originalPrice'],
-            // unit price * hour or distacne
             'calculated_price' => $pricingData['calculatedPrice'],
-            //  unit price  * hour or distacne * quantity
             'discount_on_trip' => $pricingData['discount'],
             'discount_percentage' => $pricingData['discountPercentage'],
             'tax_amount' => $pricingData['taxAmount'],
@@ -793,7 +732,7 @@ trait TripLogicTrait
     public static function getFinalCalculatedTax($details_data, $additionalCharges, $totalDiscount, $price, $provider_id, $storeData = true)
     {
 
-        $productIds = [];
+        $products = [];
         $tempList = [];
         $productDiscountTotal = 0;
         $totalAfterOwnDiscounts = 0;
@@ -839,7 +778,7 @@ trait TripLogicTrait
 
             $taxData =  \Modules\TaxModule\Services\CalculateTaxService::getCalculatedTax(
                 amount: $price,
-                productIds: $productIds,
+                productIds: $products,
                 storeData: $storeData,
                 additionalCharges: $additionalCharges,
                 taxPayer: 'rental_provider',

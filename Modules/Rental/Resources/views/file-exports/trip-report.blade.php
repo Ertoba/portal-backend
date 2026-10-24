@@ -1,5 +1,5 @@
 resources/views/file-exports/vendor-wise-tax-report.blade.php<div class="row">
-    <div class="col-lg-12 text-center "><h1 >{{ translate('messages.trip_report') }}</h1></div>
+    <div class="col-lg-12 text-center "><h1 >{{ translate('Trip report') }}</h1></div>
     <div class="col-lg-12">
 
 
@@ -7,15 +7,15 @@ resources/views/file-exports/vendor-wise-tax-report.blade.php<div class="row">
     <table>
         <thead>
             <tr>
-                <th>{{ translate('filter_criteria') }} -</th>
+                <th>{{ translate('Filter criteria') }} -</th>
                 <th></th>
                 <th></th>
                 <th>
-                    {{ translate('zone' )}} - {{ $data['zone']??translate('all') }}
+                    {{ translate('Zone' )}} - {{ $data['zone']??translate('All') }}
                     <br>
-                    {{ translate('provider' )}} - {{ $data['provider']??translate('all') }}
+                    {{ translate('Provider' )}} - {{ $data['provider']??translate('All') }}
                     <br>
-                    {{ translate('customer' )}} - {{ $data['customer']??translate('all') }}
+                    {{ translate('Customer' )}} - {{ $data['customer']??translate('All') }}
                     @if ($data['from'])
                     <br>
                     {{ translate('from' )}} - {{ $data['from']?Carbon\Carbon::parse($data['from'])->format('d M Y'):'' }}
@@ -25,9 +25,9 @@ resources/views/file-exports/vendor-wise-tax-report.blade.php<div class="row">
                     {{ translate('to' )}} - {{ $data['to']?Carbon\Carbon::parse($data['to'])->format('d M Y'):'' }}
                     @endif
                     <br>
-                    {{ translate('filter')  }}- {{  translate($data['filter']) }}
+                    {{ translate('Filter')  }}- {{  translate($data['filter']) }}
                     <br>
-                    {{ translate('Search_Bar_Content')  }}- {{ $data['search'] ??translate('N/A') }}
+                    {{ translate('Search bar content')  }}- {{ $data['search'] ??translate('N/A') }}
 
                 </th>
                 <th></th>
@@ -36,20 +36,20 @@ resources/views/file-exports/vendor-wise-tax-report.blade.php<div class="row">
                 <th></th>
             </tr>
             <tr>
-                <th>{{ translate('messages.sl') }}</th>
-                <th>{{ translate('messages.trip_id') }}</th>
-                <th>{{ translate('messages.Customer info') }}</th>
-                <th>{{ translate('messages.provider_name') }}</th>
-                <th>{{ translate('messages.Total Fare of Vehicle') }}</th>
-                <th>{{ translate('messages.Discount on Vehicle') }}</th>
-                <th>{{ translate('messages.coupon_discount') }}</th>
-                <th>{{ translate('messages.referral_discount') }}</th>
-                <th>{{ translate('messages.Pro_discount') }}</th>
-                <th>{{ translate('messages.Total_discounted_amount') }}</th>
-                <th>{{  \App\CentralLogics\Helpers::get_business_data('additional_charge_name')??translate('messages.additional_charge')  }}</th>
+                <th>{{ translate('messages.SL') }}</th>
+                <th>{{ translate('messages.Trip ID') }}</th>
+                <th>{{ translate('Customer information') }}</th>
+                <th>{{ translate('messages.Provider name') }}</th>
+                <th>{{ translate('Total fare of vehicle') }}</th>
+                <th>{{ translate('Discount on vehicle') }}</th>
+                <th>{{ translate('Coupon discount') }}</th>
+                <th>{{ translate('Referral discount') }}</th>
+                <th>{{ translate('messages.Pro discount') }}</th>
+                <th>{{ translate('messages.Total discounted amount') }}</th>
+                <th>{{  \App\CentralLogics\Helpers::get_business_data('additional_charge_name')??translate('Additional charge')  }}</th>
                 <th>{{ translate('messages.tax') }}</th>
-                <th>{{ translate('messages.total_amount') }}</th>
-                <th>{{ translate('messages.payment_status') }}</th>
+                <th>{{ translate('Total amount') }}</th>
+                <th>{{ translate('Payment status') }}</th>
             </tr>
         </thead>
         <tbody>
@@ -61,14 +61,14 @@ resources/views/file-exports/vendor-wise-tax-report.blade.php<div class="row">
                     @if ($trip->customer)
                         {{ $trip->customer['f_name'] . ' ' . $trip->customer['l_name'] }}
                     @else
-                        {{ translate('not_found') }}
+                        {{ translate('No data found') }}
                     @endif
                 </td>
                 <td>
                     @if($trip->provider)
                         {{$trip->provider->name}}
                     @else
-                        {{ translate('messages.not_found') }}
+                        {{ translate('No data found') }}
                     @endif
                 </td>
                 <td>{{ \App\CentralLogics\Helpers::number_format_short($trip['trip_amount'] - $trip->additional_charge-$trip['tax_amount']+$trip['coupon_discount_amount'] + $trip['discount_on_trip'] + $trip['ref_bonus_amount'] + ($trip->proDiscount?->amount_saved ?? 0) ) }}</td>

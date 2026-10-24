@@ -2,8 +2,9 @@
 
 namespace Modules\Rental\Http\Controllers\Web\Admin;
 
+use App\Rules\PhoneNumber;
+use App\Rules\EmailAddress;
 use App\CentralLogics\Helpers;
-use App\Traits\FileManagerTrait;
 use Brian2694\Toastr\Facades\Toastr;
 use Illuminate\Contracts\Support\Renderable;
 use Illuminate\Http\RedirectResponse;
@@ -16,10 +17,10 @@ use Modules\Rental\Exports\DriverTripExport;
 use Modules\Rental\Exports\TripExport;
 use Modules\Rental\Exports\VehicleDriverExport;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
+use App\Support\Storage\FileStorage;
 
 class DriverController extends Controller
 {
-    use FileManagerTrait;
     private VehicleDriver $driver;
     private TripVehicleDetails $tripVehicleDetails;
     private Helpers $helpers;
@@ -48,8 +49,8 @@ class DriverController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $request->validate([
-            'email' => 'required|unique:vehicle_drivers,email',
-            'phone' => 'required|unique:vehicle_drivers,phone',
+            'email' => EmailAddress::rules('required', 'vehicle_drivers,email'),
+            'phone' => PhoneNumber::rules('required', 'vehicle_drivers,phone'),
             'first_name' => 'required',
             'last_name' => 'required',
             'identity_type' => 'required',
@@ -57,7 +58,7 @@ class DriverController extends Controller
         ]);
 
         if ($request->has('image')) {
-            $imageName = $this->upload('driver/', 'png', $request->file('image'));
+            $imageName = FileStorage::upload('driver/', $request->file('image'));
         } else {
             $imageName = 'def.png';
         }
@@ -65,7 +66,7 @@ class DriverController extends Controller
         $identityImageNames = [];
         if (!empty($request->file('identity_image'))) {
             foreach ($request->identity_image as $img) {
-                $identityImage = $this->upload('driver/', 'png', $img);
+                $identityImage = FileStorage::upload('driver/', $img);
                 $identityImageNames[] = ['img' => $identityImage, 'storage' => $this->helpers->getDisk()];
             }
             $identityImage = json_encode($identityImageNames);
@@ -85,7 +86,7 @@ class DriverController extends Controller
         $driver->identity_image = $identityImage;
         $driver->save();
 
-        Toastr::success(translate('messages.driver_added_successfully'));
+        Toastr::success(translate('Added successfully'));
         return back();
 
     }
@@ -97,8 +98,9 @@ class DriverController extends Controller
      */
     public function details($id): Renderable
     {
-        $driver = $this->driver->findOrFail($id);
+        $driver = $this->driver->withStorage()->with(['provider.storage', 'provider.vehicle_reviews'])->findOrFail($id);
         $driverTrips = $this->tripVehicleDetails
+            ->with(['trip.customer', 'trip.trip_details', 'trip.user_info'])
             ->where('vehicle_driver_id', $id)
             ->when(request('search'), function ($query) {
                 return $query->whereHas('trip', function ($query) {
@@ -116,7 +118,7 @@ class DriverController extends Controller
      */
     public function edit($id): Renderable
     {
-        $driver = $this->driver->findOrFail($id);
+        $driver = $this->driver->withStorage()->with(['provider.storage', 'provider.vehicle_reviews'])->findOrFail($id);
         return view('rental::admin.driver.edit', compact('driver'));
     }
 
@@ -129,8 +131,8 @@ class DriverController extends Controller
     public function update(Request $request, $id): RedirectResponse
     {
         $request->validate([
-            'email' => 'required|unique:vehicle_drivers,email,'.$id,
-            'phone' => 'required|unique:vehicle_drivers,phone,'.$id,
+            'email' => EmailAddress::rules('required', 'vehicle_drivers,email,'.$id),
+            'phone' => PhoneNumber::rules('required', 'vehicle_drivers,phone,'.$id),
             'first_name' => 'required',
             'last_name' => 'required',
             'identity_type' => 'required',
@@ -140,7 +142,7 @@ class DriverController extends Controller
         $driver = $this->driver->findOrFail($id);
 
         if ($request->has('image')) {
-            $imageName = $this->updateAndUpload('driver/', $driver->image, 'png', $request->file('image'));
+            $imageName = FileStorage::update('driver/', $driver->image, $request->file('image'));
         } else {
             $imageName = $driver['image'];
         }
@@ -153,7 +155,7 @@ class DriverController extends Controller
             }
             $imgKeeper = [];
             foreach ($request->identity_image as $img) {
-                $identityImage = $this->upload('driver/', 'png', $img);
+                $identityImage = FileStorage::upload('driver/', $img);
                 $imgKeeper[] = ['img' => $identityImage, 'storage' => Helpers::getDisk()];
             }
             $identityImage = json_encode($imgKeeper);
@@ -171,7 +173,7 @@ class DriverController extends Controller
         $driver->identity_image = $identityImage;
         $driver->save();
 
-        Toastr::success(translate('messages.driver_updated_successfully'));
+        Toastr::success(translate('Updated successfully'));
         return back();
 
     }
@@ -193,7 +195,7 @@ class DriverController extends Controller
 
         $driver->update(['status' => !$driver->status]);
 
-        Toastr::success(translate('messages.driver_status_updated_successfully'));
+        Toastr::success(translate('Updated successfully'));
         return back();
     }
 
@@ -208,18 +210,18 @@ class DriverController extends Controller
         $driver = $this->driver->find($id);
 
         if (!$driver) {
-            Toastr::error(translate('messages.failed_to_delete_driver'));
+            Toastr::error(translate('messages.Failed to delete driver'));
             return back();
         }
 
         if ($driver->image) {
-            $this->upload('driver/', $driver->image);
+            FileStorage::upload('driver/', $driver->image);
         }
 
         $driver->translations()->delete();
         $driver->delete();
 
-        Toastr::success(translate('messages.driver_deleted_successfully'));
+        Toastr::success(translate('Deleted successfully'));
         return redirect()->route('admin.rental.provider.details', ['id' => $id, 'tab' => 'driver']);
     }
 
@@ -230,6 +232,7 @@ class DriverController extends Controller
     public function export(Request $request): BinaryFileResponse
     {
         $drivers = $this->driver
+            ->with(['provider'])
             ->when($request->has('search'), function ($query) use ($request) {
                 $keys = explode(' ', $request['search'] ?? '');
                 foreach ($keys as $key) {
@@ -257,6 +260,7 @@ class DriverController extends Controller
     public function tripExport(Request $request): BinaryFileResponse
     {
         $driverTrips = $this->tripVehicleDetails
+            ->with(['trip.customer', 'trip.provider'])
             ->where('vehicle_driver_id', $request->id)
             ->when(request('search'), function ($query) {
                 return $query->whereHas('trip', function ($query) {

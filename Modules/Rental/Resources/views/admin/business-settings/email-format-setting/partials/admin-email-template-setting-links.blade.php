@@ -1,21 +1,19 @@
 <div class="d-flex flex-wrap justify-content-between align-items-center tabs-slide-wrap position-relative mb-2 __gap-12px">
     <div class="js-nav-scroller hs-nav-scroller-horizontal mt-2">
-        <!-- Nav -->
         <ul class="nav nav-tabs tabs-inner border-0 nav--tabs nav--pills">
             <li class="nav-item tabs-slide_items">
                 <a class="nav-link {{ Request::is('admin/business-settings/rental-email-setup/admin/provider-registration') ? 'active' : '' }}"
                 href="{{ route('admin.business-settings.rental-email-setup', ['admin','provider-registration']) }}">
-                    {{translate('New Provider Registration')}}
+                    {{translate('New provider registration')}}
                 </a>
             </li>
             <li class="nav-item tabs-slide_items">
                 <a class="nav-link {{ Request::is('admin/business-settings/rental-email-setup/admin/withdraw-request') ? 'active' : '' }}"
                 href="{{ route('admin.business-settings.rental-email-setup', ['admin','withdraw-request']) }}">
-                    {{translate('Withdraw Request')}}
+                    {{translate('Withdraw request')}}
                 </a>
             </li>
         </ul>
-        <!-- End Nav -->
     </div>
     <div class="arrow-area">
         <div class="button-prev align-items-center">

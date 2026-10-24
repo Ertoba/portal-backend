@@ -19,13 +19,14 @@ use Modules\Rental\Entities\TripDetails;
 use Modules\Rental\Traits\TripLogicTrait;
 use Illuminate\Contracts\Support\Renderable;
 use Modules\Rental\Entities\TripVehicleDetails;
+use Modules\Rental\Traits\TripDetailsPageRelations;
 use Modules\Rental\Traits\RentalPushNotification;
 use MatanYadaev\EloquentSpatial\Objects\Point;
 
 class TripController extends Controller
 {
 
-    use TripLogicTrait, RentalPushNotification;
+    use TripLogicTrait, RentalPushNotification, TripDetailsPageRelations;
     private Trips $trips;
     private TripDetails $tripDetails;
     private TripVehicleDetails $tripVehicleDetails;
@@ -49,7 +50,7 @@ class TripController extends Controller
 
         $this->trips->where(['checked' => 0,'provider_id' => Helpers::get_store_id()])->update(['checked' => 1]);
 
-        $trips = $this->trips->with(['customer', 'provider', 'proDiscount'])
+        $trips = $this->trips->with(['customer.storage', 'proDiscount', 'assignedVehicle', 'assignedDriver.driver.storage', 'trip_details.vehicle.storage', 'trip_details.tripVehicleDetails'])
             ->where(['provider_id' => Helpers::get_store_id()])
             ->when($status == 'scheduled', function ($query) {
                 return $query->scheduled();
@@ -93,10 +94,36 @@ class TripController extends Controller
             ->orderBy('schedule_at', 'desc')
             ->paginate(config('default_pagination'));
 
+        if ($provider = Helpers::get_store_data()) {
+            foreach ($trips as $trip) {
+                $trip->setRelation('provider', $provider);
+            }
+        }
+
         $total = $trips->total();
 
         return view('rental::provider.trip.list', compact('trips', 'status', 'total'));
 
+    }
+
+    /**
+     * Give a trip the Store instance the query was already filtered by.
+     *
+     * Every method here scopes to provider_id = get_store_id(), so `$trip->provider` is
+     * always the authenticated vendor's Store — the one already hydrated by the auth guard.
+     * Letting the views lazy-load it re-ran that Store's translate and storage scopes.
+     */
+    private function shareProvider($trips): void
+    {
+        $provider = Helpers::get_store_data();
+
+        if (! $provider) {
+            return;
+        }
+
+        foreach (is_iterable($trips) ? $trips : [$trips] as $trip) {
+            $trip?->setRelation('provider', $provider);
+        }
     }
 
     /**
@@ -107,10 +134,11 @@ class TripController extends Controller
     public function details($id): Renderable
     {
         $trip = $this->trips
-        ->where(['provider_id' => Helpers::get_store_id()])
-        ->with(['proDiscount', 'trip_details' => function($query) {
-            $query->withCount('vehicleVariations');
-        }])->findOrFail($id);
+            ->where(['provider_id' => Helpers::get_store_id()])
+            ->with($this->tripDetailsPageRelations())
+            ->findOrFail($id);
+        $this->shareProvider($trip);
+        $this->primeTripDetailsPageRelations($trip);
 
         $is_deleted = 0;
 
@@ -155,14 +183,13 @@ class TripController extends Controller
                 }
             });
             if (in_array($status, ['ongoing', 'completed']) && $totalVehicle <= 0 && $is_deleted !=1) {
-                Toastr::error(translate('messages.at_first_assign_a_vehicle'));
+                Toastr::error(translate('messages.At first assign a vehicle'));
                 return back();
             }
 
 
             if ($status == 'canceled') {
                 $trip->canceled_by = 'vendor';
-                // $trip->cancellation_reason = $request?->cancellation_reason;
                 foreach ($trip->trip_details as $detail) {
                     $detail?->vehicle?->total_trip > 0 ? $detail?->vehicle?->decrement('total_trip', $detail->quantity) : '';
                 }
@@ -178,7 +205,7 @@ class TripController extends Controller
                 if ($this->create_transaction($trip, 'vendor') === false) {
                     DB::rollBack();
 
-                    Toastr::error(translate('messages.Failed_to_create_Transaction'));
+                    Toastr::error(translate('Failed to create transaction'));
                     return back();
                 }
             }
@@ -193,12 +220,12 @@ class TripController extends Controller
             $this->sendTripNotificationCustomer($trip);
             DB::commit();
 
-            Toastr::success(translate('messages.trip_status_updated_successfully'));
+            Toastr::success(translate('Updated successfully'));
             return back();
         } catch (\Exception $e) {
             DB::rollBack();
 
-            Toastr::error(translate('messages.something worng'));
+            Toastr::error(translate('Something wrong'));
             return back();
         }
     }
@@ -223,7 +250,7 @@ class TripController extends Controller
             }
 
             if($trip->payment_status == 'paid' && $status == 'paid'){
-                Toastr::success(translate('messages.This_trip_is_already_paid'));
+                Toastr::success(translate('messages.This trip is already paid'));
                 return back();
             }
 
@@ -236,19 +263,19 @@ class TripController extends Controller
                 if ($this->create_transaction($trip, 'vendor') === false) {
                     DB::rollBack();
 
-                    Toastr::error(translate('messages.Failed_to_create_Transaction'));
+                    Toastr::error(translate('Failed to create transaction'));
                     return back();
                 }
             }
             $this->sendTripPaymentNotificationCustomer($trip);
             DB::commit();
 
-            Toastr::success(translate('messages.trip_payment_status_updated_successfully'));
+            Toastr::success(translate('Updated successfully'));
             return back();
         } catch (\Exception $e) {
             DB::rollBack();
 
-            Toastr::error(translate('messages.something worng'));
+            Toastr::error(translate('Something wrong'));
             return back();
         }
     }
@@ -272,12 +299,12 @@ class TripController extends Controller
         ->find($request->trip_id);
 
         if(!$trip){
-            Toastr::success(translate('messages.trip_data_not_found'));
+            Toastr::success(translate('No data found'));
             return back();
         }
 
         if(Vehicle::where(['id'=> $request->vehicle_id])->doesntExist()){
-            Toastr::success(translate('messages.vehicle_not_found'));
+            Toastr::success(translate('No data found'));
             return back();
         }
 
@@ -295,7 +322,7 @@ class TripController extends Controller
 
         TripVehicleDetails::where(['trip_id'=> $request->trip_id ,'vehicle_id' => $request->vehicle_id])->whereNotIn('vehicle_identity_id', $vehicle_identity_ids)->delete();
 
-        Toastr::success(translate('messages.trip_vehicle_assigned_successfully'));
+        Toastr::success(translate('messages.Trip vehicle assigned successfully'));
         return back();
     }
 
@@ -303,7 +330,7 @@ class TripController extends Controller
      * @param Request $request
      * @return JsonResponse|RedirectResponse
      */
-    public function assignDriver(Request $request): JsonResponse|RedirectResponse
+    public function assignDriver(Request $request): RedirectResponse
     {
         $request->validate([
             'trip_id' => 'required',
@@ -314,24 +341,32 @@ class TripController extends Controller
         ->where(['provider_id' => Helpers::get_store_id()])
         ->find($request->trip_id);
         if(!$trip){
-            Toastr::success(translate('messages.trip_data_not_found'));
+            Toastr::error(translate('No data found'));
             return back();
         }
 
         $driver_ids = $request->driver_ids;
 
         foreach($driver_ids as $key => $driver_id){
-            $vehicle_data = TripVehicleDetails::where('id', $key)->first();
+            // Scoped to this trip's own vehicles, not just any TripVehicleDetails row by id — a
+            // key posted from a stale/tampered form must not be able to reassign another trip's
+            // (or another provider's) vehicle.
+            $vehicle_data = $trip->vehicle_identity()->where('id', $key)->first();
 
             if(!$vehicle_data){
-                return response()->json(['errors' => translate('vehicle_information_not_found')], 404);
+                // The assign-driver form is a plain HTML POST, not an AJAX submission — a JSON
+                // response here rendered as a blank page of raw JSON text instead of the expected
+                // toast-and-redirect, which is what made this look like it "did nothing" from the
+                // vendor's side.
+                Toastr::error(translate('No data found'));
+                return back();
             }
 
             $vehicle_data->vehicle_driver_id = $driver_id;
             $vehicle_data->save();
         }
 
-        Toastr::success(translate('messages.trip_driver_assigned_successfully'));
+        Toastr::success(translate('messages.Trip driver assigned successfully'));
         return back();
     }
 
@@ -346,7 +381,7 @@ class TripController extends Controller
 
 
 
-        $trips = $this->trips->with(['customer', 'provider', 'proDiscount'])
+        $trips = $this->trips->with(['customer', 'proDiscount'])
         ->where(['provider_id' => Helpers::get_store_id()])
             ->when($status == 'scheduled', function ($query) {
                 return $query->scheduled();
@@ -390,6 +425,7 @@ class TripController extends Controller
                 });
             })
             ->orderBy('schedule_at', 'desc')->get();
+        $this->shareProvider($trips);
 
         $data = [
             'data' => $trips,
@@ -418,12 +454,12 @@ class TripController extends Controller
 
         if (!$trip) {
             return response()->json(['success' => false,
-            'message' => translate('messages.trip_data_not_found')], 400);
+            'message' => translate('No data found')], 400);
         }
 
         if (in_array($trip->trip_status, ['completed', 'canceled'])) {
             return response()->json(['success' => false,
-            'message' => translate('messages.You_can_not_edit_this')], 400);
+            'message' => translate('messages.You can not edit this')], 400);
         }
 
         $pickup = [
@@ -447,7 +483,7 @@ class TripController extends Controller
 
         if (count($zones) > 0 &&  count($pickup_zone_id) > 0 &&  empty(array_intersect($pickup_zone_id, $zones)) == true) {
             return response()->json(['success' => false,
-            'message' => translate('messages.Pickup_location_is_out_of_zone')], 400);
+            'message' => translate('messages.Pickup location is out of zone')], 400);
         }
 
         $destination = [
@@ -497,7 +533,7 @@ class TripController extends Controller
 
             $calculationData = $this->getUpdatedTrip($request, $trip, $data, $request->update == 1 ? true : false);
             if ($request->update == 1) {
-                return response()->json(['status' => 'updated',  'message' =>translate('messages.Trip_successfully_updated'), ], 200);
+                return response()->json(['status' => 'updated',  'message' =>translate('Updated successfully'), ], 200);
             } else{
                 return response()->json([
                     'success' => true,
@@ -529,11 +565,13 @@ class TripController extends Controller
     public function generateInvoice($id)
     {
         $trip = $this->trips->where(['provider_id' => Helpers::get_store_id()])->with('proDiscount')->findOrFail($id);
+        $this->shareProvider($trip);
         return view('rental::provider.trip.invoice', compact('trip'));
     }
     public function printInvoice($id)
     {
         $trip = $this->trips->where(['provider_id' => Helpers::get_store_id()])->with('proDiscount')->findOrFail($id);
+        $this->shareProvider($trip);
         return view('rental::provider.trip.invoice-print', compact('trip'))->render();
     }
 

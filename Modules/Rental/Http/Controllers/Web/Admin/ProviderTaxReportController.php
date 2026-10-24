@@ -11,6 +11,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Brian2694\Toastr\Facades\Toastr;
 use Maatwebsite\Excel\Facades\Excel;
 use Modules\Rental\Entities\Trips;
 use Modules\Rental\Exports\ProviderWiseTaxExport;
@@ -18,12 +19,6 @@ use NunoMaduro\Collision\Provider;
 
 class ProviderTaxReportController extends Controller
 {
-
-        public function __construct()
-    {
-        DB::statement("SET sql_mode=(SELECT REPLACE(@@sql_mode,'ONLY_FULL_GROUP_BY',''));");
-    }
-
 
     public function providerWiseTaxes(Request $request)
     {
@@ -40,7 +35,6 @@ class ProviderTaxReportController extends Controller
         $store_id = $request->query('provider_id', 'all');
         $store = is_numeric($store_id) ? Store::findOrFail($store_id) : null;
 
-        // $start = microtime(true);
 
         $data = $this->providerWiseTaxData($store, $startDate, $endDate, $key);
         $result = $data['result'];
@@ -54,8 +48,6 @@ class ProviderTaxReportController extends Controller
         $storeIds = $storeQuery->pluck('store_id')->toArray();
 
         $stores = $this->getOrderTaxData($startDate, $endDate, $storeIds, $storeQuery);
-        // $time = microtime(true) - $start;
-        // dd("Query took {$time} seconds", $stores);
         $startDate = Carbon::parse($startDate)->toIso8601String();
         $endDate = Carbon::parse($endDate)->toIso8601String();
         return view('rental::admin.report.tax-report.provider-tax-report', compact('totalOrders', 'totalOrderAmount', 'totalTax', 'store', 'stores', 'dateRange', 'startDate', 'endDate'));
@@ -194,7 +186,6 @@ class ProviderTaxReportController extends Controller
         $store_id = $request->query('store_id', 'all');
         $store = is_numeric($store_id) ? Store::findOrFail($store_id) : null;
 
-        // $start = microtime(true);
 
         $data = $this->providerWiseTaxData($store, $startDate, $endDate, $key);
         $summary = $data['result'];
@@ -213,7 +204,6 @@ class ProviderTaxReportController extends Controller
             'to' => $endDate,
             'summary' => $summary
         ];
-        // dd($request->export_type);
         if ($request->export_type == 'excel') {
             return Excel::download(new ProviderWiseTaxExport($data), 'ProviderWiseTaxExport.xlsx');
         } else if ($request->export_type == 'csv') {
@@ -236,7 +226,12 @@ class ProviderTaxReportController extends Controller
         $store_id = $request->id;
         $store = is_numeric($store_id) ? Store::select('id', 'name', 'phone')->findOrFail($store_id) : null;
 
-        // $start = microtime(true);
+        if (! $store) {
+            Toastr::warning(translate('No data found'));
+
+            return back();
+        }
+
         $providertaxData =   $this->getprovidertaxData($store->id, $startDate, $endDate);
         $summary =   $providertaxData['summary'];
         $orders = $providertaxData['orders'];
@@ -248,8 +243,6 @@ class ProviderTaxReportController extends Controller
         $orders = $orders->paginate(config('default_pagination'))
             ->withQueryString();
 
-        // $time = microtime(true) - $start;
-        // dd("Query took {$time} seconds", $stores);
         $startDate = Carbon::parse($startDate)->format('d M, Y');
         $endDate = Carbon::parse($endDate)->format('d M, Y');
         return view('rental::admin.report.tax-report.provider-tax-detail-report', compact('totalOrders', 'totalOrderAmount', 'totalTax', 'store', 'orders', 'startDate', 'endDate'));
@@ -267,15 +260,18 @@ class ProviderTaxReportController extends Controller
         $store_id = $request->id;
         $store = is_numeric($store_id) ? Store::select('id', 'name', 'phone')->findOrFail($store_id) : null;
 
-        // $start = microtime(true);
+        if (! $store) {
+            Toastr::warning(translate('No data found'));
+
+            return back();
+        }
+
         $providertaxData =   $this->getprovidertaxData($store->id, $startDate, $endDate);
         $summary =   $providertaxData['summary'];
         $orders = $providertaxData['orders'];
 
         $orders = $orders->cursor();
 
-        // $time = microtime(true) - $start;
-        // dd("Query took {$time} seconds", $stores);
         $startDate = Carbon::parse($startDate)->format('d M, Y');
         $endDate = Carbon::parse($endDate)->format('d M, Y');
 
@@ -286,7 +282,6 @@ class ProviderTaxReportController extends Controller
             'to' => $endDate,
             'summary' => $summary
         ];
-        // dd($request->export_type);
         if ($request->export_type == 'excel') {
             return Excel::download(new ProviderTaxExport($data), $store->name .'s TaxExport.xlsx');
         } else if ($request->export_type == 'csv') {
@@ -303,12 +298,12 @@ class ProviderTaxReportController extends Controller
             ->selectRaw('COUNT(*) as total_orders, SUM(trip_amount) as total_order_amount, SUM(tax_amount) as total_tax')
             ->first();
 
-        $orders = Trips::with([
+        $orders = Trips::when(addon_published_status('TaxModule'), fn ($q) => $q->with([
             'orderTaxes' => function (MorphMany $query) {
                 $query->where('order_type', Trips::class)
                     ->select('id', 'order_id', 'tax_name', 'tax_amount','tax_on','tax_type','taxable_type');
             }
-        ])
+        ]))
             ->where('provider_id', $store_id)
             ->whereIn('trip_status', ['completed', 'refund_requested', 'refund_request_canceled'])
             ->when($startDate && $endDate, fn($q) => $q->whereBetween('created_at', [$startDate, $endDate]))

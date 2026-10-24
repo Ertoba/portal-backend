@@ -1,4 +1,3 @@
-    <!-- Page Header -->
     @php
         $verified_seller_badge = \App\CentralLogics\Helpers::get_business_settings('verified_seller_badge');
     @endphp
@@ -10,8 +9,9 @@
                         <span class="page-header-icon">
                             <img src="{{ asset('public/assets/admin/img/store.png') }}" class="w--22" alt="">
                         </span>
-                        <span>{{ translate('messages.Provider_Details') }}
-                    </h1></span>
+                        <span>{{ translate('Provider details') }}
+                    </h1>
+                    <p class="page-header-desc">{{ translate('This provider\'s trips, earnings, vehicles and account state in one place.') }}</p></span>
                     </h1>
                 </div>
                 @if(!request()->tab)
@@ -24,11 +24,11 @@
                                class="btn fs-14 h--45px d-center  {{ $verified_seller ? 'btn-secondary bg--EDEDED border-0 title-clr' : 'btn-primary' }}"
                                data-toggle="modal"
                                data-target="{{ $verified_seller ? '#remove-badge-btn' : '#badge-modal-btn' }}">
-                                {{ $verified_seller ? translate('messages.Removed Verified badge') : translate('messages.Give Verified Badge') }}
+                                <i class="{{ $verified_seller ? 'tio-clear-circle-outlined' : 'tio-verified-outlined' }}"></i> {{ $verified_seller ? translate('Removed verified badge') : translate('Give verified badge') }}
                             </a>
                         @endif
                         <a href="javascript:" class="btn btn--reset d-flex justify-content-between align-items-center gap-4 lh--1 h--45px">
-                            {{ translate('messages.status') }}
+                            {{ translate('messages.Status') }}
                             <label class="toggle-switch toggle-switch-sm" for="stocksCheckbox{{$store->id}}">
                                 <input type="checkbox" data-url="{{route('admin.store.status',[$store['id'],$store->status?0:1])}}"
                                        class="toggle-switch-input redirect-url" id="stocksCheckbox{{$store->id}}" {{$store->status?'checked':''}}>
@@ -38,14 +38,13 @@
                             </label>
                         </a>
                         <a href="{{ route('admin.rental.provider.edit-basic-setup', $store->id)}}" class="btn h--45px d-center btn--primary font-weight-bold float-right mr-2 mb-0">
-                            <i class="tio-edit"></i> {{ translate('messages.edit_provider') }}
+                            <i class="tio-edit"></i> {{ translate('Edit provider') }}
                         </a>
                     </div>
                 @endif
             </div>
         </div>
         @if($store->vendor->status)
-        <!-- Nav Scroller -->
         <div class="js-nav-scroller hs-nav-scroller-horizontal">
             <span class="hs-nav-scroller-arrow-prev d-none">
                 <a class="hs-nav-scroller-arrow-link" href="javascript:;">
@@ -59,51 +58,47 @@
                 </a>
             </span>
 
-            <!-- Nav -->
             <ul class="nav nav-tabs page-header-tabs mb-2">
                 <li class="nav-item">
-                    <a class="nav-link {{request('tab')==null?'active':''}}" href="{{route('admin.rental.provider.details', $store->id)}}">{{translate('messages.overview')}}</a>
+                    <a class="nav-link {{request('tab')==null?'active':''}}" href="{{route('admin.rental.provider.details', $store->id)}}">{{translate('messages.Overview')}}</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link {{request('tab')=='order'?'active':''}}" href="{{route('admin.rental.provider.details', ['id'=>$store->id, 'tab'=> 'order'])}}"  aria-disabled="true">{{translate('messages.Trip List')}}</a>
+                    <a class="nav-link {{request('tab')=='order'?'active':''}}" href="{{route('admin.rental.provider.details', ['id'=>$store->id, 'tab'=> 'order'])}}"  aria-disabled="true">{{translate('Trip list')}}</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link {{request('tab')=='driver'?'active':''}}" href="{{route('admin.rental.provider.details', ['id'=>$store->id, 'tab'=> 'driver'])}}"  aria-disabled="true">{{translate('messages.driver list')}}</a>
+                    <a class="nav-link {{request('tab')=='driver'?'active':''}}" href="{{route('admin.rental.provider.details', ['id'=>$store->id, 'tab'=> 'driver'])}}"  aria-disabled="true">{{translate('Driver list')}}</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link {{request('tab')=='vehicle'?'active':''}}" href="{{route('admin.rental.provider.details', ['id'=>$store->id, 'tab'=> 'vehicle'])}}"  aria-disabled="true">{{translate('messages.Vehicles')}}</a>
+                    <a class="nav-link {{request('tab')=='vehicle'?'active':''}}" href="{{route('admin.rental.provider.details', ['id'=>$store->id, 'tab'=> 'vehicle'])}}"  aria-disabled="true">{{translate('messages.vehicles')}}</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link {{request('tab')=='reviews'?'active':''}}" href="{{route('admin.rental.provider.details', ['id'=>$store->id, 'tab'=> 'reviews'])}}"  aria-disabled="true">{{translate('messages.reviews')}}</a>
+                    <a class="nav-link {{request('tab')=='reviews'?'active':''}}" href="{{route('admin.rental.provider.details', ['id'=>$store->id, 'tab'=> 'reviews'])}}"  aria-disabled="true">{{translate('messages.Reviews')}}</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link {{request('tab')=='discount'?'active':''}}" href="{{route('admin.rental.provider.details', ['id'=>$store->id, 'tab'=> 'discount'])}}"  aria-disabled="true">{{translate('messages.discounts')}}</a>
+                    <a class="nav-link {{request('tab')=='discount'?'active':''}}" href="{{route('admin.rental.provider.details', ['id'=>$store->id, 'tab'=> 'discount'])}}"  aria-disabled="true">{{translate('messages.Discounts')}}</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link {{request('tab')=='transaction'?'active':''}}" href="{{route('admin.rental.provider.details', ['id'=>$store->id, 'tab'=> 'transaction'])}}"  aria-disabled="true">{{translate('messages.transactions')}}</a>
+                    <a class="nav-link {{request('tab')=='transaction'?'active':''}}" href="{{route('admin.rental.provider.details', ['id'=>$store->id, 'tab'=> 'transaction'])}}"  aria-disabled="true">{{translate('messages.Transactions')}}</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link {{request('tab')=='settings'?'active':''}}" href="{{route('admin.rental.provider.details', ['id'=>$store->id, 'tab'=> 'settings'])}}"  aria-disabled="true">{{translate('messages.settings')}}</a>
+                    <a class="nav-link {{request('tab')=='settings'?'active':''}}" href="{{route('admin.rental.provider.details', ['id'=>$store->id, 'tab'=> 'settings'])}}"  aria-disabled="true">{{translate('Settings')}}</a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link {{request('tab')=='conversations'?'active':''}}" href="{{route('admin.rental.provider.details', ['id'=>$store->id, 'tab'=> 'conversations'])}}"  aria-disabled="true">{{translate('Conversations')}}</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link {{request('tab')=='meta-data'?'active':''}}" href="{{route('admin.rental.provider.details', ['id'=>$store->id, 'tab'=> 'meta-data'])}}"  aria-disabled="true">{{translate('meta_data')}}</a>
+                    <a class="nav-link {{request('tab')=='meta-data'?'active':''}}" href="{{route('admin.rental.provider.details', ['id'=>$store->id, 'tab'=> 'meta-data'])}}"  aria-disabled="true">{{translate('Meta data')}}</a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link  {{request('tab')=='disbursements' ?'active':''}}" href="{{route('admin.rental.provider.details', ['id'=>$store->id, 'tab'=> 'disbursements'])}}"  aria-disabled="true">{{translate('messages.disbursements')}}</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link  {{request('tab')=='business_plan' ?'active':''}}" href="{{route('admin.rental.provider.details', ['id'=>$store->id, 'tab'=> 'business_plan'])}}"  aria-disabled="true">{{translate('messages.business_plan')}}</a>
+                    <a class="nav-link  {{request('tab')=='business_plan' ?'active':''}}" href="{{route('admin.rental.provider.details', ['id'=>$store->id, 'tab'=> 'business_plan'])}}"  aria-disabled="true">{{translate('Business plan')}}</a>
                 </li>
             </ul>
-            <!-- End Nav -->
         </div>
-        <!-- End Nav Scroller -->
         @endif
     </div>
-    <!-- End Page Header -->
 
     <div class="modal shedule-modal fade" id="badge-modal-btn" tabindex="-1" aria-labelledby="exampleModalLabel"
         aria-hidden="true">
@@ -119,13 +114,13 @@
                 <div class="modal-body">
                     <div class="text-center">
                         <img src="{{asset('public/assets/admin/img/badge-big.png')}}" alt="icon" class="mb-3">
-                        <h3 class="mb-2">{{ translate('Give Verified Badge to this provider?') }}</h3>
+                        <h3 class="mb-2">{{ translate('Give verified badge to this provider?') }}</h3>
                         <p class="mb-0">{{ translate('This will mark the provider as verified, and a trusted badge will be displayed on the provider details for customers') }}</p>
                     </div>
                 </div>
                 <div class="modal-footer justify-content-center border-0 pt-0 gap-2">
-                    <button type="button" class="btn min-w-120px btn--reset" data-dismiss="modal">{{ translate('messages.Cancel') }}</button>
-                    <a href="{{ route('admin.rental.provider.verified-seller', [$store->id]) }}" class="btn min-w-120px btn--primary">{{ translate('messages.Yes') }}</a>
+                    <button type="button" class="btn min-w-120px btn--reset" data-dismiss="modal"><i class="tio-clear-circle-outlined"></i> {{ translate('messages.Cancel') }}</button>
+                    <a href="{{ route('admin.rental.provider.verified-seller', [$store->id]) }}" class="btn min-w-120px btn--primary"><i class="tio-checkmark-circle-outlined"></i> {{ translate('messages.Yes') }}</a>
                 </div>
             </div>
         </div>
@@ -145,13 +140,13 @@
                 <div class="modal-body">
                       <div class="text-center">
                         <img src="{{asset('public/assets/admin/img/remove-badge.png')}}" alt="icon" class="mb-3">
-                        <h3 class="mb-2">{{ translate('Want to remove the Verified Badge from this provider?') }}</h3>
+                        <h3 class="mb-2">{{ translate('Want to remove the verified badge from this provider?') }}</h3>
                         <p class="mb-0">{{ translate('The provider will lose its verified status, but you can reassign the badge at any time') }}</p>
                     </div>
                 </div>
                 <div class="modal-footer justify-content-center border-0 pt-0 gap-2">
-                    <button type="button" class="btn min-w-120px btn--reset" data-dismiss="modal">{{ translate('messages.Cancel') }}</button>
-                    <a href="{{ route('admin.rental.provider.verified-seller', [$store->id]) }}" class="btn min-w-120px btn--danger">{{ translate('messages.Yes') }}</a>
+                    <button type="button" class="btn min-w-120px btn--reset" data-dismiss="modal"><i class="tio-clear-circle-outlined"></i> {{ translate('messages.Cancel') }}</button>
+                    <a href="{{ route('admin.rental.provider.verified-seller', [$store->id]) }}" class="btn min-w-120px btn--danger"><i class="tio-checkmark-circle-outlined"></i> {{ translate('messages.Yes') }}</a>
                 </div>
             </div>
         </div>

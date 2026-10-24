@@ -2,12 +2,13 @@
 
 namespace Modules\Rental\Http\Controllers\Web\Admin;
 
+use App\Rules\ImageFile;
 use App\CentralLogics\Helpers;
 use App\Models\StoreConfig;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
-use Illuminate\Support\Facades\Cache;
+use App\Support\Cache\ApiCache;
 use Illuminate\Support\Facades\Validator;
 use Modules\AI\app\Core\AiModule;
 use Modules\Rental\Services\AI\VehicleAiService;
@@ -23,11 +24,11 @@ class VehicleAiController extends Controller
         if (function_exists('getEnvMode') && getEnvMode() == 'demo') {
             $ip = request()->header('x-forwarded-for');
             $cacheKey = 'restricted_ip_' . $ip;
-            $hits = Cache::store('file')->get($cacheKey, 0);
+            $hits = (int) ApiCache::get('demo_throttle', $cacheKey, 0);
             if ($hits >= 10) {
-                abort(403, translate('Demo Mode Restriction: This feature can only be accessed 10 times in demo mode. Further attempts are disabled to maintain a fair demo experience.'));
+                abort(403, translate('Demo mode allows limited uses of this feature, then it is disabled.') . ' ' . translate('Usage limit') . ': 10');
             }
-            Cache::store('file')->forever($cacheKey, $hits + 1);
+            ApiCache::put('demo_throttle', $cacheKey, $hits + 1);
         }
     }
 
@@ -68,7 +69,7 @@ class VehicleAiController extends Controller
             return $this->disabledResponse();
         }
 
-        $validator = Validator::make($request->all(), ['image' => 'required|image|mimes:jpeg,png,jpg,gif,webp|max:2048']);
+        $validator = Validator::make($request->all(), ['image' => ImageFile::rules('required')]);
         if ($validator->fails()) {
             return response()->json(['message' => $validator->errors()->first()], 422);
         }
@@ -190,7 +191,7 @@ class VehicleAiController extends Controller
         if ($kind === 'image') {
             $limit = Helpers::get_business_settings('image_upload_limit_for_ai');
             $used = (int) ($row->image_wise_ai_use_count ?? 0);
-            $message = translate('messages.You have reached the limit of AI usage via Image.');
+            $message = translate('You have reached the limit of AI usage via image.');
         } else {
             $limit = Helpers::get_business_settings('section_wise_ai_limit');
             $used = (int) ($row->section_wise_ai_use_count ?? 0);
@@ -238,18 +239,18 @@ class VehicleAiController extends Controller
 
     private function disabledResponse(): JsonResponse
     {
-        return response()->json(['message' => translate('messages.AI_assistant_is_not_configured')], 403);
+        return response()->json(['message' => translate('messages.AI assistant is not configured')], 403);
     }
 
     private function emptyResultResponse(): JsonResponse
     {
-        return response()->json(['message' => translate('messages.AI_failed_to_generate_a_result_please_try_again')], 422);
+        return response()->json(['message' => translate('messages.AI failed to generate a result please try again')], 422);
     }
 
     private function failureResponse(\Throwable $e): JsonResponse
     {
         info('Vehicle AI generation failed: ' . $e->getMessage());
 
-        return response()->json(['message' => translate('messages.AI_failed_to_generate_a_result_please_try_again')], 422);
+        return response()->json(['message' => translate('messages.AI failed to generate a result please try again')], 422);
     }
 }

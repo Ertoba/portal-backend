@@ -2,19 +2,18 @@
 
 namespace Modules\Rental\Http\Controllers\Web\Admin;
 
+use App\Rules\ImageFile;
 use App\Models\DataSetting;
 use Modules\Rental\Entities\RentalEmailTemplate;
 use App\Models\Translation;
 use Illuminate\Http\Request;
-use App\Traits\FileManagerTrait;
 use Illuminate\Routing\Controller;
 use Brian2694\Toastr\Facades\Toastr;
 use App\CentralLogics\Helpers;
+use App\Support\Storage\FileStorage;
 
 class SettingsController extends Controller
 {
-
-    use FileManagerTrait;
 
     public function __construct(private DataSetting $settings)
     {
@@ -25,7 +24,7 @@ class SettingsController extends Controller
         return view('rental::admin.home-page-setup.download-app', [
             'title_data' => $this->settings->where('key', 'module_home_page_data_title')->withoutGlobalScope('translate')->with('translations')->first(),
             'sub_title_data' => $this->settings->where('key', 'module_home_page_data_sub_title')->withoutGlobalScope('translate')->with('translations')->first(),
-            'image' =>  $this->settings->where('key', 'module_home_page_data_image')->first(),
+            'image' =>  $this->settings->withStorage()->where('key', 'module_home_page_data_image')->first(),
             'language'=> getWebConfig('language'),
         ]);
     }
@@ -37,13 +36,13 @@ class SettingsController extends Controller
             'title.0' => 'required',
             'sub_title.*' => 'max:110',
             'sub_title.0' => 'required',
-            'image' => 'nullable|max:2048',
+            'image' => ImageFile::rules('nullable'),
         ],
         [
-            'title.0.required'=>translate('default_title_is_required'),
-            'sub_title.0.required'=>translate('default_sub_title_is_required'),
-            'title.*.max'=>translate('max_title_length_is_30_char'),
-            'sub_title.*.required'=>translate('max_sub_title_length_is_120_char'),
+            'title.0.required'=>translate('Default title is required'),
+            'sub_title.0.required'=>translate('Default subtitle is required'),
+            'title.*.max'=>translate('Title is too long.') . ' ' . translate('Character limit') . ': 30',
+            'sub_title.*.required'=>translate('Subtitle is too long.') . ' ' . translate('Character limit') . ': 120',
         ]);
 
         $type = 'module_home_page_data';
@@ -56,7 +55,7 @@ class SettingsController extends Controller
             $this->updateImageSetting($request->file('image'), 'module_home_page_data_image', 'react_landing/', $type);
         }
 
-        Toastr::success(translate('messages.Download_app_section_data_updated_successfully'));
+        Toastr::success(translate('Updated successfully'));
         return back();
 
     }
@@ -66,7 +65,7 @@ class SettingsController extends Controller
             'title_data' => $this->settings->where('key', 'module_vendor_registration_data_title')->withoutGlobalScope('translate')->with('translations')->first(),
             'sub_title_data' => $this->settings->where('key', 'module_vendor_registration_data_sub_title')->withoutGlobalScope('translate')->with('translations')->first(),
             'button_title_data' => $this->settings->where('key', 'module_vendor_registration_data_button_title')->withoutGlobalScope('translate')->with('translations')->first(),
-            'image' =>  $this->settings->where('key', 'module_vendor_registration_data_image')->first(),
+            'image' =>  $this->settings->withStorage()->where('key', 'module_vendor_registration_data_image')->first(),
             'language'=> getWebConfig('language'),
         ]);
     }
@@ -79,15 +78,15 @@ class SettingsController extends Controller
             'sub_title.0' => 'required',
             'button_title.*' => 'max:110',
             'button_title.0' => 'required',
-            'image' => 'nullable|max:2048',
+            'image' => ImageFile::rules('nullable'),
         ],
         [
-            'title.0.required'=>translate('default_title_is_required'),
-            'sub_title.0.required'=>translate('default_sub_title_is_required'),
-            'button_title.0.required'=>translate('default_button_title_is_required'),
-            'title.*.max'=>translate('max_title_length_is_30_char'),
-            'sub_title.*.required'=>translate('max_sub_title_length_is_120_char'),
-            'button_title.*.required'=>translate('max_button_title_length_is_20_char'),
+            'title.0.required'=>translate('Default title is required'),
+            'sub_title.0.required'=>translate('Default subtitle is required'),
+            'button_title.0.required'=>translate('Default button title is required'),
+            'title.*.max'=>translate('Title is too long.') . ' ' . translate('Character limit') . ': 30',
+            'sub_title.*.required'=>translate('Subtitle is too long.') . ' ' . translate('Character limit') . ': 120',
+            'button_title.*.required'=>translate('Button title is too long.') . ' ' . translate('Character limit') . ': 20',
         ]);
 
         $type = 'module_vendor_registration_data';
@@ -101,7 +100,7 @@ class SettingsController extends Controller
             $this->updateImageSetting($request->file('image'), 'module_vendor_registration_data_image', 'react_landing/', $type);
         }
 
-        Toastr::success(translate('messages.vendor_registration_section_data_updated_successfully'));
+        Toastr::success(translate('Updated successfully'));
         return back();
 
     }
@@ -134,9 +133,9 @@ class SettingsController extends Controller
         $imageSetting->key = $key;
 
         if (empty($imageSetting->value)) {
-            $imageSetting->value = $this->upload($path, 'png', $imageFile);
+            $imageSetting->value = FileStorage::upload($path, $imageFile);
         } else {
-            $imageSetting->value = $this->updateAndUpload($path, $imageSetting->value, 'png', $imageFile);
+            $imageSetting->value = FileStorage::update($path, $imageSetting->value, $imageFile);
         }
         $imageSetting->save();
         return true;
@@ -180,7 +179,7 @@ class SettingsController extends Controller
     public function update_email_index(Request $request, $type, $tab)
     {
         if (getEnvMode() == 'demo') {
-            Toastr::info(translate('messages.update_option_is_disable_for_demo'));
+            Toastr::info(translate('messages.Update option is disable for demo'));
             return back();
         }
 
@@ -251,7 +250,7 @@ class SettingsController extends Controller
         $template = RentalEmailTemplate::where('type', $type)->where('email_type', $email_type)->first() ?? new RentalEmailTemplate();
 
         if ($request->title[array_search('default', $request->lang)] == '') {
-            Toastr::error(translate('default_data_is_required'));
+            Toastr::error(translate('Default data is required'));
             return back();
         }
         $template->title = $request->title[array_search('default', $request->lang)];
@@ -437,14 +436,14 @@ class SettingsController extends Controller
             }
         }
 
-        Toastr::success(translate('messages.template_added_successfully'));
+        Toastr::success(translate('Added successfully'));
         return back();
     }
 
     public function update_email_status(Request $request, $type, $tab, $status)
     {
         if (getEnvMode() == 'demo') {
-            Toastr::info(translate('messages.update_option_is_disable_for_demo'));
+            Toastr::info(translate('messages.Update option is disable for demo'));
             return back();
         }
 
@@ -476,9 +475,9 @@ class SettingsController extends Controller
 
         if (isset($tabKeys[$tab])) {
             Helpers::businessUpdateOrInsert(['key' => $tabKeys[$tab] . $type], ['value' => $status]);
-            Toastr::success(translate('messages.email_status_updated'));
+            Toastr::success(translate('messages.Email status updated'));
         } else {
-            Toastr::error(translate('messages.invalid_email_status_update'));
+            Toastr::error(translate('messages.Invalid email status update'));
         }
 
         return back();

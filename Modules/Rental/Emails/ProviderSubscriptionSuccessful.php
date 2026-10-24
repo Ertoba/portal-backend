@@ -2,29 +2,30 @@
 
 namespace Modules\Rental\Emails;
 
-
+use App\Mail\Concerns\BuildsTemplatedMail;
+use App\Mail\Concerns\QueueableMailable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
-use App\CentralLogics\Helpers;
-use App\Models\BusinessSetting;
 use Illuminate\Queue\SerializesModels;
 use Modules\Rental\Entities\RentalEmailTemplate;
+use App\Support\Notification\NotificationText;
+use App\Services\System\BusinessSettingService;
 
-class ProviderSubscriptionSuccessful extends Mailable
+class ProviderSubscriptionSuccessful extends Mailable implements ShouldQueue
 {
-    use Queueable, SerializesModels;
+    use BuildsTemplatedMail, Queueable, QueueableMailable, SerializesModels;
 
     /**
      * Create a new message instance.
      *
      * @return void
      */
-
-
     protected $name;
+
     protected $url;
 
-    public function __construct($name,$url)
+    public function __construct($name, $url)
     {
         $this->name = $name;
         $this->url = $url;
@@ -37,16 +38,19 @@ class ProviderSubscriptionSuccessful extends Mailable
      */
     public function build()
     {
-        $company_name = BusinessSetting::where('key', 'business_name')->first()->value;
-        $data=RentalEmailTemplate::where('type','provider')->where('email_type', 'subscription-successful')->first();
-
-        $template=$data?$data->email_template:5;
+        $data = RentalEmailTemplate::where('type', 'provider')->where('email_type', 'subscription-successful')->first();
         $url = $this->url;
         $store_name = $this->name;
-        $title = Helpers::text_variable_data_format( value:$data['title']??'',store_name:$store_name??'');
-        $body = Helpers::text_variable_data_format( value:$data['body']??'',store_name:$store_name??'');
-        $footer_text = Helpers::text_variable_data_format( value:$data['footer_text']??'',store_name:$store_name??'');
-        $copyright_text = Helpers::text_variable_data_format( value:$data['copyright_text']??'',store_name:$store_name??'');
-        return $this->subject(translate('Subscription_successful'))->view('email-templates.rental.new-email-format-'.$template, ['company_name'=>$company_name,'data'=>$data,'title'=>$title,'body'=>$body,'footer_text'=>$footer_text,'copyright_text'=>$copyright_text,'url'=>$url,'type'=> 'invoice']);
+
+        return $this->templatedMail(
+            template: $data,
+            fallbackTemplate: 5,
+            subject: translate('Subscription successful'),
+            placeholders: [
+                'store_name' => $store_name ?? '',
+            ],
+            viewData: ['url' => $url, 'type' => 'invoice'],
+            viewPrefix: 'email-templates.rental.new-email-format-',
+        );
     }
 }

@@ -1,6 +1,6 @@
 @extends('layouts.vendor.app')
 
-@section('title', translate('messages.Add New Vehicle'))
+@section('title', translate('Add new vehicle'))
 
 @php($openai_enabled = data_get(\App\CentralLogics\Helpers::get_business_settings('openai_config'), 'status') == 1)
 @php($aiRoutePrefix = 'vendor.vehicle.ai')
@@ -16,23 +16,20 @@
 
 @section('content')
     <div class="content container-fluid">
-        <!-- Page Header -->
         <div class="page-header pb-20">
             <div class="d-flex justify-content-between flex-wrap gap-3">
                 <div>
                     <h1 class="page-header-title text-break">
                         <span class="page-header-icon">
-                            <img src="{{ asset('public/assets/admin/img/car-logo.png') }}" alt="">
+                            <img src="{{ asset('public/assets/admin/img/outline/car.svg') }}" alt="">
                         </span>
-                        <span>{{ translate('messages.Add New Vehicle') }}
+                        <span>{{ translate('Add new vehicle') }}
                     </h1>
+                    <p class="page-header-desc">{{ translate('List a vehicle with its photographs, seats, fuel and the rate it goes out at.') }}</p>
                 </div>
             </div>
         </div>
-        @php($language = \App\Models\BusinessSetting::where('key', 'language')->first())
-        @php($language = $language->value ?? null)
-        @php($defaultLang = 'en')
-        <!-- End Page Header -->
+        @php($language = \App\CentralLogics\Helpers::get_business_settings('language', false) ?? null)
 
         <form action="" method="post" enctype="multipart/form-data">
             @csrf
@@ -43,7 +40,7 @@
                         <div class="card-header">
                             <div>
                                 <h5 class="text-title mb-1">
-                                    {{ translate('messages.General_Information') }}
+                                    {{ translate('General information') }}
                                 </h5>
                                 <p class="fs-12 mb-0">
                                     {{ translate('messages.Insert the basic information of the vehicle') }}
@@ -74,8 +71,8 @@
                                                     <div class="form-group mb-20">
                                                         <div class="d-flex justify-content-between align-items-center flex-wrap gap-1">
                                                             <label class="input-label font-semibold mb-0"
-                                                                   for="default_name">{{ translate('messages.vehicle_name') }}
-                                                                ({{ translate('messages.Default') }})
+                                                                   for="default_name">{{ translate('Vehicle name') }}
+                                                                ({{ translate('Default') }})
                                                             </label>
                                                             @include('rental::admin.vehicle.partials._ai_generate_btn', ['section' => 'title'])
                                                         </div>
@@ -83,7 +80,7 @@
                                                         <input type="text" name="name[]" id="default_name"
                                                                class="form-control"
                                                                value=""
-                                                               placeholder="{{ translate('messages.type_vehicle_name') }}"
+                                                               placeholder="{{ translate('messages.Type vehicle name') }}"
                                                                required>
                                                         @if ($openai_enabled)</div>@endif
                                                     </div>
@@ -91,12 +88,12 @@
                                                     <div class="form-group mb-0">
                                                         <div class="d-flex justify-content-between align-items-center flex-wrap gap-1">
                                                             <label class="input-label font-semibold mb-0"
-                                                                   for="exampleFormControlInput1">{{ translate('messages.short_description') }}
-                                                                ({{ translate('messages.default') }})</label>
+                                                                   for="exampleFormControlInput1">{{ translate('Short description') }}
+                                                                ({{ translate('Default') }})</label>
                                                             @include('rental::admin.vehicle.partials._ai_generate_btn', ['section' => 'generate-description'])
                                                         </div>
                                                         @if ($openai_enabled)<div class="outline-wrapper">@endif
-                                                        <textarea type="text" name="description[]" id="default_description" placeholder="{{ translate('messages.type_business_address') }}"
+                                                        <textarea type="text" name="description[]" id="default_description" placeholder="{{ translate('messages.Type business address') }}"
                                                                   class="form-control min-h-90px ckeditor"></textarea>
                                                         @if ($openai_enabled)</div>@endif
                                                     </div>
@@ -105,19 +102,19 @@
                                                     <div class="d-none lang_form" id="{{ $lang }}-form">
                                                         <div class="form-group mb-0">
                                                             <label class="input-label font-semibold"
-                                                                   for="{{ $lang }}_name">{{ translate('messages.vehicle_name') }}
+                                                                   for="{{ $lang }}_name">{{ translate('Vehicle name') }}
                                                                 ({{ strtoupper($lang) }})
                                                             </label>
                                                             <input type="text" name="name[]"
                                                                    id="{{ $lang }}_name" class="form-control"
-                                                                   placeholder="{{ translate('messages.store_name') }}">
+                                                                   placeholder="{{ translate('Store name') }}">
                                                         </div>
                                                         <input type="hidden" name="lang[]" value="{{ $lang }}">
                                                         <div class="form-group mb-0">
                                                             <label class="input-label font-semibold"
-                                                                   for="exampleFormControlInput1">{{ translate('messages.short_description') }}
+                                                                   for="exampleFormControlInput1">{{ translate('Short description') }}
                                                                 ({{ strtoupper($lang) }})</label>
-                                                            <textarea type="text" name="description[]" placeholder="{{ translate('messages.store') }}"
+                                                            <textarea type="text" name="description[]" placeholder="{{ translate('messages.Store') }}"
                                                                       class="form-control min-h-90px ckeditor"></textarea>
                                                         </div>
                                                     </div>
@@ -126,17 +123,17 @@
                                                 <div id="default-form">
                                                     <div class="form-group mb-0">
                                                         <label class="input-label font-semibold"
-                                                               for="exampleFormControlInput1">{{ translate('messages.vehicle_name') }}
-                                                            ({{ translate('messages.default') }})</label>
+                                                               for="exampleFormControlInput1">{{ translate('Vehicle name') }}
+                                                            ({{ translate('Default') }})</label>
                                                         <input type="text" name="name[]" class="form-control"
-                                                               placeholder="{{ translate('messages.store_name') }}" required>
+                                                               placeholder="{{ translate('Store name') }}" required>
                                                     </div>
                                                     <input type="hidden" name="lang[]" value="default">
                                                     <div class="form-group mb-0">
                                                         <label class="input-label font-semibold"
-                                                               for="exampleFormControlInput1">{{ translate('messages.short_description') }}
+                                                               for="exampleFormControlInput1">{{ translate('Short description') }}
                                                         </label>
-                                                        <textarea type="text" name="description[]" placeholder="{{ translate('messages.store') }}"
+                                                        <textarea type="text" name="description[]" placeholder="{{ translate('messages.Store') }}"
                                                                   class="form-control min-h-90px ckeditor"></textarea>
                                                     </div>
                                                 </div>
@@ -148,11 +145,11 @@
                                 <div class="col-lg-6">
                                     <div class="text-center">
                                         <label class="text--title fs-16 font-semibold mb-1">
-                                            {{ translate('Vehicle_Thumbnail') }}
+                                            {{ translate('Vehicle thumbnail') }}
                                         </label>
                                         <div class="mb-20">
                                             <p class="fs-12">
-                                                {{ translate('JPG, JPEG, PNG Less Than 1MB') }} <strong class="font-semibold">({{ translate('Ratio 2:1') }})</strong>
+                                                {{ 'JPG, JPEG, PNG' . ' image, max ' . 1 . ' MB' }} <strong class="font-semibold">(Ratio 2:1)</strong>
                                             </p>
                                         </div>
                                         <div class="upload-file image-general d-inline-block w-auto">
@@ -160,8 +157,8 @@
                                                 <i class="tio-clear"></i>
                                             </a>
                                             <input type="file" name="thumbnail"
-                                                   data-type="{{ translate('please_only_input_png_or_jpg_type_file') }}"
-                                                   data-size="{{ translate('file_size_too_big') }}"
+                                                   data-type="{{ translate('Please upload a file in a supported format') . ': PNG, JPG' }}"
+                                                   data-size="{{ translate('File size too big') }}"
                                                    class="upload-file__input single_file_input"
                                                 accept=".webp, .jpg, .jpeg, .png" data-max-size="1" value="" required>
                                             <label
@@ -192,8 +189,8 @@
                                     {{ translate('messages.Images') }}
                                 </h5>
                                 <p class="fs-12 mb-0">
-                                    {{ translate('messages.JPG, JPEG, PNG Less Than 1MB') }}
-                                    <span class="font-semibold"> {{ translate('(Ratio 2:1)') }}</span>
+                                    {{ 'JPG, JPEG, PNG' . ' image, max ' . 1 . ' MB' }}
+                                    <span class="font-semibold"> ({{ translate('Ratio') }} 2:1)</span>
                                 </p>
                             </div>
                         </div>
@@ -204,10 +201,10 @@
                                         id="image_upload_wrapper">
                                        <input type="file" name="images[]"
                                               class="upload-file__input multiple_image_input"
-                                              data-maximum="{{ translate('You can upload a maximum of ') }}"
-                                              data-content="{{ translate(' files') }}"
-                                              data-size="{{ translate('file_size_too_big.') }}"
-                                              data-type="{{ translate('please_only_input_png_or_jpg_type_file') }}"
+                                              data-maximum="{{ translate('You can upload a maximum of') }} "
+                                              data-content=" {{ translate('Files') }}"
+                                              data-size="{{ translate('File size too big') }}"
+                                              data-type="{{ translate('Please upload a file in a supported format') . ': PNG, JPG' }}"
                                               accept=".webp, .jpg,.jpeg,.png" multiple required>
                                        <div
                                            class="upload-file__img d-flex gap-0 justify-content-center align-items-center h-100 max-w-300px p-0">
@@ -232,10 +229,10 @@
                         <div class="card-header d-flex justify-content-between align-items-start flex-wrap gap-2">
                             <div>
                                 <h5 class="text-title mb-1">
-                                    {{ translate('messages.Vehicle_Information') }}
+                                    {{ translate('Vehicle information') }}
                                 </h5>
                                 <p class="fs-12 mb-0">
-                                    {{ translate('messages.Insert_The_Vehicle\'s_General_Informations') }}
+                                    {{ translate('Insert the vehicle\'s general informations') }}
                                 </p>
                             </div>
                             @include('rental::admin.vehicle.partials._ai_generate_btn', ['section' => 'vehicle-info'])
@@ -244,11 +241,11 @@
                             <div class="row g-3">
                                 <div class="col-lg-4">
                                     <div class="form-group mb-0">
-                                        <label class="input-label" for="choice_brand">{{ translate('messages.brand') }}
+                                        <label class="input-label" for="choice_brand">{{ translate('messages.Brand') }}
                                         </label>
                                         <select name="brand_id" id="choice_brand" class="form-control js-select2-custom"
-                                                data-placeholder="{{ translate('messages.select_vehicle_brand') }}" required>
-                                            <option value="" selected disabled>{{ translate('messages.select_vehicle_brand') }}</option>
+                                                data-placeholder="{{ translate('messages.Select vehicle brand') }}" required>
+                                            <option value="" selected disabled>{{ translate('messages.Select vehicle brand') }}</option>
                                             @foreach($brands as $brand)
                                                 <option value="{{ $brand->id }}">{{ $brand->name }}</option>
                                             @endforeach
@@ -267,10 +264,10 @@
                                 <div class="col-lg-4">
                                     <div class="form-group mb-0">
                                         <label class="input-label"
-                                               for="choice_category">{{ translate('messages.category') }}
+                                               for="choice_category">{{ translate('messages.Category') }}
                                         </label>
-                                        <select name="category_id" id="choice_category" class="form-control js-select2-custom" data-placeholder="{{ translate('messages.select_vehicle_category') }}" required>
-                                            <option value="" selected disabled>{{ translate('messages.select_vehicle_category') }}</option>
+                                        <select name="category_id" id="choice_category" class="form-control js-select2-custom" data-placeholder="{{ translate('messages.Select vehicle category') }}" required>
+                                            <option value="" selected disabled>{{ translate('messages.Select vehicle category') }}</option>
                                             @foreach($categories as $category)
                                                 <option value="{{ $category->id }}">{{ $category->name }}</option>
                                             @endforeach
@@ -279,12 +276,12 @@
                                 </div>
                                 <div class="col-lg-4">
                                     <div class="form-group mb-0">
-                                        <label class="input-label" for="choice_type">{{ translate('messages.type') }}
+                                        <label class="input-label" for="choice_type">{{ translate('Type') }}
                                         </label>
                                         <select name="type" id="choice_type" class="form-control js-select2-custom"
-                                                data-placeholder="{{ translate('messages.select_vehicle_type') }}" required>
+                                                data-placeholder="{{ translate('messages.Select vehicle type') }}" required>
                                             <option value="" selected disabled>
-                                                {{ translate('messages.select_vehicle_type') }}</option>
+                                                {{ translate('messages.Select vehicle type') }}</option>
                                             <option value="family">{{ translate('messages.family') }}</option>
                                             <option value="luxury">{{ translate('messages.Luxury') }}</option>
                                             <option value="affordable">{{ translate('messages.Affordable') }}</option>
@@ -297,7 +294,7 @@
                                 <div class="col-lg-4">
                                     <div class="form-group mb-0">
                                         <label class="input-label"
-                                               for="">{{ translate('messages.Engine Capacity (cc)') }}
+                                               for="">{{ translate('Engine capacity (cc)') }}
                                         </label>
                                         <input type="number" name="engine_capacity" class="form-control" placeholder="Ex: 450"
                                                value="" required>
@@ -306,7 +303,7 @@
                                 <div class="col-lg-4">
                                     <div class="form-group mb-0">
                                         <label class="input-label"
-                                               for="">{{ translate('messages.Engine Power (hp)') }}
+                                               for="">{{ translate('Engine power (hp)') }}
                                         </label>
                                         <input type="number" name="engine_power" class="form-control" placeholder="Ex: 100"
                                                value="" required>
@@ -315,7 +312,7 @@
                                 <div class="col-lg-4">
                                     <div class="form-group mb-0">
                                         <label class="input-label"
-                                               for="">{{ translate('messages.Seating Capacity') }}
+                                               for="">{{ translate('Seating capacity') }}
                                         </label>
                                         <input type="number" name="seating_capacity" class="form-control"
                                                placeholder="Input how many person can seat" value="" required>
@@ -324,7 +321,7 @@
                                 <div class="col-lg-4">
                                     <div class="form-group mb-0">
                                         <label class="input-label"
-                                               for="">{{ translate('messages.Air Condition') }}
+                                               for="">{{ translate('Air condition') }}
                                         </label>
                                         <div class="resturant-type-group border">
                                             <label class="form-check form--check mr-2 mr-md-4">
@@ -332,14 +329,14 @@
                                                        name="air_condition" id="order_confirmation_model"
                                                        checked="">
                                                 <span class="form-check-label">
-                                                    {{ translate('messages.yes') }}
+                                                    {{ translate('messages.Yes') }}
                                                 </span>
                                             </label>
                                             <label class="form-check form--check mr-2 mr-md-4">
                                                 <input class="form-check-input" type="radio" value="0"
                                                        name="air_condition" id="order_confirmation_model2">
                                                 <span class="form-check-label">
-                                                    {{ translate('messages.no') }}
+                                                    {{ translate('messages.No') }}
                                                 </span>
                                             </label>
                                         </div>
@@ -348,35 +345,35 @@
                                 <div class="col-lg-4">
                                     <div class="form-group mb-0">
                                         <label class="input-label"
-                                               for="choice_fuel_type">{{ translate('messages.fuel_type') }}
+                                               for="choice_fuel_type">{{ translate('Fuel type') }}
                                         </label>
                                         <select name="fuel_type" id="choice_fuel_type"
                                                 class="form-control js-select2-custom"
-                                                data-placeholder="{{ translate('messages.select_fuel_type') }}" required>
+                                                data-placeholder="{{ translate('messages.Select fuel type') }}" required>
                                             <option value="" selected disabled>
-                                                {{ translate('messages.select_vehicle_fuel_type') }}</option>
-                                            <option value="octan" >{{ translate('messages.Octan') }}</option>
+                                                {{ translate('messages.Select vehicle fuel type') }}</option>
+                                            <option value="octan" >{{ translate('Octane') }}</option>
                                             <option value="diesel" >{{ translate('messages.diesel') }}</option>
-                                            <option value="CNG" >{{ translate('messages.CNG') }}</option>
+                                            <option value="CNG" >CNG</option>
                                             <option value="petrol" >{{ translate('messages.Petrol') }}</option>
                                             <option value="electric" >{{ translate('messages.Electric') }}</option>
-                                            <option value="jet_fuel" >{{ translate('messages.Jet Fuel') }}</option>
+                                            <option value="jet_fuel" >{{ translate('Jet fuel') }}</option>
                                         </select>
                                     </div>
                                 </div>
                                 <div class="col-lg-4">
                                     <div class="form-group mb-0">
                                         <label class="input-label"
-                                               for="choice_transmission_type">{{ translate('messages.transmission_type') }}
+                                               for="choice_transmission_type">{{ translate('messages.Transmission type') }}
                                         </label>
                                         <select name="transmission_type" id="choice_transmission_type"
                                                 class="form-control js-select2-custom"
-                                                data-placeholder="{{ translate('messages.select_vehicle_transmission') }}" required>
+                                                data-placeholder="{{ translate('messages.Select vehicle transmission') }}" required>
                                             <option value="" selected disabled>
-                                                {{ translate('messages.select_vehicle_transmission') }}</option>
+                                                {{ translate('messages.Select vehicle transmission') }}</option>
                                             <option value="automatic">{{ translate('Automatic') }}</option>
                                             <option value="manual">{{ translate('Manual') }}</option>
-                                            <option value="continuously_variable">{{ translate('Continuously Variable') }}</option>
+                                            <option value="continuously_variable">{{ translate('Continuously variable') }}</option>
                                             <option value="dual_clutch">{{ translate('Dual-Clutch') }}</option>
                                             <option value="semi_automatic">{{ translate('Semi-Automatic') }}</option>
                                         </select>
@@ -391,15 +388,15 @@
                         <div class="card-header flex-wrap gap-3">
                             <div class="flex-grow-1">
                                 <h5 class="text-title mb-1">
-                                    {{ translate('messages.Vehicle Identity') }}
+                                    {{ translate('Vehicle identity') }}
                                 </h5>
                                 <p class="fs-12 mb-0">
-                                    {{ translate('messages.Insert_The_Vehicle\'s_Unique_Informations') }}
+                                    {{ translate('Insert the vehicle\'s unique informations') }}
                                 </p>
                             </div>
                             <label class="d-flex align-items-center gap-2">
                                 <span class="text--title">
-                                    {{ translate('messages.Same Model Multiple Vehicles') }}
+                                    {{ translate('Same model multiple vehicles') }}
                                 </span>
                                 <input class="form-check-input single-select position-relative m-0" type="checkbox" name="multiple_vehicles">
                             </label>
@@ -408,19 +405,19 @@
                             <div class="d-flex gap-20px flex-column flex-md-row equal-width" id="input-container">
                                 <div class="form-group mb-0">
                                     <label class="input-label"
-                                           for="">{{ translate('messages.VIN Number') }}</label>
+                                           for="">{{ translate('VIN number') }}</label>
                                     <input type="text" name="vehicle[vin_number][]" class="form-control"
                                            placeholder="Type your business name" value="" required>
                                 </div>
                                 <div class="form-group mb-0">
                                     <label class="input-label"
-                                           for="">{{ translate('messages.License Plate Number') }}</label>
+                                           for="">{{ translate('License plate number') }}</label>
                                     <input type="text" name="vehicle[license_plate_number][]" class="form-control"
                                            placeholder="Type your license plate number" value="" required>
                                 </div>
                                 <button type="button"
-                                        data-vin="{{ translate("messages.VIN Number") }}"
-                                        data-license="{{ translate("messages.License Plate Number") }}"
+                                        data-vin="{{ translate('VIN number') }}"
+                                        data-license="{{ translate('License plate number') }}"
                                         class="btn plus-btn shadow-none text--primary p-0 fs-32 lh--1 text-left mt-md-4 add-btn">
                                     <i class="tio-add-circle-outlined"></i>
                                 </button>
@@ -433,10 +430,10 @@
                         <div class="card-header d-flex justify-content-between align-items-start flex-wrap gap-2">
                             <div>
                                 <h5 class="text-title mb-1">
-                                    {{ translate('messages.Pricing & Discounts') }}
+                                    {{ translate('Pricing & discounts') }}
                                 </h5>
                                 <p class="fs-12 mb-0">
-                                    {{ translate('messages.Insert_The_Pricing & Discount Informations') }}
+                                    {{ translate('Insert the pricing & discount information') }}
                                 </p>
                             </div>
                             @include('rental::admin.vehicle.partials._ai_generate_btn', ['section' => 'pricing'])
@@ -446,7 +443,7 @@
                     <div class="bg--secondary rounded p-20 mobile-space-0">
                          <div class="mb-3">
                         <h6 class="fz--14px mb-1">
-                            {{ translate('messages.Trip Type') }}
+                            {{ translate('Trip type') }}
                         </h6>
                         <p class="fs-12 mb-0">
                             {{ translate('messages.Choose the trip type you prefer.') }}
@@ -476,8 +473,8 @@
                                             <label class="d-flex mb-0 form-check item">
                                                 <input class="form-check-input single-select" type="checkbox" name="trip_day_wise" value="trip_day_wise">
                                                 <span class="form-check-label ml-2 mt-1">
-                                                    <span class="title-clr d-block fz--14px">{{ translate('Per Day') }}</span>
-                                                    <p class="fz-12px mb-0 ">{{translate('Set your Per Day rental price.')}}</p>
+                                                    <span class="title-clr d-block fz--14px">{{ translate('Per day') }}</span>
+                                                    <p class="fz-12px mb-0 ">{{translate('Set your per day rental price.')}}</p>
                                                 </span>
                                             </label>
                                         </div>
@@ -491,7 +488,7 @@
                                                 <input class="form-check-input single-select" type="checkbox" name="trip_distance"
                                                         value="distance_wise" {{ old('trip_distance') == 'distance_wise' ? 'checked' : '' }}>
                                                 <span class="form-check-label ml-2 mt-1">
-                                                    <span class="title-clr d-block fz--14px">{{translate('Distance Wise')}}</span>
+                                                    <span class="title-clr d-block fz--14px">{{translate('Distance wise')}}</span>
                                                     <p class="fz-12px mb-0 ">{{translate('Set your distance wise rental price.')}}</p>
                                                 </span>
                                             </label>
@@ -504,7 +501,7 @@
 
                             <div class="col-hide">
                                 <div class="form-group mb-0">
-                                    <label class="input-label" for="">{{ translate('messages.Hourly Wise Price ($/per hour)') }}<span class="text-danger">*</span></label>
+                                    <label class="input-label" for="">{{ translate('Hourly wise price') }} ($/per hour)<span class="text-danger">*</span></label>
                                     <input type="number" name="hourly_price" class="form-control"
                                             placeholder="Ex: 35.25" min="0.01" step="0.01" value="{{ old('hourly_price') }}" required>
                                 </div>
@@ -512,14 +509,14 @@
 
                             <div class="col-hide">
                                 <div class="form-group mb-0">
-                                    <label class="input-label" for="">{{translate('messages.Per Day Price ($/per day)')}}<span class="text-danger">*</span></label>
+                                    <label class="input-label" for="">{{ translate('Per day price') }} ($/per day)<span class="text-danger">*</span></label>
                                     <input type="number" name="day_wise_price" class="form-control"
                                             placeholder="Ex: 35.25" min="0.01" step="0.01" value="{{ old('day_wise_price') }}" required>
                                 </div>
                             </div>
                             <div class="col-hide">
                                 <div class="form-group mb-0">
-                                    <label class="input-label" for="">{{ translate('messages.Distance Wise Price ($/per km)') }}<span class="text-danger">*</span></label>
+                                    <label class="input-label" for="">{{ translate('Distance wise price') }} ($/{{ $distanceUnitLabel }})<span class="text-danger">*</span></label>
                                     <input type="number" name="distance_price" class="form-control"
                                             placeholder="Ex: 35.25" min="0.01" step="0.01" value="{{ old('distance_price') }}" required>
                                 </div>
@@ -531,7 +528,7 @@
                             <div class="col-xxl-3 col-md-4">
                                 <div class="mb-0">
                                     <h6 class="fz--14px mb-1">
-                                        {{ translate('messages.Give Discount') }}
+                                        {{ translate('Give discount') }}
                                     </h6>
                                     <p class="fz-12px mb-0">
                                         {{ translate('messages.Set a discount that applies to all pricing types—hourly, daily, and distance-based') }}
@@ -568,10 +565,10 @@
                         <div class="card-header d-flex justify-content-between align-items-start flex-wrap gap-2">
                             <div>
                                 <h5 class="text-title mb-1">
-                                    {{ translate('messages.Search_Tags') }}
+                                    {{ translate('Search tags') }}
                                 </h5>
                                 <p class="fs-12 mb-0">
-                                    {{ translate('messages.Insert_The_Tags_For_Appear_In_User\'s_Search_List') }}
+                                    {{ translate('Insert the tags for appear in user\'s search list') }}
                                 </p>
                             </div>
                             @include('rental::admin.vehicle.partials._ai_generate_btn', ['section' => 'tags'])
@@ -590,10 +587,10 @@
                         <div class="card-header">
                             <div>
                                 <h5 class="text-title mb-1">
-                                    {{ translate('messages.Vehicle_Documents') }}
+                                    {{ translate('Vehicle documents') }}
                                 </h5>
                                 <p class="fs-12 mb-0">
-                                    {{ translate('messages.Upload_Vehicle\'s_Important_Documents') }}
+                                    {{ translate('Upload vehicle\'s important documents') }}
                                 </p>
                             </div>
                         </div>
@@ -632,17 +629,17 @@
                 <div class="col-lg-12">
                     <div class="btn--container justify-content-end mt-20">
                         <button type="reset" id="reset_btn"
-                                class="btn btn--reset min-w-120px">{{ translate('messages.reset') }}</button>
+                                class="btn btn--reset min-w-120px">{{ translate('messages.Reset') }}</button>
                         <button type="submit"
-                                class="btn btn--primary min-w-120px">{{ translate('messages.submit') }}</button>
+                                class="btn btn--primary min-w-120px">{{ translate('messages.Submit') }}</button>
                     </div>
                 </div>
             </div>
         </form>
     </div>
-    <input type="hidden" id="file_size_error_text" value="{{ translate('file_size_too_big') }}">
-    <input type="hidden" id="file_type_error_text" value="{{ translate('please_only_input_png_or_jpg_type_file') }}">
-    <input type="hidden" id="max_file_upload_limit_error_text" value="{{ translate('maximum_file_upload_limit_is_') }}">
+    <input type="hidden" id="file_size_error_text" value="{{ translate('File size too big') }}">
+    <input type="hidden" id="file_type_error_text" value="{{ translate('Please upload a file in a supported format') . ': PNG, JPG' }}">
+    <input type="hidden" id="max_file_upload_limit_error_text" value="{{ translate('Maximum file upload limit is') }}">
     <div id="file-assets"
         data-picture-icon="{{ asset('public/assets/admin/img/picture.svg') }}"
         data-document-icon="{{ asset('public/assets/admin/img/document.svg') }}"

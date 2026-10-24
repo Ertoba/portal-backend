@@ -7,13 +7,13 @@
         <thead class="thead-light">
             <tr>
                 <th class="border-0">{{ translate('SL') }}</th>
-                <th class="table-column-pl-0 border-0">{{ translate('messages.Transaction_ID') }}</th>
+                <th class="table-column-pl-0 border-0">{{ translate('messages.Transaction ID') }}</th>
                 <th class="border-0">{{ translate('messages.Date') }}</th>
                 @if(!$hide_source_column)
                     <th class="border-0">{{ translate('messages.Provider') }}</th>
                 @endif
-                <th class="border-0 text-center">{{ translate('messages.Earning_Source') }}</th>
-                <th class="border-0 text-right">{{ translate('messages.Amount') }}</th>
+                <th class="border-0 text-center">{{ translate('Earning source') }}</th>
+                <th class="border-0 text-right">{{ translate('Amount') }}</th>
             </tr>
         </thead>
         <tbody>
@@ -65,8 +65,8 @@
                     <tr class="collapsing-tr d-none bg-light2">
                         <td></td>
                         <td colspan="{{ $hide_source_column ? '3' : '4' }}" class="pr-0">
-                            <div class="mb-2">{{ translate('Trip Commission') }}</div>
-                            <div>{{ translate('Tax Amount') }}</div>
+                            <div class="mb-2">{{ translate('Trip commission') }}</div>
+                            <div>{{ translate('Tax amount') }}</div>
                         </td>
                         <td class="text-right pl-0">
                             <div class="mb-2">{{ \App\CentralLogics\Helpers::format_currency($t['breakdown']['store_amount_without_tax'] ?? 0) }}</div>
@@ -85,7 +85,7 @@
 @else
     <div class="empty--data py-5 w-100">
         <img src="{{ asset('public/assets/admin/svg/illustrations/sorry.svg') }}" alt="empty">
-        <h5>{{ translate('no_data_found') }}</h5>
+        <h5>{{ translate('No data found') }}</h5>
     </div>
     
 @endif

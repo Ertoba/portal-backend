@@ -1,5 +1,5 @@
 <div class="row">
-    <div class="col-lg-12 text-center "><h1 >{{ translate('provider_trip_reports') }}</h1></div>
+    <div class="col-lg-12 text-center "><h1 >{{ translate('Provider trip reports') }}</h1></div>
     <div class="col-lg-12">
 
 
@@ -7,13 +7,13 @@
     <table>
         <thead>
             <tr>
-                <th>{{ translate('Search_Criteria') }}</th>
+                <th>{{ translate('Search criteria') }}</th>
                 <th></th>
                 <th></th>
                 <th>
-                    {{ translate('zone' )}} - {{ $data['zone']??translate('all') }}
+                    {{ translate('Zone' )}} - {{ $data['zone']??translate('All') }}
                     <br>
-                    {{ translate('provider' )}} - {{ $data['provider']??translate('all') }}
+                    {{ translate('Provider' )}} - {{ $data['provider']??translate('All') }}
                     @if ($data['from'])
                     <br>
                     {{ translate('from' )}} - {{ $data['from']?Carbon\Carbon::parse($data['from'])->format('d M Y'):'' }}
@@ -23,9 +23,9 @@
                     {{ translate('to' )}} - {{ $data['to']?Carbon\Carbon::parse($data['to'])->format('d M Y'):'' }}
                     @endif
                     <br>
-                    {{ translate('filter')  }}- {{  translate($data['filter']) }}
+                    {{ translate('Filter')  }}- {{  translate($data['filter']) }}
                     <br>
-                    {{ translate('Search_Bar_Content')  }}- {{ $data['search'] ??translate('N/A') }}
+                    {{ translate('Search bar content')  }}- {{ $data['search'] ??translate('N/A') }}
 
                 </th>
                 <th> </th>
@@ -38,15 +38,15 @@
                 <th></th>
                 <th></th>
                 <th>
-                    {{ translate('total_trips')  }}- {{ $data['total_trips'] }}
+                    {{ translate('Total trips')  }}- {{ $data['total_trips'] }}
                     <br>
-                    {{ translate('total_trip_amount')  }}- {{ $data['total_trip_amount'] }}
+                    {{ translate('Total trip amount')  }}- {{ $data['total_trip_amount'] }}
                     <br>
-                    {{ translate('canceled_trip')  }}- {{ $data['total_canceled_count'] }}
+                    {{ translate('Canceled trip')  }}- {{ $data['total_canceled_count'] }}
                     <br>
-                    {{ translate('completed_trips')  }}- {{ $data['total_completed_count'] }}
+                    {{ translate('Completed trips')  }}- {{ $data['total_completed_count'] }}
                     <br>
-                    {{ translate('incomplete_trips')  }}- {{ $data['total_ongoing_count'] }}
+                    {{ translate('Incomplete trips')  }}- {{ $data['total_ongoing_count'] }}
                 </th>
                 <th> </th>
                 <th></th>
@@ -54,16 +54,16 @@
                 <th></th>
             </tr>
         <tr>
-            <th>{{ translate('sl') }}</th>
-            <th>{{ translate('messages.trip_id') }}</th>
-            <th>{{ translate('messages.trip_booking_date') }}</th>
-            <th>{{ translate('messages.trip_schedule_date') }}</th>
-            <th>{{ translate('messages.customer_name') }}</th>
-            <th>{{ translate('messages.provider_name') }}</th>
-            <th>{{ translate('messages.Total Trip Amount') }}</th>
-            <th>{{ translate('messages.payment_status') }}</th>
-            <th>{{ translate('messages.discounted_amount') }}</th>
-            <th>{{ translate('messages.Pro_discount') }}</th>
+            <th>{{ translate('SL') }}</th>
+            <th>{{ translate('messages.Trip ID') }}</th>
+            <th>{{ translate('Trip booking date') }}</th>
+            <th>{{ translate('Trip schedule date') }}</th>
+            <th>{{ translate('Customer name') }}</th>
+            <th>{{ translate('messages.Provider name') }}</th>
+            <th>{{ translate('Total trip amount') }}</th>
+            <th>{{ translate('Payment status') }}</th>
+            <th>{{ translate('Discounted amount') }}</th>
+            <th>{{ translate('messages.Pro discount') }}</th>
             <th>{{ translate('messages.tax') }}</th>
         </thead>
         <tbody>
@@ -89,14 +89,14 @@
                     @if ($trip->customer)
                         {{ $trip->customer['f_name'] . ' ' . $trip->customer['l_name'] }}
                     @else
-                        {{ translate('not_found') }}
+                        {{ translate('No data found') }}
                     @endif
                 </td>
                 <td>
                     @if($trip->provider)
                         {{$trip->provider->name}}
                     @else
-                        {{ translate('messages.not_found') }}
+                        {{ translate('No data found') }}
                     @endif
                 </td>
                 <td>{{ \App\CentralLogics\Helpers::number_format_short($trip['trip_amount']) }}</td>

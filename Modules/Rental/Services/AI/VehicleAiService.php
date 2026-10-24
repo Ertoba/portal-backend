@@ -4,47 +4,39 @@ namespace Modules\Rental\Services\AI;
 
 use Modules\AI\app\Core\Constants\AIEngineNames;
 use Modules\AI\app\Core\Factory\AIEngineFactory;
-use Modules\Rental\Entities\VehicleBrand;
-use Modules\Rental\Entities\VehicleCategory;
+use Modules\Rental\Services\Vehicle\VehicleBrandService;
+use Modules\Rental\Services\Vehicle\VehicleCategoryService;
 
 class VehicleAiService
 {
     public const TYPES = ['family', 'luxury', 'affordable', 'executives', 'compact', 'full_size'];
     public const FUEL_TYPES = ['octan', 'diesel', 'CNG', 'petrol', 'electric', 'jet_fuel'];
     public const TRANSMISSIONS = ['automatic', 'manual', 'continuously_variable', 'dual_clutch', 'semi_automatic'];
-
     private VehicleAiPrompts $prompts;
-
     public function __construct()
     {
         $this->prompts = new VehicleAiPrompts();
     }
-
     public function titleSuggestions(array $keywords, string $lang): array
     {
-        $titles = array_values(array_filter(array_map('trim', (array) ($this->decode($this->engine()->core($this->prompts->titleSuggestions($keywords, $lang)))['titles'] ?? []))));
-
-        return array_slice($titles, 0, 4);
+        return $this->trimmedValues($this->decode($this->engine()->core($this->prompts->titleSuggestions($keywords, $lang))), 'titles', 4);
     }
-
     public function title(string $name, string $lang): ?string
     {
         $title = trim((string) ($this->decode($this->engine()->core($this->prompts->title($name, $lang)))['title'] ?? ''));
 
         return $title !== '' ? $title : null;
     }
-
     public function description(string $name, string $lang): ?string
     {
         $description = trim((string) ($this->decode($this->engine()->core($this->prompts->description($name, $lang)))['description'] ?? ''));
 
         return $description !== '' ? $description : null;
     }
-
     public function vehicleInfo(string $name, ?string $desc, string $lang): ?array
     {
-        $brands = VehicleBrand::ofStatus(1)->pluck('name', 'id');
-        $categories = VehicleCategory::ofStatus(1)->pluck('name', 'id');
+        $brands = app(VehicleBrandService::class)->getActiveNames();
+        $categories = app(VehicleCategoryService::class)->getActiveNames();
 
         $parsed = $this->decode($this->engine()->core($this->prompts->vehicleInfo($name, $desc, $lang, [
             'types' => self::TYPES,
@@ -70,12 +62,11 @@ class VehicleAiService
             'brand_name' => $brandMatch['name'],
             'category_id' => $categoryMatch['id'],
             'category_name' => $categoryMatch['name'],
-            'tags' => array_values(array_filter(array_map('trim', (array) ($parsed['tags'] ?? [])))),
+            'tags' => $this->trimmedValues($parsed, 'tags'),
         ];
 
         return array_filter($data, fn ($v) => $v !== null && $v !== '') ? $data : null;
     }
-
     public function pricing(string $name, ?string $desc, string $lang): ?array
     {
         $parsed = $this->decode($this->engine()->core($this->prompts->pricing($name, $desc, $lang)));
@@ -89,14 +80,10 @@ class VehicleAiService
 
         return array_filter($data, fn ($v) => $v !== null) ? $data : null;
     }
-
     public function tags(string $name, ?string $desc, string $lang): array
     {
-        $tags = array_values(array_filter(array_map('trim', (array) ($this->decode($this->engine()->core($this->prompts->tags($name, $desc, $lang)))['tags'] ?? []))));
-
-        return array_slice($tags, 0, 8);
+        return $this->trimmedValues($this->decode($this->engine()->core($this->prompts->tags($name, $desc, $lang))), 'tags', 8);
     }
-
     public function seo(string $name, ?string $desc, string $lang): ?array
     {
         $parsed = $this->decode($this->engine()->core($this->prompts->seo($name, $desc, $lang)));
@@ -108,7 +95,6 @@ class VehicleAiService
 
         return ($data['meta_title'] !== '' || $data['meta_description'] !== '') ? $data : null;
     }
-
     public function imageAnalysis(string $dataUri, string $lang): ?array
     {
         $parsed = $this->decode($this->engine()->core($this->prompts->imageAnalysis($lang), $dataUri));
@@ -117,12 +103,16 @@ class VehicleAiService
 
         return ($name !== '' || $description !== '') ? ['name' => $name, 'description' => $description] : null;
     }
+    private function trimmedValues(mixed $parsed, string $key, ?int $limit = null): array
+    {
+        $values = array_values(array_filter(array_map('trim', (array) ($parsed[$key] ?? []))));
 
+        return $limit === null ? $values : array_slice($values, 0, $limit);
+    }
     private function engine()
     {
         return AIEngineFactory::create(AIEngineNames::getDefault());
     }
-
     private function decode(?string $raw): array
     {
         $raw = trim((string) $raw);
@@ -147,7 +137,6 @@ class VehicleAiService
 
         return [];
     }
-
     private function allowedOr($value, array $allowed): ?string
     {
         $value = trim((string) $value);
@@ -162,7 +151,6 @@ class VehicleAiService
 
         return null;
     }
-
     private function matchOption($value, $collection): array
     {
         $value = trim((string) $value);
@@ -176,21 +164,18 @@ class VehicleAiService
 
         return ['id' => null, 'name' => null];
     }
-
     private function positiveInt($value): ?int
     {
         $int = (int) round((float) $value);
 
         return $int > 0 ? $int : null;
     }
-
     private function positiveFloat($value): ?float
     {
         $float = round((float) $value, 2);
 
         return $float > 0 ? $float : null;
     }
-
     private function boundedFloat($value, float $min, float $max): ?float
     {
         if ($value === null || $value === '') {

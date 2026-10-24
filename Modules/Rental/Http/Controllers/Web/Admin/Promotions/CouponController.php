@@ -8,6 +8,7 @@ use App\Models\Zone;
 use App\Models\Coupon;
 use Illuminate\Http\Request;
 use App\CentralLogics\Helpers;
+use App\Models\Store;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Contracts\View\View;
@@ -41,8 +42,10 @@ class CouponController extends Controller
         $language = getWebConfig('language');
         $defaultLang = str_replace('_', '-', app()->getLocale());
         $zones = $this->zone->where('status' , 1)->get(['id','name']);
-        $users = $this->user->where('status' , 1)->get(['id','f_name','l_name']);
-        return view('rental::admin.coupon.list', compact('coupons', 'language', 'defaultLang','zones','users'));
+        $users = Helpers::customers_by_ids(array_merge((array) old('customer_ids', []), [request('customer')]));
+        $selected_stores = Store::whereIn('id', array_filter((array) old('store_ids', []), 'is_numeric'))->get(['id', 'name']);
+
+        return view('rental::admin.coupon.list', compact('coupons', 'language', 'defaultLang','zones','users','selected_stores'));
     }
 
 
@@ -61,10 +64,10 @@ class CouponController extends Controller
         } catch (Exception  $exception) {
             info([$exception->getFile(), $exception->getLine(), $exception->getMessage()]);
             DB::rollBack();
-            Toastr::error(translate('messages.failed_to_add_coupon'));
+            Toastr::error(translate('messages.Failed to add coupon'));
             return back();
         }
-        Toastr::success(translate('messages.coupon_added_successfully'));
+        Toastr::success(translate('Added successfully'));
         return back();
     }
 
@@ -78,7 +81,7 @@ class CouponController extends Controller
         $language = getWebConfig('language') ?? [];
         $defaultLang = str_replace('_', '-', app()->getLocale());
         $zones = $this->zone->where('status' , 1)->get(['id','name']);
-        $users = $this->user->where('status' , 1)->get(['id','f_name','l_name']);
+        $users = Helpers::customers_by_ids(json_decode($coupon->customer_id));
         return view('rental::admin.coupon.edit', compact('coupon', 'language', 'defaultLang','zones','users'));
     }
 
@@ -97,12 +100,12 @@ class CouponController extends Controller
             $this->updatecoupon($request, $coupon);
             Helpers::add_or_update_translations(request: $request, key_data: 'title', name_field: 'title', model_name: 'Coupon', data_id: $coupon->id, data_value: $coupon->title);
             DB::commit();
-            Toastr::success(translate('messages.coupon_updated_successfully'));
+            Toastr::success(translate('Updated successfully'));
             return to_route('admin.rental.coupon.add-new');
         } catch (Exception  $exception) {
             info([$exception->getFile(), $exception->getLine(), $exception->getMessage()]);
             DB::rollBack();
-            Toastr::error(translate('messages.failed_to_update_coupon'));
+            Toastr::error(translate('messages.Failed to update coupon'));
             return back();
         }
     }
@@ -115,11 +118,11 @@ class CouponController extends Controller
     public function status(Coupon $coupon): RedirectResponse
     {
         if (!$coupon->status && Carbon::parse($coupon->expire_date)->startOfDay() < Carbon::today()) {
-            Toastr::warning(translate('messages.this_coupon_is_expired_and_cannot_be_activated'));
+            Toastr::warning(translate('messages.This coupon is expired and cannot be activated'));
             return back();
         }
         $coupon->update(['status' => !$coupon->status]);
-        Toastr::success(translate('messages.coupon_status_updated_successfully'));
+        Toastr::success(translate('Updated successfully'));
         return back();
     }
 
@@ -128,7 +131,7 @@ class CouponController extends Controller
     {
         $coupon?->translations()?->delete();
         $coupon?->delete();
-        Toastr::success(translate('messages.coupon_deleted_successfully'));
+        Toastr::success(translate('Deleted successfully'));
         return back();
     }
 
@@ -172,7 +175,7 @@ class CouponController extends Controller
                 'title.0' => 'required',
             ],
             [
-                'title.0.required'=>translate('default_title_is_required'),
+                'title.0.required'=>translate('Default title is required'),
             ]);
     }
 
@@ -221,7 +224,7 @@ class CouponController extends Controller
     private function getListData($request)
     {
             $key = explode(' ', $request['search'] ?? '');
-            $coupons =  $this->coupon->where('created_by','admin')
+            $coupons =  $this->coupon->with('module')->where('created_by','admin')
             ->where('module_id', Config::get('module.current_module_id'))
             ->when($request['search'], function($query)use($key){
                 $query->where( function ($q) use ($key) {

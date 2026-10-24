@@ -1,44 +1,36 @@
 <div class="row g-2" id="order_stats">
     <div class="col-sm-6 col-lg-3">
-        <!-- Card -->
         <a class="resturant-card dashboard--card __dashboard-card card--bg-1" href="{{ route('vendor.trip.list', ['status'=>'confirmed']) }}">
             <h4 class="title">{{ $confirmedCount }}</h4>
             <span class="subtitle font-regular ">{{ translate('messages.confirmed') }}</span>
-            <img src="{{ asset('public/assets/admin/img/rental/1.png') }}" alt="{{translate('img')}}" class="resturant-icon top-50px">
+            <img src="{{ asset('public/assets/admin/img/rental/1.png') }}" alt="Img" class="resturant-icon top-50px">
         </a>
-        <!-- End Card -->
     </div>
 
     <div class="col-sm-6 col-lg-3">
-        <!-- Card -->
         <a class="resturant-card dashboard--card __dashboard-card card--bg-2" href="{{ route('vendor.trip.list', ['status'=>'ongoing']) }}">
             <h4 class="title">{{ $ongoingCount }}</h4>
-            <span class="subtitle font-regular ">{{ translate('messages.Ongoing_Trip') }}</span>
-            <img src="{{ asset('public/assets/admin/img/rental/2.png') }}" alt="{{translate('img')}}" class="resturant-icon top-50px">
+            <span class="subtitle font-regular ">{{ translate('Ongoing trip') }}</span>
+            <img src="{{ asset('public/assets/admin/img/rental/2.png') }}" alt="Img" class="resturant-icon top-50px">
         </a>
-        <!-- End Card -->
     </div>
 
     <div class="col-sm-6 col-lg-3">
-        <!-- Card -->
         <a class="resturant-card dashboard--card __dashboard-card card--bg-3"
             href="{{ route('vendor.trip.list', ['status'=>'completed']) }}">
             <h4 class="title">{{ $completedCount }}</h4>
-            <span class="subtitle font-regular ">{{ translate('messages.completed') }}</span>
-            <img src="{{ asset('public/assets/admin/img/rental/3.png') }}" alt="{{translate('img')}}" class="resturant-icon top-50px">
+            <span class="subtitle font-regular ">{{ translate('messages.Completed') }}</span>
+            <img src="{{ asset('public/assets/admin/img/rental/3.png') }}" alt="Img" class="resturant-icon top-50px">
         </a>
-        <!-- End Card -->
     </div>
 
     <div class="col-sm-6 col-lg-3">
-        <!-- Card -->
         <a class="resturant-card dashboard--card __dashboard-card card--bg-4"
             href="{{ route('vendor.trip.list',['status'=>'canceled'])  }}">
             <h4 class="title">{{ $canceledCount }}</h4>
-            <span class="subtitle font-regular ">{{ translate('messages.canceled') }}</span>
-            <img src="{{ asset('public/assets/admin/img/rental/4.png') }}" alt="{{translate('img')}}" class="resturant-icon top-50px">
+            <span class="subtitle font-regular ">{{ translate('Canceled') }}</span>
+            <img src="{{ asset('public/assets/admin/img/rental/4.png') }}" alt="Img" class="resturant-icon top-50px">
         </a>
-        <!-- End Card -->
     </div>
 
 
@@ -48,7 +40,7 @@
                 <a class="order--card badge--accepted h-100" href="{{ route('vendor.trip.list', ['status'=>'all']) }}">
                     <div class="d-flex justify-content-between align-items-center">
                         <h6 class="card-subtitle d-flex justify-content-between m-0 align-items-center">
-                            <span>{{ translate('messages.All') }}</span>
+                            <span>{{ translate('All') }}</span>
                         </h6>
                         <span class="card-title text-success">
                             {{ $totalCount }}
@@ -61,7 +53,7 @@
                 <a class="order--card badge--accepted h-100" href="{{ route('vendor.trip.list',  ['status'=>'pending'])  }}">
                     <div class="d-flex justify-content-between align-items-center">
                         <h6 class="card-subtitle d-flex justify-content-between m-0 align-items-center">
-                            <span>{{ translate('messages.pending') }}</span>
+                            <span>{{ translate('Pending') }}</span>
                         </h6>
                         <span class="card-title text-danger">
                             {{ $pendingCount }}
@@ -74,7 +66,7 @@
                 <a class="order--card badge--accepted h-100" href="{{ route('vendor.trip.list', ['status'=>'scheduled']) }}">
                     <div class="d-flex justify-content-between align-items-center">
                         <h6 class="card-subtitle d-flex justify-content-between m-0 align-items-center">
-                            <span>{{ translate('messages.scheduled') }}</span>
+                            <span>{{ translate('Scheduled') }}</span>
                         </h6>
                         <span class="card-title text-primary">
                             {{ $scheduledCount }}
@@ -87,7 +79,7 @@
                 <a class="order--card badge--accepted h-100" href="{{ route('vendor.trip.list',  ['status'=>'instant']) }}">
                     <div class="d-flex justify-content-between align-items-center">
                         <h6 class="card-subtitle d-flex justify-content-between m-0 align-items-center">
-                            <span>{{ translate('Instant_Booking') }}</span>
+                            <span>{{ translate('Instant booking') }}</span>
                         </h6>
                         <span class="card-title text-info">
                             {{ $instantCount }}

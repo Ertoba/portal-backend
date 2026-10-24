@@ -1,15 +1,15 @@
 @if(count($transactions) > 0)
-    @php($additionalChargeLabel = \App\CentralLogics\Helpers::get_business_data('additional_charge_name') ?? translate('messages.additional_charge'))
+    @php($additionalChargeLabel = \App\CentralLogics\Helpers::get_business_data('additional_charge_name') ?? translate('Additional charge'))
     <table
         class="table table-hover table-borderless table-thead-bordered table-nowrap table-align-middle card-table text-dark">
         <thead class="thead-light">
             <tr>
                 <th class="border-0">{{ translate('SL') }}</th>
-                <th class="table-column-pl-0 border-0">{{ translate('messages.Transaction_ID') }}</th>
+                <th class="table-column-pl-0 border-0">{{ translate('messages.Transaction ID') }}</th>
                 <th class="border-0">{{ translate('messages.Date') }}</th>
                 <th class="border-0">{{ translate('messages.Provider') }}</th>
-                <th class="border-0 text-center">{{ translate('messages.Earning_Source') }}</th>
-                <th class="border-0 text-right">{{ translate('messages.Amount') }}</th>
+                <th class="border-0 text-center">{{ translate('Earning source') }}</th>
+                <th class="border-0 text-right">{{ translate('Amount') }}</th>
             </tr>
         </thead>
         <tbody>
@@ -61,7 +61,7 @@
                     <tr class="collapsing-tr d-none bg-light2">
                         <td></td>
                         <td colspan="4" class="pr-0">
-                            <div class="mb-2">{{ translate('Trip Commission') }}</div>
+                            <div class="mb-2">{{ translate('Trip commission') }}</div>
                             <div>{{ $additionalChargeLabel }}</div>
                         </td>
                         <td class="text-right pl-0">
@@ -81,6 +81,6 @@
 @else
     <div class="empty--data py-5 w-100">
         <img src="{{ asset('public/assets/admin/svg/illustrations/sorry.svg') }}" alt="empty">
-        <h5>{{ translate('no_data_found') }}</h5>
+        <h5>{{ translate('No data found') }}</h5>
     </div>
 @endif

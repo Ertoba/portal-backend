@@ -1,6 +1,6 @@
 @extends('layouts.admin.app')
 
-@section('title', translate('messages.driver_list'))
+@section('title', translate('Driver list'))
 
 
 
@@ -48,32 +48,27 @@
                         </a>
                     </div>
                 </div>
-                <!-- Card -->
                 <div class="card">
-                    <!-- Header -->
                     <div class="card-header py-2">
                         <div class="search--button-wrapper">
-                            <h5 class="card-title text--title flex-grow-1">{{ translate('messages.Total_Drivers') }}</h5>
+                            <h5 class="card-title text--title flex-grow-1">{{ translate('Total drivers') }}</h5>
                             <form class="search-form flex-grow-1 max-w-353px">
-                                <!-- Search -->
                                 <div class="input-group input--group">
                                     <input id="datatableSearch_" type="search" value="{{ request()?->search ?? null }}"
                                            name="search" class="form-control"
                                            placeholder="{{ translate('Search by name') }}"
-                                           aria-label="{{ translate('messages.Search by name,') }}">
+                                           aria-label="{{ translate('messages.Search by name') }}">
                                     <button type="submit" class="btn btn--secondary bg--primary"><i
                                             class="tio-search"></i></button>
 
                                 </div>
-                                <!-- End Search -->
                             </form>
                             @if (request()->input('search'))
                                 <button type="reset" class="btn btn--primary ml-2 location-reload-to-base"
-                                        data-url="{{ url()->full() }}">{{ translate('messages.reset') }}</button>
+                                        data-url="{{ url()->full() }}"><i class="tio-refresh"></i> {{ translate('messages.Reset') }}</button>
                             @endif
 
 
-                            <!-- Unfold -->
                             <div class="hs-unfold mr-2">
                                 <a class="js-hs-unfold-invoker btn btn-sm btn-white dropdown-toggle min-height-40 font-semibold"
                                    href="javascript:;"
@@ -81,38 +76,35 @@
                                         "target": "#usersExportDropdown",
                                         "type": "css-animation"
                                     }'>
-                                    <i class="tio-download-to mr-1"></i> {{ translate('messages.export') }}
+                                    <i class="tio-download-to mr-1"></i> {{ translate('messages.Export') }}
                                 </a>
 
                                 <div id="usersExportDropdown"
                                      class="hs-unfold-content dropdown-unfold dropdown-menu dropdown-menu-sm-right">
 
-                                    <span class="dropdown-header">{{ translate('messages.download_options') }}</span>
+                                    <span class="dropdown-header">{{ translate('messages.Download options') }}</span>
                                     <a id="export-excel" class="dropdown-item"
                                        href="{{ route('admin.rental.provider.driver.export', ['type' => 'excel', request()->getQueryString()]) }}">
                                         <img class="avatar avatar-xss avatar-4by3 mr-2"
                                              src="{{ asset('public/assets/admin') }}/svg/components/excel.svg"
                                              alt="Image Description">
-                                        {{ translate('messages.excel') }}
+                                        Excel
                                     </a>
                                     <a id="export-csv" class="dropdown-item"
                                        href="{{ route('admin.rental.provider.driver.export', ['type' => 'csv', request()->getQueryString()]) }}">
                                         <img class="avatar avatar-xss avatar-4by3 mr-2"
                                              src="{{ asset('public/assets/admin') }}/svg/components/placeholder-csv-format.svg"
                                              alt="Image Description">
-                                        {{ translate('messages.csv') }}
+                                        CSV
                                     </a>
 
                                 </div>
                             </div>
-                            <!-- End Unfold -->
                             <a class="btn btn--primary font-weight-bold float-right mr-2 mb-0"
-                               href="{{ route('admin.rental.provider.driver.create', request()->id) }}">{{ translate('messages.new_driver') }}</a>
+                               href="{{ route('admin.rental.provider.driver.create', request()->id) }}"><i class="tio-add-circle"></i> {{ translate('messages.New driver') }}</a>
                         </div>
                     </div>
-                    <!-- End Header -->
 
-                    <!-- Table -->
                     <div class="table-responsive datatable-custom">
                         <table id="columnSearchDatatable"
                                class="table table-borderless table-thead-bordered table-nowrap table-align-middle card-table text--title font-semibold"
@@ -124,12 +116,12 @@
                             }'>
                             <thead class="thead-light">
                             <tr>
-                                <th class="border-0">{{ translate('sl') }}</th>
-                                <th class="border-0">{{ translate('messages.Driver_Info') }}</th>
-                                <th class="border-0">{{ translate('messages.Total_Trip') }}</th>
-                                <th class="border-0">{{ translate('messages.Complete') }}</th>
-                                <th class="border-0">{{ translate('messages.Cancel_Trip') }}</th>
-                                <th class="text-center border-0">{{ translate('messages.Driver_Status') }}</th>
+                                <th class="border-0">{{ translate('SL') }}</th>
+                                <th class="border-0">{{ translate('Driver information') }}</th>
+                                <th class="border-0">{{ translate('Total trip') }}</th>
+                                <th class="border-0">{{ translate('Completed') }}</th>
+                                <th class="border-0">{{ translate('Cancel trip') }}</th>
+                                <th class="text-center border-0">{{ translate('Driver status') }}</th>
                                 <th class="text-center border-0">{{ translate('messages.Action') }}</th>
                             </tr>
                             </thead>
@@ -153,13 +145,13 @@
                                     </div>
                                 </td>
                                 <td>
-                                    {{ $driver->trips->count() }}
+                                    {{ $driver->trips_count }}
                                 </td>
                                 <td>
-                                    {{ count($driver->completedTrips) }}
+                                    {{ $driver->completed_trips_count }}
                                 </td>
                                 <td>
-                                    {{ count($driver->canceledTrips) }}
+                                    {{ $driver->canceled_trips_count }}
                                 </td>
                                 <td>
                                     <label class="toggle-switch toggle-switch-sm" for="stocksCheckbox{{$driver->id}}">
@@ -171,14 +163,14 @@
                                 </td>
                                 <td>
                                     <div class="btn--container justify-content-center">
-                                        <a class="btn action-btn btn--warning btn-outline-warning" href="{{ route('admin.rental.provider.driver.details', $driver->id)}}"
-                                           title="{{ translate('messages.edit_store') }}"><i class="tio-visible-outlined"></i>
+                                        <a class="btn action-btn action-btn--view" href="{{ route('admin.rental.provider.driver.details', $driver->id)}}"
+                                           title="{{ translate('Edit store') }}"><i class="tio-visible-outlined"></i>
                                         </a>
-                                        <a class="btn action-btn btn-outline-primary" href="{{ route('admin.rental.provider.driver.edit', $driver->id)}}"
-                                        title="{{ translate('messages.edit_store') }}"><i class="tio-edit"></i>
+                                        <a class="btn action-btn action-btn--edit" href="{{ route('admin.rental.provider.driver.edit', $driver->id)}}"
+                                        title="{{ translate('Edit store') }}"><i class="tio-edit"></i>
                                         </a>
-                                        <a class="btn action-btn btn--danger btn-outline-danger form-alert" href="javascript:"
-                                           data-id="brand-{{$driver['id']}}" data-message="{{ translate('Want to delete this driver') }}" title="{{translate('messages.delete_driver')}}"><i class="tio-delete-outlined"></i>
+                                        <a class="btn action-btn action-btn--delete form-alert" href="javascript:"
+                                           data-id="brand-{{$driver['id']}}" data-message="{{ translate('Want to delete this driver?') }}" title="{{translate('messages.Delete driver')}}"><i class="tio-delete-outlined"></i>
                                         </a>
                                         <form action="{{route('admin.rental.provider.driver.delete',[$driver['id']])}}" method="post" id="brand-{{$driver['id']}}">
                                             @csrf @method('delete')
@@ -202,13 +194,11 @@
                         <div class="empty--data">
                             <img src="{{asset('/public/assets/admin/svg/illustrations/sorry.svg')}}" alt="public">
                             <h5>
-                                {{translate('no_data_found')}}
+                                {{translate('No data found')}}
                             </h5>
                         </div>
                     @endif
-                    <!-- End Table -->
                 </div>
-                <!-- End Card -->
             </div>
         </div>
     </div>

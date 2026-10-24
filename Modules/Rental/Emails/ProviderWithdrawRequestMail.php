@@ -2,27 +2,30 @@
 
 namespace Modules\Rental\Emails;
 
+use App\Mail\Concerns\BuildsTemplatedMail;
+use App\Mail\Concerns\QueueableMailable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
-use App\CentralLogics\Helpers;
-use App\Models\BusinessSetting;
 use Illuminate\Queue\SerializesModels;
 use Modules\Rental\Entities\RentalEmailTemplate;
+use App\Support\Notification\NotificationText;
+use App\Services\System\BusinessSettingService;
 
-class ProviderWithdrawRequestMail extends Mailable
+class ProviderWithdrawRequestMail extends Mailable implements ShouldQueue
 {
-    use Queueable, SerializesModels;
+    use BuildsTemplatedMail, Queueable, QueueableMailable, SerializesModels;
 
     /**
      * Create a new message instance.
      *
      * @return void
      */
-
     protected $wallet;
+
     protected $status;
 
-    public function __construct($status,$wallet)
+    public function __construct($status, $wallet)
     {
         $this->wallet = $wallet;
         $this->status = $status;
@@ -35,22 +38,27 @@ class ProviderWithdrawRequestMail extends Mailable
      */
     public function build()
     {
-        $company_name = BusinessSetting::where('key', 'business_name')->first()->value;
         $status = $this->status;
-        if($status == 'approved'){
-            $data=RentalEmailTemplate::where('type','provider')->where('email_type', 'withdraw_approve')->first();
-        }elseif($status == 'denied'){
-            $data=RentalEmailTemplate::where('type','provider')->where('email_type', 'withdraw_deny')->first();
-        }else{
-            $data=RentalEmailTemplate::where('type','admin')->where('email_type', 'withdraw_request')->first();
+        if ($status == 'approved') {
+            $data = RentalEmailTemplate::where('type', 'provider')->where('email_type', 'withdraw_approve')->first();
+        } elseif ($status == 'denied') {
+            $data = RentalEmailTemplate::where('type', 'provider')->where('email_type', 'withdraw_deny')->first();
+        } else {
+            $data = RentalEmailTemplate::where('type', 'admin')->where('email_type', 'withdraw_request')->first();
         }
-        $template=$data?$data->email_template:6;
         $wallet = $this->wallet;
         $store_name = $wallet->vendor->f_name;
-        $title = Helpers::text_variable_data_format( value:$data['title']??'',store_name:$store_name??'',transaction_id:$transaction_id??'');
-        $body = Helpers::text_variable_data_format( value:$data['body']??'',store_name:$store_name??'',transaction_id:$transaction_id??'');
-        $footer_text = Helpers::text_variable_data_format( value:$data['footer_text']??'',store_name:$store_name??'',transaction_id:$transaction_id??'');
-        $copyright_text = Helpers::text_variable_data_format( value:$data['copyright_text']??'',store_name:$store_name??'',transaction_id:$transaction_id??'');
-        return $this->subject(translate('Provider_Withdraw_Request'))->view('email-templates.rental.new-email-format-'.$template, ['company_name'=>$company_name,'data'=>$data,'title'=>$title,'body'=>$body,'footer_text'=>$footer_text,'copyright_text'=>$copyright_text,'wallet'=>$wallet,'transaction_id'=>$wallet->id,'time'=>$wallet->created_at,'amount'=>$wallet->amount]);
+
+        return $this->templatedMail(
+            template: $data,
+            fallbackTemplate: 6,
+            subject: translate('Provider withdraw request'),
+            placeholders: [
+                'store_name' => $store_name ?? '',
+                'transaction_id' => $wallet->id ?? '',
+            ],
+            viewData: ['wallet' => $wallet, 'transaction_id' => $wallet->id, 'time' => $wallet->created_at, 'amount' => $wallet->amount],
+            viewPrefix: 'email-templates.rental.new-email-format-',
+        );
     }
 }

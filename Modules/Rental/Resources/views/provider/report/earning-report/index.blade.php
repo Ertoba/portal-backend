@@ -1,15 +1,20 @@
 @extends('layouts.vendor.app')
 
-@section('title', translate('Earning Report'))
+@section('title', translate('Earning report'))
 
 @section('content')
     <div class="content container-fluid">
-        <div class="page-header pb-0">
+        <div class="page-header">
             <div>
                 <h1 class="page-header-title text-capitalize">
-                    {{ translate('Earning Report') }}
+                    <span class="page-header-icon">
+                        <img src="{{ asset('public/assets/admin/img/outline/report.svg') }}" class="w--26" alt="">
+                    </span>
+                    <span>
+                        {{ translate('Earning report') }}
+                    </span>
                 </h1>
-                <p>{{ translate('messages.Comprehensive_financial_overview_and_analytics') }}</p>
+                <p class="page-header-desc">{{ translate('What you earned, and what was taken from it in commission.') }}</p>
             </div>
         </div>
 

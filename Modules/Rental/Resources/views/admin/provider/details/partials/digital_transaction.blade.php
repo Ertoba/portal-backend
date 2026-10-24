@@ -4,17 +4,17 @@
             class="table table-thead-bordered table-align-middle card-table">
             <thead class="thead-light">
                 <tr>
-                    <th class="w--1 border-0">{{translate('sl')}}</th>
-                    <th class="w--1 border-0">{{translate('messages.Trip_id')}}</th>
-                    <th class="w--2 border-0">{{translate('messages.total_trip_amount')}}</th>
-                    <th class="w--3 border-0">{{translate('messages.provider_earned')}}</th>
-                    <th class="w--1 border-0">{{translate('messages.admin_earned')}}</th>
-                    <th class="w--1 border-0">{{translate('messages.additional_charge')}}</th>
-                    <th class="w--1 border-0">{{translate('messages.vat/tax')}}</th>
+                    <th class="w--1 border-0">{{translate('SL')}}</th>
+                    <th class="w--1 border-0">{{translate('messages.Trip ID')}}</th>
+                    <th class="w--2 border-0">{{translate('Total trip amount')}}</th>
+                    <th class="w--3 border-0">{{translate('messages.Provider earned')}}</th>
+                    <th class="w--1 border-0">{{translate('messages.Admin earned')}}</th>
+                    <th class="w--1 border-0">{{translate('Additional charge')}}</th>
+                    <th class="w--1 border-0">{{translate('VAT/tax')}}</th>
                 </tr>
             </thead>
             <tbody>
-            @php($digitalTransaction = \Modules\Rental\Entities\TripTransaction::where('vendor_id', $store->vendor->id)->latest()->paginate(25))
+            @php($digitalTransaction = $transactions)
             @foreach($digitalTransaction as $key => $transaction)
                 <tr>
                     <td scope="row">{{$key+$digitalTransaction->firstItem()}}</td>
@@ -40,7 +40,7 @@
 <div class="empty--data">
     <img src="{{asset('/public/assets/admin/svg/illustrations/sorry.svg')}}" alt="public">
     <h5>
-        {{translate('no_data_found')}}
+        {{translate('No data found')}}
     </h5>
 </div>
 @endif

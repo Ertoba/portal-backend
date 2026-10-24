@@ -1,6 +1,6 @@
 
     "use strict";
-          $(document).on('ready', function() {
+          $(document).ready(function() {
             function updateUI() {
                 if ($('#date_range_type').val() == 'custom') {
                     $('#date_range').removeClass('d-none');
@@ -26,8 +26,13 @@
             $('#date_range_type').on('change', updateUI);
             $('#calculate_tax_on').on('change', updateUI);
             $('#reset_button_id').on('click', function() {
-                $('.js-select2-custom').val(null).trigger('change');
+                // Only the tax pickers clear: the two fixed-choice selects go
+                // back to their default option, which the form's own reset does
+                // on the tick after this handler — select2 is re-synced to the
+                // value it lands on rather than blanked.
+                $('.js-select2-custom[multiple]').val(null).trigger('change');
                 setTimeout(() => {
+                    $('.js-select2-custom:not([multiple])').trigger('change.select2');
                     updateUI();
                 }, 1);
             });

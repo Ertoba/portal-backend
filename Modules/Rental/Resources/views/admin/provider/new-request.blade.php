@@ -1,6 +1,6 @@
 @extends('layouts.admin.app')
 
-@section('title',translate('messages.new_provider_requests'))
+@section('title',translate('messages.New provider requests'))
 
 @push('css_or_js')
     <meta name="csrf-token" content="{{ csrf_token() }}">
@@ -8,19 +8,23 @@
 
 @section('content')
     <div class="content container-fluid">
-        <!-- Page Header -->
         <div class="page-header">
             <h1 class="page-header-title">
-                <img class="onerror-image"
-                src="{{ asset('/public/assets/admin/img/rental/provider.png') }}" width="30" alt="img"> &nbsp;
-                {{translate('messages.new_provider_requests')}}</h1>
+                <span class="page-header-icon">
+                    <img class="onerror-image" src="{{ asset('/public/assets/admin/img/rental/provider.png') }}" alt="">
+                </span>
+                <span>
+                    {{translate('messages.New provider requests')}}
+                </span>
+            </h1>
+            <p class="page-header-desc">{{ translate('Providers that have applied to trade with you and are waiting on your decision.') }}</p>
             <div class="page-header-select-wrapper">
 
                 @if(!auth('admin')?->user()?->zone_id)
                     <div class="select-item">
                         <select name="zone_id" class="form-control js-select2-custom set-filter" data-url="{{url()->full()}}" data-filter="zone_id">
-                            <option value="" {{!request('zone_id')?'selected':''}}>{{ translate('messages.All_Zones') }}</option>
-                            @foreach(\App\Models\Zone::orderBy('name')->get(['name','id' ]) as $z)
+                            <option value="" {{!request('zone_id')?'selected':''}}>{{ translate('All zones') }}</option>
+                            @foreach(\App\CentralLogics\Helpers::zones_dropdown() as $z)
                                 <option
                                     value="{{$z['id']}}" {{isset($zone) && $zone->id == $z['id']?'selected':''}}>
                                     {{$z['name']}}
@@ -33,13 +37,12 @@
             <div class="row">
                 <div class="col-md-12">
                     <div class="js-nav-scroller hs-nav-scroller-horizontal mt-2">
-                        <!-- Nav -->
                         <ul class="nav nav-tabs mb-3 border-0 nav--tabs">
                             <li class="nav-item">
-                                <a class="nav-link {{request('request_type') == 'pending_provider' ? 'active' : ''}}" href="{{ route('admin.rental.provider.new-requests') }}?request_type=pending_provider"   aria-disabled="true">{{translate('messages.Pending_Request')}}</a>
+                                <a class="nav-link {{request('request_type') == 'pending_provider' ? 'active' : ''}}" href="{{ route('admin.rental.provider.new-requests') }}?request_type=pending_provider"   aria-disabled="true">{{translate('Pending request')}}</a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link {{request('request_type') == 'denied_provider' ? 'active' : ''}}" href="{{ route('admin.rental.provider.new-requests') }}?request_type=denied_provider"  aria-disabled="true">{{translate('messages.Rejected_Request')}}</a>
+                                <a class="nav-link {{request('request_type') == 'denied_provider' ? 'active' : ''}}" href="{{ route('admin.rental.provider.new-requests') }}?request_type=denied_provider"  aria-disabled="true">{{translate('Rejected request')}}</a>
                             </li>
                         </ul>
                     </div>
@@ -48,25 +51,20 @@
         </div>
 
         <div class="card">
-            <!-- Header -->
             <div class="card-header py-2">
                 <div class="search--button-wrapper">
-                    <h5 class="card-title">{{translate('messages.providers_list')}} <span class="badge badge-soft-dark ml-2" id="itemCount">{{$stores->total()}}</span></h5>
+                    <h5 class="card-title">{{translate('Providers list')}} <span class="badge badge-soft-dark ml-2" id="itemCount">{{$stores->total()}}</span></h5>
                     <form action="javascript:" id="search-form" class="search-form">
-                        <!-- Search -->
                         @csrf
                         <div class="input-group input--group">
                             <input id="datatableSearch_" type="search" name="search" class="form-control"
-                                   placeholder="{{translate('ex_:_Search_Provider_Name')}}" value="{{isset($search_by) ? $search_by : ''}}" aria-label="{{translate('messages.search')}}" required>
+                                   placeholder="{{translate('Ex') . ' : ' . translate('Search provider name')}}" value="{{isset($search_by) ? $search_by : ''}}" aria-label="{{translate('messages.Search')}}" required>
                             <button type="submit" class="btn btn--secondary"><i class="tio-search"></i></button>
                         </div>
                     </form>
-                    <!-- End Search -->
                 </div>
             </div>
-            <!-- End Header -->
 
-            <!-- Table -->
             <div class="table-responsive datatable-custom">
                 <table id="columnSearchDatatable"
                        class="table table-borderless table-thead-bordered table-nowrap table-align-middle card-table"
@@ -78,12 +76,12 @@
                         }'>
                     <thead class="thead-light">
                         <tr>
-                            <th class="border-0">{{ translate('sl') }}</th>
-                            <th class="border-0">{{ translate('messages.provider') }}</th>
-                            <th class="border-0">{{ translate('messages.owner_info') }}</th>
-                            <th class="border-0">{{ translate('messages.business_zone') }}</th>
-                            <th class="text-uppercase border-0">{{ translate('messages.business_plan') }}</th>
-                            <th class="text-center border-0">{{ translate('messages.action') }}</th>
+                            <th class="border-0">{{ translate('SL') }}</th>
+                            <th class="border-0">{{ translate('messages.Provider') }}</th>
+                            <th class="border-0">{{ translate('Owner information') }}</th>
+                            <th class="border-0">{{ translate('messages.Business zone') }}</th>
+                            <th class="text-uppercase border-0">{{ translate('Business plan') }}</th>
+                            <th class="text-center border-0">{{ translate('messages.Action') }}</th>
                         </tr>
                     </thead>
 
@@ -93,7 +91,7 @@
                             <td>{{$key+$stores->firstItem()}}</td>
                             <td>
                                 <div>
-                                    <a href="{{route('admin.rental.provider.new-requests-details', $store->id)}}" class="table-rest-info" alt="{{translate('view provider')}}">
+                                    <a href="{{route('admin.rental.provider.new-requests-details', $store->id)}}" class="table-rest-info" alt="{{translate('View provider')}}">
                                         <img class="img--60 circle onerror-image" data-onerror-image="{{asset('public/assets/admin/img/160x160/img1.jpg')}}"
                                              src="{{ $store['logo_full_url'] ?? asset('public/assets/admin/img/160x160/img1.jpg') }}" >
                                         <div class="info"><div class="text--title">
@@ -122,7 +120,7 @@
 
                             </td>
                             <td>
-                                {{$store->zone?$store->zone->name:translate('messages.zone_deleted')}}
+                                {{$store->zone?$store->zone->name:translate('messages.Zone deleted')}}
                             </td>
                             <td>
                                 <div class="table-rest-info d-block">
@@ -155,9 +153,9 @@
                                                 data-target="#exampleModal--cancel"><i class="tio-clear"></i>
                                         </button>
                                     @endif
-                                    <a class="btn action-btn btn--warning btn-outline-warning"
+                                    <a class="btn action-btn action-btn--view"
                                        href="{{route('admin.rental.provider.new-requests-details', $store->id)}}"
-                                       title="{{ translate('messages.details') }}"><i
+                                       title="{{ translate('messages.Details') }}"><i
                                             class="tio-visible-outlined"></i>
                                     </a>
                                 </div>
@@ -186,8 +184,8 @@
                                                 <input type="hidden" value="1" name="status">
                                                 <div class="d-flex justify-content-center gap-3">
                                                     <button type="button" data-dismiss="modal" aria-label="Close"
-                                                            class="btn btn--reset">{{ translate('Cancel') }}</button>
-                                                    <button type="submit" class="btn btn--primary">{{ translate('Approve') }}</button>
+                                                            class="btn btn--reset"><i class="tio-clear-circle-outlined"></i> {{ translate('Cancel') }}</button>
+                                                    <button type="submit" class="btn btn--primary"><i class="tio-checkmark-circle-outlined"></i> {{ translate('Approve') }}</button>
                                                 </div>
                                             </div>
                                         </form>
@@ -215,7 +213,7 @@
                                         <form method="get" action="{{route('admin.rental.provider.approve-or-deny',[$store['id'],0])}}">
                                             @csrf
                                             <div class="form-floating">
-                                                <label for="add-your-note" class="font-medium input-label text--title">{{ translate('Cancellation Note') }}
+                                                <label for="add-your-note" class="font-medium input-label text--title">{{ translate('Cancellation note') }}
                                                     <span class="form-label-secondary" data-toggle="tooltip" data-placement="right" data-original-title="{{ translate('Please provide the actual reason for canceling the request.') }}">
                                                             <i class="tio-info text--title opacity-60"></i>
                                                     </span>
@@ -223,7 +221,7 @@
                                                 <div class="mb-30">
                                                     <textarea
                                                         class="form-control h--90"
-                                                        placeholder="{{ translate('Type your Cancellation Note') }}"
+                                                        placeholder="{{ translate('Type your cancellation note') }}"
                                                         name="message"
                                                         id="add-your-note"
                                                         maxlength="60"
@@ -234,8 +232,8 @@
                                                 <input type="hidden" value="0" name="status">
                                                 <div class="d-flex justify-content-end gap-3">
                                                     <button type="button" data-dismiss="modal" aria-label="Close"
-                                                            class="btn btn--reset">{{ translate('Cancel') }}</button>
-                                                    <button type="submit" class="btn btn--primary">{{ translate('Deny') }}</button>
+                                                            class="btn btn--reset"><i class="tio-clear-circle-outlined"></i> {{ translate('Cancel') }}</button>
+                                                    <button type="submit" class="btn btn--primary"><i class="tio-clear-circle-outlined"></i> {{ translate('Deny') }}</button>
                                                 </div>
                                             </div>
                                         </form>
@@ -248,7 +246,6 @@
                 </table>
 
             </div>
-            <!-- End Table -->
             @if(count($stores) !== 0)
                 <hr>
             @endif
@@ -259,7 +256,7 @@
                 <div class="empty--data">
                     <img src="{{asset('/public/assets/admin/svg/illustrations/sorry.svg')}}" alt="public">
                     <h5>
-                        {{translate('no_data_found')}}
+                        {{translate('No data found')}}
                     </h5>
                 </div>
             @endif
@@ -267,9 +264,9 @@
     </div>
 
     <div class="d-none" id="data-set"
-        data-translate-are-you-sure="{{ translate('Are_you_sure?') }}"
-        data-translate-no="{{ translate('no') }}"
-        data-translate-yes="{{ translate('yes') }}"
+        data-translate-are-you-sure="{{ translate('Are you sure?') }}"
+        data-translate-no="{{ translate('No') }}"
+        data-translate-yes="{{ translate('Yes') }}"
          data-full-url="{{ url()->full() }}"
     ></div>
 

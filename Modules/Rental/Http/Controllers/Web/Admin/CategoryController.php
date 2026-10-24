@@ -2,10 +2,10 @@
 
 namespace Modules\Rental\Http\Controllers\Web\Admin;
 
+use App\Rules\ImageFile;
 use Exception;
 use App\Models\Translation;
 use Illuminate\Http\Request;
-use App\Traits\FileManagerTrait;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Routing\Controller;
 use Illuminate\Contracts\View\View;
@@ -19,13 +19,12 @@ use Modules\Rental\Exports\VehicleCategoryExport;
 use Illuminate\Auth\Access\AuthorizationException;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use App\CentralLogics\Helpers;
+use App\Support\Storage\FileStorage;
 
 class CategoryController extends Controller
 {
     private VehicleCategory $category;
     private Translation $translation;
-
-    use FileManagerTrait;
 
     public function __construct(VehicleCategory $category, Translation $translation)
     {
@@ -68,11 +67,11 @@ class CategoryController extends Controller
         } catch (Exception) {
             DB::rollBack();
 
-            Toastr::error(translate('messages.failed_to_add_category'));
+            Toastr::error(translate('messages.Failed to add category'));
             return back();
         }
 
-        Toastr::success(translate('messages.category_added_successfully'));
+        Toastr::success(translate('Added successfully'));
         return back();
     }
 
@@ -82,7 +81,7 @@ class CategoryController extends Controller
      */
     public function edit(string $id): View|Factory|Application|RedirectResponse
     {
-        $category = $this->category->withoutGlobalScope('translate')->with('translations')->findOrFail($id);
+        $category = $this->category->withoutGlobalScope('translate')->with(['translations', 'storage'])->findOrFail($id);
 
             $language = getWebConfig('language') ?? [];
             $defaultLang = str_replace('_', '-', app()->getLocale());
@@ -119,12 +118,12 @@ class CategoryController extends Controller
 
             DB::commit();
 
-            Toastr::success(translate('messages.category_updated_successfully'));
+            Toastr::success(translate('Updated successfully'));
             return back();
         } catch (Exception) {
             DB::rollBack();
 
-            Toastr::error(translate('messages.failed_to_update_category'));
+            Toastr::error(translate('messages.Failed to update category'));
             return back();
         }
     }
@@ -145,7 +144,7 @@ class CategoryController extends Controller
 
         $category->update(['status' => !$category->status]);
 
-        Toastr::success(translate('messages.category_status_updated_successfully'));
+        Toastr::success(translate('Updated successfully'));
         return back();
     }
 
@@ -159,18 +158,18 @@ class CategoryController extends Controller
         $category = $this->category->find($id);
 
         if (!$category) {
-            Toastr::error(translate('messages.failed_to_delete_category'));
+            Toastr::error(translate('messages.Failed to delete category'));
             return back();
         }
 
         if ($category->image) {
-            $this->upload('category/', $category->image);
+            FileStorage::upload('category/', $category->image);
         }
 
         $category->translations()->delete();
         $category->delete();
 
-        Toastr::success(translate('messages.category_deleted_successfully'));
+        Toastr::success(translate('Deleted successfully'));
         return back();
     }
 
@@ -212,10 +211,10 @@ class CategoryController extends Controller
             [
                 'name' => 'required|unique:categories,name' . ($id ? ','.$id : ''),
                 'name.0' => 'required',
-                'image' => 'nullable|image|mimes:webp,jpeg,jpg,png,gif|max:10240',
+                'image' => ImageFile::rules('nullable', 10240),
             ],
             [
-                'name.0.required' => translate('default_name_is_required'),
+                'name.0.required' => translate('Default name is required'),
             ]
         );
     }
@@ -228,7 +227,7 @@ class CategoryController extends Controller
     {
         $category = $this->category;
         $category->name = $request->name[array_search('default', $request->lang)];
-        $category->image = $this->upload('category/', 'png', $request->file('image'));
+        $category->image = FileStorage::upload('category/', $request->file('image'));
         $category->save();
 
         return $category;
@@ -239,7 +238,7 @@ class CategoryController extends Controller
         $category->name = $request->name[array_search('default', $request->lang)];
 
         if ($request->hasFile('image')) {
-            $category->image = $this->upload('category/', 'png', $request->file('image'), $category->image);
+            $category->image = FileStorage::update('category/', $category->image, $request->file('image'));
         }
 
         $category->save();
@@ -249,10 +248,11 @@ class CategoryController extends Controller
     public function getCategories(Request $request)
     {
         $key = explode(' ', $request['q']);
-        $cat = $this->category->when(isset($request->module_id), function ($query) use ($request) {
-            $query->where('module_id', $request->module_id);
-        })
-
+        $cat = $this->category->translateOnly('name')
+            ->select('id', 'name')
+            ->when(isset($request->module_id), function ($query) use ($request) {
+                $query->where('module_id', $request->module_id);
+            })
             ->when($request['q'], function ($q) use ($key) {
                 foreach ($key as $value) {
                     $q->where('name', 'like', "%{$value}%");

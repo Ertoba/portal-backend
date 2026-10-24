@@ -45,28 +45,8 @@ class AdminTripTaxReportController extends Controller
 
         $orderTaxData = $this->getOrderTaxes($tax_on_service_charge, $tax_on_order_commission,  $startDate, $endDate);
 
-        // $taxOnSubscriptionData = $this->generateSubscriotionTax($tax_on_subscription, $startDate, $endDate);
 
-        // if ($taxOnSubscriptionData) {
 
-        //     $combinedResults = array_merge(
-        //         $orderTaxData,
-        //         [
-        //             'vendor_subscription' => [
-        //                 'total_base_amount' => array_reduce($taxOnSubscriptionData, fn($carry, $item) =>  $item->total_paid_amount, 0),
-        //                 'taxes' => array_reduce($taxOnSubscriptionData, function ($carry, $item) {
-        //                     $carry[$item->tax_name][] = [
-        //                         'tax_rate' => $item->tax_rate,
-        //                         'total_tax_amount' => $item->total_tax
-        //                     ];
-        //                     return $carry;
-        //                 }, [])
-        //             ]
-        //         ]
-        //     );
-        // } else {
-            // $combinedResults = $orderTaxData;
-            // }
             $combinedResults = $orderTaxData;
             $totalBase = 0;
         $totalTax = 0;
@@ -80,7 +60,6 @@ class AdminTripTaxReportController extends Controller
             }
         }
         $selectedTax = [
-            // 'tax_on_subscription' => !isset($request->tax_rate) ?   $tax_on_subscription?->select('id', 'tax_rate', 'name')?->toArray() : [],
 
             'tax_on_service_charge' => !isset($request->tax_rate) ? $tax_on_service_charge?->select('id', 'tax_rate', 'name')?->toArray() : [],
 
@@ -94,49 +73,8 @@ class AdminTripTaxReportController extends Controller
 
 
 
-    // private function generateSubscriotionTax($tax_on_subscription, $startDate, $endDate)
-    // {
-    //     if (!count($tax_on_subscription)) {
-    //         return [];
-    //     }
-    //     $finalSql = "
-    //         SELECT
-    //             tax_name,
-    //             tax_rate,
-    //             SUM(paid_amount) AS total_paid_amount,
-    //             SUM(paid_amount * tax_rate / 100) AS total_tax
-    //         FROM (
-    //             " . implode(" UNION ALL ", array_fill(0, count($tax_on_subscription), "
-    //                 SELECT
-    //                     ? AS tax_name,
-    //                     ? AS tax_rate,
-    //                     paid_amount,
-    //                     created_at
-    //                 FROM subscription_transactions
-    //                 WHERE is_trial = 0
-    //                 " . ($startDate && $endDate ? "AND created_at BETWEEN ? AND ?" : "") . "
-    //             ")) . "
-    //         ) AS tax_data
-    //         GROUP BY tax_name, tax_rate
-    //     ";
 
-    //     $bindings = [];
-    //     foreach ($tax_on_subscription as $tax) {
-    //         $bindings = array_merge($bindings, [
-    //             $tax->name,
-    //             (float)$tax->tax_rate,
-    //             ...($startDate && $endDate ? [
-    //                 $startDate->format('Y-m-d H:i:s'),
-    //                 $endDate->format('Y-m-d H:i:s')
-    //             ] : [])
-    //         ]);
-    //     }
-    //     if ($bindings) {
 
-    //         $results = DB::select($finalSql, $bindings);
-    //     }
-    //     return $results ?? [];
-    // }
     private function getTaxRates($request)
     {
         $allTaxIds = collect([
@@ -181,7 +119,7 @@ class AdminTripTaxReportController extends Controller
                 ];
             });
         if (isset($request->all)) {
-            $data[] = (object)['id' => 'all', 'text' => translate('messages.all')];
+            $data[] = (object)['id' => 'all', 'text' => translate('All')];
         }
         return response()->json($data);
     }
@@ -335,77 +273,19 @@ class AdminTripTaxReportController extends Controller
     }
 
 
-    // private function getSubsctiprionData($startDate, $endDate, $tax_on_subscription, $export = false)
-    // {
-    //     $summary = DB::selectOne("  SELECT
-    //                     COUNT(*) AS total_sub,
-    //                     SUM(paid_amount) AS total_sub_amount
-    //                 FROM subscription_transactions
-    //                 WHERE is_trial = 0
-    //                         AND created_at BETWEEN ? AND ?
-    //                 LIMIT 1
-    //             ", [
-    //         $startDate->format('Y-m-d H:i:s'),
-    //         $endDate->format('Y-m-d H:i:s')
-    //     ]);
-
-    //     $total_sub_amount = (float) ($summary->total_sub_amount ?? 0);
-    //     $total_sub_count = (float) ($summary->total_sub ?? 0);
-
-    //     $total_tax_rate = $tax_on_subscription->sum(fn($tax) => (float) $tax->tax_rate);
-
-    //     $total_tax_amount = ($total_sub_amount * $total_tax_rate) / 100;
-    //     $tax_on_subscription = $tax_on_subscription->toArray();
-
-    //     $subData = SubscriptionTransaction::where('is_trial', 0)
-    //         ->whereBetween('created_at', [$startDate, $endDate]);
-    //     if ($export === false) {
-    //         $subData = $subData->paginate(config('default_pagination'));
-    //         $subData->getCollection()->transform(function ($transaction) use ($tax_on_subscription) {
-    //             $taxes = [];
-
-    //             foreach ($tax_on_subscription as $tax) {
-    //                 $rate = (float) $tax['tax_rate'];
-    //                 $amount = ($transaction->paid_amount * $rate) / 100;
-
-    //                 $taxes[] = [
-    //                     'tax_name' => $tax['name'],
-    //                     'tax_rate' => $rate,
-    //                     'tax_amount' => round($amount, 2),
-    //                 ];
-    //             }
-
-    //             $transaction->calculated_taxes = $taxes;
-    //             return $transaction;
-    //         });
-    //     } else {
-    //         $subData = $subData->cursor()->map(function ($transaction) use ($tax_on_subscription) {
-
-    //             $calculatedTaxes = collect($tax_on_subscription)->map(function ($tax) use ($transaction) {
-    //                 $rate = (float) $tax['tax_rate'];
-    //                 return [
-    //                     'tax_name' => $tax['name'],
-    //                     'tax_rate' => $rate,
-    //                     'tax_amount' => round(($transaction->paid_amount * $rate) / 100, 2)
-    //                 ];
-    //             })->all();
-
-    //             $transaction->calculated_taxes = $calculatedTaxes;
-    //             return $transaction;
-    //         });
-    //     }
 
 
 
-    //     return [
-    //         'data' => $subData,
-    //         'total_tax_amount' => $total_tax_amount,
-    //         'total_amount' => $total_sub_amount,
-    //         'total_count' => $total_sub_count,
-    //         'total_tax_rate' => $total_tax_rate,
 
-    //     ];
-    // }
+
+
+
+
+
+
+
+
+
     private function getAdminCommissionTaxData($startDate, $endDate, $tax_data, $export = false)
     {
         $results = DB::selectOne("  SELECT
@@ -647,28 +527,8 @@ class AdminTripTaxReportController extends Controller
 
         $orderTaxData = $this->getOrderTaxes($tax_on_service_charge, $tax_on_order_commission,  $startDate, $endDate);
 
-        // $taxOnSubscriptionData = $this->generateSubscriotionTax($tax_on_subscription, $startDate, $endDate);
 
-        // if ($taxOnSubscriptionData) {
 
-        //     $combinedResults = array_merge(
-        //         $orderTaxData,
-        //         [
-        //             'vendor_subscription' => [
-        //                 'total_base_amount' => array_reduce($taxOnSubscriptionData, fn($carry, $item) =>  $item->total_paid_amount, 0),
-        //                 'taxes' => array_reduce($taxOnSubscriptionData, function ($carry, $item) {
-        //                     $carry[$item->tax_name][] = [
-        //                         'tax_rate' => $item->tax_rate,
-        //                         'total_tax_amount' => $item->total_tax
-        //                     ];
-        //                     return $carry;
-        //                 }, [])
-        //             ]
-        //         ]
-        //     );
-        // } else {
-        //     $combinedResults = $orderTaxData;
-        // }
         $combinedResults = $orderTaxData;
         $totalBase = 0;
         $totalTax = 0;

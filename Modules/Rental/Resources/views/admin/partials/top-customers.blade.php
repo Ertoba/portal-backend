@@ -8,14 +8,14 @@
             <span>{{ $customer->phone }}</span>
         </div>
         <div class="ml-auto">
-            <span class="badge badge-soft">{{ translate('Trips') }} : {{ count($customer->trips) }}</span>
+            <span class="badge badge-soft">{{ translate('Trips') }} : {{ $customer->trips_count }}</span>
         </div>
     </a>
 @empty
     <div class="empty--data">
         <img src="{{ asset('/public/assets/admin/svg/illustrations/empty-state.svg') }}" alt="public">
         <h5>
-            {{ translate('no_data_found') }}
+            {{ translate('No data found') }}
         </h5>
     </div>
 @endforelse

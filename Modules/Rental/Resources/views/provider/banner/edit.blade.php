@@ -2,25 +2,24 @@
 
 @section('content')
     <div class="content container-fluid">
-        <!-- Page Header -->
         <div class="page-header">
             <h1 class="page-header-title">
                 <span class="page-header-icon">
                     <img src="{{ asset('public/assets/admin/img/banner.png') }}" class="w--26" alt="">
                 </span>
                 <span>
-                    {{ translate('messages.Banners') }}
+                    {{ translate('messages.banners') }}
                 </span>
             </h1>
+            <p class="page-header-desc">{{ translate('Change this banner\'s artwork, where it links to and whether customers can see it.') }}</p>
         </div>
-        <!-- End Page Header -->
         <div class="row gx-2 gx-lg-3">
             <div class="col-sm-12 col-lg-12 mb-3 mb-lg-2">
                 <div class="card">
                     <div class="card-header">
                         <div>
                             <h5 class="text-title mb-1">
-                                {{ translate('messages.Update_Banner') }}
+                                {{ translate('Update banner') }}
                             </h5>
                         </div>
                     </div>
@@ -34,7 +33,7 @@
                                             <ul class="nav nav-tabs mb-3 border-0">
                                                 <li class="nav-item">
                                                     <a class="nav-link lang_link active" href="#"
-                                                        id="default-link">{{ translate('messages.default') }}</a>
+                                                        id="default-link">{{ translate('Default') }}</a>
                                                 </li>
                                                 @foreach ($language as $lang)
                                                     <li class="nav-item">
@@ -46,12 +45,12 @@
                                             <div class="lang_form" id="default-form">
                                                 <div class="form-group mb-0">
                                                     <label class="input-label"
-                                                        for="default_title">{{ translate('messages.title') }}
+                                                        for="default_title">{{ translate('messages.Title') }}
                                                         ({{ translate('Default') }})
                                                     </label>
                                                     <input type="text" name="title[]" id="default_title"
                                                         class="form-control" value="{{$banner?->getRawOriginal('title')}}"
-                                                        placeholder="{{ translate('messages.new_banner') }}">
+                                                        placeholder="{{ translate('messages.New banner') }}">
                                                 </div>
                                                 <input type="hidden" name="lang[]" value="default">
                                             </div>
@@ -72,12 +71,12 @@
                                                 <div class="d-none lang_form" id="{{ $lang }}-form">
                                                     <div class="form-group mb-0">
                                                         <label class="input-label"
-                                                            for="{{ $lang }}_title">{{ translate('messages.title') }}
+                                                            for="{{ $lang }}_title">{{ translate('messages.Title') }}
                                                             ({{ strtoupper($lang) }})
                                                         </label>
                                                         <input type="text" name="title[]" id="{{ $lang }}_title"
                                                             class="form-control" value="{{$translate[$lang]['title']??''}}"
-                                                            placeholder="{{ translate('messages.new_banner') }}">
+                                                            placeholder="{{ translate('messages.New banner') }}">
                                                     </div>
                                                     <input type="hidden" name="lang[]" value="{{ $lang }}">
                                                 </div>
@@ -89,18 +88,18 @@
 
                                     <div class="form-group mb-0" id="default">
                                         <label class="input-label"
-                                            for="exampleFormControlInput1">{{ translate('messages.default_link') }}({{ translate('messages.optional') }})</label>
+                                            for="exampleFormControlInput1">{{ translate('messages.Default link') }}({{ translate('Optional') }})</label>
                                         <input type="url" name="default_link" class="form-control" value="{{ $banner->default_link }}"
-                                            placeholder="{{ translate('messages.default_link') }}">
+                                            placeholder="{{ translate('messages.Default link') }}">
                                     </div>
                                 </div>
                                 <div class="col-lg-6">
                                     <div class="h-100 d-flex flex-column justify-content-between">
                                         <div class="form-group">
                                             <label
-                                                class="fs-16 text-title font-semibold  mb-0">{{ translate('messages.Banner_Image') }}</label>
-                                            <p class="mb-20">{{ translate('JPG, JPEG, PNG Less Than 2MB') }} <span
-                                                    class="font-weight-bold">({{ translate('Ratio 3:1') }})</span>
+                                                class="fs-16 text-title font-semibold  mb-0">{{ translate('messages.Banner image') }}</label>
+                                            <p class="mb-20">{{ 'JPG, JPEG, PNG' . ' image, max ' . 2 . ' MB' }} <span
+                                                    class="font-weight-bold">(Ratio 3:1)</span>
                                             </p>
                                             <div class="upload-file image-general">
                                                 <a href="javascript:void(0);" class="remove-btn opacity-0 z-index-99">
@@ -123,9 +122,9 @@
                                         </div>
                                         <div class="btn--container justify-content-end">
                                             <button type="reset" id="reset_btn"
-                                                class="btn btn--reset">{{ translate('messages.reset') }}</button>
+                                                class="btn btn--reset">{{ translate('messages.Reset') }}</button>
                                             <button type="submit"
-                                                class="btn btn--primary">{{ translate('messages.submit') }}</button>
+                                                class="btn btn--primary">{{ translate('messages.Submit') }}</button>
                                         </div>
                                     </div>
                                 </div>

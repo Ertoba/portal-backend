@@ -1,39 +1,38 @@
 @extends('layouts.admin.app')
 
-@section('title', translate('messages.transaction_report'))
+@section('title', translate('Transaction report'))
 
 @push('css_or_js')
 @endpush
 
 @section('content')
     <div class="content container-fluid">
-        <!-- Page Header -->
         <div class="page-header">
             <h1 class="page-header-title">
                 <span class="page-header-icon">
-                    <img src="{{ asset('public/assets/admin/img/report.png') }}" class="w--22" alt="">
+                    <img src="{{ asset('public/assets/admin/img/outline/report.svg') }}" class="w--26" alt="">
                 </span>
                 <span>
-                    {{ translate('messages.Transaction_report') }}
+                    {{ translate('Transaction report') }}
                     @if (isset($filter) && $filter != 'all_time')
                         <span class="mb-0 h6 badge badge-soft-success ml-2" id="itemCount">( {{ session('from_date') }} -
                             {{ session('to_date') }} )</span>
                     @endif
                 </span>
             </h1>
+            <p class="page-header-desc">{{ translate('Money in and out day by day, so you can see how a period actually went.') }}</p>
         </div>
-        <!-- End Page Header -->
         <div class="card mb-20">
             <div class="card-body">
-                <h4 class="">{{ translate('Search Data') }}</h4>
+                <h4 class="">{{ translate('Search data') }}</h4>
                 <form action="{{ route('admin.transactions.rental.report.set-date') }}" method="post">
                     @csrf
                     <div class="row g-3">
                         <div class="col-sm-6 col-md-3">
                             <select name="zone_id" class="form-control js-select2-custom set-filter"
                                 data-url="{{ url()->full() }}" data-filter="zone_id" id="zone">
-                                <option value="all">{{ translate('messages.All_Zones') }}</option>
-                                @foreach (\App\Models\Zone::orderBy('name')->get(['id', 'name']) as $z)
+                                <option value="all">{{ translate('All zones') }}</option>
+                                @foreach (\App\CentralLogics\Helpers::zones_dropdown() as $z)
                                     <option value="{{ $z['id'] }}"
                                         {{ isset($zone) && $zone->id == $z['id'] ? 'selected' : '' }}>
                                         {{ $z['name'] }}
@@ -48,12 +47,12 @@
                                 data-module-id="{{ request('module_id') ?? '' }}"
 
                             data-url="{{ url()->full() }}" data-filter="provider_id"
-                                data-placeholder="{{ translate('messages.select_provider') }}"
+                                data-placeholder="{{ translate('Select provider') }}"
                                 class="js-data-example-ajax form-control set-filter">
                                 @if (isset($provider))
                                     <option value="{{ $provider->id }}" selected>{{ $provider->name }}</option>
                                 @else
-                                    <option value="all" selected>{{ translate('messages.all_providers') }}</option>
+                                    <option value="all" selected>{{ translate('All providers') }}</option>
                                 @endif
                             </select>
                         </div>
@@ -62,17 +61,17 @@
                             <select class="form-control set-filter" name="filter" data-url="{{ url()->full() }}"
                                 data-filter="filter">
                                 <option value="all_time" {{ isset($filter) && $filter == 'all_time' ? 'selected' : '' }}>
-                                    {{ translate('messages.All Time') }}</option>
+                                    {{ translate('All time') }}</option>
                                 <option value="this_year" {{ isset($filter) && $filter == 'this_year' ? 'selected' : '' }}>
-                                    {{ translate('messages.This Year') }}</option>
+                                    {{ translate('This year') }}</option>
                                 <option value="previous_year"
                                     {{ isset($filter) && $filter == 'previous_year' ? 'selected' : '' }}>
-                                    {{ translate('messages.Previous Year') }}</option>
+                                    {{ translate('Previous year') }}</option>
                                 <option value="this_month"
                                     {{ isset($filter) && $filter == 'this_month' ? 'selected' : '' }}>
-                                    {{ translate('messages.This Month') }}</option>
+                                    {{ translate('This month') }}</option>
                                 <option value="this_week" {{ isset($filter) && $filter == 'this_week' ? 'selected' : '' }}>
-                                    {{ translate('messages.This Week') }}</option>
+                                    {{ translate('This week') }}</option>
                                 <option value="custom" {{ isset($filter) && $filter == 'custom' ? 'selected' : '' }}>
                                     {{ translate('messages.Custom') }}</option>
                             </select>
@@ -81,21 +80,21 @@
                             <div class="col-sm-6 col-md-3">
 
                                 <input type="date" name="from" id="from_date" class="form-control"
-                                    placeholder="{{ translate('Start Date') }}"
+                                    placeholder="{{ translate('Start date') }}"
                                     {{ session()->has('from_date') ? 'value=' . session('from_date') : '' }} required>
 
                             </div>
                             <div class="col-sm-6 col-md-3">
 
                                 <input type="date" name="to" id="to_date" class="form-control"
-                                    placeholder="{{ translate('End Date') }}"
+                                    placeholder="{{ translate('End date') }}"
                                     {{ session()->has('to_date') ? 'value=' . session('to_date') : '' }} required>
 
                             </div>
                         @endif
                         <div class="col-sm-6 col-md-3 ml-auto">
                             <button type="submit"
-                                class="btn btn-primary btn-block h--45px">{{ translate('Filter') }}</button>
+                                class="btn btn-primary btn-block h--45px"><i class="tio-filter-list"></i> {{ translate('Filter') }}</button>
                         </div>
                     </div>
                 </form>
@@ -112,9 +111,9 @@
                                 <h3 class="title text-008958">
                                     {{ \App\CentralLogics\Helpers::number_format_short($totalAmount) }}
                                 </h3>
-                                <h6 class="subtitle">{{ translate('Completed Transaction') }}</h6>
+                                <h6 class="subtitle">{{ translate('Completed transaction') }}</h6>
                                 <div class="info-icon" data-toggle="tooltip" data-placement="top"
-                                    data-original-title="{{ translate('After a successful trip completion, the full Trip amount goes to this section.') }}">
+                                    data-original-title="{{ translate('After a successful trip completion, the full trip amount goes to this section.') }}">
                                     <img src="{{ asset('/public/assets/admin/img/report/new/info1.png') }}"
                                         alt="report/new">
                                 </div>
@@ -127,7 +126,7 @@
                                 <h3 class="title text-006AE5">
                                     {{ \App\CentralLogics\Helpers::number_format_short($adminEarned) }}
                                 </h3>
-                                <h6 class="subtitle">{{ translate('Admin Earning') }}</h6>
+                                <h6 class="subtitle">{{ translate('Admin earning') }}</h6>
                                 <div class="info-icon" data-toggle="tooltip" data-placement="top"
                                     data-original-title="{{ translate('After a successful trip completion, the admin commission and service fee will be added to the admin\'s earnings.') }}">
                                     <img src="{{ asset('/public/assets/admin/img/report/new/info2.png') }}"
@@ -142,9 +141,9 @@
                                 <h3 class="title text-success">
                                     {{ \App\CentralLogics\Helpers::number_format_short($providerEarned) }}
                                 </h3>
-                                <h6 class="subtitle">{{ translate('Provider Earning') }}</h6>
+                                <h6 class="subtitle">{{ translate('Provider earnings') }}</h6>
                                 <div class="info-icon" data-toggle="tooltip" data-placement="top"
-                                    data-original-title="{{ translate('After a successful trip completion, the trip amount without discount will be added to the provider’s earnings') }}">
+                                    data-original-title="{{ translate('After a successful trip completion, the trip amount without discount will be added to the provider\'s earnings') }}">
                                     <img src="{{ asset('/public/assets/admin/img/report/new/info1.png') }}"
                                         alt="report/new">
                                 </div>
@@ -155,27 +154,21 @@
             </div>
         </div>
 
-        <!-- End Stats -->
-        <!-- Card -->
         <div class="card mt-3">
-            <!-- Header -->
             <div class="card-header border-0 py-2">
                 <div class="search--button-wrapper">
-                    <h3 class="card-title">{{ translate('messages.trip_transactions') }}
+                    <h3 class="card-title">{{ translate('messages.Trip transactions') }}
                         @if ($tripTransactions->total() > 0)
                             <span class="badge badge-soft-secondary ml-2 rounded-circle" id="countItems">{{ $tripTransactions->total() }}</span>
                         @endif
                     </h3>
                     <form>
-                        <!-- Search -->
                         <div class="input--group input-group ">
-                            <input  class="form-control" placeholder="{{ translate('Search by Trip ID') }}"
+                            <input  class="form-control" placeholder="{{ translate('Search by trip ID') }}"
                                 value="{{ request()?->search ?? null }}" type="search" name="search">
                             <button class="btn btn--secondary"><i class="tio-search"></i></button>
                         </div>
-                        <!-- End Search -->
                     </form>
-                    <!-- Static Export Button -->
                     <div class="hs-unfold ml-3 flex-grow-0">
                         <a class="js-hs-unfold-invoker btn btn-sm btn-white dropdown-toggle btn export-btn font--sm"
                             href="javascript:;"
@@ -184,65 +177,62 @@
                                 &quot;type&quot;: &quot;css-animation&quot;
                             }"
                             data-hs-unfold-target="#usersExportDropdown" data-hs-unfold-invoker="">
-                            <i class="tio-download-to mr-1"></i> {{ translate('export') }}
+                            <i class="tio-download-to mr-1"></i> {{ translate('Export') }}
                         </a>
 
                         <div id="usersExportDropdown"
                             class="hs-unfold-content dropdown-unfold dropdown-menu dropdown-menu-sm-right hs-unfold-content-initialized hs-unfold-css-animation animated hs-unfold-reverse-y hs-unfold-hidden">
 
-                            <span class="dropdown-header">{{ translate('download_options') }}</span>
+                            <span class="dropdown-header">{{ translate('Download options') }}</span>
                             <a id="export-excel" class="dropdown-item"
                                 href="{{ route('admin.transactions.rental.report.transaction-report-export', ['type' => 'excel', request()->getQueryString()]) }}">
                                 <img class="avatar avatar-xss avatar-4by3 mr-2"
                                     src="{{ asset('public/assets/admin/svg/components/excel.svg') }}"
                                     alt="Image Description">
-                                {{ translate('messages.excel') }}
+                                Excel
                             </a>
                             <a id="export-csv" class="dropdown-item"
                                 href="{{ route('admin.transactions.rental.report.transaction-report-export', ['type' => 'csv', request()->getQueryString()]) }}">
                                 <img class="avatar avatar-xss avatar-4by3 mr-2"
                                     src="{{ asset('public/assets/admin/svg/components/placeholder-csv-format.svg') }}"
                                     alt="Image Description">
-                                {{ translate('messages.csv') }}
+                                CSV
                             </a>
 
                         </div>
                     </div>
-                    <!-- Static Export Button -->
                 </div>
             </div>
-            <!-- End Header -->
 
-            <!-- Body -->
             <div class="card-body p-0">
                 <div class="table-responsive">
                     <table id="datatable" class="table table-thead-bordered table-align-middle card-table">
                         <thead class="thead-light">
                             <tr>
-                                <th class="border-0">{{ translate('sl') }}</th>
-                                <th class="border-0">{{ translate('messages.trip_id') }}</th>
-                                <th class="border-0">{{ translate('messages.provider') }}</th>
-                                <th class="border-0">{{ translate('messages.customer') }}</th>
-                                <th class="border-0 min-w-120">{{ translate('messages.Total_Trip_Amount') }}</th>
-                                <th class="border-0">{{ translate('messages.Discount on Vehicle') }}</th>
-                                <th class="border-0">{{ translate('messages.Coupon_Discount') }}</th>
-                                <th class="border-0">{{ translate('messages.Referral_Discount') }}</th>
-                                <th class="border-0">{{ translate('messages.Pro_discount') }}</th>
-                                <th class="border-0">{{ translate('messages.Total Discounted Amount') }}</th>
-                                <th class="border-0">{{ translate('messages.vat/tax') }}</th>
-                                <th class="border-0">{{ translate('messages.Admin_Commission') }}</th>
+                                <th class="border-0">{{ translate('SL') }}</th>
+                                <th class="border-0">{{ translate('messages.Trip ID') }}</th>
+                                <th class="border-0">{{ translate('messages.Provider') }}</th>
+                                <th class="border-0">{{ translate('messages.Customer') }}</th>
+                                <th class="border-0 min-w-120">{{ translate('Total trip amount') }}</th>
+                                <th class="border-0">{{ translate('Discount on vehicle') }}</th>
+                                <th class="border-0">{{ translate('Coupon discount') }}</th>
+                                <th class="border-0">{{ translate('Referral discount') }}</th>
+                                <th class="border-0">{{ translate('messages.Pro discount') }}</th>
+                                <th class="border-0">{{ translate('messages.Total discounted amount') }}</th>
+                                <th class="border-0">{{ translate('VAT/tax') }}</th>
+                                <th class="border-0">{{ translate('Admin commission') }}</th>
                                 <th class="border-0">
-                                    {{ \App\CentralLogics\Helpers::get_business_data('additional_charge_name') ?? translate('messages.additional_charge') }}
+                                    {{ \App\CentralLogics\Helpers::get_business_data('additional_charge_name') ?? translate('Additional charge') }}
                                 </th>
-                                <th class="border-0">{{ translate('messages.Admin_Discount') }}</th>
-                                <th class="min-w-140 text-capitalize">{{ translate('Admin_net_income') }}</th>
-                                <th class="border-0 text-capitalize">{{ translate('messages.provider_discount') }}</th>
-                                <th class="min-w-140 text-capitalize">{{ translate('provider_net_income') }}</th>
-                                <th class="border-0 min-w-120 text-capitalize">{{ translate('messages.Total Amount Received by') }}</th>
+                                <th class="border-0">{{ translate('Admin discount') }}</th>
+                                <th class="min-w-140 text-capitalize">{{ translate('Admin net income') }}</th>
+                                <th class="border-0 text-capitalize">{{ translate('messages.Provider discount') }}</th>
+                                <th class="min-w-140 text-capitalize">{{ translate('Provider net income') }}</th>
+                                <th class="border-0 min-w-120 text-capitalize">{{ translate('Total amount received by') }}</th>
                                 <th class="border-top border-bottom text-capitalize">
-                                    {{ translate('messages.payment_method') }}</th>
-                                <th class="border-0 text-capitalize">{{ translate('messages.payment_status') }}</th>
-                                <th class="border-0">{{ translate('messages.action') }}</th>
+                                    {{ translate('messages.Payment method') }}</th>
+                                <th class="border-0 text-capitalize">{{ translate('Payment status') }}</th>
+                                <th class="border-0">{{ translate('messages.Action') }}</th>
                             </tr>
                         </thead>
                         <tbody id="set-rows">
@@ -253,7 +243,7 @@
                                             href="{{ route('admin.transactions.rental.trip.details', $ot->trip_id) }}">{{ $ot->trip_id }}</a>
                                     </td>
                                     <td class="text-capitalize">
-                                        {{ Str::limit($ot?->trip?->provider?->name ?? translate('messages.Not Found'), 25, '...') }}
+                                        {{ Str::limit($ot?->trip?->provider?->name ?? translate('No data found'), 25, '...') }}
                                     </td>
                                     <td class="white-space-nowrap">
                                         @if ($ot->trip->customer)
@@ -266,31 +256,25 @@
                                                 <strong>{{ $ot->trip?->user_info['contact_person_name'] }}</strong>
                                             </a>
                                         @else
-                                            {{ translate('messages.Guest_user') }}
+                                            {{ translate('messages.Guest user') }}
                                         @endif
 
                                     </td>
-                                    {{-- total_trip_amount --}}
                                     <td class="white-space-nowrap">
                                         {{ \App\CentralLogics\Helpers::format_currency($ot->trip_amount) }}</td>
 
-                                    {{-- vehicle_discount --}}
                                     <td class="white-space-nowrap">
                                         {{ \App\CentralLogics\Helpers::format_currency($ot->trip->discount_on_trip) }}</td>
 
-                                    {{-- coupon_discount --}}
                                     <td class="white-space-nowrap">
                                         {{ \App\CentralLogics\Helpers::format_currency($ot->trip['coupon_discount_amount']) }}
                                     </td>
-                                    {{-- referral_discount --}}
                                     <td class="white-space-nowrap">
                                         {{ \App\CentralLogics\Helpers::format_currency($ot->trip['ref_bonus_amount']) }}
                                     </td>
-                                    {{-- pro_discount --}}
                                     <td class="white-space-nowrap">
                                         {{ \App\CentralLogics\Helpers::format_currency($ot->trip?->proDiscount?->amount_saved ?? 0) }}
                                     </td>
-                                    {{-- discounted_amount --}}
                                     <td class="white-space-nowrap">
                                         {{ \App\CentralLogics\Helpers::format_currency($ot->trip['coupon_discount_amount'] + $ot->trip['ref_bonus_amount'] + $ot->trip->discount_on_trip + ($ot->trip?->proDiscount?->amount_saved ?? 0)) }}
                                     </td>
@@ -298,25 +282,20 @@
                                     <td class="white-space-nowrap">
                                         {{ \App\CentralLogics\Helpers::format_currency($ot->tax) }}</td>
 
-                                    {{-- admin_commission --}}
                                     <td class="white-space-nowrap">
                                         {{ \App\CentralLogics\Helpers::format_currency($ot->admin_commission) }}</td>
 
 
                                     <td class="white-space-nowrap">
                                         {{ \App\CentralLogics\Helpers::format_currency($ot->additional_charge) }}</td>
-                                    {{-- admin_discount --}}
                                     <td class="white-space-nowrap">
                                         {{ \App\CentralLogics\Helpers::format_currency($ot->admin_expense) }}</td>
 
 
-                                    {{-- admin_net_income --}}
                                     <td class="white-space-nowrap">
                                         {{ \App\CentralLogics\Helpers::format_currency($ot->admin_net_income) }}</td>
-                                    {{-- store_discount --}}
                                     <td class="white-space-nowrap">
                                         {{ \App\CentralLogics\Helpers::format_currency($ot->store_expense) }}</td>
-                                    {{-- store_net_income --}}
                                     <td class="white-space-nowrap">
                                         {{ \App\CentralLogics\Helpers::format_currency($ot->store_amount - $ot->tax) }}
                                     </td>
@@ -325,14 +304,14 @@
                                         </td>
                                     @elseif ($ot->received_by == 'vendor')
                                         <td class="text-capitalize white-space-nowrap">
-                                            {{ translate('messages.provider') }}</td>
+                                            {{ translate('messages.Provider') }}</td>
                                     @endif
                                     <td class="mw--85px text-capitalize min-w-120 ">
-                                        {{ translate(str_replace('_', ' ', $ot->trip['payment_method'])) }}
+                                        {{ payment_method_label($ot->trip['payment_method']) }}
                                     </td>
                                     <td class="text-capitalize white-space-nowrap">
                                         <span class="badge badge-soft-success">
-                                            {{ translate('messages.completed') }}
+                                            {{ translate('messages.Completed') }}
                                         </span>
                                     </td>
 
@@ -348,7 +327,6 @@
                             @endforeach
                         </tbody>
                     </table>
-                    <!-- End Body -->
                 </div>
                 @if (count($tripTransactions) !== 0)
                     <hr>
@@ -360,13 +338,12 @@
                     <div class="empty--data">
                         <img src="{{ asset('/public/assets/admin/svg/illustrations/sorry.svg') }}" alt="public">
                         <h5>
-                            {{ translate('no_data_found') }}
+                            {{ translate('No data found') }}
                         </h5>
                     </div>
                 @endif
             </div>
         </div>
-        <!-- End Card -->
     </div>
 @endsection
 

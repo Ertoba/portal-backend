@@ -1,6 +1,6 @@
 @extends('layouts.admin.app')
 
-@section('title',translate('messages.vehicle_report'))
+@section('title',translate('Vehicle report'))
 
 @push('css_or_js')
 
@@ -13,33 +13,32 @@
         $to = session('to_date');
     @endphp
     <div class="content container-fluid">
-        <!-- Page Header -->
         <div class="page-header">
             <h1 class="page-header-title">
                 <span class="page-header-icon">
-                    <img src="{{asset('public/assets/admin/img/report.png')}}" class="w--22" alt="">
+                    <img src="{{asset('public/assets/admin/img/outline/report.svg')}}" class="w--26" alt="">
                 </span>
                 <span>
-                    {{translate('messages.vehicle_report')}}
+                    {{translate('Vehicle report')}}
                     @if (isset($filter) && $filter != 'all_time')
                     <span class="mb-0 h6 badge badge-soft-success ml-2"
                         id="itemCount">( {{ session('from_date') }} - {{ session('to_date') }} )</span>
                         @endif
                 </span>
             </h1>
+            <p class="page-header-desc">{{ translate('Which vehicles earn and which sit idle, ranked over the period you choose.') }}</p>
         </div>
-        <!-- End Page Header -->
 
         <div class="card mb-20">
             <div class="card-body">
-                <h4 class="">{{translate('Search Data')}}</h4>
+                <h4 class="">{{translate('Search data')}}</h4>
                 <form action="{{ route('admin.transactions.rental.report.set-date') }}" method="post">
                     @csrf
                 <div class="row g-3">
                     <div class="col-sm-6 col-md-3">
                         <select name="zone_id" class="form-control js-select2-custom set-filter" data-url="{{ url()->full() }}" data-filter="zone_id" id="zone">
-                    <option value="all">{{ translate('messages.All_Zones') }}</option>
-                    @foreach(\App\Models\Zone::orderBy('name')->get() as $z)
+                    <option value="all">{{ translate('All zones') }}</option>
+                    @foreach(\App\CentralLogics\Helpers::zones_dropdown() as $z)
                         <option
                             value="{{$z['id']}}" {{isset($zone) && $zone->id == $z['id']?'selected':''}}>
                             {{$z['name']}}
@@ -54,11 +53,11 @@
                         data-zone-id="{{ isset($zone) ? $zone->id : '' }}"
                         data-module-id="{{ request('module_id') ?? '' }}"
 
-                        data-placeholder="{{translate('messages.select_provider')}}" class="js-data-example-ajax form-control set-filter" data-url="{{ url()->full() }}" data-filter="provider_id" >
+                        data-placeholder="{{translate('Select provider')}}" class="js-data-example-ajax form-control set-filter" data-url="{{ url()->full() }}" data-filter="provider_id" >
                             @if(isset($provider))
                             <option value="{{$provider->id}}" selected>{{$provider->name}}</option>
                             @else
-                            <option value="all" selected>{{translate('messages.all_providers')}}</option>
+                            <option value="all" selected>{{translate('All providers')}}</option>
                             @endif
                         </select>
                     </div>
@@ -73,17 +72,17 @@
                         @if(isset($category))
                         <option value="{{$category->id}}" selected>{{$category->name}}</option>
                         @else
-                        <option value="all" selected>{{ translate('messages.All Categories') }}</option>
+                        <option value="all" selected>{{ translate('All categories') }}</option>
                         @endif
                     </select>
                     </div>
                     <div class="col-sm-6 col-md-3">
                         <select class="form-control set-filter" data-url="{{ url()->full() }}" data-filter="filter"  name="filter">
-                            <option value="all_time" {{ isset($filter) && $filter == "all_time" ? 'selected' : '' }}>{{ translate('messages.All Time') }}</option>
-                            <option value="this_year" {{ isset($filter) && $filter == "this_year" ? 'selected' : '' }}>{{ translate('messages.This Year') }}</option>
-                            <option value="previous_year" {{ isset($filter) && $filter == "previous_year" ? 'selected' : '' }}>{{ translate('messages.Previous Year') }}</option>
-                            <option value="this_month" {{ isset($filter) && $filter == "this_month" ? 'selected' : '' }}>{{ translate('messages.This Month') }}</option>
-                            <option value="this_week" {{ isset($filter) && $filter == "this_week" ? 'selected' : '' }}>{{ translate('messages.This Week') }}</option>
+                            <option value="all_time" {{ isset($filter) && $filter == "all_time" ? 'selected' : '' }}>{{ translate('All time') }}</option>
+                            <option value="this_year" {{ isset($filter) && $filter == "this_year" ? 'selected' : '' }}>{{ translate('This year') }}</option>
+                            <option value="previous_year" {{ isset($filter) && $filter == "previous_year" ? 'selected' : '' }}>{{ translate('Previous year') }}</option>
+                            <option value="this_month" {{ isset($filter) && $filter == "this_month" ? 'selected' : '' }}>{{ translate('This month') }}</option>
+                            <option value="this_week" {{ isset($filter) && $filter == "this_week" ? 'selected' : '' }}>{{ translate('This week') }}</option>
                             <option value="custom" {{ isset($filter) && $filter == 'custom' ? 'selected' : '' }}>
                                 {{ translate('messages.Custom') }}</option>
                         </select>
@@ -91,25 +90,23 @@
                     @if (isset($filter) && $filter == 'custom')
                     <div class="col-sm-6 col-md-3">
 
-                            <input type="date" name="from" id="from_date" class="form-control" placeholder="{{ translate('Start Date') }}" {{session()->has('from_date')?'value='.session('from_date'):''}} required>
+                            <input type="date" name="from" id="from_date" class="form-control" placeholder="{{ translate('Start date') }}" {{session()->has('from_date')?'value='.session('from_date'):''}} required>
 
                     </div>
                     <div class="col-sm-6 col-md-3">
 
-                            <input type="date" name="to" id="to_date" class="form-control" placeholder="{{ translate('End Date') }}" {{session()->has('to_date')?'value='.session('to_date'):''}} required>
+                            <input type="date" name="to" id="to_date" class="form-control" placeholder="{{ translate('End date') }}" {{session()->has('to_date')?'value='.session('to_date'):''}} required>
 
                     </div>
                     @endif
                     <div class="col-sm-6 col-md-3 ml-auto">
-                        <button type="submit" class="btn btn-primary btn-block h--45px">{{translate('Filter')}}</button>
+                        <button type="submit" class="btn btn-primary btn-block h--45px"><i class="tio-filter-list"></i> {{translate('Filter')}}</button>
                     </div>
                 </div>
             </form>
             </div>
         </div>
-        <!-- Card -->
         <div class="row card mt-4">
-            <!-- Header -->
             <div class="card-header border-0 py-2">
                 <div class="search--button-wrapper">
                     <h3 class="card-title">{{translate('Vehicle report table')}}
@@ -118,66 +115,60 @@
                         @endif
                     </h3>
                     <form class="search-form">
-                    <!-- Search -->
                     <div class="input--group input-group">
-                        <input id="datatableSearch" name="search" type="search" class="form-control" placeholder="{{translate('ex_:_search_vehicle_name')}}" value="{{ request()?->search ?? null}}" aria-label="{{translate('messages.search_here')}}">
+                        <input id="datatableSearch" name="search" type="search" class="form-control" placeholder="{{translate('Ex') . ' : ' . translate('Search by vehicle name')}}" value="{{ request()?->search ?? null}}" aria-label="{{translate('Search')}}">
                         <button type="button" class="btn btn--secondary"><i class="tio-search"></i></button>
                     </div>
-                    <!-- End Search -->
                     </form>
                     @if(request()->input('search'))
-                        <button type="reset" class="btn btn--primary ml-2 location-reload-to-base" data-url="{{url()->full()}}">{{translate('messages.reset')}}</button>
-                    @endif<!-- Unfold -->
+                        <button type="reset" class="btn btn--primary ml-2 location-reload-to-base" data-url="{{url()->full()}}"><i class="tio-refresh"></i> {{translate('messages.Reset')}}</button>
+                    @endif
                     <div class="hs-unfold mr-2 flex-grow-0">
                         <a class="js-hs-unfold-invoker btn btn-sm btn-white dropdown-toggle min-height-40" href="javascript:;"
                             data-hs-unfold-options='{
                                     "target": "#usersExportDropdown",
                                     "type": "css-animation"
                                 }'>
-                            <i class="tio-download-to mr-1"></i> {{ translate('messages.export') }}
+                            <i class="tio-download-to mr-1"></i> {{ translate('messages.Export') }}
                         </a>
 
                         <div id="usersExportDropdown"
                             class="hs-unfold-content dropdown-unfold dropdown-menu dropdown-menu-sm-right">
-                            <span class="dropdown-header">{{ translate('messages.download_options') }}</span>
+                            <span class="dropdown-header">{{ translate('messages.Download options') }}</span>
                             <a id="export-excel" class="dropdown-item" href="{{route('admin.transactions.rental.report.vehicle-wise-export', ['type'=>'excel',request()->getQueryString()])}}">
                                 <img class="avatar avatar-xss avatar-4by3 mr-2"
                                     src="{{ asset('public/assets/admin') }}/svg/components/excel.svg"
                                     alt="Image Description">
-                                {{ translate('messages.excel') }}
+                                Excel
                             </a>
                             <a id="export-csv" class="dropdown-item" href="{{route('admin.transactions.rental.report.vehicle-wise-export', ['type'=>'csv',request()->getQueryString()])}}">
                                 <img class="avatar avatar-xss avatar-4by3 mr-2"
                                     src="{{ asset('public/assets/admin') }}/svg/components/placeholder-csv-format.svg"
                                     alt="Image Description">
-                                {{ translate('messages.csv') }}
+                                CSV
                             </a>
                         </div>
                     </div>
-                    <!-- End Unfold -->
                 </div>
-                <!-- End Row -->
             </div>
-            <!-- End Header -->
 
-            <!-- Table -->
             <div class="table-responsive datatable-custom" id="table-div">
                 <table id="datatable" class="table table-borderless table-thead-bordered table-nowrap card-table">
                     <thead class="thead-light">
                     <tr>
-                        <th>{{translate('sl')}}</th>
-                        <th class="w--2">{{translate('messages.Vehicle Info')}}</th>
-                        <th>{{translate('messages.Number of Vehicles')}}</th>
-                        <th class="w--2">{{translate('messages.provider')}}</th>
-                        <th>{{translate('messages.hourly_rate')}}</th>
-                        <th>{{translate('messages.distance_wise_rate')}}</th>
-                        <th>{{translate('messages.day_wise_rate')}}</th>
-                        <th>{{translate('messages.total_trip_count')}}</th>
-                        <th>{{translate('messages.total_trip_vehicles')}}</th>
-                        <th>{{translate('messages.total_trip_amount')}}</th>
-                        <th>{{translate('messages.total_discount_given')}}</th>
-                        <th>{{translate('messages.Average Trip Value')}}</th>
-                        <th>{{translate('messages.average_ratings')}}</th>
+                        <th>{{translate('SL')}}</th>
+                        <th class="w--2">{{translate('Vehicle information')}}</th>
+                        <th>{{translate('Number of vehicles')}}</th>
+                        <th class="w--2">{{translate('messages.Provider')}}</th>
+                        <th>{{translate('messages.Hourly rate')}}</th>
+                        <th>{{translate('messages.Distance wise rate')}}</th>
+                        <th>{{translate('messages.Day wise rate')}}</th>
+                        <th>{{translate('messages.Total trip count')}}</th>
+                        <th>{{translate('messages.Total trip vehicles')}}</th>
+                        <th>{{translate('Total trip amount')}}</th>
+                        <th>{{translate('Total discount given')}}</th>
+                        <th>{{translate('Average trip value')}}</th>
+                        <th>{{translate('messages.Average ratings')}}</th>
                     </tr>
                     </thead>
 
@@ -208,7 +199,7 @@
                                 @if($vehicle->provider)
                                 {{Str::limit($vehicle->provider->name,20,'...')}}
                                 @else
-                                {{translate('messages.provider_deleted')}}
+                                {{translate('messages.Provider deleted')}}
                                 @endif
                             </td>
                             <td>
@@ -247,21 +238,19 @@
             @if(count($vehicles) !== 0)
             <hr>
             @endif
-            <div class="page-area">
-                {!! $vehicles->links() !!}
-            </div>
             @if(count($vehicles) === 0)
             <div class="empty--data">
                 <img src="{{asset('/public/assets/admin/svg/illustrations/sorry.svg')}}" alt="public">
                 <h5>
-                    {{translate('no_data_found')}}
+                    {{translate('No data found')}}
                 </h5>
             </div>
             @endif
             </div>
-                <!-- End Table -->
+        <div class="page-area">
+            {!! $vehicles->links() !!}
         </div>
-        <!-- End Card -->
+        </div>
     </div>
 @endsection
 

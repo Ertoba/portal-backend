@@ -4,7 +4,6 @@ namespace Modules\Rental\Http\Controllers\Web\Provider;
 
 use App\CentralLogics\Helpers;
 use App\Models\EmployeeRole;
-use App\Models\Translation;
 use Illuminate\Contracts\Support\Renderable;
 use Illuminate\Contracts\View\Factory;
 use Illuminate\Contracts\View\View;
@@ -45,6 +44,7 @@ class ProviderController extends Controller
     public function categoryList(Request $request): View|Application|Factory
     {
         $categories = $this->category
+            ->withStorage()
             ->when($request->filled('search'), function ($query) use ($request) {
                 $keys = explode(' ', $request->input('search'));
                 $query->where(function ($subQuery) use ($keys) {
@@ -96,6 +96,7 @@ class ProviderController extends Controller
     public function brandList(Request $request): View|Application|Factory
     {
         $brands = $this->brand
+            ->withStorage()
             ->when($request->filled('search'), function ($query) use ($request) {
                 $keys = explode(' ', $request->input('search'));
                 $query->where(function ($subQuery) use ($keys) {
@@ -148,6 +149,7 @@ class ProviderController extends Controller
     {
         $providerId = $this->helpers->get_store_id();
         $reviews = $this->vehicleReview
+            ->with(['vehicle.storage', 'customer.storage'])
             ->where('provider_id', $providerId)
             ->when($request->has('search'), function ($query) use ($request) {
                 $keys = explode(' ', $request['search'] ?? '');
@@ -186,7 +188,7 @@ class ProviderController extends Controller
         $review->replied_at = now();
         $review->save();
 
-        Toastr::success(translate('messages.review_reply_updated'));
+        Toastr::success(translate('messages.Review reply updated'));
         return back();
     }
 
@@ -218,7 +220,7 @@ class ProviderController extends Controller
     public function update($id): View|Application|Factory
     {
         $role = $this->employeeRole
-            ->withoutGlobalScope('translate')
+            ->withoutGlobalScope('translate')->with('translations')
             ->where('store_id',Helpers::get_store_id())
             ->where(['id'=>$id])->first(['id','name','modules']);
 

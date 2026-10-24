@@ -18,12 +18,13 @@
         <div class="card-shape-in d-flex position-relative bg-success-gradient text-white rounded-10 p-3 p-xxl-20 gap-2 justify-content-between align-items-start overflow-hidden z-2 h-100 cursor-pointer">
             <div class="flex-grow-1 d-flex flex-column h-100">
                 <div>
-                    <div class="opacity-lg fs-14 mb-2">{{ translate('Total Earning with Admin Commission') }}</div>
+                    <div class="opacity-lg fs-14 mb-2">{{ translate('Total earning with admin commission') }}</div>
                     @if ($showComparison)
-                        <div class="opacity-lg fs-14 mb-2">
-                            {{ $summary['total_earning_percentage'] == 0 ? '' : ($summary['total_earning_positive'] ? '↑' : '↓') }}
-                            {{ (float) $summary['total_earning_percentage'] }}%
-                            {{ $comparisonText }}
+                        <div class="opacity-lg fs-14 mb-2 d-flex align-items-center gap-1">
+                            @if ($summary['total_earning_percentage'] != 0)
+                                <i class="{{ $summary['total_earning_positive'] ? 'tio-arrow-upward' : 'tio-arrow-downward' }}"></i>
+                            @endif
+                            <span>{{ (float) $summary['total_earning_percentage'] }}% {{ $comparisonText }}</span>
                         </div>
                     @endif
                 </div>
@@ -41,12 +42,13 @@
         <div class="card-shape-in d-flex position-relative bg-warning-gradient text-white rounded-10 p-3 p-xxl-20 gap-2 justify-content-between align-items-start overflow-hidden z-2 h-100 cursor-pointer">
             <div class="flex-grow-1 d-flex flex-column h-100">
                 <div>
-                    <div class="opacity-lg fs-14 mb-2">{{ translate('messages.Total_Expenses') }}</div>
+                    <div class="opacity-lg fs-14 mb-2">{{ translate('Total expenses') }}</div>
                     @if ($showComparison)
-                        <div class="opacity-lg fs-14 mb-2">
-                            {{ $summary['total_expense_percentage'] == 0 ? '' : ($summary['total_expense_positive'] ? '↑' : '↓') }}
-                            {{ (float) $summary['total_expense_percentage'] }}%
-                            {{ $comparisonText }}
+                        <div class="opacity-lg fs-14 mb-2 d-flex align-items-center gap-1">
+                            @if ($summary['total_expense_percentage'] != 0)
+                                <i class="{{ $summary['total_expense_positive'] ? 'tio-arrow-upward' : 'tio-arrow-downward' }}"></i>
+                            @endif
+                            <span>{{ (float) $summary['total_expense_percentage'] }}% {{ $comparisonText }}</span>
                         </div>
                     @endif
                 </div>
@@ -64,16 +66,17 @@
         <div class="card-shape-in d-flex position-relative bg-info-gradient text-white rounded-10 p-3 p-xxl-20 gap-2 justify-content-between align-items-start overflow-hidden z-2 h-100 cursor-pointer">
             <div class="flex-grow-1 d-flex flex-column h-100">
                 <div>
-                    <div class="opacity-lg fs-14 mb-2">{{ translate('Net Profit') }}
+                    <div class="opacity-lg fs-14 mb-2">{{ translate('Net profit') }}
                         <span data-toggle="tooltip" data-placement="right"
                             data-original-title="{{ translate('Net profit shows the amount a store keeps after total earnings are reduced by total expenses.') }}"
                             class="text-white tio-info fs-16 m-0"></span>
                     </div>
                     @if ($showComparison)
-                        <div class="opacity-lg fs-14 mb-2">
-                            {{ $summary['net_income_percentage'] == 0 ? '' : ($summary['net_income_positive'] ? '↑' : '↓') }}
-                            {{ (float) $summary['net_income_percentage'] }}%
-                            {{ $comparisonText }}
+                        <div class="opacity-lg fs-14 mb-2 d-flex align-items-center gap-1">
+                            @if ($summary['net_income_percentage'] != 0)
+                                <i class="{{ $summary['net_income_positive'] ? 'tio-arrow-upward' : 'tio-arrow-downward' }}"></i>
+                            @endif
+                            <span>{{ (float) $summary['net_income_percentage'] }}% {{ $comparisonText }}</span>
                         </div>
                     @endif
                 </div>

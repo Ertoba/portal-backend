@@ -1,6 +1,6 @@
 <div class="row">
     <div class="col-lg-12 text-center ">
-        <h1>{{ translate('Provider_Tax_Reports') }}</h1>
+        <h1>{{ translate('Provider tax report') }}</h1>
     </div>
     <div class="col-lg-12">
 
@@ -9,18 +9,18 @@
         <table>
             <thead>
                 <tr>
-                    <th>{{ translate('Search_Criteria') }}</th>
+                    <th>{{ translate('Search criteria') }}</th>
                     <th></th>
                     <th></th>
                     <th>
 
                         @if (isset($data['summary']))
                             <br>
-                            {{ translate('total_Trips') }} - {{ \App\CentralLogics\Helpers::format_currency($data['summary']->total_orders ??0) }}
+                            {{ translate('Total trips') }} - {{ \App\CentralLogics\Helpers::format_currency($data['summary']->total_orders ??0) }}
                             <br>
-                            {{ translate('total_Trip_amount') }} - {{ \App\CentralLogics\Helpers::format_currency($data['summary']->total_order_amount ??0) }}
+                            {{ translate('Total trip amount') }} - {{ \App\CentralLogics\Helpers::format_currency($data['summary']->total_order_amount ??0) }}
                             <br>
-                            {{ translate('total_tax') }} - {{ \App\CentralLogics\Helpers::format_currency($data['summary']->total_tax ??0) }}
+                            {{ translate('Total tax') }} - {{ \App\CentralLogics\Helpers::format_currency($data['summary']->total_tax ??0) }}
                         @endif
                         @if ($data['from'])
                             <br>
@@ -34,7 +34,7 @@
                         @endif
                         <br>
 
-                        {{ translate('Search_Bar_Content') }}- {{ $data['search'] ?? translate('N/A') }}
+                        {{ translate('Search bar content') }}- {{ $data['search'] ?? translate('N/A') }}
                         <br>
 
                     </th>
@@ -44,11 +44,11 @@
                     <th></th>
                 </tr>
                 <tr>
-                    <th class="border-0">{{ translate('sl') }}</th>
-                    <th class="border-0">{{ translate('Provider Info') }}</th>
-                    <th class="border-0">{{ translate('Total Trips') }}</th>
-                    <th class="border-0">{{ translate('Total Trip Amount') }}</th>
-                    <th class="border-0">{{ translate('Tax Amount') }}</th>
+                    <th class="border-0">{{ translate('SL') }}</th>
+                    <th class="border-0">{{ translate('Provider information') }}</th>
+                    <th class="border-0">{{ translate('Total trips') }}</th>
+                    <th class="border-0">{{ translate('Total trip amount') }}</th>
+                    <th class="border-0">{{ translate('Tax amount') }}</th>
             </thead>
             <tbody>
                 @foreach ($data['stores'] as $key => $store)
@@ -75,13 +75,13 @@
                                             @if ($store->store_total_tax_amount - $sum_tax_amount> 0 )
 
                                             <div class="d-flex fz-14 gap-3 align-items-center title-clr">
-                                                {{ translate('Tax Amount:') }} <span>
+                                                {{ translate('Tax amount') }}: <span>
                                                     {{ \App\CentralLogics\Helpers::format_currency($store->store_total_tax_amount - $sum_tax_amount) }}</span>
                                             </div> <br>
                                             @endif
                                             @if ($sum_tax_amount > 0 )
                                                 <div class="d-flex fz-14 gap-3 align-items-center title-clr">
-                                                    {{ translate('Sum of Taxes:') }} <span>
+                                                    {{ translate('Sum of taxes') }}: <span>
                                                     {{ \App\CentralLogics\Helpers::format_currency($sum_tax_amount) }}</span>
                                                 </div> <br>
                                                 @foreach ($store->tax_data as $tax)

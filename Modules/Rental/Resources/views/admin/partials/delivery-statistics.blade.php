@@ -4,40 +4,35 @@
             <img src="{{ asset('public/assets/admin/img/rental/1.png') }}"class="icon"
                  alt="report/new">
             <h3 class="title text-success">{{ $totalCount }}</h3>
-            <h6 class="subtitle font-regular">{{ translate('messages.total_trip') }}</h6>
+            <h6 class="subtitle font-regular">{{ translate('Total trip') }}</h6>
         </a>
     </div>
     <div class="col-lg-9">
         <div class="row g-2">
             <div class="col-sm-6">
-                <!-- Card -->
                 <a class="resturant-card dashboard--card __dashboard-card card--bg-1 card-hover-shadow" href="{{ route('admin.rental.trip.list') }}?status=pending">
                         <span class="meter">
                             <span style="height:{{ $totalCount > 0 ? ($pendingCount / $totalCount) * 100 : 0 }}%"></span>
                         </span>
                     <h4 class="title">{{ $pendingCount }}</h4>
-                    <span class="subtitle font-regular">{{ translate('messages.pending_trip') }}</span>
+                    <span class="subtitle font-regular">{{ translate('messages.Pending trip') }}</span>
                     <img src="{{ asset('public/assets/admin/img/rental/5.png') }}" alt="img"
                          class="resturant-icon top-50px">
                 </a>
-                <!-- End Card -->
             </div>
             <div class="col-sm-6">
-                <!-- Card -->
                 <a class="resturant-card dashboard--card __dashboard-card card--bg-2 card-hover-shadow" href="{{ route('admin.rental.trip.list') }}?status=ongoing">
                         <span class="meter">
                             <span style="height:{{ $totalCount > 0 ? ($ongoingCount / $totalCount) * 100 : 0 }}%"></span>
                         </span>
                     <h4 class="title">{{ $ongoingCount }}</h4>
-                    <span class="subtitle font-regular"> {{ translate('messages.Ongoing_Trip') }}
+                    <span class="subtitle font-regular"> {{ translate('Ongoing trip') }}
                         </span>
                     <img src="{{ asset('public/assets/admin/img/rental/2.png') }}" alt="img"
                          class="resturant-icon top-50px">
                 </a>
-                <!-- End Card -->
             </div>
             <div class="col-sm-6">
-                <!-- Card -->
                 <a class="resturant-card dashboard--card __dashboard-card bg-F1E8FA card-hover-shadow" href="{{ route('admin.rental.trip.list') }}?status=completed">
                         <span class="meter">
                             <span style="height:{{ $totalCount > 0 ? ($completedCount / $totalCount) * 100 : 0 }}%"></span>
@@ -48,21 +43,18 @@
                     <img src="{{ asset('public/assets/admin/img/rental/3.png') }}" alt="img"
                          class="resturant-icon top-50px">
                 </a>
-                <!-- End Card -->
             </div>
             <div class="col-sm-6">
-                <!-- Card -->
                 <a class="resturant-card dashboard--card __dashboard-card card--bg-4 card-hover-shadow" href="{{ route('admin.rental.trip.list') }}?status=canceled">
                         <span class="meter">
                             <span style="height:{{ $totalCount > 0 ? ($canceledCount / $totalCount) * 100 : 0 }}%"></span>
                         </span>
                     <h4 class="title">{{ $canceledCount }}</h4>
-                    <span class="subtitle font-regular"> {{ translate('messages.Canceled_Trip') }}
+                    <span class="subtitle font-regular"> {{ translate('Canceled trip') }}
                         </span>
                     <img src="{{ asset('public/assets/admin/img/rental/4.png') }}" alt="img"
                          class="resturant-icon top-50px">
                 </a>
-                <!-- End Card -->
             </div>
         </div>
     </div>

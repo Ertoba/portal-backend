@@ -1,7 +1,7 @@
 <div class="card card-body recent-transactions-card">
     <div class="d-flex justify-content-between align-items-center gap-2 flex-wrap border-0 recent-transaction-header">
         <div>
-            <h3 class="mb-20">{{ translate('messages.Recent_Transactions') }}</h3>
+            <h3 class="mb-20">{{ translate('Recent transactions') }}</h3>
             <div class="js-nav-scroller hs-nav-scroller-horizontal">
                 <ul class="nav nav-tabs border-0 nav--tabs nav--pills">
                     <li class="nav-item">
@@ -26,7 +26,7 @@
             <form id="rental-provider-transaction-search-form" class="">
                 <div class="input--group input-group input-group-merge input-group-flush">
                     <input id="rental-provider-transaction-search" type="search" name="report_search" class="form-control" value=""
-                        placeholder="{{ translate('messages.Search_by_Provider') }}">
+                        placeholder="{{ translate('Search by provider') }}">
                     <button type="submit" class="btn btn--secondary"><i class="tio-search"></i></button>
                 </div>
             </form>
@@ -35,17 +35,17 @@
                     <a class="js-hs-unfold-invoker btn btn-sm btn-white dropdown-toggle btn export-btn font--sm"
                         href="javascript:;"
                         data-hs-unfold-options='{"target": "#rentalProviderUsersExportDropdown", "type": "css-animation", "boundary": "viewport"}'>
-                        <i class="tio-download-to mr-1"></i> {{ translate('export') }}
+                        <i class="tio-download-to mr-1"></i> {{ translate('Export') }}
                     </a>
                     <div id="rentalProviderUsersExportDropdown" class="hs-unfold-content dropdown-unfold dropdown-menu dropdown-menu-sm-right">
-                        <span class="dropdown-header">{{ translate('download_options') }}</span>
+                        <span class="dropdown-header">{{ translate('Download options') }}</span>
                         <a id="rental-provider-export-excel" class="dropdown-item" href="javascript:;">
                             <img class="avatar avatar-xss avatar-4by3 mr-2" src="{{ asset('public/assets/admin') }}/svg/components/excel.svg" alt="excel">
-                            {{ translate('messages.excel') }}
+                            Excel
                         </a>
                         <a id="rental-provider-export-csv" class="dropdown-item" href="javascript:;">
                             <img class="avatar avatar-xss avatar-4by3 mr-2" src="{{ asset('public/assets/admin') }}/svg/components/placeholder-csv-format.svg" alt="csv">
-                            .{{ translate('messages.csv') }}
+                            .csv
                         </a>
                     </div>
                 </div>

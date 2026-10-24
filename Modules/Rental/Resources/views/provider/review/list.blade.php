@@ -1,38 +1,35 @@
 @extends('layouts.vendor.app')
 
-@section('title',translate('messages.Review List'))
+@section('title',translate('Review list'))
 
 @section('content')
     <div class="content container-fluid">
-        <!-- Page Heading -->
         <div class="page-header">
             <h1 class="page-header-title">
                 <span class="page-header-icon">
                     <img src="{{asset('public/assets/admin/img/star.png')}}" class="w--26" alt="">
                 </span>
                 <span>
-                    {{translate('messages.customers_reviews')}}
+                    {{translate('messages.Customers reviews')}}
                 </span>
             </h1>
+            <p class="page-header-desc">{{ translate('What customers said about your vehicles and drivers, newest first.') }}</p>
         </div>
-        <!-- Page Heading -->
-        <!-- Card -->
         <div class="card">
-            @php($store_review_reply = App\Models\BusinessSetting::where('key' , 'store_review_reply')->first()->value ?? 0)
+            @php($store_review_reply = \App\CentralLogics\Helpers::get_business_settings('store_review_reply', false) ?? 0)
             <div class="card-header flex-wrap py-2 border-0">
                 <div class="d-flex align-items-center gap-2 mb-2">
-                    <h4 class="mb-0">{{ translate('reviews') }}</h4>
+                    <h4 class="mb-0">{{ translate('Reviews') }}</h4>
                     <span class="badge badge-soft-dark rounded-circle">{{ $reviews->total() }}</span>
                 </div>
                 <div class="search--button-wrapper justify-content-end">
 
                     <form class="search-form">
                         <div class="input-group input--group">
-                            <input name="search" type="search" value="{{ request()?->search }}" class="form-control h--40px" placeholder="{{ translate('Ex : Search by vehicle name') }}" aria-label="Search here">
+                            <input name="search" type="search" value="{{ request()?->search }}" class="form-control h--40px" placeholder="{{ translate('Ex') . ' : ' . translate('Search by vehicle name') }}" aria-label="Search here">
                             <button type="submit" class="btn btn--secondary h--40px"><i class="tio-search"></i></button>
                         </div>
                     </form>
-                    <!-- Unfold -->
                     <div class="hs-unfold">
                         <a class="js-hs-unfold-invoker btn btn-sm btn-white dropdown-toggle btn export-btn font--sm"
                             href="javascript:;"
@@ -41,35 +38,32 @@
                                 &quot;type&quot;: &quot;css-animation&quot;
                             }"
                             data-hs-unfold-target="#usersExportDropdown" data-hs-unfold-invoker="">
-                            <i class="tio-download-to mr-1"></i> {{ translate('export') }}
+                            <i class="tio-download-to mr-1"></i> {{ translate('Export') }}
                         </a>
 
                         <div id="usersExportDropdown"
                             class="hs-unfold-content dropdown-unfold dropdown-menu dropdown-menu-sm-right hs-unfold-content-initialized hs-unfold-css-animation animated hs-unfold-reverse-y hs-unfold-hidden">
 
-                            <span class="dropdown-header">{{ translate('download_options') }}</span>
+                            <span class="dropdown-header">{{ translate('Download options') }}</span>
                             <a id="export-excel" class="dropdown-item"
                                 href="{{ route('vendor.vehicle.review.export', ['export_type' => 'excel', request()->getQueryString()]) }}">
                                 <img class="avatar avatar-xss avatar-4by3 mr-2"
                                     src="{{ asset('public/assets/admin/svg/components/excel.svg') }}"
                                     alt="Image Description">
-                                {{ translate('messages.excel') }}
+                                Excel
                             </a>
                             <a id="export-csv" class="dropdown-item"
                                 href="{{ route('vendor.vehicle.review.export', ['export_type' => 'excel', request()->getQueryString()]) }}">
                                 <img class="avatar avatar-xss avatar-4by3 mr-2"
                                     src="{{ asset('public/assets/admin/svg/components/placeholder-csv-format.svg') }}"
                                     alt="Image Description">
-                                {{ translate('messages.csv') }}
+                                CSV
                             </a>
 
                         </div>
                     </div>
-                    <!-- End Unfold -->
                 </div>
-                <!-- End Row -->
             </div>
-            <!-- Table -->
             <div class="table-responsive datatable-custom">
                 <table id="columnSearchDatatable"
                         class="table table-borderless table-thead-bordered table-nowrap table-align-middle card-table"
@@ -80,15 +74,15 @@
                         }'>
                     <thead class="thead-light">
                     <tr>
-                        <th class="border-0">{{translate('messages.#')}}</th>
-                        <th class="border-0">{{translate('messages.Review_Id')}}</th>
+                        <th class="border-0">#</th>
+                        <th class="border-0">{{translate('Review ID')}}</th>
                         <th class="border-0">{{translate('messages.Vehicle')}}</th>
-                        <th class="border-0">{{translate('messages.reviewer')}}</th>
+                        <th class="border-0">{{translate('messages.Reviewer')}}</th>
                         <th class="border-0">{{translate('messages.review')}}</th>
-                        <th class="border-0">{{translate('messages.date')}}</th>
-                        <th class="border-0">{{translate('messages.Reply_date')}}</th>
+                        <th class="border-0">{{translate('messages.Date')}}</th>
+                        <th class="border-0">{{translate('messages.Reply date')}}</th>
                         @if($store_review_reply == '1')
-                            <th class="text-center">{{translate('messages.action')}}</th>
+                            <th class="text-center">{{translate('messages.Action')}}</th>
                         @endif
                     </tr>
                     </thead>
@@ -107,13 +101,11 @@
                                         </a>
                                         <div class="media-body">
                                             <h5 class="text-hover-primary important--link mb-0">{{Str::limit($review?->vehicle?->name,10)}}</h5>
-                                            <!-- Static -->
                                             <a href="{{route('vendor.trip.details',$review->trip_id)}}"  class="fz--12 text-body important--link">{{ translate('Trip ID') }} #{{$review->trip_id}}</a>
-                                            <!-- Static -->
                                         </div>
                                     </div>
                                 @else
-                                    {{translate('messages.Vehicle_deleted!')}}
+                                    {{translate('messages.Vehicle deleted!')}}
                                 @endif
                             </td>
                             <td>
@@ -123,7 +115,7 @@
                                         <span class="d-block font-size-sm text-body">{{Str::limit($review->customer->phone)}}</span>
                                     </div>
                                 @else
-                                    {{translate('messages.customer_not_found')}}
+                                    {{translate('No data found')}}
                                 @endif
                             </td>
                             <td>
@@ -146,13 +138,13 @@
                             </td>
                             <td>
                                 <p class="text-wrap" data-toggle="tooltip" data-placement="top"
-                                   data-original-title="{{ $review?->reply }}">{!! $review->reply?Str::limit($review->reply, 50, '...'): translate('messages.Not_replied_Yet') !!}</p>
+                                   data-original-title="{{ $review?->reply }}">{!! $review->reply?Str::limit($review->reply, 50, '...'): translate('Not replied yet') !!}</p>
                             </td>
                             @if($store_review_reply == '1')
                                 <td>
                                     <div class="btn--container justify-content-center">
                                         <a  class="btn btn-sm btn--primary {{ $review->reply ? 'btn-outline-primary' : ''}}" data-toggle="modal" data-target="#reply-{{$review->id}}" title="View Details">
-                                            {{ $review->reply ? translate('view_reply') : translate('give_reply')}}
+                                            {{ $review->reply ? translate('View reply') : translate('Give reply')}}
                                         </a>
                                     </div>
                                 </td>
@@ -172,7 +164,7 @@
                                                 <img class="avatar avatar-lg mr-3  onerror-image"  data-onerror-image="{{asset('public/assets/admin/img/160x160/img1.jpg')}}"
                                                      src="{{ $review?->vehicle?->thumbnail_full_url ?? asset('public/assets/admin/img/160x160/img1.jpg') }}" alt="{{$review?->vehicle?->name}} image">
                                                 <div>
-                                                    <h5 class="text-hover-primary mb-0">{{ $review?->vehicle?->name ?? translate('vehicle_deleted') }}</h5>
+                                                    <h5 class="text-hover-primary mb-0">{{ $review?->vehicle?->name ?? translate('Vehicle deleted!') }}</h5>
                                                     @if ($review?->vehicle?->avg_rating == 5)
                                                         <div class="rating">
                                                             <span><i class="tio-star"></i></span>
@@ -280,15 +272,15 @@
                                                         <span class="d-block font-size-sm text-body">{{$review->comment}}</span>
                                                     </div>
                                                 @else
-                                                    {{translate('messages.customer_not_found')}}
+                                                    {{translate('No data found')}}
                                                 @endif
                                             </div>
                                             <div class="mt-3">
                                                 <form action="{{route('vendor.rental.review.reply', $review->id)}}" method="POST">
                                                     @csrf
-                                                    <textarea id="reply" name="reply" required class="form-control" cols="30" rows="3" placeholder="{{ translate('Write_your_reply_here') }}">{{ $review->reply ?? '' }}</textarea>
+                                                    <textarea id="reply" name="reply" required class="form-control" cols="30" rows="3" placeholder="{{ translate('Write your reply here') }}">{{ $review->reply ?? '' }}</textarea>
                                                     <div class="mt-3 btn--container justify-content-end">
-                                                        <button class="btn btn-primary">{{ $review->reply ? translate('update_reply') : translate('send_reply')}}</button>
+                                                        <button class="btn btn-primary">{{ $review->reply ? translate('Update reply') : translate('Send reply')}}</button>
                                                     </div>
                                                 </form>
                                             </div>
@@ -312,13 +304,11 @@
                 <div class="empty--data">
                     <img src="{{asset('/public/assets/admin/svg/illustrations/sorry.svg')}}" alt="public">
                     <h5>
-                        {{translate('no_data_found')}}
+                        {{translate('No data found')}}
                     </h5>
                 </div>
                 @endif
             </div>
-            <!-- End Table -->
         </div>
-        <!-- End Card -->
     </div>
 @endsection

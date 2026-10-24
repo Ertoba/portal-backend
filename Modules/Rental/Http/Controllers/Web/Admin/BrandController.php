@@ -2,10 +2,10 @@
 
 namespace Modules\Rental\Http\Controllers\Web\Admin;
 
+use App\Rules\ImageFile;
 use Exception;
 use App\Models\Translation;
 use Illuminate\Http\Request;
-use App\Traits\FileManagerTrait;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Contracts\View\View;
@@ -19,13 +19,12 @@ use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Auth\Access\AuthorizationException;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use App\CentralLogics\Helpers;
+use App\Support\Storage\FileStorage;
 class BrandController extends Controller
 {
 
     private VehicleBrand $brand;
     private Translation $translation;
-
-    use FileManagerTrait;
 
     public function __construct(VehicleBrand $brand, Translation $translation)
     {
@@ -66,11 +65,11 @@ class BrandController extends Controller
         } catch (Exception) {
             DB::rollBack();
 
-            Toastr::error(translate('messages.failed_to_add_brand'));
+            Toastr::error(translate('messages.Failed to add brand'));
             return back();
         }
 
-        Toastr::success(translate('messages.brand_added_successfully'));
+        Toastr::success(translate('Added successfully'));
         return back();
     }
 
@@ -80,7 +79,7 @@ class BrandController extends Controller
      */
     public function edit(string $id): View|Factory|Application|RedirectResponse
     {
-        $brand = $this->brand->withoutGlobalScope('translate')->with('translations')->findOrFail($id);
+        $brand = $this->brand->withoutGlobalScope('translate')->with(['translations', 'storage'])->findOrFail($id);
 
             $language = getWebConfig('language') ?? [];
             $defaultLang = str_replace('_', '-', app()->getLocale());
@@ -117,12 +116,12 @@ class BrandController extends Controller
 
             DB::commit();
 
-            Toastr::success(translate('messages.brand_updated_successfully'));
+            Toastr::success(translate('Updated successfully'));
             return back();
         } catch (Exception) {
             DB::rollBack();
 
-            Toastr::error(translate('messages.failed_to_update_brand'));
+            Toastr::error(translate('messages.Failed to update brand'));
             return back();
         }
     }
@@ -137,13 +136,13 @@ class BrandController extends Controller
         $brand = $this->brand->find($id);
 
         if (!$brand) {
-            Toastr::error(translate('messages.brand_not_found'));
+            Toastr::error(translate('No data found'));
             return back();
         }
 
         $brand->update(['status' => !$brand->status]);
 
-        Toastr::success(translate('messages.brand_status_updated_successfully'));
+        Toastr::success(translate('Updated successfully'));
         return back();
     }
 
@@ -157,18 +156,18 @@ class BrandController extends Controller
         $brand = $this->brand->find($id);
 
         if (!$brand) {
-            Toastr::error(translate('messages.failed_to_delete_brand'));
+            Toastr::error(translate('messages.Failed to delete brand'));
             return back();
         }
 
         if ($brand->image) {
-            $this->upload('brand/', $brand->image);
+            FileStorage::upload('brand/', $brand->image);
         }
 
         $brand->translations()->delete();
         $brand->delete();
 
-        Toastr::success(translate('messages.brand_deleted_successfully'));
+        Toastr::success(translate('Deleted successfully'));
         return back();
     }
 
@@ -209,10 +208,10 @@ class BrandController extends Controller
             [
                 'name' => 'required|unique:categories,name' . ($id ? ','.$id : ''),
                 'name.0' => 'required',
-                'image' => 'nullable|image|mimes:webp,jpeg,jpg,png,gif|max:10240',
+                'image' => ImageFile::rules('nullable', 10240),
             ],
             [
-                'name.0.required' => translate('default_name_is_required'),
+                'name.0.required' => translate('Default name is required'),
             ]
         );
     }
@@ -225,7 +224,7 @@ class BrandController extends Controller
     {
         $brand = $this->brand;
         $brand->name = $request->name[array_search('default', $request->lang)];
-        $brand->image = $this->upload('brand/', 'png', $request->file('image'));
+        $brand->image = FileStorage::upload('brand/', $request->file('image'));
         $brand->save();
 
         return $brand;
@@ -236,7 +235,7 @@ class BrandController extends Controller
         $brand->name = $request->name[array_search('default', $request->lang)];
 
         if ($request->hasFile('image')) {
-            $brand->image = $this->upload('brand/', 'png', $request->file('image'), $brand->image);
+            $brand->image = FileStorage::update('brand/', $brand->image, $request->file('image'));
         }
 
         $brand->save();

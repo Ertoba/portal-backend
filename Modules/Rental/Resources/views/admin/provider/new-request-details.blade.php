@@ -1,40 +1,39 @@
 @extends('layouts.admin.app')
 
-@section('title', translate('messages.New Provider Request - Details'))
+@section('title', translate('New provider request - details'))
 
 
 @section('content')
     <div class="content container-fluid">
-        <!-- Page Header -->
         <div class="page-header">
             <div class="d-flex justify-content-between flex-wrap gap-3">
                 <div>
                     <h1 class="page-header-title text-break">
                         <span class="page-header-icon">
-                            <img src="{{ asset('/public/assets/admin/img/rental/provider-details.png') }}" class="w--22" alt="">
+                            <img src="{{ asset('/public/assets/admin/img/outline/provider-details.svg') }}" class="w--26" alt="">
                         </span>
-                        <span>{{ translate('messages.Provider_Details') }}
-                    </h1></span>
+                        <span>{{ translate('Provider details') }}
+                    </h1>
+                    <p class="page-header-desc">{{ translate('What this applicant has submitted, so you can approve or turn them down.') }}</p></span>
                     </h1>
                 </div>
                 <div class="d-flex align-items-start flex-wrap gap-2">
                     <a href="{{ route('admin.rental.provider.edit-basic-setup', $store->id)}}" class="btn btn--primary-light float-right mb-0">
-                        <i class="tio-edit"></i> {{ translate('messages.edit_provider') }}
+                        <i class="tio-edit"></i> {{ translate('Edit provider') }}
                     </a>
                     @if($store->vendor->status === null)
                     <a class="btn btn--warning-light font-weight-bold float-right mb-0" data-deny="cancel" data-toggle="modal"
                        data-target="#exampleModal--cancel"><i
                             class="tio-clear font-weight-bold pr-1"></i>
-                        {{ translate('messages.reject') }}</a>
+                        {{ translate('messages.Reject') }}</a>
                     @endif
                     <a class="btn btn--primary font-weight-bold float-right mr-2 mb-0" data-deny="approve" data-toggle="modal"
                        data-target="#exampleModal--approve"
                        href="javascript:"><i
-                            class="tio-done font-weight-bold pr-1"></i>{{ translate('messages.approve') }}</a>
+                            class="tio-done font-weight-bold pr-1"></i>{{ translate('Approve') }}</a>
                 </div>
             </div>
         </div>
-        <!-- End Page Header -->
         <div class="taxi-banner radius-10 mt-4 mb-20"
              style="background-image: url('{{ $store->cover_photo_full_url ?? asset('public/assets/admin/img/100x100/1.png') }}'); background-repeat: no-repeat; background-position: center; background-size: cover;">
         <div class="taxi-info-wrapper d-flex flex-wrap flex-sm-nowrap gap-30px">
@@ -50,7 +49,7 @@
                             <img src="{{ asset('public/assets/admin/img/icons/zone.png') }}" width="36" height="36"
                                  class="rounded" alt="">
                             <div>
-                                <h5 class="lh--12 mb-0 color-3C3C3C"> {{ translate('messages.Business_zone') }}
+                                <h5 class="lh--12 mb-0 color-3C3C3C"> {{ translate('messages.Business zone') }}
                                 </h5>
                                 <span class="fs-13 lh--12 color-484848">{{$store->address}}</span>
                             </div>
@@ -59,11 +58,11 @@
                             <img src="{{ asset('public/assets/admin/img/icons/job-type.png') }}" width="36"
                                  height="36" class="rounded" alt="">
                             <div>
-                                <h5 class="lh--12 mb-0 color-3C3C3C"> {{ translate('messages.Business_Plan') }}
+                                <h5 class="lh--12 mb-0 color-3C3C3C"> {{ translate('Business plan') }}
                                 </h5>
                                 @if($store->store_business_model == 'none')
                                     <span class="fs-13 lh--12 color-484848">{{ translate($store->package->package_name ) }}</span><br>
-                                    <span class="fs-13 lh--12 color-484848">{{ translate('payment_failed') }}</span>
+                                    <span class="fs-13 lh--12 color-484848">{{ translate('Payment failed') }}</span>
                                 @else
                                 <span class="fs-13 lh--12 color-484848">{{ translate($store->store_business_model ) }}</span>
                                 @endif
@@ -74,7 +73,7 @@
                             <img src="{{ asset('/public/assets/admin/img/rental/det-icon.png') }}" width="36"
                                  height="36" class="rounded" alt="">
                             <div>
-                                <h5 class="lh--12 mb-0 color-3C3C3C"> {{ translate('messages.Approx. Pickup Time') }}
+                                <h5 class="lh--12 mb-0 color-3C3C3C"> {{ translate('Approximate pickup time') }}
                                 </h5>
                                 <span class="fs-13 lh--12 color-484848">{{ $store->delivery_time }}</span>
                             </div>
@@ -88,7 +87,7 @@
             <div class="card-header">
                 <div>
                     <h5 class="text-title mb-1">
-                        {{ translate('messages.Provider_Information') }}
+                        {{ translate('Provider information') }}
                     </h5>
                     <p class="fs-12">
                         {{ translate('messages.Here you can see all the information that provider submit during registration') }}
@@ -100,11 +99,9 @@
                     <div class="col-lg-6">
                         <div class="card __bg-FAFAFA border-0 h-100">
                             <div class="card-body">
-                                <h5 class="mb-10px font-bold"> {{ translate('messages.General_Information') }}
+                                <h5 class="mb-10px font-bold"> {{ translate('General information') }}
                                 </h5>
-                                @php($language = \App\Models\BusinessSetting::where('key', 'language')->first())
-                                @php($language = $language->value ?? null)
-                                @php($defaultLang = 'en')
+                                @php($language = \App\CentralLogics\Helpers::get_business_settings('language', false) ?? null)
                                 <div class="div">
                                     @if ($language)
                                         <ul class="nav nav-tabs mb-4">
@@ -125,11 +122,11 @@
                                             <div class="resturant--info-address">
                                                 <ul class="address-info address-info-2 p-0 text-dark">
                                                     <li class="d-flex align-items-start">
-                                                        <span class="label min-w-sm-auto">{{ translate('messages.Vendor Name') }}</span>
+                                                        <span class="label min-w-sm-auto">{{ translate('Vendor name') }}</span>
                                                         <span>: {{$store->name}} {{$store->name}}</span>
                                                     </li>
                                                     <li class="d-flex align-items-start">
-                                                        <span class="label min-w-sm-auto">{{ translate('messages.Business Address') }}</span>
+                                                        <span class="label min-w-sm-auto">{{ translate('messages.Business address') }}</span>
                                                         <span>: {{$store->address}} </span>
                                                     </li>
                                                 </ul>
@@ -151,11 +148,11 @@
                                                 <div class="resturant--info-address">
                                                     <ul class="address-info address-info-2 p-0 text-dark">
                                                         <li class="d-flex align-items-start">
-                                                            <span class="label min-w-sm-auto">{{ translate('messages.Provider Name') }}</span>
+                                                            <span class="label min-w-sm-auto">{{ translate('messages.Provider name') }}</span>
                                                             <span>: {{$translate[$lang]['name']??''}}</span>
                                                         </li>
                                                         <li class="d-flex align-items-start">
-                                                            <span class="label min-w-sm-auto">{{ translate('messages.Business Address') }}</span>
+                                                            <span class="label min-w-sm-auto">{{ translate('messages.Business address') }}</span>
                                                             <span>: {{$store->address}} </span>
                                                         </li>
                                                     </ul>
@@ -167,11 +164,11 @@
                                             <div class="resturant--info-address">
                                                 <ul class="address-info address-info-2 p-0 text-dark">
                                                     <li class="d-flex align-items-start">
-                                                        <span class="label min-w-sm-auto">{{ translate('messages.Provider Name') }}</span>
+                                                        <span class="label min-w-sm-auto">{{ translate('messages.Provider name') }}</span>
                                                         <span>: {{ $store->name }} {{ $store->name }}</span>
                                                     </li>
                                                     <li class="d-flex align-items-start">
-                                                        <span class="label min-w-sm-auto">{{ translate('messages.Business Address') }}</span>
+                                                        <span class="label min-w-sm-auto">{{ translate('messages.Business address') }}</span>
                                                         <span>: {{ $store->address }}</span>
                                                     </li>
                                                 </ul>
@@ -186,20 +183,20 @@
                     <div class="col-lg-6">
                         <div class="card __bg-FAFAFA border-0 h-100">
                             <div class="card-body">
-                                <h5 class="mb-10px font-bold"> {{ translate('messages.Owner_Information') }}
+                                <h5 class="mb-10px font-bold"> {{ translate('Owner information') }}
                                 </h5>
                                 <div class="resturant--info-address">
                                     <ul class="address-info address-info-2 p-0 text-dark">
                                         <li class="d-flex align-items-start">
-                                            <span class="label min-w-sm-auto">{{ translate('messages.First Name') }}</span>
+                                            <span class="label min-w-sm-auto">{{ translate('First name') }}</span>
                                             <span>: {{$store->vendor->f_name}} </span>
                                         </li>
                                         <li class="d-flex align-items-start">
-                                            <span class="label min-w-sm-auto">{{ translate('messages.Last Name') }}</span>
+                                            <span class="label min-w-sm-auto">{{ translate('Last name') }}</span>
                                             <span>: {{$store->vendor->l_name}}</span>
                                         </li>
                                         <li class="d-flex align-items-start">
-                                            <span class="label min-w-sm-auto">{{ translate('messages.Phone') }}</span>
+                                            <span class="label min-w-sm-auto">{{ translate('Phone') }}</span>
                                             <span>: {{$store->vendor->phone}}</span>
                                         </li>
                                     </ul>
@@ -212,7 +209,7 @@
                     <div class="col-lg-6">
                         <div class="card __bg-FAFAFA border-0 h-100">
                             <div class="card-body">
-                                <h5 class="mb-10px font-bold"> {{ translate('messages.Pickup_Zone') }}
+                                <h5 class="mb-10px font-bold"> {{ translate('Pickup zone') }}
                                 </h5>
                                 <div class="d-flex gap-2 gap-sm-3 flex-wrap">
                                     @foreach(json_decode($store->pickup_zone_id) ?? [] as $pickup)
@@ -230,19 +227,19 @@
                     <div class="col-lg-6">
                         <div class="card __bg-FAFAFA border-0 h-100">
                             <div class="card-body">
-                                <h5 class="mb-10px font-bold"> {{ translate('messages.Login Information') }}
+                                <h5 class="mb-10px font-bold"> {{ translate('Login information') }}
                                 </h5>
 
 
                                 <div class="resturant--info-address">
                                     <ul class="address-info address-info-2 p-0 text-dark">
                                         <li class="d-flex align-items-start">
-                                            <span class="label min-w-sm-auto">{{ translate('messages.Email') }}</span>
+                                            <span class="label min-w-sm-auto">{{ translate('messages.email') }}</span>
                                             <span>: {{ $store->vendor->email }}</span>
                                         </li>
                                         <li class="d-flex align-items-start">
-                                            <span class="label min-w-sm-auto">{{ translate('messages.Password') }}</span>
-                                            <span>: {{ translate('*************') }}</span>
+                                            <span class="label min-w-sm-auto">{{ translate('messages.password') }}</span>
+                                            <span>: *************</span>
                                         </li>
                                     </ul>
                                 </div>
@@ -276,8 +273,8 @@
                             <input type="hidden" value="1" name="status">
                             <div class="d-flex justify-content-end gap-3">
                                 <button type="button" data-dismiss="modal" aria-label="Close"
-                                        class="btn btn--reset">{{ translate('Cancel') }}</button>
-                                <button type="submit" class="btn btn--primary">{{ translate('Approve') }}</button>
+                                        class="btn btn--reset"><i class="tio-clear-circle-outlined"></i> {{ translate('Cancel') }}</button>
+                                <button type="submit" class="btn btn--primary"><i class="tio-checkmark-circle-outlined"></i> {{ translate('Approve') }}</button>
                             </div>
                         </div>
                     </form>
@@ -305,7 +302,7 @@
                     <form method="get" action="{{route('admin.rental.provider.approve-or-deny',[$store['id'],0])}}">
                         @csrf
                         <div class="form-floating">
-                            <label for="add-your-note" class="font-medium input-label text--title">{{ translate('Cancellation Note') }}
+                            <label for="add-your-note" class="font-medium input-label text--title">{{ translate('Cancellation note') }}
                                 <span class="form-label-secondary" data-toggle="tooltip" data-placement="right" data-original-title="Cancellation Note">
                                                             <i class="tio-info text--title opacity-60"></i>
                                                     </span>
@@ -313,7 +310,7 @@
                             <div class="mb-30">
                                                     <textarea
                                                         class="form-control h--90"
-                                                        placeholder="{{ translate('Type your Cancellation Note') }}"
+                                                        placeholder="{{ translate('Type your cancellation note') }}"
                                                         name="message"
                                                         id="add-your-note"
                                                         maxlength="60"
@@ -324,8 +321,8 @@
                             <input type="hidden" value="0" name="status">
                             <div class="d-flex justify-content-end gap-3">
                                 <button type="button" data-dismiss="modal" aria-label="Close"
-                                        class="btn btn--reset">{{ translate('Cancel') }}</button>
-                                <button type="submit" class="btn btn--primary">{{ translate('Deny') }}</button>
+                                        class="btn btn--reset"><i class="tio-clear-circle-outlined"></i> {{ translate('Cancel') }}</button>
+                                <button type="submit" class="btn btn--primary"><i class="tio-clear-circle-outlined"></i> {{ translate('Deny') }}</button>
                             </div>
                         </div>
                     </form>

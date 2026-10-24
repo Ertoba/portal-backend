@@ -16,9 +16,9 @@
     data-trend-url="{{ $trend_url }}"
     data-transactions-url="{{ $transactions_url }}"
     data-export-url="{{ $transactions_export_url }}"
-    data-placeholder-order="{{ translate('messages.Search_by_Transaction_ID_or_Provider') }}"
-    data-placeholder-expense="{{ translate('messages.Search_by_Transaction_ID_or_Provider_or_Expense_Source') }}"
-    data-placeholder-subscription="{{ translate('messages.Search_by_Transaction_ID_or_Provider_or_Subscription_Type') }}"
+    data-placeholder-order="{{ translate('Search by transaction ID or provider') }}"
+    data-placeholder-expense="{{ translate('Search by transaction ID or provider or expense source') }}"
+    data-placeholder-subscription="{{ translate('Search by transaction ID or provider or subscription type') }}"
 >
     @include('rental::provider.report.earning-report.partials._filter')
 

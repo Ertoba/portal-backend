@@ -1,16 +1,16 @@
 
 <div class="row">
-    <div class="col-lg-12 text-center "><h1 > {{translate('Driver_List')}}
+    <div class="col-lg-12 text-center "><h1 > {{translate('Driver list')}}
     </h1></div>
     <div class="col-lg-12">
 
     <table>
         <thead>
             <tr>
-                <th>{{ translate('Filter_Criteria') }}</th>
+                <th>{{ translate('Filter criteria') }}</th>
                 <th></th>
                 <th>
-                    {{ translate('Search_Bar_Content')  }}: {{ $data['search'] ?? translate('N/A') }}
+                    {{ translate('Search bar content')  }}: {{ $data['search'] ?? translate('N/A') }}
 
                 </th>
                 <th> </th>
@@ -18,12 +18,12 @@
 
 
         <tr>
-            <th>{{ translate('sl') }}</th>
-            <th>{{ translate('Driver_ID') }}</th>
-            <th>{{ translate('Driver_Name') }}</th>
-            <th>{{ translate('Driver_Provider') }}</th>
-            <th>{{ translate('Driver_Email') }}</th>
-            <th>{{ translate('Driver_Phone') }}</th>
+            <th>{{ translate('SL') }}</th>
+            <th>{{ translate('Driver ID') }}</th>
+            <th>{{ translate('Driver name') }}</th>
+            <th>{{ translate('Driver provider') }}</th>
+            <th>{{ translate('Driver email') }}</th>
+            <th>{{ translate('Driver phone') }}</th>
             <th>{{ translate('Status') }}</th>
 
         </thead>

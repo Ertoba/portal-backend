@@ -1,5 +1,5 @@
 <div class="row">
-    <div class="col-lg-12 text-center "><h1 >{{ translate('provider_summary_reports') }}</h1></div>
+    <div class="col-lg-12 text-center "><h1 >{{ translate('Provider summary reports') }}</h1></div>
     <div class="col-lg-12">
 
 
@@ -7,13 +7,13 @@
     <table>
         <thead>
             <tr>
-                <th>{{ translate('Search_Criteria') }}</th>
+                <th>{{ translate('Search criteria') }}</th>
                 <th></th>
                 <th></th>
                 <th>
-                    {{ translate('filter')  }}- {{  translate($data['filter']) }}
+                    {{ translate('Filter')  }}- {{  translate($data['filter']) }}
                     <br>
-                    {{ translate('Search_Bar_Content')  }}- {{ $data['search'] ??translate('N/A') }}
+                    {{ translate('Search bar content')  }}- {{ $data['search'] ??translate('N/A') }}
 
                 </th>
                 <th> </th>
@@ -26,17 +26,17 @@
                 <th></th>
                 <th></th>
                 <th>
-                    {{ translate('new_registered_provider')  }}- {{ $data['new_providers'] ??translate('N/A') }}
+                    {{ translate('New registered provider')  }}- {{ $data['new_providers'] ??translate('N/A') }}
                     <br>
-                    {{ translate('total_trips')  }}- {{ $data['trips'] ??translate('N/A') }}
+                    {{ translate('Total trips')  }}- {{ $data['trips'] ??translate('N/A') }}
                     <br>
-                    {{ translate('total_trip_amount')  }}- {{ $data['total_trip_amount'] ??translate('N/A') }}
+                    {{ translate('Total trip amount')  }}- {{ $data['total_trip_amount'] ??translate('N/A') }}
                     <br>
-                    {{ translate('completed_trips')  }}- {{ $data['total_completed'] ??translate('N/A') }}
+                    {{ translate('Completed trips')  }}- {{ $data['total_completed'] ??translate('N/A') }}
                     <br>
-                    {{ translate('incomplete_trips')  }}- {{ $data['total_ongoing'] ??translate('N/A') }}
+                    {{ translate('Incomplete trips')  }}- {{ $data['total_ongoing'] ??translate('N/A') }}
                     <br>
-                    {{ translate('canceled_trips')  }}- {{ $data['total_canceled'] ??translate('N/A') }}
+                    {{ translate('Canceled trips')  }}- {{ $data['total_canceled'] ??translate('N/A') }}
                 </th>
                 <th> </th>
                 <th></th>
@@ -44,15 +44,15 @@
                 <th></th>
             </tr>
             <tr>
-                <th>{{ translate('Payment_Statistics') }}</th>
+                <th>{{ translate('Payment statistics') }}</th>
                 <th></th>
                 <th></th>
                 <th>
-                    {{ translate('cash_payments')  }} - {{ $data['cash_payments'] ??translate('N/A') }}
+                    {{ translate('Cash payments')  }} - {{ $data['cash_payments'] ??translate('N/A') }}
                     <br>
-                    {{ translate('digital_payments')  }} - {{ $data['digital_payments'] ??translate('N/A') }}
+                    {{ translate('Digital payments')  }} - {{ $data['digital_payments'] ??translate('N/A') }}
                     <br>
-                    {{ translate('wallet_payments')  }} - {{ $data['wallet_payments'] ??translate('N/A') }}
+                    {{ translate('Wallet payments')  }} - {{ $data['wallet_payments'] ??translate('N/A') }}
                 </th>
                 <th> </th>
                 <th></th>
@@ -60,21 +60,19 @@
                 <th></th>
             </tr>
         <tr>
-            <th>{{ translate('sl') }}</th>
-            <th>{{translate('provider_name')}}</th>
-            <th>{{translate('Total Amount')}}</th>
-            <th>{{translate('Total Trip')}}</th>
-            <th>{{translate('Total Completed Trip')}}</th>
-            <th>{{translate('Completion Rate')}}</th>
-            <th>{{translate('Ongoing Rate')}}</th>
-            <th>{{translate('Cancelation Rate')}}</th>
+            <th>{{ translate('SL') }}</th>
+            <th>{{translate('Provider name')}}</th>
+            <th>{{translate('Total amount')}}</th>
+            <th>{{translate('Total trip')}}</th>
+            <th>{{translate('Total completed trip')}}</th>
+            <th>{{translate('Completion rate')}}</th>
+            <th>{{translate('Ongoing rate')}}</th>
+            <th>{{translate('Cancellation rate')}}</th>
         </thead>
         <tbody>
         @foreach($data['providers'] as $key => $provider)
         @php($completed = $provider->trips->where('trip_status', 'completed')->count())
         @php($canceled = $provider->trips->where('trip_status', 'canceled')->count())
-        @php($refunded = $provider->trips->where('trip_status', 'refunded')->count())
-        @php($refund_requested = $provider->trips->whereNotNull('refund_requested')->count())
         <tr>
             <td>{{$key+1}}</td>
             <td>

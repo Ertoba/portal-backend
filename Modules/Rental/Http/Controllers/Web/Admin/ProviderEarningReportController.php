@@ -5,7 +5,7 @@ namespace Modules\Rental\Http\Controllers\Web\Admin;
 use App\Exports\StoreEarningTransactionExport;
 use App\Http\Controllers\Controller;
 use App\Models\Store;
-use App\Traits\ReportGeneratorTrait;
+use App\Traits\Report\ReportGeneratorTrait;
 use Illuminate\Http\Request;
 use Maatwebsite\Excel\Facades\Excel;
 use Modules\Rental\Traits\RentalReportGeneratorTrait;

@@ -2,8 +2,12 @@
 
 namespace Modules\Rental\Providers;
 
+use App\CentralLogics\Helpers;
+use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
-use Illuminate\Database\Eloquent\Factory;
+use Modules\Rental\Services\ProviderSidebarCountService;
+use Modules\Rental\Services\RentalSidebarCountService;
 
 class RentalServiceProvider extends ServiceProvider
 {
@@ -28,6 +32,33 @@ class RentalServiceProvider extends ServiceProvider
         $this->registerConfig();
         $this->registerViews();
         $this->loadMigrationsFrom(module_path($this->moduleName, 'Database/Migrations'));
+
+        $this->composeAdminSidebarCounts();
+        $this->composeProviderSidebarCounts();
+    }
+
+    private function composeAdminSidebarCounts(): void
+    {
+        View::composer('rental::admin.partials._sidebar_v2_rental', function ($view) {
+            $moduleId = Config::get('module.current_module_id');
+
+            $view->with(RentalSidebarCountService::get(
+                moduleId: $moduleId === null ? null : (int) $moduleId
+            ));
+        });
+    }
+
+    private function composeProviderSidebarCounts(): void
+    {
+        View::composer([
+            'rental::provider.partials._sidebar_rental',
+            'rental::provider.partials._sidebar_v2_rental',
+        ], function ($view) {
+            $view->with(
+                'tripCount',
+                app(ProviderSidebarCountService::class)->tripCounts(Helpers::get_store_data()?->id)
+            );
+        });
     }
 
     /**
@@ -38,6 +69,7 @@ class RentalServiceProvider extends ServiceProvider
     public function register()
     {
         $this->app->register(RouteServiceProvider::class);
+        $this->app->singleton(ProviderSidebarCountService::class);
     }
 
     /**
@@ -102,7 +134,7 @@ class RentalServiceProvider extends ServiceProvider
     private function getPublishableViewPaths(): array
     {
         $paths = [];
-        foreach (\Config::get('view.paths') as $path) {
+        foreach (Config::get('view.paths') as $path) {
             if (is_dir($path . '/modules/' . $this->moduleNameLower)) {
                 $paths[] = $path . '/modules/' . $this->moduleNameLower;
             }

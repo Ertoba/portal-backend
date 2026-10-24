@@ -2,8 +2,8 @@
     <tbody>
         <tr>
             <td class="main-table-td">
-                <h2 class="mb-3" id="mail-title">{{ $data['title']?? translate('Main_Title_or_Subject_of_the_Mail') }}</h2>
-                <div class="mb-1" id="mail-body">{!! $data['body']?? translate('Hi_Sabrina,') !!}</div>
+                <h2 class="mb-3" id="mail-title">{{ $data['title']?? translate('Main title or subject of the mail') }}</h2>
+                <div class="mb-1" id="mail-body">{!! $data['body']?? translate('Hi sabrina,') !!}</div>
                 <span class="d-block text-center mb-3">
                     <a href="" class="cmn-btn" id="mail-button">{{ $data['button_name']??'Track Trip' }}</a>
                 </span>
@@ -13,10 +13,10 @@
                             <td class="p-10">
                                 <span class="d-block text-center">
                                     @php($restaurant_logo = \App\Models\BusinessSetting::where(['key' => 'logo'])->first())
-                                    <img class="mb-2 mail-img-2 onerror-image" data-onerror-image="{{ asset('storage/app/public/business/' . $restaurant_logo) }}"
+                                    <img class="mb-2 mail-img-2 onerror-image" data-onerror-image="{{ asset('/public/assets/admin/img/blank3.png') }}"
                                     src="{{ $data?->logo ? $data->logo_full_url : \App\CentralLogics\Helpers::get_full_url('business',$restaurant_logo?->value,$restaurant_logo?->storage[0]?->value ?? 'public', 'favicon') }}"
                                     id="logoViewer" alt="">
-                                    <h3 class="mb-3 mt-0">{{ translate('Trip_Info') }}</h3>
+                                    <h3 class="mb-3 mt-0">{{ translate('Trip information') }}</h3>
                                 </span>
                             </td>
                         </tr>
@@ -26,30 +26,30 @@
                                     <tbody>
                                         <tr>
                                             <td>
-                                                <h3 class="subtitle">{{ translate('Trip_Summary') }}</h3>
-                                                <span class="d-block">{{ translate('Trip') }}{{ translate('#_48573') }}</span>
-                                                <span class="d-block">{{ translate('23 Jul, 2023 4:30 am') }}</span>
+                                                <h3 class="subtitle">{{ translate('Trip summary') }}</h3>
+                                                <span class="d-block">{{ translate('Trip') }}#_48573</span>
+                                                <span class="d-block">23 Jul, 2023 4:30 am</span>
 
                                                 <div class="text-break mb-1">
-                                                    <span class="opacity-70">{{ translate('messages.pickup_location') }}</span> <span>:</span>
-                                                    <span>{{ translate('4B Kemal Ataturk Ave, Dhaka 1212, Bangladesh') }}</span>
+                                                    <span class="opacity-70">{{ translate('Pickup location') }}</span> <span>:</span>
+                                                    <span>4B Kemal Ataturk Ave, Dhaka 1212, Bangladesh</span>
                                                 </div>
                                                 <div class="text-break mb-1">
-                                                    <span class="opacity-70">{{ translate('messages.destination_location') }}</span> <span>:</span>
-                                                    <span>{{ translate('Dhanmondi 32 Road Bridge, Dhaka 1209, Bangladesh') }}</span>
+                                                    <span class="opacity-70">{{ translate('messages.Destination location') }}</span> <span>:</span>
+                                                    <span>Dhanmondi 32 Road Bridge, Dhaka 1209, Bangladesh</span>
                                                 </div>
                                             </td>
                                             <td class="email-template-table-td-max-width">
-                                                <h3 class="subtitle">{{ translate('User_Info') }}</h3>
-                                                <span class="d-block">{{ translate('Munam_Shahariar') }}</span>
-                                                <span class="d-block" >{{ translate('xyz@gami.com')}}</span>
+                                                <h3 class="subtitle">{{ translate('User information') }}</h3>
+                                                <span class="d-block">{{ translate('Munam Shahariar') }}</span>
+                                                <span class="d-block" >xyz@gami.com</span>
                                             </td>
                                         </tr>
                                         <td colspan="4">
                                             <table class="w-100">
                                                 <thead class="bg-section-2">
                                                     <tr>
-                                                        <th class="text-left p-1 px-3">{{ translate('#') }}</th>
+                                                        <th class="text-left p-1 px-3">#</th>
                                                         <th class="text-left p-1 px-3">{{ translate('Vehicle') }}</th>
                                                         <th class="text-left p-1 px-3">{{ translate('Hour/Km/Day') }}</th>
                                                         <th class="text-right p-1 px-3">{{ translate('Fare') }}</th>
@@ -63,14 +63,14 @@
                                                             1
                                                         </td>
                                                         <td class="text-left p-2 px-3">
-                                                            {{ translate('1.ABC_x_1') }}
+                                                            1.ABC x 1
                                                         </td>
                                                         <td class="text-left p-2 px-3">
-                                                            {{ translate('$ 20.00 x 2 Hrs') }}
+                                                            $ 20.00 x 2 Hrs
                                                         </td>
                                                         <td class="text-right p-2 px-3">
                                                             <h4>
-                                                            {{ translate('$5,465') }}
+                                                            $5,465
                                                             </h4>
                                                         </td>
                                                     </tr>
@@ -79,14 +79,14 @@
                                                             2
                                                         </td>
                                                         <td class="text-left p-2 px-3">
-                                                            {{ translate('2.XYZ_x_1') }}
+                                                            2.XYZ x 1
                                                         </td>
                                                         <td class="text-left p-2 px-3">
-                                                            {{ translate('$ 44.00 x 2 Hrs') }}
+                                                            $ 44.00 x 2 Hrs
                                                         </td>
                                                         <td class="text-right p-2 px-3">
                                                             <h4>
-                                                            {{ translate('$354') }}
+                                                            $354
                                                             </h4>
                                                         </td>
                                                     </tr>
@@ -96,29 +96,29 @@
                                                             <table class="w-100">
                                                                 <tr>
                                                                     <td class="email-template-table-td-width"></td>
-                                                                    <td class="p-1 px-3">{{ translate('Price') }}</td>
-                                                                    <td class="text-right p-1 px-3">{{ translate('$85') }}</td>
+                                                                    <td class="p-1 px-3">{{ translate('price') }}</td>
+                                                                    <td class="text-right p-1 px-3">$85</td>
                                                                 </tr>
 
                                                                 <tr>
                                                                     <td class="email-template-table-td-width"></td>
-                                                                    <td class="p-1 px-3">{{ translate('Sub_total') }}</td>
-                                                                    <td class="text-right p-1 px-3">{{ translate('$90') }}</td>
+                                                                    <td class="p-1 px-3">{{ translate('Sub Total') }}</td>
+                                                                    <td class="text-right p-1 px-3">$90</td>
                                                                 </tr>
                                                                 <tr>
                                                                     <td class="email-template-table-td-width"></td>
                                                                     <td class="p-1 px-3">{{ translate('Discount') }}</td>
-                                                                    <td class="text-right p-1 px-3">{{ translate('$10') }}</td>
+                                                                    <td class="text-right p-1 px-3">$10</td>
                                                                 </tr>
                                                                 <tr>
                                                                     <td class="email-template-table-td-width"></td>
-                                                                    <td class="p-1 px-3">{{ translate('Coupon_Discount') }}</td>
-                                                                    <td class="text-right p-1 px-3">{{ translate('$00') }}</td>
+                                                                    <td class="p-1 px-3">{{ translate('Coupon discount') }}</td>
+                                                                    <td class="text-right p-1 px-3">$00</td>
                                                                 </tr>
                                                                 <tr>
                                                                     <td class="email-template-table-td-width"></td>
-                                                                    <td class="p-1 px-3">{{ translate('VAT_/_Tax') }}</td>
-                                                                    <td class="text-right p-1 px-3">{{ translate('$15') }}</td>
+                                                                    <td class="p-1 px-3">{{ translate('VAT/tax') }}</td>
+                                                                    <td class="text-right p-1 px-3">$15</td>
                                                                 </tr>
 
                                                                 <tr>
@@ -127,7 +127,7 @@
                                                                         <h4>{{ translate('Total') }}</h4>
                                                                     </td>
                                                                     <td class="text-right p-1 px-3">
-                                                                        <span class="text-base">{{ translate('1$05') }}</span>
+                                                                        <span class="text-base">1$05</span>
                                                                     </td>
                                                                 </tr>
                                                             </table>
@@ -144,10 +144,10 @@
                 </table>
                 <hr>
                 <div class="mb-2" id="mail-footer">
-                    {{ $data['footer_text'] ?? translate('Please_contact_us_for_any_queries,_we’re_always_happy_to_help.') }}
+                    {{ $data['footer_text'] ?? translate('Please contact us for any queries; we\'re always happy to help.') }}
                 </div>
                 <div>
-                    {{ translate('Thanks_&_Regards') }},
+                    {{ translate('Thanks & regards') }},
                 </div>
                 <div class="mb-4">
                     {{ \App\CentralLogics\Helpers::get_business_settings('business_name', false) }}
@@ -157,10 +157,10 @@
         <tr>
             <td>
             <span class="privacy">
-                <a href="#" id="privacy-check" style="{{ (isset($data['privacy']) && $data['privacy'] == 1)?'':'display:none;' }}"><span class="dot"></span>{{ translate('Privacy_Policy')}}</a>
-                <a href="#" id="refund-check" style="{{ (isset($data['refund']) && $data['refund'] == 1)?'':'display:none;' }}"><span class="dot"></span>{{ translate('Refund_Policy') }}</a>
-                <a href="#" id="cancelation-check" style="{{ (isset($data['cancelation']) && $data['cancelation'] == 1)?'':'display:none;' }}"><span class="dot"></span>{{ translate('Cancelation_Policy') }}</a>
-                <a href="#" id="contact-check" style="{{ (isset($data['contact']) && $data['contact'] == 1)?'':'display:none;' }}"><span class="dot"></span>{{ translate('Contact_us') }}</a>
+                <a href="#" id="privacy-check" style="{{ (isset($data['privacy']) && $data['privacy'] == 1)?'':'display:none;' }}"><span class="dot"></span>{{ translate('Privacy policy')}}</a>
+                <a href="#" id="refund-check" style="{{ (isset($data['refund']) && $data['refund'] == 1)?'':'display:none;' }}"><span class="dot"></span>{{ translate('Refund policy') }}</a>
+                <a href="#" id="cancelation-check" style="{{ (isset($data['cancelation']) && $data['cancelation'] == 1)?'':'display:none;' }}"><span class="dot"></span>{{ translate('Cancellation policy') }}</a>
+                <a href="#" id="contact-check" style="{{ (isset($data['contact']) && $data['contact'] == 1)?'':'display:none;' }}"><span class="dot"></span>{{ translate('Contact us') }}</a>
             </span>
                 <span class="social email-template-social-span">
                     <a href="" id="facebook-check" class="email-template-social-media" style="{{ (isset($data['facebook']) && $data['facebook'] == 1)?'':'display:none;' }}">

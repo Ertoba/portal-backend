@@ -1,37 +1,37 @@
 
 <div class="row">
-    <div class="col-lg-12 text-center "><h1 > {{translate('Driver_Trip_List')}}
+    <div class="col-lg-12 text-center "><h1 > {{translate('Driver trip list')}}
         </h1></div>
     <div class="col-lg-12">
 
         <table>
             <thead>
             <tr>
-                <th>{{ translate('Filter_Criteria') }}</th>
+                <th>{{ translate('Filter criteria') }}</th>
                 <th></th>
                 <th>
-                    {{ translate('Search_Bar_Content')  }}: {{ $data['search'] ?? translate('N/A') }}
+                    {{ translate('Search bar content')  }}: {{ $data['search'] ?? translate('N/A') }}
 
                 </th>
                 <th> </th>
             </tr>
             <tr>
-                <th>{{ translate('sl') }}</th>
+                <th>{{ translate('SL') }}</th>
                 <th>{{ translate('Customer') }}</th>
                 <th>{{ translate('Provider') }}</th>
-                <th>{{ translate('Trip Amount') }}</th>
-                <th>{{ translate('Discount On Trip') }}</th>
-                <th>{{ translate('Coupon Discount Amount') }}</th>
-                <th>{{ translate('Trip Status') }}</th>
-                <th>{{ translate('Payment Status') }}</th>
-                <th>{{ translate('Tax Amount') }}</th>
+                <th>{{ translate('Trip amount') }}</th>
+                <th>{{ translate('Discount on trip') }}</th>
+                <th>{{ translate('Coupon discount amount') }}</th>
+                <th>{{ translate('Trip status') }}</th>
+                <th>{{ translate('Payment status') }}</th>
+                <th>{{ translate('Tax amount') }}</th>
 
             </thead>
             <tbody>
             @foreach($data['data'] as $key => $driverTrip)
                 <tr>
                     <td>{{ $loop->index+1}}</td>
-                    <td>{{ $driverTrip?->trip?->customer?->fullName ?? translate('messages.Guest_user') }}</td>
+                    <td>{{ $driverTrip?->trip?->customer?->fullName ?? translate('messages.Guest user') }}</td>
                     <td>{{ $driverTrip?->trip?->provider->name  }}</td>
                     <td>{{ $driverTrip?->trip?->trip_amount }}</td>
                     <td>{{ $driverTrip?->trip?->discount_on_trip }}</td>

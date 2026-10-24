@@ -1,6 +1,6 @@
 @extends('layouts.admin.app')
 
-@section('title', translate('messages.all_trips'))
+@section('title', translate('All trips'))
 
 @push('css_or_js')
 <link rel="stylesheet" href="{{asset('Modules/Rental/public/assets/css/admin/trip-list.css')}}">
@@ -8,29 +8,25 @@
 
 @section('content')
     <div class="content container-fluid">
-        <!-- Page Header -->
         <div class="page-header">
             <div class="d-flex justify-content-between flex-wrap gap-3">
                 <div>
                     <h1 class="page-header-title text-break">
                         <span class="page-header-icon">
-                            <img src="{{ asset('public/assets/admin/img/zone.png') }}" class="w--22" alt="">
+                            <img src="{{ asset('public/assets/admin/img/outline/zone.svg') }}" class="w--26" alt="">
                         </span>
-                        <span>{{ translate('messages.All_Trips') }}
+                        <span>{{ translate('All trips') }}
                             <span class="badge badge-soft-dark ml-2" id="itemCount">{{ $total }}</span>
                         </span>
                     </h1>
+                    <p class="page-header-desc">{{ translate('Trips at this stage, with the provider, customer and driver on each.') }}</p>
                 </div>
             </div>
         </div>
-        <!-- End Page Header -->
 
-        <!-- Card -->
         <div class="card">
-            <!-- Header -->
             <div class="card-header justify-content-between gap-3 py-2 flex-wrap">
                 <form action="" method="get" class="search-form flex-grow-1 max-w-450px">
-                    <!-- Search -->
                     <input type="hidden" value="{{request()?->status  }}" name="status" >
                     <div class="input-group input--group">
                         <input id="datatableSearch_" type="search" value="{{ request()?->search ?? null }}"
@@ -39,14 +35,12 @@
                                aria-label="{{ translate('messages.Search by trip ID, customer name, email') }}">
                         <button type="submit" class="btn btn--secondary bg--primary"><i class="tio-search"></i></button>
                     </div>
-                    <!-- End Search -->
                 </form>
                 @if (request()->input('search'))
                     <button type="reset" class="btn btn--primary ml-2 location-reload-to-base"
-                            data-url="{{ url()->full() }}">{{ translate('messages.reset') }}</button>
+                            data-url="{{ url()->full() }}"><i class="tio-refresh"></i> {{ translate('messages.Reset') }}</button>
                 @endif
                 <div class="search--button-wrapper justify-content-end gap-20px">
-                    <!-- Unfold -->
                     <div class="hs-unfold m-0">
                         <a class="js-hs-unfold-invoker btn btn-sm btn-white dropdown-toggle min-height-40 font-semibold"
                            href="javascript:;"
@@ -54,41 +48,38 @@
                             "target": "#usersExportDropdown",
                             "type": "css-animation"
                         }'>
-                            <i class="tio-download-to mr-1"></i> {{ translate('messages.export') }}
+                            <i class="tio-download-to mr-1"></i> {{ translate('messages.Export') }}
                         </a>
 
                         <div id="usersExportDropdown"
                              class="hs-unfold-content dropdown-unfold dropdown-menu dropdown-menu-sm-right">
 
-                            <span class="dropdown-header">{{ translate('messages.download_options') }}</span>
+                            <span class="dropdown-header">{{ translate('messages.Download options') }}</span>
                             <a id="export-excel" class="dropdown-item"
                                href="{{ route('admin.rental.trip.export', ['type' => 'excel', request()->getQueryString()]) }}">
                                 <img class="avatar avatar-xss avatar-4by3 mr-2"
                                      src="{{ asset('public/assets/admin') }}/svg/components/excel.svg"
                                      alt="Image Description">
-                                {{ translate('messages.excel') }}
+                                Excel
                             </a>
                             <a id="export-csv" class="dropdown-item"
                                href="{{ route('admin.rental.trip.export', ['type' => 'csv', request()->getQueryString()]) }}">
                                 <img class="avatar avatar-xss avatar-4by3 mr-2"
                                      src="{{ asset('public/assets/admin') }}/svg/components/placeholder-csv-format.svg"
                                      alt="Image Description">
-                                {{ translate('messages.csv') }}
+                                CSV
                             </a>
 
                         </div>
                     </div>
-                    <!-- End Unfold -->
                     <div class="hs-unfold mr-2">
                         <a class="js-hs-unfold-invoker btn btn-sm btn-white h--40px filter-button-show" href="javascript:;">
-                            <i class="tio-filter-list mr-1"></i> {{ translate('messages.filter') }} <span class="badge badge-success badge-pill ml-1" id="filter_count"></span>
+                            <i class="tio-filter-list mr-1"></i> {{ translate('messages.Filter') }} <span class="badge badge-success badge-pill ml-1" id="filter_count"></span>
                         </a>
                     </div>
                 </div>
             </div>
-            <!-- End Header -->
 
-            <!-- Table -->
             <div class="table-responsive datatable-custom">
                 <table id="columnSearchDatatable"
                        class="table table-borderless table-thead-bordered table-nowrap table-align-middle card-table"
@@ -100,17 +91,17 @@
                        }'>
                     <thead class="thead-light">
                     <tr>
-                        <th class="border-0">{{ translate('sl') }}</th>
+                        <th class="border-0">{{ translate('SL') }}</th>
                         <th class="border-0">{{ translate('messages.Trip ID') }}</th>
-                        <th class="border-0">{{ translate('messages.Booking_Date') }}</th>
-                        <th class="border-0">{{ translate('messages.Schedule_At') }}</th>
-                        <th class="border-0">{{ translate('messages.Customer_Info') }}</th>
-                        <th class="border-0">{{ translate('messages.Vendor') }}</th>
-                        <th class="border-0">{{ translate('messages.Driver_Info') }}</th>
-                        <th class="border-0">{{ translate('messages.Vehicle_Info') }}</th>
-                        <th class="border-0">{{ translate('messages.Trip_Type') }}</th>
-                        <th class="text-end border-0">{{ translate('messages.Trip_Amount') }}</th>
-                        <th class="text-center border-0">{{ translate('messages.Trip_Status') }}</th>
+                        <th class="border-0">{{ translate('Booking date') }}</th>
+                        <th class="border-0">{{ translate('Schedule at') }}</th>
+                        <th class="border-0">{{ translate('Customer information') }}</th>
+                        <th class="border-0">{{ translate('messages.vendor') }}</th>
+                        <th class="border-0">{{ translate('Driver information') }}</th>
+                        <th class="border-0">{{ translate('Vehicle information') }}</th>
+                        <th class="border-0">{{ translate('Trip type') }}</th>
+                        <th class="text-end border-0">{{ translate('Trip amount') }}</th>
+                        <th class="text-center border-0">{{ translate('Trip status') }}</th>
                         <th class="text-center border-0">{{ translate('messages.Action') }}</th>
                     </tr>
                     </thead>
@@ -153,7 +144,7 @@
                                         {{ $trip?->user_info['contact_person_email'] }}
                                     </div>
                                 @else
-                                    {{ translate('messages.Guest_user') }}
+                                    {{ translate('messages.Guest user') }}
                                 @endif
                             </div>
                         </td>
@@ -163,7 +154,7 @@
                                     {{  Str::limit($trip?->provider?->name, 12,'...')  }}
                                 </a>
                             @else
-                                <span>{{translate('messages.not_found')}}</span>
+                                <span>{{translate('No data found')}}</span>
                             @endif
                         </td>
                         @php
@@ -178,6 +169,7 @@
                                     <div class="d-flex align-items-center gap-2" data-html="true" data-toggle="tooltip"
                                          title="<div class='d-flex flex-column p-2'>
                                              @foreach($trip->assignedDriver as $index => $tooltipDriver)
+                                                @continue(! $tooltipDriver->driver)
                                                 <div class='media gap-3 {{ !$loop->last ? 'border-bottom mb-2 pb-2' : '' }}'>
                                                     <img height='40' src='{{ $tooltipDriver->driver['imageFullUrl'] }}'  class='rounded ratio-1-1' width='40' alt='...'>
                                                     <div class='media-body'>
@@ -191,6 +183,7 @@
                                          </div>">
                                         <div class="d-flex">
                                             @foreach ($trip->assignedDriver->take($maxDisplay) as $key => $assignedDriver)
+                                                @continue(! $assignedDriver->driver)
                                                 <img width="35"  class="rounded-circle aspect-1-1 border border-white shadow-sm {{ $key > 0 ? 'ml-n2' : '' }}" src="{{ $assignedDriver->driver['imageFullUrl'] }}" alt="">
                                             @endforeach
                                         </div>
@@ -200,7 +193,7 @@
                                     </div>
                                 @else
                                     <div class="text--title">
-                                        @if ($trip->assignedDriver->isNotEmpty())
+                                        @if ($trip->assignedDriver->first()?->driver)
                                             <a href="{{ route('admin.rental.provider.driver.details', $trip->assignedDriver->first()?->driver->id) }}" class="font-medium">
                                                 {{ Str::limit($trip->assignedDriver->first()?->driver?->fullName,12,'...')  }}
                                             </a>
@@ -229,7 +222,7 @@
                                                          <h5 class='d-flex align-items-center gap-2 text-white mb-0'>
                                                             <a href='{{ route('admin.rental.provider.vehicle.details', $detail->vehicle_id) }}' class='text-white'>{{ Str::limit($detail->vehicle_details['name'],12,'...')  }}</a>
                                                          </h5>
-                                                         <div class='d-flex align-items-center gap-2 fs-10'>{{ translate('messages.car_Assigned') }}: {{ $detail->tripVehicleDetails->count() }}</div>
+                                                         <div class='d-flex align-items-center gap-2 fs-10'>{{ translate('Car assigned') }}: {{ $detail->tripVehicleDetails->count() }}</div>
                                                      </div>
                                                  </div>
                                              @else
@@ -239,7 +232,7 @@
                                                          <h5 class='d-flex align-items-center gap-2 text-white mb-0'>
                                                             <span class='text-white'>{{ Str::limit($detail->vehicle_details['name'],12,'...')  }}</span>
                                                         </h5>
-                                                         <div class='d-flex align-items-center text-danger gap-2 fs-10'>{{ translate('Vehicle_Not_Found_!!!') }}</div>
+                                                         <div class='d-flex align-items-center text-danger gap-2 fs-10'>{{ translate('No data found') }}</div>
                                                      </div>
                                                  </div>
                                              @endif
@@ -260,7 +253,7 @@
                                     {{ translate($trip->trip_type) }}
                                 </div>
                                 <div class="opacity-lg">
-                                    {{ $trip->scheduled ?translate('messages.scheduled'): translate('messages.Instant')  }}
+                                    {{ $trip->scheduled ?translate('Scheduled'): translate('messages.Instant')  }}
                                 </div>
                             </div>
                         </td>
@@ -298,10 +291,10 @@
                         <td>
                             <div class="btn--container justify-content-center">
                                 <a class="btn action-btn btn--primary btn-outline-primary" href="{{route("admin.rental.trip.generate-invoice",["id" => $trip->id])}}"
-                                   title="{{ translate('messages.download') }}"><i class="tio-download-to"></i>
+                                   title="{{ translate('messages.Download') }}"><i class="tio-download-to"></i>
                                 </a>
-                                <a class="btn action-btn btn--primary btn-outline-primary" href="{{ route('admin.rental.trip.details', $trip->id) }}"
-                                   title="{{ translate('messages.view') }}"><i class="tio-visible-outlined"></i>
+                                <a class="btn action-btn action-btn--view" href="{{ route('admin.rental.trip.details', $trip->id) }}"
+                                   title="{{ translate('messages.View') }}"><i class="tio-visible-outlined"></i>
                                 </a>
                             </div>
                         </td>
@@ -321,25 +314,21 @@
                 <div class="empty--data">
                     <img src="{{asset('/public/assets/admin/svg/illustrations/sorry.svg')}}" alt="public">
                     <h5>
-                        {{translate('no_data_found')}}
+                        {{translate('No data found')}}
                     </h5>
                 </div>
             @endif
-            <!-- End Table -->
         </div>
-        <!-- End Card -->
     </div>
 
     <div id="datatableFilterSidebar" class="hs-unfold-content_ sidebar sidebar-bordered sidebar-box-shadow initial-hidden">
         <div class="card card-lg sidebar-card sidebar-footer-fixed">
             <div class="card-header">
-                <h4 class="card-header-title">{{translate('messages.Trip_filter')}}</h4>
+                <h4 class="card-header-title">{{translate('messages.Trip filter')}}</h4>
 
-                <!-- Toggle Button -->
                 <a class="js-hs-unfold-invoker_ btn btn-icon btn-sm btn-ghost-dark ml-2 filter-button-hide" href="javascript:;">
                     <i class="tio-clear tio-lg"></i>
                 </a>
-                <!-- End Toggle Button -->
             </div>
             @php
                 $filterCount = 0;
@@ -355,14 +344,13 @@
                 if(isset($from_date) && isset($to_date)) $filterCount += 1;
                 if(isset($order_type)) $filterCount += 1;
             @endphp
-                <!-- Body -->
             <form class="card-body sidebar-body sidebar-scrollbar" action="" method="get" id="order_filter_form">
                 <input type="hidden" name="status" value="{{ request()->status }}">
-                <small class="text-cap mb-3">{{translate('messages.zone')}}</small>
+                <small class="text-cap mb-3">{{translate('messages.Zone')}}</small>
 
                 <div class="mb-2 initial--21">
                     <select name="zone_ids[]" id="zone_ids" class="form-control js-select2-custom" multiple="multiple">
-                        @foreach(\App\Models\Zone::get(['id','name']) as $zone)
+                        @foreach(\App\CentralLogics\Helpers::zones_dropdown() as $zone)
                             <option value="{{$zone->id}}" {{isset($zone_ids)?(in_array($zone->id, $zone_ids)?'selected':''):''}}>{{$zone->name}}</option>
                         @endforeach
                     </select>
@@ -372,13 +360,8 @@
                 <small class="text-cap mb-3">{{translate('messages.Provider')}}</small>
                 <div class="mb-2 initial--21">
                     <select name="provider_ids[]" id="provider_ids" data-get-provider-url="{{route('admin.store.get-providers')}}" class="form-control js-select2-custom" multiple="multiple">
-                        @foreach(\App\Models\Store::WithModuleType('rental')->get(['id','name']) as $store)
-                            <option value="{{$store->id}}" data-verified="{{ (int) $store->verified_seller }}"
-                                    @if(isset($provider_ids) && in_array($store->id, $provider_ids))
-                                        selected
-                                    @endif>
-                                {{$store->name}}
-                            </option>
+                        @foreach($selected_providers as $store)
+                            <option value="{{$store->id}}" data-verified="{{ (int) $store->verified_seller }}" selected>{{$store->name}}</option>
                         @endforeach
                     </select>
                 </div>
@@ -386,12 +369,11 @@
 
                 <hr class="my-4">
                 @if($status == 'all')
-                    <small class="text-cap mb-3">{{translate('messages.Trip_status')}}</small>
+                    <small class="text-cap mb-3">{{translate('Trip status')}}</small>
 
-                    <!-- Custom Checkbox -->
                     <div class="custom-control custom-radio mb-2">
                         <input type="checkbox" id="orderStatus2" name="tripStatus[]" class="custom-control-input" value="pending" {{isset($tripStatus)?(in_array('pending', $tripStatus)?'checked':''):''}}>
-                        <label class="custom-control-label" for="orderStatus2">{{translate('messages.pending')}}</label>
+                        <label class="custom-control-label" for="orderStatus2">{{translate('Pending')}}</label>
                     </div>
                     <div class="custom-control custom-radio mb-2">
                         <input type="checkbox" id="orderStatus1" name="tripStatus[]" class="custom-control-input" value="confirmed" {{isset($tripStatus)?(in_array('confirmed', $tripStatus)?'checked':''):''}}>
@@ -399,7 +381,7 @@
                     </div>
                     <div class="custom-control custom-radio mb-2">
                         <input type="checkbox" id="orderStatus3" name="tripStatus[]" class="custom-control-input" value="ongoing" {{isset($tripStatus)?(in_array('ongoing', $tripStatus)?'checked':''):''}}>
-                        <label class="custom-control-label" for="orderStatus3">{{translate('messages.ongoing')}}</label>
+                        <label class="custom-control-label" for="orderStatus3">{{translate('Ongoing')}}</label>
                     </div>
                     <div class="custom-control custom-radio mb-2">
                         <input type="checkbox" id="orderStatus5" name="tripStatus[]" class="custom-control-input" value="completed" {{isset($tripStatus)?(in_array('completed', $tripStatus)?'checked':''):''}}>
@@ -407,7 +389,7 @@
                     </div>
                     <div class="custom-control custom-radio mb-2">
                         <input type="checkbox" id="orderStatus8" name="tripStatus[]" class="custom-control-input" value="canceled" {{isset($tripStatus)?(in_array('canceled', $tripStatus)?'checked':''):''}}>
-                        <label class="custom-control-label" for="orderStatus8">{{translate('messages.canceled')}}</label>
+                        <label class="custom-control-label" for="orderStatus8">{{translate('Canceled')}}</label>
                     </div>
                     <div class="custom-control custom-radio mb-2">
                         <input type="checkbox" id="orderStatus7" name="tripStatus[]" class="custom-control-input" value="payment_failed" {{isset($tripStatus)?(in_array('payment_failed', $tripStatus)?'checked':''):''}}>
@@ -417,7 +399,7 @@
 
                 <hr class="my-4">
 
-                <small class="text-cap mb-3">{{translate('messages.date_between')}}</small>
+                <small class="text-cap mb-3">{{translate('messages.Date between')}}</small>
 
                 <div class="row">
                     <div class="col-12">
@@ -433,18 +415,16 @@
                     </div>
                 </div>
 
-                <!-- Footer -->
                 <div class="card-footer sidebar-footer">
                     <div class="row gx-2">
                         <div class="col">
-                            <button type="reset" data-url="{{route('admin.rental.trip.list',['status' => 'all'])}}" class="btn btn-block btn-white" id="reset">{{ translate('Clear all filters') }}</button>
+                            <button type="reset" data-url="{{route('admin.rental.trip.list',['status' => 'all'])}}" class="btn btn-block btn-white" id="reset"><i class="tio-clear-circle-outlined"></i> {{ translate('Clear all filters') }}</button>
                         </div>
                         <div class="col">
-                            <button type="submit" class="btn btn-block btn-primary">{{ translate('messages.save') }}</button>
+                            <button type="submit" class="btn btn-block btn-primary"><i class="tio-save"></i> {{ translate('messages.Save') }}</button>
                         </div>
                     </div>
                 </div>
-                <!-- End Footer -->
             </form>
         </div>
     </div>

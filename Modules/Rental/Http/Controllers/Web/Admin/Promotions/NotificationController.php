@@ -2,12 +2,12 @@
 
 namespace Modules\Rental\Http\Controllers\Web\Admin\Promotions;
 
+use App\Rules\ImageFile;
 use Exception;
 use App\Models\Zone;
 use App\Models\Notification;
 use Illuminate\Http\Request;
 use App\CentralLogics\Helpers;
-use App\Traits\FileManagerTrait;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Contracts\View\View;
@@ -19,12 +19,13 @@ use Modules\Rental\Exports\PushNotificationExport;
 use Illuminate\Contracts\Foundation\Application;
 
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
+use App\Support\Notification\SendNotification;
+use App\Support\Storage\FileStorage;
 
 
 
 class NotificationController extends Controller
 {
-    use FileManagerTrait;
 
     public function __construct(private Notification $notification, private Zone $zone)
     {
@@ -51,61 +52,46 @@ class NotificationController extends Controller
         try {
             DB::beginTransaction();
             $notification = $this->createnotification($request);
-            Helpers::send_push_notif_to_topic($notification, $this->getTopic($request), 'general');
+            SendNotification::pushToTopic($notification, $this->getTopic($request), 'general');
             DB::commit();
         } catch (Exception) {
             DB::rollBack();
-            Toastr::error(translate('messages.failed_to_sent_notification'));
+            Toastr::error(translate('messages.Failed to sent notification'));
             return back();
         }
-        Toastr::success(translate('messages.notification_sent_successfully'));
+        Toastr::success(translate('messages.Notification sent successfully'));
         return back();
     }
 
-    // /**
-    //  * @param string $id
-    //  * @return View|Factory|Application|RedirectResponse
-    //  */
     public function edit(Notification $notification): View|Factory|Application|RedirectResponse
     {
+        $notification->loadMissing('storage');
 
         $zones = $this->zone->where('status' , 1)->get(['id','name']);
         return view('rental::admin.push-notification.edit', compact('notification', 'zones'));
     }
 
-    // /**
-    //  * Update the specified resource in storage.
-    //  * @param Request $request
-    //  * @param string $id
-    //  * @return RedirectResponse
-    //  * @throws AuthorizationException
-    //  */
     public function update(Notification $notification, Request $request): RedirectResponse
     {
         $this->validateRequest($request, false, $notification->id);
         try {
             DB::beginTransaction();
             $this->updatenotification($request, $notification);
-            Helpers::send_push_notif_to_topic($notification, $this->getTopic($request), 'general');
+            SendNotification::pushToTopic($notification, $this->getTopic($request), 'general');
             DB::commit();
-            Toastr::success(translate('messages.notification_updated_successfully'));
+            Toastr::success(translate('Updated successfully'));
             return to_route('admin.rental.notification.list');
         } catch (Exception) {
             DB::rollBack();
-            Toastr::error(translate('messages.failed_to_update_notification'));
+            Toastr::error(translate('messages.Failed to update notification'));
             return back();
         }
     }
 
-    // /**
-    //  * @param Request $request
-    //  * @param $id
-    //  * @return RedirectResponse
-    //  */
     public function status(Notification $notification): RedirectResponse
     {
         $notification->update(['status' => !$notification->status]);
-        Toastr::success(translate('messages.notification_status_updated_successfully'));
+        Toastr::success(translate('Updated successfully'));
         return back();
     }
 
@@ -116,15 +102,11 @@ class NotificationController extends Controller
             Helpers::check_and_delete('notification/' , $notification->image);
         }
         $notification?->delete();
-        Toastr::success(translate('messages.notification_deleted_successfully'));
+        Toastr::success(translate('Deleted successfully'));
         return back();
     }
 
 
-    // /**
-    //  * @param Request $request
-    //  * @return BinaryFileResponse
-    //  */
     public function export(Request $request): BinaryFileResponse
     {
         $notifications = $this->getListData($request);
@@ -141,11 +123,6 @@ class NotificationController extends Controller
         return Excel::download(new PushNotificationExport($data), 'Notifications.xlsx');
     }
 
-    // /**
-    //  * @param Request $request
-    //  * @param $id
-    //  * @return void
-    //  */
     private function validateRequest(Request $request): void
     {
         $request->validate([
@@ -153,14 +130,10 @@ class NotificationController extends Controller
                 'description' => 'required|max:1000',
                 'tergat' => 'required',
                 'zone'=>'required',
-                'image' => 'nullable|max:2048',
+                'image' => ImageFile::rules('nullable'),
             ]);
     }
 
-    // /**
-    //  * @param Request $request
-    //  * @return Notification
-    //  */
     private function createnotification(Request $request): Notification
     {
         $notification = $this->notification;
@@ -170,7 +143,7 @@ class NotificationController extends Controller
     {
 
         if ($request->hasFile('image')) {
-            $notification->image = $new_image == true ? $this->upload('notification/', 'png', $request->file('image')) :$this->updateAndUpload('notification/', $notification->image ,'png', $request->file('image'));
+            $notification->image = $new_image == true ? FileStorage::upload('notification/', $request->file('image')) :FileStorage::update('notification/', $notification->image , $request->file('image'));
         }
 
         $notification->title = $request->notification_title;
@@ -188,7 +161,7 @@ class NotificationController extends Controller
     private function getListData($request)
     {
         $key = explode(' ', $request['search'] ?? '');
-        $notifications = Notification::with('zone')
+        $notifications = Notification::withStorage()->with('zone')
         ->when($request['search'], function ($q) use ($key){
             $q->where(function ($q) use ($key) {
                 foreach ($key as $value) {

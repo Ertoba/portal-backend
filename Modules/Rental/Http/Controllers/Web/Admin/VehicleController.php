@@ -2,11 +2,12 @@
 
 namespace Modules\Rental\Http\Controllers\Web\Admin;
 
+use App\Rules\ImageFile;
+use App\Traits\Report\ExportRowFormatTrait;
 use App\CentralLogics\Helpers;
-use App\CentralLogics\ProductLogic;
 use App\Models\Item;
 use App\Models\Store;
-use App\Traits\FileManagerTrait;
+use App\Observers\ItemObserver;
 use Brian2694\Toastr\Facades\Toastr;
 use Carbon\Carbon;
 use Illuminate\Contracts\Support\Renderable;
@@ -32,13 +33,13 @@ use OpenSpout\Common\Exception\IOException;
 use OpenSpout\Common\Exception\UnsupportedTypeException;
 use OpenSpout\Writer\Exception\WriterNotOpenedException;
 use Rap2hpoutre\FastExcel\FastExcel;
-use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\StreamedResponse;
+use App\Support\Storage\FileStorage;
 
 class VehicleController extends Controller
 {
-    use FileManagerTrait;
+    use ExportRowFormatTrait;
     private Vehicle $vehicle;
     private VehicleCategory $vehicleCategory;
     private VehicleBrand $vehicleBrand;
@@ -66,6 +67,7 @@ class VehicleController extends Controller
     public function index(Request $request): Renderable
     {
         $vehicles = $this->vehicle
+            ->with(['provider', 'category', 'brand', 'tripDetails'])
             ->when($request->has('search'), function ($query) use ($request) {
                 $keys = explode(' ', $request['search'] ?? '');
                 foreach ($keys as $key) {
@@ -162,22 +164,22 @@ class VehicleController extends Controller
                     $applicablePrice = count($prices) ? min($prices) : 0;
 
                     if ($request->discount_type === 'percent' && $value >= 100) {
-                        $fail(translate('messages.discount_cannot_exceed_100_percent'));
+                        $fail(translate('messages.A percentage discount must be less than the full price'));
                     }
 
                     if ($request->discount_type === 'amount' && $value > $applicablePrice) {
-                        $fail(translate('messages.discount_cannot_exceed_price'));
+                        $fail(translate('messages.Discount cannot exceed price'));
                     }
                 },
             ],
             'discount_type' => 'required|in:percent,amount',
             'tag' => 'nullable|array',
             'tag.*' => 'string|max:50',
-            'thumbnail' => 'required|image|mimes:webp,jpeg,png,jpg|max:2048',
+            'thumbnail' => ImageFile::rules('required'),
             'images' => 'nullable|array',
-            'images.*' => 'image|mimes:webp,jpeg,png,jpg,gif|max:2048',
+            'images.*' => ImageFile::rules(null),
             'documents' => 'nullable|array',
-            'documents.*' => 'max:2048',
+            'documents.*' => 'max:'.(MAX_FILE_SIZE * 1024),
         ], [
             'vehicle.vin_number.*.unique' => 'The VIN number has already been taken.',
             'vehicle.license_plate_number.*.unique' => 'The license plate number has already been taken.',
@@ -186,7 +188,7 @@ class VehicleController extends Controller
         ]);
 
         if ($request->has('thumbnail')) {
-            $thumbnailName = $this->upload('vehicle/', 'png', $request->file('thumbnail'));
+            $thumbnailName = FileStorage::upload('vehicle/', $request->file('thumbnail'));
         } else {
             $thumbnailName = 'def.png';
         }
@@ -194,7 +196,7 @@ class VehicleController extends Controller
         $imagesNames = [];
         if (!empty($request->file('images'))) {
             foreach ($request->images as $img) {
-                $image = $this->upload('vehicle/', 'png', $img);
+                $image = FileStorage::upload('vehicle/', $img);
                 $imagesNames[] = ['img' => $image, 'storage' => $this->helpers->getDisk()];
             }
             $image = json_encode($imagesNames);
@@ -206,7 +208,7 @@ class VehicleController extends Controller
         if (!empty($request->file('documents'))) {
             foreach ($request->documents as $img) {
                 $extension = $img->getClientOriginalExtension();
-                $documents = $this->upload('vehicle/', $extension, $img);
+                $documents = FileStorage::upload('vehicle/', $img);
                 $vehicleDocuments[] = ['img' => $documents, 'storage' => $this->helpers->getDisk()];
             }
             $documents = json_encode($vehicleDocuments);
@@ -263,7 +265,7 @@ class VehicleController extends Controller
                         ->first();
 
                     if ($existingVehicle) {
-                        Toastr::error(translate('This VIN and License Plate combination already exists.'));
+                        Toastr::error(translate('This VIN and license plate combination already exists.'));
                         DB::rollBack();
                         return back()->withInput($request->all());
                     }
@@ -285,7 +287,7 @@ class VehicleController extends Controller
 
         DB::commit();
 
-        Toastr::success(translate('messages.vehicle_added_successfully'));
+        Toastr::success(translate('Added successfully'));
         return redirect()->route('admin.rental.provider.vehicle.list');
     }
 
@@ -359,32 +361,32 @@ class VehicleController extends Controller
                     $applicablePrice = count($prices) ? min($prices) : 0;
 
                     if ($request->discount_type === 'percent' && $value >= 100) {
-                        $fail(translate('messages.discount_cannot_exceed_100_percent'));
+                        $fail(translate('messages.A percentage discount must be less than the full price'));
                     }
 
                     if ($request->discount_type === 'amount' && $value > $applicablePrice) {
-                        $fail(translate('messages.discount_cannot_exceed_price'));
+                        $fail(translate('messages.Discount cannot exceed price'));
                     }
                 },
             ],
             'discount_type' => 'required|in:percent,amount',
             'tag' => 'nullable|array',
             'tag.*' => 'string|max:50',
-            'thumbnail' => 'nullable|image|mimes:webp,jpeg,png,jpg|max:2048',
+            'thumbnail' => ImageFile::rules('nullable'),
             'images' => 'nullable|array',
-            'images.*' => 'image|mimes:webp,jpeg,png,jpg,gif|max:2048',
+            'images.*' => ImageFile::rules(null),
             'documents' => 'nullable|array',
-            'documents.*' => 'max:2048',
+            'documents.*' => 'max:'.(MAX_FILE_SIZE * 1024),
         ]);
 
         $vehicle = $this->vehicle->findOrFail($id);
         if (!$vehicle) {
-            Toastr::success(translate('messages.vehicle_not_found_successfully'));
+            Toastr::success(translate('messages.Vehicle not found successfully'));
             return back();
         }
 
         if ($request->has('thumbnail')) {
-            $thumbnailName = $this->updateAndUpload('vehicle/', $vehicle->thumbnail, 'png', $request->file('thumbnail'));
+            $thumbnailName = FileStorage::update('vehicle/', $vehicle->thumbnail, $request->file('thumbnail'));
         } else {
             $thumbnailName = $vehicle->thumbnail;
         }
@@ -400,14 +402,13 @@ class VehicleController extends Controller
                     return $image['img'] !== $removedImage;
                 });
 
-                $imagePath = 'vehicle/' . $removedImage;
-                Storage::disk('public')->delete($imagePath);
+                FileStorage::delete('vehicle/', $removedImage);
             }
         }
 
         if (!empty($request->file('images'))) {
             foreach ($request->images as $img) {
-                $image = $this->updateAndUpload('vehicle/', $vehicle->images, 'png', $img);
+                $image = FileStorage::update('vehicle/', $vehicle->images, $img);
                 $imagesNames[] = ['img' => $image, 'storage' => $this->helpers->getDisk()];
             }
         }
@@ -425,15 +426,14 @@ class VehicleController extends Controller
                     return $image['img'] !== $removedDoc;
                 });
 
-                $docPath = 'vehicle/' . $removedDoc;
-                Storage::disk('public')->delete($docPath);
+                FileStorage::delete('vehicle/', $removedDoc);
             }
         }
 
         if (!empty($request->file('documents'))) {
             foreach ($request->documents as $doc) {
                 $extension = $doc->getClientOriginalExtension();
-                $file= $this->updateAndUpload('vehicle/', $vehicle->images, $extension, $doc);
+                $file= FileStorage::update('vehicle/', $vehicle->images, $doc);
                 $docNames[] = ['img' => $file, 'storage' => $this->helpers->getDisk()];
             }
         }
@@ -515,7 +515,7 @@ class VehicleController extends Controller
 
         $this->addOrUpdateMetaData($request, $vehicle->id);
 
-        Toastr::success(translate('messages.vehicle_updated_successfully'));
+        Toastr::success(translate('Updated successfully'));
         return redirect()->route('admin.rental.provider.vehicle.list');
     }
 
@@ -526,11 +526,13 @@ class VehicleController extends Controller
      */
     public function details(int $id): Renderable
     {
-        $data['vehicle'] = $this->vehicle->findOrFail($id);
-        $data['vehicleReview'] = $this->vehicleReview->where('vehicle_id', $id)->latest()->paginate(config('default_pagination'));
+        $data['vehicle'] = $this->vehicle->withStorage()->with(['provider.storage', 'reviews', 'brand.storage', 'category.storage', 'vehicleIdentities'])->findOrFail($id);
+        $data['vehicleReview'] = $this->vehicleReview->with(['customer.storage', 'vehicle.storage'])->where('vehicle_id', $id)->latest()->paginate(config('default_pagination'));
+
+        $data['vehicle']->loadMissing('reviews');
 
         $data['totalRating'] = $data['vehicle']->reviews->sum('rating');
-        $data['avgRating'] = number_format($data['vehicle']->reviews->avg('rating'), 1);
+        $data['avgRating'] = number_format((float) $data['vehicle']->reviews->avg('rating'), 1);
         $data['totalReviews'] = $data['vehicle']->reviews->whereNotNull('comment')->count();
         $data['excellentCount'] = $data['vehicle']->reviews->where('rating', 5)->count();
         $data['goodCount'] = $data['vehicle']->reviews->where('rating', 4)->count();
@@ -546,6 +548,7 @@ class VehicleController extends Controller
     public function reviews(Request $request): Renderable
     {
         $vehicleReview = $this->vehicleReview
+            ->with(['vehicle.storage', 'customer.storage'])
             ->when($request->has('search'), function ($query) use ($request) {
                 $keys = explode(' ', $request['search'] ?? '');
                 foreach ($keys as $key) {
@@ -577,13 +580,13 @@ class VehicleController extends Controller
         $vehicle = $this->vehicle->find($id);
 
         if (!$vehicle) {
-            Toastr::error(translate('messages.vehicle_not_found'));
+            Toastr::error(translate('No data found'));
             return back();
         }
 
         $vehicle->update(['status' => !$vehicle->status]);
 
-        Toastr::success(translate('messages.vehicle_status_updated_successfully'));
+        Toastr::success(translate('Updated successfully'));
         return back();
     }
 
@@ -597,13 +600,13 @@ class VehicleController extends Controller
         $vehicleReview = $this->vehicleReview->find($id);
 
         if (!$vehicleReview) {
-            Toastr::error(translate('messages.vehicle_not_found'));
+            Toastr::error(translate('No data found'));
             return back();
         }
 
         $vehicleReview->update(['status' => !$vehicleReview->status]);
 
-        Toastr::success(translate('messages.vehicle_status_updated_successfully'));
+        Toastr::success(translate('Updated successfully'));
         return back();
     }
 
@@ -617,13 +620,13 @@ class VehicleController extends Controller
         $vehicle = $this->vehicle->find($id);
 
         if (!$vehicle) {
-            Toastr::error(translate('messages.vehicle_not_found'));
+            Toastr::error(translate('No data found'));
             return back();
         }
 
         $vehicle->update(['new_tag' => !$vehicle->new_tag]);
 
-        Toastr::success(translate('messages.vehicle_new_tag_updated_successfully'));
+        Toastr::success(translate('Updated successfully'));
         return back();
     }
 
@@ -637,7 +640,7 @@ class VehicleController extends Controller
         $vehicle = $this->vehicle->find($id);
 
         if (!$vehicle) {
-            Toastr::error(translate('messages.failed_to_delete_vehicle'));
+            Toastr::error(translate('messages.Failed to delete vehicle'));
             return back();
         }
 
@@ -677,7 +680,7 @@ class VehicleController extends Controller
         $vehicle->translations()->delete();
         $vehicle->delete();
 
-        Toastr::success(translate('messages.vehicle_deleted_successfully'));
+        Toastr::success(translate('Deleted successfully'));
 
         if ($request->vehicle_list){
             return to_route('admin.rental.provider.vehicle.list');
@@ -695,6 +698,7 @@ class VehicleController extends Controller
     public function export(Request $request): BinaryFileResponse
     {
         $vehicles = $this->vehicle
+            ->with(['category', 'brand'])
             ->when($request->has('search'), function ($query) use ($request) {
                 $keys = explode(' ', $request['search'] ?? '');
                 foreach ($keys as $key) {
@@ -742,10 +746,12 @@ class VehicleController extends Controller
      */
     public function reviewExport(Request $request): BinaryFileResponse
     {
-        $vehicles = $this->vehicleReview->where('vehicle_id', $request->vehicle_id)->latest()->get();
+        $vehicles = $this->vehicleReview
+            ->with(['provider', 'trip', 'customer', 'vehicle'])
+            ->where('vehicle_id', $request->vehicle_id)->latest()->get();
 
         if ($vehicles->isEmpty()){
-            $vehicles = $this->vehicleReview
+            $vehicles = $this->vehicleReview->with(['provider', 'trip', 'customer', 'vehicle'])
                 ->when($request->has('search'), function ($query) use ($request) {
                     $keys = explode(' ', $request['search'] ?? '');
                     foreach ($keys as $key) {
@@ -783,7 +789,9 @@ class VehicleController extends Controller
     public function bulkImportIndex(): View|Application|Factory
     {
         $moduleType = Config::get('module.current_module_type');
-        return view('rental::admin.vehicle.bulk-import', compact('moduleType'));
+        $summary = Helpers::bulkDataSummary($this->vehicle->newQuery());
+
+        return view('rental::admin.vehicle.bulk-import', compact('moduleType', 'summary'));
     }
 
     /**
@@ -793,14 +801,14 @@ class VehicleController extends Controller
     public function bulkImportData(Request $request): RedirectResponse
     {
         $request->validate([
-            'products_file' => 'required|max:2048'
+            'products_file' => 'required|max:'.(MAX_FILE_SIZE * 1024)
         ]);
         $module_id = Config::get('module.current_module_id');
         $moduleType = Config::get('module.current_module_type');
         try {
             $collections = (new FastExcel)->import($request->file('products_file'));
         } catch (\Exception $exception) {
-            Toastr::error(translate('messages.you_have_uploaded_a_wrong_format_file'));
+            Toastr::error(translate('messages.You have uploaded a wrong format file'));
             return back();
         }
         if ($request->button == 'import') {
@@ -808,7 +816,7 @@ class VehicleController extends Controller
             try{
                 foreach ($collections as $collection) {
                     if ($collection['Id'] === "" || $collection['Name'] === "" || $collection['CategoryId'] === "" || $collection['ProviderId'] === "" || $collection['BrandId'] === "" || $collection['ZoneId'] === "") {
-                        Toastr::error(translate('messages.please_fill_all_required_fields'));
+                        Toastr::error(translate('messages.Please fill all required fields'));
                         return back();
                     }
 
@@ -849,7 +857,7 @@ class VehicleController extends Controller
                 }
             }catch(\Exception $e){
                 info(["line___{$e->getLine()}",$e->getMessage()]);
-                Toastr::error(translate('messages.failed_to_import_data'));
+                Toastr::error(translate('messages.Failed to import data'));
                 return back();
             }
             try {
@@ -857,7 +865,6 @@ class VehicleController extends Controller
                 $chunkSize = 100;
                 $chunk_items = array_chunk($data, $chunkSize);
                 foreach ($chunk_items as $key => $chunk_item) {
-//                    DB::table('items')->insert($chunk_item);
                     foreach ($chunk_item as $item) {
                         $insertedId = DB::table('vehicles')->insertGetId($item);
                         Helpers::updateStorageTable(get_class(new Item), $insertedId, $item['thumbnail']);
@@ -867,17 +874,17 @@ class VehicleController extends Controller
             } catch (\Exception $e) {
                 DB::rollBack();
                 info(["line___{$e->getLine()}", $e->getMessage()]);
-                Toastr::error(translate('messages.failed_to_import_data'));
+                Toastr::error(translate('messages.Failed to import data'));
                 return back();
             }
-            Toastr::success(translate('messages.product_imported_successfully', ['count' => count($data)]));
+            Toastr::success(translate('messages.Product imported successfully') . '. ' . translate('messages.Total') . ': ' . count($data));
             return back();
         }
         $data = [];
         try {
             foreach ($collections as $collection) {
                 if ($collection['Id'] === "" || $collection['Name'] === "" || $collection['CategoryId'] === "" || $collection['ProviderId'] === "" || $collection['BrandId'] === "" || $collection['ZoneId'] === "") {
-                    Toastr::error(translate('messages.please_fill_all_required_fields'));
+                    Toastr::error(translate('messages.Please fill all required fields'));
                     return back();
                 }
 
@@ -917,12 +924,12 @@ class VehicleController extends Controller
             }
             $id = $collections->pluck('Id')->toArray();
             if (Item::whereIn('id', $id)->doesntExist()) {
-                Toastr::error(translate('messages.Item_doesnt_exist_at_the_database'));
+                Toastr::error(translate('messages.Item doesnt exist at the database'));
                 return back();
             }
         }catch(\Exception $e){
             info(["line___{$e->getLine()}",$e->getMessage()]);
-            Toastr::error(translate('messages.failed_to_import_data'));
+            Toastr::error(translate('messages.Failed to import data'));
             return back();
         }
         try {
@@ -930,25 +937,30 @@ class VehicleController extends Controller
             $chunkSize = 100;
             $chunk_items = array_chunk($data, $chunkSize);
             foreach ($chunk_items as $key => $chunk_item) {
-//                DB::table('items')->upsert($chunk_item, ['id', 'module_id'], ['name', 'description', 'image', 'images', 'category_id', 'category_ids', 'unit_id', 'stock', 'price', 'discount', 'discount_type', 'available_time_starts', 'available_time_ends','choice_options', 'variations', 'food_variations', 'add_ons', 'attributes', 'store_id', 'status', 'veg', 'recommended']);
+                $syncItemIds = [];
                 foreach ($chunk_item as $item) {
                     if (isset($item['id']) && DB::table('items')->where('id', $item['id'])->exists()) {
                         DB::table('items')->where('id', $item['id'])->update($item);
+                        $syncItemIds[] = $item['id'];
                         Helpers::updateStorageTable(get_class(new Item), $item['id'], $item['thumbnail']);
                     } else {
                         $insertedId = DB::table('items')->insertGetId($item);
+                        $syncItemIds[] = $insertedId;
                         Helpers::updateStorageTable(get_class(new Item), $insertedId, $item['thumbnail']);
                     }
                 }
+                // DB::table() writes fire no model events, so ItemObserver did not run
+                // for these rows and both derived columns would stay unset.
+                ItemObserver::syncDerived($syncItemIds);
             }
             DB::commit();
         } catch (\Exception $e) {
             DB::rollBack();
             info(["line___{$e->getLine()}", $e->getMessage()]);
-            Toastr::error(translate('messages.failed_to_import_data'));
+            Toastr::error(translate('messages.Failed to import data'));
             return back();
         }
-        Toastr::success(translate('messages.Vehicle_imported_successfully', ['count' => count($data)]));
+        Toastr::success(translate('messages.Vehicle imported successfully') . '. ' . translate('messages.Total') . ': ' . count($data));
         return back();
     }
 
@@ -957,7 +969,9 @@ class VehicleController extends Controller
      */
     public function bulkExportIndex(): View|Application|Factory|\Illuminate\Contracts\Foundation\Application
     {
-        return view('rental::admin.vehicle.bulk-export');
+        return view('rental::admin.vehicle.bulk-export', [
+            'summary' => Helpers::bulkDataSummary($this->vehicle->newQuery()),
+        ]);
     }
 
     /**
@@ -985,7 +999,7 @@ class VehicleController extends Controller
                 $query->whereBetween('id', [$request['start_id'], $request['end_id']]);
             })->get();
 
-        return (new FastExcel(ProductLogic::format_export_vehicles(Helpers::Export_generator($vehicles), $moduleType)))->download('Vehicles.xlsx');
+        return (new FastExcel(self::formatExportVehicles(Helpers::Export_generator($vehicles), $moduleType)))->download('Vehicles.xlsx');
     }
 
 

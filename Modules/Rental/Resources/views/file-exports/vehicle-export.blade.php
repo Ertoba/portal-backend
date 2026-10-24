@@ -1,16 +1,16 @@
 
 <div class="row">
-    <div class="col-lg-12 text-center "><h1 > {{translate('Vehicle_List')}}
+    <div class="col-lg-12 text-center "><h1 > {{translate('Vehicle list')}}
     </h1></div>
     <div class="col-lg-12">
 
     <table>
         <thead>
             <tr>
-                <th>{{ translate('Filter_Criteria') }}</th>
+                <th>{{ translate('Filter criteria') }}</th>
                 <th></th>
                 <th>
-                    {{ translate('Search_Bar_Content')  }}: {{ $data['search'] ?? translate('N/A') }}
+                    {{ translate('Search bar content')  }}: {{ $data['search'] ?? translate('N/A') }}
 
                 </th>
                 <th> </th>
@@ -18,13 +18,13 @@
 
 
         <tr>
-            <th>{{ translate('sl') }}</th>
-            <th>{{ translate('Vehicle_Name') }}</th>
-            <th>{{ translate('Vehicle_ID') }}</th>
-            <th>{{ translate('Vehicle_Category') }}</th>
-            <th>{{ translate('Vehicle_Brand') }}</th>
-            <th>{{ translate('Trip Fair') }}</th>
-            <th>{{ translate('New Tag') }}</th>
+            <th>{{ translate('SL') }}</th>
+            <th>{{ translate('Vehicle name') }}</th>
+            <th>{{ translate('Vehicle ID') }}</th>
+            <th>{{ translate('Vehicle category') }}</th>
+            <th>{{ translate('Vehicle brand') }}</th>
+            <th>{{ translate('Trip fare') }}</th>
+            <th>{{ translate('New tag') }}</th>
             <th>{{ translate('Status') }}</th>
 
         </thead>
@@ -45,13 +45,13 @@
                     @endif
                     @if($vehicle->trip_distance)
                         <div>
-                            <span class="opacity-lg">{{translate('Distance Wise')}}: </span>
+                            <span class="opacity-lg">{{translate('Distance wise')}}: </span>
                             <span class="font-semibold">{{\App\CentralLogics\Helpers::format_currency($vehicle['distance_price'])}}</span>
                         </div>
                     @endif
                     @if($vehicle->trip_day_wise)
                         <div>
-                            <span class="opacity-lg">{{translate('Per Day')}}: </span>
+                            <span class="opacity-lg">{{translate('Per day')}}: </span>
                             <span class="font-semibold">{{\App\CentralLogics\Helpers::format_currency($vehicle['day_wise_price'])}}</span>
                         </div>
                     @endif

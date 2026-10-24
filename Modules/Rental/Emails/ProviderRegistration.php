@@ -1,26 +1,28 @@
 <?php
 
-
 namespace Modules\Rental\Emails;
 
+use App\Mail\Concerns\BuildsTemplatedMail;
+use App\Mail\Concerns\QueueableMailable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
-use App\CentralLogics\Helpers;
-use App\Models\BusinessSetting;
 use Illuminate\Queue\SerializesModels;
 use Modules\Rental\Entities\RentalEmailTemplate;
+use App\Support\Notification\NotificationText;
+use App\Services\System\BusinessSettingService;
 
-class ProviderRegistration extends Mailable
+class ProviderRegistration extends Mailable implements ShouldQueue
 {
-    use Queueable, SerializesModels;
+    use BuildsTemplatedMail, Queueable, QueueableMailable, SerializesModels;
 
     /**
      * Create a new message instance.
      *
      * @return void
      */
-
     protected $status;
+
     protected $name;
 
     public function __construct($status, $name)
@@ -36,15 +38,19 @@ class ProviderRegistration extends Mailable
      */
     public function build()
     {
-        $company_name = BusinessSetting::where('key', 'business_name')->first()->value;
-        $data=RentalEmailTemplate::where('type','admin')->where('email_type', 'provider_registration')->first();
-        $template=$data?$data->email_template:1;
+        $data = RentalEmailTemplate::where('type', 'admin')->where('email_type', 'provider_registration')->first();
         $url = '';
         $store_name = $this->name;
-        $title = Helpers::text_variable_data_format( value:$data['title']??'',store_name:$store_name??'');
-        $body = Helpers::text_variable_data_format( value:$data['body']??'',store_name:$store_name??'');
-        $footer_text = Helpers::text_variable_data_format( value:$data['footer_text']??'',store_name:$store_name??'');
-        $copyright_text = Helpers::text_variable_data_format( value:$data['copyright_text']??'',store_name:$store_name??'');
-        return $this->subject(translate('Provider_Registration'))->view('email-templates.rental.new-email-format-'.$template, ['company_name'=>$company_name,'data'=>$data,'title'=>$title,'body'=>$body,'footer_text'=>$footer_text,'copyright_text'=>$copyright_text,'url'=>$url]);
+
+        return $this->templatedMail(
+            template: $data,
+            fallbackTemplate: 1,
+            subject: translate('Provider registration'),
+            placeholders: [
+                'store_name' => $store_name ?? '',
+            ],
+            viewData: ['url' => $url],
+            viewPrefix: 'email-templates.rental.new-email-format-',
+        );
     }
 }

@@ -3,15 +3,13 @@
 namespace Modules\Rental\Entities;
 
 use App\CentralLogics\Helpers;
-use App\Models\Storage;
-use App\Models\Translation;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Relations\MorphMany;
-use Illuminate\Database\Eloquent\Builder;
+use App\Traits\Model\HasTranslationsTrait;
+use App\Traits\Model\HasStorageTrait;
 class VehicleCategory extends Model
 {
-    use HasFactory;
+    use HasFactory, HasTranslationsTrait, HasStorageTrait;
 
     protected $guarded = ['id'];
 
@@ -24,50 +22,23 @@ class VehicleCategory extends Model
         $query->where('status', '=', $status);
     }
 
-    public function translations(): MorphMany
+    public function getImageFullUrlAttribute()
     {
-        return $this->morphMany(Translation::class, 'translationable');
+        return $this->storageFullUrl('category', 'image', $this->image);
     }
-
-    public function storage(): MorphMany
+    public function getNameAttribute($value)
     {
-        return $this->morphMany(Storage::class, 'data');
+        return $this->translatedAttribute('name', $value);
     }
 
-    public function getImageFullUrlAttribute(){
-        $value = $this->image;
-        if (count($this->storage) > 0) {
-            foreach ($this->storage as $storage) {
-                if ($storage['key'] == 'image') {
-                    return Helpers::get_full_url('category',$value,$storage['value']);
-                }
-            }
-        }
 
-        return Helpers::get_full_url('category',$value,'public');
-    }
-    public function getNameAttribute($value){
-        if (count($this->translations) > 0) {
-            foreach ($this->translations as $translation) {
-                if ($translation['key'] == 'name') {
-                    return $translation['value'];
-                }
-            }
-        }
-
-        return $value;
-    }
-
-    protected static function booted()
+    protected static function boot(): void
     {
-        static::addGlobalScope('storage', function ($builder) {
-            $builder->with('storage');
-        });
+        parent::boot();
 
-        static::addGlobalScope('translate', function (Builder $builder) {
-            $builder->with(['translations' => function($query){
-                return $query->where('locale', app()->getLocale());
-            }]);
+        static::saved(function ($model) {
+            self::recordStorageDisk($model, 'image', 'image');
         });
     }
+
 }

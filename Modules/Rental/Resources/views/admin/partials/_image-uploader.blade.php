@@ -21,7 +21,7 @@
     @if ($textPosition == 'top')
         <p class="mb-2 fs-12 gray-dark">
             {{ translate(($imageFormat) . '. Less Than ' . $maxSize . 'MB')}} <span
-                class="font-medium text-title">{{ translate('(' . $size . ')')}}</span>
+                class="font-medium text-title">({{ $size }})</span>
         </p>
     @endif
     <div class="upload-file_custom {{ $aspectRatio }} h-100px image-box">
@@ -62,7 +62,7 @@
     @if ($textPosition == 'bottom')
         <p class="mt-3 mb-2 fs-12 gray-dark">
             {{ translate(strtoupper($imageFormat) . '. Less Than ' . $maxSize . 'MB')}} <span
-                class="font-medium text-title">{{ translate('(' . $size . ')')}}</span>
+                class="font-medium text-title">({{ $size }})</span>
         </p>
     @endif
 </div>

@@ -1,10 +1,9 @@
 @extends('layouts.admin.app')
 
-@section('title', translate('messages.Home_Page_Setup'))
+@section('title', translate('Vendor registration setup'))
 
 @section('content')
 <div class="content container-fluid">
-     <!-- Page Header -->
      <div class="page-header">
         <div class="d-flex justify-content-between flex-wrap gap-3 mb-3">
             <div>
@@ -12,13 +11,13 @@
                     <span class="page-header-icon">
                         <img src="{{ asset('public/assets/admin/img/store.png') }}" class="w--22" alt="">
                     </span>
-                    <span>{{ translate('messages.Home_Page_Setup') }} ({{ translate('Only_For_React_Web') }})
-                </h1></span>
+                    <span>{{ translate('Home page setup') }} ({{ translate('Only for react web') }})
+                </h1>
+                <p class="page-header-desc">{{ translate('The block inviting providers to list their vehicles with you.') }}</p></span>
                 </h1>
             </div>
         </div>
 
-        <!-- Nav Scroller -->
         <div class="js-nav-scroller hs-nav-scroller-horizontal">
             <span class="hs-nav-scroller-arrow-prev d-none">
                 <a class="hs-nav-scroller-arrow-link" href="javascript:;">
@@ -32,22 +31,18 @@
                 </a>
             </span>
 
-            <!-- Nav -->
             <ul class="nav nav-tabs border-0 nav--tabs nav--pills mb-2">
                 <li class="nav-item">
                     <a class="nav-link text-capitalize text-title"
-                        href="{{ route('admin.rental.settings.down_app') }}">{{ translate('messages.Download App') }}</a>
+                        href="{{ route('admin.rental.settings.down_app') }}">{{ translate('Download app') }}</a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link text-capitalize text-title active"
-                        href="javascript:">{{ translate('messages.Vendors Registration') }}</a>
+                        href="javascript:">{{ translate('Vendors registration') }}</a>
                 </li>
             </ul>
-            <!-- End Nav -->
         </div>
-        <!-- End Nav Scroller -->
     </div>
-    <!-- End Page Header -->
 
     <form action="{{ route('admin.rental.settings.vendors_registration_update') }}" method="post" enctype="multipart/form-data">
         @csrf
@@ -74,14 +69,14 @@
                             <div class="lang_form" id="default-form">
                                 <div class="form-group mb-20">
                                     <label class="input-label font-semibold"
-                                        for="default_name">{{ translate('messages.title') }}
-                                        ({{ translate('messages.Default') }})
+                                        for="default_name">{{ translate('messages.Title') }}
+                                        ({{ translate('Default') }})
                                     </label>
                                         <div class="character-count">
                                             <input type="text" name="title[]" id="default_name"
                                             class="form-control character-count-field h--45px"
                                             value="{{ $title_data?->getRawOriginal('value') }}"
-                                            placeholder="{{ translate('messages.type_title') }}" maxlength="30"
+                                            placeholder="{{ translate('Type title') }}" maxlength="30"
                                             data-max-character="30" required>
                                             <span class="d-flex  text-count justify-content-end"></span>
                                         </div>
@@ -89,10 +84,10 @@
                                 <input type="hidden" name="lang[]" value="default">
                                 <div class="form-group mb-20">
                                     <label class="input-label font-semibold"
-                                        for="exampleFormControlInput1">{{ translate('messages.subtitle') }}
-                                        ({{ translate('messages.default') }})</label>
+                                        for="exampleFormControlInput1">{{ translate('Subtitle') }}
+                                        ({{ translate('Default') }})</label>
                                     <div class="character-count">
-                                        <textarea type="text" name="sub_title[]" placeholder="{{ translate('messages.type_subtitle') }}"
+                                        <textarea type="text" name="sub_title[]" placeholder="{{ translate('messages.Type subtitle') }}"
                                         class="form-control character-count-field" maxlength="110"
                                         data-max-character="110">{{ $sub_title_data?->getRawOriginal('value') }}</textarea>
                                         <span class="d-flex text-count justify-content-end"></span>
@@ -101,11 +96,11 @@
                                 </div>
                                 <div class="form-group mb-0">
                                     <label class="input-label font-semibold"
-                                        for="exampleFormControlInput1">{{ translate('messages.button_title') }}
-                                        ({{ translate('messages.default') }})
+                                        for="exampleFormControlInput1">{{ translate('Button title') }}
+                                        ({{ translate('Default') }})
                                     </label>
                                         <div class="character-count">
-                                            <textarea type="text" name="button_title[]" placeholder="{{ translate('messages.type_button_title') }}"
+                                            <textarea type="text" name="button_title[]" placeholder="{{ translate('messages.Type button title') }}"
                                             class="form-control character-count-field h--45px" maxlength="20"
                                             data-max-character="20">{{ $button_title_data?->getRawOriginal('value') }}</textarea>
                                             <span class="d-flex text-count justify-content-end"></span>
@@ -151,7 +146,7 @@
                                 <div class="d-none lang_form" id="{{ $lang }}-form">
                                     <div class="form-group mb-20">
                                         <label class="input-label font-semibold"
-                                            for="{{ $lang }}_name">{{ translate('messages.title') }}
+                                            for="{{ $lang }}_name">{{ translate('messages.Title') }}
                                             ({{ strtoupper($lang) }})
                                         </label>
                                         <div class="character-count">
@@ -160,17 +155,17 @@
                                                 maxlength="30"
                                                 data-max-character="30"
                                                 value="{{ $title_data_translate[$lang]['value']?? '' }}"
-                                                placeholder="{{ translate('messages.type_title') }}">
+                                                placeholder="{{ translate('Type title') }}">
                                                 <span class="d-flex text-count justify-content-end"></span>
                                         </div>
                                     </div>
                                     <input type="hidden" name="lang[]" value="{{ $lang }}">
                                     <div class="form-group mb-20">
                                         <label class="input-label font-semibold"
-                                            for="exampleFormControlInput1">{{ translate('messages.subtitle') }}
+                                            for="exampleFormControlInput1">{{ translate('Subtitle') }}
                                             ({{ strtoupper($lang) }})</label>
                                             <div class="character-count">
-                                                <textarea type="text" name="sub_title[]" placeholder="{{ translate('messages.type_subtitle') }}"
+                                                <textarea type="text" name="sub_title[]" placeholder="{{ translate('messages.Type subtitle') }}"
                                                     class="form-control character-count-field" maxlength="110"
                                                     data-max-character="110">{{ $sub_title_data_translate[$lang]['value']?? '' }}</textarea>
                                                 <span class="d-flex text-count justify-content-end"></span>
@@ -179,10 +174,10 @@
                                     </div>
                                     <div class="form-group mb-0">
                                         <label class="input-label font-semibold"
-                                            for="exampleFormControlInput1">{{ translate('messages.button_title') }}
+                                            for="exampleFormControlInput1">{{ translate('Button title') }}
                                             ({{ strtoupper($lang) }})</label>
                                             <div class="character-count">
-                                                <textarea type="text" name="button_title[]" placeholder="{{ translate('messages.type_button_title') }}"
+                                                <textarea type="text" name="button_title[]" placeholder="{{ translate('messages.Type button title') }}"
                                                 class="form-control character-count-field h--45px" maxlength="20"
                                                 data-max-character="20">{{ $button_title_data_translate[$lang]['value']?? '' }}</textarea>
                                                 <span class="d-flex text-count justify-content-end"></span>
@@ -202,7 +197,7 @@
                                 </label>
                                 <div class="mb-20">
                                     <p class="fs-12">
-                                        {{ translate('JPG, JPEG, PNG Less Than 1MB') }} <strong class="font-semibold">(Ratio 3:2)</strong>
+                                        {{ 'JPG, JPEG, PNG' . ' image, max ' . 1 . ' MB' }} <strong class="font-semibold">(Ratio 3:2)</strong>
                                     </p>
                                 </div>
 
@@ -229,9 +224,9 @@
                             </div>
                             <div class="btn--container justify-content-end mt-5">
                                 <button type="reset" id="reset_btn" data-src="{{ $image?->value ?  \App\CentralLogics\Helpers::get_full_url('react_landing', $image?->value?? '', $image?->storage[0]?->value ?? 'public','upload_image_1' ) : '' }}"
-                                    class="btn btn--reset min-w-120px">{{ translate('messages.reset') }}</button>
+                                    class="btn btn--reset min-w-120px"><i class="tio-refresh"></i> {{ translate('messages.Reset') }}</button>
                                 <button type="submit"
-                                    class="btn btn--primary min-w-120px">{{ translate('messages.Submit') }}</button>
+                                    class="btn btn--primary min-w-120px"><i class="tio-checkmark-circle-outlined"></i> {{ translate('messages.Submit') }}</button>
                             </div>
                         </div>
                     </div>

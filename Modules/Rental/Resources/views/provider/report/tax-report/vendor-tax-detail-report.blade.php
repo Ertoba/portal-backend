@@ -1,6 +1,6 @@
 @extends('layouts.vendor.app')
 
-@section('title', translate('Provider Tax Report'))
+@section('title', translate('Provider tax report'))
 
 @section('vendor_tax_report')
     active
@@ -9,20 +9,19 @@
     <div class="content container-fluid">
 
 
-        <!--- Tax Report -->
-        <h2 class="mb-20">{{ translate('Tax Report') }}</h3>
+        <h2 class="mb-20">{{ translate('Tax report') }}</h3>
             <div class="card p-20 mb-20">
                 <form action="" method="get">
 
                     <div class="row g-lg-4 g-3 align-items-end justify-content-between">
                         <div class="col-lg-4 col-md-6">
-                            <label class="form-label">{{ translate('Date Range') }}</label>
+                            <label class="form-label">{{ translate('Date range') }}</label>
                             <div class="position-relative">
                                 @php
                                     $dataRange = Carbon\Carbon::parse($startDate)->format('m/d/Y') . ' - ' . Carbon\Carbon::parse($endDate)->format('m/d/Y');
                                 @endphp
                                 <i class="tio-calendar-month icon-absolute-on-right"></i>
-                                <input type="text" data-title="{{ translate('Select_Date_Range') }}" name="dates" value="{{ $dataRange  ?? null }}" class="date-range-picker form-control">
+                                <input type="text" data-title="{{ translate('Select date range') }}" name="dates" value="{{ $dataRange  ?? null }}" class="date-range-picker form-control">
                             </div>
                         </div>
                         <div class="col-lg-4 col-md-6">
@@ -41,7 +40,7 @@
                             <img src="{{ asset('/public/assets/admin/img/tax/1.png') }}" alt="img"
                                 class="mb-20">
                             <h2 class="cus-warning-clr mb-1">{{ $totalOrders }}</h2>
-                            <span class="font-medium mb-0">{{ translate('Total Trips') }}</span>
+                            <span class="font-medium mb-0">{{ translate('Total trips') }}</span>
                         </div>
                     </div>
                     <div class="col-md-6 col-xl-3">
@@ -50,7 +49,7 @@
                                 class="mb-20">
                             <h2 class="theme-clr mb-1"> {{ \App\CentralLogics\Helpers::format_currency($totalOrderAmount) }}
                             </h2>
-                            <span class="font-medium mb-0">{{ translate('Total Trip Amount') }}</span>
+                            <span class="font-medium mb-0">{{ translate('Total trip amount') }}</span>
                         </div>
                     </div>
                     <div class="col-lg-12 col-xl-6">
@@ -60,7 +59,7 @@
                                     class="mb-20">
                                 <h2 class="text-success mb-1">{{ \App\CentralLogics\Helpers::format_currency($totalTax) }}
                                 </h2>
-                                <span class="font-medium mb-0">{{ translate('Total Tax Amount') }}</span>
+                                <span class="font-medium mb-0">{{ translate('Total tax amount') }}</span>
                             </div>
                             <div class="tax-report-vat w-100">
                                 <div class="d-flex flex-column gap-1">
@@ -80,27 +79,26 @@
             </div>
             <div class="card p-20">
                 <div class="d-flex align-items-center justify-content-between gap-2 flex-wrap mb-20">
-                    <h4 class="mb-0">{{ translate('All Taxes') }}
+                    <h4 class="mb-0">{{ translate('All taxes') }}
 
                     </h4>
                     <div class="search--button-wrapper justify-content-end">
                         <form class="search-form min--260">
                             <div class="input-group input--group">
                                 <input id="datatableSearch_" type="search" name="search" class="form-control h--40px"
-                                    placeholder="{{ translate('messages.Ex:') }} 10010"
+                                    placeholder="{{ translate('messages.Ex') }}: 10010"
                                     value="{{ request()?->search ?? null }}"
-                                    aria-label="{{ translate('messages.search') }}">
+                                    aria-label="{{ translate('messages.Search') }}">
                                     <input type="hidden" name="dates" value="{{request()->input('dates')}}">
                                 <button type="submit" class="btn btn--secondary"><i class="tio-search"></i></button>
                             </div>
                         </form>
 
-                        <!-- Datatable Info -->
                         <div id="datatableCounterInfo" class="mr-2 mb-2 mb-sm-0 initial-hidden">
                             <div class="d-flex align-items-center">
                                 <span class="font-size-sm mr-3">
                                     <span id="datatableCounter">0</span>
-                                    {{ translate('messages.selected') }}
+                                    {{ translate('Selected') }}
                                 </span>
                             </div>
                         </div>
@@ -108,39 +106,38 @@
                             <a class="js-hs-unfold-invoker btn btn-sm btn-white dropdown-toggle h--40px" href="javascript:;"
                                 data-hs-unfold-options='{
                             "target": "#usersExportDropdown", "type": "css-animation" }'>
-                                <i class="tio-download-to mr-1"></i> {{ translate('messages.export') }}
+                                <i class="tio-download-to mr-1"></i> {{ translate('messages.Export') }}
                             </a>
                             <div id="usersExportDropdown"
                                 class="hs-unfold-content dropdown-unfold dropdown-menu dropdown-menu-sm-right">
-                                <span class="dropdown-header">{{ translate('messages.download_options') }}</span>
+                                <span class="dropdown-header">{{ translate('messages.Download options') }}</span>
                                 <a id="export-excel" class="dropdown-item" href="{{  route('vendor.report.providerTaxExport', ['export_type' => 'excel' ,request()->getQueryString()]) }}">
                                     <img class="avatar avatar-xss avatar-4by3 mr-2"
                                         src="{{ asset('public/assets/admin') }}/svg/components/excel.svg"
                                         alt="Image Description">
-                                    {{ translate('messages.excel') }}
+                                    Excel
                                 </a>
                                 <a id="export-csv" class="dropdown-item" href="{{  route('vendor.report.providerTaxExport', ['export_type' => 'csv' ,request()->getQueryString()]) }}">
                                     <img class="avatar avatar-xss avatar-4by3 mr-2"
                                         src="{{ asset('public/assets/admin') }}/svg/components/placeholder-csv-format.svg"
                                         alt="Image Description">
-                                    {{ translate('messages.csv') }}
+                                    CSV
                                 </a>
                             </div>
                         </div>
                     </div>
                 </div>
-                <!-- Table -->
                 <div class="table-responsive datatable-custom">
                     <table id="datatable"
                         class="table table-hover table-borderless table-thead-bordered table-nowrap table-align-middle card-table fz--14px">
                         <thead class="thead-light">
                             <tr>
-                                <th class="border-0">{{ translate('sl') }}</th>
-                                <th class="border-0">{{ translate('messages.Trip_Id') }}</th>
-                                <th class="border-0">{{ translate('messages.Trip_Date') }}</th>
-                                <th class="border-0">{{ translate('messages.Trip_Amount') }}</th>
-                                <th class="border-0">{{ translate('messages.Tax_Type') }}</th>
-                                <th class="border-0">{{ translate('messages.Tax_Amount') }}</th>
+                                <th class="border-0">{{ translate('SL') }}</th>
+                                <th class="border-0">{{ translate('messages.Trip ID') }}</th>
+                                <th class="border-0">{{ translate('Trip date') }}</th>
+                                <th class="border-0">{{ translate('Trip amount') }}</th>
+                                <th class="border-0">{{ translate('Tax type') }}</th>
+                                <th class="border-0">{{ translate('Tax amount') }}</th>
                                 <th class="border-0 text-center">{{ translate('messages.Action') }}</th>
                             </tr>
                         </thead>
@@ -164,14 +161,14 @@
                                         {{ \App\CentralLogics\Helpers::format_currency($order->trip_amount) }}
                                     </td>
                                     <td>
-                                        {{ translate('messages.trip_wise') }}
+                                        {{ translate('messages.Trip wise') }}
                                     </td>
                                     <td>
                                         <div class="d-flex flex-column gap-1">
                                             @if (count($order->orderTaxes) > 0)
                                                 @php($sum_tax_amount = collect($order->orderTaxes)->sum('tax_amount'))
                                                 <div class="d-flex fz-14 gap-3 align-items-center title-clr">
-                                                    {{ translate('Sum of Taxes:') }} <span>
+                                                    {{ translate('Sum of taxes') }}: <span>
                                                     {{ \App\CentralLogics\Helpers::format_currency($sum_tax_amount) }}</span>
                                                 </div>
 
@@ -184,14 +181,14 @@
                                                 @endforeach
                                             @else
                                                 <div class="d-flex fz-14 gap-3 align-items-center title-clr">
-                                                    {{ translate(' Tax Amount:') }} <span>
+                                                    {{ translate('Tax amount') }}: <span>
                                                     {{ \App\CentralLogics\Helpers::format_currency($order->tax_amount) }}</span>
                                                 </div>
                                             @endif
                                         </div>
                                     </td>
                                     <td class="text-center">
-                                        <a class="btn btn-sm mx-auto btn--primary action-btn btn-outline-primary offcanvas-trigger"
+                                        <a class="btn btn-sm mx-auto action-btn action-btn--view offcanvas-trigger"
                                             data-order_id="{{ $order['id'] }}"
                                             data-order_status="{{ translate($order['trip_status']) }}"
                                             data-payment_status="{{ translate($order['payment_status']) }}"
@@ -200,7 +197,7 @@
                                             data-order_tax_amount="{{ \App\CentralLogics\Helpers::format_currency($order['tax_amount']) }}"
                                             data-order_taxes='@json($order->orderTaxes)' href="#0"
                                             data-target="#offcanvas__customBtn__adminDetails">
-                                            <i class="tio-invisible"></i>
+                                            <i class="tio-visible-outlined"></i>
                                         </a>
                                     </td>
                                 </tr>
@@ -219,7 +216,7 @@
                     <div class="empty--data">
                         <img src="{{ asset('/public/assets/admin/svg/illustrations/sorry.svg') }}" alt="public">
                         <h5>
-                            {{ translate('no_data_found') }}
+                            {{ translate('No data found') }}
                         </h5>
                     </div>
                 @endif
@@ -245,14 +242,14 @@
                         </div>
                         <span class="fz--14px title-clr d-block mb-1" id="order_date"></span>
                         <div class="d-flex align-items-center gap-3">
-                            <span class="fz--14px title-clr">{{ translate('Payment Status') }}: </span> <span
+                            <span class="fz--14px title-clr">{{ translate('Payment status') }}: </span> <span
                                 class="bg-opacity-success-10 rounded py-2 px-3 font-semibold fz-12px text-success"
                                 id="payment_status"></span>
                         </div>
                     </div>
                     <div
                         class="border d-flex align-items-center bg-white-n justify-content-between rounded p-12 mb-20 fz--14px">
-                        {{ translate('Trip Amount') }}
+                        {{ translate('Trip amount') }}
                         <span class="title-clr font-semibold" id="order_amount"></span>
                     </div>
                     <div class="bg-white-n rounded p-12">
@@ -260,7 +257,7 @@
                         </div>
 
                         <div class="d-flex align-items-center fz--14px border-top pt-2 justify-content-between">
-                            {{ translate('messages.Total_Tax_Amount') }}
+                            {{ translate('Total tax amount') }}
                             <span class="title-clr font-semibold" id="order_tax_amount"></span>
                         </div>
                     </div>

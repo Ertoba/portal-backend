@@ -4,11 +4,11 @@
         <thead class="thead-light">
             <tr>
                 <th class="border-0">{{ translate('SL') }}</th>
-                <th class="table-column-pl-0 border-0">{{ translate('messages.Transaction_ID') }}</th>
+                <th class="table-column-pl-0 border-0">{{ translate('messages.Transaction ID') }}</th>
                 <th class="border-0">{{ translate('messages.Date') }}</th>
                 <th class="border-0">{{ translate('messages.Source') }}</th>
-                <th class="border-0 text-center">{{ translate('messages.Expense_Source') }}</th>
-                <th class="border-0 text-right">{{ translate('messages.Amount') }}</th>
+                <th class="border-0 text-center">{{ translate('Expense source') }}</th>
+                <th class="border-0 text-right">{{ translate('Amount') }}</th>
             </tr>
         </thead>
         <tbody>
@@ -64,6 +64,6 @@
 @else
     <div class="empty--data py-5 w-100">
         <img src="{{ asset('public/assets/admin/svg/illustrations/sorry.svg') }}" alt="empty">
-        <h5>{{ translate('no_data_found') }}</h5>
+        <h5>{{ translate('No data found') }}</h5>
     </div>
 @endif

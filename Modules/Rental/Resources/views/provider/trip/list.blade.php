@@ -1,316 +1,246 @@
 @extends('layouts.vendor.app')
 
-@section('title', translate('messages.all_trips'))
+@php
+    $status_labels = [
+        'scheduled' => translate('Scheduled'),
+        'instant' => translate('messages.Instant'),
+        'pending' => translate('Pending'),
+        'confirmed' => translate('messages.confirmed'),
+        'ongoing' => translate('Ongoing'),
+        'completed' => translate('Completed'),
+        'canceled' => translate('Canceled'),
+        'payment_failed' => translate('Payment failed'),
+    ];
+    $status_badges = [
+        'pending' => 'badge-soft-info',
+        'confirmed' => 'badge-soft-primary',
+        'ongoing' => 'badge-soft-warning',
+        'completed' => 'badge-soft-success',
+        'canceled' => 'badge-soft-danger',
+        'payment_failed' => 'badge-soft-danger',
+    ];
+    $trip_type_labels = [
+        'hourly' => translate('Hourly'),
+        'distance_wise' => translate('Distance wise'),
+        'day_wise' => translate('messages.day_wise'),
+    ];
+    $payment_status_labels = [
+        'paid' => translate('messages.paid'),
+        'unpaid' => translate('messages.unpaid'),
+        'partially_paid' => translate('Partially paid'),
+    ];
+    $page_title = isset($status_labels[$status])
+        ? translate('messages.Trips') . ': ' . $status_labels[$status]
+        : translate('All trips');
+    $max_avatars = 3;
+@endphp
+
+@section('title', $page_title)
 
 @push('css_or_js')
-    <link rel="stylesheet" href="{{asset('Modules/Rental/public/assets/css/provider/trip-list.css')}}">
+    <link rel="stylesheet" href="{{ asset('Modules/Rental/public/assets/css/provider/trip-list.css') }}">
 @endpush
 
 @section('content')
     <div class="content container-fluid">
-        <!-- Page Header -->
         <div class="page-header">
-            <div class="d-flex justify-content-between flex-wrap gap-3">
-                <div>
-                    <h1 class="page-header-title text-break">
-                        <span class="page-header-icon">
-                            <img src="{{ asset('public/assets/admin/img/zone.png') }}" class="w--22" alt="">
-                        </span>
-                        <span>{{ translate('messages.All_Trips') }}
-                            <span class="badge badge-soft-dark ml-2" id="itemCount">{{ $total }}</span>
-                        </span>
-                    </h1>
-                </div>
-            </div>
+            <h1 class="page-header-title text-break">
+                <span class="page-header-icon">
+                    <img src="{{ asset('public/assets/admin/img/outline/zone.svg') }}" class="w--26" alt="">
+                </span>
+                <span>{{ $page_title }}
+                    <span class="badge badge-soft-dark ml-2" id="itemCount">{{ $total }}</span>
+                </span>
+            </h1>
+            <p class="page-header-desc">{{ translate('Your trips at this stage, with the customer and driver on each.') }}</p>
         </div>
-        <!-- End Page Header -->
 
-        <!-- Card -->
         <div class="card">
-            <!-- Header -->
-            <div class="card-header justify-content-between gap-3 py-2 flex-wrap">
-                <form action="" method="get" class="search-form flex-grow-1 max-w-450px">
-                    <!-- Search -->
-                    <input type="hidden" value="{{request()?->status  }}" name="status" >
-                    <div class="input-group input--group">
-                        <input id="datatableSearch_" type="search" value="{{ request()?->search ?? null }}"
-                               name="search" class="form-control"
-                               placeholder="{{ translate('Search by trip ID, customer name, email') }}"
-                               aria-label="{{ translate('messages.Search by trip ID, customer name, email') }}">
-                        <button type="submit" class="btn btn--secondary bg--primary"><i class="tio-search"></i></button>
-                    </div>
-                    <!-- End Search -->
-                </form>
-                @if (request()->input('search'))
-                    <button type="reset" class="btn btn--primary ml-2 location-reload-to-base"
-                            data-url="{{ url()->full() }}">{{ translate('messages.reset') }}</button>
-                @endif
-                <div class="search--button-wrapper justify-content-end gap-20px">
-                    <!-- Unfold -->
-                    <div class="hs-unfold m-0">
-                        <a class="js-hs-unfold-invoker btn btn-sm btn-white dropdown-toggle min-height-40 font-semibold"
-                           href="javascript:;"
-                           data-hs-unfold-options='{
-                            "target": "#usersExportDropdown",
-                            "type": "css-animation"
-                        }'>
-                            <i class="tio-download-to mr-1"></i> {{ translate('messages.export') }}
+            <div class="card-header border-0 py-2">
+                <div class="search--button-wrapper">
+                    @include('partials._table-head', [
+                        'subtitle' => translate('messages.Newest schedule first. Open a trip to assign drivers, update its status or print the invoice.'),
+                    ])
+                    <form action="" method="get" class="search-form">
+                        <input type="hidden" value="{{ $status }}" name="status">
+                        <div class="input-group input--group">
+                            <input type="search" value="{{ request('search') }}" name="search" class="form-control"
+                                   placeholder="{{ translate('Search by trip ID, customer name, email') }}"
+                                   aria-label="{{ translate('Search by trip ID, customer name, email') }}">
+                            <button type="submit" class="btn btn--secondary"><i class="tio-search"></i></button>
+                        </div>
+                    </form>
+                    @if (request('search'))
+                        <button type="button" class="btn btn--reset location-reload-to-base" data-url="{{ url()->full() }}">
+                            <i class="tio-refresh"></i> {{ translate('messages.Reset') }}
+                        </button>
+                    @endif
+                    <div class="hs-unfold">
+                        <a class="js-hs-unfold-invoker btn btn-sm btn-white dropdown-toggle h--40px" href="javascript:;"
+                           data-hs-unfold-options='{"target": "#usersExportDropdown", "type": "css-animation"}'>
+                            <i class="tio-download-to mr-1"></i> {{ translate('messages.Export') }}
                         </a>
-
-                        <div id="usersExportDropdown"
-                             class="hs-unfold-content dropdown-unfold dropdown-menu dropdown-menu-sm-right">
-
-                            <span class="dropdown-header">{{ translate('messages.download_options') }}</span>
-                            <a id="export-excel" class="dropdown-item"
-                               href="{{ route('vendor.trip.export', ['type' => 'excel', request()->getQueryString()]) }}">
-                                <img class="avatar avatar-xss avatar-4by3 mr-2"
-                                     src="{{ asset('public/assets/admin') }}/svg/components/excel.svg"
-                                     alt="Image Description">
-                                {{ translate('messages.excel') }}
+                        <div id="usersExportDropdown" class="hs-unfold-content dropdown-unfold dropdown-menu dropdown-menu-sm-right">
+                            <span class="dropdown-header">{{ translate('messages.Download options') }}</span>
+                            <a id="export-excel" class="dropdown-item" href="{{ route('vendor.trip.export', ['type' => 'excel', request()->getQueryString()]) }}">
+                                <img class="avatar avatar-xss avatar-4by3 mr-2" src="{{ asset('public/assets/admin/svg/components/excel.svg') }}" alt="">
+                                Excel
                             </a>
-                            <a id="export-csv" class="dropdown-item"
-                               href="{{ route('vendor.trip.export', ['type' => 'csv', request()->getQueryString()]) }}">
-                                <img class="avatar avatar-xss avatar-4by3 mr-2"
-                                     src="{{ asset('public/assets/admin') }}/svg/components/placeholder-csv-format.svg"
-                                     alt="Image Description">
-                                {{ translate('messages.csv') }}
+                            <a id="export-csv" class="dropdown-item" href="{{ route('vendor.trip.export', ['type' => 'csv', request()->getQueryString()]) }}">
+                                <img class="avatar avatar-xss avatar-4by3 mr-2" src="{{ asset('public/assets/admin/svg/components/placeholder-csv-format.svg') }}" alt="">
+                                CSV
                             </a>
-
                         </div>
                     </div>
-                    <!-- End Unfold -->
-
                 </div>
             </div>
-            <!-- End Header -->
 
-            <!-- Table -->
             <div class="table-responsive datatable-custom">
-                <table id="columnSearchDatatable"
-                       class="table table-borderless table-thead-bordered table-nowrap table-align-middle card-table"
-                       data-hs-datatables-options='{
-                            "order": [],
-                            "orderCellsTop": true,
-                            "paging":false
-
-                       }'>
+                <table class="table table-hover table-borderless table-thead-bordered table-nowrap table-align-middle card-table">
                     <thead class="thead-light">
-                    <tr>
-                        <th class="border-0">{{ translate('sl') }}</th>
-                        <th class="border-0">{{ translate('messages.Trip ID') }}</th>
-                        <th class="border-0">{{ translate('messages.Booking_Date') }}</th>
-                        <th class="border-0">{{ translate('messages.Schedule_At') }}</th>
-                        <th class="border-0">{{ translate('messages.Customer_Info') }}</th>
-                        <th class="border-0">{{ translate('messages.Driver_Info') }}</th>
-                        <th class="border-0">{{ translate('messages.Vehicle_Info') }}</th>
-                        <th class="border-0">{{ translate('messages.Trip_Type') }}</th>
-                        <th class="text-end border-0">{{ translate('messages.Trip_Amount') }}</th>
-                        <th class="text-center border-0">{{ translate('messages.Trip_Status') }}</th>
-                        <th class="text-center border-0">{{ translate('messages.Action') }}</th>
-                    </tr>
+                        <tr>
+                            <th class="border-0">{{ translate('messages.Trip') }}</th>
+                            <th class="border-0">{{ translate('messages.Schedule') }}</th>
+                            <th class="border-0">{{ translate('messages.Customer') }}</th>
+                            <th class="border-0">{{ translate('messages.Driver & vehicles') }}</th>
+                            <th class="border-0">{{ translate('Type') }}</th>
+                            <th class="border-0 col--numeric">{{ translate('messages.Amount') }}</th>
+                            <th class="border-0 text-center">{{ translate('messages.Status') }}</th>
+                            <th class="border-0 text-center">{{ translate('messages.Action') }}</th>
+                        </tr>
                     </thead>
 
                     <tbody id="set-rows">
-                    @foreach($trips as $key=> $trip)
-                    <tr>
-                        <td>{{$key+$trips->firstItem()}}</td>
-                        <td class="text--title font-semibold">
-                            <a href="{{ route('vendor.trip.details', $trip->id) }}">{{ $trip->id }}</a>
-                        </td>
-                        <td>
-                            <div class="text--title">
-                                {{ \App\CentralLogics\Helpers::date_format($trip?->created_at)  }}
-                                <br>
-                                {{ \App\CentralLogics\Helpers::time_format($trip?->created_at)  }}
-                            </div>
-                        </td>
-                        <td>
-                            <div class="text--title">
-                                {{ \App\CentralLogics\Helpers::date_format($trip?->schedule_at)  }}
-                                <br>
-                                {{ \App\CentralLogics\Helpers::time_format($trip?->schedule_at)  }}
-                            </div>
-                        </td>
-                        <td>
-                            <div class="text--title">
-                                @if ($trip->customer)
-                                    <div class="font-medium">
-                                        {{ $trip->customer->fullName }}
-                                    </div>
-                                    <div class="opacity-lg">
-                                        {{ $trip->customer->email }}
-                                    </div>
-                                @elseif($trip?->user_info['contact_person_name'])
-                                    <div class="font-medium">
-                                        {{$trip?->user_info['contact_person_name'] }}
-                                    </div>
-                                    <div class="opacity-lg">
-                                        {{ $trip?->user_info['contact_person_email'] }}
-                                    </div>
-                                @else
-                                    {{ translate('messages.Guest_user') }}
-                                @endif
-                            </div>
-                        </td>
-
-                        @php
-                            $maxDisplay = 3;
-                            $totalVehicle = count($trip->assignedVehicle);
-                            $totalDriver = count($trip->assignedDriver);
-                            $totalTripe = count($trip->trip_details);
-                        @endphp
-                        <td>
-                            @if($totalDriver)
-                                @if($totalDriver > 1)
-                                    <div class="d-flex align-items-center gap-2" data-html="true" data-toggle="tooltip"
-                                         title="<div class='d-flex flex-column p-2'>
-                                             @foreach($trip->assignedDriver as $index => $tooltipDriver)
-                                                <div class='media gap-3 {{ !$loop->last ? 'border-bottom mb-2 pb-2' : '' }}'>
-                                                    <img height='40' src='{{ $tooltipDriver->driver['imageFullUrl'] }}'  class='rounded ratio-1-1' width='40' alt='...'>
-                                                    <div class='media-body'>
-                                                        <h5 class='d-flex align-items-center gap-2 text-white mb-0'>
-                                                            <a href='{{ route('vendor.driver.details', $tooltipDriver->driver->id) }}' class='text-white'>{{ Str::limit($tooltipDriver->driver['fullName'],12,'...')  }}</a>
-                                                        </h5>
-                                                        <div class='d-flex align-items-center gap-2 fs-10'>{{Str::limit( $tooltipDriver->driver->email,12,'...') }}</div>
+                        @foreach ($trips as $trip)
+                            @php($drivers = $trip->assignedDriver->filter(fn ($assigned) => $assigned->driver))
+                            @php($driver_count = $drivers->count())
+                            @php($vehicle_count = $trip->assignedVehicle->count())
+                            @php($customer_name = $trip->customer ? $trip->customer->fullName : data_get($trip->user_info, 'contact_person_name'))
+                            @php($customer_contact = $trip->customer ? ($trip->customer->phone ?: $trip->customer->email) : (data_get($trip->user_info, 'contact_person_number') ?: data_get($trip->user_info, 'contact_person_email')))
+                            <tr>
+                                <td>
+                                    <span class="d-flex align-items-center gap-2">
+                                        <a class="font-weight-bold" href="{{ route('vendor.trip.details', $trip->id) }}">#{{ $trip->id }}</a>
+                                        <span class="cell-chips">
+                                            <span class="cell-chip">{{ $trip->scheduled ? translate('Scheduled') : translate('messages.Instant') }}</span>
+                                            @if ($trip->edited)
+                                                <span class="cell-chip">{{ translate('messages.Edited') }}</span>
+                                            @endif
+                                        </span>
+                                    </span>
+                                    <span class="d-block fs-12 text-muted">{{ translate('messages.booked') }}: {{ \App\CentralLogics\Helpers::date_format($trip->created_at) }}</span>
+                                </td>
+                                <td>
+                                    @if ($trip->schedule_at)
+                                        <span class="table-when">
+                                            <span class="table-when__day">{{ \App\CentralLogics\Helpers::date_format($trip->schedule_at) }}</span>
+                                            <span class="table-when__ago text-uppercase">{{ \App\CentralLogics\Helpers::time_format($trip->schedule_at) }}</span>
+                                        </span>
+                                    @else
+                                        <span class="text-muted">&mdash;</span>
+                                    @endif
+                                </td>
+                                <td>
+                                    @if ($customer_name)
+                                        <span class="d-block text--title line--limit-1 max-w-200px">{{ $customer_name }}</span>
+                                        @if ($customer_contact)
+                                            <span class="d-block fs-12 text-muted">{{ $customer_contact }}</span>
+                                        @endif
+                                    @else
+                                        <span class="text-muted">{{ translate('messages.Guest user') }}</span>
+                                    @endif
+                                </td>
+                                <td>
+                                    @if ($driver_count > 1)
+                                        <div class="d-flex align-items-center gap-2" data-html="true" data-toggle="tooltip"
+                                             title="<div class='d-flex flex-column p-2'>
+                                                @foreach ($drivers as $tooltip_driver)
+                                                    <div class='media gap-3 {{ !$loop->last ? 'border-bottom mb-2 pb-2' : '' }}'>
+                                                        <img height='40' src='{{ data_get($tooltip_driver->driver, 'imageFullUrl') }}' class='rounded ratio-1-1' width='40' alt=''>
+                                                        <div class='media-body'>
+                                                            <h5 class='text-white mb-0'>{{ Str::limit(e($tooltip_driver->driver->fullName), 16, '...') }}</h5>
+                                                            <div class='fs-10'>{{ Str::limit(e($tooltip_driver->driver->email), 18, '...') }}</div>
+                                                        </div>
                                                     </div>
-                                                </div>
-                                             @endforeach
-                                         </div>">
-                                        <div class="d-flex">
-                                            @foreach ($trip->assignedDriver->take($maxDisplay) as $key => $assignedDriver)
-                                                <img width="35"  class="rounded-circle aspect-1-1 border border-white shadow-sm {{ $key > 0 ? 'ml-n2' : '' }}" src="{{ $assignedDriver->driver['imageFullUrl'] }}" alt="">
-                                            @endforeach
+                                                @endforeach
+                                             </div>">
+                                            <span class="d-flex">
+                                                @foreach ($drivers->take($max_avatars) as $index => $assigned)
+                                                    <img width="28" class="rounded-circle aspect-1-1 border border-white shadow-sm {{ $loop->first ? '' : 'ml-n2' }}" src="{{ data_get($assigned->driver, 'imageFullUrl') }}" alt="">
+                                                @endforeach
+                                            </span>
+                                            <span class="fs-12 text--title">{{ translate('messages.drivers') }}: {{ $driver_count }}</span>
                                         </div>
-                                        @if ($totalDriver > $maxDisplay)
-                                            <span>+{{ $totalDriver - $maxDisplay }}</span>
-                                        @endif
+                                    @elseif ($driver_count === 1)
+                                        <a class="d-block text--title line--limit-1 max-w-200px" href="{{ route('vendor.driver.details', $drivers->first()->driver->id) }}">{{ $drivers->first()->driver->fullName }}</a>
+                                    @else
+                                        <span class="d-block text-muted">{{ translate('messages.Unassigned') }}</span>
+                                    @endif
+
+                                    @if ($vehicle_count > 0)
+                                        <span class="d-inline-block fs-12 text-primary text-underline mt-1" data-html="true" data-toggle="tooltip"
+                                              title="<div class='d-flex flex-column p-2'>
+                                                @foreach ($trip->trip_details as $detail)
+                                                    <div class='media gap-3 {{ !$loop->last ? 'border-bottom mb-2 pb-2' : '' }}'>
+                                                        <img src='{{ data_get($detail->vehicle, 'thumbnailFullUrl', asset('public/assets/admin/img/160x160/img2.jpg')) }}' class='rounded ratio-1-1' width='40' alt=''>
+                                                        <div class='media-body'>
+                                                            <h5 class='text-white mb-0'>{{ Str::limit(e(data_get($detail->vehicle_details, 'name', '')), 16, '...') }}</h5>
+                                                            @if ($detail->vehicle)
+                                                                <div class='fs-10'>{{ translate('Car assigned') }}: {{ $detail->tripVehicleDetails->count() }}</div>
+                                                            @else
+                                                                <div class='fs-10 text-danger'>{{ translate('No data found') }}</div>
+                                                            @endif
+                                                        </div>
+                                                    </div>
+                                                @endforeach
+                                              </div>">{{ translate('messages.vehicles') }}: {{ $vehicle_count }}</span>
+                                    @else
+                                        <span class="d-block fs-12 text--warning mt-1">{{ translate('messages.No vehicle assigned') }}</span>
+                                    @endif
+                                </td>
+                                <td>
+                                    <span class="d-block text--title">{{ $trip_type_labels[$trip->trip_type] ?? ucfirst(str_replace('_', ' ', $trip->trip_type)) }}</span>
+                                    @if ($trip->distance_label)
+                                        <span class="d-block fs-12 text-muted">{{ $trip->distance_label }}</span>
+                                    @endif
+                                </td>
+                                <td class="col--numeric">
+                                    <span class="d-block text--title font-weight-bold">{{ \App\CentralLogics\Helpers::format_currency($trip->trip_amount) }}</span>
+                                    <span class="d-block fs-12 {{ $trip->payment_status === 'paid' ? 'text--success' : 'text--danger' }}">{{ $payment_status_labels[$trip->payment_status] ?? ucfirst(str_replace('_', ' ', $trip->payment_status)) }}</span>
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge {{ $status_badges[$trip->trip_status] ?? 'badge-soft-secondary' }}">{{ $status_labels[$trip->trip_status] ?? ucfirst(str_replace('_', ' ', $trip->trip_status)) }}</span>
+                                </td>
+                                <td>
+                                    <div class="btn--container justify-content-center">
+                                        <a class="btn action-btn action-btn--view" href="{{ route('vendor.trip.details', $trip->id) }}"
+                                           title="{{ translate('View details') }}"><i class="tio-visible-outlined"></i></a>
+                                        <a class="btn action-btn action-btn--print" href="{{ route('vendor.trip.generate-invoice', ['id' => $trip->id]) }}"
+                                           title="{{ translate('messages.Download invoice') }}"><i class="tio-download-to"></i></a>
                                     </div>
-                                @else
-                                    <div class="text--title">
-                                        @if ($trip->assignedDriver->isNotEmpty())
-                                            <a href="{{ route('vendor.driver.details', $trip->assignedDriver->first()?->driver?->id) }}" class="font-medium">
-                                                {{ Str::limit($trip->assignedDriver->first()?->driver?->fullName,12,'...')  }}
-                                            </a>
-                                            <div class="opacity-lg">
-                                                {{ Str::limit($trip->assignedDriver->first()?->driver?->email,12,'...' )  }}
-                                            </div>
-                                        @endif
-                                    </div>
-                                @endif
-                            @else
-                                <div class="text-muted fs-12 mt-1">
-                                    {{ translate('messages.Unassigned') }}
-                                </div>
-                            @endif
-                        </td>
-
-                        <td>
-                            @if($totalVehicle > 0)
-                                <div class="text-primary text-underline font-weight-medium" data-html="true" data-toggle="tooltip"
-                                     title="<div class='d-flex flex-column p-2'>
-                                         @foreach($trip->trip_details as $index => $detail)
-                                             @if($detail?->vehicle)
-                                                 <div class='media gap-3 {{ !$loop->last ? 'border-bottom mb-2 pb-2' : '' }}'>
-                                                     <img src='{{  data_get($detail?->vehicle,'thumbnailFullUrl',asset('public/assets/admin/img/160x160/img2.jpg') ) }}' class='rounded ratio-1-1' width='40' alt='...'>
-                                                     <div class='media-body'>
-                                                         <h5 class='d-flex align-items-center gap-2 text-white mb-0'>
-                                                            <a href='{{ route('vendor.vehicle.details', $detail->vehicle_id) }}' class='text-white'>{{ Str::limit($detail->vehicle_details['name'],12,'...')  }}</a>
-                                                         </h5>
-                                                         <div class='d-flex align-items-center gap-2 fs-10'>{{ translate('messages.car_Assigned') }}: {{ $detail->tripVehicleDetails->count() }}</div>
-                                                     </div>
-                                                 </div>
-                                             @else
-                                                 <div class='media gap-3 {{ !$loop->last ? 'border-bottom mb-2 pb-2' : '' }}'>
-                                                     <img src='{{  data_get($detail?->vehicle,'thumbnailFullUrl',asset('public/assets/admin/img/160x160/img2.jpg') ) }}' class='rounded ratio-1-1' width='40' alt='...'>
-                                                     <div class='media-body'>
-                                                         <h5 class='d-flex align-items-center gap-2 text-white mb-0'>
-                                                            <span class='text-white'>{{ Str::limit($detail->vehicle_details['name'],12,'...')  }}</span>
-                                                        </h5>
-                                                         <div class='d-flex align-items-center text-danger gap-2 fs-10'>{{ translate('Vehicle_Not_Found_!!!') }}</div>
-                                                     </div>
-                                                 </div>
-                                             @endif
-                                         @endforeach
-                                    </div>">
-                                    {{ $totalVehicle }} {{ translate('messages.vehicles') }}
-                                </div>
-                            @else
-                                <div class="text--warning font-medium">
-                                    {{ translate('messages.Unassigned') }}
-                                </div>
-                            @endif
-
-                        </td>
-                        <td>
-                            <div class="text--title">
-                                <div class="font-medium">
-                                    {{ translate($trip->trip_type) }}
-                                </div>
-                                <div class="opacity-lg">
-                                    {{ $trip->scheduled ?translate('messages.scheduled'): translate('messages.Instant')  }}
-                                </div>
-                            </div>
-                        </td>
-                        <td>
-                            <div class="text--title text-end">
-                                <div class="font-semobold">
-                                    {{ \App\CentralLogics\Helpers::format_currency($trip->trip_amount) }}
-                                </div>
-                                <div class="opacity-lg font-medium {{ $trip->payment_status  == 'paid' ? 'text--success' : 'text--danger' }} ">
-                                    {{ translate($trip->payment_status) }}
-                                </div>
-                            </div>
-                        </td>
-                        <td>
-                            <div class="d-flex justify-content-center">
-                                @php
-                                $statusClasses = [
-                                    'pending' => 'badge-soft-info',
-                                    'completed' => 'badge-soft-success',
-                                    'canceled' => 'badge-soft-danger',
-                                    'ongoing' => 'badge-soft-warning',
-                                    'payment_failed' => 'badge-soft-danger',
-                                ];
-
-                                $badgeClass = $statusClasses[$trip->trip_status] ?? 'badge-soft-info';
-                            @endphp
-                            <label class="badge {{ $badgeClass }} border-0">
-                                {{ translate($trip->trip_status) }}
-                            </label>
-                            </div>
-                        </td>
-                        <td>
-                            <div class="btn--container justify-content-center">
-                                <a class="btn action-btn btn--primary btn-outline-primary" href="{{route("vendor.trip.generate-invoice",["id" => $trip->id])}}"
-                                   title="{{ translate('messages.download') }}"><i class="tio-download-to"></i>
-                                </a>
-                                <a class="btn action-btn btn--primary btn-outline-primary" href="{{ route('vendor.trip.details', $trip->id) }}"
-                                   title="{{ translate('messages.view') }}"><i class="tio-visible-outlined"></i>
-                                </a>
-                            </div>
-                        </td>
-                    </tr>
-                    @endforeach
+                                </td>
+                            </tr>
+                        @endforeach
                     </tbody>
                 </table>
+            </div>
 
-            </div>
-            @if(count($trips) !== 0)
-                <hr>
-            @endif
-            <div class="page-area">
-                {!! $trips->appends($_GET)->links() !!}
-            </div>
-            @if(count($trips) === 0)
+            @if (count($trips) === 0)
                 <div class="empty--data">
-                    <img src="{{asset('/public/assets/admin/svg/illustrations/sorry.svg')}}" alt="public">
-                    <h5>
-                        {{translate('no_data_found')}}
-                    </h5>
+                    <img src="{{ asset('public/assets/admin/svg/illustrations/sorry.svg') }}" alt="">
+                    @if (request('search'))
+                        <h5>{{ translate('messages.No trip matches your search.') }}</h5>
+                        <p class="text-muted font-size-sm">{{ translate('Try a different trip ID, customer name or email.') }}</p>
+                    @else
+                        <h5>{{ translate('messages.No trips here yet.') }}</h5>
+                        <p class="text-muted font-size-sm">{{ translate('Trips appear here as customers book your vehicles.') }}</p>
+                    @endif
+                </div>
+            @else
+                <div class="page-area px-4 pb-3">
+                    {!! $trips->withQueryString()->links() !!}
                 </div>
             @endif
-            <!-- End Table -->
         </div>
-        <!-- End Card -->
     </div>
 @endsection

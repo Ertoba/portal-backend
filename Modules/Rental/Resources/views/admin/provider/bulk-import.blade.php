@@ -1,169 +1,55 @@
 @extends('layouts.admin.app')
 
-@section('title',translate('Provider Bulk Import'))
+@section('title', translate('messages.Provider bulk import'))
+
+@push('css_or_js')
+    <link rel="stylesheet" href="{{ asset('public/assets/admin/css/third-party-setup.css') }}">
+    <link rel="stylesheet" href="{{ asset('public/assets/admin/css/bulk-tools.css') }}">
+@endpush
 
 @section('content')
-    <div class="content container-fluid">
-        <div class="page-header">
-            <h1 class="page-header-title">
-                <span class="page-header-icon">
-                    <img src="{{asset('public/assets/admin/img/resturant.png')}}" class="w--20" alt="">
-                </span>
-                <span>
-                    {{translate('messages.Providers_bulk_import')}}
-                </span>
-            </h1>
-        </div>
-        <!-- Content Row -->
-        <div class="card">
-            <div class="card-body">
-                <div class="export-steps-2">
-                    <div class="row g-4">
-                        <div class="col-sm-6 col-lg-4">
-                            <div class="export-steps-item-2 h-100">
-                                <div class="top">
-                                    <div>
-                                        <h3 class="fs-20">{{translate('Step 1')}}</h3>
-                                        <div>
-                                            {{translate('Download_Excel_File')}}
-                                        </div>
-                                    </div>
-                                    <img src="{{asset('/public/assets/admin/img/bulk-import-1.png')}}" alt="">
-                                </div>
-                                <h4>{{ translate('Instruction') }}</h4>
-                                <ul class="m-0 pl-4">
-                                    <li>
-                                        {{ translate('Download_the_format_file_and_fill_it_with_proper_data.') }}
-                                    </li>
-                                    <li>
-                                        {{ translate('You_can_download_the_example_file_to_understand_how_the_data_must_be_filled.') }}
-                                    </li>
-                                    <li>
-                                        {{ translate('Have_to_upload_excel_file.') }}
-                                    </li>
-                                </ul>
-                            </div>
-                        </div>
-                        <div class="col-sm-6 col-lg-4">
-                            <div class="export-steps-item-2 h-100">
-                                <div class="top">
-                                    <div>
-                                        <h3 class="fs-20">{{translate('Step 2')}}</h3>
-                                        <div>
-                                            {{translate('Match_Spread_sheet_data_according_to_instruction')}}
-                                        </div>
-                                    </div>
-                                    <img src="{{asset('/public/assets/admin/img/bulk-import-2.png')}}" alt="">
-                                </div>
-                                <h4>{{ translate('Instruction') }}</h4>
-                                <ul class="m-0 pl-4">
-                                    <li>
-                                        {{ translate('Download the format file and fill it with proper data.') }}
-                                    </li>
-                                    <li>
-                                        {{ translate('You can download the example file to understand how the data must be filled.') }}
-                                    </li>
-                                    <li>
-                                        {{ translate('Have to upload zip file') }}
-                                    </li>
-                                </ul>
-                            </div>
-                        </div>
-                        <div class="col-sm-6 col-lg-4">
-                            <div class="export-steps-item-2 h-100">
-                                <div class="top">
-                                    <div>
-                                        <h3 class="fs-20">{{translate('Step 3')}}</h3>
-                                        <div>
-                                            {{translate('Validate data and complete import')}}
-                                        </div>
-                                    </div>
-                                    <img src="{{asset('/public/assets/admin/img/bulk-import-3.png')}}" alt="">
-                                </div>
-                                <h4>{{ translate('Instruction') }}</h4>
-                                <ul class="m-0 pl-4">
-                                    <li>
-                                        {{ translate('Download the format file and fill it with proper data.') }}
-                                    </li>
-                                    <li>
-                                        {{ translate('You can download the example file to understand how the data must be filled.') }}
-                                    </li>
-                                    <li>
-                                        {{ translate('Have to upload zip file') }}
-                                    </li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="text-center pb-4">
-                    <h3 class="mb-3 export--template-title font-regular">{{translate('download_spreadsheet_template')}}</h3>
-                    <div class="btn--container justify-content-center export--template-btns">
-
-                        <a href="{{asset('public/assets/providers_bulk_format.xlsx')}}" download="" class="btn btn--primary btn-outline-primary">{{ translate('Template with Existing Data') }}</a>
-                        <a href="{{asset('public/assets/providers_bulk_format_nodata.xlsx')}}" download="" class="btn btn--primary">{{ translate('Template without Data') }}</a>
-
-                    </div>
-                </div>
-            </div>
-        </div>
-
-
-
-        <form class="product-form" id="import_form" action="" method="POST"
-        enctype="multipart/form-data">
-            @csrf
-
-        <input type="hidden" name="button" id="btn_value">
-        <div class="card mt-2 rest-part">
-            <div class="card-body">
-                <div class="row g-3">
-                    <div class="col-sm-6">
-                        <h5 class="text-capitalize mb-3">{{ translate('Select_Data_Upload_type') }}</h5>
-                        <div class="module-radio-group border rounded">
-                            <label class="form-check form--check">
-                                <input class="form-check-input "   value="import" type="radio" name="upload_type" checked>
-                                <span class="form-check-label py-20">
-                                    {{ translate('Upload_New_Data') }}
-                                </span>
-                            </label>
-                            <label class="form-check form--check">
-                                <input class="form-check-input " value="update" type="radio" name="upload_type">
-                                <span class="form-check-label py-20">
-                                    {{ translate('Update_Existing_Data') }}
-                                </span>
-                            </label>
-                        </div>
-                    </div>
-                    <div class="col-sm-6">
-                        <h5 class="text-capitalize mb-3">{{ translate('Import_Providers_file') }}</h5>
-                        <label class="uploadDnD d-block">
-                            <div class="form-group inputDnD input_image input_image_edit position-relative">
-                                <div class="upload-text">
-                                    <div>
-                                        <img src="{{asset('/public/assets/admin/img/bulk-import-3.png')}}" alt="">
-                                    </div>
-                                    <div data-text="{{translate('Must_be_Excel_files_using_our_Excel_template_above')}}" class="filename">{{translate('Must_be_Excel_files_using_our_Excel_template_above')}}</div>
-                                </div>
-                                <input type="file" name="products_file" class="form-control-file text--primary font-weight-bold action-upload-section-dot-area" id="products_file">
-                            </div>
-                        </label>
-
-                    </div>
-                </div>
-                <div class="btn--container justify-content-end mt-20">
-                    <button id="reset_btn" type="reset" class="btn btn--reset">{{translate('messages.reset')}}</button>
-                    <button type="button" data-massage="{{ translate('You_want_to_') }}" data-title="{{ translate('Are you sure?') }}" data-yes="{{ translate('messages.Yes') }}" data-no="{{ translate('messages.No') }}" class="btn btn--primary update_or_import">{{translate('messages.Upload')}}</button>
-                </div>
-            </div>
-        </div>
-    </form>
-</div>
-
-
-    </div>
+    @include('partials.bulk._import', ['bulk' => [
+        'title' => translate('messages.Provider bulk import'),
+        'subtitle' => translate('Upload a spreadsheet to add new providers or update the ones you already have.'),
+        'icon' => asset('public/assets/admin/img/provider.png'),
+        'action' => url()->current(),
+        'summary' => $summary,
+        'count_label' => translate('Providers in this module'),
+        'mode_add_title' => translate('Add new providers'),
+        'mode_add_desc' => translate('Every row becomes a new provider with its owner account.'),
+        'mode_update_title' => translate('Update existing providers'),
+        'mode_update_desc' => translate('Rows are matched on their ID and overwritten.'),
+        'note_import' => translate('A provider is rejected if its email or phone already belongs to another one.'),
+        'note_update' => translate('Your file must keep its Id column. Matching providers are overwritten and cannot be restored.'),
+        'templates' => [
+            [
+                'label' => translate('Template with current data'),
+                'hint' => translate('The heading row plus example rows, so you can see how each column is filled.'),
+                'url' => asset('public/assets/providers_bulk_format.xlsx'),
+            ],
+            [
+                'label' => translate('Empty template'),
+                'hint' => translate('Only the heading row — start from a clean sheet.'),
+                'url' => asset('public/assets/providers_bulk_format_nodata.xlsx'),
+            ],
+        ],
+        'aside_subtitle' => translate('These columns must carry a value in every row.'),
+        'columns' => ['providerName', 'ownerFirstName', 'ownerLastName', 'email', 'phone', 'logo', 'CoverPhoto',
+                      'Address', 'latitude', 'longitude', 'zone_id', 'module_id', 'Comission', 'DeliveryTime'],
+        'tips' => [
+            translate('Two rows cannot share an email or a phone number, and neither can clash with a provider you already have.'),
+            translate('Zone ID and module ID come from their own lists — the file is not checked against names.'),
+            translate('latitude and longitude place the provider on the map, and must sit inside the zone you name.'),
+        ],
+        'export_url' => route('admin.rental.provider.bulk_export_index'),
+        'export_title' => translate('messages.Export providers'),
+        'export_desc' => translate('Download your current providers as a ready-made file to edit.'),
+        'help_title' => translate('Importing providers'),
+        'help_steps' => [
+            translate('Download a template, or export your providers to start from the data you already have.'),
+            translate('Fill one row per provider and keep the column headings exactly as they come.'),
+            translate('Pick whether the file adds new providers or updates existing ones.'),
+            translate('Choose the file and press upload — the whole file is checked before anything is saved.'),
+        ],
+    ]])
 @endsection
-
-@push('script_2')
-<script src="{{asset('Modules/Rental/public/assets/js/admin/view-pages/provider-bulk-import.js')}}"></script>
-@endpush

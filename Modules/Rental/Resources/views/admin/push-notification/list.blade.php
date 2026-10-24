@@ -8,7 +8,6 @@
 
 @section('content')
     <div class="content container-fluid">
-        <!-- Page Header -->
         <div class="page-header">
             <h1 class="page-header-title">
                 <span class="page-header-icon">
@@ -18,8 +17,8 @@
                     {{translate('messages.notification')}}
                 </span>
             </h1>
+            <p class="page-header-desc">{{ translate('Messages you have pushed to customers\' phones, and when each one went out.') }}</p>
         </div>
-        <!-- End Page Header -->
         <div class="row g-3">
             <div class="col-12">
                 <div class="card">
@@ -31,15 +30,15 @@
                                     <div class="row g-2">
                                         <div class="col-12">
                                             <div class="form-group mb-0">
-                                                <label class="input-label" for="exampleFormControlInput1">{{translate('messages.title')}}</label>
-                                                <input type="text" name="notification_title" class="form-control" placeholder="{{translate('messages.new_notification')}}" required maxlength="191">
+                                                <label class="input-label" for="exampleFormControlInput1">{{translate('messages.Title')}}</label>
+                                                <input type="text" name="notification_title" class="form-control" placeholder="{{translate('New notification')}}" required maxlength="191">
                                             </div>
                                         </div>
                                         <div class="col-12">
                                             <div class="form-group mb-0">
-                                                <label class="input-label" for="exampleFormControlInput1">{{translate('messages.zone')}}</label>
+                                                <label class="input-label" for="exampleFormControlInput1">{{translate('messages.Zone')}}</label>
                                                 <select name="zone" id="zone" class="form-control js-select2-custom" >
-                                                    <option value="all">{{translate('messages.all')}}</option>
+                                                    <option value="all">{{translate('All')}}</option>
                                                     @foreach($zones as $zone)
                                                         <option value="{{$zone['id']}}">{{$zone['name']}}</option>
                                                     @endforeach
@@ -48,17 +47,17 @@
                                         </div>
                                         <div class="col-12">
                                             <div class="form-group mb-0">
-                                                <label class="input-label" for="tergat">{{translate('messages.send_to')}}</label>
+                                                <label class="input-label" for="tergat">{{translate('messages.Send to')}}</label>
 
-                                                <select name="tergat" class="form-control js-select2-custom" id="tergat" data-placeholder="{{translate('messages.select_tergat')}}" required>
-                                                    <option value="customer">{{translate('messages.customer')}}</option>
+                                                <select name="tergat" class="form-control js-select2-custom" id="tergat" data-placeholder="{{translate('messages.Select target')}}" required>
+                                                    <option value="customer">{{translate('messages.Customer')}}</option>
                                                     <option value="store">{{translate('messages.Provider')}}</option>
                                                 </select>
                                             </div>
                                         </div>
                                         <div class="col-12">
                                             <div class="form-group mb-0">
-                                                <label class="input-label" for="exampleFormControlInput1">{{translate('messages.description')}}</label>
+                                                <label class="input-label" for="exampleFormControlInput1">{{translate('messages.Description')}}</label>
                                                 <textarea name="description" class="form-control" maxlength="1000" required></textarea>
                                             </div>
                                         </div>
@@ -67,8 +66,8 @@
                                 <div class="col-lg-6">
                                     <div class="h-100 d-flex flex-column">
                                         <label class="d-block text-center mt-auto mb-0">
-                                            {{translate('messages.image')}}
-                                            <small class="text-danger"> ( {{translate('messages.ratio')}} 900x300 )</small>
+                                            {{translate('messages.Image')}}
+                                            <small class="text-danger"> ( {{translate('messages.Ratio')}} 900x300 )</small>
                                         </label>
                                         <div class="text-center py-3 my-auto">
                                             <img class="img--vertical" id="viewer" data-src="{{asset('public/assets/admin/img/900x400/img1.jpg')}}"
@@ -77,14 +76,14 @@
                                         <div class="custom-file">
                                             <input type="file" name="image" id="customFileEg1" class="custom-file-input"
                                                 accept=".webp, .jpg, .png, .jpeg, .gif, .bmp, .tif, .tiff|image/*">
-                                            <label class="custom-file-label" for="customFileEg1">{{translate('messages.choose_file')}}</label>
+                                            <label class="custom-file-label" for="customFileEg1">{{translate('Choose file')}}</label>
                                         </div>
                                     </div>
                                 </div>
                                 <div class="col-12">
                                     <div class="btn--container justify-content-end">
-                                        <button type="reset" id="reset_btn" class="btn btn--reset">{{translate('messages.reset')}}</button>
-                                        <button type="submit" id="submit" class="btn btn--primary">{{translate('messages.send_notification')}}</button>
+                                        <button type="reset" id="reset_btn" class="btn btn--reset"><i class="tio-refresh"></i> {{translate('messages.Reset')}}</button>
+                                        <button type="submit" id="submit" class="btn btn--primary"><i class="tio-send"></i> {{translate('Send notification')}}</button>
                                     </div>
                                 </div>
                             </div>
@@ -99,56 +98,51 @@
                         <div class="search--button-wrapper">
                             <h5 class="card-title">{{ translate('Notification list') }}<span class="badge badge-soft-dark ml-2">{{$notifications->total()}}</span></h5>
                             <form class="search-form" >
-                                <!-- Search -->
                                 <div class="input-group input--group min--270">
                                     <input type="search" name="search"  class="form-control"
-                                    value="{{ request()?->search ?? null }}"  placeholder="{{translate('messages.search_notification')}}">
+                                    value="{{ request()?->search ?? null }}"  placeholder="{{translate('messages.Search notification')}}">
                                     <button type="submit" class="btn btn--secondary">
                                     <i class="tio-search"></i>
                                     </button>
                                 </div>
-                                <!-- End Search -->
                             </form>
                             @if(request()->input('search'))
-                            <button type="reset" class="btn btn--primary ml-2 location-reload-to-base" data-url="{{url()->full()}}">{{translate('messages.reset')}}</button>
+                            <button type="reset" class="btn btn--primary ml-2 location-reload-to-base" data-url="{{url()->full()}}"><i class="tio-refresh"></i> {{translate('messages.Reset')}}</button>
                             @endif
 
 
-                            <!-- Unfold -->
                             <div class="hs-unfold mr-2">
                                 <a class="js-hs-unfold-invoker btn btn-sm btn-white dropdown-toggle min-height-40" href="javascript:;"
                                     data-hs-unfold-options='{
                                             "target": "#usersExportDropdown",
                                             "type": "css-animation"
                                         }'>
-                                    <i class="tio-download-to mr-1"></i> {{ translate('messages.export') }}
+                                    <i class="tio-download-to mr-1"></i> {{ translate('messages.Export') }}
                                 </a>
 
                                 <div id="usersExportDropdown"
                                     class="hs-unfold-content dropdown-unfold dropdown-menu dropdown-menu-sm-right">
 
-                                    <span class="dropdown-header">{{ translate('messages.download_options') }}</span>
+                                    <span class="dropdown-header">{{ translate('messages.Download options') }}</span>
 
 
                                     <a id="export-excel" class="dropdown-item" href="{{route('admin.rental.notification.export', ['type'=>'excel' , request()->getQueryString()])}}">
                                         <img class="avatar avatar-xss avatar-4by3 mr-2"
                                             src="{{ asset('public/assets/admin') }}/svg/components/excel.svg"
                                             alt="Image Description">
-                                        {{ translate('messages.excel') }}
+                                        Excel
                                     </a>
                                     <a id="export-csv" class="dropdown-item" href="{{route('admin.rental.notification.export', ['type'=>'csv', request()->getQueryString()])}}">
                                         <img class="avatar avatar-xss avatar-4by3 mr-2"
                                             src="{{ asset('public/assets/admin') }}/svg/components/placeholder-csv-format.svg"
                                             alt="Image Description">
-                                        {{ translate('messages.csv') }}
+                                        CSV
                                     </a>
 
                                 </div>
                             </div>
-                            <!-- End Unfold -->
                         </div>
                     </div>
-                    <!-- Table -->
                     <div class="table-responsive datatable-custom">
                         <table id="columnSearchDatatable"
                                class="table table-borderless table-thead-bordered table-nowrap table-align-middle card-table"
@@ -160,13 +154,13 @@
                             <thead class="thead-light">
                                 <tr>
                                     <th class="border-0">{{ translate('messages.SL') }}</th>
-                                    <th class="border-0">{{translate('messages.title')}}</th>
-                                    <th class="border-0">{{translate('messages.description')}}</th>
-                                    <th class="border-0">{{translate('messages.image')}}</th>
-                                    <th class="border-0">{{translate('messages.zone')}}</th>
-                                    <th class="border-0">{{translate('messages.tergat')}}</th>
-                                    <th class="text-center border-0">{{translate('messages.status')}}</th>
-                                    <th class="text-center border-0">{{translate('messages.action')}}</th>
+                                    <th class="border-0">{{translate('messages.Title')}}</th>
+                                    <th class="border-0">{{translate('messages.Description')}}</th>
+                                    <th class="border-0">{{translate('messages.Image')}}</th>
+                                    <th class="border-0">{{translate('messages.Zone')}}</th>
+                                    <th class="border-0">{{translate('messages.target')}}</th>
+                                    <th class="text-center border-0">{{translate('messages.Status')}}</th>
+                                    <th class="text-center border-0">{{translate('messages.Action')}}</th>
                                 </tr>
                             </thead>
 
@@ -188,11 +182,11 @@
                                             src="{{ $notification['image_full_url'] }}"
                                                 data-onerror-image="{{asset('public/assets/admin/img/160x160/img2.jpg')}}">
                                         @else
-                                            <label class="badge badge-soft-warning">{{translate('No Image')}}</label>
+                                            <label class="badge badge-soft-warning">{{translate('No image')}}</label>
                                         @endif
                                     </td>
                                     <td>
-                                        {{$notification->zone_id==null?translate('messages.all'):($notification->zone?$notification->zone->name:translate('messages.zone_deleted'))}}
+                                        {{$notification->zone_id==null?translate('All'):($notification->zone?$notification->zone->name:translate('messages.Zone deleted'))}}
                                     </td>
                                     <td class="text-uppercase">
                                         {{ translate($notification->tergat)}}
@@ -207,11 +201,11 @@
                                     </td>
                                     <td>
                                         <div class="btn--container justify-content-center">
-                                            <a class="btn action-btn btn--primary btn-outline-primary"
-                                            href="{{route('admin.rental.notification.edit',[$notification['id']])}}" title="{{translate('messages.edit_notification')}}"><i class="tio-edit"></i>
+                                            <a class="btn action-btn action-btn--edit"
+                                            href="{{route('admin.rental.notification.edit',[$notification['id']])}}" title="{{translate('messages.Edit notification')}}"><i class="tio-edit"></i>
                                             </a>
-                                            <a class="btn action-btn btn--danger btn-outline-danger form-alert" href="javascript:"
-                                               data-id="notification-{{$notification['id']}}" data-message="{{ translate('Want to delete this notification ?') }}" title="{{translate('messages.delete_notification')}}"><i class="tio-delete-outlined"></i>
+                                            <a class="btn action-btn action-btn--delete form-alert" href="javascript:"
+                                               data-id="notification-{{$notification['id']}}" data-message="{{ translate('Want to delete this notification?') }}" title="{{translate('messages.Delete notification')}}"><i class="tio-delete-outlined"></i>
                                             </a>
                                             <form action="{{route('admin.rental.notification.delete',[$notification['id']])}}" method="post" id="notification-{{$notification['id']}}">
                                                 @csrf @method('delete')
@@ -233,13 +227,12 @@
                     <div class="empty--data">
                         <img src="{{asset('/public/assets/admin/svg/illustrations/sorry.svg')}}" alt="public">
                         <h5>
-                            {{translate('no_data_found')}}
+                            {{translate('No data found')}}
                         </h5>
                     </div>
                     @endif
                 </div>
             </div>
-            <!-- End Table -->
         </div>
     </div>
 
