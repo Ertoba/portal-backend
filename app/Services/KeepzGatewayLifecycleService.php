@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\PaymentRequest;
+use App\Support\Payment\KeepzStatusIdentity;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
@@ -80,6 +81,15 @@ class KeepzGatewayLifecycleService
         if (isset($payload['statusCode'])) {
             $this->logUnusableResponse('Keepz recovery status was unavailable', $payment, $payload);
             return $this->result('unknown', null, 'status_unavailable', $payload);
+        }
+
+        // Never transition paid / terminal / active from an unrelated provider order.
+        if (!KeepzStatusIdentity::matches((string) $payment->id, $payload)) {
+            Log::error('Keepz recovery order identity mismatch', [
+                'payment_request_id' => $payment->id,
+                'provider_order_id' => data_get($payload, 'integratorOrderId'),
+            ]);
+            return $this->result('unknown', null, 'provider_order_id_mismatch', $payload);
         }
 
         $status = $this->normalizeStatus(data_get($payload, 'status') ?? data_get($payload, 'orderStatus'));
