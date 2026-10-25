@@ -1,0 +1,51 @@
+name: Keepz Status Integrity
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "app/Http/Controllers/KeepzPaymentController.php"
+      - "app/Services/KeepzGatewayLifecycleService.php"
+      - "app/Support/Payment/KeepzStatusIdentity.php"
+      - "tests/Unit/KeepzStatusIdentityTest.php"
+      - "composer.json"
+      - "composer.lock"
+      - ".github/workflows/keepz-status-integrity.yml"
+  pull_request:
+    paths:
+      - "app/Http/Controllers/KeepzPaymentController.php"
+      - "app/Services/KeepzGatewayLifecycleService.php"
+      - "app/Support/Payment/KeepzStatusIdentity.php"
+      - "tests/Unit/KeepzStatusIdentityTest.php"
+      - ".github/workflows/keepz-status-integrity.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  keepz-integrity:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.3"
+          extensions: curl, json, simplexml, mbstring, fileinfo, pdo_sqlite, gd, intl, zip, bcmath
+          coverage: none
+          tools: composer:v2
+      - name: Lint Keepz payment source and tests
+        run: |
+          php -l app/Http/Controllers/KeepzPaymentController.php
+          php -l app/Services/KeepzGatewayLifecycleService.php
+          php -l app/Support/Payment/KeepzStatusIdentity.php
+          php -l tests/Unit/KeepzStatusIdentityTest.php
+      - name: Install locked dependencies
+        run: composer install --no-scripts --no-interaction --prefer-dist --no-progress
+      - name: Verify provider order binding
+        env:
+          APP_ENV: testing
+          DB_CONNECTION: sqlite
+          DB_DATABASE: ":memory:"
+        run: vendor/bin/phpunit --no-coverage tests/Unit/KeepzStatusIdentityTest.php
