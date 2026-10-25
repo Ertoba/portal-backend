@@ -1036,7 +1036,7 @@ if (!function_exists('config_settings')) {
          */
         function generateOtpCode(): string
         {
-            return isStaticOtpMode() ? STATIC_OTP_CODE : (string) rand(100000, 999999);
+            return isStaticOtpMode() ? STATIC_OTP_CODE : (string) random_int(100000, 999999);
         }
     }
 
