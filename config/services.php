@@ -24,6 +24,12 @@ return [
         'token' => env('POSTMARK_TOKEN'),
     ],
 
+    // Server-side Routes API key. Enable Routes API and restrict this key by API.
+    // Never reuse the public browser Maps JavaScript key for server billing.
+    'google_routes' => [
+        'key' => env('GOOGLE_ROUTES_API_KEY'),
+    ],
+
     'ses' => [
         'key' => env('AWS_ACCESS_KEY_ID'),
         'secret' => env('AWS_SECRET_ACCESS_KEY'),

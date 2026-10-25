@@ -15,7 +15,7 @@ class PlaceOrderRequest extends BaseRequest
             'payment_method' => 'required|in:cash_on_delivery,digital_payment,wallet,offline_payment',
             'order_type' => 'required|in:take_away,delivery,parcel',
             'store_id' => 'required_unless:order_type,parcel',
-            'distance' => 'required_unless:order_type,take_away',
+            'distance' => 'nullable|numeric|min:0',
             'address' => 'required_unless:order_type,take_away',
             'longitude' => 'required_unless:order_type,take_away',
             'latitude' => 'required_unless:order_type,take_away',

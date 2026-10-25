@@ -8,6 +8,7 @@ use App\Http\Requests\Customer\Order\PlaceOrderRequest;
 use App\Http\Requests\Customer\Order\SurgePriceRequest;
 use App\Http\Resources\Customer\Order\CheckoutSummaryResource;
 use App\Services\Order\OrderService;
+use App\Services\Order\TrustedCustomerDeliveryDistance;
 use App\Traits\Order\CartValidationTrait;
 use App\Traits\Order\CheckoutSummaryTrait;
 use App\Traits\Order\PlaceNewOrderTrait;
@@ -37,11 +38,15 @@ class OrderPlacementController extends BaseApiController
             $request->merge(['delivery_type' => $deliveryType]);
         }
 
+        app(TrustedCustomerDeliveryDistance::class)->apply($request);
+
         return $this->envelope($this->placeNewOrder($request), config('response.default_store_201'));
     }
 
     public function storePrescription(PlaceOrderRequest $request): JsonResponse
     {
+        app(TrustedCustomerDeliveryDistance::class)->apply($request);
+
         return $this->envelope($this->placeNewOrder($request, true), config('response.default_store_201'));
     }
 
@@ -54,6 +59,8 @@ class OrderPlacementController extends BaseApiController
      */
     public function checkoutSummary(CheckoutSummaryRequest $request): JsonResponse
     {
+        app(TrustedCustomerDeliveryDistance::class)->apply($request);
+
         $result = $this->buildCheckoutSummary($request);
 
         if ($result['status_code'] !== 200) {

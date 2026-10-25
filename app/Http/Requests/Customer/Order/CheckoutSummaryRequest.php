@@ -23,7 +23,7 @@ class CheckoutSummaryRequest extends BaseRequest
             'order_type' => 'required|in:take_away,delivery,parcel',
             'store_id' => 'required_unless:order_type,parcel',
             'order_amount' => 'required|numeric',
-            'distance' => 'required_unless:order_type,take_away',
+            'distance' => 'nullable|numeric|min:0',
             'longitude' => 'required_unless:order_type,take_away',
             'latitude' => 'required_unless:order_type,take_away',
             'parcel_category_id' => 'required_if:order_type,parcel',

@@ -1,0 +1,54 @@
+name: Customer Delivery Distance Security
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "app/Services/Order/TrustedCustomerDeliveryDistance.php"
+      - "app/Http/Controllers/Api/V1/Customer/Order/OrderPlacementController.php"
+      - "app/Http/Requests/Customer/Order/PlaceOrderRequest.php"
+      - "app/Http/Requests/Customer/Order/CheckoutSummaryRequest.php"
+      - "config/services.php"
+      - "tests/Unit/TrustedCustomerDeliveryDistanceTest.php"
+      - ".github/workflows/customer-delivery-distance.yml"
+  pull_request:
+    paths:
+      - "app/Services/Order/TrustedCustomerDeliveryDistance.php"
+      - "app/Http/Controllers/Api/V1/Customer/Order/OrderPlacementController.php"
+      - "config/services.php"
+      - "tests/Unit/TrustedCustomerDeliveryDistanceTest.php"
+      - ".github/workflows/customer-delivery-distance.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  trusted-distance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.3"
+          extensions: curl, json, simplexml, mbstring, fileinfo, pdo_sqlite, gd, intl, zip, bcmath
+          coverage: none
+          tools: composer:v2
+      - name: PHP syntax checks
+        run: |
+          php -l app/Services/Order/TrustedCustomerDeliveryDistance.php
+          php -l app/Http/Controllers/Api/V1/Customer/Order/OrderPlacementController.php
+          php -l app/Http/Requests/Customer/Order/PlaceOrderRequest.php
+          php -l app/Http/Requests/Customer/Order/CheckoutSummaryRequest.php
+          php -l config/services.php
+          php -l tests/Unit/TrustedCustomerDeliveryDistanceTest.php
+      - name: Install locked dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+      - name: Run route distance regression
+        env:
+          APP_ENV: testing
+          DB_CONNECTION: sqlite
+          DB_DATABASE: ":memory:"
+          CACHE_STORE: array
+        run: vendor/bin/phpunit tests/Unit/TrustedCustomerDeliveryDistanceTest.php
