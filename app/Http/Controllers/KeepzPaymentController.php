@@ -6,6 +6,7 @@ use App\Models\BusinessSetting;
 use App\Models\DisbursementWithdrawalMethod;
 use App\Models\Order;
 use App\Models\PaymentRequest;
+use App\Support\Payment\KeepzStatusIdentity;
 use App\Traits\Processor;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
@@ -745,6 +746,16 @@ class KeepzPaymentController extends Controller
 
         if (!is_array($response) || isset($response['statusCode'])) {
             $this->logGatewayResponse('Keepz order status response was not usable', $payment, $response);
+            return null;
+        }
+
+        // An authenticated provider status lookup must not finalize another order.
+        // Keepz documents integratorOrderId as part of every successful status payload.
+        if (!KeepzStatusIdentity::matches((string) $payment->id, $response)) {
+            Log::error('Keepz status order identity mismatch', [
+                'payment_request_id' => $payment->id,
+                'provider_order_id' => data_get($response, 'integratorOrderId'),
+            ]);
             return null;
         }
 
