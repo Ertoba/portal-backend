@@ -22,7 +22,7 @@ final class TrustedCustomerDeliveryDistanceTest extends TestCase
     public function test_provider_distance_is_used_instead_of_client_submitted_distance(): void
     {
         Http::fake(['routes.googleapis.com/*' => Http::response([
-            'routes' => [['distanceMeters' => 12842]],
+            'routes' => [['distanceMeters' => 12842, 'duration' => '1120s']],
         ], 200)]);
 
         $distance = app(TrustedCustomerDeliveryDistance::class)
@@ -30,7 +30,7 @@ final class TrustedCustomerDeliveryDistanceTest extends TestCase
 
         $this->assertSame(12.842, $distance);
         Http::assertSent(fn ($request) =>
-            $request->hasHeader('X-Goog-FieldMask', 'routes.distanceMeters')
+            $request->hasHeader('X-Goog-FieldMask', 'routes.distanceMeters,routes.duration')
             && $request['origin']['location']['latLng']['latitude'] === 41.69
             && $request['travelMode'] === 'DRIVE'
         );
@@ -67,7 +67,7 @@ final class TrustedCustomerDeliveryDistanceTest extends TestCase
     public function test_parcel_request_ignores_a_forged_zero_distance(): void
     {
         Http::fake(['routes.googleapis.com/*' => Http::response([
-            'routes' => [['distanceMeters' => 7500]],
+            'routes' => [['distanceMeters' => 7500, 'duration' => '840s']],
         ], 200)]);
 
         $request = Request::create('/api/v1/customer/order/place', 'POST', [
@@ -75,6 +75,7 @@ final class TrustedCustomerDeliveryDistanceTest extends TestCase
             'latitude' => '41.5',
             'longitude' => '44.5',
             'distance' => 0,
+            'delivery_duration' => 1,
             'receiver_details' => json_encode([
                 'latitude' => 41.6,
                 'longitude' => 44.6,
@@ -85,10 +86,35 @@ final class TrustedCustomerDeliveryDistanceTest extends TestCase
         app(TrustedCustomerDeliveryDistance::class)->apply($request);
 
         $this->assertSame(7.5, $request->input('distance'));
+        $this->assertSame(840, $request->input('delivery_duration'));
+
         Http::assertSent(fn ($outgoing) =>
             $outgoing['origin']['location']['latLng']['latitude'] === 41.5
             && $outgoing['destination']['location']['latLng']['longitude'] === 44.6
         );
+    }
+
+    public function test_missing_provider_duration_clears_untrusted_client_eta(): void
+    {
+        Http::fake(['routes.googleapis.com/*' => Http::response([
+            'routes' => [['distanceMeters' => 2400]],
+        ], 200)]);
+
+        $request = Request::create('/api/v1/customer/order/place', 'POST', [
+            'order_type' => 'parcel',
+            'latitude' => 41.5,
+            'longitude' => 44.5,
+            'distance' => 0,
+            'delivery_duration' => 1,
+            'receiver_details' => json_encode([
+                'latitude' => 41.6, 'longitude' => 44.6,
+            ]),
+        ]);
+
+        app(TrustedCustomerDeliveryDistance::class)->apply($request);
+
+        $this->assertSame(2.4, $request->input('distance'));
+        $this->assertNull($request->input('delivery_duration'));
     }
 
     public function test_takeaway_keeps_original_input_and_skips_paid_route_lookup(): void

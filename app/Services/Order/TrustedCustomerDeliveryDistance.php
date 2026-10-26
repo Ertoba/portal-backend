@@ -50,8 +50,13 @@ final class TrustedCustomerDeliveryDistance
             $this->fail(422, 'Valid pickup and delivery coordinates are required.');
         }
 
+        $metrics = $this->routeMetrics($origin[0], $origin[1], $destination[0], $destination[1]);
+
+        // Do not accept a client-forged trip duration as the ETA source.
+        // A missing provider duration is explicitly null, never the request value.
         $request->merge([
-            'distance' => $this->routeKilometres($origin[0], $origin[1], $destination[0], $destination[1]),
+            'distance' => $metrics['distance'],
+            'delivery_duration' => $metrics['duration'],
         ]);
     }
 
@@ -77,6 +82,16 @@ final class TrustedCustomerDeliveryDistance
      */
     public function routeKilometres(mixed $originLat, mixed $originLng, mixed $destinationLat, mixed $destinationLng): float
     {
+        return $this->routeMetrics($originLat, $originLng, $destinationLat, $destinationLng)['distance'];
+    }
+
+    /**
+     * Compute one provider-authoritative route for both billed distance and ETA.
+     *
+     * @return array{distance: float, duration: int|null}
+     */
+    public function routeMetrics(mixed $originLat, mixed $originLng, mixed $destinationLat, mixed $destinationLng): array
+    {
         $from = [
             'latitude' => $this->coordinate($originLat, -90, 90),
             'longitude' => $this->coordinate($originLng, -180, 180),
@@ -94,17 +109,17 @@ final class TrustedCustomerDeliveryDistance
 
         // Rounded to ~1 metre. Only geographic coordinates enter the cache key;
         // neither client distance nor customer-supplied pricing inputs do.
-        $cacheKey = 'customer-route-km:v1:'.hash('sha256', implode(':', [
+        $cacheKey = 'customer-route-metrics:v2:'.hash('sha256', implode(':', [
             round($from['latitude'], 5), round($from['longitude'], 5),
             round($to['latitude'], 5), round($to['longitude'], 5),
         ]));
 
-        return Cache::remember($cacheKey, now()->addMinutes(5), function () use ($apiKey, $from, $to): float {
+        return Cache::remember($cacheKey, now()->addMinutes(5), function () use ($apiKey, $from, $to): array {
             try {
                 $response = Http::acceptJson()
                     ->withHeaders([
                         'X-Goog-Api-Key' => $apiKey,
-                        'X-Goog-FieldMask' => 'routes.distanceMeters',
+                        'X-Goog-FieldMask' => 'routes.distanceMeters,routes.duration',
                     ])
                     ->timeout(8)
                     ->post(self::ROUTES_URL, [
@@ -133,7 +148,18 @@ final class TrustedCustomerDeliveryDistance
                 $this->fail(503, 'A delivery route could not be verified for this address.');
             }
 
-            return round(((float) $metres) / 1000, 4);
+            // Compute Routes reports a protobuf duration string like "840s".
+            // No travel-time value from the customer is ever trusted as fallback.
+            $providerDuration = data_get($response->json(), 'routes.0.duration');
+            $durationSeconds = is_string($providerDuration)
+                && preg_match('/^(\\d+(?:\\.\\d+)?)s$/', trim($providerDuration), $parts)
+                    ? (int) round((float) $parts[1])
+                    : null;
+
+            return [
+                'distance' => round(((float) $metres) / 1000, 4),
+                'duration' => $durationSeconds,
+            ];
         });
     }
 
