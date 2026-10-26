@@ -56,6 +56,22 @@ final class TrustedCustomerDeliveryDistance
     }
 
     /**
+     * POS admins and vendors may post any distance in a hidden form field, or
+     * store an old value in the session. Neither is authoritative for billing.
+     * The source is always the database store location; the destination is
+     * the pinned delivery location being written to the order.
+     */
+    public function forStoreAddress(Store $store, array $address): float
+    {
+        return $this->routeKilometres(
+            $store->latitude,
+            $store->longitude,
+            $address['latitude'] ?? null,
+            $address['longitude'] ?? null,
+        );
+    }
+
+    /**
      * Returns the provider-measured driving distance, always in kilometres.
      * Public to allow independent, DB-free tests of route integrity.
      */

@@ -27,6 +27,7 @@ use  Illuminate\Support\Facades\Session;
 use App\Support\Notification\SendNotification;
 use Illuminate\Support\Facades\Log;
 use App\Services\Zone\DeliveryRuleService;
+use App\Services\Order\TrustedCustomerDeliveryDistance;
 class POSController extends Controller
 {
     use ItemStockTrait;
@@ -363,6 +364,20 @@ class POSController extends Controller
             }
         }
 
+        if (! $storeForAddress) {
+            return response()->json(['errors' => [[
+                'code' => 'store_id',
+                'message' => 'Select a valid store before saving a delivery address.',
+            ]]], 422);
+        }
+
+        // The hidden form field 'distance' is client-controlled and must never
+        // become the POS shipping fee's source of truth.
+        $trustedDistance = app(TrustedCustomerDeliveryDistance::class)->forStoreAddress(
+            $storeForAddress,
+            ['latitude' => $request->latitude, 'longitude' => $request->longitude],
+        );
+
         $address = [
             'contact_person_name' => $request->contact_person_name,
             'contact_person_number' => $request->contact_person_number,
@@ -371,7 +386,7 @@ class POSController extends Controller
             'floor' => $request->floor,
             'road' => $request->road,
             'house' => $request->house,
-            'distance' => $request->distance??0,
+            'distance' => $trustedDistance,
             'delivery_fee' => $request->delivery_fee?:0,
             'longitude' => (string)$request->longitude,
             'latitude' => (string)$request->latitude,
@@ -887,6 +902,14 @@ class POSController extends Controller
         $distance_data = $hasDeliveryAddress ? $address['distance'] : 0;
 
         $store = Helpers::get_store_data();
+
+        // Recheck the route at order placement; session distance was originally
+        // set by a client-side map, and cannot be trusted for shipping charges.
+        if ($hasDeliveryAddress) {
+            $distance_data = app(TrustedCustomerDeliveryDistance::class)->forStoreAddress($store, $address);
+            $address['distance'] = $distance_data;
+            $request->session()->put('address', $address);
+        }
 
         $self_delivery_status = $store->self_delivery_system;
         $store_sub=$store?->store_sub;

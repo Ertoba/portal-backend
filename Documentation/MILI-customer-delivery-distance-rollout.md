@@ -27,3 +27,18 @@ Normal delivery routes run from the DB store coordinates to customer coordinates
   order-edit, and other direct callers of DeliveryChargeService need separate
   entry-point verification and integration testing before global certification.
 - No production deploy, migration or live payment was run as part of this change.
+
+## Admin / Vendor POS pricing hardening
+- Saving a delivery address now measures the driving route from the DB store
+  coordinates to the pinned destination, ignoring hidden input `distance`.
+- Final POS order creation recomputes that route again before vehicle selection,
+  delivery pricing and persisting the delivery address. Take-away/POS without a
+  delivery address is unaffected in Vendor POS.
+- The map's initial extra-charge AJAX preview still uses a browser-supplied
+  distance before the address has been saved. Treat it as a non-authoritative
+  preview; the saved-address quote and final order now use server-verified
+  route distance. The initial map quote itself must be harmonized separately
+  for full UI parity.
+- Staging acceptance: both Admin/Vendor POS, manual `distance=0` and altered
+  session distance, several destination pins, delivery vs pickup, absent provider
+  key, provider outages, vehicle coverage, and fee preview vs final invoice.

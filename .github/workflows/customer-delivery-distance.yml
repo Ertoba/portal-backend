@@ -5,6 +5,8 @@ on:
     branches: [main]
     paths:
       - "app/Services/Order/TrustedCustomerDeliveryDistance.php"
+      - "app/Http/Controllers/Admin/POSController.php"
+      - "app/Http/Controllers/Vendor/POSController.php"
       - "app/Http/Controllers/Api/V1/Customer/Order/OrderPlacementController.php"
       - "app/Http/Requests/Customer/Order/PlaceOrderRequest.php"
       - "app/Http/Requests/Customer/Order/CheckoutSummaryRequest.php"
@@ -14,6 +16,8 @@ on:
   pull_request:
     paths:
       - "app/Services/Order/TrustedCustomerDeliveryDistance.php"
+      - "app/Http/Controllers/Admin/POSController.php"
+      - "app/Http/Controllers/Vendor/POSController.php"
       - "app/Http/Controllers/Api/V1/Customer/Order/OrderPlacementController.php"
       - "config/services.php"
       - "tests/Unit/TrustedCustomerDeliveryDistanceTest.php"
@@ -38,6 +42,8 @@ jobs:
       - name: PHP syntax checks
         run: |
           php -l app/Services/Order/TrustedCustomerDeliveryDistance.php
+          php -l app/Http/Controllers/Admin/POSController.php
+          php -l app/Http/Controllers/Vendor/POSController.php
           php -l app/Http/Controllers/Api/V1/Customer/Order/OrderPlacementController.php
           php -l app/Http/Requests/Customer/Order/PlaceOrderRequest.php
           php -l app/Http/Requests/Customer/Order/CheckoutSummaryRequest.php

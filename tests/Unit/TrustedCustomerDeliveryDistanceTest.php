@@ -3,6 +3,7 @@
 namespace Tests\Unit;
 
 use App\Services\Order\TrustedCustomerDeliveryDistance;
+use App\Models\Store;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -117,6 +118,50 @@ final class TrustedCustomerDeliveryDistanceTest extends TestCase
 
         $this->expectException(HttpResponseException::class);
         app(TrustedCustomerDeliveryDistance::class)->apply($request);
+        Http::assertNothingSent();
+    }
+
+    public function test_pos_distance_is_remeasured_from_database_store_coordinates_not_form_value(): void
+    {
+        Http::fake(['routes.googleapis.com/*' => Http::response([
+            'routes' => [['distanceMeters' => 18400]],
+        ], 200)]);
+
+        $store = new Store();
+        $store->latitude = 41.7300;
+        $store->longitude = 44.7900;
+
+        $distance = app(TrustedCustomerDeliveryDistance::class)->forStoreAddress(
+            $store,
+            ['latitude' => 41.7400, 'longitude' => 44.8300, 'distance' => 0],
+        );
+
+        $this->assertSame(18.4, $distance);
+        Http::assertSent(fn ($request) =>
+            $request['origin']['location']['latLng']['latitude'] === 41.73
+            && $request['origin']['location']['latLng']['longitude'] === 44.79
+            && $request['destination']['location']['latLng']['latitude'] === 41.74
+        );
+    }
+
+    public function test_pos_missing_pinned_address_fails_closed(): void
+    {
+        Http::fake();
+
+        $store = new Store();
+        $store->latitude = 41.73;
+        $store->longitude = 44.79;
+
+        try {
+            app(TrustedCustomerDeliveryDistance::class)->forStoreAddress(
+                $store,
+                ['distance' => 0],
+            );
+            $this->fail('POS should not accept a forged distance without coordinates');
+        } catch (HttpResponseException $exception) {
+            $this->assertSame(422, $exception->getResponse()->getStatusCode());
+        }
+
         Http::assertNothingSent();
     }
 
