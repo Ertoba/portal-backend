@@ -6,6 +6,7 @@ use App\Models\BusinessSetting;
 use App\Models\DisbursementWithdrawalMethod;
 use App\Models\Order;
 use App\Models\PaymentRequest;
+use App\Support\Payment\KeepzFailureFinalizer;
 use App\Support\Payment\KeepzStatusIdentity;
 use App\Support\Payment\KeepzVerifiedFailure;
 use App\Traits\Processor;
@@ -1125,27 +1126,7 @@ class KeepzPaymentController extends Controller
 
     private function finalizeFailedPayment(PaymentRequest $payment, ?string $transactionId, ?string $status): ?PaymentRequest
     {
-        if ($payment->is_paid) {
-            return null;
-        }
-
-        $metadata = $this->getPaymentMetadata($payment);
-
-        if (!empty($metadata['keepz_failure_handled'])) {
-            return null;
-        }
-
-        $metadata['keepz_failure_handled'] = now()->toIso8601String();
-        $metadata['keepz_failure_status'] = $status;
-        $this->updatePaymentMetadata($payment, $metadata);
-
-        if ($transactionId && empty($payment->transaction_id)) {
-            $this->payment::where(['id' => $payment->id])->update([
-                'transaction_id' => $transactionId,
-            ]);
-        }
-
-        return $this->payment::where(['id' => $payment->id])->first() ?? $payment;
+        return KeepzFailureFinalizer::claim($payment, $transactionId, $status);
     }
 
     private function transactionIdFromPayload(PaymentRequest $payment, array $payload): string

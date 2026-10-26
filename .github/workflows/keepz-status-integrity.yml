@@ -9,6 +9,8 @@ on:
       - "app/Support/Payment/KeepzStatusIdentity.php"
       - "tests/Unit/KeepzStatusIdentityTest.php"
       - "app/Support/Payment/KeepzVerifiedFailure.php"
+      - "app/Support/Payment/KeepzFailureFinalizer.php"
+      - "tests/Unit/KeepzFailureFinalizerTest.php"
       - "tests/Unit/KeepzVerifiedFailureTest.php"
       - "composer.json"
       - "composer.lock"
@@ -20,6 +22,8 @@ on:
       - "app/Support/Payment/KeepzStatusIdentity.php"
       - "tests/Unit/KeepzStatusIdentityTest.php"
       - "app/Support/Payment/KeepzVerifiedFailure.php"
+      - "app/Support/Payment/KeepzFailureFinalizer.php"
+      - "tests/Unit/KeepzFailureFinalizerTest.php"
       - "tests/Unit/KeepzVerifiedFailureTest.php"
       - ".github/workflows/keepz-status-integrity.yml"
   workflow_dispatch:
@@ -46,6 +50,8 @@ jobs:
           php -l app/Support/Payment/KeepzStatusIdentity.php
           php -l tests/Unit/KeepzStatusIdentityTest.php
           php -l app/Support/Payment/KeepzVerifiedFailure.php
+          php -l app/Support/Payment/KeepzFailureFinalizer.php
+          php -l tests/Unit/KeepzFailureFinalizerTest.php
           php -l tests/Unit/KeepzVerifiedFailureTest.php
       - name: Install locked dependencies
         run: composer install --no-scripts --no-interaction --prefer-dist --no-progress
@@ -54,4 +60,4 @@ jobs:
           APP_ENV: testing
           DB_CONNECTION: sqlite
           DB_DATABASE: ":memory:"
-        run: vendor/bin/phpunit --no-coverage tests/Unit/KeepzStatusIdentityTest.php tests/Unit/KeepzVerifiedFailureTest.php
+        run: vendor/bin/phpunit --no-coverage tests/Unit/KeepzStatusIdentityTest.php tests/Unit/KeepzVerifiedFailureTest.php tests/Unit/KeepzFailureFinalizerTest.php
