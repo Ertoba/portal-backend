@@ -27,6 +27,18 @@ final class OrderOtpGeneratorTest extends TestCase
         $this->assertStringContainsString("translate('messages.Failed to place order')", $trait);
     }
 
+    public function test_admin_and_vendor_pos_use_the_secure_handover_generator(): void
+    {
+        foreach ([
+            'Admin/POSController.php',
+            'Vendor/POSController.php',
+        ] as $relativePath) {
+            $source = file_get_contents(app_path('Http/Controllers/' . $relativePath));
+            $this->assertStringContainsString('OrderOtpGenerator::class)->generate()', $source, $relativePath);
+            $this->assertStringNotContainsString('->otp = rand(', $source, $relativePath);
+        }
+    }
+
     public function test_new_orders_use_the_secure_handover_code_generator(): void
     {
         $trait = file_get_contents(app_path('Traits/Order/PlaceNewOrderTrait.php'));

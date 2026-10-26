@@ -987,7 +987,7 @@ class POSController extends Controller
         $order->schedule_at = now();
         $order->updated_at = now();
         $order->zone_id = $store->zone_id;
-        $order->otp = rand(1000, 9999);
+        $order->otp = app(\App\Services\Order\OrderOtpGenerator::class)->generate();
 
         $additionalCharges = [];
         $settings = Helpers::get_business_settings_many([

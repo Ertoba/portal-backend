@@ -6,12 +6,16 @@ on:
     paths:
       - "app/Services/Order/OrderOtpGenerator.php"
       - "app/Traits/Order/PlaceNewOrderTrait.php"
+      - "app/Http/Controllers/Admin/POSController.php"
+      - "app/Http/Controllers/Vendor/POSController.php"
       - "tests/Unit/OrderOtpGeneratorTest.php"
       - ".github/workflows/order-handover-otp.yml"
   pull_request:
     paths:
       - "app/Services/Order/OrderOtpGenerator.php"
       - "app/Traits/Order/PlaceNewOrderTrait.php"
+      - "app/Http/Controllers/Admin/POSController.php"
+      - "app/Http/Controllers/Vendor/POSController.php"
       - "tests/Unit/OrderOtpGeneratorTest.php"
       - ".github/workflows/order-handover-otp.yml"
   workflow_dispatch:
@@ -35,6 +39,8 @@ jobs:
         run: |
           php -l app/Services/Order/OrderOtpGenerator.php
           php -l app/Traits/Order/PlaceNewOrderTrait.php
+          php -l app/Http/Controllers/Admin/POSController.php
+          php -l app/Http/Controllers/Vendor/POSController.php
           php -l tests/Unit/OrderOtpGeneratorTest.php
       - run: composer install --no-interaction --prefer-dist --no-progress
       - name: Verify order handover OTP integrity
