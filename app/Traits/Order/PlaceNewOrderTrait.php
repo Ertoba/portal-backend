@@ -287,7 +287,7 @@ trait PlaceNewOrderTrait
             $order->scheduled = $request->schedule_at ? 1 : 0;
             $order->cutlery = $request->cutlery ? 1 : 0;
             $order->is_guest = $request->user ? 0 : 1;
-            $order->otp = rand(1000, 9999);
+            $order->otp = app(\App\Services\Order\OrderOtpGenerator::class)->generate();
             $order->zone_id = isset($zone) ? $zone->id : end(json_decode($request->header('zoneId'), true));
             $order->module_id = getModuleId($request->header('moduleId'));
             $order->parcel_category_id = $request->parcel_category_id;
