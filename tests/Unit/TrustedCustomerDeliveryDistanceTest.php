@@ -4,6 +4,7 @@ namespace Tests\Unit;
 
 use App\Services\Order\TrustedCustomerDeliveryDistance;
 use Illuminate\Http\Exceptions\HttpResponseException;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
@@ -60,6 +61,63 @@ final class TrustedCustomerDeliveryDistanceTest extends TestCase
     {
         $this->expectException(HttpResponseException::class);
         app(TrustedCustomerDeliveryDistance::class)->routeKilometres('untrusted', 44, 42, 45);
+    }
+
+    public function test_parcel_request_ignores_a_forged_zero_distance(): void
+    {
+        Http::fake(['routes.googleapis.com/*' => Http::response([
+            'routes' => [['distanceMeters' => 7500]],
+        ], 200)]);
+
+        $request = Request::create('/api/v1/customer/order/place', 'POST', [
+            'order_type' => 'parcel',
+            'latitude' => '41.5',
+            'longitude' => '44.5',
+            'distance' => 0,
+            'receiver_details' => json_encode([
+                'latitude' => 41.6,
+                'longitude' => 44.6,
+                'zone_id' => 1,
+            ]),
+        ]);
+
+        app(TrustedCustomerDeliveryDistance::class)->apply($request);
+
+        $this->assertSame(7.5, $request->input('distance'));
+        Http::assertSent(fn ($outgoing) =>
+            $outgoing['origin']['location']['latLng']['latitude'] === 41.5
+            && $outgoing['destination']['location']['latLng']['longitude'] === 44.6
+        );
+    }
+
+    public function test_takeaway_keeps_original_input_and_skips_paid_route_lookup(): void
+    {
+        Http::fake();
+        $request = Request::create('/api/v1/customer/order/place', 'POST', [
+            'order_type' => 'take_away',
+            'distance' => 0,
+        ]);
+
+        app(TrustedCustomerDeliveryDistance::class)->apply($request);
+
+        $this->assertSame(0, $request->input('distance'));
+        Http::assertNothingSent();
+    }
+
+    public function test_parcel_missing_receiver_is_rejected_instead_of_trusting_client_distance(): void
+    {
+        Http::fake();
+        $request = Request::create('/api/v1/customer/order/place', 'POST', [
+            'order_type' => 'parcel',
+            'latitude' => 41.5,
+            'longitude' => 44.5,
+            'distance' => 0,
+            'receiver_details' => '{}',
+        ]);
+
+        $this->expectException(HttpResponseException::class);
+        app(TrustedCustomerDeliveryDistance::class)->apply($request);
+        Http::assertNothingSent();
     }
 
     public function test_valid_route_is_cached_for_same_geographic_pair(): void
