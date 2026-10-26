@@ -1,0 +1,47 @@
+name: MILI Read-only Release Preflight
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "scripts/mili-production-preflight.sh"
+      - ".github/workflows/mili-release-preflight.yml"
+  pull_request:
+    paths:
+      - "scripts/mili-production-preflight.sh"
+      - ".github/workflows/mili-release-preflight.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  static-preflight:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Shell syntax validation
+        run: bash -n scripts/mili-production-preflight.sh
+      - name: Positive and negative synthetic runtime gates
+        run: |
+          set -euo pipefail
+          tmp="$(mktemp -d)"
+          trap 'rm -rf "$tmp"' EXIT
+          mkdir -p "$tmp/storage/framework/views" "$tmp/storage/framework/sessions" "$tmp/storage/framework/cache" "$tmp/storage/logs" "$tmp/bootstrap/cache"
+          touch "$tmp/artisan"
+          cat >"$tmp/.env" <<'ENV'
+          APP_ENV=production
+          APP_DEBUG=false
+          APP_URL=https://mili.example.test
+          APP_KEY=base64:synthetic-never-real
+          DB_CONNECTION=sqlite
+          DB_DATABASE=synthetic
+          GOOGLE_ROUTES_API_KEY=synthetic-never-real
+          ENV
+          MILI_WEB_USER="$(id -un)" bash scripts/mili-production-preflight.sh "$tmp"
+          sed -i '/^GOOGLE_ROUTES_API_KEY=/d' "$tmp/.env"
+          if MILI_WEB_USER="$(id -un)" bash scripts/mili-production-preflight.sh "$tmp"; then
+            echo "Missing Routes key did not block deployment" >&2
+            exit 1
+          fi
