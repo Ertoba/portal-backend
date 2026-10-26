@@ -13,6 +13,10 @@ on:
       - "app/Http/Requests/Customer/Order/CheckoutSummaryRequest.php"
       - "config/services.php"
       - "tests/Unit/TrustedCustomerDeliveryDistanceTest.php"
+      - "app/Traits/Order/PlaceNewOrderTrait.php"
+      - "app/Traits/Order/CheckoutSummaryTrait.php"
+      - "app/Traits/Order/DeliveryFeeTrait.php"
+      - "app/Services/Order/DeliveryChargeService.php"
       - ".github/workflows/customer-delivery-distance.yml"
   pull_request:
     paths:
@@ -23,6 +27,12 @@ on:
       - "app/Http/Controllers/Api/V1/Customer/Order/OrderPlacementController.php"
       - "config/services.php"
       - "tests/Unit/TrustedCustomerDeliveryDistanceTest.php"
+      - "app/Traits/Order/PlaceNewOrderTrait.php"
+      - "app/Traits/Order/CheckoutSummaryTrait.php"
+      - "app/Traits/Order/DeliveryFeeTrait.php"
+      - "app/Services/Order/DeliveryChargeService.php"
+      - "app/Http/Requests/Customer/Order/PlaceOrderRequest.php"
+      - "app/Http/Requests/Customer/Order/CheckoutSummaryRequest.php"
       - ".github/workflows/customer-delivery-distance.yml"
   workflow_dispatch:
 
@@ -44,6 +54,10 @@ jobs:
       - name: PHP syntax checks
         run: |
           php -l app/Services/Order/TrustedCustomerDeliveryDistance.php
+          php -l app/Traits/Order/PlaceNewOrderTrait.php
+          php -l app/Traits/Order/CheckoutSummaryTrait.php
+          php -l app/Traits/Order/DeliveryFeeTrait.php
+          php -l app/Services/Order/DeliveryChargeService.php
           php -l app/Http/Controllers/Admin/POSController.php
           php -l app/Http/Controllers/Vendor/POSController.php
           node --check public/assets/admin/js/view-pages/pos.js
