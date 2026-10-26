@@ -865,7 +865,15 @@ trait PlaceNewOrderTrait
         } catch (\Exception $exception) {
             Log::error('PlaceNewOrder', [$exception->getFile(), $exception->getLine(), $exception->getMessage()]);
             DB::rollBack();
-            return response()->json([$exception], 403);
+            // Never serialize a caught exception back to the customer.
+            // Framework errors can contain SQL, paths, gateway metadata or user data.
+            // Keep the existing 403 wire status for legacy clients, with the
+            // standard public-facing errors envelope expected by OrderPlacementController.
+            return response()->json([
+                'errors' => [
+                    ['code' => 'order', 'message' => translate('messages.Failed to place order')],
+                ],
+            ], 403);
         }
 
         return response()->json([
