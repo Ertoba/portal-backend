@@ -256,7 +256,11 @@ function posCalculateDeliveryDistance(options) {
         document.getElementById("address").value = resolvedAddress;
 
         let requestData = {
+            // Keep browser distance for display/debugging only; POS controllers
+            // now compute authoritative route kilometres from these coordinates.
             distancMileResult: distancMileResult,
+            latitude: document.getElementById("latitude")?.value || "",
+            longitude: document.getElementById("longitude")?.value || "",
             customer_id: document.getElementById("customer")?.value || "",
         };
         if (storeId !== undefined && storeId !== null && storeId !== "") {
@@ -288,11 +292,13 @@ function posCalculateDeliveryDistance(options) {
                     .html(deliveryCharge + currencySymbol);
             },
             error: function () {
-                let deliveryCharge = 0;
-                document.getElementById("delivery_fee").value = deliveryCharge;
-                $("#delivery_fee")
-                    .siblings("strong")
-                    .html(deliveryCharge + currencySymbol);
+                // A failed authoritative route is NOT free shipping.
+                document.getElementById("delivery_fee").value = "";
+                $("#delivery_fee").siblings("strong").text("—");
+                toastr.warning(warningMessage, {
+                    CloseButton: true,
+                    ProgressBar: true,
+                });
             },
             complete: function () {
                 toggleLoading(false);
@@ -422,6 +428,8 @@ function posInitCoveragePicker(options) {
         }
 
         const requestData = {
+            latitude: document.getElementById("latitude")?.value || "",
+            longitude: document.getElementById("longitude")?.value || "",
             customer_id: document.getElementById("customer")?.value || "",
         };
         if (storeId) {
@@ -439,8 +447,8 @@ function posInitCoveragePicker(options) {
                 $("#delivery_fee").siblings("strong").html(deliveryCharge + currencySymbol);
             },
             error: function () {
-                document.getElementById("delivery_fee").value = 0;
-                $("#delivery_fee").siblings("strong").html(0 + currencySymbol);
+                document.getElementById("delivery_fee").value = "";
+                $("#delivery_fee").siblings("strong").text("—");
             },
         });
     });

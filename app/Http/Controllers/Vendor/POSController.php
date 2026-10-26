@@ -1284,8 +1284,13 @@ class POSController extends Controller
 
     public function extra_charge(Request $request)
     {
-        $distance_data = $request->distancMileResult ?? 1;
-        $store         = Helpers::get_store_data();
+        $store = Helpers::get_store_data();
+        if (! $store) {
+            return response()->json(['errors' => [['code' => 'store_id', 'message' => 'Invalid POS store']]], 422);
+        }
+        $distance_data = app(TrustedCustomerDeliveryDistance::class)->forStoreAddress(
+            $store, $request->only(['latitude', 'longitude']),
+        );
 
         $delivery_calc = $this->calculatePosDeliveryFee(
             $store,

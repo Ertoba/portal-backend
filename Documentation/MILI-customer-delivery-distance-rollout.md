@@ -42,3 +42,15 @@ Normal delivery routes run from the DB store coordinates to customer coordinates
 - Staging acceptance: both Admin/Vendor POS, manual `distance=0` and altered
   session distance, several destination pins, delivery vs pickup, absent provider
   key, provider outages, vehicle coverage, and fee preview vs final invoice.
+
+## POS initial map-preview parity
+- The Admin/Vendor `extra_charge` AJAX price quote now sends pinned
+  latitude/longitude; the server ignores `distancMileResult` and calls the
+  SAME route verifier used by saved addresses and completed POS orders.
+- Coverage-picker re-quotes also include pinned coordinates. Without valid
+  coordinates, the endpoint rejects the quote rather than treating the
+  missing client distance as 1 km.
+- Browser quote failure clears the fee display instead of showing a
+  misleading 0/free delivery charge.
+- This is a breaking contract for third-party POS quote callers that omit
+  coordinates; review integrations and test both POS interfaces in staging.
