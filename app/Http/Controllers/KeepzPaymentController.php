@@ -7,6 +7,7 @@ use App\Models\DisbursementWithdrawalMethod;
 use App\Models\Order;
 use App\Models\PaymentRequest;
 use App\Support\Payment\KeepzStatusIdentity;
+use App\Support\Payment\KeepzVerifiedFailure;
 use App\Traits\Processor;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
@@ -87,17 +88,32 @@ class KeepzPaymentController extends Controller
 
         $this->logGatewayResponse('Keepz order was not created', $payment, $response);
 
-        $failedPayment = $this->finalizeFailedPayment(
-            $payment,
-            null,
-            data_get($response, 'status') ?? data_get($response, 'statusCode') ?? 'order_create_failed'
-        );
+        // A network timeout, malformed create response or missing checkout URL
+        // is NOT proof that Keepz declined the payment. The provider may already
+        // have created the order: canceling our order here would race a later
+        // SUCCESS callback and can cause a false failure/COD fallback.
+        // Only a clearly terminal provider response may invoke the failure hook.
+        if (KeepzVerifiedFailure::matches($response)) {
+            $failedPayment = $this->finalizeFailedPayment(
+                $payment,
+                null,
+                data_get($response, 'status') ?? data_get($response, 'orderStatus')
+            );
 
-        if ($failedPayment) {
-            $this->callFailureHook($failedPayment);
+            if ($failedPayment) {
+                $this->callFailureHook($failedPayment);
+            }
+
+            return $this->payment_response($failedPayment ?? $payment, 'fail');
         }
 
-        return $this->payment_response($failedPayment ?? $payment, 'fail');
+        Log::warning('Keepz order creation unresolved; payment left pending for reconciliation', [
+            'payment_request_id' => $payment->id,
+            'provider_status' => data_get($response, 'status'),
+            'provider_status_code' => data_get($response, 'statusCode'),
+        ]);
+
+        return $this->payment_response($payment, 'fail');
     }
 
     public function mobileIntentById(string $paymentId, Request $request)
@@ -232,7 +248,12 @@ class KeepzPaymentController extends Controller
                 return $this->payment_response($payment, 'success');
             }
         } else {
-            $this->finalizeFailedPayment($payment, null, 'redirect_fail');
+            // A browser 'fail' redirect is not a provider-verified terminal
+            // state. If status lookup is down or mismatched, keep the original
+            // payment pending so a delayed verified SUCCESS can reconcile.
+            Log::warning('Keepz fail redirect had no verified provider status; left pending', [
+                'payment_request_id' => $payment->id,
+            ]);
         }
 
         return $this->payment_response($payment, 'fail');

@@ -8,6 +8,8 @@ on:
       - "app/Services/KeepzGatewayLifecycleService.php"
       - "app/Support/Payment/KeepzStatusIdentity.php"
       - "tests/Unit/KeepzStatusIdentityTest.php"
+      - "app/Support/Payment/KeepzVerifiedFailure.php"
+      - "tests/Unit/KeepzVerifiedFailureTest.php"
       - "composer.json"
       - "composer.lock"
       - ".github/workflows/keepz-status-integrity.yml"
@@ -17,6 +19,8 @@ on:
       - "app/Services/KeepzGatewayLifecycleService.php"
       - "app/Support/Payment/KeepzStatusIdentity.php"
       - "tests/Unit/KeepzStatusIdentityTest.php"
+      - "app/Support/Payment/KeepzVerifiedFailure.php"
+      - "tests/Unit/KeepzVerifiedFailureTest.php"
       - ".github/workflows/keepz-status-integrity.yml"
   workflow_dispatch:
 
@@ -41,6 +45,8 @@ jobs:
           php -l app/Services/KeepzGatewayLifecycleService.php
           php -l app/Support/Payment/KeepzStatusIdentity.php
           php -l tests/Unit/KeepzStatusIdentityTest.php
+          php -l app/Support/Payment/KeepzVerifiedFailure.php
+          php -l tests/Unit/KeepzVerifiedFailureTest.php
       - name: Install locked dependencies
         run: composer install --no-scripts --no-interaction --prefer-dist --no-progress
       - name: Verify provider order binding
@@ -48,4 +54,4 @@ jobs:
           APP_ENV: testing
           DB_CONNECTION: sqlite
           DB_DATABASE: ":memory:"
-        run: vendor/bin/phpunit --no-coverage tests/Unit/KeepzStatusIdentityTest.php
+        run: vendor/bin/phpunit --no-coverage tests/Unit/KeepzStatusIdentityTest.php tests/Unit/KeepzVerifiedFailureTest.php
