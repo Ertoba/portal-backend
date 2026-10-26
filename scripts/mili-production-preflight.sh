@@ -4,7 +4,7 @@ set -u
 APP_ROOT="/var/www/mili"
 if [[ $# -gt 0 ]]; then APP_ROOT="$1"; fi
 WEB_USER="www-data"
-if [[ -n "$MILI_WEB_USER" ]]; then WEB_USER="$MILI_WEB_USER"; fi
+if [[ -v MILI_WEB_USER && -n "$MILI_WEB_USER" ]]; then WEB_USER="$MILI_WEB_USER"; fi
 ERRORS=0
 WARNINGS=0
 pass() { printf 'PASS: %s\n' "$1"; }
