@@ -19,6 +19,14 @@ final class OrderOtpGeneratorTest extends TestCase
         }
     }
 
+    public function test_failed_order_exception_is_not_serialized_to_api_clients(): void
+    {
+        $trait = file_get_contents(app_path('Traits/Order/PlaceNewOrderTrait.php'));
+        $this->assertStringNotContainsString('response()->json([$exception]', $trait);
+        $this->assertStringContainsString("'code' => 'order'", $trait);
+        $this->assertStringContainsString("translate('messages.Failed to place order')", $trait);
+    }
+
     public function test_new_orders_use_the_secure_handover_code_generator(): void
     {
         $trait = file_get_contents(app_path('Traits/Order/PlaceNewOrderTrait.php'));
