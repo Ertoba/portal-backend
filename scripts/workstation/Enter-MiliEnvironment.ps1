@@ -72,4 +72,3 @@ $env:PATH = (@(
 
 Write-Host "MILI workspace: $workspace"
 Write-Host "Build root:     $buildRoot"
-

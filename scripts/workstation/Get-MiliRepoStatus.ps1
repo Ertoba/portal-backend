@@ -38,4 +38,3 @@ $rows = foreach ($entry in $repositories.GetEnumerator()) {
 }
 
 $rows | Format-Table -AutoSize
-
