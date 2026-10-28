@@ -19,8 +19,17 @@ ENV_FILE="$APP_ROOT/.env"
 read_setting() {
   [[ -r "$ENV_FILE" ]] || return 1
   awk -v k="$1" '
-    index($0, k "=") == 1 {
-      v = substr($0, length(k) + 2)
+    {
+      line = $0
+      sub(/\r$/, "", line)
+      if (line ~ /^[[:space:]]*#/) next
+      sub(/^[[:space:]]*export[[:space:]]+/, "", line)
+      eq = index(line, "=")
+      if (!eq) next
+      name = substr(line, 1, eq - 1)
+      gsub(/^[[:space:]]+|[[:space:]]+$/, "", name)
+      if (name != k) next
+      v = substr(line, eq + 1)
       sub(/\r$/, "", v)
       gsub(/^[[:space:]]+|[[:space:]]+$/, "", v)
       if (v ~ /^".*"$/ || v ~ /^\047.*\047$/) v = substr(v, 2, length(v)-2)
@@ -40,12 +49,22 @@ required_setting() {
 
 if [[ -f "$APP_ROOT/artisan" ]]; then pass "Laravel entry point exists"; else fail "Laravel entry point missing"; fi
 if [[ -f "$ENV_FILE" && -r "$ENV_FILE" ]]; then pass ".env readable (contents hidden)"; else fail ".env missing/unreadable"; fi
+if [[ -f "$ENV_FILE" ]]; then
+  env_mode="$(stat -c '%a' "$ENV_FILE" 2>/dev/null || true)"
+  case "$env_mode" in
+    *0) pass ".env denies access to other users (mode $env_mode)";;
+    *) fail ".env is accessible to other users (mode $env_mode)";;
+  esac
+fi
 required_setting APP_KEY
 required_setting DB_CONNECTION
 required_setting DB_DATABASE
 required_setting GOOGLE_ROUTES_API_KEY
 
-if [[ "$(read_setting APP_ENV)" == "production" ]]; then pass "APP_ENV=production"; else fail "APP_ENV must be production"; fi
+case "$(read_setting APP_ENV)" in
+  production|live) pass "APP_ENV is a production mode";;
+  *) fail "APP_ENV must be production or live";;
+esac
 case "$(read_setting APP_DEBUG)" in false|0) pass "APP_DEBUG disabled";; *) fail "APP_DEBUG must be false or 0";; esac
 case "$(read_setting APP_URL)" in https://*) pass "APP_URL uses HTTPS";; *) fail "APP_URL must use HTTPS";; esac
 if command -v php >/dev/null 2>&1; then pass "PHP CLI available"; else fail "PHP CLI missing"; fi
