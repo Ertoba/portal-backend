@@ -17,6 +17,7 @@ class VehicleSearchRequest extends BaseRequest
             'offset' => 'nullable|integer|min:1',
             'sortby_price' => 'nullable|in:asc,desc',
             'trip_type' => 'nullable|in:hourly,distance_wise,day_wise,provider_wise',
+            'date' => 'nullable|date',
         ];
     }
 
