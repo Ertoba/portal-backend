@@ -39,6 +39,7 @@ jobs:
           DB_DATABASE=synthetic
           GOOGLE_ROUTES_API_KEY=synthetic-never-real
           ENV
+          chmod 600 "$tmp/.env"
           MILI_WEB_USER="$(id -un)" bash scripts/mili-production-preflight.sh "$tmp"
           sed -i '/^GOOGLE_ROUTES_API_KEY=/d' "$tmp/.env"
           if MILI_WEB_USER="$(id -un)" bash scripts/mili-production-preflight.sh "$tmp"; then
