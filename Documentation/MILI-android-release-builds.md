@@ -63,6 +63,39 @@ matches the owner's Digital Asset Links JSON. An upload-key reset does not chang
 that Play app-signing fingerprint or require replacing it with the upload key in
 Digital Asset Links / API provider configuration.
 
+## Install verified production payloads on an ADB device
+
+An AAB is not directly installable with `adb install`. Use the pinned official
+bundletool to generate a device-specific APK set from each verified production
+AAB; do not recompile Flutter merely to install an already-built payload.
+The [device installer](../scripts/workstation/Install-MiliAabPayloadOnDevice.ps1)
+requires the explicit `-UninstallExisting` local-data-deletion acknowledgement.
+Keep the original AAB bytes and hashes unchanged. Device conversion work/logs
+belong under `build-workspace/production/android/<device-run>/device-apks/`;
+final APK sets and the installation manifest belong under
+`artifacts/production/android/<device-run>/device-apks/`. These are release
+payloads, not debug APKs, even when installed on the test device.
+
+Use the selected new per-app upload keystore explicitly. A locally upload-key
+signed APK is **not** Google Play's app-signing identity and does not establish
+Play acceptance, App Links/API-provider acceptance or financial-flow QA.
+Do not replace Play app-signing fingerprints in provider configuration.
+Play upload-key activation is not a prerequisite for this local ADB installation.
+
+Prepare and verify all three APK sets before removing any installed application:
+source AAB hashes, package/version, release status and every APK's expected new
+certificate must match. Different signing identities cannot update the existing
+installation in place. Uninstall only the three explicit MILI package IDs after
+the owner authorizes local data loss; do not use keep-data or downgrade options.
+Uninstall removes local sessions/preferences, not server accounts or orders.
+
+Read signing passwords only in memory. Bundletool password files must be created
+under an owner-and-SYSTEM-only private directory beneath `ops/secrets/` and removed
+in `finally`; never print passwords or embed them in native command arguments.
+Record the exact device serial, authorization, versions, certificate fingerprints,
+installation times, generated/installed APK hashes and cold-launch results.
+Keep historical debug installation evidence separately dated, not labeled current.
+
 ## Production acceptance gates
 
 1. Read all already-used version codes in Play, including drafts/test releases;
