@@ -226,8 +226,10 @@ if ($Resume) {
     if ($previousManifest.status -ne 'failed' -or $previousManifest.mode -ne 'production' -or
         $previousManifest.runId -ne $RunId -or $previousManifest.signingRunId -ne $SigningRunId -or
         $previousManifest.bundletoolSha256 -ne $BundletoolSha256 -or
-        [IO.Path]::GetFullPath($previousManifest.bundletool) -ne $bundletool -or @($previousManifest.components).Count -ne 0) {
-        throw 'Resume requires the matching failed run with no already-finalized component artifacts.'
+        [IO.Path]::GetFullPath($previousManifest.bundletool) -ne $bundletool -or
+        @($previousManifest.components | Where-Object { $_.component -notin $Components }).Count -ne 0 -or
+        @($previousManifest.components | Select-Object -ExpandProperty component -Unique).Count -ne @($previousManifest.components).Count) {
+        throw 'Resume requires the matching failed run and all previously finalized components selected exactly once.'
     }
     $failedManifestBackup = Join-Path $artifactRoot ("production-build-manifest.failed-" + (Get-Date -Format 'yyyyMMdd-HHmmss-fffffff') + '.json')
     Copy-Item -LiteralPath $manifestPath -Destination $failedManifestBackup -ErrorAction Stop
@@ -242,7 +244,7 @@ $oldTmp = $env:TMP
 $oldJavaHome = $env:JAVA_HOME
 $env:TEMP = $tempRoot
 $env:TMP = $tempRoot
-$results = @()
+$results = if ($Resume) { @($previousManifest.components) } else { @() }
 $manifest = [ordered]@{
     schemaVersion = 1; mode = 'production'; runId = $RunId; signingRunId = $SigningRunId
     status = 'running'; startedAtUtc = [DateTimeOffset]::UtcNow.ToString('o')
@@ -270,8 +272,8 @@ try {
     foreach ($plan in $plans) {
         $component = $plan.component
         $existingWork = Join-Path $runRoot $component
-        $compiledAabReused = $Resume -and (Test-Path -LiteralPath $existingWork)
-        if ($compiledAabReused) {
+        $existingStage = $Resume -and (Test-Path -LiteralPath $existingWork)
+        if ($existingStage) {
             $stage = Get-Content -LiteralPath (Join-Path $existingWork 'stage.json') -Raw | ConvertFrom-Json
             $expectedSource = Join-Path $existingWork 'source'
             $expectedArchive = Join-Path $existingWork 'source.zip'
@@ -296,6 +298,13 @@ try {
         }
         if ($stage.sha -ne $plan.plannedSha) {
             throw "$component main changed after version/signing preflight; start a new production run."
+        }
+        $stagedAab = Join-Path $stage.source 'build\app\outputs\bundle\release\app-release.aab'
+        $compiledAabReused = $existingStage -and (Test-Path -LiteralPath $stagedAab -PathType Leaf)
+        $retained = if ($Resume) { @($previousManifest.components | Where-Object { $_.component -eq $component }) } else { @() }
+        $retained = if ($retained.Count -eq 1) { $retained[0] } else { $null }
+        if ($retained -and -not $compiledAabReused) {
+            throw "$component already has a finalized artifact; its compiled source AAB must still exist. No recompilation is permitted."
         }
         # The staging helper reloads the common environment; restore this run's temp root.
         $env:TEMP = $tempRoot
@@ -335,7 +344,7 @@ try {
             if ((Get-FileHash -LiteralPath $lockFile -Algorithm SHA256).Hash -ne $lockHash) {
                 throw "$component dependency lock changed during compilation."
             }
-            $aab = Join-Path $source 'build\app\outputs\bundle\release\app-release.aab'
+            $aab = $stagedAab
             if (-not (Test-Path -LiteralPath $aab -PathType Leaf)) { throw "$component AAB is missing." }
             $built = Get-Item -LiteralPath $aab
             if ($built.LastWriteTime -lt $started.AddSeconds(-2) -or $built.Length -le 0) {
@@ -425,6 +434,49 @@ try {
             if ((Get-FileHash -LiteralPath $plan.properties -Algorithm SHA256).Hash -ne $propertiesHash -or
                 (Get-FileHash -LiteralPath $plan.keystore -Algorithm SHA256).Hash -ne $keyHash) {
                 throw "$component canonical signing material changed during the build."
+            }
+            if ($retained) {
+                $retainedPath = Assert-WithinPath $retained.artifact $artifactRoot
+                $allowedName = '^mili-' + $component + '-main-' + $stage.sha.Substring(0, 7) + '-v' + $plan.versionCode + '-(release|pending-upload-key-reset)\.aab$'
+                $verifiedHash = (Get-FileHash -LiteralPath $aab -Algorithm SHA256).Hash
+                if ([IO.Path]::GetDirectoryName($retainedPath) -ne [IO.Path]::GetFullPath($artifactRoot) -or
+                    [IO.Path]::GetFileName($retainedPath) -notmatch $allowedName -or
+                    $retained.sha -ne $stage.sha -or $retained.package -ne $manifestPackage -or
+                    $retained.versionCode -ne $plan.versionCode -or $retained.versionName -ne $manifestName -or
+                    $retained.signingRunId -ne $SigningRunId -or
+                    (Get-NormalizedFingerprint $retained.uploadCertificateSha256) -ne $plan.fingerprint -or
+                    $retained.stageArchiveSha256 -ne $stage.archiveSha256 -or $retained.lockSha256 -ne $lockHash -or
+                    $retained.bytes -ne $built.Length -or $retained.sha256 -ne $verifiedHash -or
+                    (Get-FileHash -LiteralPath $retainedPath -Algorithm SHA256).Hash -ne $verifiedHash) {
+                    throw "$component finalized artifact identity/hash differs from its fully reverified compiled AAB."
+                }
+                $expectedSymbols = @{}
+                $expectedSymbols["mili-$component-v$($plan.versionCode)-mapping.txt"] = Join-Path $source 'build\app\outputs\mapping\release\mapping.txt'
+                $expectedSymbols["mili-$component-v$($plan.versionCode)-native-debug-symbols.zip"] = Join-Path $source 'build\app\outputs\native-debug-symbols\release\native-debug-symbols.zip'
+                $retainedSymbolNames = @()
+                foreach ($symbol in $retained.symbols) {
+                    $symbolPath = Assert-WithinPath $symbol.artifact $artifactRoot
+                    $symbolName = [IO.Path]::GetFileName($symbolPath)
+                    if ([IO.Path]::GetDirectoryName($symbolPath) -ne [IO.Path]::GetFullPath($artifactRoot) -or
+                        -not $expectedSymbols.ContainsKey($symbolName) -or $symbolName -in $retainedSymbolNames -or
+                        (Get-FileHash -LiteralPath $symbolPath -Algorithm SHA256).Hash -ne $symbol.sha256 -or
+                        (Get-FileHash -LiteralPath $expectedSymbols[$symbolName] -Algorithm SHA256).Hash -ne $symbol.sha256) {
+                        throw "$component finalized mapping/symbol identity or hash changed."
+                    }
+                    $retainedSymbolNames += $symbolName
+                }
+                foreach ($name in $expectedSymbols.Keys) {
+                    if ((Test-Path -LiteralPath $expectedSymbols[$name] -PathType Leaf) -and $name -notin $retainedSymbolNames) {
+                        throw "$component generated mapping/symbols are missing from the previous finalized metadata."
+                    }
+                }
+                $retained | Add-Member -NotePropertyName 'finalArtifactRetained' -NotePropertyValue $true -Force
+                $retained | Add-Member -NotePropertyName 'compiledAabReusedOnResume' -NotePropertyValue $true -Force
+                $retained | Add-Member -NotePropertyName 'reverifiedAtUtc' -NotePropertyValue ([DateTimeOffset]::UtcNow.ToString('o')) -Force
+                $results = @($results | Where-Object { $_.component -ne $component }) + @($retained)
+                Save-RunManifest
+                Write-Host "PRODUCTION_ARTIFACT_REVERIFIED component=$component sha=$($stage.sha) artifact=$retainedPath unchanged=true"
+                continue
             }
             $ready = $plan.registrationStatus -eq 'registered-verified'
             $qualifier = if ($ready) { 'release' } else { 'pending-upload-key-reset' }

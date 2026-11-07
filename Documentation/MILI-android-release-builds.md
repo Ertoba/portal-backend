@@ -92,10 +92,11 @@ RELRO header warnings are advisory because headers alone cannot distinguish data
 from padding. This is not generated-APK ZIP alignment, device/runtime acceptance
 or Play approval. Keep these scopes separate in release records.
 
-An explicit `-Resume` can recover a failed pre-publication verification run with
-zero finalized components: preserve its failed manifest, recheck source/archive
-identity, and reverify the completed signed AAB without recompiling or changing
-its timestamp. Never overwrite an already-published artifact. Google's exact
+An explicit `-Resume` can recover a failed run: preserve its failed manifest and
+recheck source/archive identity. Previously finalized components must remain
+selected; their source/final AABs and mapping files are fully reverified, never
+rewritten or recompiled. A missing AAB in an existing validated stage can resume
+incremental compilation. Never overwrite an already-published artifact. Google's exact
 `play-services-identity-credentials.properties` library-version metadata is allowed
 only after a size limit and strict three-field/client/version structure check;
 this is not a general credential-file exemption.
