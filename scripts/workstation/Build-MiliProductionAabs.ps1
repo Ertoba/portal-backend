@@ -301,8 +301,13 @@ try {
         }
         $stagedAab = Join-Path $stage.source 'build\app\outputs\bundle\release\app-release.aab'
         $compiledAabReused = $existingStage -and (Test-Path -LiteralPath $stagedAab -PathType Leaf)
-        $retained = if ($Resume) { @($previousManifest.components | Where-Object { $_.component -eq $component }) } else { @() }
-        $retained = if ($retained.Count -eq 1) { $retained[0] } else { $null }
+        $retained = $null
+        if ($Resume) {
+            # Keep the array wrapper outside an if-expression: PS5.1 otherwise
+            # unwraps one PSCustomObject, whose Count property is not reliable.
+            $retainedMatches = @($previousManifest.components | Where-Object { $_.component -eq $component })
+            if ($retainedMatches.Count -eq 1) { $retained = $retainedMatches[0] }
+        }
         if ($retained -and -not $compiledAabReused) {
             throw "$component already has a finalized artifact; its compiled source AAB must still exist. No recompilation is permitted."
         }
