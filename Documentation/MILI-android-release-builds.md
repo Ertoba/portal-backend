@@ -86,6 +86,20 @@ Digital Asset Links / API provider configuration.
 Signed AABs may be prepared before a reset becomes active, but they must remain
 clearly labeled pending registration and must not be described as upload-ready.
 
+The [static 16KB checker](../scripts/workstation/Test-MiliAndroid16Kb.ps1)
+checks completed AAB ELF64 LOAD alignment/congruence and records packaging intent.
+RELRO header warnings are advisory because headers alone cannot distinguish data
+from padding. This is not generated-APK ZIP alignment, device/runtime acceptance
+or Play approval. Keep these scopes separate in release records.
+
+An explicit `-Resume` can recover a failed pre-publication verification run with
+zero finalized components: preserve its failed manifest, recheck source/archive
+identity, and reverify the completed signed AAB without recompiling or changing
+its timestamp. Never overwrite an already-published artifact. Google's exact
+`play-services-identity-credentials.properties` library-version metadata is allowed
+only after a size limit and strict three-field/client/version structure check;
+this is not a general credential-file exemption.
+
 ## Primary references
 
 - [Google Play App Signing and upload-key resets](https://support.google.com/googleplay/android-developer/answer/9842756?hl=en)

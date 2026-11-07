@@ -17,7 +17,8 @@ param(
     [Parameter(Mandatory = $true)]
     [ValidatePattern('^[0-9A-Fa-f]{64}$')]
     [string]$BundletoolSha256,
-    [hashtable]$PlayRegistrationEvidence = @{}
+    [hashtable]$PlayRegistrationEvidence = @{},
+    [switch]$Resume
 )
 
 $ErrorActionPreference = 'Stop'
@@ -217,7 +218,21 @@ foreach ($component in $Components) {
 
 $runRoot = Assert-WithinPath (Join-Path $workspace "build-workspace\production\android\$RunId") (Join-Path $workspace 'build-workspace\production')
 $artifactRoot = Assert-WithinPath (Join-Path $workspace "artifacts\production\android\$RunId") (Join-Path $workspace 'artifacts\production')
-if ((Test-Path -LiteralPath $runRoot) -or (Test-Path -LiteralPath $artifactRoot)) {
+$manifestPath = Join-Path $artifactRoot 'production-build-manifest.json'
+$previousManifest = $null
+$failedManifestBackup = $null
+if ($Resume) {
+    $previousManifest = Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json
+    if ($previousManifest.status -ne 'failed' -or $previousManifest.mode -ne 'production' -or
+        $previousManifest.runId -ne $RunId -or $previousManifest.signingRunId -ne $SigningRunId -or
+        $previousManifest.bundletoolSha256 -ne $BundletoolSha256 -or
+        [IO.Path]::GetFullPath($previousManifest.bundletool) -ne $bundletool -or @($previousManifest.components).Count -ne 0) {
+        throw 'Resume requires the matching failed run with no already-finalized component artifacts.'
+    }
+    $failedManifestBackup = Join-Path $artifactRoot ("production-build-manifest.failed-" + (Get-Date -Format 'yyyyMMdd-HHmmss-fffffff') + '.json')
+    Copy-Item -LiteralPath $manifestPath -Destination $failedManifestBackup -ErrorAction Stop
+}
+elseif ((Test-Path -LiteralPath $runRoot) -or (Test-Path -LiteralPath $artifactRoot)) {
     throw 'Production run and artifact directories must be fresh; existing runs are never overwritten.'
 }
 $tempRoot = Join-Path $runRoot 'tmp'
@@ -227,7 +242,6 @@ $oldTmp = $env:TMP
 $oldJavaHome = $env:JAVA_HOME
 $env:TEMP = $tempRoot
 $env:TMP = $tempRoot
-$manifestPath = Join-Path $artifactRoot 'production-build-manifest.json'
 $results = @()
 $manifest = [ordered]@{
     schemaVersion = 1; mode = 'production'; runId = $RunId; signingRunId = $SigningRunId
@@ -237,6 +251,12 @@ $manifest = [ordered]@{
     debugWorkRoot = Join-Path $workspace 'build-workspace\debug\android'
     debugArtifactRoot = Join-Path $workspace 'artifacts\debug\android'
     components = @(); safeToUploadAllToExistingPlayApps = $false
+    resumed = [bool]$Resume; previousFailedManifest = $failedManifestBackup
+}
+if ($Resume) {
+    $manifest.startedAtUtc = $previousManifest.startedAtUtc
+    $manifest.resumedAtUtc = [DateTimeOffset]::UtcNow.ToString('o')
+    $manifest.previousFailedAtUtc = $previousManifest.failedAtUtc
 }
 
 function Save-RunManifest {
@@ -249,8 +269,31 @@ try {
     Save-RunManifest
     foreach ($plan in $plans) {
         $component = $plan.component
-        $stage = & (Join-Path $PSScriptRoot 'Stage-MiliAndroidBuild.ps1') `
-            -WorkspaceRoot $physicalWorkspace -Mode production -Component $component -RunId $RunId
+        $existingWork = Join-Path $runRoot $component
+        $compiledAabReused = $Resume -and (Test-Path -LiteralPath $existingWork)
+        if ($compiledAabReused) {
+            $stage = Get-Content -LiteralPath (Join-Path $existingWork 'stage.json') -Raw | ConvertFrom-Json
+            $expectedSource = Join-Path $existingWork 'source'
+            $expectedArchive = Join-Path $existingWork 'source.zip'
+            $liveMain = Get-GitText $plan.repository @('ls-remote', '--exit-code', '--heads', 'origin', 'refs/heads/main')
+            if ($stage.mode -ne 'production' -or $stage.runId -ne $RunId -or $stage.component -ne $component -or
+                $stage.package -ne $plan.applicationId -or $stage.repository -ne $plan.repository -or
+                $stage.source -ne $expectedSource -or $stage.work -ne $existingWork -or $stage.archive -ne $expectedArchive -or
+                $stage.log -ne (Join-Path $existingWork 'logs') -or $stage.artifact -ne $artifactRoot -or
+                (Get-FileHash -LiteralPath $expectedArchive -Algorithm SHA256).Hash -ne $stage.archiveSha256 -or
+                (Get-GitText $plan.repository @('branch', '--show-current')) -ne 'main' -or
+                (Get-GitText $plan.repository @('status', '--porcelain', '--untracked-files=normal')) -or
+                (Get-GitText $plan.repository @('rev-parse', 'origin/main')) -ne $plan.plannedSha -or
+                $liveMain -notmatch ('^' + $plan.plannedSha + '\s+refs/heads/main$') -or
+                (Get-FileHash -LiteralPath (Join-Path $expectedSource 'pubspec.lock') -Algorithm SHA256).Hash -ne
+                (Get-FileHash -LiteralPath (Join-Path $plan.repository 'pubspec.lock') -Algorithm SHA256).Hash) {
+                throw "$component existing stage does not match this clean, current-main production plan."
+            }
+        }
+        else {
+            $stage = & (Join-Path $PSScriptRoot 'Stage-MiliAndroidBuild.ps1') `
+                -WorkspaceRoot $physicalWorkspace -Mode production -Component $component -RunId $RunId
+        }
         if ($stage.sha -ne $plan.plannedSha) {
             throw "$component main changed after version/signing preflight; start a new production run."
         }
@@ -266,7 +309,7 @@ try {
         $signingLink = Assert-WithinPath (Join-Path $androidRoot 'key.properties') $androidRoot
         $logPath = Join-Path $stage.log 'flutter-production-aab.log'
         $verifyLog = Join-Path $stage.log 'aab-verification.log'
-        $started = Get-Date
+        $started = if ($compiledAabReused) { [DateTimeOffset]::Parse($stage.stagedAt).LocalDateTime } else { Get-Date }
         $lockFile = Join-Path $source 'pubspec.lock'
         $lockHash = (Get-FileHash -LiteralPath $lockFile -Algorithm SHA256).Hash
         $propertiesHash = (Get-FileHash -LiteralPath $plan.properties -Algorithm SHA256).Hash
@@ -276,17 +319,19 @@ try {
         Write-Host "PRODUCTION_BUILD_START component=$component sha=$($stage.sha) versionCode=$($plan.versionCode)"
         try {
             if (Test-Path -LiteralPath $signingLink) { throw 'Staging unexpectedly contains signing properties.' }
-            # A hard link preserves the restrictive secret-file ACL; no plaintext copy is created.
-            New-Item -ItemType HardLink -Path $signingLink -Target $plan.properties | Out-Null
-            $linkCreated = $true
-            Push-Location $source
-            $locationPushed = $true
-            Invoke-NativeLogged -Tool flutter -Arguments @('pub', 'get', '--enforce-lockfile') -LogPath $logPath
-            if ((Get-FileHash -LiteralPath $lockFile -Algorithm SHA256).Hash -ne $lockHash) {
-                throw "$component locked dependencies changed during resolution."
+            if (-not $compiledAabReused) {
+                # A hard link preserves the restrictive secret-file ACL; no plaintext copy is created.
+                New-Item -ItemType HardLink -Path $signingLink -Target $plan.properties | Out-Null
+                $linkCreated = $true
+                Push-Location $source
+                $locationPushed = $true
+                Invoke-NativeLogged -Tool flutter -Arguments @('pub', 'get', '--enforce-lockfile') -LogPath $logPath
+                if ((Get-FileHash -LiteralPath $lockFile -Algorithm SHA256).Hash -ne $lockHash) {
+                    throw "$component locked dependencies changed during resolution."
+                }
+                # All Flutter release ABIs are retained. No --target-platform or debug signing fallback.
+                Invoke-NativeLogged -Tool flutter -Arguments @('build', 'appbundle', '--release', '--no-pub', '--build-number', [string]$plan.versionCode) -LogPath $logPath
             }
-            # All Flutter release ABIs are retained. No --target-platform or debug signing fallback.
-            Invoke-NativeLogged -Tool flutter -Arguments @('build', 'appbundle', '--release', '--no-pub', '--build-number', [string]$plan.versionCode) -LogPath $logPath
             if ((Get-FileHash -LiteralPath $lockFile -Algorithm SHA256).Hash -ne $lockHash) {
                 throw "$component dependency lock changed during compilation."
             }
@@ -307,7 +352,7 @@ try {
                 throw "$component AAB signer is not the NEW requested upload key."
             }
             Invoke-NativeLogged -Tool $keytool -Arguments @('-J-Duser.language=en', '-printcert', '-file', $plan.certificate) -LogPath $verifyLog
-            Invoke-NativeLogged -Tool $java -Arguments @('-jar', $bundletool, 'validate', "--bundle=$aab") -LogPath $verifyLog
+            Invoke-NativeLogged -Tool $java -Arguments @('-jar', $bundletool, 'validate', "--bundle=$aab") -LogPath $verifyLog -Capture | Out-Null
             $manifestXml = Invoke-NativeLogged -Tool $java -Arguments @('-jar', $bundletool, 'dump', 'manifest', "--bundle=$aab", '--module=base') -LogPath $verifyLog -Capture
             $xml = New-Object Xml.XmlDocument
             $xml.XmlResolver = $null
@@ -344,6 +389,16 @@ try {
                 }
                 $privateDirectories = @('.secrets', 'secrets', 'credentials', 'service-accounts', 'service_accounts', 'private-keys', 'private_keys')
                 foreach ($entryName in $entryNames) {
+                    if ($entryName -ceq 'base/root/play-services-identity-credentials.properties') {
+                        $metadataEntry = $zip.GetEntry($entryName)
+                        if ($metadataEntry.Length -gt 1024) { throw 'Unexpected Google identity library metadata size.' }
+                        $reader = New-Object IO.StreamReader($metadataEntry.Open())
+                        try { $publicMetadata = $reader.ReadToEnd() } finally { $reader.Dispose() }
+                        if ($publicMetadata -notmatch '\Aversion=([0-9]+\.[0-9]+\.[0-9]+(?:[-.A-Za-z0-9]*)?)\r?\nclient=play-services-identity-credentials\r?\nplay-services-identity-credentials_client=\1\r?\n?\z') {
+                            throw 'Unexpected Google identity library metadata contents.'
+                        }
+                        continue
+                    }
                     foreach ($part in $entryName.Split('/')) {
                         if ($privateDirectories -contains $part) { throw "$component AAB contains a forbidden private directory." }
                         foreach ($pattern in $privatePatterns) {
@@ -408,6 +463,8 @@ try {
                 safeToUploadToExistingPlayApp = $ready; source = $source; stageArchiveSha256 = $stage.archiveSha256
                 artifact = $artifact; bytes = $built.Length; sha256 = $aabHash; symbols = @($symbols)
                 lockSha256 = $lockHash; startedAt = $started.ToString('o'); completedAtUtc = [DateTimeOffset]::UtcNow.ToString('o')
+                compiledAabReused = [bool]$compiledAabReused; stagedAt = $stage.stagedAt
+                compiledAabCreatedAt = $built.CreationTime.ToString('o'); compiledAabWrittenAt = $built.LastWriteTime.ToString('o')
                 buildLog = $logPath; verificationLog = $verifyLog
                 verified = @('jarsigner', 'new-upload-certificate', 'bundletool-validate', 'manifest', 'all-flutter-release-abis', 'no-private-config-entries')
             }
