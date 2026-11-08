@@ -244,7 +244,10 @@ $oldTmp = $env:TMP
 $oldJavaHome = $env:JAVA_HOME
 $env:TEMP = $tempRoot
 $env:TMP = $tempRoot
-$results = if ($Resume) { @($previousManifest.components) } else { @() }
+# PS5.1 unwraps if-expression output: an empty branch becomes $null and one
+# record becomes a scalar. Assign the array outside the expression.
+$results = @()
+if ($Resume) { $results = @($previousManifest.components) }
 $manifest = [ordered]@{
     schemaVersion = 1; mode = 'production'; runId = $RunId; signingRunId = $SigningRunId
     status = 'running'; startedAtUtc = [DateTimeOffset]::UtcNow.ToString('o')
@@ -487,9 +490,20 @@ try {
             $qualifier = if ($ready) { 'release' } else { 'pending-upload-key-reset' }
             $filename = "mili-$component-main-$($stage.sha.Substring(0, 7))-v$($plan.versionCode)-$qualifier.aab"
             $artifact = Join-Path $artifactRoot $filename
-            if (Test-Path -LiteralPath $artifact) { throw 'Refusing to replace a production artifact.' }
             $aabHash = (Get-FileHash -LiteralPath $aab -Algorithm SHA256).Hash
-            Copy-Item -LiteralPath $aab -Destination $artifact
+            $recoveredFinal = Test-Path -LiteralPath $artifact
+            if ($recoveredFinal) {
+                # A metadata write may fail after copying a fully verified AAB.
+                # Adopt only the exact already-built bytes on explicit resume;
+                # never recompile, rewrite, rename or replace the final file.
+                if (-not $Resume -or -not $compiledAabReused -or
+                    (Get-Item -LiteralPath $artifact).Length -ne $built.Length -or
+                    (Get-FileHash -LiteralPath $artifact -Algorithm SHA256).Hash -ne $aabHash) {
+                    throw 'Refusing to replace or adopt an unmatched production artifact.'
+                }
+            } else {
+                Copy-Item -LiteralPath $aab -Destination $artifact
+            }
             if ((Get-FileHash -LiteralPath $artifact -Algorithm SHA256).Hash -ne $aabHash) {
                 throw "$component copied AAB checksum mismatch."
             }
@@ -501,16 +515,22 @@ try {
                 $symbolSource = Join-Path $source $symbol.relative
                 if (Test-Path -LiteralPath $symbolSource -PathType Leaf) {
                     $symbolArtifact = Join-Path $artifactRoot $symbol.name
-                    if (Test-Path -LiteralPath $symbolArtifact) { throw 'Refusing to replace a symbol artifact.' }
                     $symbolHash = (Get-FileHash -LiteralPath $symbolSource -Algorithm SHA256).Hash
-                    Copy-Item -LiteralPath $symbolSource -Destination $symbolArtifact
+                    if (Test-Path -LiteralPath $symbolArtifact) {
+                        if (-not $Resume -or -not $compiledAabReused -or -not $recoveredFinal -or
+                            (Get-FileHash -LiteralPath $symbolArtifact -Algorithm SHA256).Hash -ne $symbolHash) {
+                            throw 'Refusing to replace or adopt an unmatched symbol artifact.'
+                        }
+                    } else {
+                        Copy-Item -LiteralPath $symbolSource -Destination $symbolArtifact
+                    }
                     if ((Get-FileHash -LiteralPath $symbolArtifact -Algorithm SHA256).Hash -ne $symbolHash) {
                         throw 'Copied release symbol checksum mismatch.'
                     }
                     $symbols += [pscustomobject]@{ artifact = $symbolArtifact; sha256 = $symbolHash }
                 }
             }
-            $results += [pscustomobject]@{
+            $results = @($results) + @([pscustomobject]@{
                 component = $component; sha = $stage.sha; package = $manifestPackage
                 versionCode = $plan.versionCode; versionName = $manifestName
                 gitVersionCode = $plan.gitVersionCode; confirmedPlayMaximumVersionCode = $plan.playMaximumVersionCode
@@ -522,9 +542,10 @@ try {
                 lockSha256 = $lockHash; startedAt = $started.ToString('o'); completedAtUtc = [DateTimeOffset]::UtcNow.ToString('o')
                 compiledAabReused = [bool]$compiledAabReused; stagedAt = $stage.stagedAt
                 compiledAabCreatedAt = $built.CreationTime.ToString('o'); compiledAabWrittenAt = $built.LastWriteTime.ToString('o')
+                finalArtifactRecoveredAfterMetadataFailure = [bool]$recoveredFinal
                 buildLog = $logPath; verificationLog = $verifyLog
                 verified = @('jarsigner', 'new-upload-certificate', 'bundletool-validate', 'manifest', 'all-flutter-release-abis', 'no-private-config-entries')
-            }
+            })
             Save-RunManifest
             Write-Host "PRODUCTION_BUILD_VERIFIED component=$component sha=$($stage.sha) registration=$($plan.registrationStatus) safeToUpload=$ready artifact=$artifact"
         }
