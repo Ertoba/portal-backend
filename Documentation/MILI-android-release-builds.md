@@ -69,7 +69,11 @@ An AAB is not directly installable with `adb install`. Use the pinned official
 bundletool to generate a device-specific APK set from each verified production
 AAB; do not recompile Flutter merely to install an already-built payload.
 The [device installer](../scripts/workstation/Install-MiliAabPayloadOnDevice.ps1)
-requires the explicit `-UninstallExisting` local-data-deletion acknowledgement.
+requires exactly one explicit mode: `-UpdateExisting` preserves existing data
+after checking the installed certificate and a strictly greater version code;
+`-UninstallExisting` is only for owner-authorized local data deletion. Supply
+`-ProductionRunId`, selected `-Components` and their `-VersionCodes` for a newer
+bundle run. Update mode never uninstalls and checks preserved first-install times.
 Keep the original AAB bytes and hashes unchanged. Device conversion work/logs
 belong under `build-workspace/production/android/<device-run>/device-apks/`;
 final APK sets and the installation manifest belong under

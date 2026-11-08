@@ -27,9 +27,37 @@ class WalletController extends BaseApiController
 
     public function collectCashPayment(CollectCashPaymentRequest $request): JsonResponse
     {
-        $redirectLink = $this->walletService->collectCashPaymentLink($this->deliveryMan(), $request->payload());
+        $deliveryMan = $this->deliveryMan();
+        $redirectLink = $this->walletService->collectCashPaymentLink($deliveryMan, $request->payload());
+        $payment = $this->walletService->cashPaymentReference($deliveryMan, $redirectLink);
 
-        return $this->responseFormatter(config('response.default_200'), ['redirect_link' => $redirectLink]);
+        return $this->responseFormatter(config('response.default_200'), [
+            'redirect_link' => $redirectLink,
+            'payment_id' => $payment?->id,
+            'status_url' => $payment ? route('deliveryman_cash_payment_status', ['payment_id' => $payment->id]) : null,
+        ]);
+    }
+
+    public function cashPaymentStatus(Request $request): JsonResponse
+    {
+        if (! $request->query->has('payment_id')) {
+            // Probe this contract before creating a payment. Older deployments
+            // return 404, allowing new apps to fail closed without creating an
+            // orphan payment which they cannot subsequently verify.
+            return $this->responseFormatter(config('response.default_200'), [
+                'verification_version' => 1,
+                'supports_embedded_keepz' => true,
+            ])->header('Cache-Control', 'private, no-store');
+        }
+
+        $payment = $this->walletService->ownedCashPayment($this->deliveryMan(), $request->query('payment_id'));
+
+        if ($payment === null) {
+            return $this->errorResponse(config('response.default_404'), 'Payment not found', 'payment_id');
+        }
+
+        return $this->responseFormatter(config('response.default_200'), $this->walletService->cashPaymentStatus($payment))
+            ->header('Cache-Control', 'private, no-store');
     }
 
     public function adjust(): JsonResponse

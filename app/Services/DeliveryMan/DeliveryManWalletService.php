@@ -4,7 +4,9 @@ namespace App\Services\DeliveryMan;
 
 use App\Models\DeliveryMan;
 use App\Models\DeliveryManWallet;
+use App\Models\PaymentRequest;
 use App\Services\BaseService;
+use App\Support\Payment\KeepzCashCollectionSettlement;
 use App\Traits\Payment\PaymentRedirectLinkTrait;
 use Illuminate\Pagination\LengthAwarePaginator;
 
@@ -26,7 +28,49 @@ class DeliveryManWalletService extends BaseService
             'callback' => $data['callback'] ?? null,
             'attribute' => $deliveryMan->is_ride == 1 ? 'rider_collect_cash_payments' : 'deliveryman_collect_cash_payments',
             'attribute_id' => $deliveryMan->id,
+            'additional_data' => ($data['payment_gateway'] ?? null) === 'keepz'
+                ? ['cash_collection_verification_version' => 1]
+                : [],
         ]);
+    }
+
+    public function cashPaymentReference(DeliveryMan $deliveryMan, ?string $redirectLink): ?PaymentRequest
+    {
+        parse_str((string) parse_url((string) $redirectLink, PHP_URL_QUERY), $query);
+
+        return $this->ownedCashPayment($deliveryMan, $query['payment_id'] ?? null);
+    }
+
+    public function ownedCashPayment(DeliveryMan $deliveryMan, mixed $paymentId): ?PaymentRequest
+    {
+        if (! is_string($paymentId) || ! \Illuminate\Support\Str::isUuid($paymentId)) {
+            return null;
+        }
+
+        return PaymentRequest::query()
+            ->whereKey($paymentId)
+            ->where('payment_method', 'keepz')
+            ->where('payer_id', $deliveryMan->id)
+            ->where('attribute_id', $deliveryMan->id)
+            ->where('attribute', $deliveryMan->is_ride == 1 ? 'rider_collect_cash_payments' : 'deliveryman_collect_cash_payments')
+            ->where('success_hook', 'collect_cash_success')
+            ->first();
+    }
+
+    /** Read only: payment callbacks, never a status poll, update the ledger. */
+    public function cashPaymentStatus(PaymentRequest $payment): array
+    {
+        $paid = (bool) $payment->is_paid;
+        $settled = $paid && KeepzCashCollectionSettlement::hasReceipt($payment);
+        $metadata = json_decode($payment->additional_data ?? '[]', true);
+        $failed = ! $paid && ! empty($metadata['keepz_failure_handled']);
+
+        return [
+            'payment_id' => (string) $payment->id,
+            'status' => $settled ? 'success' : ($failed ? 'failed' : 'pending'),
+            'is_paid' => $paid,
+            'is_settled' => $settled,
+        ];
     }
 
     public function adjust(mixed $deliveryManId): array

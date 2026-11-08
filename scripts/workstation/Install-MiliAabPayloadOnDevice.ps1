@@ -3,20 +3,29 @@ param(
     [string]$WorkspaceRoot = $env:MILI_PHYSICAL_WORKSPACE,
     [ValidatePattern('^[A-Za-z0-9_-]+$')][string]$DeviceId = '29301JEGR18798',
     [ValidatePattern('^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$')][string]$RunId = '20261107-device-new-signature-install',
-    [Parameter(Mandatory = $true)][switch]$UninstallExisting
+    [ValidatePattern('^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$')][string]$ProductionRunId = '20261107-production',
+    [ValidateSet('customer', 'vendor', 'delivery')][string[]]$Components = @('customer', 'vendor', 'delivery'),
+    [Alias('ExpectedVersionCodes')][hashtable]$VersionCodes = @{ customer = 55; vendor = 39; delivery = 41 },
+    [switch]$UpdateExisting,
+    [switch]$UninstallExisting
 )
 
-# This is an explicitly destructive local-device install, not a Google Play release.
-# All three APK sets are verified before any uninstall; no old signing key is used.
+# This installs locally signed release payloads, not Google Play-signed releases.
+# Verify every selected APK set before any device write. Update mode NEVER uninstalls.
 $ErrorActionPreference = 'Stop'
-if (-not $UninstallExisting) { throw 'Explicit -UninstallExisting is required: all three local app data stores will be deleted.' }
+if ($UpdateExisting.IsPresent -eq $UninstallExisting.IsPresent) { throw 'Choose exactly one explicit mode: -UpdateExisting (preserve data) OR -UninstallExisting (delete selected local app data).' }
+if ($Components.Count -eq 0 -or @($Components | Select-Object -Unique).Count -ne $Components.Count) { throw 'Select at least one component without duplicates.' }
+foreach ($component in $Components) {
+    $expectedCode = 0L
+    if (-not $VersionCodes.ContainsKey($component) -or -not [long]::TryParse([string]$VersionCodes[$component], [ref]$expectedCode) -or $expectedCode -le 0 -or $expectedCode -gt 2100000000) { throw "Supply a valid explicit version code for $component." }
+}
 if (-not $WorkspaceRoot) { throw 'Pass -WorkspaceRoot.' }
 . (Join-Path $PSScriptRoot 'Enter-MiliEnvironment.ps1') -WorkspaceRoot $WorkspaceRoot
 $workspace = $env:MILI_WORKSPACE
 $work = Join-Path $workspace "build-workspace\production\android\$RunId\device-apks"
 $artifacts = Join-Path $workspace "artifacts\production\android\$RunId\device-apks"
 $secret = Join-Path $workspace "ops\secrets\android-signing\local-device\$RunId"
-$productionRoot = Join-Path $workspace 'artifacts\production\android\20261107-production'
+$productionRoot = Join-Path $workspace "artifacts\production\android\$ProductionRunId"
 $bundletool = Join-Path $workspace 'tools\bundletool\bundletool-all-1.18.3.jar'
 $bundletoolHash = 'A099CFA1543F55593BC2ED16A70A7C67FE54B1747BB7301F37FDFD6D91028E29'
 $jbr = 'C:\Program Files\Android\Android Studio\jbr\bin'
@@ -27,7 +36,8 @@ $adb = Join-Path $sdk 'platform-tools\adb.exe'
 $aapt = Join-Path $sdk 'build-tools\36.1.0\aapt.exe'
 $apksigner = Join-Path $sdk 'build-tools\36.1.0\apksigner.bat'
 $manifestPath = Join-Path $artifacts 'device-install-manifest.json'
-$state = [ordered]@{ schemaVersion = 1; runId = $RunId; mode = 'release-payload-new-upload-certificate-local-install'; deviceId = $DeviceId; localDataDeletionAuthorized = $true; googlePlayAppSigning = $false; startedAtUtc = [DateTimeOffset]::UtcNow.ToString('o'); status = 'preflight'; components = @() }
+$mode = if ($UpdateExisting) { 'release-payload-upload-certificate-data-preserving-update' } else { 'release-payload-new-upload-certificate-local-install' }
+$state = [ordered]@{ schemaVersion = 2; runId = $RunId; productionRunId = $ProductionRunId; mode = $mode; deviceId = $DeviceId; localDataDeletionAuthorized = $UninstallExisting.IsPresent; googlePlayAppSigning = $false; startedAtUtc = [DateTimeOffset]::UtcNow.ToString('o'); status = 'preflight'; components = @() }
 $passwordFiles = @()
 
 function Invoke-Checked([string]$Tool, [string[]]$Arguments) {
@@ -49,7 +59,7 @@ function Assert-NoReparse([string]$Path) {
 function Assert-Apk([string]$Path, [string]$Fingerprint) {
     $output = Invoke-Checked $apksigner @('verify', '--print-certs', $Path)
     $digests = @([regex]::Matches($output, '(?m)^Signer #\d+ certificate SHA-256 digest: ([0-9a-fA-F]+)') | ForEach-Object { $_.Groups[1].Value.ToUpperInvariant() })
-    if ($digests.Count -ne 1 -or $digests[0] -ne $Fingerprint) { throw 'APK signer does not match the new upload certificate.' }
+    if ($digests.Count -ne 1 -or $digests[0] -ne $Fingerprint) { throw 'APK signer does not match the pinned upload certificate.' }
 }
 function Device-State([string]$Package) {
     $paths = @((Invoke-Checked $adb @('-s', $DeviceId, 'shell', 'pm', 'path', $Package)) -split '\r?\n' | Where-Object { $_ -match '^package:' } | ForEach-Object { $_.Substring(8).Trim() })
@@ -61,9 +71,16 @@ function Device-State([string]$Package) {
     $hashes = @(foreach ($path in $paths) {
         $line = Invoke-Checked $adb @('-s', $DeviceId, 'shell', 'sha256sum', $path)
         if ($line -notmatch '^([0-9a-fA-F]{64})\s') { throw 'Device APK hash could not be read.' }
-        [pscustomobject]@{ name = [IO.Path]::GetFileName($path); sha256 = $Matches[1].ToUpperInvariant() }
+        [pscustomobject]@{ name = [IO.Path]::GetFileName($path); path = $path; sha256 = $Matches[1].ToUpperInvariant() }
     })
     return [pscustomobject]@{ versionCode = [long]$version.Groups[1].Value; firstInstallTime = $installedAt.Groups[1].Value.Trim(); apks = $hashes }
+}
+function Assert-DeviceBaseline($App) {
+    $current = Device-State $App.package
+    $currentHashes = @($current.apks | ForEach-Object { $_.sha256 } | Sort-Object)
+    $beforeHashes = @($App.before.apks | ForEach-Object { $_.sha256 } | Sort-Object)
+    if ($current.versionCode -ne $App.before.versionCode -or $current.firstInstallTime -ne $App.before.firstInstallTime -or ($currentHashes -join ',') -ne ($beforeHashes -join ',')) { throw 'Device app changed after preflight; refusing any further device writes.' }
+    if ($UpdateExisting -and $current.versionCode -ge $App.versionCode) { throw 'Update mode requires a strictly greater version code; no downgrade or same-version reinstall is permitted.' }
 }
 
 foreach ($path in @($java, $keytool, $adb, $aapt, $apksigner, $bundletool)) { Assert-NoReparse $path }
@@ -100,17 +117,28 @@ try {
     Invoke-Checked $java ($javaPrefix + @('get-device-spec', "--output=$spec", "--device-id=$DeviceId", "--adb=$adb")) | Out-Null
     $production = Get-Content -LiteralPath (Join-Path $productionRoot 'production-build-manifest.json') -Raw | ConvertFrom-Json
     $signing = Get-Content -LiteralPath (Join-Path $workspace 'ops\config\android-signing\20261107-upload-reset\upload-keys.json') -Raw | ConvertFrom-Json
-    if ($production.status -ne 'verified-builds-complete' -or $production.signingRunId -ne '20261107-upload-reset' -or $signing.runId -ne '20261107-upload-reset') { throw 'Unexpected production/signing metadata.' }
-    $versions = @{ customer = 55; vendor = 39; delivery = 41 }
+    if ($production.status -ne 'verified-builds-complete' -or $production.runId -ne $ProductionRunId -or $production.signingRunId -ne '20261107-upload-reset' -or $signing.runId -ne '20261107-upload-reset') { throw 'Unexpected production/signing metadata.' }
     $pins = @{ customer = 'FEB2A59267A90F789D8E97C548BB2A70F97F3E150CEB748B7356D365EAF494EB'; vendor = 'FB2E46955EEAC16F51B3E171138F4E34DEDF2B00B659B9271D970B88ACA64169'; delivery = '9D9B99B0462C676070D2FEEA5E2D813849BF97124EF8CF6E883663AA57FC343E' }
-    foreach ($component in @('customer', 'vendor', 'delivery')) {
-        Write-Host "PREPARING $component (new upload certificate, release payload)"
+    foreach ($component in $Components) {
+        Write-Host "PREPARING $component (pinned upload certificate, release payload)"
         $entries = @($production.components | Where-Object { $_.component -eq $component }); $keys = @($signing.apps | Where-Object { $_.component -eq $component })
         if ($entries.Count -ne 1 -or $keys.Count -ne 1) { throw 'Expected exactly one app metadata entry.' }
         $entry = $entries[0]; $key = $keys[0]; $package = "ge.mili.$component"; $fingerprint = $pins[$component]
         $aab = Join-Path $productionRoot ([IO.Path]::GetFileName($entry.artifact))
-        if ($entry.package -ne $package -or $entry.versionCode -ne $versions[$component] -or $entry.debuggable -ne $false -or $key.applicationId -ne $package -or $key.alias -ne 'upload' -or $key.certificateSha256.Replace(':', '') -ne $fingerprint -or (Hash $aab) -ne $entry.sha256) { throw 'AAB/key identity or hash mismatch.' }
+        if ($entry.package -ne $package -or $entry.versionCode -ne $VersionCodes[$component] -or $entry.debuggable -ne $false -or $entry.uploadCertificateSha256 -ne $fingerprint -or $key.applicationId -ne $package -or $key.alias -ne 'upload' -or $key.certificateSha256.Replace(':', '') -ne $fingerprint -or (Hash $aab) -ne $entry.sha256) { throw 'AAB/key identity or hash mismatch.' }
         $appWork = Join-Path $work $component; New-Item -ItemType Directory -Path $appWork | Out-Null
+        $before = Device-State $package
+        $installedSignerVerified = $false
+        if ($UpdateExisting) {
+            if ($before.versionCode -ge [long]$entry.versionCode) { throw 'Update mode requires a strictly greater version code than the installed app.' }
+            $installedBase = @($before.apks | Where-Object { $_.name -eq 'base.apk' })
+            if ($installedBase.Count -ne 1) { throw 'Expected exactly one installed base APK for signature verification.' }
+            $pulledBase = Join-Path $appWork 'installed-before-base.apk'
+            Invoke-Checked $adb @('-s', $DeviceId, 'pull', $installedBase[0].path, $pulledBase) | Out-Null
+            if ((Hash $pulledBase) -ne $installedBase[0].sha256) { throw 'Installed base APK changed during read-only preflight.' }
+            Assert-Apk $pulledBase $fingerprint
+            $installedSignerVerified = $true
+        }
         $private = Join-Path $workspace "ops\secrets\android-signing\$component\20261107-upload-reset"
         $propertiesPath = Join-Path $private 'key.properties'; $keystore = Join-Path $private 'upload-keystore.jks'
         Assert-NoReparse $propertiesPath; Assert-NoReparse $keystore
@@ -140,31 +168,40 @@ try {
         $baseFiles = @($apkFiles | Where-Object { $_.name -eq 'base-master.apk' })
         if ($baseFiles.Count -ne 1 -or $apkFiles.Count -lt 2) { throw 'Expected device-specific base and split APKs.' }
         $badging = Invoke-Checked $aapt @('dump', 'badging', (Join-Path $appWork 'base-master.apk'))
-        if ($badging -notmatch "package: name='$([regex]::Escape($package))' versionCode='$($entry.versionCode)' versionName='4\.2\.0'" -or $badging -match '(?m)^application-debuggable') { throw 'Generated base package/version/release manifest mismatch.' }
+        if ($badging -notmatch "package: name='$([regex]::Escape($package))' versionCode='$($entry.versionCode)' versionName='$([regex]::Escape($entry.versionName))'" -or $badging -match '(?m)^application-debuggable') { throw 'Generated base package/version/release manifest mismatch.' }
         if ((Hash $aab) -ne $entry.sha256) { throw 'Original production AAB changed.' }
-        $state.components += [ordered]@{ component = $component; package = $package; sourceSha = $entry.sha; versionCode = $entry.versionCode; versionName = $entry.versionName; originalAab = $aab; originalAabSha256 = $entry.sha256; apksArtifact = $apks; apksSha256 = Hash $apks; apkSignerSha256 = $fingerprint; generatedApks = $apkFiles; before = Device-State $package; status = 'verified-ready' }
+        $state.components += [ordered]@{ component = $component; package = $package; sourceSha = $entry.sha; versionCode = $entry.versionCode; versionName = $entry.versionName; originalAab = $aab; originalAabSha256 = $entry.sha256; apksArtifact = $apks; apksSha256 = Hash $apks; apkSignerSha256 = $fingerprint; installedSignerVerifiedBeforeUpdate = $installedSignerVerified; generatedApks = $apkFiles; before = $before; status = 'verified-ready' }
         Save-State; Write-Host "VERIFIED $component $($entry.versionCode)"
     }
-    if ($state.components.Count -ne 3) { throw 'All three verified APK sets are required before deleting any app.' }
-    $state.status = 'all-three-verified-before-uninstall'; Save-State
+    if ($state.components.Count -ne $Components.Count) { throw 'All selected APK sets must be verified before any device write.' }
+    foreach ($app in $state.components) { Assert-DeviceBaseline $app }
+    $state.status = 'all-selected-verified-before-device-write'; Save-State
     foreach ($app in $state.components) {
-        $current = Device-State $app.package
-        if (($current.apks | ConvertTo-Json -Compress) -ne ($app.before.apks | ConvertTo-Json -Compress)) { throw 'Device app changed after preflight; refusing uninstall.' }
-        Write-Host "UNINSTALLING $($app.package): authorized local app data deletion"
-        $app.status = 'uninstall-started'; Save-State
-        if ((Invoke-Checked $adb @('-s', $DeviceId, 'uninstall', $app.package)).Trim() -ne 'Success') { throw 'Package uninstall did not report success.' }
-        $app.status = 'uninstalled'; Save-State
+        Assert-DeviceBaseline $app
+        if ((Hash $app.apksArtifact) -ne $app.apksSha256 -or (Hash $app.originalAab) -ne $app.originalAabSha256) { throw 'Verified APK set or original AAB changed before device write.' }
+        if ($UninstallExisting) {
+            Write-Host "UNINSTALLING $($app.package): authorized local app data deletion"
+            $app.status = 'uninstall-started'; Save-State
+            if ((Invoke-Checked $adb @('-s', $DeviceId, 'uninstall', $app.package)).Trim() -ne 'Success') { throw 'Package uninstall did not report success.' }
+            $app.status = 'uninstalled'; Save-State
+        } else {
+            Write-Host "UPDATING $($app.package): preserve existing local app data"
+            $app.status = 'update-started'; Save-State
+        }
         Invoke-Checked $java ($javaPrefix + @('install-apks', "--apks=$($app.apksArtifact)", "--device-id=$DeviceId", "--adb=$adb")) | Out-Null
         $app.after = Device-State $app.package
         $actualHashes = @($app.after.apks | ForEach-Object { $_.sha256 } | Sort-Object)
         $expectedHashes = @($app.generatedApks | ForEach-Object { $_.sha256 } | Sort-Object)
         if ($app.after.versionCode -ne $app.versionCode -or ($actualHashes -join ',') -ne ($expectedHashes -join ',')) { throw 'Installed version/APK hashes differ from verified payload.' }
+        $app.firstInstallTimePreserved = $app.after.firstInstallTime -eq $app.before.firstInstallTime
+        if ($UpdateExisting -and -not $app.firstInstallTimePreserved) { throw 'Update unexpectedly changed firstInstallTime; stopped without recovery.' }
+        $app.localDataPreservationMode = $UpdateExisting.IsPresent
         $app.originalAabUnchanged = (Hash $app.originalAab) -eq $app.originalAabSha256
         if (-not $app.originalAabUnchanged) { throw 'Original AAB changed after installation.' }
-        $app.status = 'installed-verified-new-signature'; Save-State
-        Write-Host "INSTALLED $($app.package) $($app.versionCode) (new upload signature; local data reset)"
+        $app.status = if ($UpdateExisting) { 'updated-verified-data-preserved' } else { 'installed-verified-new-signature' }; Save-State
+        Write-Host "INSTALLED $($app.package) $($app.versionCode) ($mode)"
     }
-    $state.status = 'all-three-installed-verified'; $state.completedAtUtc = [DateTimeOffset]::UtcNow.ToString('o'); Save-State
+    $state.status = 'all-selected-installed-verified'; $state.completedAtUtc = [DateTimeOffset]::UtcNow.ToString('o'); Save-State
     Write-Host "Manifest: $manifestPath"
 } catch {
     $state.status = 'failed-stopped-no-automatic-recovery'; $state.failedAtUtc = [DateTimeOffset]::UtcNow.ToString('o'); Save-State

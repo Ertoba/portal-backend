@@ -334,6 +334,7 @@ Route::middleware('localization')->group(function () {
             });
             Route::controller(DeliveryManWalletController::class)->group(function () {
                 Route::post('make-collected-cash-payment', 'collectCashPayment')->name('deliveryman_make_payment');
+                Route::get('collected-cash-payment-status', 'cashPaymentStatus')->name('deliveryman_cash_payment_status');
                 Route::post('make-wallet-adjustment', 'adjust')->name('deliveryman_make_wallet_adjustment');
                 Route::get('wallet-payment-list', 'payments')->name('deliveryman_wallet_payment_list');
                 Route::get('wallet-provided-earning-list', 'providedEarnings')->name('wallet_provided_earning_list');

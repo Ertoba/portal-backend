@@ -9,10 +9,12 @@ use App\Models\PaymentRequest;
 use App\Support\Payment\KeepzFailureFinalizer;
 use App\Support\Payment\KeepzStatusIdentity;
 use App\Support\Payment\KeepzVerifiedFailure;
+use App\Support\Payment\KeepzCashCollectionSettlement;
 use App\Traits\Processor;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use phpseclib3\Crypt\PublicKeyLoader;
@@ -1074,6 +1076,21 @@ class KeepzPaymentController extends Controller
         if ($status === 'success') {
             if (!$this->matchesPaymentRequest($payment, $payload)) {
                 return 'amount_or_currency_mismatch';
+            }
+
+            if (KeepzCashCollectionSettlement::handles($payment)) {
+                // Never publish is_paid before the cash ledger and its
+                // payment-specific receipt commit. Hook errors roll back all
+                // bookkeeping and can be retried by the verified callback.
+                DB::transaction(function () use ($payment, $payload): void {
+                    $locked = $this->payment::whereKey($payment->id)->lockForUpdate()->firstOrFail();
+                    $updated = $this->finalizeSuccessfulPayment($locked, $payload);
+                    if ($updated !== null) {
+                        $this->callSuccessHook($updated);
+                    }
+                }, 3);
+
+                return $status;
             }
 
             $updatedPayment = $this->finalizeSuccessfulPayment($payment, $payload);

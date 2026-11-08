@@ -639,6 +639,11 @@ if (! function_exists('collect_cash_fail')) {
 if (! function_exists('collect_cash_success')) {
     function collect_cash_success($data){
 
+        if ($data instanceof \App\Models\PaymentRequest
+            && \App\Support\Payment\KeepzCashCollectionSettlement::handles($data)) {
+            return \App\Support\Payment\KeepzCashCollectionSettlement::settle($data);
+        }
+
         try {
             $account_transaction = new AccountTransaction();
             if($data->attribute === 'store_collect_cash_payments'){
