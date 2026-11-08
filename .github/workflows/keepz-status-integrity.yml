@@ -5,6 +5,15 @@ on:
     branches: [main]
     paths:
       - "app/Http/Controllers/KeepzPaymentController.php"
+      - "app/Http/Controllers/Api/V1/DeliveryMan/Wallet/WalletController.php"
+      - "app/Services/DeliveryMan/DeliveryManWalletService.php"
+      - "app/Services/CheckoutPaymentRecoveryService.php"
+      - "app/Support/Payment/KeepzCashCollectionSettlement.php"
+      - "app/helpers.php"
+      - "routes/api/v1/api.php"
+      - "tests/Feature/DeliveryManCashPaymentStatusTest.php"
+      - "tests/Feature/CheckoutPaymentRecoveryStatusTest.php"
+      - "tests/Unit/PaymentGatewayVisibilityTest.php"
       - "app/Services/KeepzGatewayLifecycleService.php"
       - "app/Support/Payment/KeepzStatusIdentity.php"
       - "tests/Unit/KeepzStatusIdentityTest.php"
@@ -18,6 +27,15 @@ on:
   pull_request:
     paths:
       - "app/Http/Controllers/KeepzPaymentController.php"
+      - "app/Http/Controllers/Api/V1/DeliveryMan/Wallet/WalletController.php"
+      - "app/Services/DeliveryMan/DeliveryManWalletService.php"
+      - "app/Services/CheckoutPaymentRecoveryService.php"
+      - "app/Support/Payment/KeepzCashCollectionSettlement.php"
+      - "app/helpers.php"
+      - "routes/api/v1/api.php"
+      - "tests/Feature/DeliveryManCashPaymentStatusTest.php"
+      - "tests/Feature/CheckoutPaymentRecoveryStatusTest.php"
+      - "tests/Unit/PaymentGatewayVisibilityTest.php"
       - "app/Services/KeepzGatewayLifecycleService.php"
       - "app/Support/Payment/KeepzStatusIdentity.php"
       - "tests/Unit/KeepzStatusIdentityTest.php"
@@ -53,11 +71,16 @@ jobs:
           php -l app/Support/Payment/KeepzFailureFinalizer.php
           php -l tests/Unit/KeepzFailureFinalizerTest.php
           php -l tests/Unit/KeepzVerifiedFailureTest.php
+          php -l app/Http/Controllers/Api/V1/DeliveryMan/Wallet/WalletController.php
+          php -l app/Services/DeliveryMan/DeliveryManWalletService.php
+          php -l app/Support/Payment/KeepzCashCollectionSettlement.php
+          php -l tests/Feature/DeliveryManCashPaymentStatusTest.php
+          php -l tests/Feature/CheckoutPaymentRecoveryStatusTest.php
       - name: Install locked dependencies
         run: composer install --no-scripts --no-interaction --prefer-dist --no-progress
-      - name: Verify provider order binding
+      - name: Verify provider binding, owned status and atomic cash settlement
         env:
           APP_ENV: testing
           DB_CONNECTION: sqlite
           DB_DATABASE: ":memory:"
-        run: vendor/bin/phpunit --no-coverage tests/Unit/KeepzStatusIdentityTest.php tests/Unit/KeepzVerifiedFailureTest.php tests/Unit/KeepzFailureFinalizerTest.php
+        run: vendor/bin/phpunit --no-coverage tests/Unit/KeepzStatusIdentityTest.php tests/Unit/KeepzVerifiedFailureTest.php tests/Unit/KeepzFailureFinalizerTest.php tests/Unit/PaymentGatewayVisibilityTest.php tests/Feature/DeliveryManCashPaymentStatusTest.php tests/Feature/CheckoutPaymentRecoveryStatusTest.php
